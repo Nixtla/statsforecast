@@ -4,7 +4,7 @@ __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
 index = {"logger": "core.ipynb",
          "GroupedArray": "core.ipynb",
-         "grouped_array_from_df": "core.ipynb",
+         "StatsForecast": "core.ipynb",
          "ses": "models.ipynb",
          "adida": "models.ipynb",
          "historic_average": "models.ipynb",

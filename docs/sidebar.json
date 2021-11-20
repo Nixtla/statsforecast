@@ -1,0 +1,8 @@
+{
+  "statsforecast": {
+    "Overview": "/",
+    "Core": "core.html",
+    "Models": "models.html",
+    "Utils": "utils.html"
+  }
+}
