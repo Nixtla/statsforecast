@@ -1,0 +1,57 @@
+name: CI
+
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+jobs:
+  nb-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Set up python
+        uses: actions/setup-python@v2
+
+      - name: Install nbdev
+        run: pip install nbdev
+
+      - name: Read all notebooks
+        run: nbdev_read_nbs
+
+      - name: Check if all notebooks are cleaned
+        run: |
+          echo "Check we are starting with clean git checkout"
+          if [ -n "$(git status -uno -s)" ]; then echo "git status is not clean"; false; fi
+          echo "Trying to strip out notebooks"
+          nbdev_clean_nbs
+          echo "Check that strip out was unnecessary"
+          git status -s # display the status to see which nbs need cleaning up
+          if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks"; false; fi
+      - name: Check if there is no diff library/notebooks
+        run: |
+          if [ -n "$(nbdev_diff_nbs)" ]; then echo -e "!!! Detected difference between the notebooks and the library"; false; fi
+
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Set up environment
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.8
+          mamba-version: '*'
+          channels: conda-forge
+          activate-environment: statsforecast
+          environment-file: environment.yml
+
+      - name: Install pip requirements
+        run: pip install nbdev tabulate ./
+
+      - name: Run tests
+        run: nbdev_test_nbs

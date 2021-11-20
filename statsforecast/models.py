@@ -8,7 +8,6 @@ __all__ = ['ses', 'adida', 'historic_average', 'croston_classic', 'croston_sba',
 from itertools import count
 from numbers import Number
 from typing import Collection, List, Sequence, Tuple
-from sklearn.base import BaseEstimator, RegressorMixin
 
 import numpy as np
 import pandas as pd

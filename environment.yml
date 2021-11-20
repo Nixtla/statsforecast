@@ -1,0 +1,8 @@
+name: statsforecast
+channels:
+  - conda-forge
+dependencies:
+  - numba
+  - numpy
+  - pandas
+  - scipy
