@@ -41,7 +41,7 @@ nb_path: "nbs/index.ipynb"
 <span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">Markdown</span>
 
 <span class="kn">from</span> <span class="nn">statsforecast</span> <span class="kn">import</span> <span class="n">StatsForecast</span>
-<span class="kn">from</span> <span class="nn">statsforecast.models</span> <span class="kn">import</span> <span class="n">adida</span><span class="p">,</span> <span class="n">ses</span><span class="p">,</span> <span class="n">seasonal_naive</span>
+<span class="kn">from</span> <span class="nn">statsforecast.models</span> <span class="kn">import</span> <span class="n">random_walk_with_drift</span><span class="p">,</span> <span class="n">seasonal_naive</span><span class="p">,</span> <span class="n">ses</span>
 </pre></div>
 
     </div>
@@ -178,7 +178,7 @@ nb_path: "nbs/index.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="n">seasonal_naive</span><span class="p">,</span> <span class="mi">7</span><span class="p">)],</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="n">random_walk_with_drift</span><span class="p">,</span> <span class="p">(</span><span class="n">seasonal_naive</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)],</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">)</span>
 <span class="n">forecasts</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">display_df</span><span class="p">(</span><span class="n">forecasts</span><span class="p">)</span>
 </pre></div>
@@ -193,10 +193,10 @@ nb_path: "nbs/index.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2021-11-19 20:05:44 statsforecast.core INFO: Computing forecasts
-2021-11-19 20:05:45 statsforecast.core INFO: Computed forecasts for adida.
-2021-11-19 20:05:45 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
-2021-11-19 20:05:45 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+<pre>2021-11-22 20:03:32 statsforecast.core INFO: Computing forecasts
+2021-11-22 20:03:32 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
+2021-11-22 20:03:33 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+2021-11-22 20:03:33 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
 </pre>
 </div>
 </div>
@@ -209,81 +209,81 @@ nb_path: "nbs/index.ipynb"
 <thead><tr>
 <th style="text-align:right">unique_id</th>
 <th style="text-align:left">ds</th>
-<th style="text-align:right">adida</th>
-<th style="text-align:right">ses_alpha-0.1</th>
+<th style="text-align:right">random_walk_with_drift</th>
 <th style="text-align:right">seasonal_naive_season_length-7</th>
+<th style="text-align:right">ses_alpha-0.1</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td style="text-align:right">0</td>
 <td style="text-align:left">2000-04-10 00:00:00</td>
-<td style="text-align:right">3.84552</td>
-<td style="text-align:right">3.85506</td>
+<td style="text-align:right">3.0303</td>
 <td style="text-align:right">3</td>
+<td style="text-align:right">3.85506</td>
 </tr>
 <tr>
 <td style="text-align:right">0</td>
 <td style="text-align:left">2000-04-11 00:00:00</td>
-<td style="text-align:right">3.84552</td>
-<td style="text-align:right">3.85506</td>
+<td style="text-align:right">3.06061</td>
 <td style="text-align:right">5</td>
+<td style="text-align:right">3.85506</td>
 </tr>
 <tr>
 <td style="text-align:right">0</td>
 <td style="text-align:left">2000-04-12 00:00:00</td>
-<td style="text-align:right">3.84552</td>
-<td style="text-align:right">3.85506</td>
+<td style="text-align:right">3.09091</td>
 <td style="text-align:right">4</td>
+<td style="text-align:right">3.85506</td>
 </tr>
 <tr>
 <td style="text-align:right">0</td>
 <td style="text-align:left">2000-04-13 00:00:00</td>
-<td style="text-align:right">3.84552</td>
-<td style="text-align:right">3.85506</td>
+<td style="text-align:right">3.12121</td>
 <td style="text-align:right">7</td>
+<td style="text-align:right">3.85506</td>
 </tr>
 <tr>
 <td style="text-align:right">0</td>
 <td style="text-align:left">2000-04-14 00:00:00</td>
-<td style="text-align:right">3.84552</td>
-<td style="text-align:right">3.85506</td>
+<td style="text-align:right">3.15152</td>
 <td style="text-align:right">6</td>
+<td style="text-align:right">3.85506</td>
 </tr>
 <tr>
 <td style="text-align:right">1</td>
 <td style="text-align:left">2000-07-19 00:00:00</td>
-<td style="text-align:right">97.1878</td>
-<td style="text-align:right">90.4709</td>
+<td style="text-align:right">100.489</td>
 <td style="text-align:right">93.0166</td>
+<td style="text-align:right">90.4709</td>
 </tr>
 <tr>
 <td style="text-align:right">1</td>
 <td style="text-align:left">2000-07-20 00:00:00</td>
-<td style="text-align:right">97.1878</td>
-<td style="text-align:right">90.4709</td>
+<td style="text-align:right">101.489</td>
 <td style="text-align:right">94.2307</td>
+<td style="text-align:right">90.4709</td>
 </tr>
 <tr>
 <td style="text-align:right">1</td>
 <td style="text-align:left">2000-07-21 00:00:00</td>
-<td style="text-align:right">97.1878</td>
-<td style="text-align:right">90.4709</td>
+<td style="text-align:right">102.489</td>
 <td style="text-align:right">95.7649</td>
+<td style="text-align:right">90.4709</td>
 </tr>
 <tr>
 <td style="text-align:right">1</td>
 <td style="text-align:left">2000-07-22 00:00:00</td>
-<td style="text-align:right">97.1878</td>
-<td style="text-align:right">90.4709</td>
+<td style="text-align:right">103.489</td>
 <td style="text-align:right">96.9441</td>
+<td style="text-align:right">90.4709</td>
 </tr>
 <tr>
 <td style="text-align:right">1</td>
 <td style="text-align:left">2000-07-23 00:00:00</td>
-<td style="text-align:right">97.1878</td>
-<td style="text-align:right">90.4709</td>
+<td style="text-align:right">104.489</td>
 <td style="text-align:right">97.75</td>
+<td style="text-align:right">90.4709</td>
 </tr>
 </tbody>
 </table>

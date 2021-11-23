@@ -8,7 +8,7 @@ import pandas as pd
 from IPython.display import display, Markdown
 
 from statsforecast import StatsForecast
-from statsforecast.models import adida, ses, seasonal_naive
+from statsforecast.models import random_walk_with_drift, seasonal_naive, ses
 ```
 
 ```python
@@ -46,28 +46,28 @@ display_df(pd.concat([series.head(), series.tail()]))
 
 
 ```python
-fcst = StatsForecast(series, models=[adida, (ses, 0.1), (seasonal_naive, 7)], freq='D')
+fcst = StatsForecast(series, models=[random_walk_with_drift, (seasonal_naive, 7), (ses, 0.1)], freq='D')
 forecasts = fcst.forecast(5)
 display_df(forecasts)
 ```
 
-    2021-11-19 20:05:44 statsforecast.core INFO: Computing forecasts
-    2021-11-19 20:05:45 statsforecast.core INFO: Computed forecasts for adida.
-    2021-11-19 20:05:45 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
-    2021-11-19 20:05:45 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+    2021-11-22 20:03:32 statsforecast.core INFO: Computing forecasts
+    2021-11-22 20:03:32 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
+    2021-11-22 20:03:33 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+    2021-11-22 20:03:33 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
 
 
 
-|   unique_id | ds                  |    adida |   ses_alpha-0.1 |   seasonal_naive_season_length-7 |
-|------------:|:--------------------|---------:|----------------:|---------------------------------:|
-|           0 | 2000-04-10 00:00:00 |  3.84552 |         3.85506 |                           3      |
-|           0 | 2000-04-11 00:00:00 |  3.84552 |         3.85506 |                           5      |
-|           0 | 2000-04-12 00:00:00 |  3.84552 |         3.85506 |                           4      |
-|           0 | 2000-04-13 00:00:00 |  3.84552 |         3.85506 |                           7      |
-|           0 | 2000-04-14 00:00:00 |  3.84552 |         3.85506 |                           6      |
-|           1 | 2000-07-19 00:00:00 | 97.1878  |        90.4709  |                          93.0166 |
-|           1 | 2000-07-20 00:00:00 | 97.1878  |        90.4709  |                          94.2307 |
-|           1 | 2000-07-21 00:00:00 | 97.1878  |        90.4709  |                          95.7649 |
-|           1 | 2000-07-22 00:00:00 | 97.1878  |        90.4709  |                          96.9441 |
-|           1 | 2000-07-23 00:00:00 | 97.1878  |        90.4709  |                          97.75   |
+|   unique_id | ds                  |   random_walk_with_drift |   seasonal_naive_season_length-7 |   ses_alpha-0.1 |
+|------------:|:--------------------|-------------------------:|---------------------------------:|----------------:|
+|           0 | 2000-04-10 00:00:00 |                  3.0303  |                           3      |         3.85506 |
+|           0 | 2000-04-11 00:00:00 |                  3.06061 |                           5      |         3.85506 |
+|           0 | 2000-04-12 00:00:00 |                  3.09091 |                           4      |         3.85506 |
+|           0 | 2000-04-13 00:00:00 |                  3.12121 |                           7      |         3.85506 |
+|           0 | 2000-04-14 00:00:00 |                  3.15152 |                           6      |         3.85506 |
+|           1 | 2000-07-19 00:00:00 |                100.489   |                          93.0166 |        90.4709  |
+|           1 | 2000-07-20 00:00:00 |                101.489   |                          94.2307 |        90.4709  |
+|           1 | 2000-07-21 00:00:00 |                102.489   |                          95.7649 |        90.4709  |
+|           1 | 2000-07-22 00:00:00 |                103.489   |                          96.9441 |        90.4709  |
+|           1 | 2000-07-23 00:00:00 |                104.489   |                          97.75   |        90.4709  |
 
