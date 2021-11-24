@@ -2,6 +2,16 @@
 > Forecasting using statistical models
 
 
+[![CI](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=refactor)](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml)
+![PyPI](https://img.shields.io/pypi/v/statsforecast?color=blue)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/statsforecast)
+[![License](https://img.shields.io/github/license/Nixtla/statsforecast)](https://github.com/Nixtla/statsforecast/tree/refactor/LICENSE)
+
+## Install
+`pip install statsforecast`
+
+## How to use
+
 ```python
 import numpy as np
 import pandas as pd
@@ -51,10 +61,10 @@ forecasts = fcst.forecast(5)
 display_df(forecasts)
 ```
 
-    2021-11-22 20:03:32 statsforecast.core INFO: Computing forecasts
-    2021-11-22 20:03:32 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
-    2021-11-22 20:03:33 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
-    2021-11-22 20:03:33 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
+    2021-11-23 19:14:48 statsforecast.core INFO: Computing forecasts
+    2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
+    2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+    2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
 
 
 
