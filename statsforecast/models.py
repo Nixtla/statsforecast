@@ -144,8 +144,8 @@ def croston_sba(y, h):
 
 
 def croston_optimized(y, h):
-    yd = demand(y)
-    yi = intervals(y)
+    yd = _demand(y)
+    yi = _intervals(y)
     ydp = _optimized_ses_forecast(yd)
     yip = _optimized_ses_forecast(yi)
     return ydp / yip
