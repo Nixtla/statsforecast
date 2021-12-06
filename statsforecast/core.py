@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from numba import njit
 
-from .utils import generate_daily_series
+from .utils import generate_series
 
 # Internal Cell
 logging.basicConfig(
@@ -70,7 +70,7 @@ def _grouped_array_from_df(df):
     cum_sizes = sizes.cumsum()
     dates = df['ds'].values[cum_sizes - 1]
     indptr = np.append(0, cum_sizes).astype(np.int32)
-    return GroupedArray(data, indptr), indices, dates
+    return GroupedArray(data, indptr), indices, pd.DatetimeIndex(dates)
 
 # Internal Cell
 def _build_forecast_name(model, *args) -> str:
