@@ -43,7 +43,18 @@ nb_path: "nbs/core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">statsforecast.models</span> <span class="kn">import</span> <span class="n">adida</span><span class="p">,</span> <span class="n">ses</span><span class="p">,</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">fastcore.test</span> <span class="kn">import</span> <span class="n">test_eq</span>
+
+<span class="kn">from</span> <span class="nn">statsforecast.models</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">adida</span><span class="p">,</span>
+    <span class="n">croston_classic</span><span class="p">,</span>
+    <span class="n">historic_average</span><span class="p">,</span>
+    <span class="n">naive</span><span class="p">,</span>
+    <span class="n">seasonal_naive</span><span class="p">,</span>
+    <span class="n">seasonal_window_average</span><span class="p">,</span>
+    <span class="n">ses</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">statsforecast.utils</span> <span class="kn">import</span> <span class="n">generate_series</span>
 </pre></div>
 
     </div>
@@ -60,7 +71,7 @@ nb_path: "nbs/core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">equal_ends</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">equal_ends</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="n">series</span>
 </pre></div>
 
@@ -105,27 +116,27 @@ nb_path: "nbs/core.ipynb"
   <tbody>
     <tr>
       <th>0</th>
-      <td>2000-10-05</td>
+      <td>2000-01-01</td>
       <td>0.123838</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-10-06</td>
+      <td>2000-01-02</td>
       <td>1.460113</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-10-07</td>
+      <td>2000-01-03</td>
       <td>2.418577</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-10-08</td>
+      <td>2000-01-04</td>
       <td>3.372232</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-10-09</td>
+      <td>2000-01-05</td>
       <td>4.241948</td>
     </tr>
     <tr>
@@ -135,27 +146,27 @@ nb_path: "nbs/core.ipynb"
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-10</td>
+      <td>2000-06-13</td>
       <td>2.338823</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-11</td>
+      <td>2000-06-14</td>
       <td>3.402687</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-12</td>
+      <td>2000-06-15</td>
       <td>4.235569</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-13</td>
+      <td>2000-06-16</td>
       <td>5.210396</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-14</td>
+      <td>2000-06-17</td>
       <td>6.238846</td>
     </tr>
   </tbody>
@@ -203,6 +214,12 @@ nb_path: "nbs/core.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Daily-data">Daily data<a class="anchor-link" href="#Daily-data"> </a></h2>
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -212,7 +229,7 @@ nb_path: "nbs/core.ipynb"
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
     <span class="n">series</span><span class="p">,</span>
-    <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">],</span>
     <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="o">%</span><span class="k">time</span> res1 = fcst.forecast(14)
@@ -229,13 +246,11 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2021-12-08 19:05:48 __main__ INFO: Computing forecasts
-2021-12-08 19:05:52 __main__ INFO: Computed forecasts for adida.
-2021-12-08 19:05:52 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2021-12-08 19:05:52 __main__ INFO: Computed forecasts for ses_alpha-0.2.
-2021-12-08 19:05:52 __main__ INFO: Computed forecasts for ses_alpha-0.3.
-2021-12-08 19:05:53 __main__ INFO: Computed forecasts for historic_average.
-2021-12-08 19:05:53 __main__ INFO: Computed forecasts for croston_classic.
+<pre>2021-12-08 19:51:35 __main__ INFO: Computing forecasts
+2021-12-08 19:51:40 __main__ INFO: Computed forecasts for adida.
+2021-12-08 19:51:40 __main__ INFO: Computed forecasts for ses_alpha-0.1.
+2021-12-08 19:51:40 __main__ INFO: Computed forecasts for historic_average.
+2021-12-08 19:51:41 __main__ INFO: Computed forecasts for croston_classic.
 </pre>
 </div>
 </div>
@@ -243,8 +258,8 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 6.1 s, sys: 10.4 ms, total: 6.11 s
-Wall time: 6.1 s
+<pre>CPU times: user 6.46 s, sys: 14.6 ms, total: 6.47 s
+Wall time: 6.45 s
 </pre>
 </div>
 </div>
@@ -274,8 +289,6 @@ Wall time: 6.1 s
       <th>ds</th>
       <th>adida</th>
       <th>ses_alpha-0.1</th>
-      <th>ses_alpha-0.2</th>
-      <th>ses_alpha-0.3</th>
       <th>historic_average</th>
       <th>croston_classic</th>
     </tr>
@@ -286,58 +299,46 @@ Wall time: 6.1 s
       <th></th>
       <th></th>
       <th></th>
-      <th></th>
-      <th></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
-      <td>2001-05-15</td>
+      <td>2000-08-10</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-16</td>
+      <td>2000-08-11</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-17</td>
+      <td>2000-08-12</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-18</td>
+      <td>2000-08-13</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-19</td>
+      <td>2000-08-14</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
@@ -348,62 +349,50 @@ Wall time: 6.1 s
       <td>...</td>
       <td>...</td>
       <td>...</td>
-      <td>...</td>
-      <td>...</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-24</td>
+      <td>2000-06-27</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-25</td>
+      <td>2000-06-28</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-26</td>
+      <td>2000-06-29</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-27</td>
+      <td>2000-06-30</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-28</td>
+      <td>2000-07-01</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
   </tbody>
 </table>
-<p>140000 rows × 7 columns</p>
+<p>140000 rows × 5 columns</p>
 </div>
 </div>
 
@@ -424,7 +413,7 @@ Wall time: 6.1 s
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
     <span class="n">series</span><span class="p">,</span>
-    <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">],</span>
     <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
     <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
 <span class="p">)</span>
@@ -442,13 +431,11 @@ Wall time: 6.1 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2021-12-08 19:05:54 __main__ INFO: Computing forecasts
-2021-12-08 19:05:56 __main__ INFO: Computed forecasts for adida.
-2021-12-08 19:05:56 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2021-12-08 19:05:56 __main__ INFO: Computed forecasts for ses_alpha-0.2.
-2021-12-08 19:05:56 __main__ INFO: Computed forecasts for ses_alpha-0.3.
-2021-12-08 19:05:56 __main__ INFO: Computed forecasts for historic_average.
-2021-12-08 19:05:57 __main__ INFO: Computed forecasts for croston_classic.
+<pre>2021-12-08 19:51:42 __main__ INFO: Computing forecasts
+2021-12-08 19:51:44 __main__ INFO: Computed forecasts for adida.
+2021-12-08 19:51:45 __main__ INFO: Computed forecasts for ses_alpha-0.1.
+2021-12-08 19:51:45 __main__ INFO: Computed forecasts for historic_average.
+2021-12-08 19:51:45 __main__ INFO: Computed forecasts for croston_classic.
 </pre>
 </div>
 </div>
@@ -456,8 +443,8 @@ Wall time: 6.1 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 631 ms, sys: 76.6 ms, total: 708 ms
-Wall time: 3.66 s
+<pre>CPU times: user 772 ms, sys: 95.7 ms, total: 868 ms
+Wall time: 4.16 s
 </pre>
 </div>
 </div>
@@ -487,8 +474,6 @@ Wall time: 3.66 s
       <th>ds</th>
       <th>adida</th>
       <th>ses_alpha-0.1</th>
-      <th>ses_alpha-0.2</th>
-      <th>ses_alpha-0.3</th>
       <th>historic_average</th>
       <th>croston_classic</th>
     </tr>
@@ -499,58 +484,46 @@ Wall time: 3.66 s
       <th></th>
       <th></th>
       <th></th>
-      <th></th>
-      <th></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>0</th>
-      <td>2001-05-15</td>
+      <td>2000-08-10</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-16</td>
+      <td>2000-08-11</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-17</td>
+      <td>2000-08-12</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-18</td>
+      <td>2000-08-13</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2001-05-19</td>
+      <td>2000-08-14</td>
       <td>3.151185</td>
       <td>3.151185</td>
-      <td>3.126454</td>
-      <td>3.162569</td>
       <td>3.220805</td>
       <td>3.151185</td>
     </tr>
@@ -561,62 +534,50 @@ Wall time: 3.66 s
       <td>...</td>
       <td>...</td>
       <td>...</td>
-      <td>...</td>
-      <td>...</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-24</td>
+      <td>2000-06-27</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-25</td>
+      <td>2000-06-28</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-26</td>
+      <td>2000-06-29</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-27</td>
+      <td>2000-06-30</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2001-05-28</td>
+      <td>2000-07-01</td>
       <td>3.651947</td>
       <td>3.651947</td>
-      <td>4.103254</td>
-      <td>4.544015</td>
       <td>3.261435</td>
       <td>3.651947</td>
     </tr>
   </tbody>
 </table>
-<p>140000 rows × 7 columns</p>
+<p>140000 rows × 5 columns</p>
 </div>
 </div>
 
@@ -645,6 +606,12 @@ Wall time: 3.66 s
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Monthly-data">Monthly data<a class="anchor-link" href="#Monthly-data"> </a></h2>
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -652,8 +619,8 @@ Wall time: 3.66 s
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">series</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">equal_ends</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">series</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">monthly_series</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">equal_ends</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">monthly_series</span>
 </pre></div>
 
     </div>
@@ -772,12 +739,12 @@ Wall time: 3.66 s
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
-    <span class="n">series</span><span class="p">,</span>
-    <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">],</span>
+    <span class="n">monthly_series</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">],</span>
     <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="o">%</span><span class="k">time</span> res1 = fcst.forecast(4)
-<span class="n">res1</span>
+<span class="o">%</span><span class="k">time</span> monthly_res = fcst.forecast(4)
+<span class="n">monthly_res</span>
 </pre></div>
 
     </div>
@@ -790,13 +757,11 @@ Wall time: 3.66 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2021-12-08 19:05:59 __main__ INFO: Computing forecasts
-2021-12-08 19:06:03 __main__ INFO: Computed forecasts for adida.
-2021-12-08 19:06:03 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2021-12-08 19:06:03 __main__ INFO: Computed forecasts for ses_alpha-0.2.
-2021-12-08 19:06:03 __main__ INFO: Computed forecasts for ses_alpha-0.3.
-2021-12-08 19:06:03 __main__ INFO: Computed forecasts for historic_average.
-2021-12-08 19:06:03 __main__ INFO: Computed forecasts for croston_classic.
+<pre>2021-12-08 19:51:48 __main__ INFO: Computing forecasts
+2021-12-08 19:51:52 __main__ INFO: Computed forecasts for adida.
+2021-12-08 19:51:52 __main__ INFO: Computed forecasts for ses_alpha-0.1.
+2021-12-08 19:51:52 __main__ INFO: Computed forecasts for historic_average.
+2021-12-08 19:51:52 __main__ INFO: Computed forecasts for croston_classic.
 </pre>
 </div>
 </div>
@@ -804,8 +769,8 @@ Wall time: 3.66 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 4.85 s, sys: 7.48 ms, total: 4.86 s
-Wall time: 4.86 s
+<pre>CPU times: user 5.34 s, sys: 12 ms, total: 5.35 s
+Wall time: 5.35 s
 </pre>
 </div>
 </div>
@@ -835,15 +800,11 @@ Wall time: 4.86 s
       <th>ds</th>
       <th>adida</th>
       <th>ses_alpha-0.1</th>
-      <th>ses_alpha-0.2</th>
-      <th>ses_alpha-0.3</th>
       <th>historic_average</th>
       <th>croston_classic</th>
     </tr>
     <tr>
       <th>unique_id</th>
-      <th></th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -857,8 +818,6 @@ Wall time: 4.86 s
       <td>2001-09-30</td>
       <td>4.069533</td>
       <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
       <td>4.895469</td>
       <td>4.101110</td>
     </tr>
@@ -867,8 +826,6 @@ Wall time: 4.86 s
       <td>2001-10-31</td>
       <td>4.069533</td>
       <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
       <td>4.895469</td>
       <td>4.101110</td>
     </tr>
@@ -877,8 +834,6 @@ Wall time: 4.86 s
       <td>2001-11-30</td>
       <td>4.069533</td>
       <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
       <td>4.895469</td>
       <td>4.101110</td>
     </tr>
@@ -887,8 +842,6 @@ Wall time: 4.86 s
       <td>2001-12-31</td>
       <td>4.069533</td>
       <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
       <td>4.895469</td>
       <td>4.101110</td>
     </tr>
@@ -897,15 +850,11 @@ Wall time: 4.86 s
       <td>2001-09-30</td>
       <td>6.407427</td>
       <td>5.631709</td>
-      <td>6.417505</td>
-      <td>6.407427</td>
       <td>6.588876</td>
       <td>5.631709</td>
     </tr>
     <tr>
       <th>...</th>
-      <td>...</td>
-      <td>...</td>
       <td>...</td>
       <td>...</td>
       <td>...</td>
@@ -917,8 +866,6 @@ Wall time: 4.86 s
       <td>2001-12-31</td>
       <td>4.352780</td>
       <td>5.783700</td>
-      <td>4.686199</td>
-      <td>4.352780</td>
       <td>5.083481</td>
       <td>5.783700</td>
     </tr>
@@ -927,8 +874,6 @@ Wall time: 4.86 s
       <td>2001-09-30</td>
       <td>7.166113</td>
       <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
       <td>6.789791</td>
       <td>7.166113</td>
     </tr>
@@ -937,8 +882,6 @@ Wall time: 4.86 s
       <td>2001-10-31</td>
       <td>7.166113</td>
       <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
       <td>6.789791</td>
       <td>7.166113</td>
     </tr>
@@ -947,8 +890,6 @@ Wall time: 4.86 s
       <td>2001-11-30</td>
       <td>7.166113</td>
       <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
       <td>6.789791</td>
       <td>7.166113</td>
     </tr>
@@ -957,249 +898,17 @@ Wall time: 4.86 s
       <td>2001-12-31</td>
       <td>7.166113</td>
       <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
       <td>6.789791</td>
       <td>7.166113</td>
     </tr>
   </tbody>
 </table>
-<p>40000 rows × 7 columns</p>
+<p>40000 rows × 5 columns</p>
 </div>
 </div>
 
 </div>
 
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
-    <span class="n">series</span><span class="p">,</span>
-    <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">],</span>
-    <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">,</span>
-    <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="o">%</span><span class="k">time</span> res2 = fcst.forecast(4)
-<span class="n">res2</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>2021-12-08 19:06:04 __main__ INFO: Computing forecasts
-2021-12-08 19:06:06 __main__ INFO: Computed forecasts for adida.
-2021-12-08 19:06:06 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2021-12-08 19:06:06 __main__ INFO: Computed forecasts for ses_alpha-0.2.
-2021-12-08 19:06:06 __main__ INFO: Computed forecasts for ses_alpha-0.3.
-2021-12-08 19:06:06 __main__ INFO: Computed forecasts for historic_average.
-2021-12-08 19:06:06 __main__ INFO: Computed forecasts for croston_classic.
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 786 ms, sys: 28 ms, total: 814 ms
-Wall time: 2.95 s
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-
-
-<div class="output_html rendered_html output_subarea output_execute_result">
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>ds</th>
-      <th>adida</th>
-      <th>ses_alpha-0.1</th>
-      <th>ses_alpha-0.2</th>
-      <th>ses_alpha-0.3</th>
-      <th>historic_average</th>
-      <th>croston_classic</th>
-    </tr>
-    <tr>
-      <th>unique_id</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>2001-09-30</td>
-      <td>4.069533</td>
-      <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
-      <td>4.895469</td>
-      <td>4.101110</td>
-    </tr>
-    <tr>
-      <th>0</th>
-      <td>2001-10-31</td>
-      <td>4.069533</td>
-      <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
-      <td>4.895469</td>
-      <td>4.101110</td>
-    </tr>
-    <tr>
-      <th>0</th>
-      <td>2001-11-30</td>
-      <td>4.069533</td>
-      <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
-      <td>4.895469</td>
-      <td>4.101110</td>
-    </tr>
-    <tr>
-      <th>0</th>
-      <td>2001-12-31</td>
-      <td>4.069533</td>
-      <td>4.101110</td>
-      <td>4.601393</td>
-      <td>4.069533</td>
-      <td>4.895469</td>
-      <td>4.101110</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>2001-09-30</td>
-      <td>6.407427</td>
-      <td>5.631709</td>
-      <td>6.417505</td>
-      <td>6.407427</td>
-      <td>6.588876</td>
-      <td>5.631709</td>
-    </tr>
-    <tr>
-      <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-    </tr>
-    <tr>
-      <th>9998</th>
-      <td>2001-12-31</td>
-      <td>4.352780</td>
-      <td>5.783700</td>
-      <td>4.686199</td>
-      <td>4.352780</td>
-      <td>5.083481</td>
-      <td>5.783700</td>
-    </tr>
-    <tr>
-      <th>9999</th>
-      <td>2001-09-30</td>
-      <td>7.166113</td>
-      <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
-      <td>6.789791</td>
-      <td>7.166113</td>
-    </tr>
-    <tr>
-      <th>9999</th>
-      <td>2001-10-31</td>
-      <td>7.166113</td>
-      <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
-      <td>6.789791</td>
-      <td>7.166113</td>
-    </tr>
-    <tr>
-      <th>9999</th>
-      <td>2001-11-30</td>
-      <td>7.166113</td>
-      <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
-      <td>6.789791</td>
-      <td>7.166113</td>
-    </tr>
-    <tr>
-      <th>9999</th>
-      <td>2001-12-31</td>
-      <td>7.166113</td>
-      <td>7.166113</td>
-      <td>8.153630</td>
-      <td>9.056795</td>
-      <td>6.789791</td>
-      <td>7.166113</td>
-    </tr>
-  </tbody>
-</table>
-<p>40000 rows × 7 columns</p>
-</div>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_frame_equal</span><span class="p">(</span><span class="n">res1</span><span class="p">,</span> <span class="n">res2</span><span class="p">)</span>
-</pre></div>
-
-    </div>
 </div>
 </div>
 

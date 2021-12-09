@@ -6,14 +6,9 @@ __all__ = ['StatsForecast']
 import inspect
 import logging
 from concurrent.futures import ProcessPoolExecutor
-from functools import partial
-from itertools import chain
 
 import numpy as np
 import pandas as pd
-from numba import njit
-
-from .utils import generate_series
 
 # Internal Cell
 logging.basicConfig(
@@ -47,6 +42,11 @@ class GroupedArray:
 
     def __repr__(self):
         return f'GroupedArray(n_data={self.data.size:,}, n_groups={self.n_groups:,})'
+
+    def __eq__(self, other):
+        if not hasattr(other, 'data') or not hasattr(other, 'indptr'):
+            return False
+        return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
     def compute_forecasts(self, h, func, *args):
         out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
@@ -85,10 +85,11 @@ def _build_forecast_name(model, *args) -> str:
         model_name += '_' + '_'.join(changed_params)
     return model_name
 
+# Internal Cell
 def _as_tuple(x):
     if isinstance(x, tuple):
         return x
-    return (x, )
+    return (x,)
 
 # Cell
 class StatsForecast:

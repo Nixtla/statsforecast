@@ -1,6 +1,10 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 defaults:
   run:
@@ -36,7 +40,12 @@ jobs:
           if [ -n "$(nbdev_diff_nbs)" ]; then echo -e "!!! Detected difference between the notebooks and the library"; false; fi
 
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
     steps:
       - name: Clone repo
         uses: actions/checkout@v2
@@ -44,7 +53,7 @@ jobs:
       - name: Set up environment
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
           mamba-version: '*'
           channels: conda-forge
           activate-environment: statsforecast
