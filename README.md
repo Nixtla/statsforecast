@@ -56,15 +56,15 @@ display_df(pd.concat([series.head(), series.tail()]))
 
 
 ```python
-fcst = StatsForecast(series, models=[random_walk_with_drift, (seasonal_naive, 7), (ses, 0.1)], freq='D')
+fcst = StatsForecast(series, models=[random_walk_with_drift, (seasonal_naive, 7), (ses, 0.1)], freq='D', n_jobs=2)
 forecasts = fcst.forecast(5)
 display_df(forecasts)
 ```
 
-    2021-11-23 19:14:48 statsforecast.core INFO: Computing forecasts
-    2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
-    2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
-    2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
+    2021-12-08 20:16:25 statsforecast.core INFO: Computing forecasts
+    2021-12-08 20:16:25 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
+    2021-12-08 20:16:25 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+    2021-12-08 20:16:26 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
 
 
 
