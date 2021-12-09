@@ -63,14 +63,13 @@ def _grouped_array_from_df(df):
     if not df.index.is_monotonic_increasing:
         df = df.sort_index()
     data = df['y'].values.astype(np.float32)
-    df = df.reset_index('ds')
-    indices_sizes = df.index.value_counts(sort=False)
+    indices_sizes = df.index.get_level_values('unique_id').value_counts(sort=False)
     indices = indices_sizes.index
     sizes = indices_sizes.values
     cum_sizes = sizes.cumsum()
-    dates = df['ds'].values[cum_sizes - 1]
+    dates = df.index.get_level_values('ds')[cum_sizes - 1]
     indptr = np.append(0, cum_sizes).astype(np.int32)
-    return GroupedArray(data, indptr), indices, pd.DatetimeIndex(dates)
+    return GroupedArray(data, indptr), indices, dates
 
 # Internal Cell
 def _build_forecast_name(model, *args) -> str:
