@@ -31,10 +31,10 @@ nb_path: "nbs/index.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p><a href="https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml"><img src="https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=refactor" alt="CI"></a>
-<img src="https://img.shields.io/pypi/v/statsforecast?color=blue" alt="PyPI">
-<img src="https://img.shields.io/pypi/pyversions/statsforecast" alt="PyPI - Python Version">
-<a href="https://github.com/Nixtla/statsforecast/tree/refactor/LICENSE"><img src="https://img.shields.io/github/license/Nixtla/statsforecast" alt="License"></a></p>
+<p><a href="https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml"><img src="https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=main" alt="CI"></a>
+<a href="https://pypi.org/project/statsforecast/"><img src="https://img.shields.io/pypi/pyversions/statsforecast" alt="Python"></a>
+<a href="https://pypi.org/project/statsforecast/"><img src="https://img.shields.io/pypi/v/statsforecast?color=blue" alt="PyPi"></a>
+<a href="https://github.com/Nixtla/statsforecast/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Nixtla/statsforecast" alt="License"></a></p>
 
 </div>
 </div>
@@ -201,7 +201,7 @@ nb_path: "nbs/index.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="n">random_walk_with_drift</span><span class="p">,</span> <span class="p">(</span><span class="n">seasonal_naive</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)],</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="n">random_walk_with_drift</span><span class="p">,</span> <span class="p">(</span><span class="n">seasonal_naive</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)],</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">forecasts</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">display_df</span><span class="p">(</span><span class="n">forecasts</span><span class="p">)</span>
 </pre></div>
@@ -216,10 +216,10 @@ nb_path: "nbs/index.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2021-11-23 19:14:48 statsforecast.core INFO: Computing forecasts
-2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
-2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
-2021-11-23 19:14:49 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
+<pre>2021-12-08 20:33:06 statsforecast.core INFO: Computing forecasts
+2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
+2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
 </pre>
 </div>
 </div>

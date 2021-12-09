@@ -2,10 +2,10 @@
 > Forecasting using statistical models
 
 
-[![CI](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=refactor)](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml)
-![PyPI](https://img.shields.io/pypi/v/statsforecast?color=blue)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/statsforecast)
-[![License](https://img.shields.io/github/license/Nixtla/statsforecast)](https://github.com/Nixtla/statsforecast/tree/refactor/LICENSE)
+[![CI](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml)
+[![Python](https://img.shields.io/pypi/pyversions/statsforecast)](https://pypi.org/project/statsforecast/)
+[![PyPi](https://img.shields.io/pypi/v/statsforecast?color=blue)](https://pypi.org/project/statsforecast/)
+[![License](https://img.shields.io/github/license/Nixtla/statsforecast)](https://github.com/Nixtla/statsforecast/blob/main/LICENSE)
 
 ## Install
 `pip install statsforecast`
@@ -61,10 +61,10 @@ forecasts = fcst.forecast(5)
 display_df(forecasts)
 ```
 
-    2021-12-08 20:16:25 statsforecast.core INFO: Computing forecasts
-    2021-12-08 20:16:25 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
-    2021-12-08 20:16:25 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
-    2021-12-08 20:16:26 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
+    2021-12-08 20:33:06 statsforecast.core INFO: Computing forecasts
+    2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
+    2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
+    2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
 
 
 
