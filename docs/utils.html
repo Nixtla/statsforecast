@@ -47,9 +47,9 @@ nb_path: "nbs/utils.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="generate_daily_series" class="doc_header"><code>generate_daily_series</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/utils.py#L13" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>generate_daily_series</code>(<strong><code>n_series</code></strong>:<code>int</code>, <strong><code>min_length</code></strong>:<code>int</code>=<em><code>50</code></em>, <strong><code>max_length</code></strong>:<code>int</code>=<em><code>500</code></em>, <strong><code>n_static_features</code></strong>:<code>int</code>=<em><code>0</code></em>, <strong><code>equal_ends</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>seed</code></strong>:<code>int</code>=<em><code>0</code></em>)</p>
+<h4 id="generate_series" class="doc_header"><code>generate_series</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/utils.py#L13" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>generate_series</code>(<strong><code>n_series</code></strong>:<code>int</code>, <strong><code>freq</code></strong>:<code>str</code>=<em><code>'D'</code></em>, <strong><code>min_length</code></strong>:<code>int</code>=<em><code>50</code></em>, <strong><code>max_length</code></strong>:<code>int</code>=<em><code>500</code></em>, <strong><code>n_static_features</code></strong>:<code>int</code>=<em><code>0</code></em>, <strong><code>equal_ends</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>seed</code></strong>:<code>int</code>=<em><code>0</code></em>)</p>
 </blockquote>
-<p>Generates <code>n_series</code> of different lengths in the interval [<code>min_length</code>, <code>max_length</code>].
+<p>Generates <code>n_series</code> of frequency <code>freq</code> of different lengths in the interval [<code>min_length</code>, <code>max_length</code>].
 If <code>n_static_features &gt; 0</code>, then each serie gets static features with random values.
 If <code>equal_ends == True</code> then all series end at the same date.</p>
 
@@ -77,7 +77,7 @@ If <code>equal_ends == True</code> then all series end at the same date.</p>
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">generate_daily_series</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
 <span class="n">data</span>
 </pre></div>
 
@@ -174,6 +174,125 @@ If <code>equal_ends == True</code> then all series end at the same date.</p>
       <th>99</th>
       <td>2000-06-29</td>
       <td>3.259480</td>
+    </tr>
+  </tbody>
+</table>
+<p>27003 rows × 2 columns</p>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">monthly_data</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;M&#39;</span><span class="p">)</span>
+<span class="n">monthly_data</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ds</th>
+      <th>y</th>
+    </tr>
+    <tr>
+      <th>unique_id</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2000-01-31</td>
+      <td>0.497650</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-02-29</td>
+      <td>1.290925</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-03-31</td>
+      <td>2.207184</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-04-30</td>
+      <td>3.237349</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-05-31</td>
+      <td>4.311755</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>99</th>
+      <td>2014-09-30</td>
+      <td>10.477150</td>
+    </tr>
+    <tr>
+      <th>99</th>
+      <td>2014-10-31</td>
+      <td>11.431850</td>
+    </tr>
+    <tr>
+      <th>99</th>
+      <td>2014-11-30</td>
+      <td>0.447339</td>
+    </tr>
+    <tr>
+      <th>99</th>
+      <td>2014-12-31</td>
+      <td>1.081776</td>
+    </tr>
+    <tr>
+      <th>99</th>
+      <td>2015-01-31</td>
+      <td>2.259480</td>
     </tr>
   </tbody>
 </table>

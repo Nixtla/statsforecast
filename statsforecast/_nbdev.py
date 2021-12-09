@@ -19,7 +19,7 @@ index = {"logger": "core.ipynb",
          "window_average": "models.ipynb",
          "seasonal_exponential_smoothing": "models.ipynb",
          "tsb": "models.ipynb",
-         "generate_daily_series": "utils.ipynb"}
+         "generate_series": "utils.ipynb"}
 
 modules = ["core.py",
            "models.py",
