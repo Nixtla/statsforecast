@@ -1,3 +1,6 @@
 [submodule "docs/assets"]
 	path = docs/assets
 	url = https://github.com/Nixtla/styles.git
+[submodule "external-links/r-source"]
+	path = external-links/r-source
+	url = https://github.com/wch/r-source
