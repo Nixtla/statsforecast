@@ -14,7 +14,7 @@ import pandas as pd
 from numba import njit
 from scipy.optimize import minimize
 
-from .arima import auto_arima as auto_arima_f, predict
+from .arima import auto_arima_f, predict_arima
 
 # Internal Cell
 @njit
@@ -241,4 +241,4 @@ def auto_arima(x, h, season_length):
         allowmean=False, allowdrift=False #not implemented yet
     )
 
-    return predict(mod, h, se_fit=False)
+    return predict_arima(mod, h, se_fit=False)
