@@ -2,7 +2,7 @@
 
 __all__ = ['ses', 'adida', 'historic_average', 'croston_classic', 'croston_sba', 'croston_optimized',
            'seasonal_window_average', 'seasonal_naive', 'imapa', 'naive', 'random_walk_with_drift', 'window_average',
-           'seasonal_exponential_smoothing', 'tsb']
+           'seasonal_exponential_smoothing', 'tsb', 'auto_arima']
 
 # Cell
 from itertools import count
@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.optimize import minimize
+
+from .arima import auto_arima_f, predict_arima
 
 # Internal Cell
 @njit
@@ -230,3 +232,13 @@ def tsb(y, h, alpha_d, alpha_p):
     ydf = _ses_forecast(yd, alpha_d)
     forecast = np.float32(ypf * ydf)
     return np.repeat(forecast, h)
+
+# Cell
+def auto_arima(x, h, season_length):
+    mod = auto_arima_f(
+        x,
+        period=season_length,
+        allowmean=False, allowdrift=False #not implemented yet
+    )
+
+    return predict_arima(mod, h, se_fit=False)
