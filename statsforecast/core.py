@@ -105,10 +105,16 @@ class StatsForecast:
             fcsts = self._sequential_forecast(h)
         else:
             fcsts = self._data_parallel_forecast(h)
-        dates = np.hstack([
-            pd.date_range(last_date + self.freq, periods=h, freq=self.freq)
-            for last_date in self.last_dates
-        ])
+        if issubclass(self.last_dates.dtype.type, np.integer):
+            dates = np.hstack([
+                np.arange(last_date + 1, last_date + 1 + h, dtype=self.last_dates.dtype)
+                for last_date in self.last_dates
+            ])
+        else:
+            dates = np.hstack([
+                pd.date_range(last_date + self.freq, periods=h, freq=self.freq)
+                for last_date in self.last_dates
+            ])
         idx = pd.Index(np.repeat(self.uids, h), name='unique_id')
         return pd.DataFrame({'ds': dates, **fcsts}, index=idx)
 
