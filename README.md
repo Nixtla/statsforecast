@@ -33,6 +33,8 @@ Data scientists and developers have to iterate their models quickly in order to 
 
 ![](nbs/../examples/computational-efficiency.png)
 
+You can reproduce the results [here](../experiments/arima/).
+
 ## Install
 `pip install statsforecast`
 
@@ -121,6 +123,6 @@ for label in (ax.get_xticklabels() + ax.get_yticklabels()):
 
 
     
-![png](docs/images/output_17_0.png)
+![png](docs/images/output_18_0.png)
     
 
