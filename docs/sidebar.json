@@ -1,6 +1,7 @@
 {
   "statsforecast": {
     "Overview": "/",
+    "Title": "arima.html",
     "Core": "core.html",
     "Models": "models.html",
     "Utils": "utils.html"
