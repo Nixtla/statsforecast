@@ -18,7 +18,7 @@
 
 To reproduce the main results you have:
 
-1. Execute `make init` to create a Docker image with the needed dependencies.
+1. Execute `make init` to create a Docker image with the required dependencies.
 2. Run the experiments using `make run_module module="python -m src.[model] --dataset M4 --group [group]"` where `[model]` can be `statsforecast`, `pmdarima` and `prophet`, and `[group]` can be `Daily`, `Hourly` and `Weekly`.
 3. To run R experiments you have to prepare the data using `make run_module module="python -m src.data --dataset M4 --group [group]"` for each `[group]`. Once it is done, just run `make run_module module="Rscript src/arima_r.R [group]"`.
 4. Finally you can evaluate the forecasts using `make run_module module="python -m src.evaluation"`.
