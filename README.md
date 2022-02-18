@@ -61,12 +61,6 @@ forecasts = fcst.forecast(5)
 display_df(forecasts)
 ```
 
-    2021-12-08 20:33:06 statsforecast.core INFO: Computing forecasts
-    2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for random_walk_with_drift.
-    2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-7.
-    2021-12-08 20:33:07 statsforecast.core INFO: Computed forecasts for ses_alpha-0.1.
-
-
 
 |   unique_id | ds                  |   random_walk_with_drift |   seasonal_naive_season_length-7 |   ses_alpha-0.1 |
 |------------:|:--------------------|-------------------------:|---------------------------------:|----------------:|
