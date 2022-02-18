@@ -1,0 +1,16 @@
+name: arima_nixtla
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  - numba
+  - numpy
+  - pandas
+  - scipy
+  - statsmodels
+  - prophet
+  - pmdarima
+  - pip
+  - pip:
+    - statsforecast
+    - jupyterlab
