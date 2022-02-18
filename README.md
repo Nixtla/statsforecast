@@ -9,11 +9,11 @@
 
 ## Motivation
 
-Statistical models are widely used to forecast time series in production and as a benchmark, including the `auto_arima` model. However, python alternatives tend to be slow and inaaccurate, preventing data scientists from quickly iterating and deploying these models in production for a large number of time series. `StatsForecast` includes a large battery of models that can efficiently fit thousands of time series. In particular, `StatsForecast` includes the `auto_arima` model based on the R implementation (developed by Rob Hyndman) and optimized using `numba`.
+Statistical models are widely used to forecast time series in production and as a benchmark, including the `auto_arima` model. However, python alternatives tend to be slow and inaaccurate, preventing data scientists from quickly iterating and deploying these models in production for a large number of time series. `StatsForecast` includes a large battery of models that can efficiently fit thousands of time series. In particular, `StatsForecast` includes the `auto_arima` model based on the R implementation in the [forecast](https://github.com/robjhyndman/forecast) package (developed by Rob Hyndman) and optimized using `numba`.
 
 ### Accuracy comparison
 
-To test the accuracy of our implementation, we performed experiments with different datasets and models. We took `Daily`, `Hourly` and `Weekly` data from the M4 competition. From python, we selected `pmdarima` to compare `auto_arima` implementations and also `prophet`, one of the most widely used forecasting libraries in the world. In addition, we compared our model against the original R implementation. The following table summaries the results. As can be seen, our `auto_arima` is the best model in accuracy (measured by the `MASE` loss) and time, even compared with the original implementation. 
+To test the accuracy of our implementation, we performed experiments with different datasets and models. We took `Daily`, `Hourly` and `Weekly` data from the M4 competition. From python, we selected `pmdarima` to compare `auto_arima` implementations and also `prophet`, one of the most widely used forecasting libraries in the world. In addition, we compared our model against the original R implementation. The following table summarizes the results. As can be seen, our `auto_arima` is the best model in accuracy (measured by the `MASE` loss) and time, even compared with the original implementation.
 
 | dataset   | metric   |   auto_arima_nixtla | auto_arima_pmdarima [1] |   auto_arima_r |   prophet |
 |:----------|:---------|--------------------:|----------------------:|---------------:|----------:|

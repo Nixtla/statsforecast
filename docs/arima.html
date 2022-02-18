@@ -120,7 +120,7 @@ nb_path: "nbs/arima.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="o">%</span><span class="k">time</span> mod = auto_arima_f(ap, period=12, method=&#39;CSS-ML&#39;)
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">mod</span> <span class="o">=</span> <span class="n">auto_arima_f</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;CSS-ML&#39;</span><span class="p">)</span>
 <span class="n">predict_arima</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">se_fit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </pre></div>
 
@@ -130,15 +130,6 @@ nb_path: "nbs/arima.ipynb"
 
 <div class="output_wrapper">
 <div class="output">
-
-<div class="output_area">
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 894 ms, sys: 7.92 ms, total: 902 ms
-Wall time: 906 ms
-</pre>
-</div>
-</div>
 
 <div class="output_area">
 
