@@ -10,7 +10,7 @@ entries:
       title: Overview
       url: /
     - output: web,pdf
-      title: Title
+      title: ARIMA
       url: arima.html
     - output: web,pdf
       title: Core

@@ -31,9 +31,9 @@ To test the accuracy of our implementation, we performed experiments with differ
 
 Data scientists and developers have to iterate their models quickly in order to select the best approach and, once selected, they need a fast solution to deploy it into production so that business decisions can be made in a reasonable amount of time. Therefore, we compared our implementation in computational time based on the number of time series. The following graph shows the results. As we can see, the best model is our `auto_arima`. According to the table above, the computational performance does not compromise the accuracy.
 
-![](nbs/../examples/computational-efficiency.png)
+![](nbs/imgs/computational-efficiency.png)
 
-You can reproduce the results [here](../experiments/arima/).
+You can reproduce the results [here](/experiments/arima/).
 
 ## Install
 `pip install statsforecast`
@@ -82,11 +82,6 @@ fcst = StatsForecast(
 forecasts = fcst.forecast(12)
 display_df(forecasts)
 ```
-
-    2022-02-18 00:33:15 statsforecast.core INFO: Computing forecasts
-    2022-02-18 00:33:23 statsforecast.core INFO: Computed forecasts for auto_arima_season_length-12.
-    2022-02-18 00:33:24 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-12.
-
 
 
 |   unique_id |   ds |   auto_arima_season_length-12 |   seasonal_naive_season_length-12 |
