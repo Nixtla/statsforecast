@@ -83,9 +83,9 @@ forecasts = fcst.forecast(12)
 display_df(forecasts)
 ```
 
-    2022-02-17 21:04:14 statsforecast.core INFO: Computing forecasts
-    2022-02-17 21:04:15 statsforecast.core INFO: Computed forecasts for auto_arima_season_length-12.
-    2022-02-17 21:04:15 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-12.
+    2022-02-18 00:33:15 statsforecast.core INFO: Computing forecasts
+    2022-02-18 00:33:23 statsforecast.core INFO: Computed forecasts for auto_arima_season_length-12.
+    2022-02-18 00:33:24 statsforecast.core INFO: Computed forecasts for seasonal_naive_season_length-12.
 
 
 
@@ -111,7 +111,7 @@ forecasts['y_test'] = ap_test
 
 ```python
 fig, ax = plt.subplots(1, 1, figsize = (20, 7))
-pd.concat([series, forecasts]).set_index('ds').plot(ax=ax, linewidth=2)
+pd.concat([series_train, forecasts]).set_index('ds').plot(ax=ax, linewidth=2)
 ax.set_title('AirPassengers Forecast', fontsize=22)
 ax.set_ylabel('Monthly Passengers', fontsize=20)
 ax.set_xlabel('Timestamp [t]', fontsize=20)
