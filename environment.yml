@@ -8,3 +8,7 @@ dependencies:
   - pandas
   - scipy
   - statsmodels
+  - pip:
+    - nbdev
+    - jupyterlab
+    - tabulate
