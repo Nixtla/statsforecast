@@ -23,11 +23,11 @@
 
 ## 📖 Why? 
 
-Current python alternatives for statistical models are slow and innacurate. So we created a librabry that can be used to forecast in production enviorments or as benchmarks.  `StatsForecast` includes a large battery of models that can efficiently fit thousands of time series in an efficient manner. 
+Current python alternatives for statistical models are slow and innacurate. So we created a librabry that can be used to forecast in production enviorments or as benchmarks.  `StatsForecast` includes a large battery of models that can efficiently fit thousands of time series.
 
 ### 🔬 Accuracy
 
-We compared accuracy and speed of this library against: [`pmdarima`](https://github.com/alkaline-ml/pmdarima), Bob Hyndman's [forecast](https://github.com/robjhyndman/forecast) package and Facebook's [prohpet](https://github.com/facebook/prophet). We used the `Daily`, `Hourly` and `Weekly` data from the [M4 competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128). 
+We compared accuracy and speed against: [pmdarima](https://github.com/alkaline-ml/pmdarima), Bob Hyndman's [forecast](https://github.com/robjhyndman/forecast) package and Facebook's [prohpet](https://github.com/facebook/prophet). We used the `Daily`, `Hourly` and `Weekly` data from the [M4 competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128). 
 
 The following table summarizes the results. As can be seen, our `auto_arima` is the best model in accuracy (measured by the `MASE` loss) and time, even compared with the original implementation in R.
 
@@ -43,11 +43,24 @@ The following table summarizes the results. As can be seen, our `auto_arima` is 
 
 [1] The model `auto_arima` from `pmdarima` had problems with Hourly data. An issue was opened in their repo.
 
+Data details
+ 
+| group   | n_series   | mean_length   | std_length   |   min_length | max_length   |
+|:--------|-----------:|--------------:|-------------:|-------------:|-------------:|
+| Daily   | 4,227      | 2,371         | 1,756        |          107 | 9,933        |
+| Hourly  | 414        | 901           | 127          |          748 | 1,008        |
+| Weekly  | 359        | 1,035         | 707          |           93 | 2,610        | 
+
 ### ⏲ Computational efficiency
 
-Data scientists and developers have to iterate their models quickly in order to select the best approach and, once selected, they need a fast solution to deploy it into production so that business decisions can be made in a reasonable amount of time. Therefore, we compared our implementation in computational time based on the number of time series. The following graph shows the results. As we can see, the best model is our `auto_arima`. According to the table above, the computational performance does not compromise the accuracy.
+We measured computational time againsts number of time series. The following graph shows the results. As we can see, the fastest model is our `auto_arima`.
 
 ![](nbs/imgs/computational-efficiency.png)
+
+<details>
+    <summary> Nixtla vs prophet </summary> 
+    <img src="imgs/computational-efficiency-hours-wo-pmdarima.png" > 
+</details>
 
 You can reproduce the results [here](/experiments/arima/).
 
@@ -99,6 +112,23 @@ forecasts = fcst.forecast(12)
 display_df(forecasts)
 ```
 
+
+|   unique_id |   ds |   auto_arima_season_length-12 |   seasonal_naive_season_length-12 |
+|------------:|-----:|------------------------------:|----------------------------------:|
+|           0 |  133 |                       424.16  |                               360 |
+|           0 |  134 |                       407.082 |                               342 |
+|           0 |  135 |                       470.861 |                               406 |
+|           0 |  136 |                       460.914 |                               396 |
+|           0 |  137 |                       484.901 |                               420 |
+|           0 |  138 |                       536.904 |                               472 |
+|           0 |  139 |                       612.903 |                               548 |
+|           0 |  140 |                       623.903 |                               559 |
+|           0 |  141 |                       527.903 |                               463 |
+|           0 |  142 |                       471.903 |                               407 |
+|           0 |  143 |                       426.903 |                               362 |
+|           0 |  144 |                       469.903 |                               405 |
+
+
 ```python
 forecasts['y_test'] = ap_test
 ```
@@ -114,6 +144,12 @@ ax.grid()
 for label in (ax.get_xticklabels() + ax.get_yticklabels()):
     label.set_fontsize(20)
 ```
+
+
+    
+![png](docs/images/output_23_0.png)
+    
+
 
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/neuralforecast/blob/main/CONTRIBUTING.md).
