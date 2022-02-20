@@ -28,7 +28,7 @@ Bug fixes and features are added through pull requests (PRs).
 ### Local setup for working on a PR
 
 #### 1. Clone the repository
-* HTTPS: `git clone https://github.com/Nixtla/neuralforecast.git`
+* HTTPS: `git clone https://github.com/Nixtla/statsforecast.git`
 * SSH: `git clone git@github.com:Nixtla/neuralforecast.git`
 * GitHub CLI: `gh repo clone Nixtla/neuralforecast`
 
