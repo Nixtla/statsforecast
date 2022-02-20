@@ -1,33 +1,43 @@
-# Statistical ⚡️ Forecast
-> Lightning fast forecasting with statistical and econometric models
+# Title
 
 
+
+#
+
+<div align="center">
 <img src="https://raw.githubusercontent.com/Nixtla/neuralforecast/main/nbs/indx_imgs/branding/logo_mid.png">
-
+<h1 align="center">Statistical ⚡️ Forecast</h1>
+<h3 align="center">Lightning fast forecasting with statistical and econometric models</h3>
+    
 [![CI](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml)
 [![Python](https://img.shields.io/pypi/pyversions/statsforecast)](https://pypi.org/project/statsforecast/)
 [![PyPi](https://img.shields.io/pypi/v/statsforecast?color=blue)](https://pypi.org/project/statsforecast/)
-[![License](https://img.shields.io/github/license/Nixtla/statsforecast)](https://github.com/Nixtla/statsforecast/blob/main/LICENSE)
+[![conda-nixtla](https://img.shields.io/conda/vn/nixtla/statsforecast?color=seagreen&label=conda)](https://anaconda.org/nixtla/statsforecast)
+[![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/Nixtla/statsforecast/blob/main/LICENSE)
+[![docs](https://img.shields.io/website-up-down-green-red/http/nixtla.github.io/statsforecast.svg?label=docs)](https://nixtla.github.io/statsforecast/)  
+    
+**StatsForecast** offers a collection of widely used univariate time series forecasting models, including exponential smoothing and automatic `ARIMA` modeling optimized for high performance using `numba`.
 
-
-**statsforecast** offers a collection of widly used univariate time series forecasting models including exponential smoothing and automatic ARIMA modelling optimized for high perfomance using `numba`.
+[Getting started](#%F0%9F%A7%AC%20Getting%20Started) •
+[Installation](#💻-installation)
+</div>
 
 ## 🔥 Features
 
-* Fastest and most acurate autoarima in Python and R (for the moment...)
-* Out of the box implementation of other classical models and benchmarks like exponetial smoothing, croston, sesonal naive, random walk and tbs.
-* 20x faster than pmdarima
-* 1.5x faster than R
-* 500x faster than Prophet 
-* Compiled to high performance machine code through [numba](https://numba.pydata.org/)
+* Fastest and most accurate `auto_arima` in Python and R (for the moment...).
+* Out of the box implementation of other classical models and benchmarks like `exponential smoothing`, `croston`, `sesonal naive`, `random walk with drift` and `tbs`.
+* 20x faster than `pmdarima`.
+* 1.5x faster than R.
+* 500x faster than `Prophet`. 
+* Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
 
 ## 📖 Why? 
 
-Current python alternatives for statistical models are slow and innacurate. So we created a librabry that can be used to forecast in production enviorments or as benchmarks.  `StatsForecast` includes a large battery of models that can efficiently fit thousands of time series.
+Current Python alternatives for statistical models are slow and inaccurate. So we created a library that can be used to forecast in production environments or as benchmarks.  `StatsForecast` includes an extensive battery of models that can efficiently fit thousands of time series.
 
 ### 🔬 Accuracy
 
-We compared accuracy and speed against: [pmdarima](https://github.com/alkaline-ml/pmdarima), Bob Hyndman's [forecast](https://github.com/robjhyndman/forecast) package and Facebook's [prohpet](https://github.com/facebook/prophet). We used the `Daily`, `Hourly` and `Weekly` data from the [M4 competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128). 
+We compared accuracy and speed against: [pmdarima](https://github.com/alkaline-ml/pmdarima), Rob Hyndman's [forecast](https://github.com/robjhyndman/forecast) package and Facebook's [Prophet](https://github.com/facebook/prophet). We used the `Daily`, `Hourly` and `Weekly` data from the [M4 competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128). 
 
 The following table summarizes the results. As can be seen, our `auto_arima` is the best model in accuracy (measured by the `MASE` loss) and time, even compared with the original implementation in R.
 
@@ -43,7 +53,7 @@ The following table summarizes the results. As can be seen, our `auto_arima` is 
 
 [1] The model `auto_arima` from `pmdarima` had problems with Hourly data. An issue was opened in their repo.
 
-Data details
+The following table summarizes the data details.
  
 | group   | n_series   | mean_length   | std_length   |   min_length | max_length   |
 |:--------|-----------:|--------------:|-------------:|-------------:|-------------:|
@@ -53,19 +63,59 @@ Data details
 
 ### ⏲ Computational efficiency
 
-We measured computational time againsts number of time series. The following graph shows the results. As we can see, the fastest model is our `auto_arima`.
+We measured the computational time against the number of time series. The following graph shows the results. As we can see, the fastest model is our `auto_arima`.
 
 ![](nbs/imgs/computational-efficiency.png)
 
 <details>
-    <summary> Nixtla vs prophet </summary> 
+    <summary> Nixtla vs Prophet </summary> 
     <img src="imgs/computational-efficiency-hours-wo-pmdarima.png" > 
 </details>
 
 You can reproduce the results [here](/experiments/arima/).
 
-## 💻 Install
-`pip install statsforecast`
+## 📖 Documentation
+Here is a link to the [documentation](https://nixtla.github.io/statsforecast/).
+
+## 🧬 Getting Started [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)
+
+[Example Jupyter Notebook](https://github.com/Nixtla/statsforecast/blob/main/examples/arima.ipynb)
+
+## 💻 Installation
+<details>
+<summary>PyPI</summary>
+
+You can install the *released version* of `StatsForecast` from the [Python package index](https://pypi.org) with:
+
+```python
+pip install statsforecast
+```
+
+(Installing inside a python virtualenvironment or a conda environment is recommended.)
+</details>
+
+<details>
+<summary>Conda</summary>
+  
+Also you can install the *released version* of `StatsForecast` from [conda](https://anaconda.org) with:
+
+```python
+conda install -c nixtla statsforecast
+```
+
+(Installing inside a python virtualenvironment or a conda environment is recommended.)
+</details>
+
+<details>
+<summary>Dev Mode</summary>
+If you want to make some modifications to the code and see the effects in real time (without reinstalling), follow the steps below:
+
+```bash
+git clone https://github.com/Nixtla/statsforecast.git
+cd stats?forecast
+pip install -e .
+```
+</details>
 
 ## 🧬 How to use
 
