@@ -30,7 +30,7 @@ Bug fixes and features are added through pull requests (PRs).
 #### 1. Clone the repository
 * HTTPS: `git clone https://github.com/Nixtla/statsforecast.git`
 * SSH: `git clone git@github.com:Nixtla/statsforecast.git`
-* GitHub CLI: `gh repo clone Nixtla/neuralforecast`
+* GitHub CLI: `gh repo clone Nixtla/statsforecast`
 
 #### 2. Set up a conda environment
 The repo comes with an `environment.yml` file which contains the libraries needed to run all the tests. In order to set up the environment you must have `conda` installed, we recommend [miniconda](https://docs.conda.io/en/latest/miniconda.html).
