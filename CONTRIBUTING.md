@@ -29,7 +29,7 @@ Bug fixes and features are added through pull requests (PRs).
 
 #### 1. Clone the repository
 * HTTPS: `git clone https://github.com/Nixtla/statsforecast.git`
-* SSH: `git clone git@github.com:Nixtla/neuralforecast.git`
+* SSH: `git clone git@github.com:Nixtla/statsforecast.git`
 * GitHub CLI: `gh repo clone Nixtla/neuralforecast`
 
 #### 2. Set up a conda environment
