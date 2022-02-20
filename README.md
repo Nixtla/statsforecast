@@ -67,7 +67,7 @@ We measured the computational time against the number of time series. The follow
 
 <details>
     <summary> Nixtla vs Prophet </summary> 
-    <img src="./imgs/computational-efficiency-hours-wo-pmdarima.png" > 
+    <img src="nbs/imgs/computational-efficiency-hours-wo-pmdarima.png" > 
 </details>
 
 You can reproduce the results [here](/experiments/arima/).
