@@ -67,7 +67,7 @@ We measured the computational time against the number of time series. The follow
 
 <details>
     <summary> Nixtla vs Prophet </summary> 
-    <img src="imgs/computational-efficiency-hours-wo-pmdarima.png" > 
+    <img src="./imgs/computational-efficiency-hours-wo-pmdarima.png" > 
 </details>
 
 You can reproduce the results [here](/experiments/arima/).
@@ -110,7 +110,7 @@ If you want to make some modifications to the code and see the effects in real t
 
 ```bash
 git clone https://github.com/Nixtla/statsforecast.git
-cd stats?forecast
+cd statsforecast
 pip install -e .
 ```
 </details>
