@@ -72,6 +72,10 @@ We measured the computational time against the number of time series. The follow
 
 You can reproduce the results [here](/experiments/arima/).
 
+## 👾 Less code
+![pmd to stats](nbs/imgs/pdmarimaStats.gif)
+
+
 ## 📖 Documentation
 Here is a link to the [documentation](https://nixtla.github.io/statsforecast/).
 
@@ -195,7 +199,7 @@ for label in (ax.get_xticklabels() + ax.get_yticklabels()):
 
 
     
-![png](docs/images/output_22_0.png)
+![png](docs/images/output_23_0.png)
     
 
 
