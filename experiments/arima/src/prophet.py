@@ -6,24 +6,71 @@ from multiprocessing import Pool, cpu_count
 import fire
 import numpy as np
 import pandas as pd
+from neuralforecast.losses.numpy import mape
 from prophet import Prophet
+from sklearn.model_selection import ParameterGrid
 
 from src.data import get_data
+
+params_grid = {'seasonality_mode': ['multiplicative','additive'],
+               'growth': ['linear', 'flat'],
+               'changepoint_prior_scale': [0.1, 0.2, 0.3, 0.4, 0.5],
+               'n_changepoints': [5, 10, 15, 20]}
+grid = ParameterGrid(params_grid)
 
 
 def fit_and_predict(index, ts, horizon, freq, seasonality): 
 
-    ts['ds'] = pd.date_range(start='1970-01-01', periods=ts.shape[0], freq=freq)
-   
-    model = Prophet()
-    model.add_seasonality(name='season', 
-                          period=seasonality,
-                          fourier_order=5)
-    model = model.fit(ts)
+    df = ts.drop('unique_id', 1)
+    df['ds'] = pd.date_range(start='1970-01-01', periods=ts.shape[0], freq=freq)
+    df_val = df.tail(horizon)
+    df_train = df.drop(df_val.index)
+    y_val = df_val['y'].values
+
+    if len(df_train) >= horizon:
+        val_results = {'losses': [], 'params': []}
+
+        for params in grid:
+            model = Prophet(seasonality_mode=params['seasonality_mode'],
+                            growth=params['growth'],
+                            weekly_seasonality=True,
+			    daily_seasonality=True,
+			    yearly_seasonality=True,
+                            n_changepoints=params['n_changepoints'],
+                            changepoint_prior_scale=params['changepoint_prior_scale'])
+            model = model.fit(df_train)
+            
+            forecast = model.make_future_dataframe(periods=horizon, 
+                                                   include_history=False, 
+                                                   freq=freq)
+            forecast = model.predict(forecast)
+            forecast['unique_id'] = index
+            forecast = forecast.filter(items=['unique_id', 'ds', 'yhat'])
+            
+            loss = mape(y_val, forecast['yhat'].values) 
+            
+            val_results['losses'].append(loss)
+            val_results['params'].append(params)
+
+        idx_params = np.argmin(val_results['losses']) 
+        params = val_results['params'][idx_params]
+    else:
+        params = {'seasonality_mode': 'multiplicative',
+                  'growth': 'flat',
+                  'n_changepoints': 150,
+                  'changepoint_prior_scale': 0.5}
+    model = Prophet(seasonality_mode=params['seasonality_mode'],
+                    growth=params['growth'],
+		    weekly_seasonality=True,
+		    daily_seasonality=True,
+		    yearly_seasonality=True,
+		    n_changepoints=params['n_changepoints'],
+		    changepoint_prior_scale=params['changepoint_prior_scale'])
+    model = model.fit(df)
     
     forecast = model.make_future_dataframe(periods=horizon, 
-                                           include_history=False, 
-                                           freq=freq)
+					   include_history=False, 
+					   freq=freq)
     forecast = model.predict(forecast)
     forecast['unique_id'] = index
     forecast = forecast.filter(items=['unique_id', 'ds', 'yhat'])
@@ -51,4 +98,4 @@ def main(dataset: str, group: str) -> None:
 
 
 if __name__ == '__main__':
-   fire.Fire(main)
+    fire.Fire(main)
