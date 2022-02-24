@@ -107,12 +107,14 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
 
 # Cell
 @njit
-def ses(y, h, alpha):
+def ses(y, h, future_xreg, alpha):
+    y = y[:, 0]
     fcst, _ = _ses_fcst_mse(y, alpha)
     return np.full(h, fcst, np.float32)
 
 
-def adida(y, h):
+def adida(y, h, future_xreg):
+    y = y[:, 0]
     if (y == 0).all():
         return np.repeat(np.float32(0), h)
     y_intervals = _intervals(y)
@@ -127,12 +129,14 @@ def adida(y, h):
 
 
 @njit
-def historic_average(y, h):
+def historic_average(y, h, future_xreg):
+    y = y[:, 0]
     return np.repeat(y.mean(), h)
 
 
 @njit
-def croston_classic(y, h):
+def croston_classic(y, h, future_xreg):
+    y = y[:, 0]
     yd = _demand(y)
     yi = _intervals(y)
     ydp = _ses_forecast(yd, 0.1)
@@ -141,11 +145,13 @@ def croston_classic(y, h):
 
 
 @njit
-def croston_sba(y, h):
+def croston_sba(y, h, future_xreg):
+    y = y[:, 0]
     return 0.95 * croston_classic(y, h)
 
 
-def croston_optimized(y, h):
+def croston_optimized(y, h, future_xreg):
+    y = y[:, 0]
     yd = _demand(y)
     yi = _intervals(y)
     ydp = _optimized_ses_forecast(yd)
@@ -154,7 +160,14 @@ def croston_optimized(y, h):
 
 
 @njit
-def seasonal_window_average(y: np.ndarray, h: int, season_length: int, window_size: int) -> np.ndarray:
+def seasonal_window_average(
+    y: np.ndarray,
+    h: int,
+    future_xreg,
+    season_length: int,
+    window_size: int,
+) -> np.ndarray:
+    y = y[:, 0]
     min_samples = season_length * window_size
     if y.size < min_samples:
         return np.full(h, np.nan, np.float32)
@@ -169,11 +182,12 @@ def seasonal_window_average(y: np.ndarray, h: int, season_length: int, window_si
 
 
 @njit
-def seasonal_naive(y, h, season_length):
-    return seasonal_window_average(y, h, season_length, 1)
+def seasonal_naive(y, h, future_xreg, season_length):
+    return seasonal_window_average(y, h, future_xreg, season_length, 1)
 
 
-def imapa(y, h):
+def imapa(y, h, future_xreg):
+    y = y[:, 0]
     if (y == 0).all():
         return np.repeat(np.float32(0), h)
     y_intervals = _intervals(y)
@@ -191,18 +205,21 @@ def imapa(y, h):
 
 
 @njit
-def naive(y, h):
+def naive(y, h, future_xreg):
+    y = y[:, 0]
     return np.repeat(y[-1], h)
 
 
 @njit
-def random_walk_with_drift(y, h):
+def random_walk_with_drift(y, h, future_xreg):
+    y = y[:, 0]
     slope = (y[-1] - y[0]) / (y.size - 1)
     return slope * (1 + np.arange(h)) + y[-1]
 
 
 @njit
-def window_average(y, h, window_size):
+def window_average(y, h, future_xreg, window_size):
+    y = y[:, 0]
     if y.size < window_size:
         return np.full(h, np.nan, np.float32)
     wavg = y[-window_size:].mean()
@@ -210,7 +227,8 @@ def window_average(y, h, window_size):
 
 
 @njit
-def seasonal_exponential_smoothing(y, h, season_length, alpha):
+def seasonal_exponential_smoothing(y, h, future_xreg, season_length, alpha):
+    y = y[:, 0]
     if y.size < season_length:
         return np.full(h, np.nan, np.float32)
     season_vals = np.empty(season_length, np.float32)
@@ -223,7 +241,8 @@ def seasonal_exponential_smoothing(y, h, season_length, alpha):
 
 
 @njit
-def tsb(y, h, alpha_d, alpha_p):
+def tsb(y, h, future_xreg, alpha_d, alpha_p):
+    y = y[:, 0]
     if (y == 0).all():
         return np.repeat(np.float32(0), h)
     yd = _demand(y)
@@ -234,8 +253,9 @@ def tsb(y, h, alpha_d, alpha_p):
     return np.repeat(forecast, h)
 
 # Cell
-def auto_arima(y: np.ndarray, h: int, season_length: int = 1,
+def auto_arima(y: np.ndarray, h: int, future_xreg, season_length: int = 1,
                approximation: bool = False) -> np.ndarray:
+    y = y[:, 0]
     mod = auto_arima_f(
         y,
         period=season_length,
