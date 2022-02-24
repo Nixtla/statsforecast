@@ -107,14 +107,14 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
 
 # Cell
 @njit
-def ses(y, h, future_xreg, alpha):
-    y = y[:, 0]
+def ses(X, h, future_xreg, alpha):
+    y = X[:, 0] if X.ndim == 2 else X
     fcst, _ = _ses_fcst_mse(y, alpha)
     return np.full(h, fcst, np.float32)
 
 
-def adida(y, h, future_xreg):
-    y = y[:, 0]
+def adida(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
         return np.repeat(np.float32(0), h)
     y_intervals = _intervals(y)
@@ -129,14 +129,14 @@ def adida(y, h, future_xreg):
 
 
 @njit
-def historic_average(y, h, future_xreg):
-    y = y[:, 0]
+def historic_average(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     return np.repeat(y.mean(), h)
 
 
 @njit
-def croston_classic(y, h, future_xreg):
-    y = y[:, 0]
+def croston_classic(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     yd = _demand(y)
     yi = _intervals(y)
     ydp = _ses_forecast(yd, 0.1)
@@ -145,13 +145,13 @@ def croston_classic(y, h, future_xreg):
 
 
 @njit
-def croston_sba(y, h, future_xreg):
-    y = y[:, 0]
+def croston_sba(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     return 0.95 * croston_classic(y, h)
 
 
-def croston_optimized(y, h, future_xreg):
-    y = y[:, 0]
+def croston_optimized(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     yd = _demand(y)
     yi = _intervals(y)
     ydp = _optimized_ses_forecast(yd)
@@ -161,13 +161,13 @@ def croston_optimized(y, h, future_xreg):
 
 @njit
 def seasonal_window_average(
-    y: np.ndarray,
+    X: np.ndarray,
     h: int,
     future_xreg,
     season_length: int,
     window_size: int,
 ) -> np.ndarray:
-    y = y[:, 0]
+    y = X[:, 0] if X.ndim == 2 else X
     min_samples = season_length * window_size
     if y.size < min_samples:
         return np.full(h, np.nan, np.float32)
@@ -182,12 +182,12 @@ def seasonal_window_average(
 
 
 @njit
-def seasonal_naive(y, h, future_xreg, season_length):
-    return seasonal_window_average(y, h, future_xreg, season_length, 1)
+def seasonal_naive(X, h, future_xreg, season_length):
+    return seasonal_window_average(X, h, future_xreg, season_length, 1)
 
 
-def imapa(y, h, future_xreg):
-    y = y[:, 0]
+def imapa(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
         return np.repeat(np.float32(0), h)
     y_intervals = _intervals(y)
@@ -205,21 +205,21 @@ def imapa(y, h, future_xreg):
 
 
 @njit
-def naive(y, h, future_xreg):
-    y = y[:, 0]
+def naive(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     return np.repeat(y[-1], h)
 
 
 @njit
-def random_walk_with_drift(y, h, future_xreg):
-    y = y[:, 0]
+def random_walk_with_drift(X, h, future_xreg):
+    y = X[:, 0] if X.ndim == 2 else X
     slope = (y[-1] - y[0]) / (y.size - 1)
     return slope * (1 + np.arange(h)) + y[-1]
 
 
 @njit
-def window_average(y, h, future_xreg, window_size):
-    y = y[:, 0]
+def window_average(X, h, future_xreg, window_size):
+    y = X[:, 0] if X.ndim == 2 else X
     if y.size < window_size:
         return np.full(h, np.nan, np.float32)
     wavg = y[-window_size:].mean()
@@ -227,8 +227,8 @@ def window_average(y, h, future_xreg, window_size):
 
 
 @njit
-def seasonal_exponential_smoothing(y, h, future_xreg, season_length, alpha):
-    y = y[:, 0]
+def seasonal_exponential_smoothing(X, h, future_xreg, season_length, alpha):
+    y = X[:, 0] if X.ndim == 2 else X
     if y.size < season_length:
         return np.full(h, np.nan, np.float32)
     season_vals = np.empty(season_length, np.float32)
@@ -241,8 +241,8 @@ def seasonal_exponential_smoothing(y, h, future_xreg, season_length, alpha):
 
 
 @njit
-def tsb(y, h, future_xreg, alpha_d, alpha_p):
-    y = y[:, 0]
+def tsb(X, h, future_xreg, alpha_d, alpha_p):
+    y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
         return np.repeat(np.float32(0), h)
     yd = _demand(y)
@@ -253,9 +253,9 @@ def tsb(y, h, future_xreg, alpha_d, alpha_p):
     return np.repeat(forecast, h)
 
 # Cell
-def auto_arima(y: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
+def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
                approximation: bool = False) -> np.ndarray:
-    y = y[:, 0]
+    y = X[:, 0] if X.ndim == 2 else X
     mod = auto_arima_f(
         y,
         period=season_length,
