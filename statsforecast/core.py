@@ -53,7 +53,7 @@ class GroupedArray:
         xr = None
         for i, grp in enumerate(self):
             if xreg is not None:
-                xr = xreg[i*h : (i+1)*h]
+                xr = xreg[i*h : (i+1)*h].values
             out[h * i : h * (i + 1)] = func(grp, h, xr, *args)
         return out
 
