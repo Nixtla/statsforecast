@@ -253,7 +253,7 @@ def tsb(y, h, future_xreg, alpha_d, alpha_p):
     return np.repeat(forecast, h)
 
 # Cell
-def auto_arima(y: np.ndarray, h: int, future_xreg, season_length: int = 1,
+def auto_arima(y: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
                approximation: bool = False) -> np.ndarray:
     y = y[:, 0]
     mod = auto_arima_f(
