@@ -48,10 +48,13 @@ class GroupedArray:
             return False
         return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
-    def compute_forecasts(self, h, func, *args):
+    def compute_forecasts(self, h, func, xreg=None, *args):
         out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
+        xr = None
         for i, grp in enumerate(self):
-            out[h * i : h * (i + 1)] = func(grp, h, *args)
+            if xreg is not None:
+                xr = xreg[i*h : (i+1)*h]
+            out[h * i : h * (i + 1)] = func(grp, h, xr, *args)
         return out
 
     def split(self, n_chunks):
@@ -62,7 +65,7 @@ def _grouped_array_from_df(df):
     df = df.set_index('ds', append=True)
     if not df.index.is_monotonic_increasing:
         df = df.sort_index()
-    data = df['y'].values.astype(np.float32)
+    data = df.values.astype(np.float32)
     indices_sizes = df.index.get_level_values('unique_id').value_counts(sort=False)
     indices = indices_sizes.index
     sizes = indices_sizes.values
@@ -75,7 +78,7 @@ def _grouped_array_from_df(df):
 def _build_forecast_name(model, *args) -> str:
     model_name = f'{model.__name__}'
     func_params = inspect.signature(model).parameters
-    func_args = list(func_params.items())[2:]  # remove input array and horizon
+    func_args = list(func_params.items())[3:]  # remove input array, horizon and xreg
     changed_params = [
         f'{name}-{value}'
         for value, (name, arg) in zip(args, func_args)
@@ -100,11 +103,11 @@ class StatsForecast:
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
 
-    def forecast(self, h):
+    def forecast(self, h, xreg=None):
         if self.n_jobs == 1:
-            fcsts = self._sequential_forecast(h)
+            fcsts = self._sequential_forecast(h, xreg)
         else:
-            fcsts = self._data_parallel_forecast(h)
+            fcsts = self._data_parallel_forecast(h, xreg)
         if issubclass(self.last_dates.dtype.type, np.integer):
             dates = np.hstack([
                 np.arange(last_date + 1, last_date + 1 + h, dtype=self.last_dates.dtype)
@@ -118,17 +121,17 @@ class StatsForecast:
         idx = pd.Index(np.repeat(self.uids, h), name='unique_id')
         return pd.DataFrame({'ds': dates, **fcsts}, index=idx)
 
-    def _sequential_forecast(self, h):
+    def _sequential_forecast(self, h, xreg):
         fcsts = {}
         logger.info('Computing forecasts')
         for model_args in self.models:
             model, *args = _as_tuple(model_args)
             model_name = _build_forecast_name(model, *args)
-            fcsts[model_name] = self.ga.compute_forecasts(h, model, *args)
+            fcsts[model_name] = self.ga.compute_forecasts(h, model, xreg, *args)
             logger.info(f'Computed forecasts for {model_name}.')
         return fcsts
 
-    def _data_parallel_forecast(self, h):
+    def _data_parallel_forecast(self, h, xreg):
         fcsts = {}
         logger.info('Computing forecasts')
         gas = self.ga.split(self.n_jobs)
@@ -138,7 +141,7 @@ class StatsForecast:
                 model_name = _build_forecast_name(model, *args)
                 futures = []
                 for ga in gas:
-                    future = executor.submit(ga.compute_forecasts, h, model, *args)
+                    future = executor.submit(ga.compute_forecasts, h, model, xreg, *args)
                     futures.append(future)
                 fcsts[model_name] = np.hstack([f.result() for f in futures])
                 logger.info(f'Computed forecasts for {model_name}.')

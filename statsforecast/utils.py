@@ -50,7 +50,7 @@ def generate_series(
         static_values = [
             [random.randint(0, 100)] * serie_length for serie_length in series_lengths
         ]
-        series[f'static_{i}'] = np.hstack(chain.from_iterable(static_values))
+        series[f'static_{i}'] = np.hstack(static_values)
         series[f'static_{i}'] = series[f'static_{i}'].astype('category')
         if i == 0:
             series['y'] = series['y'] * (1 + series[f'static_{i}'].cat.codes)
