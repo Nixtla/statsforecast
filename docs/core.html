@@ -76,7 +76,7 @@ nb_path: "nbs/core.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L98" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>)</p>
+<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L104" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>)</p>
 </blockquote>
 
 </div>
@@ -128,11 +128,11 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-24 13:24:34 __main__ INFO: Computing forecasts
-2022-02-24 13:24:37 __main__ INFO: Computed forecasts for adida.
-2022-02-24 13:24:37 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2022-02-24 13:24:37 __main__ INFO: Computed forecasts for historic_average.
-2022-02-24 13:24:37 __main__ INFO: Computed forecasts for croston_classic.
+<pre>2022-02-25 11:07:34 __main__ INFO: Computing forecasts
+2022-02-25 11:07:37 __main__ INFO: Computed forecasts for adida.
+2022-02-25 11:07:37 __main__ INFO: Computed forecasts for ses_alpha-0.1.
+2022-02-25 11:07:37 __main__ INFO: Computed forecasts for historic_average.
+2022-02-25 11:07:37 __main__ INFO: Computed forecasts for croston_classic.
 </pre>
 </div>
 </div>
@@ -424,11 +424,11 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-24 13:24:38 __main__ INFO: Computing forecasts
-2022-02-24 13:24:40 __main__ INFO: Computed forecasts for adida.
-2022-02-24 13:24:40 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2022-02-24 13:24:40 __main__ INFO: Computed forecasts for historic_average.
-2022-02-24 13:24:40 __main__ INFO: Computed forecasts for croston_classic.
+<pre>2022-02-25 11:07:37 __main__ INFO: Computing forecasts
+2022-02-25 11:07:40 __main__ INFO: Computed forecasts for adida.
+2022-02-25 11:07:40 __main__ INFO: Computed forecasts for ses_alpha-0.1.
+2022-02-25 11:07:40 __main__ INFO: Computed forecasts for historic_average.
+2022-02-25 11:07:40 __main__ INFO: Computed forecasts for croston_classic.
 </pre>
 </div>
 </div>
@@ -436,8 +436,8 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 2.83 s, sys: 30.6 ms, total: 2.86 s
-Wall time: 2.84 s
+<pre>CPU times: user 2.87 s, sys: 30.9 ms, total: 2.9 s
+Wall time: 2.88 s
 </pre>
 </div>
 </div>
@@ -799,8 +799,8 @@ Wall time: 2.84 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-24 13:24:43 __main__ INFO: Computing forecasts
-2022-02-24 13:24:43 __main__ INFO: Computed forecasts for historic_average.
+<pre>2022-02-25 11:07:40 __main__ INFO: Computing forecasts
+2022-02-25 11:07:40 __main__ INFO: Computed forecasts for historic_average.
 </pre>
 </div>
 </div>
@@ -1148,7 +1148,7 @@ Wall time: 2.84 s
 <span class="n">train_mask</span> <span class="o">=</span> <span class="n">series_xreg</span><span class="p">[</span><span class="s1">&#39;ds&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">valid_start</span>
 <span class="n">series_train</span> <span class="o">=</span> <span class="n">series_xreg</span><span class="p">[</span><span class="n">train_mask</span><span class="p">]</span>
 <span class="n">series_valid</span> <span class="o">=</span> <span class="n">series_xreg</span><span class="p">[</span><span class="o">~</span><span class="n">train_mask</span><span class="p">]</span>
-<span class="n">X_valid</span> <span class="o">=</span> <span class="n">series_valid</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;ds&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="n">X_valid</span> <span class="o">=</span> <span class="n">series_valid</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
     <span class="n">series_train</span><span class="p">,</span>
     <span class="p">[</span><span class="n">linear_regression</span><span class="p">],</span>
@@ -1168,8 +1168,8 @@ Wall time: 2.84 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-24 13:24:46 __main__ INFO: Computing forecasts
-2022-02-24 13:24:49 __main__ INFO: Computed forecasts for linear_regression.
+<pre>2022-02-25 11:07:42 __main__ INFO: Computing forecasts
+2022-02-25 11:07:45 __main__ INFO: Computed forecasts for linear_regression.
 </pre>
 </div>
 </div>
@@ -1177,8 +1177,8 @@ Wall time: 2.84 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 3.02 s, sys: 30.8 ms, total: 3.05 s
-Wall time: 3.04 s
+<pre>CPU times: user 2.45 s, sys: 34.8 ms, total: 2.49 s
+Wall time: 2.48 s
 </pre>
 </div>
 </div>

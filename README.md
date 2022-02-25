@@ -248,8 +248,6 @@ xreg_test = pd.DataFrame(
 xreg_test['trend'] = np.arange(133, ap_test.size + 133)
 xreg_test['month'] = xreg_test['ds'].dt.month
 xreg_test = pd.get_dummies(xreg_test, columns=['month'], drop_first=True)
-xreg_test = xreg_test.drop('ds', 1)
-xreg_test = xreg_test.astype(np.float32)
 ```
 
 ```python
