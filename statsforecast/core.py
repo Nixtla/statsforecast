@@ -112,6 +112,8 @@ class StatsForecast:
     def forecast(self, h, xreg=None):
         if xreg is not None:
             _, xreg = _prepare_df(xreg)
+            if xreg.shape != (h * len(self.ga), self.ga.data.shape[1] - 1):
+                raise Exception('`xreg` does not have the right dimensions')
         if self.n_jobs == 1:
             fcsts = self._sequential_forecast(h, xreg)
         else:
