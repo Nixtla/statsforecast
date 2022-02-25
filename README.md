@@ -203,6 +203,105 @@ for label in (ax.get_xticklabels() + ax.get_yticklabels()):
     
 
 
+### Adding external regressors
+
+```python
+series_xreg = pd.DataFrame(
+    {
+        'ds': pd.date_range(start='1949-01-01', periods=ap_train.size, freq='M'),
+        'y': ap_train
+    },
+    index=pd.Index([0] * ap_train.size, name='unique_id')
+)
+```
+
+```python
+series_xreg['trend'] = np.arange(1, ap_train.size + 1)
+series_xreg['intercept'] = np.ones(ap_train.size)
+series_xreg['month'] = series_xreg['ds'].dt.month
+series_xreg = pd.get_dummies(series_xreg, columns=['month'], drop_first=True)
+```
+
+```python
+display_df(series_xreg.head())
+```
+
+
+|   unique_id | ds                  |   y |   trend |   intercept |   month_2 |   month_3 |   month_4 |   month_5 |   month_6 |   month_7 |   month_8 |   month_9 |   month_10 |   month_11 |   month_12 |
+|------------:|:--------------------|----:|--------:|------------:|----------:|----------:|----------:|----------:|----------:|----------:|----------:|----------:|-----------:|-----------:|-----------:|
+|           0 | 1949-01-31 00:00:00 | 112 |       1 |           1 |         0 |         0 |         0 |         0 |         0 |         0 |         0 |         0 |          0 |          0 |          0 |
+|           0 | 1949-02-28 00:00:00 | 118 |       2 |           1 |         1 |         0 |         0 |         0 |         0 |         0 |         0 |         0 |          0 |          0 |          0 |
+|           0 | 1949-03-31 00:00:00 | 132 |       3 |           1 |         0 |         1 |         0 |         0 |         0 |         0 |         0 |         0 |          0 |          0 |          0 |
+|           0 | 1949-04-30 00:00:00 | 129 |       4 |           1 |         0 |         0 |         1 |         0 |         0 |         0 |         0 |         0 |          0 |          0 |          0 |
+|           0 | 1949-05-31 00:00:00 | 121 |       5 |           1 |         0 |         0 |         0 |         1 |         0 |         0 |         0 |         0 |          0 |          0 |          0 |
+
+
+```python
+xreg_test = pd.DataFrame(
+    {
+        'ds': pd.date_range(start='1960-01-01', periods=ap_test.size, freq='M')
+    },
+    index=pd.Index([0] * ap_test.size, name='unique_id')
+)
+```
+
+```python
+xreg_test['trend'] = np.arange(133, ap_test.size + 133)
+xreg_test['intercept'] = np.ones(ap_test.size)
+xreg_test['month'] = xreg_test['ds'].dt.month
+xreg_test = pd.get_dummies(xreg_test, columns=['month'], drop_first=True)
+```
+
+```python
+fcst = StatsForecast(
+    series_xreg, 
+    models=[(auto_arima, 12), (seasonal_naive, 12)], 
+    freq='M', 
+    n_jobs=1
+)
+forecasts = fcst.forecast(12, xreg=xreg_test)
+display_df(forecasts)
+```
+
+
+|   unique_id | ds                  |   auto_arima_season_length-12 |   seasonal_naive_season_length-12 |
+|------------:|:--------------------|------------------------------:|----------------------------------:|
+|           0 | 1960-01-31 00:00:00 |                       392.207 |                               360 |
+|           0 | 1960-02-29 00:00:00 |                       376.962 |                               342 |
+|           0 | 1960-03-31 00:00:00 |                       436.133 |                               406 |
+|           0 | 1960-04-30 00:00:00 |                       427.066 |                               396 |
+|           0 | 1960-05-31 00:00:00 |                       459.206 |                               420 |
+|           0 | 1960-06-30 00:00:00 |                       505.109 |                               472 |
+|           0 | 1960-07-31 00:00:00 |                       583.265 |                               548 |
+|           0 | 1960-08-31 00:00:00 |                       596.063 |                               559 |
+|           0 | 1960-09-30 00:00:00 |                       491.6   |                               463 |
+|           0 | 1960-10-31 00:00:00 |                       429.576 |                               407 |
+|           0 | 1960-11-30 00:00:00 |                       394.843 |                               362 |
+|           0 | 1960-12-31 00:00:00 |                       433.5   |                               405 |
+
+
+```python
+forecasts['y_test'] = ap_test
+```
+
+```python
+fig, ax = plt.subplots(1, 1, figsize = (20, 7))
+pd.concat([series_xreg[['ds', 'y']], forecasts]).set_index('ds').plot(ax=ax, linewidth=2)
+ax.set_title('AirPassengers Forecast using External Regressors', fontsize=22)
+ax.set_ylabel('Monthly Passengers', fontsize=20)
+ax.set_xlabel('Timestamp [t]', fontsize=20)
+ax.legend(prop={'size': 15})
+ax.grid()
+for label in (ax.get_xticklabels() + ax.get_yticklabels()):
+    label.set_fontsize(20)
+```
+
+
+    
+![png](docs/images/output_32_0.png)
+    
+
+
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/neuralforecast/blob/main/CONTRIBUTING.md).
 

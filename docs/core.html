@@ -53,26 +53,12 @@ nb_path: "nbs/core.ipynb"
     <span class="n">seasonal_naive</span><span class="p">,</span>
     <span class="n">seasonal_window_average</span><span class="p">,</span>
     <span class="n">ses</span><span class="p">,</span>
+    <span class="n">auto_arima</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">statsforecast.utils</span> <span class="kn">import</span> <span class="n">generate_series</span>
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>/home/jose/mambaforge/envs/statsforecast/lib/python3.9/site-packages/statsmodels/compat/pandas.py:65: FutureWarning: pandas.Int64Index is deprecated and will be removed from pandas in a future version. Use pandas.Index with the appropriate dtype instead.
-  from pandas import Int64Index as NumericIndex
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -90,7 +76,7 @@ nb_path: "nbs/core.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L98" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>)</p>
+<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L104" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>)</p>
 </blockquote>
 
 </div>
@@ -142,11 +128,11 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-23 22:20:11 __main__ INFO: Computing forecasts
-2022-02-23 22:20:16 __main__ INFO: Computed forecasts for adida.
-2022-02-23 22:20:16 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2022-02-23 22:20:17 __main__ INFO: Computed forecasts for historic_average.
-2022-02-23 22:20:17 __main__ INFO: Computed forecasts for croston_classic.
+<pre>2022-02-25 11:19:24 __main__ INFO: Computing forecasts
+2022-02-25 11:19:26 __main__ INFO: Computed forecasts for adida.
+2022-02-25 11:19:26 __main__ INFO: Computed forecasts for ses_alpha-0.1.
+2022-02-25 11:19:26 __main__ INFO: Computed forecasts for historic_average.
+2022-02-25 11:19:26 __main__ INFO: Computed forecasts for croston_classic.
 </pre>
 </div>
 </div>
@@ -190,43 +176,43 @@ nb_path: "nbs/core.ipynb"
   <tbody>
     <tr>
       <th>0</th>
-      <td>2000-08-10</td>
-      <td>157.559219</td>
-      <td>157.559219</td>
-      <td>161.040253</td>
-      <td>157.559219</td>
+      <td>2001-05-15</td>
+      <td>3.151185</td>
+      <td>3.151185</td>
+      <td>3.220805</td>
+      <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-08-11</td>
-      <td>157.559219</td>
-      <td>157.559219</td>
-      <td>161.040253</td>
-      <td>157.559219</td>
+      <td>2001-05-16</td>
+      <td>3.151185</td>
+      <td>3.151185</td>
+      <td>3.220805</td>
+      <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-08-12</td>
-      <td>157.559219</td>
-      <td>157.559219</td>
-      <td>161.040253</td>
-      <td>157.559219</td>
+      <td>2001-05-17</td>
+      <td>3.151185</td>
+      <td>3.151185</td>
+      <td>3.220805</td>
+      <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-08-13</td>
-      <td>157.559219</td>
-      <td>157.559219</td>
-      <td>161.040253</td>
-      <td>157.559219</td>
+      <td>2001-05-18</td>
+      <td>3.151185</td>
+      <td>3.151185</td>
+      <td>3.220805</td>
+      <td>3.151185</td>
     </tr>
     <tr>
       <th>0</th>
-      <td>2000-08-14</td>
-      <td>157.559219</td>
-      <td>157.559219</td>
-      <td>161.040253</td>
-      <td>157.559219</td>
+      <td>2001-05-19</td>
+      <td>3.151185</td>
+      <td>3.151185</td>
+      <td>3.220805</td>
+      <td>3.151185</td>
     </tr>
     <tr>
       <th>...</th>
@@ -238,43 +224,43 @@ nb_path: "nbs/core.ipynb"
     </tr>
     <tr>
       <th>9999</th>
-      <td>2000-06-27</td>
-      <td>87.646744</td>
-      <td>87.646744</td>
-      <td>78.274399</td>
-      <td>87.646744</td>
+      <td>2001-05-24</td>
+      <td>3.651947</td>
+      <td>3.651947</td>
+      <td>3.261435</td>
+      <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2000-06-28</td>
-      <td>87.646744</td>
-      <td>87.646744</td>
-      <td>78.274399</td>
-      <td>87.646744</td>
+      <td>2001-05-25</td>
+      <td>3.651947</td>
+      <td>3.651947</td>
+      <td>3.261435</td>
+      <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2000-06-29</td>
-      <td>87.646744</td>
-      <td>87.646744</td>
-      <td>78.274399</td>
-      <td>87.646744</td>
+      <td>2001-05-26</td>
+      <td>3.651947</td>
+      <td>3.651947</td>
+      <td>3.261435</td>
+      <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2000-06-30</td>
-      <td>87.646744</td>
-      <td>87.646744</td>
-      <td>78.274399</td>
-      <td>87.646744</td>
+      <td>2001-05-27</td>
+      <td>3.651947</td>
+      <td>3.651947</td>
+      <td>3.261435</td>
+      <td>3.651947</td>
     </tr>
     <tr>
       <th>9999</th>
-      <td>2000-07-01</td>
-      <td>87.646744</td>
-      <td>87.646744</td>
-      <td>78.274399</td>
-      <td>87.646744</td>
+      <td>2001-05-28</td>
+      <td>3.651947</td>
+      <td>3.651947</td>
+      <td>3.261435</td>
+      <td>3.651947</td>
     </tr>
   </tbody>
 </table>
@@ -438,11 +424,11 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-23 22:20:18 __main__ INFO: Computing forecasts
-2022-02-23 22:20:22 __main__ INFO: Computed forecasts for adida.
-2022-02-23 22:20:22 __main__ INFO: Computed forecasts for ses_alpha-0.1.
-2022-02-23 22:20:22 __main__ INFO: Computed forecasts for historic_average.
-2022-02-23 22:20:23 __main__ INFO: Computed forecasts for croston_classic.
+<pre>2022-02-25 11:19:27 __main__ INFO: Computing forecasts
+2022-02-25 11:19:29 __main__ INFO: Computed forecasts for adida.
+2022-02-25 11:19:29 __main__ INFO: Computed forecasts for ses_alpha-0.1.
+2022-02-25 11:19:29 __main__ INFO: Computed forecasts for historic_average.
+2022-02-25 11:19:29 __main__ INFO: Computed forecasts for croston_classic.
 </pre>
 </div>
 </div>
@@ -450,8 +436,8 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 5.02 s, sys: 4.46 ms, total: 5.03 s
-Wall time: 5.02 s
+<pre>CPU times: user 2.9 s, sys: 29.9 ms, total: 2.93 s
+Wall time: 2.91 s
 </pre>
 </div>
 </div>
@@ -813,8 +799,8 @@ Wall time: 5.02 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-23 22:20:23 __main__ INFO: Computing forecasts
-2022-02-23 22:20:23 __main__ INFO: Computed forecasts for historic_average.
+<pre>2022-02-25 11:19:30 __main__ INFO: Computing forecasts
+2022-02-25 11:19:30 __main__ INFO: Computed forecasts for historic_average.
 </pre>
 </div>
 </div>
@@ -1162,7 +1148,7 @@ Wall time: 5.02 s
 <span class="n">train_mask</span> <span class="o">=</span> <span class="n">series_xreg</span><span class="p">[</span><span class="s1">&#39;ds&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">valid_start</span>
 <span class="n">series_train</span> <span class="o">=</span> <span class="n">series_xreg</span><span class="p">[</span><span class="n">train_mask</span><span class="p">]</span>
 <span class="n">series_valid</span> <span class="o">=</span> <span class="n">series_xreg</span><span class="p">[</span><span class="o">~</span><span class="n">train_mask</span><span class="p">]</span>
-<span class="n">X_valid</span> <span class="o">=</span> <span class="n">series_valid</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;ds&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">])</span>
+<span class="n">X_valid</span> <span class="o">=</span> <span class="n">series_valid</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
 <span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
     <span class="n">series_train</span><span class="p">,</span>
     <span class="p">[</span><span class="n">linear_regression</span><span class="p">],</span>
@@ -1182,8 +1168,8 @@ Wall time: 5.02 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-02-23 22:20:26 __main__ INFO: Computing forecasts
-2022-02-23 22:20:28 __main__ INFO: Computed forecasts for linear_regression.
+<pre>2022-02-25 11:19:32 __main__ INFO: Computing forecasts
+2022-02-25 11:19:35 __main__ INFO: Computed forecasts for linear_regression.
 </pre>
 </div>
 </div>
@@ -1191,8 +1177,8 @@ Wall time: 5.02 s
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>CPU times: user 3.25 s, sys: 60.6 ms, total: 3.31 s
-Wall time: 3.26 s
+<pre>CPU times: user 2.49 s, sys: 25.7 ms, total: 2.52 s
+Wall time: 2.5 s
 </pre>
 </div>
 </div>

@@ -61,11 +61,17 @@ class GroupedArray:
         return [self[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks)]
 
 # Internal Cell
-def _grouped_array_from_df(df):
+def _prepare_df(df):
     df = df.set_index('ds', append=True)
     if not df.index.is_monotonic_increasing:
         df = df.sort_index()
     data = df.values.astype(np.float32)
+
+    return df, data
+
+# Internal Cell
+def _grouped_array_from_df(df):
+    df, data = _prepare_df(df)
     indices_sizes = df.index.get_level_values('unique_id').value_counts(sort=False)
     indices = indices_sizes.index
     sizes = indices_sizes.values
@@ -104,6 +110,10 @@ class StatsForecast:
         self.n_jobs = n_jobs
 
     def forecast(self, h, xreg=None):
+        if xreg is not None:
+            _, xreg = _prepare_df(xreg)
+            if xreg.shape != (h * len(self.ga), self.ga.data.shape[1] - 1):
+                raise Exception('`xreg` does not have the right dimensions')
         if self.n_jobs == 1:
             fcsts = self._sequential_forecast(h, xreg)
         else:

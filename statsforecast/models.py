@@ -14,7 +14,7 @@ import pandas as pd
 from numba import njit
 from scipy.optimize import minimize
 
-from .arima import auto_arima_f, predict_arima
+from .arima import auto_arima_f, forecast_arima
 
 # Internal Cell
 @njit
@@ -256,11 +256,13 @@ def tsb(X, h, future_xreg, alpha_d, alpha_p):
 def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
                approximation: bool = False) -> np.ndarray:
     y = X[:, 0] if X.ndim == 2 else X
+    xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
     mod = auto_arima_f(
         y,
+        xreg=xreg,
         period=season_length,
         approximation=approximation,
         allowmean=False, allowdrift=False #not implemented yet
     )
 
-    return predict_arima(mod, h, se_fit=False)
+    return forecast_arima(mod, h, xreg=future_xreg)['mean']
