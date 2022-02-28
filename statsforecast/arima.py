@@ -849,8 +849,15 @@ def arima(x: np.ndarray,
     else:
         init = init0
 
-    def arma_css_op(p):
+    def arma_css_op(p, x):
+        x = x.copy()
+        par = coef.copy()
+        par[mask] = p
         phi, theta = arima_transpar(p, arma, False)
+
+        if ncxreg > 0:
+            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+
         res, resid = arima_css(x, arma, phi, theta, ncond)
 
         return 0.5 * np.log(res)
@@ -859,9 +866,10 @@ def arima(x: np.ndarray,
     # parscale definition, think about it, scipy doesnt use it
     if method == 'CSS':
         if no_optim:
-            res = OptimResult(True, 0, np.array([]), arma_css_op(np.array([])))
+            res = OptimResult(True, 0, np.array([]), arma_css_op(np.array([]), x))
         else:
-            res = minimize(arma_css_op, init0, method=optim_method, tol=tol, options=optim_control)
+            res = minimize(arma_css_op, init0, args=(x,),
+                           method=optim_method, tol=tol, options=optim_control)
 
         if res.status > 0:
             warnings.warn(
@@ -879,9 +887,10 @@ def arima(x: np.ndarray,
     else:
         if method == 'CSS-ML':
             if no_optim:
-                res = OptimResult(True, 0, np.array([]), arma_css_op(np.array([])))
+                res = OptimResult(True, 0, np.array([]), arma_css_op(np.array([]), x))
             else:
-                res = minimize(arma_css_op, init[mask], method=optim_method, tol=tol, options=optim_control)
+                res = minimize(arma_css_op, init[mask], args=(x,),
+                               method=optim_method, tol=tol, options=optim_control)
             # if not res.success:
                 # warnings.warn(res.message)
             #if res.success:
@@ -922,8 +931,8 @@ def arima(x: np.ndarray,
                     coef[ind] = maInvert(coef[ind])
             if any(coef[mask] != res.x):
                 oldcode = res.status
-                res = minimize(arma_css_op, coef[mask], method=optim_method,
-                               tol=tol, options=optim_control)
+                res = minimize(arma_css_op, coef[mask], args=(x,),
+                               method=optim_method, tol=tol, options=optim_control)
                 res.status = oldcode
                 coef[mask] = res.x
             A = arima_gradtrans(coef, arma)
@@ -1181,7 +1190,7 @@ def myarima(
             else:
                 last_nonzero = 0
             if last_nonzero > 0:
-                testvec = testvec[:last_nonzero]
+                testvec = testvec[:(last_nonzero + 1)]
                 proots = np.polynomial.polynomial.polyroots(np.append(1, -testvec))
                 if proots.size > 0:
                     minroot = min(minroot, *abs(proots))
@@ -1193,11 +1202,11 @@ def myarima(
             else:
                 last_nonzero = 0
             if last_nonzero > 0:
-                testvec = testvec[:last_nonzero]
-                proots = np.polynomial.polynomial.polyroots(np.append(1, -testvec))
+                testvec = testvec[:(last_nonzero + 1)]
+                proots = np.polynomial.polynomial.polyroots(np.append(1, testvec))
                 if proots.size > 0:
                     minroot = min(minroot, *abs(proots))
-        if minroot < 1 + 0.1 or checkarima(fit):
+        if minroot < 1 + 0.01 or checkarima(fit):
             fit['ic'] = math.inf
         fit['xreg'] = xreg
         if trace:
@@ -1689,7 +1698,7 @@ def auto_arima_f(
             if sv.min() / sv.sum() < np.finfo(np.float64).eps:
                 raise ValueError('xreg is rank deficient')
             j = (~np.isnan(x)) & (~np.isnan(np.nansum(xregg, 1)))
-            xx[j] = sm.OLS(x, xregg).fit().resid
+            xx[j] = sm.OLS(x, sm.add_constant(xregg)).fit().resid
     else:
         xx = x
         xregg = None
