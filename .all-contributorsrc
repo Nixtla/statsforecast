@@ -31,6 +31,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "tackes",
+      "name": "Jeff Tackes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9125316?v=4",
+      "profile": "http://www.jefftackes.com",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
