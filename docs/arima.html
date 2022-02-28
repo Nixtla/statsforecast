@@ -39,6 +39,24 @@ nb_path: "nbs/arima.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">seasonal</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;period&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span> 
+      <span class="n">include_mean</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;CSS-ML&#39;</span><span class="p">)[</span><span class="s1">&#39;coef&#39;</span><span class="p">]</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 <div class="output_wrapper">
 <div class="output">
@@ -81,26 +99,6 @@ nb_path: "nbs/arima.ipynb"
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>(array([448.08972925, 423.7922724 , 453.50022757, 496.68138142,
-        508.6158662 , 572.31747306, 659.85480907, 644.26321316,
-        546.57452622, 499.81156619]),
- array([11.52472983, 13.1634063 , 14.67466798, 15.63674637, 16.39162602,
-        16.98465381, 17.47757493, 17.89954747, 18.27186588, 18.60809127]))</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
 </div>
     {% endraw %}
 
@@ -115,27 +113,6 @@ nb_path: "nbs/arima.ipynb"
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>(array([470.01001978, 440.51695518, 442.19364409, 430.30835395,
-        425.09995486, 417.37375139, 411.27110797, 404.89266672,
-        399.07691805, 393.42302754]),
- array([ 30.69910098,  51.7119346 ,  61.89383108,  71.06720512,
-         77.98073444,  83.94820386,  88.93458207,  93.25690033,
-         96.99561817, 100.27008013]))</pre>
-</div>
-
-</div>
-
 </div>
 </div>
 
@@ -158,23 +135,21 @@ nb_path: "nbs/arima.ipynb"
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>(array([441.89780999, 463.67025109, 489.91167871, 513.32953249,
-        528.76730885, 534.25607325, 530.97884159, 522.3581567 ,
-        512.68416037, 505.75233928]),
- array([25.0415441 , 31.85337696, 33.32711739, 33.34240667, 34.68174237,
-        37.33841209, 39.68800768, 40.77980646, 40.92281376, 40.99296996]))</pre>
 </div>
+    {% endraw %}
 
-</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">myarima</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">seasonal</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;order&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;period&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span> 
+        <span class="n">constant</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ic</span><span class="o">=</span><span class="s1">&#39;aicc&#39;</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;CSS-ML&#39;</span><span class="p">)[</span><span class="s1">&#39;aic&#39;</span><span class="p">]</span>
+</pre></div>
+
+    </div>
 </div>
 </div>
 
@@ -192,7 +167,72 @@ nb_path: "nbs/arima.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="forecast_arima" class="doc_header"><code>forecast_arima</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/arima.py#L1333" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>forecast_arima</code>(<strong><code>model</code></strong>, <strong><code>h</code></strong>=<em><code>None</code></em>, <strong><code>level</code></strong>=<em><code>(80, 95)</code></em>, <strong><code>fan</code></strong>=<em><code>False</code></em>, <strong><code>xreg</code></strong>=<em><code>None</code></em>, <strong><code>blambda</code></strong>=<em><code>None</code></em>, <strong><code>bootstrap</code></strong>=<em><code>False</code></em>, <strong><code>npaths</code></strong>=<em><code>5000</code></em>, <strong><code>biasadj</code></strong>=<em><code>None</code></em>)</p>
+<h4 id="arima_string" class="doc_header"><code>arima_string</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/arima.py#L1329" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>arima_string</code>(<strong><code>model</code></strong>, <strong><code>padding</code></strong>=<em><code>False</code></em>)</p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima_string</span><span class="p">(</span><span class="n">res_Arima_ex</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima_string</span><span class="p">(</span><span class="n">res_Arima</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="forecast_arima" class="doc_header"><code>forecast_arima</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/arima.py#L1361" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>forecast_arima</code>(<strong><code>model</code></strong>, <strong><code>h</code></strong>=<em><code>None</code></em>, <strong><code>level</code></strong>=<em><code>(80, 95)</code></em>, <strong><code>fan</code></strong>=<em><code>False</code></em>, <strong><code>xreg</code></strong>=<em><code>None</code></em>, <strong><code>blambda</code></strong>=<em><code>None</code></em>, <strong><code>bootstrap</code></strong>=<em><code>False</code></em>, <strong><code>npaths</code></strong>=<em><code>5000</code></em>, <strong><code>biasadj</code></strong>=<em><code>None</code></em>)</p>
 </blockquote>
 
 </div>
@@ -223,7 +263,7 @@ nb_path: "nbs/arima.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="auto_arima_f" class="doc_header"><code>auto_arima_f</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/arima.py#L1562" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>auto_arima_f</code>(<strong><code>x</code></strong>, <strong><code>d</code></strong>=<em><code>None</code></em>, <strong><code>D</code></strong>=<em><code>None</code></em>, <strong><code>max_p</code></strong>=<em><code>5</code></em>, <strong><code>max_q</code></strong>=<em><code>5</code></em>, <strong><code>max_P</code></strong>=<em><code>2</code></em>, <strong><code>max_Q</code></strong>=<em><code>2</code></em>, <strong><code>max_order</code></strong>=<em><code>5</code></em>, <strong><code>max_d</code></strong>=<em><code>2</code></em>, <strong><code>max_D</code></strong>=<em><code>1</code></em>, <strong><code>start_p</code></strong>=<em><code>2</code></em>, <strong><code>start_q</code></strong>=<em><code>2</code></em>, <strong><code>start_P</code></strong>=<em><code>1</code></em>, <strong><code>start_Q</code></strong>=<em><code>1</code></em>, <strong><code>stationary</code></strong>=<em><code>False</code></em>, <strong><code>seasonal</code></strong>=<em><code>True</code></em>, <strong><code>ic</code></strong>=<em><code>'aicc'</code></em>, <strong><code>stepwise</code></strong>=<em><code>True</code></em>, <strong><code>nmodels</code></strong>=<em><code>94</code></em>, <strong><code>trace</code></strong>=<em><code>False</code></em>, <strong><code>approximation</code></strong>=<em><code>None</code></em>, <strong><code>method</code></strong>=<em><code>None</code></em>, <strong><code>truncate</code></strong>=<em><code>None</code></em>, <strong><code>xreg</code></strong>=<em><code>None</code></em>, <strong><code>test</code></strong>=<em><code>'kpss'</code></em>, <strong><code>test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>seasonal_test</code></strong>=<em><code>'seas'</code></em>, <strong><code>seasonal_test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>allowdrift</code></strong>=<em><code>True</code></em>, <strong><code>allowmean</code></strong>=<em><code>True</code></em>, <strong><code>blambda</code></strong>=<em><code>None</code></em>, <strong><code>biasadj</code></strong>=<em><code>False</code></em>, <strong><code>parallel</code></strong>=<em><code>False</code></em>, <strong><code>num_cores</code></strong>=<em><code>2</code></em>, <strong><code>period</code></strong>=<em><code>1</code></em>)</p>
+<h4 id="auto_arima_f" class="doc_header"><code>auto_arima_f</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/arima.py#L1590" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>auto_arima_f</code>(<strong><code>x</code></strong>, <strong><code>d</code></strong>=<em><code>None</code></em>, <strong><code>D</code></strong>=<em><code>None</code></em>, <strong><code>max_p</code></strong>=<em><code>5</code></em>, <strong><code>max_q</code></strong>=<em><code>5</code></em>, <strong><code>max_P</code></strong>=<em><code>2</code></em>, <strong><code>max_Q</code></strong>=<em><code>2</code></em>, <strong><code>max_order</code></strong>=<em><code>5</code></em>, <strong><code>max_d</code></strong>=<em><code>2</code></em>, <strong><code>max_D</code></strong>=<em><code>1</code></em>, <strong><code>start_p</code></strong>=<em><code>2</code></em>, <strong><code>start_q</code></strong>=<em><code>2</code></em>, <strong><code>start_P</code></strong>=<em><code>1</code></em>, <strong><code>start_Q</code></strong>=<em><code>1</code></em>, <strong><code>stationary</code></strong>=<em><code>False</code></em>, <strong><code>seasonal</code></strong>=<em><code>True</code></em>, <strong><code>ic</code></strong>=<em><code>'aicc'</code></em>, <strong><code>stepwise</code></strong>=<em><code>True</code></em>, <strong><code>nmodels</code></strong>=<em><code>94</code></em>, <strong><code>trace</code></strong>=<em><code>False</code></em>, <strong><code>approximation</code></strong>=<em><code>None</code></em>, <strong><code>method</code></strong>=<em><code>None</code></em>, <strong><code>truncate</code></strong>=<em><code>None</code></em>, <strong><code>xreg</code></strong>=<em><code>None</code></em>, <strong><code>test</code></strong>=<em><code>'kpss'</code></em>, <strong><code>test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>seasonal_test</code></strong>=<em><code>'seas'</code></em>, <strong><code>seasonal_test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>allowdrift</code></strong>=<em><code>True</code></em>, <strong><code>allowmean</code></strong>=<em><code>True</code></em>, <strong><code>blambda</code></strong>=<em><code>None</code></em>, <strong><code>biasadj</code></strong>=<em><code>False</code></em>, <strong><code>parallel</code></strong>=<em><code>False</code></em>, <strong><code>num_cores</code></strong>=<em><code>2</code></em>, <strong><code>period</code></strong>=<em><code>1</code></em>)</p>
 </blockquote>
 
 </div>
@@ -239,6 +279,23 @@ nb_path: "nbs/arima.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">mod</span> <span class="o">=</span> <span class="n">auto_arima_f</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;CSS-ML&#39;</span><span class="p">,</span> <span class="n">trace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
 
 </div>
     {% endraw %}
