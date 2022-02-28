@@ -1,0 +1,24 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "FedericoGarza",
+      "name": "fede",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10517170?v=4",
+      "profile": "https://github.com/FedericoGarza",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "statsforecast",
+  "projectOwner": "Nixtla",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
