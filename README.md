@@ -72,6 +72,10 @@ We measured the computational time against the number of time series. The follow
 
 You can reproduce the results [here](/experiments/arima/).
 
+### External regressors
+
+Results with external regressors are qualitatively similar to the reported before. You can find the complete experiments [here](/experiments/arima_xreg/)
+
 ## 👾 Less code
 ![pmd to stats](nbs/imgs/pdmarimaStats.gif)
 
@@ -141,18 +145,12 @@ ap_test = AirPassengers[-horizon:]
 ```python
 series_train = pd.DataFrame(
     {
-        'ds': np.arange(1, ap_train.size + 1),
+        'ds': pd.date_range(start='1949-01-01', periods=ap_train.size, freq='M'),
         'y': ap_train
     },
     index=pd.Index([0] * ap_train.size, name='unique_id')
 )
 ```
-
-```python
-def display_df(df):
-    display(Markdown(df.to_markdown()))
-```
-
 ```python
 fcst = StatsForecast(
     series_train, 
@@ -161,25 +159,7 @@ fcst = StatsForecast(
     n_jobs=1
 )
 forecasts = fcst.forecast(12)
-display_df(forecasts)
 ```
-
-
-|   unique_id |   ds |   auto_arima_season_length-12 |   seasonal_naive_season_length-12 |
-|------------:|-----:|------------------------------:|----------------------------------:|
-|           0 |  133 |                       424.16  |                               360 |
-|           0 |  134 |                       407.082 |                               342 |
-|           0 |  135 |                       470.861 |                               406 |
-|           0 |  136 |                       460.914 |                               396 |
-|           0 |  137 |                       484.901 |                               420 |
-|           0 |  138 |                       536.904 |                               472 |
-|           0 |  139 |                       612.903 |                               548 |
-|           0 |  140 |                       623.903 |                               559 |
-|           0 |  141 |                       527.903 |                               463 |
-|           0 |  142 |                       471.903 |                               407 |
-|           0 |  143 |                       426.903 |                               362 |
-|           0 |  144 |                       469.903 |                               405 |
-
 
 ```python
 forecasts['y_test'] = ap_test
@@ -206,24 +186,14 @@ for label in (ax.get_xticklabels() + ax.get_yticklabels()):
 ### Adding external regressors
 
 ```python
-series_xreg = pd.DataFrame(
-    {
-        'ds': pd.date_range(start='1949-01-01', periods=ap_train.size, freq='M'),
-        'y': ap_train
-    },
-    index=pd.Index([0] * ap_train.size, name='unique_id')
-)
+series_train['trend'] = np.arange(1, ap_train.size + 1)
+series_train['intercept'] = np.ones(ap_train.size)
+series_train['month'] = series_train['ds'].dt.month
+series_train = pd.get_dummies(series_train, columns=['month'], drop_first=True)
 ```
 
 ```python
-series_xreg['trend'] = np.arange(1, ap_train.size + 1)
-series_xreg['intercept'] = np.ones(ap_train.size)
-series_xreg['month'] = series_xreg['ds'].dt.month
-series_xreg = pd.get_dummies(series_xreg, columns=['month'], drop_first=True)
-```
-
-```python
-display_df(series_xreg.head())
+display_df(series_train.head())
 ```
 
 
@@ -260,47 +230,11 @@ fcst = StatsForecast(
     n_jobs=1
 )
 forecasts = fcst.forecast(12, xreg=xreg_test)
-display_df(forecasts)
 ```
-
-
-|   unique_id | ds                  |   auto_arima_season_length-12 |   seasonal_naive_season_length-12 |
-|------------:|:--------------------|------------------------------:|----------------------------------:|
-|           0 | 1960-01-31 00:00:00 |                       392.207 |                               360 |
-|           0 | 1960-02-29 00:00:00 |                       376.962 |                               342 |
-|           0 | 1960-03-31 00:00:00 |                       436.133 |                               406 |
-|           0 | 1960-04-30 00:00:00 |                       427.066 |                               396 |
-|           0 | 1960-05-31 00:00:00 |                       459.206 |                               420 |
-|           0 | 1960-06-30 00:00:00 |                       505.109 |                               472 |
-|           0 | 1960-07-31 00:00:00 |                       583.265 |                               548 |
-|           0 | 1960-08-31 00:00:00 |                       596.063 |                               559 |
-|           0 | 1960-09-30 00:00:00 |                       491.6   |                               463 |
-|           0 | 1960-10-31 00:00:00 |                       429.576 |                               407 |
-|           0 | 1960-11-30 00:00:00 |                       394.843 |                               362 |
-|           0 | 1960-12-31 00:00:00 |                       433.5   |                               405 |
-
 
 ```python
 forecasts['y_test'] = ap_test
 ```
-
-```python
-fig, ax = plt.subplots(1, 1, figsize = (20, 7))
-pd.concat([series_xreg[['ds', 'y']], forecasts]).set_index('ds').plot(ax=ax, linewidth=2)
-ax.set_title('AirPassengers Forecast using External Regressors', fontsize=22)
-ax.set_ylabel('Monthly Passengers', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid()
-for label in (ax.get_xticklabels() + ax.get_yticklabels()):
-    label.set_fontsize(20)
-```
-
-
-    
-![png](docs/images/output_32_0.png)
-    
-
 
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/neuralforecast/blob/main/CONTRIBUTING.md).
