@@ -237,7 +237,7 @@ forecasts['y_test'] = ap_test
 ```
 
 ## 🔨 How to contribute
-See [CONTRIBUTING.md](https://github.com/Nixtla/neuralforecast/blob/main/CONTRIBUTING.md).
+See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md).
 
 ## 📃 References
 *  The `auto_arima` model is based (translated) from the R implementation included in the [forecast](https://github.com/robjhyndman/forecast) package developed by Rob Hyndman.
