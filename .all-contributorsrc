@@ -1,0 +1,105 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "FedericoGarza",
+      "name": "fede",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10517170?v=4",
+      "profile": "https://github.com/FedericoGarza",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "jmoralez",
+      "name": "José Morales",
+      "avatar_url": "https://avatars.githubusercontent.com/u/8473587?v=4",
+      "profile": "https://github.com/jmoralez",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "sugatoray",
+      "name": "Sugato Ray",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10201242?v=4",
+      "profile": "https://www.linkedin.com/in/sugatoray/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "tackes",
+      "name": "Jeff Tackes",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9125316?v=4",
+      "profile": "http://www.jefftackes.com",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "darinkist",
+      "name": "darinkist",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62692170?v=4",
+      "profile": "https://github.com/darinkist",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "alech97",
+      "name": "Alec Helyar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22159405?v=4",
+      "profile": "https://github.com/alech97",
+      "contributions": [
+        "question"
+      ]
+    },
+    {
+      "login": "dhirschfeld",
+      "name": "Dave Hirschfeld",
+      "avatar_url": "https://avatars.githubusercontent.com/u/881019?v=4",
+      "profile": "https://dhirschfeld.github.io",
+      "contributions": [
+        "question"
+      ]
+    },
+    {
+      "login": "mergenthaler",
+      "name": "mergenthaler",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4086186?v=4",
+      "profile": "https://github.com/mergenthaler",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "kdgutier",
+      "name": "Kin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19935241?v=4",
+      "profile": "https://github.com/kdgutier",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Yasslight90",
+      "name": "Yasslight90",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58293883?v=4",
+      "profile": "https://github.com/Yasslight90",
+      "contributions": [
+        "ideas"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "statsforecast",
+  "projectOwner": "Nixtla",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}
