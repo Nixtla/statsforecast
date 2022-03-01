@@ -23,11 +23,11 @@
 
 ## 🔥 Features
 
-* Fastest and most accurate `auto_arima` in Python and R (for the moment...).
-* Usage of external regressors.
+* Fastest and most accurate `auto_arima` in `Python` and `R` (for the moment...).
+* **New! [2022-03-01]**: Inclusion of `exogenous variables`.
 * Out of the box implementation of other classical models and benchmarks like `exponential smoothing`, `croston`, `sesonal naive`, `random walk with drift` and `tbs`.
 * 20x faster than `pmdarima`.
-* 1.5x faster than R.
+* 1.5x faster than `R`.
 * 500x faster than `Prophet`. 
 * Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
 
