@@ -74,7 +74,7 @@ You can reproduce the results [here](/experiments/arima/).
 
 ### External regressors
 
-Results with external regressors are qualitatively similar to the reported before. You can find the complete experiments [here](/experiments/arima_xreg/)
+Results with external regressors are qualitatively similar to the reported before. You can find the complete experiments [here](/experiments/arima_xreg/).
 
 ## 👾 Less code
 ![pmd to stats](nbs/imgs/pdmarimaStats.gif)
@@ -224,7 +224,7 @@ xreg_test = pd.get_dummies(xreg_test, columns=['month'], drop_first=True)
 
 ```python
 fcst = StatsForecast(
-    series_xreg, 
+    series_train, 
     models=[(auto_arima, 12), (seasonal_naive, 12)], 
     freq='M', 
     n_jobs=1
