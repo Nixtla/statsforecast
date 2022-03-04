@@ -15,7 +15,6 @@ import pandas as pd
 logging.basicConfig(
     format='%(asctime)s %(name)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
@@ -50,29 +49,25 @@ class GroupedArray:
         return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
     def compute_forecasts(self, h, func, xreg=None, level=None, *args):
-        if level is None:
-            out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
-        else:
-            out = np.full((h * self.n_groups, 2 * len(level) + 1), np.nan, dtype=np.float32)
-        xr = None
         has_level = 'level' in inspect.signature(func).parameters
-        keys = None
         if has_level:
+            out = np.full((h * self.n_groups, 2 * len(level) + 1), np.nan, dtype=np.float32)
             func = partial(func, level=level)
+        else:
+            out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
+        xr = None
+        keys = None
         for i, grp in enumerate(self):
             if xreg is not None:
                 xr = xreg[i*h : (i+1)*h]
-            if level is None:
-                out[h * i : h * (i + 1)] = func(grp, h, xr, *args)
+            res = func(grp, h, xr, *args)
+            if has_level:
+                if keys is None:
+                    keys = list(res.keys())
+                for j, key in enumerate(keys):
+                    out[h * i : h * (i + 1), j] = res[key]
             else:
-                if has_level:
-                    res = func(grp, h, xr, *args)
-                    if keys is None:
-                        keys = list(res.keys())
-                    for j, key in enumerate(keys):
-                        out[h * i : h * (i + 1), j] = res[key]
-                else:
-                    out[h * i : h * (i + 1), 0] = func(grp, h, xr, *args)
+                out[h * i : h * (i + 1)] = res
         return out, keys
 
     def split(self, n_chunks):
