@@ -7,7 +7,7 @@ __all__ = ['ses', 'adida', 'historic_average', 'croston_classic', 'croston_sba',
 # Cell
 from itertools import count
 from numbers import Number
-from typing import Collection, List, Sequence, Tuple
+from typing import Collection, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -254,7 +254,7 @@ def tsb(X, h, future_xreg, alpha_d, alpha_p):
 
 # Cell
 def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
-               approximation: bool = False) -> np.ndarray:
+               approximation: bool = False, level: Optional[Tuple[int]] = None) -> np.ndarray:
     y = X[:, 0] if X.ndim == 2 else X
     xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
     mod = auto_arima_f(
@@ -264,5 +264,11 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
         approximation=approximation,
         allowmean=False, allowdrift=False #not implemented yet
     )
-
-    return forecast_arima(mod, h, xreg=future_xreg)['mean']
+    fcst = forecast_arima(mod, h, xreg=future_xreg, level=level)
+    if level is None:
+        return fcst['mean']
+    return {
+        'mean': fcst['mean'],
+        **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in level},
+        **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+    }
