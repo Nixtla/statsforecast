@@ -2,13 +2,14 @@ name: statsforecast
 channels:
   - conda-forge
 dependencies:
+  - jupyterlab
   - matplotlib
   - numba
   - numpy
   - pandas
+  - pip
   - scipy
   - statsmodels
+  - tabulate
   - pip:
     - nbdev
-    - jupyterlab
-    - tabulate

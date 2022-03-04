@@ -6,6 +6,7 @@ __all__ = ['StatsForecast']
 import inspect
 import logging
 from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,6 @@ import pandas as pd
 logging.basicConfig(
     format='%(asctime)s %(name)s %(levelname)s: %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
@@ -48,14 +48,27 @@ class GroupedArray:
             return False
         return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
-    def compute_forecasts(self, h, func, xreg=None, *args):
-        out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
+    def compute_forecasts(self, h, func, xreg=None, level=None, *args):
+        has_level = 'level' in inspect.signature(func).parameters and level is not None
+        if has_level:
+            out = np.full((h * self.n_groups, 2 * len(level) + 1), np.nan, dtype=np.float32)
+            func = partial(func, level=level)
+        else:
+            out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
         xr = None
+        keys = None
         for i, grp in enumerate(self):
             if xreg is not None:
                 xr = xreg[i*h : (i+1)*h]
-            out[h * i : h * (i + 1)] = func(grp, h, xr, *args)
-        return out
+            res = func(grp, h, xr, *args)
+            if has_level:
+                if keys is None:
+                    keys = list(res.keys())
+                for j, key in enumerate(keys):
+                    out[h * i : h * (i + 1), j] = res[key]
+            else:
+                out[h * i : h * (i + 1)] = res
+        return out, keys
 
     def split(self, n_chunks):
         return [self[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks)]
@@ -109,15 +122,15 @@ class StatsForecast:
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
 
-    def forecast(self, h, xreg=None):
+    def forecast(self, h, xreg=None, level=None):
         if xreg is not None:
             _, xreg = _prepare_df(xreg)
             if xreg.shape != (h * len(self.ga), self.ga.data.shape[1] - 1):
                 raise Exception('`xreg` does not have the right dimensions')
         if self.n_jobs == 1:
-            fcsts = self._sequential_forecast(h, xreg)
+            fcsts = self._sequential_forecast(h, xreg, level)
         else:
-            fcsts = self._data_parallel_forecast(h, xreg)
+            fcsts = self._data_parallel_forecast(h, xreg, level)
         if issubclass(self.last_dates.dtype.type, np.integer):
             dates = np.hstack([
                 np.arange(last_date + 1, last_date + 1 + h, dtype=self.last_dates.dtype)
@@ -131,17 +144,22 @@ class StatsForecast:
         idx = pd.Index(np.repeat(self.uids, h), name='unique_id')
         return pd.DataFrame({'ds': dates, **fcsts}, index=idx)
 
-    def _sequential_forecast(self, h, xreg):
+    def _sequential_forecast(self, h, xreg, level):
         fcsts = {}
         logger.info('Computing forecasts')
         for model_args in self.models:
             model, *args = _as_tuple(model_args)
             model_name = _build_forecast_name(model, *args)
-            fcsts[model_name] = self.ga.compute_forecasts(h, model, xreg, *args)
+            values, keys = self.ga.compute_forecasts(h, model, xreg, level, *args)
+            if keys is not None:
+                for j, key in enumerate(keys):
+                    fcsts[f'{model_name}_{key}'] = values[:, j]
+            else:
+                fcsts[model_name] = values
             logger.info(f'Computed forecasts for {model_name}.')
         return fcsts
 
-    def _data_parallel_forecast(self, h, xreg):
+    def _data_parallel_forecast(self, h, xreg, level):
         fcsts = {}
         logger.info('Computing forecasts')
         gas = self.ga.split(self.n_jobs)
@@ -151,8 +169,13 @@ class StatsForecast:
                 model_name = _build_forecast_name(model, *args)
                 futures = []
                 for ga in gas:
-                    future = executor.submit(ga.compute_forecasts, h, model, xreg, *args)
+                    future = executor.submit(ga.compute_forecasts, h, model, xreg, level, *args)
                     futures.append(future)
-                fcsts[model_name] = np.hstack([f.result() for f in futures])
+                model_forecasts = np.hstack([f.result() for f in futures])
+                if isinstance(model_forecasts, dict):
+                    for k, v in model_forecasts.items():
+                        fcsts[f'{model_name}_{k}'] = v
+                else:
+                    fcsts[model_name] = model_forecasts
                 logger.info(f'Computed forecasts for {model_name}.')
         return fcsts

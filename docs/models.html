@@ -26,6 +26,21 @@ nb_path: "nbs/models.ipynb"
     
 <div class="cell border-box-sizing code_cell rendered">
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_stream output_stderr output_text">
+<pre>/home/jose/mambaforge/envs/statsforecast/lib/python3.9/site-packages/statsmodels/compat/pandas.py:65: FutureWarning: pandas.Int64Index is deprecated and will be removed from pandas in a future version. Use pandas.Index with the appropriate dtype instead.
+  from pandas import Int64Index as NumericIndex
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
@@ -390,7 +405,7 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="auto_arima" class="doc_header"><code>auto_arima</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L256" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>auto_arima</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>approximation</code></strong>:<code>bool</code>=<em><code>False</code></em>)</p>
+<h4 id="auto_arima" class="doc_header"><code>auto_arima</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L256" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>auto_arima</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>approximation</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>)</p>
 </blockquote>
 
 </div>
@@ -462,6 +477,13 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>External regressors</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -520,9 +542,170 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_text output_subarea output_execute_result">
-<pre>array([448.22763223, 424.00468115, 453.78779314, 497.03025495,
-       509.01958041, 572.76982017, 660.35134179])</pre>
+<pre>array([444.37994435, 418.3426712 , 446.43052379, 488.47985218,
+       499.54005383, 562.59623451, 649.65290106])</pre>
 </div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Confidence intervals</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">auto_arima</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">95</span><span class="p">)))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>mean</th>
+      <th>lo-80</th>
+      <th>lo-95</th>
+      <th>hi-80</th>
+      <th>hi-95</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>444.300051</td>
+      <td>429.182317</td>
+      <td>421.179472</td>
+      <td>459.417784</td>
+      <td>467.420629</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>418.210020</td>
+      <td>399.756915</td>
+      <td>389.988431</td>
+      <td>436.663126</td>
+      <td>446.431610</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>446.237034</td>
+      <td>424.256469</td>
+      <td>412.620660</td>
+      <td>468.217599</td>
+      <td>479.853408</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>488.228929</td>
+      <td>463.405840</td>
+      <td>450.265291</td>
+      <td>513.052017</td>
+      <td>526.192566</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>499.231361</td>
+      <td>471.807503</td>
+      <td>457.290190</td>
+      <td>526.655218</td>
+      <td>541.172531</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>562.230631</td>
+      <td>532.446502</td>
+      <td>516.679736</td>
+      <td>592.014760</td>
+      <td>607.781525</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>649.230850</td>
+      <td>617.256215</td>
+      <td>600.329866</td>
+      <td>681.205484</td>
+      <td>698.131833</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>633.230784</td>
+      <td>599.207510</td>
+      <td>581.196677</td>
+      <td>667.254058</td>
+      <td>685.264891</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>535.230804</td>
+      <td>499.275106</td>
+      <td>480.241310</td>
+      <td>571.186501</td>
+      <td>590.220298</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>488.230798</td>
+      <td>450.441457</td>
+      <td>430.436989</td>
+      <td>526.020138</td>
+      <td>546.024607</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>417.230800</td>
+      <td>377.692737</td>
+      <td>356.762551</td>
+      <td>456.768863</td>
+      <td>477.699049</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>459.230799</td>
+      <td>418.018156</td>
+      <td>396.201501</td>
+      <td>500.443442</td>
+      <td>522.260098</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
 
 </div>
 

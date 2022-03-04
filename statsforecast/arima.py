@@ -14,6 +14,7 @@ import pandas as pd
 import statsmodels.api as sm
 from numba import njit
 from scipy.optimize import minimize
+from scipy.stats import norm
 
 from .utils import AirPassengers as ap
 
@@ -1367,7 +1368,7 @@ def is_constant(x):
     return np.all(x[0] == x)
 
 # Cell
-def forecast_arima(model, h=None, level=(80, 95), fan=False,
+def forecast_arima(model, h=None, level=None, fan=False,
                    xreg=None, blambda=None, bootstrap=False,
                    npaths=5_000, biasadj=None):
     if h is None:
@@ -1391,6 +1392,9 @@ def forecast_arima(model, h=None, level=(80, 95), fan=False,
             )
             xreg = None
         origxreg = None
+
+    if fan:
+        level = np.arange(51, 100, 3)
 
     if use_drift:
         n = len(x)
@@ -1417,13 +1421,31 @@ def forecast_arima(model, h=None, level=(80, 95), fan=False,
     else:
         pred, se = predict_arima(model, n_ahead=h)
 
+    if level is not None:
+        nint = len(level)
+        if bootstrap:
+            raise NotImplementedError('bootstrap=True')
+        else:
+            quantiles = norm.ppf(0.5 * (1 + np.asarray(level) / 100))
+            lower = pd.DataFrame(
+                pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
+                columns=[f'{l}%' for l in level],
+            )
+            upper = pd.DataFrame(
+                pred.reshape(-1, 1) + quantiles * se.reshape(-1, 1),
+                columns=[f'{l}%' for l in level],
+            )
+    else:
+        lower = None
+        upper = None
+
     ans = {
         'method': None,
         'model': model,
         'level': None,
         'mean': pred,
-        'lower': None,
-        'upper': None,
+        'lower': lower,
+        'upper': upper,
         'x': x,
         'series': None,
         'fitted': None,
@@ -1431,7 +1453,6 @@ def forecast_arima(model, h=None, level=(80, 95), fan=False,
     }
 
     return ans
-
 
 # Internal Cell
 def mstl(x, period, blambda=None, s_window=7 + 4 * np.arange(1, 7)):
