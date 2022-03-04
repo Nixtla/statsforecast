@@ -49,7 +49,7 @@ class GroupedArray:
         return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
     def compute_forecasts(self, h, func, xreg=None, level=None, *args):
-        has_level = 'level' in inspect.signature(func).parameters
+        has_level = 'level' in inspect.signature(func).parameters and level is not None
         if has_level:
             out = np.full((h * self.n_groups, 2 * len(level) + 1), np.nan, dtype=np.float32)
             func = partial(func, level=level)
