@@ -11,7 +11,7 @@
 [![CI](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml)
 [![Python](https://img.shields.io/pypi/pyversions/statsforecast)](https://pypi.org/project/statsforecast/)
 [![PyPi](https://img.shields.io/pypi/v/statsforecast?color=blue)](https://pypi.org/project/statsforecast/)
-[![conda-nixtla](https://img.shields.io/conda/vn/nixtla/statsforecast?color=seagreen&label=conda)](https://anaconda.org/nixtla/statsforecast)
+[![conda-nixtla](https://img.shields.io/conda/vn/conda-forge/statsforecast?color=seagreen&label=conda)](https://anaconda.org/conda-forge/statsforecast)
 [![License: GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/Nixtla/statsforecast/blob/main/LICENSE)
 [![docs](https://img.shields.io/website-up-down-green-red/http/nixtla.github.io/statsforecast.svg?label=docs)](https://nixtla.github.io/statsforecast/)  
     
@@ -25,6 +25,7 @@
 
 * Fastest and most accurate `auto_arima` in `Python` and `R` (for the moment...).
 * **New! [2022-03-01]**: Inclusion of `exogenous variables`.
+* **New! [2022-03-07]**: Inclusion of `prediction intervals`.
 * Out of the box implementation of other classical models and benchmarks like `exponential smoothing`, `croston`, `sesonal naive`, `random walk with drift` and `tbs`.
 * 20x faster than `pmdarima`.
 * 1.5x faster than `R`.
@@ -108,7 +109,7 @@ pip install statsforecast
 Also you can install the *released version* of `StatsForecast` from [conda](https://anaconda.org) with:
 
 ```python
-conda install -c nixtla statsforecast
+conda install -c conda-forge statsforecast
 ```
 
 (Installing inside a python virtualenvironment or a conda environment is recommended.)
@@ -160,7 +161,7 @@ fcst = StatsForecast(
     freq='M', 
     n_jobs=1
 )
-forecasts = fcst.forecast(12)
+forecasts = fcst.forecast(12, level=(80, 95))
 ```
 
 ```python
@@ -169,7 +170,20 @@ forecasts['y_test'] = ap_test
 
 ```python
 fig, ax = plt.subplots(1, 1, figsize = (20, 7))
-pd.concat([series_train, forecasts]).set_index('ds').plot(ax=ax, linewidth=2)
+df_plot = pd.concat([series_train, forecasts]).set_index('ds')
+df_plot[['y', 'y_test', 'auto_arima_season_length-12_mean', 'seasonal_naive_season_length-12']].plot(ax=ax, linewidth=2)
+ax.fill_between(df_plot.index, 
+                df_plot['auto_arima_season_length-12_lo-80'], 
+                df_plot['auto_arima_season_length-12_hi-80'],
+                alpha=.35,
+                color='green',
+                label='auto_arima_level_80')
+ax.fill_between(df_plot.index, 
+                df_plot['auto_arima_season_length-12_lo-95'], 
+                df_plot['auto_arima_season_length-12_hi-95'],
+                alpha=.2,
+                color='green',
+                label='auto_arima_level_95')
 ax.set_title('AirPassengers Forecast', fontsize=22)
 ax.set_ylabel('Monthly Passengers', fontsize=20)
 ax.set_xlabel('Timestamp [t]', fontsize=20)
@@ -231,7 +245,7 @@ fcst = StatsForecast(
     freq='M', 
     n_jobs=1
 )
-forecasts = fcst.forecast(12, xreg=xreg_test)
+forecasts = fcst.forecast(12, xreg=xreg_test, level=(80, 95))
 ```
 
 ```python
