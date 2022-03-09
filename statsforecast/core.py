@@ -59,7 +59,7 @@ class GroupedArray:
         keys = None
         for i, grp in enumerate(self):
             if xreg is not None:
-                xr = xreg[i*h : (i+1)*h]
+                xr = xreg[i]
             res = func(grp, h, xr, *args)
             if has_level:
                 if keys is None:
@@ -74,17 +74,11 @@ class GroupedArray:
         return [self[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks) if x.size]
 
 # Internal Cell
-def _prepare_df(df):
+def _grouped_array_from_df(df):
     df = df.set_index('ds', append=True)
     if not df.index.is_monotonic_increasing:
         df = df.sort_index()
     data = df.values.astype(np.float32)
-
-    return df, data
-
-# Internal Cell
-def _grouped_array_from_df(df):
-    df, data = _prepare_df(df)
     indices_sizes = df.index.get_level_values('unique_id').value_counts(sort=False)
     indices = indices_sizes.index
     sizes = indices_sizes.values
@@ -124,9 +118,10 @@ class StatsForecast:
 
     def forecast(self, h, xreg=None, level=None):
         if xreg is not None:
-            _, xreg = _prepare_df(xreg)
-            if xreg.shape != (h * len(self.ga), self.ga.data.shape[1] - 1):
-                raise Exception('`xreg` does not have the right dimensions')
+            expected_shape = (h * len(self.ga), self.ga.data.shape[1])
+            if xreg.shape != expected_shape:
+                raise ValueError(f'Expected xreg to have shape {expected_shape}, but got {xreg.shape}')
+            xreg, _, _ = _grouped_array_from_df(xreg)
         if self.n_jobs == 1:
             fcsts = self._sequential_forecast(h, xreg, level)
         else:
@@ -163,13 +158,19 @@ class StatsForecast:
         fcsts = {}
         logger.info('Computing forecasts')
         gas = self.ga.split(self.n_jobs)
+        if xreg is not None:
+            xregs = xreg.split(self.n_jobs)
+        else:
+            from itertools import repeat
+
+            xregs = repeat(None)
         with ProcessPoolExecutor(self.n_jobs) as executor:
             for model_args in self.models:
                 model, *args = _as_tuple(model_args)
                 model_name = _build_forecast_name(model, *args)
                 futures = []
-                for ga in gas:
-                    future = executor.submit(ga.compute_forecasts, h, model, xreg, level, *args)
+                for ga, xr in zip(gas, xregs):
+                    future = executor.submit(ga.compute_forecasts, h, model, xr, level, *args)
                     futures.append(future)
                 values, keys = list(zip(*[f.result() for f in futures]))
                 keys = keys[0]
