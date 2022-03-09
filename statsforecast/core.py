@@ -168,8 +168,14 @@ class StatsForecast:
                 model, *args = _as_tuple(model_args)
                 model_name = _build_forecast_name(model, *args)
                 futures = []
-                for ga in gas:
-                    future = executor.submit(ga.compute_forecasts, h, model, xreg, level, *args)
+                for i, ga in enumerate(gas):
+                    if xreg is not None:
+                        xreg_start = i * h * len(ga)
+                        xreg_end = (i+1) * h * len(ga)
+                        xreg_ =  xreg[xreg_start:xreg_end]
+                    else:
+                        xreg_ = xreg
+                    future = executor.submit(ga.compute_forecasts, h, model, xreg_, level, *args)
                     futures.append(future)
                 values, keys = list(zip(*[f.result() for f in futures]))
                 keys = keys[0]
