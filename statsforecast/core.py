@@ -71,7 +71,7 @@ class GroupedArray:
         return out, keys
 
     def split(self, n_chunks):
-        return [self[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks)]
+        return [self[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks) if x.size]
 
 # Internal Cell
 def _prepare_df(df):
@@ -171,11 +171,14 @@ class StatsForecast:
                 for ga in gas:
                     future = executor.submit(ga.compute_forecasts, h, model, xreg, level, *args)
                     futures.append(future)
-                model_forecasts = np.hstack([f.result() for f in futures])
-                if isinstance(model_forecasts, dict):
-                    for k, v in model_forecasts.items():
-                        fcsts[f'{model_name}_{k}'] = v
+                values, keys = list(zip(*[f.result() for f in futures]))
+                keys = keys[0]
+                if keys is not None:
+                    values = np.vstack(values)
+                    for j, key in enumerate(keys):
+                        fcsts[f'{model_name}_{key}'] = values[:, j]
                 else:
-                    fcsts[model_name] = model_forecasts
+                    values = np.hstack(values)
+                    fcsts[model_name] = values
                 logger.info(f'Computed forecasts for {model_name}.')
         return fcsts
