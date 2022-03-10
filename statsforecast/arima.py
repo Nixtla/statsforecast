@@ -2344,7 +2344,7 @@ class AutoARIMA:
         ----------
         h: int
             Number of periods for forecasting.
-        X: array-like of shape (n, n_x) optional (default=None)
+        X: array-like of shape (h, n_x) optional (default=None)
             Future exogenous variables.
         level: int
             Confidence level for prediction intervals.
