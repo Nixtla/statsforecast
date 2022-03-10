@@ -8,7 +8,7 @@ import os
 import warnings
 from collections import namedtuple
 from functools import partial
-from typing import Optional, Dict
+from typing import Optional, Dict, Union, Tuple
 
 import numpy as np
 import pandas as pd
@@ -2103,45 +2103,45 @@ class AutoARIMA:
     D: int optional (default None)
         Order of seasonal-differencing.
         If missing, will choose a value based on `season_test`.
-    max_p: int
+    max_p: int (default 5)
         Maximum value of p.
-    max_q: int
+    max_q: int (default 5)
         Maximum value of q.
-    max_P: int
+    max_P: int (default 2)
         Maximum value of P.
-    max_Q: int
+    max_Q: int (default 2)
         Maximum value of Q.
-    max_order: int
+    max_order: int (default 5)
         Maximum value of p+q+P+Q if model selection is not stepwise.
-    max_d: int
+    max_d: int (default 2)
         Maximum number of non-seasonal differences
-    max_D: int
+    max_D: int (default 1)
         Maximum number of seasonal differences
-    start_p: int
+    start_p: int (default 2)
         Starting value of p in stepwise procedure.
-    start_q: int
+    start_q: int (default 2)
         Starting value of q in stepwise procedure.
-    start_P: int
+    start_P: int (default 1)
         Starting value of P in stepwise procedure.
-    start_Q: int
+    start_Q: int (default 1)
         Starting value of Q in stepwise procedure.
-    stationary: bool
-        If TRUE, restricts search to stationary models.
-    seasonal: bool
-        If FALSE, restricts search to non-seasonal models.
-    ic: str
+    stationary: bool (default False)
+        If True, restricts search to stationary models.
+    seasonal: bool (default True)
+        If False, restricts search to non-seasonal models.
+    ic: str (default 'aicc')
         Information criterion to be used in model selection.
-    stepwise: bool
-        If TRUE, will do stepwise selection (faster).
+    stepwise: bool (default True)
+        If True, will do stepwise selection (faster).
         Otherwise, it searches over all models.
         Non-stepwise selection can be very slow,
         especially for seasonal models.
-    nmodels: int
+    nmodels: int (default 94)
         Maximum number of models considered in the stepwise search.
-    trace: bool
-        If TRUE, the list of ARIMA models considered will be reported.
+    trace: bool (default False)
+        If True, the list of ARIMA models considered will be reported.
     approximation: bool optional (default None)
-        If TRUE, estimation is via conditional sums of squares
+        If True, estimation is via conditional sums of squares
         and the information criteria used for model
         selection are approximated.
         The final model is still computed using
@@ -2158,15 +2158,15 @@ class AutoARIMA:
         An integer value indicating how many observations
         to use in model selection.
         The last truncate values of the series are
-        used to select a model when truncate is not NULL
-        and approximation=TRUE.
-        All observations are used if either truncate=NULL
-        or approximation=FALSE.
-    test: str
+        used to select a model when truncate is not None
+        and approximation=True.
+        All observations are used if either truncate=None
+        or approximation=False.
+    test: str (default 'kpss')
         Type of unit root test to use. See ndiffs for details.
     test_kwargs: str optional (default None)
         Additional arguments to be passed to the unit root test.
-    seasonal_test: str
+    seasonal_test: str (default 'seas')
         This determines which method is used to select the number
         of seasonal differences.
         The default method is to use a measure of seasonal
@@ -2175,32 +2175,32 @@ class AutoARIMA:
     seasonal_test_kwargs: dict optional (default None)
         Additional arguments to be passed to the seasonal
         unit root test. See nsdiffs for details.
-    allowdrift: bool
-        If TRUE, models with drift terms are considered.
-    allowmean: bool
-        If TRUE, models with a non-zero mean are considered.
-    blambda: float
+    allowdrift: bool (default True)
+        If True, models with drift terms are considered.
+    allowmean: bool (default True)
+        If True, models with a non-zero mean are considered.
+    blambda: float optional (default None)
         Box-Cox transformation parameter.
         If lambda="auto", then a transformation is automatically
         selected using BoxCox.lambda.
-        The transformation is ignored if NULL.
+        The transformation is ignored if None.
         Otherwise, data transformed before model is estimated.
-    biasadj: bool
+    biasadj: bool (default False)
         Use adjusted back-transformed mean for Box-Cox transformations.
         If transformed data is used to produce forecasts and fitted values,
         a regular back transformation will result in median forecasts.
-        If biasadj is TRUE, an adjustment will be made to produce
+        If biasadj is True, an adjustment will be made to produce
         mean forecasts and fitted values.
-    parallel: bool
-        If TRUE and stepwise = FALSE, then the specification search
+    parallel: bool (default False)
+        If True and stepwise = False, then the specification search
         is done in parallel.
         This can give a significant speedup on multicore machines.
-    num_cores: int
+    num_cores: int (default 2)
         Allows the user to specify the amount of parallel processes to be used
-        if parallel = TRUE and stepwise = FALSE.
-        If NULL, then the number of logical cores is
+        if parallel = True and stepwise = False.
+        If None, then the number of logical cores is
         automatically detected and all available cores are used.
-    period: int
+    period: int (default 1)
         Number of observations per unit of time.
         For example 24 for Hourly data.
 
@@ -2337,7 +2337,7 @@ class AutoARIMA:
         return self
 
     def predict(self, h: int, X: Optional[np.ndarray] = None,
-                level: Optional[int] = None):
+                level: Optional[Union[int, Tuple[int]]] = None):
         """Forecast future values using a fitted AutoArima.
 
         Parameters
@@ -2358,10 +2358,10 @@ class AutoARIMA:
             level is not None.
         """
         forecast = forecast_arima(self.model_, h=h, xreg=X,
-                                  level=(level,) if level is not None else level)
+                                  level=(level,) if isinstance(level, int) else level)
 
         if level is not None:
-            lo = forecast['lower'].values
+            lo = np.flip(forecast['lower'].values)
             hi = forecast['upper'].values
 
             return forecast['mean'], np.hstack([lo, hi])
