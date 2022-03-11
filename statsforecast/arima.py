@@ -2360,10 +2360,12 @@ class AutoARIMA:
         forecast = forecast_arima(self.model_, h=h, xreg=X,
                                   level=(level,) if isinstance(level, int) else level)
 
+        mean = pd.DataFrame({'mean': forecast['mean']})
+
         if level is not None:
-            lo = np.flip(forecast['lower'].values)
-            hi = forecast['upper'].values
+            lo = forecast['lower'].iloc[:,::-1].add_prefix('lo_')
+            hi = forecast['upper'].add_prefix('hi_')
 
-            return forecast['mean'], np.hstack([lo, hi])
+            return pd.concat([lo, mean, hi], 1)
 
-        return forecast['mean']
+        return mean
