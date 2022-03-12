@@ -16,21 +16,21 @@
 [![docs](https://img.shields.io/website-up-down-green-red/http/nixtla.github.io/statsforecast.svg?label=docs)](https://nixtla.github.io/statsforecast/)  
     
 **StatsForecast** offers a collection of widely used univariate time series forecasting models, including exponential smoothing and automatic `ARIMA` modeling optimized for high performance using `numba`.
-
-[Getting started](#%F0%9F%A7%AC%20Getting%20Started) •
-[Installation](#💻-installation)
 </div>
 
 ## 🔥 Features
 
-* Fastest and most accurate `auto_arima` in `Python` and `R` (for the moment...).
-* **New! [2022-03-01]**: Inclusion of `exogenous variables`.
-* **New! [2022-03-07]**: Inclusion of `prediction intervals`.
+* Fastest and most accurate `auto_arima` in `Python` and `R`.
+* **New!**: Good Ol' sklearn syntax with `AutoARIMA().fit(y).predict(h=7)`.
+* **New!**: Inclusion of `exogenous variables`.
+* **New!**: Inclusion of `prediction intervals`.
 * Out of the box implementation of other classical models and benchmarks like `exponential smoothing`, `croston`, `sesonal naive`, `random walk with drift` and `tbs`.
 * 20x faster than `pmdarima`.
 * 1.5x faster than `R`.
 * 500x faster than `Prophet`. 
 * Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
+
+Missing something? Please open an issue or write us in [![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 
 ## 📖 Why? 
 
