@@ -2390,8 +2390,6 @@ class AutoARIMA:
 
         Parameters
         ----------
-        X: array-like of shape (n, n_x) optional (default=None)
-            Exogenous variables used to fit AutoArima.
         level: int
             Confidence level for prediction intervals.
 
