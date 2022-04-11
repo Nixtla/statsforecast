@@ -2122,6 +2122,8 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
             if 'intercept' in coef.columns:
                 coef = coef.rename(columns={'intercept': 'mean'})
             print(coef)
+    else:
+        print('This model does not have coefficients, be sure its properly trained.')
     print(f'\nsigma^2 = {round(model["sigma2"], ndigits=digits)}', end='')
     if model['loglik'] is not None:
         print(f': log likelihood = {model["loglik"]:.2f}', end='')
