@@ -147,7 +147,7 @@ def croston_classic(X, h, future_xreg):
 @njit
 def croston_sba(X, h, future_xreg):
     y = X[:, 0] if X.ndim == 2 else X
-    return 0.95 * croston_classic(y, h)
+    return 0.95 * croston_classic(y, h, future_xreg)
 
 
 def croston_optimized(X, h, future_xreg):
