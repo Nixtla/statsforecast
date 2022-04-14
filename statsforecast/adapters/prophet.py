@@ -11,13 +11,13 @@ import pandas as pd
 try:
     from prophet import Prophet
 except ModuleNotFoundError as e:
-        msg = (
-            '{e}. To use prophet adapters you have to install '
-            'prophet. Please run `pip install prophet`. '
-            'Note that it is recommended to install prophet '
-            'using conda environments due to dependencies.'
-        )
-        raise ModuleNotFoundError(msg) from e
+    msg = (
+        '{e}. To use prophet adapters you have to install '
+        'prophet. Please run `pip install prophet`. '
+        'Note that it is recommended to install prophet '
+        'using conda environments due to dependencies.'
+    )
+    raise ModuleNotFoundError(msg) from e
 from ..arima import AutoARIMA
 
 # Cell
