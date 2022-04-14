@@ -7,7 +7,6 @@ dependencies:
   - numba
   - numpy
   - pandas
-  - prophet
   - pip
   - scipy
   - statsmodels
