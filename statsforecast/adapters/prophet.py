@@ -9,7 +9,7 @@ from copy import deepcopy
 import numpy as np
 import statsmodels.api as sm
 import pandas as pd
-if sys.version_info != (3, 6) or sys.platform not in ['win32', 'cygwin']:
+if sys.version_info != (3, 6) or (sys.platform not in ['win32', 'cygwin']):
     try:
         from prophet import Prophet
     except ModuleNotFoundError as e:
@@ -20,7 +20,7 @@ if sys.version_info != (3, 6) or sys.platform not in ['win32', 'cygwin']:
             'using conda environments due to dependencies.'
         )
         raise ModuleNotFoundError(msg) from e
-elif sys.version_info == (3, 6) and sys.platform in ['win32', 'cygwin']:
+elif sys.version_info == (3, 6) and (sys.platform in ['win32', 'cygwin']):
     try:
         from fbprophet import Prophet
     except ModuleNotFoundError as e:
