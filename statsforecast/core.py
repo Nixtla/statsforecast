@@ -5,7 +5,7 @@ __all__ = ['StatsForecast']
 # Cell
 import inspect
 import logging
-from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Pool
 from functools import partial
 
 import numpy as np
@@ -164,15 +164,15 @@ class StatsForecast:
             from itertools import repeat
 
             xregs = repeat(None)
-        with ProcessPoolExecutor(self.n_jobs) as executor:
+        with Pool(self.n_jobs) as executor:
             for model_args in self.models:
                 model, *args = _as_tuple(model_args)
                 model_name = _build_forecast_name(model, *args)
                 futures = []
                 for ga, xr in zip(gas, xregs):
-                    future = executor.submit(ga.compute_forecasts, h, model, xr, level, *args)
+                    future = executor.apply_async(ga.compute_forecasts, (h, model, xr, level, *args,))
                     futures.append(future)
-                values, keys = list(zip(*[f.result() for f in futures]))
+                values, keys = list(zip(*[f.get() for f in futures]))
                 keys = keys[0]
                 if keys is not None:
                     values = np.vstack(values)
