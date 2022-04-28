@@ -5,7 +5,6 @@ __all__ = ['StatsForecast']
 # Cell
 import inspect
 import logging
-from multiprocessing import Pool
 from functools import partial
 
 import numpy as np
@@ -110,11 +109,12 @@ def _as_tuple(x):
 # Cell
 class StatsForecast:
 
-    def __init__(self, df, models, freq, n_jobs=1):
+    def __init__(self, df, models, freq, n_jobs=1, ray_address=None):
         self.ga, self.uids, self.last_dates = _grouped_array_from_df(df)
         self.models = models
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
+        self.ray_address = ray_address
 
     def forecast(self, h, xreg=None, level=None):
         if xreg is not None:
@@ -164,7 +164,22 @@ class StatsForecast:
             from itertools import repeat
 
             xregs = repeat(None)
-        with Pool(self.n_jobs) as executor:
+
+        if self.ray_address is not None:
+            try:
+                from ray.util.multiprocessing import Pool
+            except ModuleNotFoundError as e:
+                msg = (
+                    '{e}. To use a ray cluster you have to install '
+                    'ray. Please run `pip install ray`. '
+                )
+                raise ModuleNotFoundError(msg) from e
+            kwargs = dict(ray_address=self.ray_address)
+        else:
+            from multiprocessing import Pool
+            kwargs = dict()
+
+        with Pool(self.n_jobs, **kwargs) as executor:
             for model_args in self.models:
                 model, *args = _as_tuple(model_args)
                 model_name = _build_forecast_name(model, *args)
