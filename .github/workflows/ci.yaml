@@ -86,4 +86,4 @@ jobs:
         run: pip3 install ".[ray]"
 
       - name: Run ray
-        run: python action_files/test_ray.py
+        run: python3 action_files/test_ray.py
