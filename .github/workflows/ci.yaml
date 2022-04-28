@@ -83,7 +83,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install library with ray
-        run: pip install ".[ray]"
+        run: pip3 install ".[ray]"
 
       - name: Run ray
         run: python action_files/test_ray.py
