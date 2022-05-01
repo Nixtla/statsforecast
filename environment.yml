@@ -13,3 +13,4 @@ dependencies:
   - tabulate
   - pip:
     - nbdev
+    - tqdm
