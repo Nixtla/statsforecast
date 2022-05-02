@@ -24,6 +24,7 @@
 * **New!**: Good Ol' sklearn syntax with `AutoARIMA().fit(y).predict(h=7)`.
 * **New!**: Inclusion of `exogenous variables`.
 * **New!**: Inclusion of `prediction intervals`.
+* **New!**: Integration with [ray](https://github.com/ray-project/ray).
 * Out of the box implementation of other classical models and benchmarks like `exponential smoothing`, `croston`, `sesonal naive`, `random walk with drift` and `tbs`.
 * 20x faster than `pmdarima`.
 * 1.5x faster than `R`.
