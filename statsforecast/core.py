@@ -130,10 +130,13 @@ class StatsForecast:
             last_date_f = lambda x: np.arange(x + 1, x + 1 + h, dtype=self.last_dates.dtype)
         else:
             last_date_f = lambda x: pd.date_range(x + self.freq, periods=h, freq=self.freq)
-        dates = np.hstack([
-            last_date_f(last_date)
-            for last_date in self.last_dates
-        ])
+        if len(np.unique(self.last_dates)) == 1:
+            dates = np.tile(last_date_f(self.last_dates[0]), len(self.ga))
+        else:
+            dates = np.hstack([
+                last_date_f(last_date)
+                for last_date in self.last_dates
+            ])
         idx = pd.Index(np.repeat(self.uids, h), name='unique_id')
         return pd.DataFrame({'ds': dates, **fcsts}, index=idx)
 
