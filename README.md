@@ -21,15 +21,15 @@
 ## 🔥 Features
 
 * Fastest and most accurate `auto_arima` in `Python` and `R`.
+* **New!**: Distributed compuration in clusters with [ray](https://github.com/ray-project/ray).
 * **New!**: Good Ol' sklearn syntax with `AutoARIMA().fit(y).predict(h=7)`.
-* **New!**: Inclusion of `exogenous variables`.
-* **New!**: Inclusion of `prediction intervals`.
-* **New!**: Integration with [ray](https://github.com/ray-project/ray).
-* Out of the box implementation of other classical models and benchmarks like `exponential smoothing`, `croston`, `sesonal naive`, `random walk with drift` and `tbs`.
+* **New!**: Inclusion of `exogenous variables` and `prediction intervals`.
+* Out of the box implementation of `exponential smoothing`, `croston`, `sesonal naive`, `random walk with drift` and `tbs`.
 * 20x faster than `pmdarima`.
 * 1.5x faster than `R`.
 * 500x faster than `Prophet`. 
 * Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
+* 1,000,000 series in [30 min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray) with [ray](https://github.com/ray-project/ray).
 
 Missing something? Please open an issue or write us in [![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 
