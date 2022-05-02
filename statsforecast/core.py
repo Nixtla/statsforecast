@@ -6,6 +6,7 @@ __all__ = ['StatsForecast']
 import inspect
 import logging
 from functools import partial
+from os import cpu_count
 
 import numpy as np
 import pandas as pd
@@ -106,6 +107,31 @@ def _as_tuple(x):
         return x
     return (x,)
 
+# Internal Cell
+def _get_n_jobs(n_groups, n_jobs, ray_address):
+    if ray_address is not None:
+        logger.info(
+            'Using ray address,'
+            'using available resources insted of `n_jobs`'
+        )
+        try:
+            import ray
+        except ModuleNotFoundError as e:
+            msg = (
+                '{e}. To use a ray cluster you have to install '
+                'ray. Please run `pip install ray`. '
+            )
+            raise ModuleNotFoundError(msg) from e
+        if not ray.is_initialized():
+            ray.init(ray_address, ignore_reinit_error=True)
+        actual_n_jobs = int(ray.available_resources()['CPU'])
+    else:
+        if n_jobs == -1 or (n_jobs is None):
+            actual_n_jobs = cpu_count()
+        else:
+            actual_n_jobs = n_jobs
+    return min(n_groups, actual_n_jobs)
+
 # Cell
 class StatsForecast:
 
@@ -113,7 +139,7 @@ class StatsForecast:
         self.ga, self.uids, self.last_dates = _grouped_array_from_df(df)
         self.models = models
         self.freq = pd.tseries.frequencies.to_offset(freq)
-        self.n_jobs = n_jobs
+        self.n_jobs = _get_n_jobs(len(self.ga), n_jobs, ray_address)
         self.ray_address = ray_address
 
     def forecast(self, h, xreg=None, level=None):
@@ -170,7 +196,7 @@ class StatsForecast:
                 from ray.util.multiprocessing import Pool
             except ModuleNotFoundError as e:
                 msg = (
-                    '{e}. To use a ray cluster you have to install '
+                    f'{e}. To use a ray cluster you have to install '
                     'ray. Please run `pip install ray`. '
                 )
                 raise ModuleNotFoundError(msg) from e
