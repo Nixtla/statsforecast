@@ -2419,7 +2419,7 @@ class AutoARIMA:
         mean = pd.DataFrame({'mean': forecast['mean']})
 
         if level is not None:
-            lo = forecast['lower'].iloc[:,::-1].add_prefix('lo_')
+            lo = forecast['lower'].add_prefix('lo_')
             hi = forecast['upper'].add_prefix('hi_')
 
             return pd.concat([lo, mean, hi], 1)
@@ -2451,7 +2451,7 @@ class AutoARIMA:
             lo = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
                 columns=[f'lo_{l}%' for l in _level],
-            ).iloc[:,::-1]
+            )
             hi = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) + quantiles * se.reshape(-1, 1),
                 columns=[f'hi_{l}%' for l in _level],
