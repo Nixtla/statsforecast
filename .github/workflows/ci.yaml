@@ -83,11 +83,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install library with ray
-        run: pip3 install ".[ray]"
+        run: pip3 install ".[ray]" pytest
 
       - name: Windows redis
         if: ${{ matrix.os == 'windows-latest' }}
         run: pip3 install redis #https://github.com/ray-project/ray/pull/23991, remove later
 
       - name: Run ray
-        run: python3 action_files/test_ray.py
+        run: pytest action_files
