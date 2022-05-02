@@ -2450,7 +2450,7 @@ class AutoARIMA:
 
             lo = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
-                columns=[f'lo_{l}%' for l in _level],
+                columns=[f'lo_{l}%' for l in reversed(_level)],
             )
             hi = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) + quantiles * se.reshape(-1, 1),
