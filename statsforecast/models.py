@@ -269,6 +269,6 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
         return fcst['mean']
     return {
         'mean': fcst['mean'],
-        **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in level},
+        **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
         **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
     }

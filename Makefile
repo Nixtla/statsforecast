@@ -35,3 +35,10 @@ dist: clean
 
 clean:
 	rm -rf dist
+
+nbdev_flow:
+	nbdev_install_git_hooks && nbdev_build_lib \
+				&& nbdev_build_docs \
+				&& nbdev_clean_nbs --clear_all True --fname "nbs/*" \
+				&& nbdev_diff_nbs \
+				&& nbdev_test_nbs --timing
