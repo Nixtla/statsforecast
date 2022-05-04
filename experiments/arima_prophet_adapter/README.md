@@ -1,8 +1,22 @@
 # AutoARIMAProphet experiments
 
-Prophet is one of the most widely used time series forecasting models in the world. Its GitHub repository has more than 14 thousand stars and more than a hundred repositories depending on the implementation. However, in many scenarios, it does not offer good performance in terms of time and accuracy. This is highly relevant when you want to forecast thousands of time series. The success of Prophet depends to a large extent on its usability, for example, adding exogenous and calendar variables is almost trivial. For this purpose, we have created a Prophet API adapter to use Prophet's functionalities but with a faster and more accurate model such as AutoARIMA. Just import this adapter and replace it with the Prophet class to start using AutoARIMA inside a pipeline made for Prophet.
+[Prophet](https://github.com/facebook/prophet) is one of the most widely used time series forecasting models in the world. Its GitHub repository has more than 14 thousand stars and more than a hundred repositories depending on the implementation. However, in many scenarios, [it does not offer good performance in terms of time and accuracy](https://analyticsindiamag.com/why-are-people-bashing-facebook-prophet/). This is highly relevant when you want to forecast thousands of time series. The success of Prophet depends to a large extent on its usability, for example, [adding exogenous and calendar variables is almost trivial](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html). For this purpose, we have created a Prophet API adapter to use Prophet's functionalities but with a faster and more accurate model such as AutoARIMA. Just import this adapter and replace it with the Prophet class to start using AutoARIMA inside a pipeline made for Prophet.
 
-With this simple change, a reduction of 24% in MAPE, 22% in SMAPE, and 77% in time can be achieved. 
+```python
+from prophet import Prophet
+from statsforecast.adapters.prophet import AutoARIMAProphet
+
+# BEFORE
+m = Prophet()
+# AFTER
+m = AutoARIMAProphet()
+m.fit(df)
+future = m.make_future_dataframe(365)
+forecast = m.predict(future)
+fig = m.plot(forecast)
+```
+
+With this simple change, a **reduction of 24% in MAPE, 22% in SMAPE, and 77% in time can be achieved**. 
 
 # Experiment details
 
