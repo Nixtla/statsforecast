@@ -104,6 +104,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "guerda",
+      "name": "Philip Gillißen",
+      "avatar_url": "https://avatars.githubusercontent.com/u/230782?v=4",
+      "profile": "https://github.com/guerda",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
