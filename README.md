@@ -129,6 +129,8 @@ pip install -e .
 
 ## 🧬 How to use
 
+The following example needs `ipython` and `matplotlib` as additional packages. If not installed, install it via your preferred method, e.g. `pip install ipython matplotlib`.
+
 ```python
 import numpy as np
 import pandas as pd
