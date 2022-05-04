@@ -1,4 +1,16 @@
-# ARIMA experiments
+# AutoARIMAProphet experiments
+
+Prophet is one of the most widely used time series forecasting models in the world. Its GitHub repository has more than 14 thousand stars and more than a hundred repositories depending on the implementation. However, in many scenarios, it does not offer good performance in terms of time and accuracy. This is highly relevant when you want to forecast thousands of time series. The success of Prophet depends to a large extent on its usability, for example, adding exogenous and calendar variables is almost trivial. For this purpose, we have created a Prophet API adapter to use Prophet's functionalities but with a faster and more accurate model such as AutoARIMA. Just import this adapter and replace it with the Prophet class to start using AutoARIMA inside a pipeline made for Prophet.
+
+With this simple change, a reduction of 24% in MAPE, 22% in SMAPE, and 77% in time can be achieved. 
+
+# Experiment details
+
+To validate the Prophet adapter, we design a pipeline considering the M3, M4, and Tourism datasets, widely used to create benchmarks. The pipeline finds the best hyperparameters of Prophet by doing cross-validation. We simply replace Prophet with AutoARIMAProphet in the pipeline without performing hyperparameter optimization (AutoARIMA performs it inside the model).
+
+# Results 
+
+The following tables show the results for each dataset (time in minutes). 
 
 ## M3
 
