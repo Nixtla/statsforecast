@@ -3,22 +3,37 @@
 __all__ = ['AutoARIMAProphet']
 
 # Cell
+import sys
 from copy import deepcopy
 
 import numpy as np
 import statsmodels.api as sm
 import pandas as pd
-try:
-    from prophet import Prophet
-except ModuleNotFoundError as e:
-    msg = (
-        '{e}. To use prophet adapters you have to install '
-        'prophet. Please run `pip install prophet`. '
-        'Note that it is recommended to install prophet '
-        'using conda environments due to dependencies.'
-    )
-    raise ModuleNotFoundError(msg) from e
 from ..arima import AutoARIMA
+
+if sys.version_info.minor != 6 or (sys.platform not in ['win32', 'cygwin']):
+    try:
+        from prophet import Prophet
+    except ModuleNotFoundError as e:
+        msg = (
+            '{e}. To use prophet adapters you have to install '
+            'prophet. Please run `pip install prophet`. '
+            'Note that it is recommended to install prophet '
+            'using conda environments due to dependencies.'
+        )
+        raise ModuleNotFoundError(msg) from e
+elif sys.version_info.minor == 6 and (sys.platform in ['win32', 'cygwin']):
+    try:
+        from fbprophet import Prophet
+    except ModuleNotFoundError as e:
+        msg = (
+            '{e}. To use prophet adapters you have to install '
+            'fbprophet. Please run `pip install fbprophet`. '
+            'Note that it is recommended to install prophet '
+            'using conda environments due to dependencies.'
+        )
+        raise ModuleNotFoundError(msg) from e
+
 
 # Cell
 class AutoARIMAProphet(Prophet):
