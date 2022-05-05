@@ -16,7 +16,7 @@ forecast = m.predict(future)
 fig = m.plot(forecast)
 ```
 
-With this simple change, a **reduction of 24% in MAPE, 22% in SMAPE, and 77% in time can be achieved**. 
+With this simple change, a **reduction of 17% in MAPE, 15% in SMAPE can be achieved**. Also, `AutoARIMAProphet` is **31x** faster.
 
 # Experiment details
 
@@ -25,6 +25,9 @@ To validate the Prophet adapter, we design a pipeline considering the M3, M4, an
 # Results 
 
 The following tables show the results for each dataset (time in minutes). 
+
+![MAPE](./mape-comparison.png)
+![time](./time-comparison.png)
 
 ## M3
 
