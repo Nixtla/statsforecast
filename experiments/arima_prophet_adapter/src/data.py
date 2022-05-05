@@ -12,6 +12,19 @@ dict_datasets = {
 }
 
 def get_data(directory: str, dataset: str, group: str, train: bool = True):
+    if dataset == 'PeytonManning':
+        df = pd.read_csv('https://raw.githubusercontent.com/facebook/prophet/main/examples/example_wp_log_peyton_manning.csv')
+        df.insert(0, 'unique_id', 'peyton_manning')
+        horizon = 365
+        freq = 'D'
+        seasonality = 7
+        df_test = df.tail(horizon)
+        df_train = df.drop(df_test.index) 
+
+        if train:
+            return df_train, horizon, freq, seasonality
+        return df_test, horizon, freq, seasonality
+
     if dataset not in dict_datasets.keys():
         raise Exception(f'dataset {dataset} not found')
 

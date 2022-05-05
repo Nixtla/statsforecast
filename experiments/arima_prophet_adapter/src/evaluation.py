@@ -40,7 +40,7 @@ def evaluate(lib: str, dataset: str, group: str):
 if __name__ == '__main__':
     groups = ['Yearly', 'Quarterly', 'Monthly', 'Other', 'Daily', 'Hourly', 'Weekly']
     lib = ['arima_prophet_adapter', 'prophet']
-    datasets = ['M3', 'Tourism', 'M4']
+    datasets = ['M3', 'Tourism', 'M4', 'PeytonManning']
     evaluation = [evaluate(lib, dataset, group) for lib, group in product(lib, groups) for dataset in datasets]
     evaluation = [eval_ for eval_ in evaluation if eval_ is not None]
     evaluation = pd.concat(evaluation)
