@@ -1,9 +1,8 @@
-# For most cases AutoArima is more accurate and faster than Prophet. 
+# AutoArima is faster and more accurate than FB-Prophet in most cases.
 
-We tested on more than 100k benchmark series and proved that you can get at 31x time reduction with improvemnts of 17% in MAPE and 15% in SMAPE. 
+We benchmarked AutoARIMA on more than 100K series and show that you can improve MAPE and sMAPE forecast accuracy of 17% and 15% with 31x times less computation than FB-Prophet. 
 
-
-Just change this two lines and see for yourself.
+Just try this two lines and verify it for yourself.
 
 ```python
 from prophet import Prophet
