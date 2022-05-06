@@ -13,7 +13,7 @@ model = Prophet()
 
 # AFTER (fast and accurate)
 model = AutoARIMAProphet()
-model.fit(df)
+model = model.fit(df)
 future = model.make_future_dataframe(365)
 forecast = model.predict(future)
 fig = model.plot(forecast)
@@ -26,18 +26,17 @@ fig = model.plot(forecast)
 
 # Background
 
-[Prophet](https://github.com/facebook/prophet) is one of the most widely used time series forecasting models in the world. Its GitHub repository has more than 14 thousand stars and more than a hundred repositories depending on the implementation. However, in many scenarios, [it does not offer good performance in terms of time and accuracy](https://analyticsindiamag.com/why-are-people-bashing-facebook-prophet/). This is highly relevant when you want to forecast thousands of time series. The success of Prophet depends to a large extent on its usability, for example, [adding exogenous and calendar variables is almost trivial](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html). 
+[FB-Prophet](https://github.com/facebook/prophet) is one of the world's most used time series forecasting models. Its GitHub repository has more than 14 thousand stars, and more than a hundred repositories depend on it. However, in many scenarios, [FB-Prophet does not offer good performance in terms of time and accuracy.](https://analyticsindiamag.com/why-are-people-bashing-facebook-prophet/) This lacking performance suggests that the FB-Prophet's success can be explained mainly by its usability. For example, [adding exogenous and calendar variables is almost trivial.](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html)
 
-Trying to contribute to the forecasting community we created a Prophet API adapter that lets you use Prophet's useful functionalities without the bayesian approach. Just import this adapter and replace it with the Prophet class to start using AutoARIMA in your exsisting pipelines.
-
+To contribute to the forecasting community, we created a FB-Prophet API adapter that lets you use Prophet's useful methods without accuracy and computational downsides. Just import this AutoARIMAProphet adapter and replace the Prophet class to start using AutoARIMA in any of your existing pipelines.
 
 # Empirical validation
 
-To validate the Prophet adapter, we design a pipeline considering the M3, M4, and Tourism datasets. This data sets are standar benchmarks in the forecasting practice. The pipeline finds the best hyperparameters of Prophet by doing cross-validation. We simply replace Prophet with AutoARIMAProphet in the pipeline without performing hyperparameter optimization (AutoARIMA performs it inside the model).
+To validate the AutoARIMAProphet adapter, we designed a pipeline considering the M3, M4, and Tourism datasets (standard benchmarks in the forecasting practice). The pipeline automatically selects ARIMA's parameters with the AIC criterion and selects Prophet's parameters with time-series cross-validation.
 
 # Results 
 
-The following tables show the results (mape, smape and time) for each dataset (time in minutes). 
+The following tables show the MAPE, sMAPE and time (in minutes) results for each dataset.
 
 ## M3
 
