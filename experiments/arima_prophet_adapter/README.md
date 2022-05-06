@@ -114,9 +114,8 @@ conda activate arima_prophet
 5. Evaluate the results using `python -m src.evaluation`.
 
 ## Conclusion's
-* Don't believe everything you read on TDS
-* Always use benchmarks when forecasting
-* Quick and easy results are sometimes [misleading](https://en.wikipedia.org/wiki/Streetlight_effect) 
+* Be mindful on what you read on Towards Data Science.
+* Always use strong baselines when forecasting
+* Quick and easy results are sometimes [misleading](https://en.wikipedia.org/wiki/Streetlight_effect)
 * Simpler models are sometimes [better](https://en.wikipedia.org/wiki/Occam%27s_razor)
-* Facebooks prophet might be many things, but its defenelty not a model for forecasting time series at scale. 
-
+* Facebook's Prophet might be many things, but its definitely not a model for forecasting time series at scale.
