@@ -100,9 +100,9 @@ The following tables show the MAPE, sMAPE and time (in minutes) AutoARIMA improv
 ## Reproducibility
 
 
-1. Create a conda environment using the `arima_prophet.yml` file.
+1. Create a conda environment arima_prophet using the `environment.yml` file.
   ```shell
-  conda env create -f arima_prophet.yml
+  conda env create -f environment.yml
   ```
 
 3. Activate the conda environment using 
