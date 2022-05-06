@@ -1,6 +1,6 @@
 # AutoArima is faster and more accurate than FB-Prophet in most cases.
 
-We benchmarked on more than 100K series and show that you can improve _MAPE_ and _sMAPE_ forecast accuracy by _17%_ and _15%_ with _37x_ times less computational time.
+We benchmarked on more than 100K series and show that you can improve _MAPE_ and _sMAPE_ forecast accuracy by _17%_ and _15%_ with _37x_  less computational time.
 
 Just try this two lines and verify it for yourself.
 
