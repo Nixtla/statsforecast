@@ -94,6 +94,9 @@ The following tables show the MAPE, sMAPE and time (in minutes) AutoARIMA improv
 | Yearly      | time     | **0.32**                | 21.5      | -98.51%                  |
 
 
+![#f03c15](https://via.placeholder.com/15/f03c15/000000?text=+) `FALTA PEYTON`
+
+
 ## Reproducibility
 
 
