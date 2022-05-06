@@ -124,8 +124,8 @@ For `M4`, the groups are `Yearly`, `Monthly`, `Quarterly`, `Weekly`, `Daily`, an
 
 ## Conclusion's
 * Be mindful on what you read on Towards Data Science.
-* Always use strong baselines when forecasting
-* Quick and easy results are sometimes [misleading](https://en.wikipedia.org/wiki/Streetlight_effect)
-* Simpler models are sometimes [better](https://en.wikipedia.org/wiki/Occam%27s_razor)
+* Always use strong baselines when forecasting.
+* Quick and easy results are sometimes [misleading](https://en.wikipedia.org/wiki/Streetlight_effect).
+* Simpler models are sometimes [better](https://en.wikipedia.org/wiki/Occam%27s_razor).
 
 # Facebook's Prophet might be many things, but its definitely not a model for forecasting time series at scale.
