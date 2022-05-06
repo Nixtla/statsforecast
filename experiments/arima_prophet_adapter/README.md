@@ -36,11 +36,11 @@ To validate the AutoARIMAProphet adapter, we designed a pipeline considering the
 
 # Results 
 
-The following tables show the MAPE, sMAPE and time (in minutes) results for each dataset.
+The following tables show the MAPE, sMAPE and time (in minutes) AutoARIMA improvements on Prophet for each dataset.
 
 ## M3
 
-| frequency   | metric   | arima_prophet_adapter   |   prophet | %_reduction_vs_prophet   |
+| frequency   | metric   | AutoARIMAProphet adapter|   Prophet | %_reduction_vs_prophet   |
 |:------------|:---------|------------------------:|----------:|-------------------------:|
 | Monthly     | mape     | **21.19**               |     22.37 | -5.27%                   |
 | Monthly     | smape    | **15.17**               |     17.83 | -14.92%                  |
@@ -57,7 +57,7 @@ The following tables show the MAPE, sMAPE and time (in minutes) results for each
 
 ## M4
 
-| frequency   | metric   | arima_prophet_adapter   | prophet   | %_reduction_vs_prophet   |
+| frequency   | metric   | AutoARIMAProphet adapter|   Prophet | %_reduction_vs_prophet   |
 |:------------|:---------|------------------------:|----------:|-------------------------:|
 | Daily       | mape     | **3.97**                | 11.32     | -64.93%                  |
 | Daily       | smape    | **3.16**                | 9.05      | -65.08%                  |
@@ -81,7 +81,7 @@ The following tables show the MAPE, sMAPE and time (in minutes) results for each
 
 ## Tourism
 
-| frequency   | metric   | arima_prophet_adapter   | prophet   | %_reduction_vs_prophet   |
+| frequency   | metric   | AutoARIMAProphet adapter|   Prophet | %_reduction_vs_prophet   |
 |:------------|:---------|------------------------:|----------:|-------------------------:|
 | Monthly     | mape     | **21.63**               | 25.39     | -14.81%                  |
 | Monthly     | smape    | **20.63**               | 23.19     | -11.04%                  |
