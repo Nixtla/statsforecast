@@ -1,32 +1,43 @@
-# AutoARIMAProphet experiments
+# For most cases AutoArima is more accurate and faster than Prophet. 
 
-[Prophet](https://github.com/facebook/prophet) is one of the most widely used time series forecasting models in the world. Its GitHub repository has more than 14 thousand stars and more than a hundred repositories depending on the implementation. However, in many scenarios, [it does not offer good performance in terms of time and accuracy](https://analyticsindiamag.com/why-are-people-bashing-facebook-prophet/). This is highly relevant when you want to forecast thousands of time series. The success of Prophet depends to a large extent on its usability, for example, [adding exogenous and calendar variables is almost trivial](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html). For this purpose, we have created a Prophet API adapter to use Prophet's functionalities but with a faster and more accurate model such as AutoARIMA. Just import this adapter and replace it with the Prophet class to start using AutoARIMA inside a pipeline made for Prophet.
+We tested on more than 100k benchmark series and proved that you can get at 31x time reduction with improvemnts of 17% in MAPE and 15% in SMAPE. 
+
+
+Just change this two lines and see for yourself.
 
 ```python
 from prophet import Prophet
 from statsforecast.adapters.prophet import AutoARIMAProphet
 
-# BEFORE
+# BEFORE (slow)
 m = Prophet()
-# AFTER
+# AFTER (fast)
 m = AutoARIMAProphet()
 m.fit(df)
 future = m.make_future_dataframe(365)
 forecast = m.predict(future)
 fig = m.plot(forecast)
 ```
+# Results on M3,M4,Toursim and PeytonManning: 
 
-With this simple change, a **reduction of 17% in MAPE, 15% in SMAPE can be achieved**. Also, `AutoARIMAProphet` is **31x** faster.
+![comparison](./comparison.png)
 
-# Experiment details
 
-To validate the Prophet adapter, we design a pipeline considering the M3, M4, and Tourism datasets, widely used to create benchmarks. The pipeline finds the best hyperparameters of Prophet by doing cross-validation. We simply replace Prophet with AutoARIMAProphet in the pipeline without performing hyperparameter optimization (AutoARIMA performs it inside the model).
+
+# Background
+
+[Prophet](https://github.com/facebook/prophet) is one of the most widely used time series forecasting models in the world. Its GitHub repository has more than 14 thousand stars and more than a hundred repositories depending on the implementation. However, in many scenarios, [it does not offer good performance in terms of time and accuracy](https://analyticsindiamag.com/why-are-people-bashing-facebook-prophet/). This is highly relevant when you want to forecast thousands of time series. The success of Prophet depends to a large extent on its usability, for example, [adding exogenous and calendar variables is almost trivial](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html). 
+
+Trying to contribute to the forecasting community we created a Prophet API adapter that lets you use Prophet's useful functionalities without the bayesian approach. Just import this adapter and replace it with the Prophet class to start using AutoARIMA in your exsisting pipelines.
+
+
+# Empirical validation
+
+To validate the Prophet adapter, we design a pipeline considering the M3, M4, and Tourism datasets. This data sets are standar benchmarks in the forecasting practice. The pipeline finds the best hyperparameters of Prophet by doing cross-validation. We simply replace Prophet with AutoARIMAProphet in the pipeline without performing hyperparameter optimization (AutoARIMA performs it inside the model).
 
 # Results 
 
-The following tables show the results for each dataset (time in minutes). 
-
-![comparison](./comparison.png)
+The following tables show the results (mape, smape and time) for each dataset (time in minutes). 
 
 ## M3
 
@@ -91,3 +102,11 @@ The following tables show the results for each dataset (time in minutes).
 2. Activate the conda environment using `conda activate arima_prophet`.
 3. Run the experiments for each dataset and each model using `python -m src.experiment --dataset [dataset] --group [group] --model_name [model_name]`. For `M4`, the groups are `Yearly`, `Monthly`, `Quarterly`, `Weekly`, `Daily`, and `Hourly`. For `M3`, the groups are `Yearly`, `Monthly`, `Quarterly`, and `Other`. For `Tourism`, the groups are `Yearly`, `Monthly`, and `Quarterly`. Finally, for `PeytonManning` the group is `Daily`.
 4. Evaluate the results using `python -m src.evaluation`.
+
+## Conclusion's
+* Don't believe everything you read on TDS
+* Always use benchmarks when forecasting
+* Quick and easy results are sometimes [misleading](https://en.wikipedia.org/wiki/Streetlight_effect) 
+* Simpler models are sometimes [better](https://en.wikipedia.org/wiki/Occam%27s_razor)
+* Facebooks prophet might be many things, but its defenelty not a model for forecasting time series at scale. 
+
