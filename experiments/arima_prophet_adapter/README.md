@@ -101,17 +101,25 @@ The following tables show the MAPE, sMAPE and time (in minutes) AutoARIMA improv
 
 
 1. Create a conda environment using the `arima_prophet.yml` file.
-```shell
-conda env create -f arima_prophet.yml
-```
+  ```shell
+  conda env create -f arima_prophet.yml
+  ```
 
 3. Activate the conda environment using 
-```shell
-conda activate arima_prophet
-```
+  ```shell
+  conda activate arima_prophet
+  ```
 
-4. Run the experiments for each dataset and each model using `python -m src.experiment --dataset [dataset] --group [group] --model_name [model_name]`. For `M4`, the groups are `Yearly`, `Monthly`, `Quarterly`, `Weekly`, `Daily`, and `Hourly`. For `M3`, the groups are `Yearly`, `Monthly`, `Quarterly`, and `Other`. For `Tourism`, the groups are `Yearly`, `Monthly`, and `Quarterly`. Finally, for `PeytonManning` the group is `Daily`.
-5. Evaluate the results using `python -m src.evaluation`.
+4. Run the experiments for each dataset and each model using 
+  ```shell
+  python -m src.experiment --dataset [dataset] --group [group] --model_name [model_name]
+  ```
+For `M4`, the groups are `Yearly`, `Monthly`, `Quarterly`, `Weekly`, `Daily`, and `Hourly`. For `M3`, the groups are `Yearly`, `Monthly`, `Quarterly`, and `Other`. For `Tourism`, the groups are `Yearly`, `Monthly`, and `Quarterly`. Finally, for `PeytonManning` the group is `Daily`.
+
+5. Evaluate the results using
+  ```shell
+  python -m src.evaluation
+  ```
 
 ## Conclusion's
 * Be mindful on what you read on Towards Data Science.
