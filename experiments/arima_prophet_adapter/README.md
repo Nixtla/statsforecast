@@ -26,8 +26,7 @@ To validate the Prophet adapter, we design a pipeline considering the M3, M4, an
 
 The following tables show the results for each dataset (time in minutes). 
 
-![MAPE](./mape-comparison.png)
-![time](./time-comparison.png)
+![comparison](./comparison.png)
 
 ## M3
 
