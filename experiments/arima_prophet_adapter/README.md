@@ -8,14 +8,15 @@ Just try this two lines and verify it for yourself.
 from prophet import Prophet
 from statsforecast.adapters.prophet import AutoARIMAProphet
 
-# BEFORE (slow)
-m = Prophet()
-# AFTER (fast)
-m = AutoARIMAProphet()
-m.fit(df)
-future = m.make_future_dataframe(365)
-forecast = m.predict(future)
-fig = m.plot(forecast)
+# BEFORE (slow and innacurate)
+model = Prophet()
+
+# AFTER (fast and accurate)
+model = AutoARIMAProphet()
+model.fit(df)
+future = model.make_future_dataframe(365)
+forecast = model.predict(future)
+fig = model.plot(forecast)
 ```
 # Results on M3,M4,Toursim and PeytonManning: 
 
