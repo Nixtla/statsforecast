@@ -1,6 +1,6 @@
 # AutoArima is faster and more accurate than FB-Prophet in most cases.
 
-We benchmarked AutoARIMA on more than 100K series and show that you can improve MAPE and sMAPE forecast accuracy by 17% and 15% with 37x times less computation than FB-Prophet. 
+We benchmarked on more than 100K series and show that you can improve _MAPE_ and _sMAPE_ forecast accuracy by _17%_ and _15%_ with _37x_ times less computational time.
 
 Just try this two lines and verify it for yourself.
 
@@ -13,6 +13,7 @@ model = Prophet()
 
 # AFTER (fast and accurate)
 model = AutoARIMAProphet()
+
 model = model.fit(df)
 future = model.make_future_dataframe(365)
 forecast = model.predict(future)
@@ -28,11 +29,11 @@ fig = model.plot(forecast)
 
 [FB-Prophet](https://github.com/facebook/prophet) is one of the world's most used time series forecasting models. Its GitHub repository has more than 14 thousand stars, and more than a hundred repositories depend on it. However, in many scenarios, [FB-Prophet does not offer good performance in terms of time and accuracy.](https://analyticsindiamag.com/why-are-people-bashing-facebook-prophet/) This lacking performance suggests that the FB-Prophet's success can be explained mainly by its usability. For example, [adding exogenous and calendar variables is almost trivial.](https://facebook.github.io/prophet/docs/seasonality,_holiday_effects,_and_regressors.html)
 
-To contribute to the forecasting community, we created a FB-Prophet API adapter that lets you use Prophet's useful methods without accuracy and computational downsides. Just import this AutoARIMAProphet adapter and replace the Prophet class to start using AutoARIMA in any of your existing pipelines.
+To contribute to the forecasting community, we created a _FB-Prophet API adapter_ that lets you use Prophet's useful methods without accuracy and computational downsides. Just import this AutoARIMAProphet adapter and replace the Prophet class to start using AutoARIMA in any of your existing pipelines.
 
 # Empirical validation
 
-To validate the AutoARIMAProphet adapter, we designed a pipeline considering the M3, M4, and Tourism datasets (standard benchmarks in the forecasting practice). The pipeline automatically selects ARIMA's parameters with the AIC criterion and selects Prophet's parameters with time-series cross-validation.
+To validate the AutoARIMAProphet adapter, we designed a pipeline considering the M3, M4, and Tourism datasets (standard benchmarks in the forecasting practice) and the Peyton Manning data set orriginaly used by FB.  The pipeline automatically selects ARIMA's parameters with the AIC criterion and selects Prophet's parameters with time-series cross-validation.
 
 # Results 
 
