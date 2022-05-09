@@ -149,7 +149,7 @@ class AutoARIMAProphet(Prophet):
                                num_cores=num_cores,
                                period=period)
 
-    def fit(self, df, disable_seasonal_features=False, **kwargs):
+    def fit(self, df, disable_seasonal_features=True, **kwargs):
         """Fit the AutoARIMAProphet model.
 
         Parameters
