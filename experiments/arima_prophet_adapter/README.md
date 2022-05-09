@@ -4,7 +4,7 @@ We benchmarked on more than 100K series and show that you can improve _MAPE_ and
 
 Now you can replace prophet with two lines of code and verify it for yourself. 
 
-### Install statsforecast
+### Install StatsForecast
 ```bash
 pip install statsforecast
 ```
@@ -65,3 +65,10 @@ For `M4`, the groups are `Yearly`, `Monthly`, `Quarterly`, `Weekly`, `Daily`, an
 * Quick and easy results are sometimes [misleading](https://en.wikipedia.org/wiki/Streetlight_effect).
 * Simpler models are sometimes [better](https://en.wikipedia.org/wiki/Occam%27s_razor).
 * **Facebook's Prophet might be many things, but its definitely not a model for forecasting time series at scale.**
+
+## Misc.
+* [`StatsForecast`](https://github.com/nixtla/statsforecast) also includes a variety of lightning fast baseline models.
+* If you really need to do forecast at scale, [here](https://github.com/nixtla/statsforecast/tree/main/experiments/ray) we show how to forecast 1 million time series under 30 minutes using [Ray](https://github.com/ray-project/ray).
+* If you are interested in SOTA Deep Learning models, check [`NeuralForecast`](https://github.com/nixtla/neuralforecast)
+
+
