@@ -10,25 +10,11 @@ pip install statsforecast
 ```
 
 ### Replace prophet to make your forecast a lot faster
-```python
-from prophet import Prophet
-from statsforecast.adapters.prophet import AutoARIMAProphet
-
-# BEFORE (slow and innacurate)
-model = Prophet()
-
-# AFTER (fast and accurate)
-model = AutoARIMAProphet()
-
-model = model.fit(df)
-future = model.make_future_dataframe(365)
-forecast = model.predict(future)
-fig = model.plot(forecast)
-```
+![comparison-code](./comparison-code.png)
 
 We respected the original prophet syntax so your pipeline won't get affected.
 
-## Results on M3, M4, Toursim and PeytonManning: 
+## Results on M3, M4, Tourism and PeytonManning: 
 
 ![comparison](./comparison.png)
 
