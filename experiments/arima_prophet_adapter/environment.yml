@@ -1,0 +1,12 @@
+name: arima_prophet
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.7
+  - prophet
+  - pip:
+    - neuralforecast
+    - statsforecast
+    - jupyterlab

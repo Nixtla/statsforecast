@@ -8,7 +8,7 @@ dependencies:
   - numpy
   - pandas
   - pip
-  - prophet
+  - fbprophet
   - scipy
   - statsmodels
   - tabulate

@@ -51,6 +51,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Set up environment
+        if: ${{ matrix.python-version != 3.6 || matrix.os != 'windows-latest' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
@@ -58,6 +59,16 @@ jobs:
           channels: conda-forge
           activate-environment: statsforecast
           environment-file: environment.yml
+
+      - name: Set up environment windows 3.6
+        if: ${{ matrix.python-version == 3.6 && matrix.os == 'windows-latest' }}
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          mamba-version: '*'
+          channels: conda-forge
+          activate-environment: statsforecast
+          environment-file: action_files/environment_windows_py36.yml
 
       - name: Install pip requirements
         run: pip install nbdev tabulate ./

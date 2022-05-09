@@ -2,7 +2,8 @@
 
 __all__ = ["index", "modules", "custom_doc_links", "git_url"]
 
-index = {"OptimResult": "arima.ipynb",
+index = {"AutoARIMAProphet": "adapters.prophet.ipynb",
+         "OptimResult": "arima.ipynb",
          "partrans": "arima.ipynb",
          "arima_gradtrans": "arima.ipynb",
          "arima_undopars": "arima.ipynb",
@@ -61,7 +62,8 @@ index = {"OptimResult": "arima.ipynb",
          "generate_series": "utils.ipynb",
          "AirPassengers": "utils.ipynb"}
 
-modules = ["arima.py",
+modules = ["adapters/prophet.py",
+           "arima.py",
            "core.py",
            "models.py",
            "utils.py"]
