@@ -1,9 +1,15 @@
-# AutoArima is faster and more accurate than FB-Prophet in most cases.
+# AutoArima is faster and more accurate than FB-Prophet in most cases. Replace it with two lines of code.
 
 We benchmarked on more than 100K series and show that you can improve _MAPE_ and _sMAPE_ forecast accuracy by _17%_ and _15%_ with _37x_  less computational time.
 
-Just try this two lines and verify it for yourself.
+Now you can replace prophet with two lines of code and verify it for yourself. 
 
+### Install statsforecast
+```bash
+pip install statsforecast
+```
+
+### Replace prophet to make your forecast a lot faster
 ```python
 from prophet import Prophet
 from statsforecast.adapters.prophet import AutoARIMAProphet
@@ -19,6 +25,9 @@ future = model.make_future_dataframe(365)
 forecast = model.predict(future)
 fig = model.plot(forecast)
 ```
+
+We respected the original prophet syntax so your pipeline won't get affected.
+
 ## Results on M3, M4, Toursim and PeytonManning: 
 
 ![comparison](./comparison.png)
