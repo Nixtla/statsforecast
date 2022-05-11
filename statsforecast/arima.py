@@ -866,7 +866,7 @@ def arima(x: np.ndarray,
         return 0.5 * np.log(res)
 
     coef = np.array(fixed)
-    # parscale definition, think about it, scipy doesnt use it
+    # parscale definition, think about it, scipy doesn't use it
     if method == 'CSS':
         if no_optim:
             res = OptimResult(True, 0, np.array([]), arma_css_op(np.array([]), x))
