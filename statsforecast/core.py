@@ -105,6 +105,22 @@ def _grouped_array_from_df(df):
     return GroupedArray(data, indptr), indices, dates
 
 # Internal Cell
+def _cv_dates(last_dates, freq, h, test_size):
+    #assuming step_size = 1
+    n_windows = test_size - h + 1
+    if len(np.unique(last_dates)) == 1:
+        total_dates = pd.date_range(end=last_dates[0], periods=test_size, freq=freq)
+        out = np.empty((h * n_windows, 2), dtype='datetime64[s]')
+        for i_window in range(n_windows):
+            out[h * i_window : h * (i_window + 1), 0] = total_dates[i_window:(i_window + h)]
+            out[h * i_window : h * (i_window + 1), 1] = np.tile(total_dates[i_window] - freq * 1, h)
+        dates = pd.DataFrame(np.tile(out, (len(last_dates), 1)), columns=['ds', 'cutoff'])
+    else:
+        dates = pd.concat([_cv_dates([ld], freq, h, test_size) for ld in last_dates])
+        dates = dates.reset_index(drop=True)
+    return dates
+
+# Internal Cell
 def _build_forecast_name(model, *args) -> str:
     model_name = f'{model.__name__}'
     func_params = inspect.signature(model).parameters
