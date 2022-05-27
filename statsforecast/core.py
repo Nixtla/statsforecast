@@ -286,7 +286,7 @@ class StatsForecast:
                     for j, key in enumerate(keys):
                         fcsts[f'{model_name}_{key}'] = values[:, j]
                 else:
-                    values = np.hstack(values)
+                    values = np.hstack([val.flatten() for val in values])
                     fcsts[model_name] = values.flatten()
                 logger.info(f'Computed forecasts for {model_name}.')
         if mode == 'cv':
