@@ -82,7 +82,8 @@ class GroupedArray:
                 end_cutoff = cutoff + h
                 y_train = grp[(cutoff - input_size):cutoff] if input_size is not None else grp[:cutoff]
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
-                out[i_ts, i_window] = func(y_train, h, None, *args)
+                future_xreg = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
+                out[i_ts, i_window] = func(y_train, h, future_xreg, *args)
                 out_test[i_ts, i_window] = y_test[:, 0] if y_test.ndim == 2 else y_test
 
         return out, out_test
