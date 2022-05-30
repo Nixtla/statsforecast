@@ -1280,6 +1280,7 @@ def Arima(
     biasadj=False,
     method='CSS',
     model=None,
+    **kwargs
 ):
     x = x.copy()
     origx = x.copy()
@@ -1315,9 +1316,9 @@ def Arima(
             else:
                 xreg = drift
         if xreg is None:
-            tmp = arima(x, order, seasonal, include_mean=include_mean, method=method)
+            tmp = arima(x, order, seasonal, include_mean=include_mean, method=method, **kwargs)
         else:
-            tmp = arima(x, order, seasonal, xreg, include_mean, method=method)
+            tmp = arima(x, order, seasonal, xreg, include_mean, method=method, **kwargs)
             if include_drift:
                 tmp['coef'] = change_drift_name(tmp['coef'])
 
@@ -1702,7 +1703,7 @@ def auto_arima_f(
         if np.isnan(x).all():
             raise ValueError('all data are missing')
         if allowmean:
-            fit = Arima(x, order=(0, 0, 0), fixed=np.mean(x))
+            fit = Arima(x, order=(0, 0, 0), fixed=np.array([np.mean(x)]))
         else:
             fit = Arima(x, order=(0, 0, 0), include_mean=False)
         fit['x'] = origx
