@@ -8,7 +8,7 @@ __all__ = ['quantile_auto_regression', 'ses', 'adida', 'historic_average', 'cros
 from itertools import count
 from numbers import Number
 from sys import float_info
-from typing import Collection, List, Optional, Sequence, Tuple
+from typing import Collection, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
