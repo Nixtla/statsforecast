@@ -43,7 +43,7 @@ if __name__=="__main__":
         end = time()
         print(f'Init forecast, instantiation time: {end-init}')
         init = time()
-        forecasts = model.cross_validation(h=7, test_size=21)
+        forecasts = model.cross_validation(h=7, test_size=13)
         total_time = (time() - init) / 60
         time_df = pd.DataFrame({'time': [total_time], 'length': [length], 'cpus': [os.cpu_count()]})
         time_df.to_csv(f'./results/time_{length}.csv')
