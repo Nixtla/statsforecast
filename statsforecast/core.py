@@ -77,8 +77,7 @@ class GroupedArray:
         out = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         for i_ts, grp in enumerate(self):
-            for i_window in range(n_windows):
-                cutoff = -test_size + i_window
+            for i_window, cutoff in enumerate(range(-test_size, -test_size + n_windows, 1), start=0):
                 end_cutoff = cutoff + h
                 y_train = grp[(cutoff - input_size):cutoff] if input_size is not None else grp[:cutoff]
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
