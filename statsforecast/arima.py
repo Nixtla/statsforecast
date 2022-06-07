@@ -18,6 +18,7 @@ from numba import njit
 from scipy.optimize import minimize
 from scipy.stats import norm
 
+from .mstl import mstl
 from .utils import AirPassengers as ap
 
 # Internal Cell
@@ -1472,42 +1473,6 @@ def fitted_arima(model, h=1):
             raise NotImplementedError('lambda not None')
     else:
         raise NotImplementedError('h > 1')
-
-# Internal Cell
-def mstl(x, period, blambda=None, s_window=7 + 4 * np.arange(1, 7)):
-    origx = x
-    n = len(x)
-    msts = period
-    iterate = 1
-    if x.ndim == 2:
-        x = x[:, 0]
-    if np.isnan(x).any():
-        ...  # na.interp
-    if blambda is not None:
-        ...  # boxcox
-    tt = np.arange(n)
-    if msts > 1:
-        fit = sm.tsa.STL(x, period=msts, seasonal=s_window[0]).fit()
-        seas = fit.seasonal
-        deseas = x - seas
-        trend = fit.trend
-    else:
-        try:
-            from supersmoother import SuperSmoother
-        except ImportError as e:
-            print('supersmoother is required for mstl with period=1')
-            raise e
-        msts = None
-        deseas = x
-        t = 1 + np.arange(n)
-        trend = SuperSmoother().fit(t, x).predict(t)
-    deseas[np.isnan(origx)] = np.nan
-    remainder = deseas - trend
-    output = {'data': origx, 'trend': trend}
-    if msts is not None:
-        output['seasonal'] = seas
-    output['remainder'] = remainder
-    return pd.DataFrame(output)
 
 # Internal Cell
 def seas_heuristic(x, period):

@@ -32,7 +32,6 @@ index = {"AutoARIMAProphet": "adapters.prophet.ipynb",
          "is_constant": "arima.ipynb",
          "forecast_arima": "arima.ipynb",
          "fitted_arima": "arima.ipynb",
-         "mstl": "arima.ipynb",
          "seas_heuristic": "arima.ipynb",
          "nsdiffs": "arima.ipynb",
          "ndiffs": "arima.ipynb",
@@ -59,6 +58,7 @@ index = {"AutoARIMAProphet": "adapters.prophet.ipynb",
          "seasonal_exponential_smoothing": "models.ipynb",
          "tsb": "models.ipynb",
          "auto_arima": "models.ipynb",
+         "mstl": "mstl.ipynb",
          "generate_series": "utils.ipynb",
          "AirPassengers": "utils.ipynb"}
 
@@ -66,6 +66,7 @@ modules = ["adapters/prophet.py",
            "arima.py",
            "core.py",
            "models.py",
+           "mstl.py",
            "utils.py"]
 
 doc_url = "https://Nixtla.github.io/statsforecast/"
