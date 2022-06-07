@@ -70,21 +70,21 @@ class GroupedArray:
                 out[h * i : h * (i + 1)] = res
         return out, keys
 
-    def compute_cv(self, h, test_size, func, input_size=None, *args):
+    def compute_cv(self, h, test_size, func, step_size=1, input_size=None, *args):
         # output of size: (ts, window, h)
-        # assuming step_size = 1 for the moment
-        n_windows = test_size - h + 1
+        if (test_size - h) % step_size:
+            raise Exception('`test_size - h` should be module `step_size`')
+        n_windows = int((test_size - h) / step_size) + 1
         out = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         for i_ts, grp in enumerate(self):
-            for i_window, cutoff in enumerate(range(-test_size, -test_size + n_windows, 1), start=0):
+            for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
                 end_cutoff = cutoff + h
                 y_train = grp[(cutoff - input_size):cutoff] if input_size is not None else grp[:cutoff]
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
                 future_xreg = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
                 out[i_ts, i_window] = func(y_train, h, future_xreg, *args)
                 out_test[i_ts, i_window] = y_test[:, 0] if y_test.ndim == 2 else y_test
-
         return out, out_test
 
     def split(self, n_chunks):
@@ -105,9 +105,11 @@ def _grouped_array_from_df(df):
     return GroupedArray(data, indptr), indices, dates
 
 # Internal Cell
-def _cv_dates(last_dates, freq, h, test_size):
+def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     #assuming step_size = 1
-    n_windows = test_size - h + 1
+    if (test_size - h) % step_size:
+        raise Exception('`test_size - h` should be module `step_size`')
+    n_windows = int((test_size - h) / step_size) + 1
     if len(np.unique(last_dates)) == 1:
         if issubclass(last_dates.dtype.type, np.integer):
             total_dates = np.arange(last_dates[0] - test_size + 1, last_dates[0] + 1)
@@ -116,12 +118,13 @@ def _cv_dates(last_dates, freq, h, test_size):
         else:
             total_dates = pd.date_range(end=last_dates[0], periods=test_size, freq=freq)
             out = np.empty((h * n_windows, 2), dtype='datetime64[s]')
-        for i_window in range(n_windows):
-            out[h * i_window : h * (i_window + 1), 0] = total_dates[i_window:(i_window + h)]
-            out[h * i_window : h * (i_window + 1), 1] = np.tile(total_dates[i_window] - freq * 1, h)
+        for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
+            end_cutoff = cutoff + h
+            out[h * i_window : h * (i_window + 1), 0] = total_dates[cutoff:] if end_cutoff == 0 else total_dates[cutoff:end_cutoff]
+            out[h * i_window : h * (i_window + 1), 1] = np.tile(total_dates[cutoff] - freq, h)
         dates = pd.DataFrame(np.tile(out, (len(last_dates), 1)), columns=['ds', 'cutoff'])
     else:
-        dates = pd.concat([_cv_dates(np.array([ld]), freq, h, test_size) for ld in last_dates])
+        dates = pd.concat([_cv_dates(np.array([ld]), freq, h, test_size, step_size) for ld in last_dates])
         dates = dates.reset_index(drop=True)
     return dates
 
@@ -187,7 +190,7 @@ class StatsForecast:
                 raise ValueError(f'Expected xreg to have shape {expected_shape}, but got {xreg.shape}')
             xreg, _, _ = _grouped_array_from_df(xreg)
         forecast_kwargs = dict(
-            h=h, test_size=None, input_size=None,
+            h=h, test_size=None, step_size=None, input_size=None,
             xreg=xreg, level=level, mode='forecast',
         )
         if self.n_jobs == 1:
@@ -208,22 +211,33 @@ class StatsForecast:
         idx = pd.Index(np.repeat(self.uids, h), name='unique_id')
         return pd.DataFrame({'ds': dates, **fcsts}, index=idx)
 
-    def cross_validation(self, h, test_size, input_size=None):
+    def cross_validation(self, h, n_windows=1, step_size=1, test_size=None, input_size=None):
+        if test_size is None:
+            test_size = h + step_size * (n_windows - 1)
+        elif n_windows is None:
+            if (test_size - h) % step_size:
+                raise Exception('`test_size - h` should be module `step_size`')
+            n_windows = int((test_size - h) / step_size) + 1
+        elif (n_windows is None) and (test_size is None):
+            raise Exception('you must define `n_windows` or `test_size`')
+        else:
+            raise Exception('you must define `n_windows` or `test_size` but not both')
+
         cv_kwargs = dict(
-            h=h, test_size=test_size, input_size=input_size,
+            h=h, test_size=test_size, step_size=step_size,
+            input_size=input_size,
             xreg=None, level=None, mode='cv',
         )
         if self.n_jobs == 1:
             fcsts = self._sequential(**cv_kwargs)
         else:
             fcsts = self._data_parallel(**cv_kwargs)
-
-        dates = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size)
+        dates = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size, step_size=step_size)
         dates = {'ds': dates['ds'].values, 'cutoff': dates['cutoff'].values}
-        idx = pd.Index(np.repeat(self.uids, h * (test_size - h + 1)), name='unique_id')
+        idx = pd.Index(np.repeat(self.uids, h * n_windows), name='unique_id')
         return pd.DataFrame({**dates, **fcsts}, index=idx)
 
-    def _sequential(self, h, test_size, input_size, xreg, level, mode='forecast'):
+    def _sequential(self, h, test_size, step_size, input_size, xreg, level, mode='forecast'):
         fcsts = {}
         logger.info('Computing forecasts')
         for model_args in self.models:
@@ -232,7 +246,7 @@ class StatsForecast:
             if mode == 'forecast':
                 values, keys = self.ga.compute_forecasts(h, model, xreg, level, *args)
             elif mode == 'cv':
-                values, test_values = self.ga.compute_cv(h, test_size, model, input_size, *args)
+                values, test_values = self.ga.compute_cv(h, test_size, model, step_size, input_size, *args)
                 keys = None
             if keys is not None:
                 for j, key in enumerate(keys):
@@ -244,7 +258,7 @@ class StatsForecast:
             fcsts = {'y': test_values.flatten(), **fcsts}
         return fcsts
 
-    def _data_parallel(self, h, test_size, input_size, xreg, level, mode='forecast'):
+    def _data_parallel(self, h, test_size, step_size, input_size, xreg, level, mode='forecast'):
         fcsts = {}
         logger.info('Computing forecasts')
         gas = self.ga.split(self.n_jobs)
@@ -278,7 +292,7 @@ class StatsForecast:
                     if mode == 'forecast':
                         future = executor.apply_async(ga.compute_forecasts, (h, model, xr, level, *args,))
                     elif mode == 'cv':
-                        future = executor.apply_async(ga.compute_cv, (h, test_size, model, input_size, *args))
+                        future = executor.apply_async(ga.compute_cv, (h, test_size, model, step_size, input_size, *args))
                     futures.append(future)
                 if mode == 'forecast':
                     values, keys = list(zip(*[f.get() for f in futures]))
