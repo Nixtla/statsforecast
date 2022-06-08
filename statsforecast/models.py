@@ -2,12 +2,14 @@
 
 __all__ = ['ses', 'adida', 'historic_average', 'croston_classic', 'croston_sba', 'croston_optimized',
            'seasonal_window_average', 'seasonal_naive', 'imapa', 'naive', 'random_walk_with_drift', 'window_average',
-           'seasonal_exponential_smoothing', 'tsb', 'auto_arima']
+           'seasonal_exponential_smoothing', 'tsb', 'auto_arima', 'multiple_seasonal_decomposition']
 
 # Cell
+from functools import partial
 from itertools import count
+from math import trunc
 from numbers import Number
-from typing import Collection, List, Optional, Sequence, Tuple
+from typing import Callable, Collection, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -15,6 +17,7 @@ from numba import njit
 from scipy.optimize import minimize
 
 from .arima import auto_arima_f, forecast_arima
+from .mstl import mstl
 
 # Internal Cell
 @njit
@@ -272,3 +275,41 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
         **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
         **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
     }
+
+# Cell
+def multiple_seasonal_decomposition(X: np.ndarray, h: int, future_xreg: np.ndarray = None,
+                                    season_length: Union[int, List[int]] = 1,
+                                    level: Optional[Tuple[int]] = None,
+                                    forecast_function: Optional[Callable] = None,
+                                    method: str = 'arima'):
+    y = X[:, 0] if X.ndim == 2 else X
+    xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
+    if forecast_function is None:
+        if method != 'arima' and (level is not None):
+            raise Exception('`level` only valid for ARIMA method')
+        if method == 'naive':
+            forecast_function = naive
+        elif method == 'arima':
+            forecast_function = partial(auto_arima, level=level, season_length=1)
+        elif method == 'random_walk_with_drift':
+            forecast_function = random_walk_with_drift
+        else:
+            raise Exception(f'method {method} not found')
+
+    mstl_ob = mstl(y, period=season_length)
+    seasoncolumns = mstl_ob.filter(regex='seasonal*').columns
+    nseasons = len(seasoncolumns)
+    seascomp = np.full((h, nseasons), np.nan)
+    seasonal_periods = [season_length] if isinstance(season_length, int) else season_length
+    n = len(mstl_ob)
+    for i in range(nseasons):
+        mp = seasonal_periods[i]
+        colname = seasoncolumns[i]
+        seascomp[:, i] = np.tile(mstl_ob[colname].values[-mp:], trunc(1 + (h-1)/mp))[:h]
+    lastseas = seascomp.sum(axis=1)
+    xdata = mstl_ob['data'].values
+    x_sa = mstl_ob['trend'] + mstl_ob['remainder']
+    fcast = forecast_function(X=X, h=h, future_xreg=future_xreg)
+    if isinstance(fcast, dict):
+        return {key: val + lastseas for key, val in fcast.items()}
+    return fcast + lastseas
