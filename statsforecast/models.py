@@ -279,9 +279,9 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
 # Cell
 def multiple_seasonal_decomposition(X: np.ndarray, h: int, future_xreg: np.ndarray = None,
                                     season_length: Union[int, List[int]] = 1,
-                                    level: Optional[Tuple[int]] = None,
+                                    method: str = 'arima',
                                     forecast_function: Optional[Callable] = None,
-                                    method: str = 'arima'):
+                                    level: Optional[Tuple[int]] = None):
     y = X[:, 0] if X.ndim == 2 else X
     xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
     if forecast_function is None:
