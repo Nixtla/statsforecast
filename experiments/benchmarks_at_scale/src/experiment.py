@@ -8,6 +8,7 @@ from statsforecast.models import (
         croston_classic, seasonal_naive, naive,
         adida, historic_average,
         seasonal_window_average,
+        seasonal_exponential_smoothing,
         imapa,
         window_average,
         random_walk_with_drift,
@@ -17,13 +18,14 @@ from statsforecast.models import (
 if __name__=="__main__":
     dir_ = Path('./results')
     dir_.mkdir(exist_ok=True)
-    for length in [100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000]:
+    for length in [10_000, 100_000, 1_000_000, 5_000_000, 10_000_000]:
         print(f'length: {length}')
         file_ = dir_ / f'forecasts_{length}.parquet'
         if file_.exists():
             print('Already generated')
             continue
         series = pd.read_parquet(f'./data/series_{length}.parquet')
+        #series['y'] += 0.0001 #prevent division by zero error
         print('Data read')
         models = [
             croston_classic,
@@ -33,7 +35,8 @@ if __name__=="__main__":
             (seasonal_window_average, 7, 4),
             imapa,
             (window_average, 7),
-            random_walk_with_drift
+            (seasonal_exponential_smoothing, 7, 0.9),
+            #random_walk_with_drift
         ]
         init = time()
         model = StatsForecast(series,
