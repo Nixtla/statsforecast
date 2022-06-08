@@ -58,6 +58,7 @@ index = {"AutoARIMAProphet": "adapters.prophet.ipynb",
          "seasonal_exponential_smoothing": "models.ipynb",
          "tsb": "models.ipynb",
          "auto_arima": "models.ipynb",
+         "multiple_seasonal_decomposition": "models.ipynb",
          "mstl": "mstl.ipynb",
          "generate_series": "utils.ipynb",
          "AirPassengers": "utils.ipynb"}
