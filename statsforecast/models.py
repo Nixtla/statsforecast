@@ -285,8 +285,6 @@ def multiple_seasonal_decomposition(X: np.ndarray, h: int, future_xreg: np.ndarr
     y = X[:, 0] if X.ndim == 2 else X
     xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
     if forecast_function is None:
-        if method != 'arima' and (xreg is not None or future_xreg is not None):
-            raise Exception('you can use external regressors only with method=`arima`')
         if method != 'arima' and (level is not None):
             raise Exception('`level` only valid for ARIMA method')
         if method == 'naive':
