@@ -5,6 +5,7 @@ __all__ = ['ses', 'adida', 'historic_average', 'croston_classic', 'croston_sba',
            'seasonal_exponential_smoothing', 'tsb', 'auto_arima', 'multiple_seasonal_decomposition']
 
 # Cell
+from functools import partial
 from itertools import count
 from math import trunc
 from numbers import Number
