@@ -92,9 +92,9 @@ class GroupedArray:
         return [self[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks) if x.size]
 
 # Internal Cell
-def _grouped_array_from_df(df):
+def _grouped_array_from_df(df, sort_df):
     df = df.set_index('ds', append=True)
-    if not df.index.is_monotonic_increasing:
+    if not df.index.is_monotonic_increasing and sort_df:
         df = df.sort_index()
     data = df.values.astype(np.float32)
     indices_sizes = df.index.get_level_values('unique_id').value_counts(sort=False)
@@ -174,19 +174,20 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
 # Cell
 class StatsForecast:
 
-    def __init__(self, df, models, freq, n_jobs=1, ray_address=None):
-        self.ga, self.uids, self.last_dates = _grouped_array_from_df(df)
+    def __init__(self, df, models, freq, n_jobs=1, ray_address=None, sort_df=True):
+        self.ga, self.uids, self.last_dates = _grouped_array_from_df(df, sort_df)
         self.models = models
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = _get_n_jobs(len(self.ga), n_jobs, ray_address)
         self.ray_address = ray_address
+        self.sort_df = sort_df
 
     def forecast(self, h, xreg=None, level=None):
         if xreg is not None:
             expected_shape = (h * len(self.ga), self.ga.data.shape[1])
             if xreg.shape != expected_shape:
                 raise ValueError(f'Expected xreg to have shape {expected_shape}, but got {xreg.shape}')
-            xreg, _, _ = _grouped_array_from_df(xreg)
+            xreg, _, _ = _grouped_array_from_df(xreg, sort_df=self.sort_df)
         forecast_kwargs = dict(
             h=h, test_size=None, input_size=None,
             xreg=xreg, level=level, mode='forecast',
