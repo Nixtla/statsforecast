@@ -12,6 +12,14 @@ from sklearn.preprocessing import OneHotEncoder
 from .core import StatsForecast
 
 # Cell
+def _to_summing_matrix(df: pd.DataFrame):
+    """Transforms the bottom DataFrame `df` to a S matrix."""
+    s_mat = []
+    categories = [df[col].unique() for col in df.columns]
+    s_mat = OneHotEncoder(categories=categories, sparse=False, dtype=np.float32).fit_transform(df).T
+    return s_mat
+
+# Cell
 def _aggregate_key(df: pd.DataFrame, keys: List[List[str]], agg_fn: Callable = np.sum):
     """Aggregates `df` according to `keys` using `agg_fn`."""
     df = df.copy()
