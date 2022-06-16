@@ -127,10 +127,10 @@ def _cv_dates(last_dates, freq, h, test_size):
     return dates
 
 # Internal Cell
-def _build_forecast_name(model, *args) -> str:
+def _build_forecast_name(model, *args, idx_remove=3) -> str:
     model_name = f'{model.__name__}'
     func_params = inspect.signature(model).parameters
-    func_args = list(func_params.items())[3:]  # remove input array, horizon and xreg
+    func_args = list(func_params.items())[idx_remove:]  # remove input array, horizon and xreg
     changed_params = [
         f'{name}-{value}'
         for value, (name, arg) in zip(args, func_args)
