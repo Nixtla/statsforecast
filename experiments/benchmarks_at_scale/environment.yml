@@ -1,0 +1,11 @@
+name: benchmarks_at_scale
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  - pip==20.3.3
+  - fire
+  - pyarrow
+  - jupyterlab
+  - pip:
+    - statsforecast[ray]
