@@ -77,10 +77,11 @@ class GroupedArray:
             result['residuals'] = {'values': res}
         return result
 
-    def compute_cv(self, h, test_size, func, input_size=None, residuals=False, *args):
+    def compute_cv(self, h, test_size, func, step_size=1, input_size=None, residuals=False, *args):
         # output of size: (ts, window, h)
-        # assuming step_size = 1 for the moment
-        n_windows = test_size - h + 1
+        if (test_size - h) % step_size:
+            raise Exception('`test_size - h` should be module `step_size`')
+        n_windows = int((test_size - h) / step_size) + 1
         out = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         if residuals:
@@ -88,8 +89,7 @@ class GroupedArray:
             res_idxs = np.full_like(res, False, dtype=bool)
             last_res_idxs = np.full_like(res, False, dtype=bool)
         for i_ts, grp in enumerate(self):
-            for i_window in range(n_windows):
-                cutoff = -test_size + i_window
+            for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size
                 y_train = grp[(cutoff - in_size_disp):cutoff]
@@ -129,9 +129,11 @@ def _grouped_array_from_df(df, sort_df):
     return GroupedArray(data, indptr), indices, dates, df.index
 
 # Internal Cell
-def _cv_dates(last_dates, freq, h, test_size):
+def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     #assuming step_size = 1
-    n_windows = test_size - h + 1
+    if (test_size - h) % step_size:
+        raise Exception('`test_size - h` should be module `step_size`')
+    n_windows = int((test_size - h) / step_size) + 1
     if len(np.unique(last_dates)) == 1:
         if issubclass(last_dates.dtype.type, np.integer):
             total_dates = np.arange(last_dates[0] - test_size + 1, last_dates[0] + 1)
@@ -140,12 +142,13 @@ def _cv_dates(last_dates, freq, h, test_size):
         else:
             total_dates = pd.date_range(end=last_dates[0], periods=test_size, freq=freq)
             out = np.empty((h * n_windows, 2), dtype='datetime64[s]')
-        for i_window in range(n_windows):
-            out[h * i_window : h * (i_window + 1), 0] = total_dates[i_window:(i_window + h)]
-            out[h * i_window : h * (i_window + 1), 1] = np.tile(total_dates[i_window] - freq * 1, h)
+        for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
+            end_cutoff = cutoff + h
+            out[h * i_window : h * (i_window + 1), 0] = total_dates[cutoff:] if end_cutoff == 0 else total_dates[cutoff:end_cutoff]
+            out[h * i_window : h * (i_window + 1), 1] = np.tile(total_dates[cutoff] - freq, h)
         dates = pd.DataFrame(np.tile(out, (len(last_dates), 1)), columns=['ds', 'cutoff'])
     else:
-        dates = pd.concat([_cv_dates(np.array([ld]), freq, h, test_size) for ld in last_dates])
+        dates = pd.concat([_cv_dates(np.array([ld]), freq, h, test_size, step_size) for ld in last_dates])
         dates = dates.reset_index(drop=True)
     return dates
 
@@ -213,7 +216,8 @@ class StatsForecast:
                 raise ValueError(f'Expected xreg to have shape {expected_shape}, but got {xreg.shape}')
             xreg, _, _, _ = _grouped_array_from_df(xreg, sort_df=self.sort_df)
         forecast_kwargs = dict(
-            h=h, test_size=None, input_size=None,
+            h=h, test_size=None, step_size=None,
+            input_size=None,
             xreg=xreg, residuals=residuals,
             level=level, mode='forecast',
         )
@@ -244,9 +248,20 @@ class StatsForecast:
         fcst_residuals = {key: val['values'] for key, val in self.fcst_residuals_.items()}
         return pd.DataFrame({**fcst_residuals}, index=self.ds).reset_index(level=1)
 
-    def cross_validation(self, h, test_size, input_size=None, residuals=False):
+    def cross_validation(self, h, n_windows=1, step_size=1, test_size=None, input_size=None, residuals=False):
+        if test_size is None:
+            test_size = h + step_size * (n_windows - 1)
+        elif n_windows is None:
+            if (test_size - h) % step_size:
+                raise Exception('`test_size - h` should be module `step_size`')
+            n_windows = int((test_size - h) / step_size) + 1
+        elif (n_windows is None) and (test_size is None):
+            raise Exception('you must define `n_windows` or `test_size`')
+        else:
+            raise Exception('you must define `n_windows` or `test_size` but not both')
+
         cv_kwargs = dict(
-            h=h, test_size=test_size, input_size=input_size,
+            h=h, test_size=test_size, step_size=step_size, input_size=input_size,
             xreg=None, residuals=residuals, level=None, mode='cv',
         )
         if self.n_jobs == 1:
@@ -255,11 +270,11 @@ class StatsForecast:
             res_fcsts = self._data_parallel(**cv_kwargs)
         if residuals:
             self.cv_residuals_ = res_fcsts['residuals']
-            self.n_cv_ = test_size - h + 1
+            self.n_cv_ = n_windows
         fcsts = res_fcsts['fcsts']
-        dates = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size)
+        dates = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size, step_size=step_size)
         dates = {'ds': dates['ds'].values, 'cutoff': dates['cutoff'].values}
-        idx = pd.Index(np.repeat(self.uids, h * (test_size - h + 1)), name='unique_id')
+        idx = pd.Index(np.repeat(self.uids, h * n_windows), name='unique_id')
         return pd.DataFrame({**dates, **fcsts}, index=idx)
 
     def cross_validation_residuals(self):
@@ -276,7 +291,7 @@ class StatsForecast:
         res['cutoff'] = res['ds'].where(res['cutoff']).bfill()
         return res
 
-    def _sequential(self, h, test_size, input_size, xreg, residuals, level, mode='forecast'):
+    def _sequential(self, h, test_size, step_size, input_size, xreg, residuals, level, mode='forecast'):
         result = {'fcsts': {}, 'residuals': {}}
         logger.info('Computing forecasts')
         for model_args in self.models:
@@ -287,7 +302,7 @@ class StatsForecast:
                 values = res_fcsts['forecasts']
                 keys = res_fcsts['keys']
             elif mode == 'cv':
-                res_fcsts = self.ga.compute_cv(h, test_size, model, input_size, residuals, *args)
+                res_fcsts = self.ga.compute_cv(h, test_size, model, step_size, input_size, residuals, *args)
                 values = res_fcsts['forecasts']
                 test_values = res_fcsts['y']
                 keys = None
@@ -303,7 +318,7 @@ class StatsForecast:
             result['fcsts'] = {'y': test_values.flatten(), **result['fcsts']}
         return result
 
-    def _data_parallel(self, h, test_size, input_size, xreg, residuals, level, mode='forecast'):
+    def _data_parallel(self, h, test_size, step_size, input_size, xreg, residuals, level, mode='forecast'):
         result = {'fcsts': {}, 'residuals': {}}
         logger.info('Computing forecasts')
         gas = self.ga.split(self.n_jobs)
@@ -337,7 +352,7 @@ class StatsForecast:
                     if mode == 'forecast':
                         future = executor.apply_async(ga.compute_forecasts, (h, model, xr, residuals, level, *args,))
                     elif mode == 'cv':
-                        future = executor.apply_async(ga.compute_cv, (h, test_size, model, input_size, residuals, *args))
+                        future = executor.apply_async(ga.compute_cv, (h, test_size, model, step_size, input_size, residuals, *args))
                     futures.append(future)
                 if mode == 'forecast':
                     res_fcsts = [f.get() for f in futures]
