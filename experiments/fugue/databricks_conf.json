@@ -1,0 +1,39 @@
+{
+    "num_workers": 4,
+    "cluster_name": "test",
+    "spark_version": "10.5.x-cpu-ml-scala2.12",
+    "spark_conf": {
+        "spark.speculation": "true",
+        "spark.task.cpus": "1",
+        "spark.sql.adaptive.enabled": "false"
+    },
+    "aws_attributes": {
+        "first_on_demand": 1,
+        "availability": "SPOT",
+        "zone_id": "us-west-2c",
+        "spot_bid_price_percent": 100,
+        "ebs_volume_count": 0
+    },
+    "node_type_id": "i3.8xlarge",
+    "driver_node_type_id": "i3.xlarge",
+    "ssh_public_keys": [],
+    "custom_tags": {},
+    "spark_env_vars": {
+        "MKL_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1"
+    },
+    "autotermination_minutes": 40,
+    "enable_elastic_disk": false,
+    "cluster_source": "UI",
+    "init_scripts": [
+        {
+            "dbfs": {
+                "destination": "dbfs:/FileStore/tmp/dask.sh"
+            }
+        }
+    ],
+    "cluster_id": "-----235216-jjam92e9"
+}

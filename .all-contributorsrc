@@ -113,6 +113,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "shagn",
+      "name": "Sebastian Hagn",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16029092?v=4",
+      "profile": "https://github.com/shagn",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
