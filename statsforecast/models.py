@@ -268,23 +268,25 @@ def window_average(X, h, future_xreg, residuals, window_size):
     mean = np.repeat(wavg, h)
     return {'mean': mean}
 
-
+# Cell
 @njit
 def seasonal_exponential_smoothing(X, h, future_xreg, residuals, season_length, alpha):
-    if residuals:
-        raise NotImplementedError('return residuals')
     y = X[:, 0] if X.ndim == 2 else X
     if y.size < season_length:
         return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
+    res = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        season_vals[i], _ = _ses_forecast(y[i::season_length], alpha)
+        season_vals[i], res[i::season_length] = _ses_forecast(y[i::season_length], alpha)
     out = np.empty(h, np.float32)
     for i in range(h):
         out[i] = season_vals[i % season_length]
-    return {'mean': out}
+    fcst = {'mean': out}
+    if residuals:
+        fcst['residuals'] = res
+    return fcst
 
-
+# Cell
 @njit
 def tsb(X, h, future_xreg, residuals, alpha_d, alpha_p):
     if residuals:
