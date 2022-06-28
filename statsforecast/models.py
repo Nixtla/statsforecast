@@ -137,16 +137,19 @@ def adida(X, h, future_xreg, residuals):
     mean = np.repeat(forecast, h)
     return {'mean': mean}
 
-
+# Cell
 @njit
 def historic_average(X, h, future_xreg, residuals):
-    if residuals:
-        raise NotImplementedError('return residuals')
     y = X[:, 0] if X.ndim == 2 else X
     mean = np.repeat(y.mean(), h)
-    return {'mean': mean}
+    fcst = {'mean': mean}
+    if residuals:
+        res = np.full(y.size, np.nan, y.dtype)
+        res[1:] = y[1:] - y.cumsum()[:-1] / np.arange(1, y.size)
+        fcst['residuals'] = res
+    return fcst
 
-
+# Cell
 @njit
 def croston_classic(X, h, future_xreg, residuals):
     if residuals:
