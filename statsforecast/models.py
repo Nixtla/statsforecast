@@ -27,28 +27,30 @@ def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float]:
     smoothed = x[0]
     n = x.size
     mse = 0.
+    resids = np.full(n, np.nan, np.float32)
 
     for i in range(1, n):
         smoothed = (alpha * x[i - 1] + (1 - alpha) * smoothed).item()
         error = x[i] - smoothed
         mse += error * error
+        resids[i] = error
 
     mse /= n
     forecast = alpha * x[-1] + (1 - alpha) * smoothed
-    return forecast, mse
+    return forecast, mse, resids
 
 
 def _ses_mse(alpha: float, x: np.ndarray) -> float:
     """Compute the mean squared error of a simple exponential smoothing fit."""
-    _, mse = _ses_fcst_mse(x, alpha)
+    _, mse, _ = _ses_fcst_mse(x, alpha)
     return mse
 
 
 @njit
 def _ses_forecast(x: np.ndarray, alpha: float) -> float:
     """One step ahead forecast with simple exponential smoothing."""
-    forecast, _ = _ses_fcst_mse(x, alpha)
-    return forecast
+    forecast, _, resids = _ses_fcst_mse(x, alpha)
+    return forecast, resids
 
 
 @njit
@@ -80,9 +82,10 @@ def _probability(x: np.ndarray) -> np.ndarray:
     return (x != 0).astype(np.int32)
 
 
-def _optimized_ses_forecast(x: np.ndarray,
-                            bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
-                            ) -> float:
+def _optimized_ses_forecast(
+        x: np.ndarray,
+        bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
+    ) -> float:
     """Searches for the optimal alpha and computes SES one step forecast."""
     alpha = minimize(
         fun=_ses_mse,
@@ -91,8 +94,8 @@ def _optimized_ses_forecast(x: np.ndarray,
         bounds=bounds,
         method='L-BFGS-B'
     ).x[0]
-    forecast = _ses_forecast(x, alpha)
-    return forecast
+    forecast, residuals = _ses_forecast(x, alpha)
+    return forecast, residuals
 
 
 @njit
@@ -108,14 +111,15 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
 # Cell
 @njit
 def ses(X, h, future_xreg, residuals, alpha):
-    if residuals:
-        raise NotImplementedError('return residuals')
     y = X[:, 0] if X.ndim == 2 else X
-    fcst, _ = _ses_fcst_mse(y, alpha)
+    fcst, _, res = _ses_fcst_mse(y, alpha)
     mean = np.full(h, fcst, np.float32)
-    return {'mean': mean}
+    fcst = {'mean': mean}
+    if residuals:
+        fcst['residuals'] = res
+    return fcst
 
-
+# Cell
 def adida(X, h, future_xreg, residuals):
     if residuals:
         raise NotImplementedError('return residuals')
@@ -128,7 +132,7 @@ def adida(X, h, future_xreg, residuals):
     lost_remainder_data = len(y) % aggregation_level
     y_cut = y[lost_remainder_data:]
     aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-    sums_forecast = _optimized_ses_forecast(aggregation_sums)
+    sums_forecast, _ = _optimized_ses_forecast(aggregation_sums)
     forecast = sums_forecast / aggregation_level
     mean = np.repeat(forecast, h)
     return {'mean': mean}
@@ -150,8 +154,8 @@ def croston_classic(X, h, future_xreg, residuals):
     y = X[:, 0] if X.ndim == 2 else X
     yd = _demand(y)
     yi = _intervals(y)
-    ydp = _ses_forecast(yd, 0.1)
-    yip = _ses_forecast(yi, 0.1)
+    ydp, _ = _ses_forecast(yd, 0.1)
+    yip, _ = _ses_forecast(yi, 0.1)
     mean = ydp / yip
     return {'mean': mean}
 
@@ -172,8 +176,8 @@ def croston_optimized(X, h, future_xreg, residuals):
     y = X[:, 0] if X.ndim == 2 else X
     yd = _demand(y)
     yi = _intervals(y)
-    ydp = _optimized_ses_forecast(yd)
-    yip = _optimized_ses_forecast(yi)
+    ydp, _ = _optimized_ses_forecast(yd)
+    yip, _ = _optimized_ses_forecast(yi)
     mean = ydp / yip
     return {'mean': mean}
 
@@ -222,7 +226,7 @@ def imapa(X, h, future_xreg, residuals):
         lost_remainder_data = len(y) % aggregation_level
         y_cut = y[lost_remainder_data:]
         aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-        forecast = _optimized_ses_forecast(aggregation_sums)
+        forecast, _ = _optimized_ses_forecast(aggregation_sums)
         forecasts[aggregation_level - 1] = (forecast / aggregation_level)
     forecast = forecasts.mean()
     mean = np.repeat(forecast, h)
@@ -271,7 +275,7 @@ def seasonal_exponential_smoothing(X, h, future_xreg, residuals, season_length, 
         return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
     for i in range(season_length):
-        season_vals[i] = _ses_forecast(y[i::season_length], alpha)
+        season_vals[i], _ = _ses_forecast(y[i::season_length], alpha)
     out = np.empty(h, np.float32)
     for i in range(h):
         out[i] = season_vals[i % season_length]
@@ -287,8 +291,8 @@ def tsb(X, h, future_xreg, residuals, alpha_d, alpha_p):
         return {'mean': np.repeat(np.float32(0), h)}
     yd = _demand(y)
     yp = _probability(y)
-    ypf = _ses_forecast(yp, alpha_p)
-    ydf = _ses_forecast(yd, alpha_d)
+    ypf, _ = _ses_forecast(yp, alpha_p)
+    ydf, _ = _ses_forecast(yd, alpha_d)
     forecast = np.float32(ypf * ydf)
     mean = np.repeat(forecast, h)
     return {'mean': mean}
