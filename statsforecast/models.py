@@ -246,17 +246,20 @@ def naive(X, h, future_xreg, residuals):
         return {'mean': mean, 'residuals': res}
     return {'mean': mean}
 
-
+# Cell
 @njit
 def random_walk_with_drift(X, h, future_xreg, residuals):
-    if residuals:
-        raise NotImplementedError('return residuals')
     y = X[:, 0] if X.ndim == 2 else X
     slope = (y[-1] - y[0]) / (y.size - 1)
     mean = slope * (1 + np.arange(h)) + y[-1]
-    return {'mean': mean}
+    fcst = {'mean': mean.astype(np.float32)}
+    if residuals:
+        res = np.full(y.size, np.nan, dtype=np.float32)
+        res[1:] = (y[1:] - (slope + y[:-1])).astype(np.float32)
+        fcst['residuals'] = res
+    return fcst
 
-
+# Cell
 @njit
 def window_average(X, h, future_xreg, residuals, window_size):
     if residuals:
