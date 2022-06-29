@@ -2,7 +2,7 @@
 
 __all__ = ['ses', 'ses_optimized', 'adida', 'historic_average', 'croston_classic', 'croston_sba', 'croston_optimized',
            'seasonal_window_average', 'imapa', 'naive', 'seasonal_naive', 'random_walk_with_drift', 'window_average',
-           'seasonal_exponential_smoothing', 'tsb', 'auto_arima']
+           'seasonal_exponential_smoothing', 'seasonal_ses_optimized', 'tsb', 'auto_arima']
 
 # Cell
 from itertools import count
@@ -306,6 +306,23 @@ def seasonal_exponential_smoothing(X, h, future_xreg, residuals, season_length, 
     res = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
         season_vals[i], res[i::season_length] = _ses_forecast(y[i::season_length], alpha)
+    out = np.empty(h, np.float32)
+    for i in range(h):
+        out[i] = season_vals[i % season_length]
+    fcst = {'mean': out}
+    if residuals:
+        fcst['residuals'] = res
+    return fcst
+
+# Cell
+def seasonal_ses_optimized(X, h, future_xreg, residuals, season_length):
+    y = X[:, 0] if X.ndim == 2 else X
+    if y.size < season_length:
+        return {'mean': np.full(h, np.nan, np.float32)}
+    season_vals = np.empty(season_length, np.float32)
+    res = np.full(y.size, np.nan, np.float32)
+    for i in range(season_length):
+        season_vals[i], res[i::season_length] = _optimized_ses_forecast(y[i::season_length], [(0.01, 0.99)])
     out = np.empty(h, np.float32)
     for i in range(h):
         out[i] = season_vals[i % season_length]
