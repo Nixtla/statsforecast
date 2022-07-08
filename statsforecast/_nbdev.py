@@ -65,6 +65,9 @@ index = {"AutoARIMAProphet": "adapters.prophet.ipynb",
 modules = ["adapters/prophet.py",
            "arima.py",
            "core.py",
+           "ets.py",
+           "etsTargetFunction.py",
+           "etscalc.py",
            "models.py",
            "utils.py"]
 
