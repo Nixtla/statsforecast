@@ -884,15 +884,15 @@ def etsmodel(y: np.ndarray, m: int,
                 fitted=fits, states=states, par=fit_par)
 
 # Internal Cell
-def ets(y, m, model='ZZZ',
-        damped=None, alpha=None, beta=None, gamma=None, phi=None,
-        additive_only=None, blambda=None, biasadj=None,
-        lower=np.array([0.0001, 0.0001, 0.0001, 0.8]),
-        upper=np.array([0.9999, 0.9999, 0.9999, 0.98]),
-        opt_crit='lik', nmse=3, bounds='both',
-        ic='aicc', restrict=True, allow_multiplicative_trend=False,
-        use_initial_values=False,
-        maxit=2_000):
+def ets_f(y, m, model='ZZZ',
+          damped=None, alpha=None, beta=None, gamma=None, phi=None,
+          additive_only=None, blambda=None, biasadj=None,
+          lower=np.array([0.0001, 0.0001, 0.0001, 0.8]),
+          upper=np.array([0.9999, 0.9999, 0.9999, 0.98]),
+          opt_crit='lik', nmse=3, bounds='both',
+          ic='aicc', restrict=True, allow_multiplicative_trend=False,
+          use_initial_values=False,
+          maxit=2_000):
     # converting params to floats
     # to improve numba compilation
     if alpha is None:
