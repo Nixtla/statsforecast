@@ -476,6 +476,7 @@ def pegelsresid_C(y: np.ndarray,
     if seasontype == 'N':
         gamma = 0.
     amse = np.full(nmse, fill_value=np.nan)
+    lik = 0.
     lik = etscalc(y=y, n=n, x=x, m=m,
                   error=switch(errortype),
                   trend=switch(trendtype),
@@ -483,6 +484,8 @@ def pegelsresid_C(y: np.ndarray,
                   alpha=alpha, beta=beta, gamma=gamma, phi=phi,
                   e=e, amse=amse, nmse=nmse)
     x = x.reshape((n + 1, p))
+    if lik is None:
+        lik = np.nan
     if not np.isnan(lik):
         if np.abs(lik + 99999) < 1e-7:
             lik = np.nan
