@@ -6,7 +6,6 @@ dependencies:
   - matplotlib
   - numba
   - numpy
-  - ipynb
   - pandas
   - pip
   - prophet
