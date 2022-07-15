@@ -22,8 +22,8 @@ TOL = 1.0e-10
 HUGEN = 1.0e10
 NA = -99999.0
 smalno = np.finfo(float).eps
-NOGIL = os.environ.get('NUMBA_RELEASE_GIL', False)
-CACHE = os.environ.get('NUMBA_CACHE', False)
+NOGIL = os.environ.get('NUMBA_RELEASE_GIL', 'False').lower() in ['true']
+CACHE = os.environ.get('NUMBA_CACHE', 'False').lower() in ['true']
 
 # Internal Cell
 @njit(nogil=NOGIL, cache=CACHE)
