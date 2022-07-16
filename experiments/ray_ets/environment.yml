@@ -1,0 +1,14 @@
+name: ets_ray
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.7
+  - pip==20.3.3
+  - numpy==1.21.4
+  - pip:
+    - "statsforecast[ray] @ git+https://github.com/nixtla/statsforecast.git@main"
+    - jupyterlab
+    - botocore
+    - boto3
