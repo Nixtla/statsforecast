@@ -45,13 +45,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
     steps:
       - name: Clone repo
         uses: actions/checkout@v2
 
       - name: Set up environment
-        if: ${{ matrix.python-version != 3.6 || matrix.os != 'windows-latest' }}
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
@@ -59,16 +58,6 @@ jobs:
           channels: conda-forge
           activate-environment: statsforecast
           environment-file: environment.yml
-
-      - name: Set up environment windows 3.6
-        if: ${{ matrix.python-version == 3.6 && matrix.os == 'windows-latest' }}
-        uses: conda-incubator/setup-miniconda@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-          mamba-version: '*'
-          channels: conda-forge
-          activate-environment: statsforecast
-          environment-file: action_files/environment_windows_py36.yml
 
       - name: Install pip requirements
         run: pip install nbdev tabulate ./
@@ -83,7 +72,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
     steps:
       - name: Clone repo
         uses: actions/checkout@v2
