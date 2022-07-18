@@ -21,7 +21,7 @@
 ## 🔥  Highlights
 
 * Fastest and most accurate `auto_arima` in `Python` and `R`.
-* Fastest and most accurate `ETS` in `Python` and `R`.
+* Fastest and most accurate `ets` in `Python` and `R`.
 
 * **New!**: Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter).
 * **New!**: Distributed computation in clusters with [ray](https://github.com/ray-project/ray). (Forecast 1M series in [30min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray))
@@ -39,9 +39,6 @@
 * Out of the box implementation of `ses`, `adida`, `historic_average`, `croston_classic`, `croston_sba`, `croston_optimized`, `seasonal_window_average`, `seasonal_naive`, `imapa`
 `naive`, `random_walk_with_drift`, `window_average`, `seasonal_exponential_smoothing`, `tsb`, `auto_arima` and `ets`. 
 
-
-
-
 Missing something? Please open an issue or write us in [![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 
 ## 📖 Why? 
@@ -51,13 +48,15 @@ Current Python alternatives for statistical models are slow, inaccurate and don'
 ## 🔬 Accuracy & ⏲ Speed 
 
 ### ARIMA 
-The `auto_arima` model implemented in statsforecast is **20x faster** than `pmdarima` and **1.5x faster** than `R`  while improving accuracy. You can see the exact comparisson and reproduce the results [here](./experiments/arima/).
+The `auto_arima` model implemented in `StatsForecast` is **20x faster** than `pmdarima` and **1.5x faster** than `R`  while improving accuracy. You can see the exact comparison and reproduce the results [here](./experiments/arima/).
 
 ### ETS
-ToDo
+
+The `ets` model implemented in `StatsForecast` is **4x faster** than `statsmodels` and *1.6x faster* than `R` while improving accuracy. You can see the exact comparison and reproduce the results [here](./experiments/ets/)
 
 ### Benchmarks at Scale
-With Statsforecast you can fit 9 benchmark models on **1,000,000** series in under **5 min**. Reproduce the results [here](./experiments/benchmarks_at_scale/). 
+
+With `StatsForecast` you can fit 9 benchmark models on **1,000,000** series in under **5 min**. Reproduce the results [here](./experiments/benchmarks_at_scale/). 
 
 ## 💻 Installation
 <details>
@@ -95,8 +94,6 @@ pip install -e .
 ```
 </details>
 
-
-
 ## 🧬 Getting Started 
 You can run this notebooks to get you started. 
 
@@ -104,22 +101,21 @@ You can run this notebooks to get you started.
     * In this notebook we present Nixtla's `auto_arima`. 
     The `auto_arima` model is widely used to forecast time series in production and as a benchmark. However, the alternative python implementation (`pmdarima`) is so slow that prevents data scientists from quickly iterating and deploying `auto_arima` in production for a large number of time series. 
 
+* Shorter Example of fitting and `auto_arima` and an `ets` model.  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb) 
 
-* Shorter Example of fitting and `auto_arima` and an `ets` using exogenous variables.  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb) 
 
-
-* Benchmarking 9 models on millions of series 
+* Benchmarking 9 models on millions of [series](./experiments/benchmarks_at_scale/).
 
 ## 📖 Documentation (WIP)
 Here is a link to the [documentation](https://nixtla.github.io/statsforecast/).
-
-
 
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md).
 
 ## 📃 References
+
 *  The `auto_arima` model is based (translated) from the R implementation included in the [forecast](https://github.com/robjhyndman/forecast) package developed by Rob Hyndman.
+*  The `ets` model is based (translated) from the R implementation included in the [forecast](https://github.com/robjhyndman/forecast) package developed by Rob Hyndman.
 
 ## Contributors ✨
 
