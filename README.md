@@ -95,16 +95,18 @@ pip install -e .
 ```
 </details>
 
+
+
 ## 🧬 Getting Started 
 You can run this notebooks to get you started. 
 
-* Example of different `auto_arima` models on M4 data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb) 
+* Example of different `auto_arima` models on M4 data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)  
     * In this notebook we present Nixtla's `auto_arima`. 
     The `auto_arima` model is widely used to forecast time series in production and as a benchmark. However, the alternative python implementation (`pmdarima`) is so slow that prevents data scientists from quickly iterating and deploying `auto_arima` in production for a large number of time series. 
 
-* Shorter Example of fitting and `auto_arima` and an `ets`. 
 
-* Example of exogenous variables for `auto_arima`
+* Shorter Example of fitting and `auto_arima` and an `ets` using exogenous variables.  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb) 
+
 
 * Benchmarking 9 models on millions of series 
 
