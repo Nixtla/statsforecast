@@ -93,7 +93,7 @@ jobs:
         run: pytest action_files
 
 #separating windows ray due to https://github.com/ray-project/ray/issues/26378
-  test-ray:
+  test-ray-windows:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
