@@ -19,7 +19,7 @@
 </div>
 
 ## 🎉 New!
-* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb)  **ETS Example**: 400% faster than StatsModels with improved accuracy and robustness.
+* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb)  **ETS Example**: 400x faster than StatsModels with improved accuracy and robustness.
 * [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)   **Complete pipeline and comparison**:  20x faster than pmdarima and 500x faster than Prophet. 
 
 ## 🔥  Highlights
