@@ -14,7 +14,7 @@ import pandas as pd
 from numba import njit
 from scipy.optimize import minimize
 
-from .arima import auto_arima_f, forecast_arima
+from .arima import auto_arima_f, forecast_arima, fitted_arima
 
 # Internal Cell
 @njit
@@ -27,17 +27,17 @@ def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float]:
     smoothed = x[0]
     n = x.size
     mse = 0.
-    resids = np.full(n, np.nan, np.float32)
+    fitted = np.full(n, np.nan, np.float32)
 
     for i in range(1, n):
         smoothed = (alpha * x[i - 1] + (1 - alpha) * smoothed).item()
         error = x[i] - smoothed
         mse += error * error
-        resids[i] = error
+        fitted[i] = smoothed
 
     mse /= n
     forecast = alpha * x[-1] + (1 - alpha) * smoothed
-    return forecast, mse, resids
+    return forecast, mse, fitted
 
 
 def _ses_mse(alpha: float, x: np.ndarray) -> float:
@@ -49,8 +49,8 @@ def _ses_mse(alpha: float, x: np.ndarray) -> float:
 @njit
 def _ses_forecast(x: np.ndarray, alpha: float) -> float:
     """One step ahead forecast with simple exponential smoothing."""
-    forecast, _, resids = _ses_fcst_mse(x, alpha)
-    return forecast, resids
+    forecast, _, fitted = _ses_fcst_mse(x, alpha)
+    return forecast, fitted
 
 
 @njit
@@ -94,8 +94,8 @@ def _optimized_ses_forecast(
         bounds=bounds,
         method='L-BFGS-B'
     ).x[0]
-    forecast, residuals = _ses_forecast(x, alpha)
-    return forecast, residuals
+    forecast, fitted = _ses_forecast(x, alpha)
+    return forecast, fitted
 
 
 @njit
@@ -110,28 +110,28 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
 
 # Cell
 @njit
-def ses(X, h, future_xreg, residuals, alpha):
+def ses(X, h, future_xreg, fitted, alpha):
     y = X[:, 0] if X.ndim == 2 else X
-    fcst, _, res = _ses_fcst_mse(y, alpha)
+    fcst, _, fitted_vals = _ses_fcst_mse(y, alpha)
     mean = np.full(h, fcst, np.float32)
     fcst = {'mean': mean}
-    if residuals:
-        fcst['residuals'] = res
+    if fitted:
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
-def ses_optimized(X, h, future_xreg, residuals):
+def ses_optimized(X, h, future_xreg, fitted):
     y = X[:, 0] if X.ndim == 2 else X
     fcst, res = _optimized_ses_forecast(y, [(0.01, 0.99)])
     mean = np.full(h, fcst, np.float32)
     fcst = {'mean': mean}
-    if residuals:
-        fcst['residuals'] = res
+    if fitted:
+        fcst['fitted'] = fitted
     return fcst
 
 # Cell
-def adida(X, h, future_xreg, residuals):
-    if residuals:
+def adida(X, h, future_xreg, fitted):
+    if fitted:
         raise NotImplementedError('return residuals')
     y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
@@ -149,21 +149,21 @@ def adida(X, h, future_xreg, residuals):
 
 # Cell
 @njit
-def historic_average(X, h, future_xreg, residuals):
+def historic_average(X, h, future_xreg, fitted):
     y = X[:, 0] if X.ndim == 2 else X
     mean = np.repeat(y.mean(), h)
     fcst = {'mean': mean}
-    if residuals:
-        res = np.full(y.size, np.nan, y.dtype)
-        res[1:] = y[1:] - y.cumsum()[:-1] / np.arange(1, y.size)
-        fcst['residuals'] = res
+    if fitted:
+        fitted_vals = np.full(y.size, np.nan, y.dtype)
+        fitted_vals[1:] = y.cumsum()[:-1] / np.arange(1, y.size)
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
 @njit
-def croston_classic(X, h, future_xreg, residuals):
-    if residuals:
-        raise NotImplementedError('return residuals')
+def croston_classic(X, h, future_xreg, fitted):
+    if fitted:
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     yd = _demand(y)
     yi = _intervals(y)
@@ -174,18 +174,18 @@ def croston_classic(X, h, future_xreg, residuals):
 
 
 @njit
-def croston_sba(X, h, future_xreg, residuals):
-    if residuals:
-        raise NotImplementedError('return residuals')
+def croston_sba(X, h, future_xreg, fitted):
+    if fitted:
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     mean = croston_classic(y, h, future_xreg, residuals)
     mean['mean'] *= 0.95
     return mean
 
 
-def croston_optimized(X, h, future_xreg, residuals):
-    if residuals:
-        raise NotImplementedError('return residuals')
+def croston_optimized(X, h, future_xreg, fitted):
+    if fitted:
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     yd = _demand(y)
     yi = _intervals(y)
@@ -200,12 +200,12 @@ def seasonal_window_average(
     X: np.ndarray,
     h: int,
     future_xreg,
-    residuals,
+    fitted,
     season_length: int,
     window_size: int,
 ) -> np.ndarray:
-    if residuals:
-        raise NotImplementedError('return residuals')
+    if fitted:
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     min_samples = season_length * window_size
     if y.size < min_samples:
@@ -219,9 +219,9 @@ def seasonal_window_average(
         out[i] = season_avgs[i % season_length]
     return {'mean': out}
 
-def imapa(X, h, future_xreg, residuals):
-    if residuals:
-        raise NotImplementedError('return residuals')
+def imapa(X, h, future_xreg, fitted):
+    if fitted:
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
         return {'mean': np.repeat(np.float32(0), h)}
@@ -241,54 +241,54 @@ def imapa(X, h, future_xreg, residuals):
 
 
 @njit
-def naive(X, h, future_xreg, residuals):
+def naive(X, h, future_xreg, fitted):
     y = X[:, 0] if X.ndim == 2 else X
     mean = np.repeat(y[-1], h).astype(np.float32)
-    if residuals:
-        res = np.full(y.size, np.nan, np.float32)
-        res[1:] = (y - np.roll(y, 1))[1:]
-        return {'mean': mean, 'residuals': res}
+    if fitted:
+        fitted_vals = np.full(y.size, np.nan, np.float32)
+        fitted_vals[1:] = np.roll(y, 1)[1:]
+        return {'mean': mean, 'fitted': fitted_vals}
     return {'mean': mean}
 
 # Cell
 @njit
-def seasonal_naive(X, h, future_xreg, residuals, season_length):
+def seasonal_naive(X, h, future_xreg, fitted, season_length):
     y = X[:, 0] if X.ndim == 2 else X
     if y.size < season_length:
         return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
-    res = np.full(y.size, np.nan, np.float32)
+    fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        s_naive = naive(y[i::season_length], 1, None, residuals)
+        s_naive = naive(y[i::season_length], 1, None, fitted)
         season_vals[i] = s_naive['mean'].item()
-        if residuals:
-            res[i::season_length] = s_naive['residuals']
+        if fitted:
+            fitted_vals[i::season_length] = s_naive['fitted']
     out = np.empty(h, np.float32)
     for i in range(h):
         out[i] = season_vals[i % season_length]
     fcst = {'mean': out}
-    if residuals:
-        fcst['residuals'] = res
+    if fitted:
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
 @njit
-def random_walk_with_drift(X, h, future_xreg, residuals):
+def random_walk_with_drift(X, h, future_xreg, fitted):
     y = X[:, 0] if X.ndim == 2 else X
     slope = (y[-1] - y[0]) / (y.size - 1)
     mean = slope * (1 + np.arange(h)) + y[-1]
     fcst = {'mean': mean.astype(np.float32)}
-    if residuals:
-        res = np.full(y.size, np.nan, dtype=np.float32)
-        res[1:] = (y[1:] - (slope + y[:-1])).astype(np.float32)
-        fcst['residuals'] = res
+    if fitted:
+        fitted_vals = np.full(y.size, np.nan, dtype=np.float32)
+        fitted_vals[1:] = (slope + y[:-1]).astype(np.float32)
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
 @njit
-def window_average(X, h, future_xreg, residuals, window_size):
-    if residuals:
-        raise NotImplementedError('return residuals')
+def window_average(X, h, future_xreg, fitted, window_size):
+    if fitted:
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     if y.size < window_size:
         return {'mean': np.full(h, np.nan, np.float32)}
@@ -298,43 +298,43 @@ def window_average(X, h, future_xreg, residuals, window_size):
 
 # Cell
 @njit
-def seasonal_exponential_smoothing(X, h, future_xreg, residuals, season_length, alpha):
+def seasonal_exponential_smoothing(X, h, future_xreg, fitted, season_length, alpha):
     y = X[:, 0] if X.ndim == 2 else X
     if y.size < season_length:
         return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
-    res = np.full(y.size, np.nan, np.float32)
+    fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        season_vals[i], res[i::season_length] = _ses_forecast(y[i::season_length], alpha)
+        season_vals[i], fitted_vals[i::season_length] = _ses_forecast(y[i::season_length], alpha)
     out = np.empty(h, np.float32)
     for i in range(h):
         out[i] = season_vals[i % season_length]
     fcst = {'mean': out}
-    if residuals:
-        fcst['residuals'] = res
+    if fitted:
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
-def seasonal_ses_optimized(X, h, future_xreg, residuals, season_length):
+def seasonal_ses_optimized(X, h, future_xreg, fitted, season_length):
     y = X[:, 0] if X.ndim == 2 else X
     if y.size < season_length:
         return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
-    res = np.full(y.size, np.nan, np.float32)
+    fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        season_vals[i], res[i::season_length] = _optimized_ses_forecast(y[i::season_length], [(0.01, 0.99)])
+        season_vals[i], fitted_vals[i::season_length] = _optimized_ses_forecast(y[i::season_length], [(0.01, 0.99)])
     out = np.empty(h, np.float32)
     for i in range(h):
         out[i] = season_vals[i % season_length]
     fcst = {'mean': out}
-    if residuals:
-        fcst['residuals'] = res
+    if fitted:
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
 @njit
-def tsb(X, h, future_xreg, residuals, alpha_d, alpha_p):
-    if residuals:
+def tsb(X, h, future_xreg, fitted, alpha_d, alpha_p):
+    if fitted:
         raise NotImplementedError('return residuals')
     y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
@@ -348,7 +348,7 @@ def tsb(X, h, future_xreg, residuals, alpha_d, alpha_p):
     return {'mean': mean}
 
 # Cell
-def auto_arima(X: np.ndarray, h: int, future_xreg=None, residuals: bool = False, season_length: int = 1,
+def auto_arima(X: np.ndarray, h: int, future_xreg=None, fitted: bool = False, season_length: int = 1,
                approximation: bool = False, level: Optional[Tuple[int]] = None) -> np.ndarray:
     y = X[:, 0] if X.ndim == 2 else X
     xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
@@ -361,10 +361,8 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, residuals: bool = False,
     )
     fcst = forecast_arima(mod, h, xreg=future_xreg, level=level)
     mean = fcst['mean']
-    if residuals:
-        from .arima import fitted_arima
-        res = fitted_arima(mod)
-        return {'mean': mean, 'residuals': res}
+    if fitted:
+        return {'mean': mean, 'fitted': fitted_arima(mod)}
     if level is None:
         return {'mean': mean}
     return {
