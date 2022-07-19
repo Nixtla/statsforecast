@@ -48,46 +48,46 @@ class GroupedArray:
             return False
         return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
-    def compute_forecasts(self, h, func, xreg=None, residuals=False, level=None, *args):
+    def compute_forecasts(self, h, func, xreg=None, fitted=False, level=None, *args):
         has_level = 'level' in inspect.signature(func).parameters and level is not None
         if has_level:
             out = np.full((h * self.n_groups, 2 * len(level) + 1), np.nan, dtype=np.float32)
             func = partial(func, level=level)
         else:
             out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
-        if residuals:
-            res = np.full(self.data.shape[0], np.nan, dtype=np.float32)
+        if fitted:
+            fitted_vals = np.full(self.data.shape[0], np.nan, dtype=np.float32)
         xr = None
         keys = None
         for i, grp in enumerate(self):
             if xreg is not None:
                 xr = xreg[i]
-            res_fn = func(grp, h, xr, residuals, *args)
+            res_fn = func(grp, h, xr, fitted, *args)
             if has_level:
                 if keys is None:
-                    keys = [key for key in res_fn.keys() if key not in ['residuals']]
+                    keys = [key for key in res_fn.keys() if key not in ['fitted']]
                 for j, key in enumerate(keys):
                     out[h * i : h * (i + 1), j] = res_fn[key]
             else:
                 out[h * i : h * (i + 1)] = res_fn['mean']
-            if residuals:
-                res[self.indptr[i] : self.indptr[i + 1]] = res_fn['residuals']
+            if fitted:
+                fitted_vals[self.indptr[i] : self.indptr[i + 1]] = res_fn['fitted']
         result = {'forecasts': out, 'keys': keys}
-        if residuals:
-            result['residuals'] = {'values': res}
+        if fitted:
+            result['fitted'] = {'values': fitted_vals}
         return result
 
-    def compute_cv(self, h, test_size, func, step_size=1, input_size=None, residuals=False, *args):
+    def compute_cv(self, h, test_size, func, step_size=1, input_size=None, fitted=False, *args):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
             raise Exception('`test_size - h` should be module `step_size`')
         n_windows = int((test_size - h) / step_size) + 1
         out = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
-        if residuals:
-            res = np.full((self.data.shape[0], n_windows), np.nan, dtype=np.float32)
-            res_idxs = np.full_like(res, False, dtype=bool)
-            last_res_idxs = np.full_like(res, False, dtype=bool)
+        if fitted:
+            fitted_vals = np.full((self.data.shape[0], n_windows), np.nan, dtype=np.float32)
+            fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
+            last_fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
         for i_ts, grp in enumerate(self):
             for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
                 end_cutoff = cutoff + h
@@ -95,20 +95,20 @@ class GroupedArray:
                 y_train = grp[(cutoff - in_size_disp):cutoff]
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
                 future_xreg = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
-                res_fn = func(y_train, h, future_xreg, residuals, *args)
+                res_fn = func(y_train, h, future_xreg, fitted, *args)
                 out[i_ts, i_window] = res_fn['mean']
                 out_test[i_ts, i_window] = y_test[:, 0] if y_test.ndim == 2 else y_test
-                if residuals:
-                    res[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
+                if fitted:
+                    fitted_vals[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
                         (cutoff - in_size_disp):cutoff
-                    ] = res_fn['residuals']
-                    res_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
+                    ] = res_fn['fitted']
+                    fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
                         (cutoff - in_size_disp):cutoff
                     ] = True
-                    last_res_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][cutoff-1] = True
+                    last_fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][cutoff-1] = True
         result = {'forecasts': out, 'y': out_test}
-        if residuals:
-            result['residuals'] = {'values': res, 'idxs': res_idxs, 'last_idxs': last_res_idxs}
+        if fitted:
+            result['fitted'] = {'values': fitted_vals, 'idxs': fitted_idxs, 'last_idxs': last_fitted_idxs}
         return result
 
     def split(self, n_chunks):
@@ -209,7 +209,7 @@ class StatsForecast:
         self.ray_address = ray_address
         self.sort_df = sort_df
 
-    def forecast(self, h, xreg=None, residuals=False, level=None):
+    def forecast(self, h, xreg=None, fitted=False, level=None):
         if xreg is not None:
             expected_shape = (h * len(self.ga), self.ga.data.shape[1])
             if xreg.shape != expected_shape:
@@ -218,15 +218,15 @@ class StatsForecast:
         forecast_kwargs = dict(
             h=h, test_size=None, step_size=None,
             input_size=None,
-            xreg=xreg, residuals=residuals,
+            xreg=xreg, fitted=fitted,
             level=level, mode='forecast',
         )
         if self.n_jobs == 1:
             res_fcsts = self._sequential(**forecast_kwargs)
         else:
             res_fcsts = self._data_parallel(**forecast_kwargs)
-        if residuals:
-            self.fcst_residuals_ = res_fcsts['residuals']
+        if fitted:
+            self.fcst_fitted_ = res_fcsts['fitted']
         fcsts = res_fcsts['fcsts']
         if issubclass(self.last_dates.dtype.type, np.integer):
             last_date_f = lambda x: np.arange(x + 1, x + 1 + h, dtype=self.last_dates.dtype)
@@ -242,13 +242,13 @@ class StatsForecast:
         idx = pd.Index(np.repeat(self.uids, h), name='unique_id')
         return pd.DataFrame({'ds': dates, **fcsts}, index=idx)
 
-    def forecast_residuals(self):
-        if not hasattr(self, 'fcst_residuals_'):
-            raise Exception('Please run `forecast` mehtod using `residuals=True`')
-        fcst_residuals = {key: val['values'] for key, val in self.fcst_residuals_.items()}
+    def forecast_fitted_values(self):
+        if not hasattr(self, 'fcst_fitted_'):
+            raise Exception('Please run `forecast` mehtod using `fitted=True`')
+        fcst_residuals = {key: val['values'] for key, val in self.fcst_fitted_.items()}
         return pd.DataFrame({**fcst_residuals}, index=self.ds).reset_index(level=1)
 
-    def cross_validation(self, h, n_windows=1, step_size=1, test_size=None, input_size=None, residuals=False):
+    def cross_validation(self, h, n_windows=1, step_size=1, test_size=None, input_size=None, fitted=False):
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
         elif n_windows is None:
@@ -262,14 +262,14 @@ class StatsForecast:
 
         cv_kwargs = dict(
             h=h, test_size=test_size, step_size=step_size, input_size=input_size,
-            xreg=None, residuals=residuals, level=None, mode='cv',
+            xreg=None, fitted=fitted, level=None, mode='cv',
         )
         if self.n_jobs == 1:
             res_fcsts = self._sequential(**cv_kwargs)
         else:
             res_fcsts = self._data_parallel(**cv_kwargs)
-        if residuals:
-            self.cv_residuals_ = res_fcsts['residuals']
+        if fitted:
+            self.cv_fitted_ = res_fcsts['fitted']
             self.n_cv_ = n_windows
         fcsts = res_fcsts['fcsts']
         dates = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size, step_size=step_size)
@@ -277,12 +277,12 @@ class StatsForecast:
         idx = pd.Index(np.repeat(self.uids, h * n_windows), name='unique_id')
         return pd.DataFrame({**dates, **fcsts}, index=idx)
 
-    def cross_validation_residuals(self):
-        if not hasattr(self, 'cv_residuals_'):
-            raise Exception('Please run `cross_validation` mehtod using `residuals=True`')
+    def cross_validation_fitted_values(self):
+        if not hasattr(self, 'cv_fitted_'):
+            raise Exception('Please run `cross_validation` mehtod using `fitted=True`')
         index = pd.MultiIndex.from_tuples(np.tile(self.ds, self.n_cv_), names=['unique_id', 'ds'])
-        res = pd.DataFrame(index=index, columns=['cutoff', 'y'] + list(self.cv_residuals_.keys()))
-        for model, res_ in self.cv_residuals_.items():
+        res = pd.DataFrame(index=index, columns=['cutoff', 'y'] + list(self.cv_fitted_.keys()))
+        for model, res_ in self.cv_fitted_.items():
             res[model] = res_['values'].flatten('F')
         res['cutoff'] = res_['last_idxs'].flatten('F')
         res['y'] = np.tile(self.ga.data.flatten(), self.n_cv_)
@@ -291,18 +291,18 @@ class StatsForecast:
         res['cutoff'] = res['ds'].where(res['cutoff']).bfill()
         return res
 
-    def _sequential(self, h, test_size, step_size, input_size, xreg, residuals, level, mode='forecast'):
-        result = {'fcsts': {}, 'residuals': {}}
+    def _sequential(self, h, test_size, step_size, input_size, xreg, fitted, level, mode='forecast'):
+        result = {'fcsts': {}, 'fitted': {}}
         logger.info('Computing forecasts')
         for model_args in self.models:
             model, *args = _as_tuple(model_args)
             model_name = _build_forecast_name(model, *args)
             if mode == 'forecast':
-                res_fcsts = self.ga.compute_forecasts(h, model, xreg, residuals, level, *args)
+                res_fcsts = self.ga.compute_forecasts(h, model, xreg, fitted, level, *args)
                 values = res_fcsts['forecasts']
                 keys = res_fcsts['keys']
             elif mode == 'cv':
-                res_fcsts = self.ga.compute_cv(h, test_size, model, step_size, input_size, residuals, *args)
+                res_fcsts = self.ga.compute_cv(h, test_size, model, step_size, input_size, fitted, *args)
                 values = res_fcsts['forecasts']
                 test_values = res_fcsts['y']
                 keys = None
@@ -311,15 +311,15 @@ class StatsForecast:
                     result['fcsts'][f'{model_name}_{key}'] = values[:, j]
             else:
                 result['fcsts'][model_name] = values.flatten()
-            if residuals:
-                result['residuals'][model_name] = res_fcsts['residuals']
+            if fitted:
+                result['fitted'][model_name] = res_fcsts['fitted']
             logger.info(f'Computed forecasts for {model_name}.')
         if mode == 'cv':
             result['fcsts'] = {'y': test_values.flatten(), **result['fcsts']}
         return result
 
-    def _data_parallel(self, h, test_size, step_size, input_size, xreg, residuals, level, mode='forecast'):
-        result = {'fcsts': {}, 'residuals': {}}
+    def _data_parallel(self, h, test_size, step_size, input_size, xreg, fitted, level, mode='forecast'):
+        result = {'fcsts': {}, 'fitted': {}}
         logger.info('Computing forecasts')
         gas = self.ga.split(self.n_jobs)
         if xreg is not None:
@@ -350,9 +350,9 @@ class StatsForecast:
                 futures = []
                 for ga, xr in zip(gas, xregs):
                     if mode == 'forecast':
-                        future = executor.apply_async(ga.compute_forecasts, (h, model, xr, residuals, level, *args,))
+                        future = executor.apply_async(ga.compute_forecasts, (h, model, xr, fitted, level, *args,))
                     elif mode == 'cv':
-                        future = executor.apply_async(ga.compute_cv, (h, test_size, model, step_size, input_size, residuals, *args))
+                        future = executor.apply_async(ga.compute_cv, (h, test_size, model, step_size, input_size, fitted, *args))
                     futures.append(future)
                 if mode == 'forecast':
                     res_fcsts = [f.get() for f in futures]
@@ -371,11 +371,11 @@ class StatsForecast:
                 else:
                     values = np.hstack([val.flatten() for val in values])
                     result['fcsts'][model_name] = values.flatten()
-                if residuals:
+                if fitted:
                     res = {}
-                    for k in res_fcsts[0]['residuals'].keys():
-                        res[k] = np.concatenate([d['residuals'][k] for d in res_fcsts])
-                    result['residuals'][model_name] = res
+                    for k in res_fcsts[0]['fitted'].keys():
+                        res[k] = np.concatenate([d['fitted'][k] for d in res_fcsts])
+                    result['fitted'][model_name] = res
                 logger.info(f'Computed forecasts for {model_name}.')
         if mode == 'cv':
             test_values = np.vstack(test_values)
