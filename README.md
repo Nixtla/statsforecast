@@ -18,8 +18,47 @@
 **StatsForecast** offers a collection of widely used univariate time series forecasting models, including automatic `ARIMA` and `ETS` modeling optimized for high performance using `numba`. It also includes a large battery of benchmarking models.
 </div>
 
+## 💻 Installation and Getting Started
+<details open>
+<summary>PyPI</summary>
+
+You can install the *released version* of `StatsForecast` from the [Python package index](https://pypi.org) with:
+
+```python
+pip install statsforecast
+```
+
+(Installing inside a python virtualenvironment or a conda environment is recommended.)
+</details>
+
+<details open>
+<summary>Conda</summary>
+  
+Also you can install the *released version* of `StatsForecast` from [conda](https://anaconda.org) with:
+
+```python
+conda install -c conda-forge statsforecast
+```
+
+(Installing inside a python virtualenvironment or a conda environment is recommended.)
+</details>
+
+<details>
+<summary>Dev Mode</summary>
+If you want to make some modifications to the code and see the effects in real time (without reinstalling), follow the steps below:
+
+```bash
+git clone https://github.com/Nixtla/statsforecast.git
+cd statsforecast
+pip install -e .
+```
+</details>
+
+To get started just follow this [guide](./examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb).
+
+
 ## 🎉 New!
-* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb)  **ETS Example**: 400x faster than StatsModels with improved accuracy and robustness.
+* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb)  **ETS Example**: 400x faster than StatsModels with improved accuracy and robustness.
 * [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)   **Complete pipeline and comparison**:  20x faster than pmdarima and 500x faster than Prophet. 
 
 ## 🔥  Highlights
@@ -63,41 +102,7 @@ StatsForecast's exponential smoothing is **4x faster than StatsModels'** and **1
 
 With `StatsForecast` you can fit 9 benchmark models on **1,000,000** series in under **5 min**. Reproduce the results [here](./experiments/benchmarks_at_scale/). 
 
-## 💻 Installation
-<details>
-<summary>PyPI</summary>
 
-You can install the *released version* of `StatsForecast` from the [Python package index](https://pypi.org) with:
-
-```python
-pip install statsforecast
-```
-
-(Installing inside a python virtualenvironment or a conda environment is recommended.)
-</details>
-
-<details>
-<summary>Conda</summary>
-  
-Also you can install the *released version* of `StatsForecast` from [conda](https://anaconda.org) with:
-
-```python
-conda install -c conda-forge statsforecast
-```
-
-(Installing inside a python virtualenvironment or a conda environment is recommended.)
-</details>
-
-<details>
-<summary>Dev Mode</summary>
-If you want to make some modifications to the code and see the effects in real time (without reinstalling), follow the steps below:
-
-```bash
-git clone https://github.com/Nixtla/statsforecast.git
-cd statsforecast
-pip install -e .
-```
-</details>
 
 ## 🧬 Getting Started 
 You can run this notebooks to get you started. 
