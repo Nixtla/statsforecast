@@ -18,6 +18,10 @@
 **StatsForecast** offers a collection of widely used univariate time series forecasting models, including automatic `ARIMA` and `ETS` modeling optimized for high performance using `numba`. It also includes a large battery of benchmarking models.
 </div>
 
+## 🎉 New!
+* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb)  **ETS Example**: 400% faster than statsmodels with improved accuarcy and robustness.
+* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)   **Complete pipeline and comparison**:  20x faster than pmdarima and 500x faster than Prophet. 
+
 ## 🔥  Highlights
 
 * Fastest and most accurate `auto_arima` in `Python` and `R`.
@@ -33,6 +37,7 @@
 * 20x faster than `pmdarima`.
 * 1.5x faster than `R`.
 * 500x faster than `Prophet`. 
+* 4x faster than `statsmodels`.
 * Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
 * 1,000,000 series in [30 min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray) with [ray](https://github.com/ray-project/ray).
 
@@ -52,7 +57,7 @@ The `auto_arima` model implemented in `StatsForecast` is **20x faster** than `pm
 
 ### ETS
 
-The `ets` model implemented in `StatsForecast` is **4x faster** than `statsmodels` and *1.6x faster* than `R` while improving accuracy. You can see the exact comparison and reproduce the results [here](./experiments/ets/)
+StatsForecast's exponential smoothing is **4x faster than StatsModels'** and **1.6x faster than R's**, with improved accuracy and robustness. You can see the exact comparison and reproduce the results[here](./experiments/ets/)
 
 ### Benchmarks at Scale
 
