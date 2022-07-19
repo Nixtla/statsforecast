@@ -132,7 +132,7 @@ def ses_optimized(X, h, future_xreg, fitted):
 # Cell
 def adida(X, h, future_xreg, fitted):
     if fitted:
-        raise NotImplementedError('return residuals')
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
         return {'mean': np.repeat(np.float32(0), h)}
@@ -178,7 +178,7 @@ def croston_sba(X, h, future_xreg, fitted):
     if fitted:
         raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
-    mean = croston_classic(y, h, future_xreg, residuals)
+    mean = croston_classic(y, h, future_xreg, fitted)
     mean['mean'] *= 0.95
     return mean
 
@@ -335,7 +335,7 @@ def seasonal_ses_optimized(X, h, future_xreg, fitted, season_length):
 @njit
 def tsb(X, h, future_xreg, fitted, alpha_d, alpha_p):
     if fitted:
-        raise NotImplementedError('return residuals')
+        raise NotImplementedError('return fitted')
     y = X[:, 0] if X.ndim == 2 else X
     if (y == 0).all():
         return {'mean': np.repeat(np.float32(0), h)}
