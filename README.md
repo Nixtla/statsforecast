@@ -58,7 +58,7 @@ To get started just follow this [guide](./examples/Getting_Started_with_Auto_Ari
 
 
 ## 🎉 New!
-* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb)  **ETS Example**: 400x faster than StatsModels with improved accuracy and robustness.
+* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb)  **ETS Example**: 4x faster than StatsModels with improved accuracy and robustness.
 * [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)   **Complete pipeline and comparison**:  20x faster than pmdarima and 500x faster than Prophet. 
 
 ## 🔥  Highlights
