@@ -9,3 +9,4 @@ dist
 *.gif
 *.parquet
 *.csv
+tmp
