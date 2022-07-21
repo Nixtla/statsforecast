@@ -66,9 +66,9 @@ To get started just follow this [guide](./examples/Getting_Started_with_Auto_Ari
 * Fastest and most accurate `auto_arima` in `Python` and `R`.
 * Fastest and most accurate `ets` in `Python` and `R`.
 
-* **New!**: Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter).
-* **New!**: Distributed computation in clusters with [ray](https://github.com/ray-project/ray). (Forecast 1M series in [30min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray))
-* **New!**: Good Ol' sklearn syntax with `AutoARIMA().fit(y).predict(h=7)`.
+* Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter).
+* Distributed computation in clusters with [ray](https://github.com/ray-project/ray). (Forecast 1M series in [30min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray))
+* Good Ol' sklearn interface with `AutoARIMA().fit(y).predict(h=7)`.
 
 ## 🎊 Features 
 
