@@ -43,7 +43,7 @@ nb_path: "nbs/core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">fastcore.test</span> <span class="kn">import</span> <span class="n">test_eq</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">fastcore.test</span> <span class="kn">import</span> <span class="n">test_eq</span><span class="p">,</span> <span class="n">test_fail</span>
 
 <span class="kn">from</span> <span class="nn">statsforecast.models</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">adida</span><span class="p">,</span>
@@ -51,6 +51,7 @@ nb_path: "nbs/core.ipynb"
     <span class="n">croston_classic</span><span class="p">,</span>
     <span class="n">croston_optimized</span><span class="p">,</span>
     <span class="n">croston_sba</span><span class="p">,</span>
+    <span class="n">ets</span><span class="p">,</span>
     <span class="n">historic_average</span><span class="p">,</span>
     <span class="n">imapa</span><span class="p">,</span>
     <span class="n">naive</span><span class="p">,</span>
@@ -83,7 +84,7 @@ nb_path: "nbs/core.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L110" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>, <strong><code>ray_address</code></strong>=<em><code>None</code></em>)</p>
+<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L201" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>, <strong><code>ray_address</code></strong>=<em><code>None</code></em>, <strong><code>sort_df</code></strong>=<em><code>True</code></em>)</p>
 </blockquote>
 
 </div>
@@ -118,6 +119,107 @@ nb_path: "nbs/core.ipynb"
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
     <span class="n">series</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">naive</span><span class="p">,</span> <span class="n">adida</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">,</span> <span class="n">croston_optimized</span><span class="p">,</span>
+    <span class="n">croston_sba</span><span class="p">,</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">imapa</span><span class="p">,</span> <span class="n">naive</span><span class="p">,</span> 
+    <span class="n">random_walk_with_drift</span><span class="p">,</span> <span class="p">(</span><span class="n">seasonal_exponential_smoothing</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">seasonal_naive</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="n">seasonal_window_average</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+    <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="n">tsb</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="p">(</span><span class="n">window_average</span><span class="p">,</span> <span class="mi">4</span><span class="p">)],</span>
+    <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">res</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+<span class="n">res</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Fitted-values">Fitted values<a class="anchor-link" href="#Fitted-values"> </a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Cross-Validation">Cross Validation<a class="anchor-link" href="#Cross-Validation"> </a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Cross-validation-fitted-values">Cross validation fitted values<a class="anchor-link" href="#Cross-validation-fitted-values"> </a></h3>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">test_cv_fitted</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">resids_fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
+        <span class="n">series_cv</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">sum_ahead</span><span class="p">,</span> <span class="n">naive</span><span class="p">],</span>
+        <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
+        <span class="n">n_jobs</span><span class="o">=</span><span class="n">n_jobs</span>
+    <span class="p">)</span>
+    <span class="n">resids_res_cv</span> <span class="o">=</span> <span class="n">resids_fcst</span><span class="o">.</span><span class="n">cross_validation</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_windows</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">fitted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">resids_cv</span> <span class="o">=</span> <span class="n">resids_fcst</span><span class="o">.</span><span class="n">cross_validation_fitted_values</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">uid</span> <span class="ow">in</span> <span class="n">resids_cv</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">cutoff</span> <span class="ow">in</span> <span class="n">resids_cv</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">uid</span><span class="p">][</span><span class="s1">&#39;cutoff&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">testing</span><span class="o">.</span><span class="n">assert_frame_equal</span><span class="p">(</span>
+                <span class="n">resids_cv</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">uid</span><span class="p">]</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;cutoff == @cutoff&#39;</span><span class="p">)[[</span><span class="s1">&#39;ds&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]],</span> 
+                <span class="n">series_cv</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s1">&#39;ds &lt;= @cutoff &amp; unique_id == @uid&#39;</span><span class="p">)[[</span><span class="s1">&#39;ds&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">]],</span>
+                <span class="n">check_dtype</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">)</span>
+<span class="n">test_cv_fitted</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Equal-ends">Equal ends<a class="anchor-link" href="#Equal-ends"> </a></h3>
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">series_eq_ends</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">equal_ends</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
+    <span class="n">series_eq_ends</span><span class="p">,</span>
     <span class="p">[</span><span class="n">adida</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">,</span> <span class="n">croston_optimized</span><span class="p">,</span>
      <span class="n">croston_sba</span><span class="p">,</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">imapa</span><span class="p">,</span> <span class="n">naive</span><span class="p">,</span> 
      <span class="n">random_walk_with_drift</span><span class="p">,</span> <span class="p">(</span><span class="n">seasonal_exponential_smoothing</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
@@ -159,7 +261,27 @@ nb_path: "nbs/core.ipynb"
         <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span>
     <span class="p">)</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+    <span class="n">res_cv</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">cross_validation</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">res_cv</span><span class="p">)</span>
+    <span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
+        <span class="n">series_cv</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">sum_ahead</span><span class="p">],</span>
+        <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">res_cv</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">cross_validation</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">test_eq</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">res_cv</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_cv</span><span class="p">[</span><span class="s1">&#39;sum_ahead&#39;</span><span class="p">]))</span>
+    
+    <span class="n">test_fcst_fitted</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">test_cv_fitted</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># check n_windows argument</span>
+    <span class="n">n_windows</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">cross_validation</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_windows</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;unique_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="n">test_eq</span><span class="p">(</span><span class="n">n_windows</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">test_eq</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">res_cv</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_cv</span><span class="p">[</span><span class="s1">&#39;sum_ahead&#39;</span><span class="p">]))</span>
+    <span class="c1"># check step_size argument</span>
+    <span class="n">n_windows</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">cross_validation</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">n_windows</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;unique_id&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+    <span class="n">test_eq</span><span class="p">(</span><span class="n">n_windows</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">test_eq</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">res_cv</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">res_cv</span><span class="p">[</span><span class="s1">&#39;sum_ahead&#39;</span><span class="p">]))</span>
 </pre></div>
 
     </div>
@@ -207,23 +329,6 @@ nb_path: "nbs/core.ipynb"
 <span class="p">)</span>
 <span class="o">%</span><span class="k">time</span> monthly_res = fcst.forecast(4)
 <span class="n">monthly_res</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span><span class="o">.</span><span class="n">ga</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">2</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
 </pre></div>
 
     </div>
@@ -331,6 +436,24 @@ nb_path: "nbs/core.ipynb"
 </div>
     {% endraw %}
 
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">int_ds_cv</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">cross_validation</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">n_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">int_ds_cv</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="External-regressors">External regressors<a class="anchor-link" href="#External-regressors"> </a></h2>
@@ -339,7 +462,7 @@ nb_path: "nbs/core.ipynb"
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Every column after <strong>y</strong> is considered an external regressor and will be passed to the models that allow them. If you use them you must supply the future values to the <code>forecast</code> method.</p>
+<p>Every column after <strong>y</strong> is considered an external regressor and will be passed to the models that allow them. If you use them you must supply the future values to the <a href="/statsforecast/ets.html#forecast"><code>forecast</code></a> method.</p>
 
 </div>
 </div>
@@ -351,11 +474,11 @@ nb_path: "nbs/core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">future_xreg</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">linear_regression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">future_xreg</span><span class="p">,</span> <span class="n">residuals</span><span class="p">):</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="n">xreg</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>
     <span class="n">coefs</span><span class="p">,</span> <span class="o">*</span><span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">lstsq</span><span class="p">(</span><span class="n">xreg</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">rcond</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">future_xreg</span> <span class="o">@</span> <span class="n">coefs</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">future_xreg</span> <span class="o">@</span> <span class="n">coefs</span><span class="p">}</span>
 </pre></div>
 
     </div>
@@ -422,7 +545,24 @@ nb_path: "nbs/core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">xreg_res</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ds&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">();</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">xreg_res</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ds&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">xreg_res_cv</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">cross_validation</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_windows</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -516,5 +656,5 @@ nb_path: "nbs/core.ipynb"
     {% endraw %}
 
 </div>
-
+ 
 

@@ -2,10 +2,12 @@
 __pycache__
 *.egg-info
 Gemfile*
+Gemfile.lock
 docs/_site
 build
 dist
 .vscode
 *.gif
-*.parquet
 *.csv
+*/data/*
+*.parquet
