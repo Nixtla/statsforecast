@@ -1,9 +1,13 @@
 {
-  "statsforecast": {
-    "Overview": "/",
-    "ARIMA": "arima.html",
-    "Core": "core.html",
-    "Models": "models.html",
-    "Utils": "utils.html"
-  }
+	"StatsForecast": {
+		"Overview": "/",
+		"Core": "core.html",
+		"Models": "models.html",
+		"Utils": "utils.html",
+		"Adapters for Prophet": "adapters.prophet.html"
+	},
+	"Examples": {
+		"Getting started with AutoARIMA and ETS": "Getting_Started_with_Auto_Arima_and_ETS.html",
+		"AutoArima vs Prophet": "AutoArima_vs_Prophet.html"
+	}
 }

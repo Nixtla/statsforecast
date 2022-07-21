@@ -10,9 +10,6 @@ entries:
       title: Overview
       url: /
     - output: web,pdf
-      title: ARIMA
-      url: arima.html
-    - output: web,pdf
       title: Core
       url: core.html
     - output: web,pdf
@@ -21,7 +18,19 @@ entries:
     - output: web,pdf
       title: Utils
       url: utils.html
+    - output: web,pdf
+      title: Adapters for Prophet
+      url: adapters.prophet.html
     output: web
-    title: statsforecast
+    title: StatsForecast
+  - folderitems:
+    - output: web,pdf
+      title: AutoArima vs Prophet
+      url: AutoArima_vs_Prophet.html
+    - output: web,pdf
+      title: Getting started with AutoARIMA and ETS
+      url: Getting_Started_with_Auto_Arima_and_ETS.html
+    output: web
+    title: Examples
   output: web
   title: Sidebar
