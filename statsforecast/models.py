@@ -374,10 +374,14 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, fitted: bool = False, se
     }
 
 # Cell
-def ets(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
+def ets(X: np.ndarray, h: int, future_xreg=None, fitted: bool = False,
+        season_length: int = 1,
         model: str = 'ZZZ') -> np.ndarray:
     y = X[:, 0] if X.ndim == 2 else X
     xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
     mod = ets_f(y, m=season_length, model=model)
     fcst = forecast_ets(mod, h)
-    return fcst['mean']
+    keys = ['mean']
+    if fitted:
+        keys.append('fitted')
+    return {key: fcst[key] for key in keys}
