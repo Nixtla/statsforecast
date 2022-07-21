@@ -2,7 +2,7 @@
 
 __all__ = ['ses', 'ses_optimized', 'adida', 'historic_average', 'croston_classic', 'croston_sba', 'croston_optimized',
            'seasonal_window_average', 'imapa', 'naive', 'seasonal_naive', 'random_walk_with_drift', 'window_average',
-           'seasonal_exponential_smoothing', 'seasonal_ses_optimized', 'tsb', 'auto_arima']
+           'seasonal_exponential_smoothing', 'seasonal_ses_optimized', 'tsb', 'auto_arima', 'ets']
 
 # Cell
 from itertools import count
@@ -15,6 +15,7 @@ from numba import njit
 from scipy.optimize import minimize
 
 from .arima import auto_arima_f, forecast_arima, fitted_arima
+from .ets import ets_f, forecast_ets
 
 # Internal Cell
 @njit
@@ -352,13 +353,14 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, fitted: bool = False, se
                approximation: bool = False, level: Optional[Tuple[int]] = None) -> np.ndarray:
     y = X[:, 0] if X.ndim == 2 else X
     xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
-    mod = auto_arima_f(
-        y,
-        xreg=xreg,
-        period=season_length,
-        approximation=approximation,
-        allowmean=False, allowdrift=False #not implemented yet
-    )
+    with np.errstate(invalid='ignore'):
+        mod = auto_arima_f(
+            y,
+            xreg=xreg,
+            period=season_length,
+            approximation=approximation,
+            allowmean=False, allowdrift=False #not implemented yet
+        )
     fcst = forecast_arima(mod, h, xreg=future_xreg, level=level)
     mean = fcst['mean']
     if fitted:
@@ -370,3 +372,12 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, fitted: bool = False, se
         **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
         **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
     }
+
+# Cell
+def ets(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
+        model: str = 'ZZZ') -> np.ndarray:
+    y = X[:, 0] if X.ndim == 2 else X
+    xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
+    mod = ets_f(y, m=season_length, model=model)
+    fcst = forecast_ets(mod, h)
+    return fcst['mean']
