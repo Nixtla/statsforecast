@@ -258,13 +258,14 @@ def auto_arima(X: np.ndarray, h: int, future_xreg=None, season_length: int = 1,
                approximation: bool = False, level: Optional[Tuple[int]] = None) -> np.ndarray:
     y = X[:, 0] if X.ndim == 2 else X
     xreg = X[:, 1:] if (X.ndim == 2 and X.shape[1] > 1) else None
-    mod = auto_arima_f(
-        y,
-        xreg=xreg,
-        period=season_length,
-        approximation=approximation,
-        allowmean=False, allowdrift=False #not implemented yet
-    )
+    with np.errstate(invalid='ignore'):
+        mod = auto_arima_f(
+            y,
+            xreg=xreg,
+            period=season_length,
+            approximation=approximation,
+            allowmean=False, allowdrift=False #not implemented yet
+        )
     fcst = forecast_arima(mod, h, xreg=future_xreg, level=level)
     if level is None:
         return fcst['mean']
