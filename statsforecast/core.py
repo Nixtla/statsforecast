@@ -245,8 +245,9 @@ class StatsForecast:
     def forecast_fitted_values(self):
         if not hasattr(self, 'fcst_fitted_'):
             raise Exception('Please run `forecast` mehtod using `fitted=True`')
-        fcst_residuals = {key: val['values'] for key, val in self.fcst_fitted_.items()}
-        return pd.DataFrame({**fcst_residuals}, index=self.ds).reset_index(level=1)
+        fcst_fitted = {key: val['values'] for key, val in self.fcst_fitted_.items()}
+        fcst_fitted['y'] = self.ga.data[:, 0]
+        return pd.DataFrame({**fcst_fitted}, index=self.ds).reset_index(level=1)
 
     def cross_validation(self, h, n_windows=1, step_size=1, test_size=None, input_size=None, fitted=False):
         if test_size is None:
