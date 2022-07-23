@@ -122,6 +122,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "goodwanghan",
+      "name": "Han Wang",
+      "avatar_url": "https://avatars.githubusercontent.com/u/21092479?v=4",
+      "profile": "https://github.com/fugue-project/fugue",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
