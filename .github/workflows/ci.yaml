@@ -60,7 +60,8 @@ jobs:
           environment-file: environment.yml
 
       - name: Install pip requirements
-        run: pip install nbdev tabulate ./
+        run: pip install fugue nbdev tabulate ./
+
 
       - name: Run tests
         run: nbdev_test_nbs

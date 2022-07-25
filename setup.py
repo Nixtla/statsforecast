@@ -25,6 +25,7 @@ statuses = [ '1 - Planning', '2 - Pre-Alpha', '3 - Alpha',
 py_versions = '2.0 2.1 2.2 2.3 2.4 2.5 2.6 2.7 3.0 3.1 3.2 3.3 3.4 3.5 3.6 3.7 3.8 3.9 3.10'.split()
 
 requirements = cfg.get('requirements','').split()
+fugue_requirements = cfg.get('fugue_requirements', '').split()
 ray_requirements = cfg.get('ray_requirements', '').split()
 lic = licenses[cfg['license']]
 min_python = cfg['min_python']
@@ -42,7 +43,7 @@ setuptools.setup(
     packages = setuptools.find_packages(),
     include_package_data = True,
     install_requires = requirements,
-    extras_require = {'ray': ray_requirements,},
+    extras_require = {'ray': ray_requirements, 'fugue': fugue_requirements,},
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
     long_description = open('README.md', encoding='utf8').read(),
