@@ -1,27 +1,27 @@
 {
 	"StatsForecast": {
 		"Overview": "/",
-		"Installation": "installation.html",
+		"Installation": "/Installation",
 		"": {
 			"Reference": {
-				"Core": "core.html",
-				"Models": "models.html",
-				"Utils": "utils.html",
-				"Adapters for Prophet": "adapters.prophet.html"
+				"Core": "/core",
+				"Models": "/models",
+				"Utils": "/utils",
+				"Adapters for Prophet": "/adapters.prophet"
 			}
 		},
 		"empty2": {
 			"Quick Start": {
-				"Getting started with AutoARIMA and ETS": "Getting_Started_with_Auto_Arima_and_ETS.html",
-				"AutoArima vs Prophet": "AutoArima_vs_Prophet.html"
+				"Getting started with AutoARIMA and ETS": "/Getting_Started_with_Auto_Arima_and_ETS",
+				"AutoArima vs Prophet": "/AutoArima_vs_Prophet"
 			}
 		},
-		"Exogenous Regressors": "Exogenous.html",
-		"Uncertainty Intervals": "UncertaintyIntervals.html",
-		"Outliers": "Outliers.html",
-		"Non Daily Data": "NonDailyData.html",
-		"Diagnostics": "Diagnostics.html",
-		"Forecasting at Scale": "ForecastingAtScale.html",
-		"Getting Help Contributing": "Contributing.html"
+		"Exogenous Regressors": "/Exogenous",
+		"Uncertainty Intervals": "/UncertaintyIntervals",
+		"Outliers": "/Outliers",
+		"Non Daily Data": "/NonDailyData",
+		"Diagnostics": "/Diagnostics",
+		"Forecasting at Scale": "/ForecastingAtScale",
+		"Getting Help Contributing": "/Contributing"
 	}
 }

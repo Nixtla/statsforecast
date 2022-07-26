@@ -11,53 +11,53 @@ entries:
       url: /
     - output: web,pdf
       title: Installation
-      url: installation.html
+      url: /Installation
       subfolders:
       - output: web
         subfolderitems:
         - output: web,pdf
           title: Core
-          url: core.html
+          url: /core
         - output: web,pdf
           title: Models
-          url: models.html
+          url: /models
         - output: web,pdf
           title: Utils
-          url: utils.html
+          url: /utils
         - output: web,pdf
           title: Adapters for Prophet
-          url: adapters.prophet.html
+          url: /adapters.prophet
         title: Reference
       - output: web
         subfolderitems:
         - output: web,pdf
           title: Getting started with AutoARIMA and ETS
-          url: Getting_Started_with_Auto_Arima_and_ETS.html
+          url: /Getting_Started_with_Auto_Arima_and_ETS
         - output: web,pdf
           title: AutoArima vs Prophet
-          url: AutoArima_vs_Prophet.html
+          url: /AutoArima_vs_Prophet
         title: Quick Start
     - output: web,pdf
       title: Exogenous Regressors
-      url: Exogenous.html
+      url: /Exogenous
     - output: web,pdf
       title: Uncertainty Intervals
-      url: UncertaintyIntervals.html
+      url: /UncertaintyIntervals
     - output: web,pdf
       title: Outliers
-      url: Outliers.html
+      url: /Outliers
     - output: web,pdf
       title: Non Daily Data
-      url: NonDailyData.html
+      url: /NonDailyData
     - output: web,pdf
       title: Diagnostics
-      url: Diagnostics.html
+      url: /Diagnostics
     - output: web,pdf
       title: Forecasting at Scale
-      url: ForecastingAtScale.html
+      url: /ForecastingAtScale
     - output: web,pdf
       title: Getting Help Contributing
-      url: Contributing.html
+      url: /Contributing
     output: web
     title: StatsForecast
   output: web
