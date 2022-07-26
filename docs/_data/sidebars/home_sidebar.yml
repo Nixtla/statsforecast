@@ -10,27 +10,55 @@ entries:
       title: Overview
       url: /
     - output: web,pdf
-      title: Core
-      url: core.html
+      title: Installation
+      url: installation.html
+      subfolders:
+      - output: web
+        subfolderitems:
+        - output: web,pdf
+          title: Core
+          url: core.html
+        - output: web,pdf
+          title: Models
+          url: models.html
+        - output: web,pdf
+          title: Utils
+          url: utils.html
+        - output: web,pdf
+          title: Adapters for Prophet
+          url: adapters.prophet.html
+        title: Reference
+      - output: web
+        subfolderitems:
+        - output: web,pdf
+          title: Getting started with AutoARIMA and ETS
+          url: Getting_Started_with_Auto_Arima_and_ETS.html
+        - output: web,pdf
+          title: AutoArima vs Prophet
+          url: AutoArima_vs_Prophet.html
+        title: Quick Start
     - output: web,pdf
-      title: Models
-      url: models.html
+      title: Exogenous Regressors
+      url: Exogenous.html
     - output: web,pdf
-      title: Utils
-      url: utils.html
+      title: Uncertainty Intervals
+      url: UncertaintyIntervals.html
     - output: web,pdf
-      title: Adapters for Prophet
-      url: adapters.prophet.html
+      title: Outliers
+      url: Outliers.html
+    - output: web,pdf
+      title: Non Daily Data
+      url: NonDailyData.html
+    - output: web,pdf
+      title: Diagnostics
+      url: Diagnostics.html
+    - output: web,pdf
+      title: Forecasting at Scale
+      url: ForecastingAtScale.html
+    - output: web,pdf
+      title: Getting Help Contributing
+      url: Contributing.html
     output: web
     title: StatsForecast
-  - folderitems:
-    - output: web,pdf
-      title: AutoArima vs Prophet
-      url: AutoArima_vs_Prophet.html
-    - output: web,pdf
-      title: Getting started with AutoARIMA and ETS
-      url: Getting_Started_with_Auto_Arima_and_ETS.html
-    output: web
-    title: Examples
   output: web
   title: Sidebar
