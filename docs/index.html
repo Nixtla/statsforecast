@@ -1,6 +1,6 @@
 ---
 
-title: <center>Nixtla
+title: Statistical ⚡️ Forecast
 
 
 keywords: fastai
@@ -31,11 +31,7 @@ nb_path: "nbs/index.ipynb"
 
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<div align="center">
-<img src="https://raw.githubusercontent.com/Nixtla/neuralforecast/main/nbs/indx_imgs/branding/logo_mid.png">
-<h1 align="center">Statistical ⚡️ Forecast</h1>
-<h3 align="center">Lightning fast forecasting with statistical and econometric models</h3>
-</div><p><strong>StatsForecast</strong> offers a collection of widely used univariate time series forecasting models, including automatic <code>ARIMA</code> and <code>ETS</code> modeling optimized for high performance using <code>numba</code>. It also includes a large battery of benchmarking models.</p>
+<p><strong>StatsForecast</strong> offers a collection of widely used univariate time series forecasting models, including automatic <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> and <a href="/statsforecast/ets.html"><code>ets</code></a> modeling optimized for high performance using <code>numba</code>. It also includes a large battery of benchmarking models.</p>
 
 </div>
 </div>
@@ -79,7 +75,7 @@ pip install -e .
 <li><p><strong>New!</strong>: Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments <a href="https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter">here</a>.</p>
 </li>
 <li><strong>New!</strong>: Distributed computation in clusters with <a href="https://github.com/ray-project/ray">ray</a>. (Forecast 1M series in <a href="https://github.com/Nixtla/statsforecast/tree/main/experiments/ray">30min</a>)</li>
-<li><strong>New!</strong>: Good Ol' sklearn syntax with <code>AutoARIMA().fit(y).predict(h=7)</code>.</li>
+<li><strong>New!</strong>: Good Ol' sklearn syntax with <a href="/statsforecast/arima.html#AutoARIMA"><code>AutoARIMA</code></a> (<code>AutoARIMA().fit(y).predict(h=7)</code>.</li>
 </ul>
 
 </div>
@@ -115,7 +111,7 @@ pip install -e .
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="%F0%9F%94%AC-Accuracy-&amp;-%E2%8F%B2-Speed">&#128300; Accuracy &amp; &#9202; Speed<a class="anchor-link" href="#%F0%9F%94%AC-Accuracy-&amp;-%E2%8F%B2-Speed"> </a></h2><h3 id="ARIMA">ARIMA<a class="anchor-link" href="#ARIMA"> </a></h3><p>The <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> model implemented in <a href="/statsforecast/core.html#StatsForecast"><code>StatsForecast</code></a> is <strong>20x faster</strong> than <code>pmdarima</code> and <strong>1.5x faster</strong> than <code>R</code>  while improving accuracy. You can see the exact comparison and reproduce the results <a href="./experiments/arima/">here</a>.</p>
-<h3 id="ETS">ETS<a class="anchor-link" href="#ETS"> </a></h3><p>StatsForecast's exponential smoothing is <strong>4x faster than StatsModels'</strong> and <strong>1.6x faster than R's</strong>, with improved accuracy and robustness. You can see the exact comparison and reproduce the results<a href="./experiments/ets/">here</a></p>
+<h3 id="ETS">ETS<a class="anchor-link" href="#ETS"> </a></h3><p>StatsForecast's <a href="/statsforecast/ets.html"><code>ets</code></a> is <strong>4x faster than StatsModels'</strong> and <strong>1.6x faster than R's</strong>, with improved accuracy and robustness. You can see the exact comparison and reproduce the results<a href="./experiments/ets/">here</a></p>
 <h3 id="Benchmarks-at-Scale">Benchmarks at Scale<a class="anchor-link" href="#Benchmarks-at-Scale"> </a></h3><p>With <a href="/statsforecast/core.html#StatsForecast"><code>StatsForecast</code></a> you can fit 9 benchmark models on <strong>1,000,000</strong> series in under <strong>5 min</strong>. Reproduce the results <a href="./experiments/benchmarks_at_scale/">here</a>.</p>
 
 </div>
