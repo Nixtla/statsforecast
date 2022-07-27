@@ -32,7 +32,7 @@ nb_path: "nbs/adapters.prophet.ipynb"
 <div class="output_area">
 
 <div class="output_subarea output_stream output_stderr output_text">
-<pre>2022-04-14 19:58:59 prophet.plot ERROR: Importing plotly failed. Interactive plots will not work.
+<pre>2022-07-26 12:44:31 prophet.plot ERROR: Importing plotly failed. Interactive plots will not work.
 </pre>
 </div>
 </div>
@@ -46,40 +46,6 @@ nb_path: "nbs/adapters.prophet.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
 
 </div>
     {% endraw %}
@@ -101,7 +67,7 @@ nb_path: "nbs/adapters.prophet.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="AutoARIMAProphet" class="doc_header"><code>class</code> <code>AutoARIMAProphet</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/adapters/prophet.py#L24" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>AutoARIMAProphet</code>(<strong><code>growth</code></strong>=<em><code>'linear'</code></em>, <strong><code>changepoints</code></strong>=<em><code>None</code></em>, <strong><code>n_changepoints</code></strong>=<em><code>25</code></em>, <strong><code>changepoint_range</code></strong>=<em><code>0.8</code></em>, <strong><code>yearly_seasonality</code></strong>=<em><code>'auto'</code></em>, <strong><code>weekly_seasonality</code></strong>=<em><code>'auto'</code></em>, <strong><code>daily_seasonality</code></strong>=<em><code>'auto'</code></em>, <strong><code>holidays</code></strong>=<em><code>None</code></em>, <strong><code>seasonality_mode</code></strong>=<em><code>'additive'</code></em>, <strong><code>seasonality_prior_scale</code></strong>=<em><code>10.0</code></em>, <strong><code>holidays_prior_scale</code></strong>=<em><code>10.0</code></em>, <strong><code>changepoint_prior_scale</code></strong>=<em><code>0.05</code></em>, <strong><code>mcmc_samples</code></strong>=<em><code>0</code></em>, <strong><code>interval_width</code></strong>=<em><code>0.8</code></em>, <strong><code>uncertainty_samples</code></strong>=<em><code>1000</code></em>, <strong><code>stan_backend</code></strong>=<em><code>None</code></em>, <strong><code>d</code></strong>=<em><code>None</code></em>, <strong><code>D</code></strong>=<em><code>None</code></em>, <strong><code>max_p</code></strong>=<em><code>5</code></em>, <strong><code>max_q</code></strong>=<em><code>5</code></em>, <strong><code>max_P</code></strong>=<em><code>2</code></em>, <strong><code>max_Q</code></strong>=<em><code>2</code></em>, <strong><code>max_order</code></strong>=<em><code>5</code></em>, <strong><code>max_d</code></strong>=<em><code>2</code></em>, <strong><code>max_D</code></strong>=<em><code>1</code></em>, <strong><code>start_p</code></strong>=<em><code>2</code></em>, <strong><code>start_q</code></strong>=<em><code>2</code></em>, <strong><code>start_P</code></strong>=<em><code>1</code></em>, <strong><code>start_Q</code></strong>=<em><code>1</code></em>, <strong><code>stationary</code></strong>=<em><code>False</code></em>, <strong><code>seasonal</code></strong>=<em><code>True</code></em>, <strong><code>ic</code></strong>=<em><code>'aicc'</code></em>, <strong><code>stepwise</code></strong>=<em><code>True</code></em>, <strong><code>nmodels</code></strong>=<em><code>94</code></em>, <strong><code>trace</code></strong>=<em><code>False</code></em>, <strong><code>approximation</code></strong>=<em><code>False</code></em>, <strong><code>method</code></strong>=<em><code>None</code></em>, <strong><code>truncate</code></strong>=<em><code>None</code></em>, <strong><code>test</code></strong>=<em><code>'kpss'</code></em>, <strong><code>test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>seasonal_test</code></strong>=<em><code>'seas'</code></em>, <strong><code>seasonal_test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>allowdrift</code></strong>=<em><code>False</code></em>, <strong><code>allowmean</code></strong>=<em><code>False</code></em>, <strong><code>blambda</code></strong>=<em><code>None</code></em>, <strong><code>biasadj</code></strong>=<em><code>False</code></em>, <strong><code>parallel</code></strong>=<em><code>False</code></em>, <strong><code>num_cores</code></strong>=<em><code>2</code></em>, <strong><code>period</code></strong>=<em><code>1</code></em>) :: <code>Prophet</code></p>
+<h2 id="AutoARIMAProphet" class="doc_header"><code>class</code> <code>AutoARIMAProphet</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/adapters/prophet.py#L39" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>AutoARIMAProphet</code>(<strong><code>growth</code></strong>=<em><code>'linear'</code></em>, <strong><code>changepoints</code></strong>=<em><code>None</code></em>, <strong><code>n_changepoints</code></strong>=<em><code>25</code></em>, <strong><code>changepoint_range</code></strong>=<em><code>0.8</code></em>, <strong><code>yearly_seasonality</code></strong>=<em><code>'auto'</code></em>, <strong><code>weekly_seasonality</code></strong>=<em><code>'auto'</code></em>, <strong><code>daily_seasonality</code></strong>=<em><code>'auto'</code></em>, <strong><code>holidays</code></strong>=<em><code>None</code></em>, <strong><code>seasonality_mode</code></strong>=<em><code>'additive'</code></em>, <strong><code>seasonality_prior_scale</code></strong>=<em><code>10.0</code></em>, <strong><code>holidays_prior_scale</code></strong>=<em><code>10.0</code></em>, <strong><code>changepoint_prior_scale</code></strong>=<em><code>0.05</code></em>, <strong><code>mcmc_samples</code></strong>=<em><code>0</code></em>, <strong><code>interval_width</code></strong>=<em><code>0.8</code></em>, <strong><code>uncertainty_samples</code></strong>=<em><code>1000</code></em>, <strong><code>stan_backend</code></strong>=<em><code>None</code></em>, <strong><code>d</code></strong>=<em><code>None</code></em>, <strong><code>D</code></strong>=<em><code>None</code></em>, <strong><code>max_p</code></strong>=<em><code>5</code></em>, <strong><code>max_q</code></strong>=<em><code>5</code></em>, <strong><code>max_P</code></strong>=<em><code>2</code></em>, <strong><code>max_Q</code></strong>=<em><code>2</code></em>, <strong><code>max_order</code></strong>=<em><code>5</code></em>, <strong><code>max_d</code></strong>=<em><code>2</code></em>, <strong><code>max_D</code></strong>=<em><code>1</code></em>, <strong><code>start_p</code></strong>=<em><code>2</code></em>, <strong><code>start_q</code></strong>=<em><code>2</code></em>, <strong><code>start_P</code></strong>=<em><code>1</code></em>, <strong><code>start_Q</code></strong>=<em><code>1</code></em>, <strong><code>stationary</code></strong>=<em><code>False</code></em>, <strong><code>seasonal</code></strong>=<em><code>True</code></em>, <strong><code>ic</code></strong>=<em><code>'aicc'</code></em>, <strong><code>stepwise</code></strong>=<em><code>True</code></em>, <strong><code>nmodels</code></strong>=<em><code>94</code></em>, <strong><code>trace</code></strong>=<em><code>False</code></em>, <strong><code>approximation</code></strong>=<em><code>False</code></em>, <strong><code>method</code></strong>=<em><code>None</code></em>, <strong><code>truncate</code></strong>=<em><code>None</code></em>, <strong><code>test</code></strong>=<em><code>'kpss'</code></em>, <strong><code>test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>seasonal_test</code></strong>=<em><code>'seas'</code></em>, <strong><code>seasonal_test_kwargs</code></strong>=<em><code>None</code></em>, <strong><code>allowdrift</code></strong>=<em><code>False</code></em>, <strong><code>allowmean</code></strong>=<em><code>False</code></em>, <strong><code>blambda</code></strong>=<em><code>None</code></em>, <strong><code>biasadj</code></strong>=<em><code>False</code></em>, <strong><code>parallel</code></strong>=<em><code>False</code></em>, <strong><code>num_cores</code></strong>=<em><code>2</code></em>, <strong><code>period</code></strong>=<em><code>1</code></em>) :: <code>Prophet</code></p>
 </blockquote>
 <p>Returns best ARIMA model using external variables created
 by the Prophet interface.</p>
