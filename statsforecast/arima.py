@@ -2445,14 +2445,16 @@ class AutoARIMA:
         fitted_values = pd.DataFrame({'mean': fitted_arima(self.model_.model)})
         if level is not None:
             _level = (level,) if isinstance(level, int) else level
+            _level = sorted(_level)
             arr_level = np.asarray(_level)
             se = np.sqrt(self.model_.model['sigma2'])
             quantiles = norm.ppf(0.5 * (1 + arr_level / 100))
 
             lo = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
-                columns=[f'lo_{l}%' for l in reversed(_level)],
+                columns=[f'lo_{l}%' for l in _level],
             )
+            lo = lo.iloc[:, ::-1]
             hi = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) + quantiles * se.reshape(-1, 1),
                 columns=[f'hi_{l}%' for l in _level],
