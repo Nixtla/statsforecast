@@ -131,6 +131,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "bjeffrey92",
+      "name": "Ben Jeffrey",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36240394?v=4",
+      "profile": "https://www.linkedin.com/in/benjamin-jeffrey-218548a8/",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
