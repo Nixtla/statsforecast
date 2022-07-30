@@ -25,11 +25,11 @@ entries:
     title: StatsForecast
   - folderitems:
     - output: web,pdf
-      title: AutoArima vs Prophet
-      url: AutoArima_vs_Prophet.html
-    - output: web,pdf
       title: Getting started with AutoARIMA and ETS
       url: Getting_Started_with_Auto_Arima_and_ETS.html
+    - output: web,pdf
+      title: AutoArima vs Prophet
+      url: AutoArima_vs_Prophet.html
     output: web
     title: Examples
   output: web

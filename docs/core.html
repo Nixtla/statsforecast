@@ -84,7 +84,162 @@ nb_path: "nbs/core.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L201" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>, <strong><code>ray_address</code></strong>=<em><code>None</code></em>, <strong><code>sort_df</code></strong>=<em><code>True</code></em>)</p>
+<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L202" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>, <strong><code>ray_address</code></strong>=<em><code>None</code></em>, <strong><code>sort_df</code></strong>=<em><code>True</code></em>)</p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h2 id="ParallelBackend" class="doc_header"><code>class</code> <code>ParallelBackend</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L388" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ParallelBackend</code>()</p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h2 id="MultiprocessBackend" class="doc_header"><code>class</code> <code>MultiprocessBackend</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L401" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>MultiprocessBackend</code>(<strong><code>n_jobs</code></strong>:<code>int</code>) :: <a href="/statsforecast/core.html#ParallelBackend"><code>ParallelBackend</code></a></p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h2 id="RayBackend" class="doc_header"><code>class</code> <code>RayBackend</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L418" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>RayBackend</code>(<strong><code>ray_address</code></strong>) :: <a href="/statsforecast/core.html#ParallelBackend"><code>ParallelBackend</code></a></p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="forecast" class="doc_header"><code>forecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L431" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>forecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>h</code></strong>, <strong><code>xreg</code></strong>=<em><code>None</code></em>, <strong><code>level</code></strong>=<em><code>None</code></em>, <strong><code>parallel</code></strong>:<code>Optional</code>[<code>ForwardRef('ParallelBackend')</code>]=<em><code>None</code></em>)</p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="cross_validation" class="doc_header"><code>cross_validation</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L447" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>cross_validation</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>h</code></strong>, <strong><code>n_windows</code></strong>=<em><code>1</code></em>, <strong><code>step_size</code></strong>=<em><code>1</code></em>, <strong><code>test_size</code></strong>=<em><code>None</code></em>, <strong><code>input_size</code></strong>=<em><code>None</code></em>, <strong><code>parallel</code></strong>:<code>Optional</code>[<code>ForwardRef('ParallelBackend')</code>]=<em><code>None</code></em>)</p>
 </blockquote>
 
 </div>
@@ -656,5 +811,5 @@ nb_path: "nbs/core.ipynb"
     {% endraw %}
 
 </div>
- 
+
 

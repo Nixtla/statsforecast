@@ -74,7 +74,7 @@ pip install -e .
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="%F0%9F%94%A5--Highlights">&#128293;  Highlights<a class="anchor-link" href="#%F0%9F%94%A5--Highlights"> </a></h2><ul>
 <li>Fastest and most accurate <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> in <code>Python</code> and <code>R</code>.</li>
-<li><p>Fastest and most accurate <a href="/statsforecast/ets.html"><code>ets</code></a> in <code>Python</code> and <code>R</code>.</p>
+<li><p>Fastest and most accurate <a href="/statsforecast/models.html#ets"><code>ets</code></a> in <code>Python</code> and <code>R</code>.</p>
 </li>
 <li><p><strong>New!</strong>: Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments <a href="https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter">here</a>.</p>
 </li>
@@ -97,7 +97,7 @@ pip install -e .
 <li><p>1,000,000 series in <a href="https://github.com/Nixtla/statsforecast/tree/main/experiments/ray">30 min</a> with <a href="https://github.com/ray-project/ray">ray</a>.</p>
 </li>
 <li><p>Out of the box implementation of <a href="/statsforecast/models.html#ses"><code>ses</code></a>, <a href="/statsforecast/models.html#adida"><code>adida</code></a>, <a href="/statsforecast/models.html#historic_average"><code>historic_average</code></a>, <a href="/statsforecast/models.html#croston_classic"><code>croston_classic</code></a>, <a href="/statsforecast/models.html#croston_sba"><code>croston_sba</code></a>, <a href="/statsforecast/models.html#croston_optimized"><code>croston_optimized</code></a>, <a href="/statsforecast/models.html#seasonal_window_average"><code>seasonal_window_average</code></a>, <a href="/statsforecast/models.html#seasonal_naive"><code>seasonal_naive</code></a>, <a href="/statsforecast/models.html#imapa"><code>imapa</code></a>
-<a href="/statsforecast/models.html#naive"><code>naive</code></a>, <a href="/statsforecast/models.html#random_walk_with_drift"><code>random_walk_with_drift</code></a>, <a href="/statsforecast/models.html#window_average"><code>window_average</code></a>, <a href="/statsforecast/models.html#seasonal_exponential_smoothing"><code>seasonal_exponential_smoothing</code></a>, <a href="/statsforecast/models.html#tsb"><code>tsb</code></a>, <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> and <a href="/statsforecast/ets.html"><code>ets</code></a>.</p>
+<a href="/statsforecast/models.html#naive"><code>naive</code></a>, <a href="/statsforecast/models.html#random_walk_with_drift"><code>random_walk_with_drift</code></a>, <a href="/statsforecast/models.html#window_average"><code>window_average</code></a>, <a href="/statsforecast/models.html#seasonal_exponential_smoothing"><code>seasonal_exponential_smoothing</code></a>, <a href="/statsforecast/models.html#tsb"><code>tsb</code></a>, <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> and <a href="/statsforecast/models.html#ets"><code>ets</code></a>.</p>
 </li>
 </ul>
 <p>Missing something? Please open an issue or write us in <a href="https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A"><img src="https://img.shields.io/badge/Slack-4A154B?&amp;logo=slack&amp;logoColor=white" alt="Slack"></a></p>
@@ -131,7 +131,7 @@ pip install -e .
 The <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> model is widely used to forecast time series in production and as a benchmark. However, the alternative python implementation (<code>pmdarima</code>) is so slow that prevents data scientists from quickly iterating and deploying <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> in production for a large number of time series. </li>
 </ul>
 </li>
-<li><p>Shorter Example of fitting and <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> and an <a href="/statsforecast/ets.html"><code>ets</code></a> model.  <a href="https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&amp;_ETS_.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></p>
+<li><p>Shorter Example of fitting and <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> and an <a href="/statsforecast/models.html#ets"><code>ets</code></a> model.  <a href="https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&amp;_ETS_.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a></p>
 </li>
 </ul>
 <ul>
@@ -152,12 +152,12 @@ The <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> 
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="%F0%9F%93%83-References">&#128195; References<a class="anchor-link" href="#%F0%9F%93%83-References"> </a></h2><ul>
 <li>The <a href="/statsforecast/models.html#auto_arima"><code>auto_arima</code></a> model is based (translated) from the R implementation included in the <a href="https://github.com/robjhyndman/forecast">forecast</a> package developed by Rob Hyndman.</li>
-<li>The <a href="/statsforecast/ets.html"><code>ets</code></a> model is based (translated) from the R implementation included in the <a href="https://github.com/robjhyndman/forecast">forecast</a> package developed by Rob Hyndman.</li>
+<li>The <a href="/statsforecast/models.html#ets"><code>ets</code></a> model is based (translated) from the R implementation included in the <a href="https://github.com/robjhyndman/forecast">forecast</a> package developed by Rob Hyndman.</li>
 </ul>
 
 </div>
 </div>
 </div>
 </div>
- 
+
 
