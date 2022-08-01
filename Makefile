@@ -20,6 +20,7 @@ docs: $(SRC)
 	touch docs
 
 build_docs:
+	nbdev_build_lib
 	nbdev_build_docs --mk_readme False
 	nbdev_build_docs --fname "examples/*.ipynb" --mk_readme False
 

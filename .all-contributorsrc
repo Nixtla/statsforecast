@@ -11,7 +11,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/10517170?v=4",
       "profile": "https://github.com/FedericoGarza",
       "contributions": [
-        "code"
+        "code",
+        "maintenance"
       ]
     },
     {
@@ -130,6 +131,24 @@
       "profile": "https://github.com/fugue-project/fugue",
       "contributions": [
         "code"
+      ]
+    },
+    {
+      "login": "bjeffrey92",
+      "name": "Ben Jeffrey",
+      "avatar_url": "https://avatars.githubusercontent.com/u/36240394?v=4",
+      "profile": "https://www.linkedin.com/in/benjamin-jeffrey-218548a8/",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "Beliavsky",
+      "name": "Beliavsky",
+      "avatar_url": "https://avatars.githubusercontent.com/u/38887928?v=4",
+      "profile": "https://github.com/Beliavsky",
+      "contributions": [
+        "doc"
       ]
     }
   ],
