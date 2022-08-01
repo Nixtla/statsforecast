@@ -150,6 +150,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "MMenchero",
+      "name": "Mariana Menchero García ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/47995617?v=4",
+      "profile": "https://github.com/MMenchero",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
