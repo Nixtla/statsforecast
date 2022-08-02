@@ -36,30 +36,12 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="ses" class="doc_header"><code>ses</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L113" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ses</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>, <strong><code>alpha</code></strong>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="ARIMA-methods">ARIMA methods<a class="anchor-link" href="#ARIMA-methods"> </a></h2>
 </div>
 </div>
-
 </div>
-    {% endraw %}
-
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -78,8 +60,61 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="ses_optimized" class="doc_header"><code>ses_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L124" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ses_optimized</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
+<h4 id="auto_arima" class="doc_header"><code>auto_arima</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L22" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>auto_arima</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>approximation</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>season_length</code></strong></td>
+<td><code>int</code></td>
+<td><code>1</code></td>
+<td>season_length</td>
+</tr>
+<tr>
+<td><strong><code>approximation</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>approximation</td>
+</tr>
+<tr>
+<td><strong><code>level</code></strong></td>
+<td><code>typing.Optional[typing.Tuple[int]]</code></td>
+<td><code>None</code></td>
+<td>level</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -91,6 +126,30 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Auto ARIMA</strong>: Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average) model using an information criterion. Default is the corrected Akaike Information Criterion (AICc). Information criterions are tests used to check how well a model fits the data it is trying to describe.</p>
+<p>The ARIMA models are based in the autocorrelations in the data and the autocorrelations of the forecast errors. Every model has three components: AR, I, and MA.</p>
+<p>An AR(p) model captures the autocorrelations in the data at lags $1,2,\dots p$.</p>
+<p>{% raw %}
+$$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p}+\epsilon_t$$
+{% endraw %}</p>
+<p>If the autocorrelations of the forecast errors are added up to lag $q$, an ARMA(p,q) model is obtained.</p>
+<p>{% raw %}
+$$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\theta_1 \epsilon_{t-1}+\theta_2\epsilon_{t-2}+\dots\theta_q\epsilon_{t-q}$$
+{% endraw %}</p>
+<p>The last component of an ARIMA model is the integrated (I) part, which is a differencing operation. The order of differencing, denoted by $d$, indicates how many rounds of lag-1 differencing are performed.</p>
+<p>ARIMA models requiere the user to select $p$, $q$, and $d$. The values for $\beta_i, i=1,2,\dots,p$ and $\theta_j, j=1,2,\dots,q$ are then estimated. Auto ARIMA automatically makes this selection, searching over a range of possible values for $p$, $q$, and $d$, and then choosing the best model using an information criterion.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Exponential-smoothing-methods">Exponential smoothing methods<a class="anchor-link" href="#Exponential-smoothing-methods"> </a></h2>
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -109,8 +168,55 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="adida" class="doc_header"><code>adida</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L134" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>adida</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
+<h4 id="ets" class="doc_header"><code>ets</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L53" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ets</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>model</code></strong>:<code>str</code>=<em><code>'ZZZ'</code></em>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td></td>
+<td><code>None</code></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>season_length</code></strong></td>
+<td><code>int</code></td>
+<td><code>1</code></td>
+<td>season length</td>
+</tr>
+<tr>
+<td><strong><code>model</code></strong></td>
+<td><code>str</code></td>
+<td><code>ZZZ</code></td>
+<td>model type</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -122,184 +228,62 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Error, Trend, and Seasonality</strong>: Statistical models for exponential smoothing. These models are stochastic data generating processes than can produce complete forecast distributions. Each model consists of a set of equations to describe the observed data and the unobserved components or states, which are level, trend, and seasonal. Errors can be either additive or multiplicative. The notation ETS(Z,Z,Z) is used to describe the ETS model being used, where Z can take one of the following values.</p>
+<table>
+<thead><tr>
+<th>Notation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>N = None</td>
+<td></td>
+</tr>
+<tr>
+<td>A = Additive</td>
+<td></td>
+</tr>
+<tr>
+<td>Ad = Additive (damped)</td>
+<td></td>
+</tr>
+<tr>
+<td>M = Multiplicative</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>The possibilities for each state are shown below.</p>
+<table>
+<thead><tr>
+<th>State</th>
+<th>Possible values </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Error</td>
+<td>A, M</td>
+</tr>
+<tr>
+<td>Trend</td>
+<td>N, A, Ad</td>
+</tr>
+<tr>
+<td>Seasonal</td>
+<td>N, A, M</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="historic_average" class="doc_header"><code>historic_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L152" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>historic_average</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="croston_classic" class="doc_header"><code>croston_classic</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L164" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_classic</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="croston_sba" class="doc_header"><code>croston_sba</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L177" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_sba</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="croston_optimized" class="doc_header"><code>croston_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L187" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_optimized</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_window_average" class="doc_header"><code>seasonal_window_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L199" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_window_average</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>, <strong><code>season_length</code></strong>:<code>int</code>, <strong><code>window_size</code></strong>:<code>int</code>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="imapa" class="doc_header"><code>imapa</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L223" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>imapa</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="naive" class="doc_header"><code>naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L244" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>naive</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
 
 </div>
     {% endraw %}
@@ -322,8 +306,49 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_naive" class="doc_header"><code>seasonal_naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L255" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_naive</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>, <strong><code>season_length</code></strong>)</p>
+<h4 id="ses" class="doc_header"><code>ses</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L177" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ses</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>alpha</code></strong>:<code>float</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>alpha</code></strong></td>
+<td><code>float</code></td>
+<td></td>
+<td>smoothing parameter</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -335,6 +360,21 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Simple (or single) exponential smoothing</strong>: Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with no clear trend or seasonality. Assuming there are $t$ observations, the one-step forecast is given by</p>
+<p>{% raw %}
+$$\hat{y}_{t+1}= \alpha y_{t} + \alpha(1-\alpha)y_{t-1} + \alpha(1-\alpha)^2 y_{t-2} \dots$$
+{% endraw %}</p>
+<p>which can also be written as</p>
+<p>{% raw %}
+$$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
+{% endraw %}</p>
+<p>The rate $0 \leq \alpha \leq 1$ at which the weights decrease is called the smoothing parameter. When $\alpha = 1$, SES is equal to the naive method.</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -353,8 +393,43 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="random_walk_with_drift" class="doc_header"><code>random_walk_with_drift</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L276" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>random_walk_with_drift</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>)</p>
+<h4 id="ses_optimized" class="doc_header"><code>ses_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L186" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ses_optimized</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -366,6 +441,13 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Simple exponential smoothing optimized</strong>: A version of SES where the smoothing parameter $\alpha$ is chosen automatically by minimizing the mean squared error of the fit.</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -384,8 +466,55 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="window_average" class="doc_header"><code>window_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L289" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>window_average</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>, <strong><code>window_size</code></strong>)</p>
+<h4 id="seasonal_exponential_smoothing" class="doc_header"><code>seasonal_exponential_smoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L223" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_exponential_smoothing</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>, <strong><code>alpha</code></strong>:<code>float</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>season_length</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>length of season</td>
+</tr>
+<tr>
+<td><strong><code>alpha</code></strong></td>
+<td><code>float</code></td>
+<td></td>
+<td>smoothing parameter</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -397,6 +526,13 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Seasonal exponential smoothing</strong>: A seasonal version of exponential smoothing.</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -415,8 +551,49 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_exponential_smoothing" class="doc_header"><code>seasonal_exponential_smoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L301" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_exponential_smoothing</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>, <strong><code>season_length</code></strong>, <strong><code>alpha</code></strong>)</p>
+<h4 id="seasonal_ses_optimized" class="doc_header"><code>seasonal_ses_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L233" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_ses_optimized</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>season_length</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>season length</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -428,6 +605,19 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Seasonal SES optimized</strong>: A seasonal version of SES optimized</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Simple-methods">Simple methods<a class="anchor-link" href="#Simple-methods"> </a></h2>
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -446,8 +636,43 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_ses_optimized" class="doc_header"><code>seasonal_ses_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L319" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_ses_optimized</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>, <strong><code>season_length</code></strong>)</p>
+<h4 id="historic_average" class="doc_header"><code>historic_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L270" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>historic_average</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -459,6 +684,16 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Historic average:</strong> Also known as mean method. Uses a simple average of all past observations. Assuming there are $t$ observations, the one-step forecast is given by</p>
+<p>{% raw %}
+$$ \hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j $$
+{% endraw %}</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -477,8 +712,43 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="tsb" class="doc_header"><code>tsb</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L336" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>tsb</code>(<strong><code>X</code></strong>, <strong><code>h</code></strong>, <strong><code>future_xreg</code></strong>, <strong><code>fitted</code></strong>, <strong><code>alpha_d</code></strong>, <strong><code>alpha_p</code></strong>)</p>
+<h4 id="naive" class="doc_header"><code>naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L293" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>naive</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -490,6 +760,16 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Naive</strong>: A random walk model, defined as</p>
+<p>{% raw %}
+$$ \hat{y}_{t+1} = y_t $$
+{% endraw %}</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -508,8 +788,43 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="auto_arima" class="doc_header"><code>auto_arima</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L352" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>auto_arima</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>approximation</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>)</p>
+<h4 id="random_walk_with_drift" class="doc_header"><code>random_walk_with_drift</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L318" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>random_walk_with_drift</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -521,6 +836,17 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Random walk with drift</strong>: A variation of the naive method allows the forecasts to change over time. The amout of change, called drift, is the average change seen in the historical data.</p>
+<p>{% raw %}
+$$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-y_1}{t-1} $$
+{% endraw %}</p>
+<p>From the previous equation, we can see that this is equivalent to extrapolating a line between the first and the last observation.</p>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -539,8 +865,49 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="ets" class="doc_header"><code>ets</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L377" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ets</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>model</code></strong>:<code>str</code>=<em><code>'ZZZ'</code></em>)</p>
+<h4 id="seasonal_naive" class="doc_header"><code>seasonal_naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L352" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_naive</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>)</p>
 </blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>season_length</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>length of season</td>
+</tr>
+</tbody>
+</table>
 
 </div>
 
@@ -548,6 +915,20 @@ nb_path: "nbs/models.ipynb"
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Seasonal naive</strong>: Similar to the naive method, but uses the last known observation of the same period (e.g. the same month of the previous year) in order to capture seasonal variations.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -556,9 +937,666 @@ nb_path: "nbs/models.ipynb"
     
 <div class="cell border-box-sizing code_cell rendered">
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="window_average" class="doc_header"><code>window_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L378" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>window_average</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>window_size</code></strong>:<code>int</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>window_size</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>window size</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Window average</strong>: Uses the average of the last $k$ observations, with $k$ the length of the window. Wider windows will capture global trends, while narrow windows will reveal local trends. The length of the window selected should take into account the importance of past observations and how fast the series changes.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="seasonal_window_average" class="doc_header"><code>seasonal_window_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L413" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_window_average</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>, <strong><code>window_size</code></strong>:<code>int</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>season_length</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>length of season</td>
+</tr>
+<tr>
+<td><strong><code>window_size</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>window size</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Seasonal window average</strong>: An average of the last $k$ observations of the same period, with $k$ the length of the window.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Sparse-or-intermittent-series">Sparse or intermittent series<a class="anchor-link" href="#Sparse-or-intermittent-series"> </a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Sparse or intermittent series are series with very few non-zero observations. They are notoriously hard to forecast, and so, different methods have been developed especifically for them. Before the development of Croston's method and its variants, SES was usually used to forecast them.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="adida" class="doc_header"><code>adida</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L425" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>adida</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Aggregate-Dissagregate Intermittent Demand Approach</strong>: Uses temporal aggregation to reduce the number of zero observations. Once the data has been agregated, it uses the optimized SES to generate the forecasts at the new level. It then breaks down the forecast to the original level using equal weights.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="croston_classic" class="doc_header"><code>croston_classic</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L463" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_classic</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Croston classic</strong>: A method to forecast time series that exhibit intermittent demand. It decomposes the original time series into a non-zero demand size $z_t$ and inter-demand intervals $p_t$. Then the forecast is given by</p>
+$$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
+<p>where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter of both components is set equal to 0.1</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="croston_optimized" class="doc_header"><code>croston_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L488" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_optimized</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Croston Optimized</strong>: A variation of the classic Croston's method where the smooting paramater is optimally selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand intervals $p_t$ are smoothed separately, so their smoothing parameters can be different.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="croston_sba" class="doc_header"><code>croston_sba</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L510" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_sba</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Croston with Syntetos-Boylan Approximation</strong>: A variation of the classic Croston's method that uses a debiasing factor, so that the forecast is given by</p>
+$$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="imapa" class="doc_header"><code>imapa</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L519" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>imapa</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Intermittent Multiple Aggregation Prediction Algorithm</strong>: Similar to ADIDA, but instead of using a single aggregation level, it considers multiple in order to capture different dynamics of the data. Uses the optimized SES to generate the forecasts at the new levels and then combines them using a simple average.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="tsb" class="doc_header"><code>tsb</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L564" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>tsb</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>int</code>, <strong><code>alpha_d</code></strong>:<code>float</code>, <strong><code>alpha_p</code></strong>:<code>float</code>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>forecasting horizon</td>
+</tr>
+<tr>
+<td><strong><code>future_xreg</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>future regressors</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>fitted values</td>
+</tr>
+<tr>
+<td><strong><code>alpha_d</code></strong></td>
+<td><code>float</code></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>alpha_p</code></strong></td>
+<td><code>float</code></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong>Teunter-Syntetos-Babai</strong>: A modification of Croston's method that replaces the inter-demand intervals with the demand probability $d_t$, which is defined as follows.</p>
+$$
+d_t = \begin{cases}
+    1  &amp; \text{if demand occurs at time t}\\ 
+    0 &amp; \text{otherwise.}
+\end{cases}
+$$<p>Hence, the forecast is given by</p>
+<p>{% raw %}
+$$\hat{y}_t= \hat{d}_t\hat{z_t}$$
+{% endraw %}</p>
+<p>Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ, like in the optimized Croston's method.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="References">References<a class="anchor-link" href="#References"> </a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="General"><strong>General</strong><a class="anchor-link" href="#General"> </a></h4><ul>
+<li><p>Hyndman, R.J., &amp; Athanasopoulos, G. (2021) Forecasting: principles and practice, 3rd edition, OTexts: Melbourne, Australia. <a href="https://otexts.com/fpp3/">OTexts.com/fpp3</a>. Accessed on July 2022.</p>
+</li>
+<li><p>Shmueli, G., &amp; Lichtendahl Jr, K. C. (2016). Practical time series forecasting with r: A hands-on guide. Axelrod Schnall Publishers.</p>
+</li>
+</ul>
+<h4 id="For-sparse-or-intermittent-series"><strong>For sparse or intermittent series</strong><a class="anchor-link" href="#For-sparse-or-intermittent-series"> </a></h4><ul>
+<li><a href="https://link.springer.com/article/10.1057/jors.1972.50">Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.</a></li>
+</ul>
+<ul>
+<li><p><a href="https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f">Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F., &amp; Assimakopoulos, V. (2011). An aggregate–disaggregate intermittent demand approach (ADIDA) to forecasting: an empirical proposition and analysis. Journal of the Operational Research Society, 62(3), 544-554.</a></p>
+</li>
+<li><p><a href="https://www.academia.edu/1527250/The_accuracy_of_intermittent_demand_estimates">Syntetos, A. A., &amp; Boylan, J. E. (2005). The accuracy of intermittent demand estimates. International Journal of forecasting, 21(2), 303-314.</a></p>
+</li>
+<li><p>Syntetos, A. A., &amp; Boylan, J. E. (2021). Intermittent demand forecasting: Context, methods and applications. John Wiley &amp; Sons.</p>
+</li>
+<li><p><a href="https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437">Teunter, R. H., Syntetos, A. A., &amp; Babai, M. Z. (2011). Intermittent demand: Linking forecasting to inventory obsolescence. European Journal of Operational Research, 214(3), 606-615.</a></p>
+</li>
+</ul>
+
+</div>
+</div>
+</div>
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
@@ -590,6 +1628,24 @@ nb_path: "nbs/models.ipynb"
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>{&#39;mean&#39;: array([444.30005077, 418.2100203 , 446.23703401, 488.22892853,
+        499.23136059, 562.23063085, 649.23084981, 633.23078411,
+        535.23080382, 488.23079791, 417.23079968, 459.23079915])}</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
@@ -604,6 +1660,60 @@ nb_path: "nbs/models.ipynb"
 </pre></div>
 
     </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>{&#39;mean&#39;: array([442.35716875, 428.26736624, 492.97479339, 477.36999551,
+        477.602817  , 535.8579976 , 600.8320224 , 594.76827626,
+        513.70320272, 448.22263603, 390.31626497, 435.73799675]),
+ &#39;fitted&#39;: array([116.728278  , 111.29797225, 130.98552585, 127.18762361,
+        127.91654095, 140.64922159, 155.44717494, 151.17337288,
+        129.5555072 , 115.09973709, 101.48278561, 114.29631571,
+        117.40536016, 112.80113444, 135.43130661, 133.10447674,
+        133.84510101, 146.51419389, 165.35430453, 165.36070888,
+        144.29581048, 130.26971789, 114.32008899, 127.47073496,
+        134.03440491, 133.6681697 , 160.74627987, 161.73732268,
+        162.22614645, 186.01231156, 205.36305947, 200.98582149,
+        173.00563235, 154.4296413 , 136.89230158, 156.54516339,
+        162.400938  , 160.31535237, 192.82553515, 186.71498379,
+        184.68299532, 206.46353076, 236.31557357, 231.65402709,
+        203.42535137, 179.23482696, 159.83439834, 183.40256068,
+        190.08189359, 186.20552738, 218.40929619, 217.61903664,
+        224.04305857, 253.3709849 , 279.90429647, 271.38427151,
+        234.67497927, 205.47924836, 180.7092165 , 201.45075848,
+        204.29344316, 197.78412081, 223.52237619, 220.40730102,
+        222.86122515, 254.53908214, 289.32412258, 291.08384394,
+        252.11058878, 222.1536254 , 195.6382674 , 221.4079707 ,
+        227.52974607, 225.48763067, 262.73849174, 255.80192385,
+        260.68802341, 296.21114303, 339.881661  , 345.25455827,
+        298.87678503, 264.94377309, 233.60829635, 262.17671556,
+        271.97698119, 267.65159022, 312.03658112, 303.78955824,
+        307.22005545, 349.02744252, 401.65213682, 401.73687913,
+        348.19282101, 305.95175602, 266.44370917, 299.34068205,
+        306.29089566, 299.70495408, 345.53425101, 338.1698277 ,
+        341.83809583, 388.86822718, 449.62735213, 450.66550863,
+        394.60984771, 347.25540466, 302.32732891, 338.64086423,
+        342.73803829, 330.93521325, 375.5256836 , 358.72056835,
+        354.89625188, 401.48980081, 463.8793049 , 469.02292832,
+        416.65947678, 359.4471744 , 312.89072992, 348.1532051 ,
+        349.2381522 , 341.97783375, 393.68673734, 385.43804265,
+        389.4421283 , 449.51109971, 513.17950119, 520.63369582,
+        461.89517794, 403.32147034, 352.40484967, 397.33762488,
+        406.19355303, 397.11535573, 454.61389193, 427.4719012 ,
+        439.93408728, 506.75146129, 579.73742316, 589.22425018,
+        514.25494668, 446.66425945, 393.5558558 , 437.9098171 ])}</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
@@ -667,6 +1777,23 @@ nb_path: "nbs/models.ipynb"
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>{&#39;mean&#39;: array([444.37994435, 418.3426712 , 446.43052379, 488.47985218,
+        499.54005383, 562.59623451, 649.65290106])}</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
@@ -691,9 +1818,146 @@ nb_path: "nbs/models.ipynb"
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>mean</th>
+      <th>lo-95</th>
+      <th>lo-80</th>
+      <th>hi-80</th>
+      <th>hi-95</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>444.300051</td>
+      <td>421.179472</td>
+      <td>429.182317</td>
+      <td>459.417784</td>
+      <td>467.420629</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>418.210020</td>
+      <td>389.988431</td>
+      <td>399.756915</td>
+      <td>436.663126</td>
+      <td>446.431610</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>446.237034</td>
+      <td>412.620660</td>
+      <td>424.256469</td>
+      <td>468.217599</td>
+      <td>479.853408</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>488.228929</td>
+      <td>450.265291</td>
+      <td>463.405840</td>
+      <td>513.052017</td>
+      <td>526.192566</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>499.231361</td>
+      <td>457.290190</td>
+      <td>471.807503</td>
+      <td>526.655218</td>
+      <td>541.172531</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>562.230631</td>
+      <td>516.679736</td>
+      <td>532.446502</td>
+      <td>592.014760</td>
+      <td>607.781525</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>649.230850</td>
+      <td>600.329866</td>
+      <td>617.256215</td>
+      <td>681.205484</td>
+      <td>698.131833</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>633.230784</td>
+      <td>581.196677</td>
+      <td>599.207510</td>
+      <td>667.254058</td>
+      <td>685.264891</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>535.230804</td>
+      <td>480.241310</td>
+      <td>499.275106</td>
+      <td>571.186501</td>
+      <td>590.220298</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>488.230798</td>
+      <td>430.436989</td>
+      <td>450.441457</td>
+      <td>526.020138</td>
+      <td>546.024607</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>417.230800</td>
+      <td>356.762551</td>
+      <td>377.692737</td>
+      <td>456.768863</td>
+      <td>477.699049</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>459.230799</td>
+      <td>396.201501</td>
+      <td>418.018156</td>
+      <td>500.443442</td>
+      <td>522.260098</td>
+    </tr>
+  </tbody>
+</table>
+</div></div>
+
+</div>
+
+</div>
+</div>
+
 </div>
     {% endraw %}
 
 </div>
- 
+
 
