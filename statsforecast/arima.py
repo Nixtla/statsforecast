@@ -16,7 +16,7 @@ import pandas as pd
 import statsmodels.api as sm
 from numba import njit
 from scipy.optimize import minimize
-from scipy.stats import norm
+from scipy.stats import norm, boxcox
 
 from .utils import AirPassengers as ap
 
