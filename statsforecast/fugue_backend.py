@@ -3,7 +3,7 @@
 __all__ = ['FugueBackend']
 
 # Cell
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 import pandas as pd
 from fugue import transform
@@ -26,11 +26,12 @@ class FugueBackend(ParallelBackend):
         return {}
 
     def forecast(self, df, models, freq, **kwargs: Any) -> Any:
-        schema = "*-y+" + str(self._get_output_schema(models))
+        s, renames = self._get_output_schema(models)
+        schema = "*-y+" + str(s)
         return transform(
             df,
             self._forecast_series,
-            params=dict(models=models, freq=freq, kwargs=kwargs),
+            params=dict(models=models, freq=freq, renames=renames, kwargs=kwargs),
             schema=schema,
             partition={"by": "unique_id"},
             engine=self._engine,
@@ -39,11 +40,12 @@ class FugueBackend(ParallelBackend):
         )
 
     def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
-        schema = "*," + str(self._get_output_schema(models, mode="cv"))
+        s, renames = self._get_output_schema(models, mode="cv")
+        schema = "*," + str(s)
         return transform(
             df,
             self._cv,
-            params=dict(models=models, freq=freq, kwargs=kwargs),
+            params=dict(models=models, freq=freq, renames=renames, kwargs=kwargs),
             schema=schema,
             partition={"by": "unique_id"},
             engine=self._engine,
@@ -51,21 +53,27 @@ class FugueBackend(ParallelBackend):
             **self._transform_kwargs,
         )
 
-    def _forecast_series(self, df: pd.DataFrame, models, freq, kwargs) -> pd.DataFrame:
+    def _forecast_series(self, df: pd.DataFrame, models, freq, renames, kwargs) -> pd.DataFrame:
         tdf = df.set_index("unique_id")
         model = StatsForecast(tdf, models=models, freq=freq, n_jobs=1)
-        return model.forecast(**kwargs).reset_index()
+        return model.forecast(**kwargs).reset_index().rename(columns=renames)
 
-    def _cv(self, df: pd.DataFrame, models, freq, kwargs) -> pd.DataFrame:
+    def _cv(self, df: pd.DataFrame, models, freq, renames, kwargs) -> pd.DataFrame:
         tdf = df.set_index("unique_id")
         model = StatsForecast(tdf, models=models, freq=freq, n_jobs=1)
-        return model.cross_validation(**kwargs).reset_index()
+        return model.cross_validation(**kwargs).reset_index().rename(columns=renames)
 
-    def _get_output_schema(self, models, mode="forecast") -> Schema:
+    def _get_output_schema(self, models, mode="forecast") -> Tuple[Schema, Dict[str,str]]:
         cols = []
         for model_args in models:
             model, *args = _as_tuple(model_args)
             cols.append((_build_forecast_name(model, *args), float))
         if mode == "cv":
             cols = [("cutoff", "datetime")] + cols
-        return Schema(cols)
+        renames = {}
+        for i in range(len(cols)):
+            cn = cols[i][0].replace("-", "_")
+            if cn != cols[i][0]:
+                renames[cols[i][0]]=cn
+                cols[i]=(cn, cols[i][1])
+        return Schema(cols), renames
