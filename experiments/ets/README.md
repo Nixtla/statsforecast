@@ -3,7 +3,7 @@
 ## Main results
 
 
-| dataset   | metric   |   ets_nixtla |   ets_r |   ets_statsmodels[1] |
+| dataset   | metric   |   ets_statsforecast |   ets_r |   ets_statsmodels[1] |
 |:----------|:---------|-------------:|--------:|------------------:|
 | Hourly    | MASE     |         1.61 |    1.82 |   21848.5         |
 | Hourly    | time     |        18.79 |   35.45 |     112.35        |
@@ -17,7 +17,7 @@
 | Quarterly | time     |        88.48 |   75.78 |     280.89        |
 | Yearly    | MASE     |         3.09 |    3.44 |     101.64        |
 | Yearly    | time     |         6.73 |   15.38 |      34.35        |
-[1] The model `ETSModel` from `statsmodels` had performance problems for particular series. An issue was opened.
+[1] The model `ETSModel` from `statsmodels` had performance problems for particular series. An [issue](https://github.com/statsmodels/statsmodels/issues/8344) was opened and answered.
 
 ## Reproducibility
 
