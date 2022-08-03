@@ -56,7 +56,8 @@ class GroupedArray:
             for i, grp in enumerate(self):
                 y = grp[:, 0] if grp.ndim == 2 else grp
                 X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
-                fm[i, i_model] = deepcopy(model).fit(y=y, X=X)
+                new_model = model.new()
+                fm[i, i_model] = new_model.fit(y=y, X=X)
         return fm
 
     def _output_predict(self, fm, h, X, level=tuple()):

@@ -19,7 +19,15 @@ from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ets import ets_f, forecast_ets
 
 # Cell
-class AutoARIMA:
+class _TS:
+
+    def new(self):
+        b = type(self).__new__(type(self))
+        b.__dict__.update(self.__dict__)
+        return b
+
+# Cell
+class AutoARIMA(_TS):
 
     def __init__(self, season_length: int = 1, approximation: bool = False):
         self.season_length = season_length
@@ -54,7 +62,7 @@ class AutoARIMA:
         return fitted_arima(self.fitted_)
 
 # Cell
-class ETS:
+class ETS(_TS):
 
     def __init__(self, season_length: int = 1, model: str = 'ZZZ'):
         self.season_length = season_length
@@ -178,7 +186,7 @@ def _predict_ses(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class SimpleExponentialSmoothing:
+class SimpleExponentialSmoothing(_TS):
 
     def __init__(self, alpha: float):
         self.alpha = alpha
@@ -207,7 +215,7 @@ def _predict_ses_optimized(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class SimpleExponentialSmoothingOptimized:
+class SimpleExponentialSmoothingOptimized(_TS):
 
     def __init__(self):
         pass
@@ -246,7 +254,7 @@ def _predict_seasonal_es(obj, season_length: int, h: int):
     return fcst
 
 # Cell
-class SeasonalExponentialSmoothing:
+class SeasonalExponentialSmoothing(_TS):
 
     def __init__(self, season_length: int, alpha: float):
         self.season_length = season_length
@@ -284,7 +292,7 @@ def _predict_seasonal_es_opt(obj, season_length: int, h: int):
     return fcst
 
 # Cell
-class SeasonalExponentialSmoothingOptimized:
+class SeasonalExponentialSmoothingOptimized(_TS):
 
     def __init__(self, season_length: int):
         self.season_length = season_length
@@ -316,7 +324,7 @@ def _predict_historic_average(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class HistoricAverage:
+class HistoricAverage(_TS):
 
     def __init__(self):
         pass
@@ -348,7 +356,7 @@ def _predict_naive(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class Naive:
+class Naive(_TS):
 
     def __init__(self):
         pass
@@ -383,7 +391,7 @@ def _predict_rwd(obj, h: int):
     return obj['mean'] + obj['slope'] * (1 + np.arange(h))
 
 # Cell
-class RandomWalkWithDrift:
+class RandomWalkWithDrift(_TS):
 
     def __init__(self):
         pass
@@ -424,7 +432,7 @@ def _predict_seasonal_naive(obj, season_length: int, h: int):
     return fcst
 
 # Cell
-class SeasonalNaive:
+class SeasonalNaive(_TS):
 
     def __init__(self, season_length: int):
         self.season_length = season_length
@@ -454,7 +462,7 @@ def _predict_window_average(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class WindowAverage:
+class WindowAverage(_TS):
 
     def __init__(self, window_size: int):
         self.window_size = window_size
@@ -492,7 +500,7 @@ def _predict_seas_wa(obj, season_length: int, h: int):
     return fcst
 
 # Cell
-class SeasonalWindowAverage:
+class SeasonalWindowAverage(_TS):
 
     def __init__(self, season_length: int, window_size: int):
         self.season_length = season_length
@@ -529,7 +537,7 @@ def _predict_adida(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class ADIDA:
+class ADIDA(_TS):
 
     def __init__(self):
         pass
@@ -562,7 +570,7 @@ def _predict_croston_classic(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class CrostonClassic:
+class CrostonClassic(_TS):
 
     def __init__(self):
         pass
@@ -593,7 +601,7 @@ def _predict_croston_optimized(obj, h: int):
      return np.repeat(obj['mean'], h)
 
 # Cell
-class CrostonOptimized:
+class CrostonOptimized(_TS):
 
     def __init__(self):
         pass
@@ -620,7 +628,7 @@ def _predict_croston_sba(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class CrostonSBA:
+class CrostonSBA(_TS):
 
     def __init__(self):
         pass
@@ -659,7 +667,7 @@ def _predict_imapa(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class IMAPA:
+class IMAPA(_TS):
 
     def __init__(self):
         pass
@@ -694,7 +702,7 @@ def _predict_tsb(obj, h: int):
     return np.repeat(obj['mean'], h)
 
 # Cell
-class TSB:
+class TSB(_TS):
 
     def __init__(self, alpha_d: float, alpha_p: float):
         self.alpha_d = alpha_d
