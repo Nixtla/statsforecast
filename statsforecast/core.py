@@ -233,12 +233,10 @@ class StatsForecast:
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.ray_address = ray_address
-        self.ga = None
-        if df is not None:
-            self._prepare_fit(df=df, sort_df=sort_df)
+        self._prepare_fit(df=df, sort_df=sort_df)
 
     def _prepare_fit(self, df, sort_df):
-        if getattr(self, 'ga') is None:
+        if df is not None:
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
 
