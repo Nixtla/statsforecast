@@ -25,6 +25,9 @@ class AutoARIMA:
         self.season_length = season_length
         self.approximation = approximation
 
+    def __repr__(self):
+        return f'AutoARIMA()'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         with np.errstate(invalid='ignore'):
             self.fitted_ = auto_arima_f(
@@ -56,6 +59,9 @@ class ETS:
     def __init__(self, season_length: int = 1, model: str = 'ZZZ'):
         self.season_length = season_length
         self.model = model
+
+    def __repr__(self):
+        return f'ETS(sl={self.season_length},model={self.model})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = ets_f(y, m=self.season_length, model=self.model)
@@ -177,6 +183,9 @@ class SimpleExponentialSmoothing:
     def __init__(self, alpha: float):
         self.alpha = alpha
 
+    def __repr__(self):
+        return f'SES(alpha={self.alpha})'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _ses(y=y, alpha=self.alpha)
         return self
@@ -202,6 +211,9 @@ class SimpleExponentialSmoothingOptimized:
 
     def __init__(self):
         pass
+
+    def __repr__(self):
+        return f'SESOpt()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _ses_optimized(y=y)
@@ -240,6 +252,9 @@ class SeasonalExponentialSmoothing:
         self.season_length = season_length
         self.alpha = alpha
 
+    def __repr__(self):
+        return f'SeasonalES(sl={self.season_length},alpha={self.alpha})'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _seasonal_exponential_smoothing(y=y, season_length=self.season_length, alpha=self.alpha)
         return self
@@ -274,6 +289,9 @@ class SeasonalExponentialSmoothingOptimized:
     def __init__(self, season_length: int):
         self.season_length = season_length
 
+    def __repr__(self):
+        return f'SeasESOpt(sl={self.season_length})'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _seasonal_ses_optimized(y=y, season_length=self.season_length)
         return self
@@ -303,6 +321,9 @@ class HistoricAverage:
     def __init__(self):
         pass
 
+    def __repr__(self):
+        return f'HistoricAverage()'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _historic_average(y)
         return self
@@ -331,6 +352,9 @@ class Naive:
 
     def __init__(self):
         pass
+
+    def __repr__(self):
+        return f'Naive()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _naive(y)
@@ -363,6 +387,9 @@ class RandomWalkWithDrift:
 
     def __init__(self):
         pass
+
+    def __repr__(self):
+        return f'RWD()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _random_walk_with_drift(y)
@@ -402,6 +429,9 @@ class SeasonalNaive:
     def __init__(self, season_length: int):
         self.season_length = season_length
 
+    def __repr__(self):
+        return f'SeasonalNaive(sl={self.season_length})'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _seasonal_naive(y=y, season_length=self.season_length)
         return self
@@ -428,6 +458,9 @@ class WindowAverage:
 
     def __init__(self, window_size: int):
         self.window_size = window_size
+
+    def __repr__(self):
+        return f'WindowAverage(ws={self.window_size})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _window_average(y=y, window_size=self.window_size)
@@ -465,6 +498,9 @@ class SeasonalWindowAverage:
         self.season_length = season_length
         self.window_size = window_size
 
+    def __repr__(self):
+        return f'SeasWA(sl={self.season_length},ws={self.window_size})'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _seasonal_window_average(y=y, season_length=self.season_length, window_size=self.window_size)
         return self
@@ -498,6 +534,9 @@ class ADIDA:
     def __init__(self):
         pass
 
+    def __repr__(self):
+        return f'ADIDA()'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _adida(y=y)
         return self
@@ -527,6 +566,9 @@ class CrostonClassic:
 
     def __init__(self):
         pass
+
+    def __repr__(self):
+        return f'CrostonClassic()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _croston_classic(y=y)
@@ -583,6 +625,9 @@ class CrostonSBA:
     def __init__(self):
         pass
 
+    def __repr__(self):
+        return f'CrostonSBA()'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _croston_sba(y=y)
         return self
@@ -619,6 +664,9 @@ class IMAPA:
     def __init__(self):
         pass
 
+    def __repr__(self):
+        return f'IMAPA()'
+
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _imapa(y=y)
         return self
@@ -651,6 +699,9 @@ class TSB:
     def __init__(self, alpha_d: float, alpha_p: float):
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
+
+    def __repr__(self):
+        return f'TSB(d={self.alpha_d},p={self.alpha_p})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.fitted_ = _tsb(y=y, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
