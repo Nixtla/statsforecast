@@ -5,6 +5,7 @@ __all__ = ['StatsForecast']
 # Cell
 import inspect
 import logging
+from copy import deepcopy
 from functools import partial
 from os import cpu_count
 from typing import Any, Callable, List, Optional, Tuple
@@ -49,71 +50,100 @@ class GroupedArray:
             return False
         return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
-    def compute_forecasts(self, h, func, xreg=None, fitted=False, level=None, *args):
-        has_level = 'level' in inspect.signature(func).parameters and level is not None
-        if has_level:
-            out = np.full((h * self.n_groups, 2 * len(level) + 1), np.nan, dtype=np.float32)
-            func = partial(func, level=level)
-        else:
-            out = np.full(h * self.n_groups, np.nan, dtype=np.float32)
-        if fitted:
-            fitted_vals = np.full(self.data.shape[0], np.nan, dtype=np.float32)
-        xr = None
-        keys = None
-        for i, grp in enumerate(self):
-            if xreg is not None:
-                xr = xreg[i]
-            res_fn = func(grp, h, xr, fitted, *args)
-            if has_level:
-                if keys is None:
-                    keys = [key for key in res_fn.keys() if key not in ['fitted']]
-                for j, key in enumerate(keys):
-                    out[h * i : h * (i + 1), j] = res_fn[key]
-            else:
-                out[h * i : h * (i + 1)] = res_fn['mean']
-            if fitted:
-                fitted_vals[self.indptr[i] : self.indptr[i + 1]] = res_fn['fitted']
-        result = {'forecasts': out, 'keys': keys}
-        if fitted:
-            result['fitted'] = {'values': fitted_vals}
-        return result
+    def fit(self, models):
+        fm = np.full((self.n_groups, len(models)), np.nan, dtype=object)
+        for i_model, model in enumerate(models):
+            for i, grp in enumerate(self):
+                y = grp[:, 0] if grp.ndim == 2 else grp
+                X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
+                fm[i, i_model] = deepcopy(model).fit(y=y, X=X)
+        return fm
 
-    def compute_cv(self, h, test_size, func, step_size=1, input_size=None, fitted=False, *args):
+    def _output_predict(self, fm, h, X, level=tuple()):
+        #returns empty output according to method
+        cols = []
+        cuts = np.full(len(fm) + 1, fill_value=np.nan, dtype=np.int32)
+        cuts[0] = 0
+        for i_model, model in enumerate(fm[0, :]):
+            model_name = repr(model)
+            cols_m = [model_name]
+            has_level = 'level' in inspect.signature(model.predict).parameters and len(level) > 0
+            if has_level:
+                cols_m += [f'{model_name}-lo_{lv}' for lv in level]
+                cols_m += [f'{model_name}-hi_{lv}' for lv in level]
+            cols += cols_m
+            cuts[i_model + 1] = len(cols_m) + cuts[i_model]
+        out = np.full((self.n_groups * h, len(cols)), fill_value=np.nan, dtype=np.float32)
+        return out, cols, cuts
+
+    def predict(self, fm, h, X=None, level=tuple()):
+        #fm stands for fitted_models
+        #and fm should have fitted_model
+        fcsts, cols, cuts = self._output_predict(fm=fm, h=h, X=X, level=level)
+        for i_model in range(fm.shape[1]):
+            has_level = 'level' in inspect.signature(fm[0, i_model].predict).parameters and len(level) > 0
+            kwargs = {}
+            if has_level:
+                kwargs['level'] = level
+            for i, _ in enumerate(self):
+                if X is not None:
+                    X_ = X[i]
+                else:
+                    X_ = None
+                fcsts_i = fm[i, i_model].predict(h=h, X=X_, **kwargs)
+                if fcsts_i.ndim == 1:
+                    fcsts_i = fcsts_i[:, None]
+                fcsts[i * h : (i + 1) * h, cuts[i_model]:cuts[i_model + 1]] = fcsts_i
+        return fcsts, cols
+
+    def fit_predict(self, models, h, X=None, level=tuple()):
+        #fitted models
+        fm = self.fit(models=models)
+        #forecasts
+        fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
+        return fm, fcsts, cols
+
+    def predict_in_sample(self, model_idx, level=tuple()):
+        has_level = 'level' in inspect.signature(self.fm[0, model_idx].predict_in_sample).parameters and len(level) > 0
+        kwargs = {}
+        if has_level:
+            kwargs['level'] = level
+        in_sample = np.full((self.data.shape[0],  2 * has_level * len(level) + 1), np.nan, dtype=np.float32)
+        for i, _ in enumerate(self):
+            in_sample_i = self.fm[i, model_idx].predict_in_sample(**kwargs)
+            in_sample[self.indptr[i] : self.indptr[i + 1], : 2 * has_level * len(level) + 1] = in_sample_i
+        return in_sample
+
+    def compute_cv(self, model, h, test_size, step_size=1, input_size=None):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
             raise Exception('`test_size - h` should be module `step_size`')
         n_windows = int((test_size - h) / step_size) + 1
         out = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
         out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
-        if fitted:
-            fitted_vals = np.full((self.data.shape[0], n_windows), np.nan, dtype=np.float32)
-            fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
-            last_fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
         for i_ts, grp in enumerate(self):
             for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size
+                #train dataset
                 y_train = grp[(cutoff - in_size_disp):cutoff]
+                y_train = y_train[:, 0] if y_train.ndim == 2 else y_train
+                X_train = y_train[:, 1:] if (y_train.ndim == 2 and y_train.shape[1] > 1) else None
+                #test dataset
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
-                future_xreg = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
-                res_fn = func(y_train, h, future_xreg, fitted, *args)
-                out[i_ts, i_window] = res_fn['mean']
-                out_test[i_ts, i_window] = y_test[:, 0] if y_test.ndim == 2 else y_test
-                if fitted:
-                    fitted_vals[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
-                        (cutoff - in_size_disp):cutoff
-                    ] = res_fn['fitted']
-                    fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
-                        (cutoff - in_size_disp):cutoff
-                    ] = True
-                    last_fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][cutoff-1] = True
+                y_test = y_test[:, 0] if y_test.ndim == 2 else y_test
+                X_test = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
+                # fit model
+                out[i_ts, i_window] = model.fit(y=y_train, X=X_train).predict(h=h, X=X_test)[:, 0]
+                out_test[i_ts, i_window] = y_test
         result = {'forecasts': out, 'y': out_test}
-        if fitted:
-            result['fitted'] = {'values': fitted_vals, 'idxs': fitted_idxs, 'last_idxs': last_fitted_idxs}
         return result
 
     def split(self, n_chunks):
         return [self[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks) if x.size]
+
+    def split_fm(self, fm, n_chunks):
+        return [fm[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks) if x.size]
 
 # Internal Cell
 def _grouped_array_from_df(df, sort_df):
@@ -154,26 +184,6 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     return dates
 
 # Internal Cell
-def _build_forecast_name(model, *args, idx_remove=4) -> str:
-    model_name = f'{model.__name__}'
-    func_params = inspect.signature(model).parameters
-    func_args = list(func_params.items())[idx_remove:]  # remove input array, horizon and xreg
-    changed_params = [
-        f'{name}-{value}'
-        for value, (name, arg) in zip(args, func_args)
-        if arg.default != value
-    ]
-    if changed_params:
-        model_name += '_' + '_'.join(changed_params)
-    return model_name
-
-# Internal Cell
-def _as_tuple(x):
-    if isinstance(x, tuple):
-        return x
-    return (x,)
-
-# Internal Cell
 def _get_n_jobs(n_groups, n_jobs, ray_address):
     if ray_address is not None:
         logger.info(
@@ -203,46 +213,42 @@ class StatsForecast:
 
     def __init__(
             self,
-            df: pd.DataFrame, # DataFrame with columns `ds` and `y`, indexed by `unique_id`
             models: List[Tuple[Callable, Any]], # List of tuples, each containing a fn and its parameters
             freq: str, # Frequency of the data
             n_jobs: int = 1, # Number of jobs used to parallel processing. Use `-1` to use all cores
             ray_address: Optional[str] = None,  # Optional ray address to distribute jobs
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id`
             sort_df: bool = True # Sort `df` according to index and `ds`?
         ):
         # needed for residuals, think about it later
-        self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
         self.models = models
         self.freq = pd.tseries.frequencies.to_offset(freq)
-        self.n_jobs = _get_n_jobs(len(self.ga), n_jobs, ray_address)
+        self.n_jobs = n_jobs
         self.ray_address = ray_address
-        self.sort_df = sort_df
+        self.ga = None
+        if df is not None:
+            self._prepare_fit(df=df, sort_df=sort_df)
 
-    def forecast(
+    def _prepare_fit(self, df, sort_df):
+        if getattr(self, 'ga') is None:
+            self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
+            self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
+
+    def fit(
             self,
-            h: int, # Forecast horizon
-            xreg: Optional[pd.DataFrame] = None, # Future exogenous regressors
-            fitted: bool = False, # Save fitted values for each model?
-            level: Optional[List[int]] = None, # Levels of propabilistic intervals
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id`
+            sort_df: bool = True # Sort `df` according to index and `ds`?
         ):
-        if xreg is not None:
-            expected_shape = (h * len(self.ga), self.ga.data.shape[1])
-            if xreg.shape != expected_shape:
-                raise ValueError(f'Expected xreg to have shape {expected_shape}, but got {xreg.shape}')
-            xreg, _, _, _ = _grouped_array_from_df(xreg, sort_df=self.sort_df)
-        forecast_kwargs = dict(
-            h=h, test_size=None, step_size=None,
-            input_size=None,
-            xreg=xreg, fitted=fitted,
-            level=level, mode='forecast',
-        )
+        self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
-            res_fcsts = self._sequential(**forecast_kwargs)
+            self.fitted_ = self.ga.fit(models=self.models)
         else:
-            res_fcsts = self._data_parallel(**forecast_kwargs)
-        if fitted:
-            self.fcst_fitted_ = res_fcsts['fitted']
-        fcsts = res_fcsts['fcsts']
+            self.fitted_ = self._fit_parallel()
+        #idx = pd.Index(self.uids, name='unique_id')
+        #self.fitted_ = pd.DataFrame(self.fitted_, index=idx)
+        return self
+
+    def _make_future_df(self, h: int):
         if issubclass(self.last_dates.dtype.type, np.integer):
             last_date_f = lambda x: np.arange(x + 1, x + 1 + h, dtype=self.last_dates.dtype)
         else:
@@ -255,104 +261,53 @@ class StatsForecast:
                 for last_date in self.last_dates
             ])
         idx = pd.Index(np.repeat(self.uids, h), name='unique_id')
-        return pd.DataFrame({'ds': dates, **fcsts}, index=idx)
+        df = pd.DataFrame({'ds': dates}, index=idx)
+        return df
 
-    def forecast_fitted_values(self):
-        if not hasattr(self, 'fcst_fitted_'):
-            raise Exception('Please run `forecast` mehtod using `fitted=True`')
-        fcst_fitted = {key: val['values'] for key, val in self.fcst_fitted_.items()}
-        fcst_fitted['y'] = self.ga.data[:, 0]
-        return pd.DataFrame({**fcst_fitted}, index=self.ds).reset_index(level=1)
+    def _parse_X_level(self, h, X, level):
+        if X is not None:
+            expected_shape = (h * len(self.ga), self.ga.data.shape[1])
+            if X.shape != expected_shape:
+                raise ValueError(f'Expected X to have shape {expected_shape}, but got {X.shape}')
+            X, _, _, _ = _grouped_array_from_df(xreg, sort_df=self.sort_df)
+        if level is None:
+            level = tuple()
+        return X, level
 
-    def cross_validation(
+    def predict(
+            self,
+            h: int, # Forecast horizon,
+            X: Optional[pd.DataFrame] = None, # Future exogenous regressors
+            level: Optional[List[int]] = None, # Levels of propabilistic intervals
+        ):
+        X, level = self._parse_X_level(h=h, X=X, level=level)
+        if self.n_jobs == 1:
+            fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
+        else:
+            fcsts, cols = self._predict_parallel(h=h, X=X, level=level)
+        df = self._make_future_df(h=h)
+        df[cols] = fcsts
+        return df
+
+    def fit_predict(
             self,
             h: int, # Forecast horizon
-            n_windows: int = 1, # Number of windows used for cross validation
-            step_size: int = 1, # Step size between each window
-            test_size: Optional[int] = None, # Lenght of test size. If passed, set `n_windows=None`
-            input_size: Optional[int] = None, # Input size for each window
-            fitted=False, # Save fitted values for each window and each model?
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id`
+            X: Optional[pd.DataFrame] = None, # Future exogenous regressors
+            level: Optional[List[int]] = None, # Levels of propabilistic intervals
+            sort_df: bool = True # Sort `df` according to index and `ds`?
         ):
-        if test_size is None:
-            test_size = h + step_size * (n_windows - 1)
-        elif n_windows is None:
-            if (test_size - h) % step_size:
-                raise Exception('`test_size - h` should be module `step_size`')
-            n_windows = int((test_size - h) / step_size) + 1
-        elif (n_windows is None) and (test_size is None):
-            raise Exception('you must define `n_windows` or `test_size`')
-        else:
-            raise Exception('you must define `n_windows` or `test_size` but not both')
-
-        cv_kwargs = dict(
-            h=h, test_size=test_size, step_size=step_size, input_size=input_size,
-            xreg=None, fitted=fitted, level=None, mode='cv',
-        )
+        self._prepare_fit(df, sort_df)
+        X, level = self._parse_X_level(h=h, X=X, level=level)
         if self.n_jobs == 1:
-            res_fcsts = self._sequential(**cv_kwargs)
+            self.fitted_, fcsts, cols = self.ga.fit_predict(models=self.models, h=h, X=X, level=level)
         else:
-            res_fcsts = self._data_parallel(**cv_kwargs)
-        if fitted:
-            self.cv_fitted_ = res_fcsts['fitted']
-            self.n_cv_ = n_windows
-        fcsts = res_fcsts['fcsts']
-        dates = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size, step_size=step_size)
-        dates = {'ds': dates['ds'].values, 'cutoff': dates['cutoff'].values}
-        idx = pd.Index(np.repeat(self.uids, h * n_windows), name='unique_id')
-        return pd.DataFrame({**dates, **fcsts}, index=idx)
+            self.fitted_, fcsts, cols = self._fit_predict_parallel(h=h, X=X, level=level)
+        df = self._make_future_df(h=h)
+        df[cols] = fcsts
+        return df
 
-    def cross_validation_fitted_values(self):
-        if not hasattr(self, 'cv_fitted_'):
-            raise Exception('Please run `cross_validation` mehtod using `fitted=True`')
-        index = pd.MultiIndex.from_tuples(np.tile(self.ds, self.n_cv_), names=['unique_id', 'ds'])
-        res = pd.DataFrame(index=index, columns=['cutoff', 'y'] + list(self.cv_fitted_.keys()))
-        for model, res_ in self.cv_fitted_.items():
-            res[model] = res_['values'].flatten('F')
-        res['cutoff'] = res_['last_idxs'].flatten('F')
-        res['y'] = np.tile(self.ga.data.flatten(), self.n_cv_)
-        idxs = res_['idxs'].flatten('F')
-        res = res.iloc[idxs].reset_index(level=1)
-        res['cutoff'] = res['ds'].where(res['cutoff']).bfill()
-        return res
-
-    def _sequential(self, h, test_size, step_size, input_size, xreg, fitted, level, mode='forecast'):
-        result = {'fcsts': {}, 'fitted': {}}
-        logger.info('Computing forecasts')
-        for model_args in self.models:
-            model, *args = _as_tuple(model_args)
-            model_name = _build_forecast_name(model, *args)
-            if mode == 'forecast':
-                res_fcsts = self.ga.compute_forecasts(h, model, xreg, fitted, level, *args)
-                values = res_fcsts['forecasts']
-                keys = res_fcsts['keys']
-            elif mode == 'cv':
-                res_fcsts = self.ga.compute_cv(h, test_size, model, step_size, input_size, fitted, *args)
-                values = res_fcsts['forecasts']
-                test_values = res_fcsts['y']
-                keys = None
-            if keys is not None:
-                for j, key in enumerate(keys):
-                    result['fcsts'][f'{model_name}_{key}'] = values[:, j]
-            else:
-                result['fcsts'][model_name] = values.flatten()
-            if fitted:
-                result['fitted'][model_name] = res_fcsts['fitted']
-            logger.info(f'Computed forecasts for {model_name}.')
-        if mode == 'cv':
-            result['fcsts'] = {'y': test_values.flatten(), **result['fcsts']}
-        return result
-
-    def _data_parallel(self, h, test_size, step_size, input_size, xreg, fitted, level, mode='forecast'):
-        result = {'fcsts': {}, 'fitted': {}}
-        logger.info('Computing forecasts')
-        gas = self.ga.split(self.n_jobs)
-        if xreg is not None:
-            xregs = xreg.split(self.n_jobs)
-        else:
-            from itertools import repeat
-
-            xregs = repeat(None)
-
+    def _get_pool(self):
         if self.ray_address is not None:
             try:
                 from ray.util.multiprocessing import Pool
@@ -362,49 +317,68 @@ class StatsForecast:
                     'ray. Please run `pip install ray`. '
                 )
                 raise ModuleNotFoundError(msg) from e
-            kwargs = dict(ray_address=self.ray_address)
+            pool_kwargs = dict(ray_address=self.ray_address)
         else:
             from multiprocessing import Pool
-            kwargs = dict()
+            pool_kwargs = dict()
+        return Pool, pool_kwargs
 
-        with Pool(self.n_jobs, **kwargs) as executor:
-            for model_args in self.models:
-                model, *args = _as_tuple(model_args)
-                model_name = _build_forecast_name(model, *args)
-                futures = []
-                for ga, xr in zip(gas, xregs):
-                    if mode == 'forecast':
-                        future = executor.apply_async(ga.compute_forecasts, (h, model, xr, fitted, level, *args,))
-                    elif mode == 'cv':
-                        future = executor.apply_async(ga.compute_cv, (h, test_size, model, step_size, input_size, fitted, *args))
-                    futures.append(future)
-                if mode == 'forecast':
-                    res_fcsts = [f.get() for f in futures]
-                    values = [d['forecasts'] for d in res_fcsts]
-                    keys = [d['keys'] for d in res_fcsts]
-                    keys = keys[0]
-                elif mode == 'cv':
-                    res_fcsts = [f.get() for f in futures]
-                    values = [d['forecasts'] for d in res_fcsts]
-                    test_values = [d['y'] for d in res_fcsts]
-                    keys = None
-                if keys is not None:
-                    values = np.vstack(values)
-                    for j, key in enumerate(keys):
-                        result['fcsts'][f'{model_name}_{key}'] = values[:, j]
-                else:
-                    values = np.hstack([val.flatten() for val in values])
-                    result['fcsts'][model_name] = values.flatten()
-                if fitted:
-                    res = {}
-                    for k in res_fcsts[0]['fitted'].keys():
-                        res[k] = np.concatenate([d['fitted'][k] for d in res_fcsts])
-                    result['fitted'][model_name] = res
-                logger.info(f'Computed forecasts for {model_name}.')
-        if mode == 'cv':
-            test_values = np.vstack(test_values)
-            result['fcsts'] = {'y': test_values.flatten(), **result['fcsts']}
-        return result
+    def _fit_parallel(self):
+        gas = self.ga.split(self.n_jobs)
+        Pool, pool_kwargs = self._get_pool()
+        with Pool(self.n_jobs, **pool_kwargs) as executor:
+            futures = []
+            for ga in gas:
+                future = executor.apply_async(ga.fit, kwds={'models': self.models})
+                futures.append(future)
+            fm = np.vstack([f.get() for f in futures])
+        return fm
+
+    def _get_gas_Xs(self, X):
+        gas = self.ga.split(self.n_jobs)
+        if X is not None:
+            Xs = X.split(self.n_jobs)
+        else:
+            from itertools import repeat
+            Xs = repeat(None)
+        return gas, Xs
+
+    def _predict_parallel(self, h, X, level):
+        #create elements for each core
+        gas, Xs = self._get_gas_Xs(X=X)
+        fms = self.ga.split_fm(self.fitted_, self.n_jobs)
+        Pool, pool_kwargs = self._get_pool()
+        #compute parallel forecasts
+        with Pool(self.n_jobs, **pool_kwargs) as executor:
+            futures = []
+            for ga, fm, X_ in zip(gas, fms, Xs):
+                future = executor.apply_async(ga.predict, kwds={'fm': fm, 'h': h, 'X': X_, 'level': level})
+                futures.append(future)
+            out = [f.get() for f in futures]
+            fcsts, cols = list(zip(*out))
+            fcsts = np.vstack(fcsts)
+            cols = cols[0]
+        return fcsts, cols
+
+    def _fit_predict_parallel(self, h, X, level):
+        #create elements for each core
+        gas, Xs = self._get_gas_Xs(X=X)
+        Pool, pool_kwargs = self._get_pool()
+        #compute parallel forecasts
+        with Pool(self.n_jobs, **pool_kwargs) as executor:
+            futures = []
+            for ga, X_ in zip(gas, Xs):
+                future = executor.apply_async(ga.fit_predict, kwds={'models': self.models, 'h': h, 'X': X_, 'level': level})
+                futures.append(future)
+            out = [f.get() for f in futures]
+            fm, fcsts, cols = list(zip(*out))
+            fm = np.vstack(fm)
+            fcsts = np.vstack(fcsts)
+            cols = cols[0]
+        return fm, fcsts, cols
+
+    def __repr__(self):
+        return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
 # Internal Cell
 class ParallelBackend:
