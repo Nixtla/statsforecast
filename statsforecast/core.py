@@ -52,10 +52,10 @@ class GroupedArray:
 
     def fit(self, models):
         fm = np.full((self.n_groups, len(models)), np.nan, dtype=object)
-        for i_model, model in enumerate(models):
-            for i, grp in enumerate(self):
-                y = grp[:, 0] if grp.ndim == 2 else grp
-                X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
+        for i, grp in enumerate(self):
+            y = grp[:, 0] if grp.ndim == 2 else grp
+            X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
+            for i_model, model in enumerate(models):
                 new_model = model.new()
                 fm[i, i_model] = new_model.fit(y=y, X=X)
         return fm
@@ -103,6 +103,13 @@ class GroupedArray:
         #forecasts
         fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
         return fm, fcsts, cols
+
+    def forecast(self, models, h, X=None, level=tuple()):
+        #fitted models
+        fm = self.fit(models=models)
+        #forecasts
+        fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
+        return fcsts, cols
 
     def predict_in_sample(self, model_idx, level=tuple()):
         has_level = 'level' in inspect.signature(self.fm[0, model_idx].predict_in_sample).parameters and len(level) > 0
@@ -308,6 +315,24 @@ class StatsForecast:
         df[cols] = fcsts
         return df
 
+    def forecast(
+            self,
+            h: int, # Forecast horizon
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id`
+            X: Optional[pd.DataFrame] = None, # Future exogenous regressors
+            level: Optional[List[int]] = None, # Levels of propabilistic intervals
+            sort_df: bool = True # Sort `df` according to index and `ds`?
+        ):
+        self._prepare_fit(df, sort_df)
+        X, level = self._parse_X_level(h=h, X=X, level=level)
+        if self.n_jobs == 1:
+            fcsts, cols = self.ga.forecast(models=self.models, h=h, X=X, level=level)
+        else:
+            fcsts, cols = self._forecast_parallel(h=h, X=X, level=level)
+        df = self._make_future_df(h=h)
+        df[cols] = fcsts
+        return df
+
     def _get_pool(self):
         if self.ray_address is not None:
             try:
@@ -330,6 +355,7 @@ class StatsForecast:
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga in gas:
+                print(self.models)
                 future = executor.apply_async(ga.fit, (self.models,))
                 futures.append(future)
             fm = np.vstack([f.get() for f in futures])
@@ -377,6 +403,22 @@ class StatsForecast:
             fcsts = np.vstack(fcsts)
             cols = cols[0]
         return fm, fcsts, cols
+
+    def _forecast_parallel(self, h, X, level):
+        #create elements for each core
+        gas, Xs = self._get_gas_Xs(X=X)
+        Pool, pool_kwargs = self._get_pool()
+        #compute parallel forecasts
+        with Pool(self.n_jobs, **pool_kwargs) as executor:
+            futures = []
+            for ga, X_ in zip(gas, Xs):
+                future = executor.apply_async(ga.forecast, (self.models, h, X_, level,))
+                futures.append(future)
+            out = [f.get() for f in futures]
+            fcsts, cols = list(zip(*out))
+            fcsts = np.vstack(fcsts)
+            cols = cols[0]
+        return fcsts, cols
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
