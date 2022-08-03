@@ -159,6 +159,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "ngupta23",
+      "name": "Nikhil Gupta",
+      "avatar_url": "https://avatars.githubusercontent.com/u/33585645?v=4",
+      "profile": "https://www.linkedin.com/in/guptanick/",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
