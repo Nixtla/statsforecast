@@ -329,7 +329,7 @@ class StatsForecast:
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga in gas:
-                future = executor.apply_async(ga.fit, self.models)
+                future = executor.apply_async(ga.fit, (self.models,))
                 futures.append(future)
             fm = np.vstack([f.get() for f in futures])
         return fm
@@ -352,7 +352,7 @@ class StatsForecast:
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga, fm, X_ in zip(gas, fms, Xs):
-                future = executor.apply_async(ga.predict, fm, (h, X_, level))
+                future = executor.apply_async(ga.predict, (fm, h, X_, level,))
                 futures.append(future)
             out = [f.get() for f in futures]
             fcsts, cols = list(zip(*out))
@@ -368,7 +368,7 @@ class StatsForecast:
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga, X_ in zip(gas, Xs):
-                future = executor.apply_async(ga.fit_predict, self.models, (h, X_, level))
+                future = executor.apply_async(ga.fit_predict, (self.models, h, X_, level,))
                 futures.append(future)
             out = [f.get() for f in futures]
             fm, fcsts, cols = list(zip(*out))
