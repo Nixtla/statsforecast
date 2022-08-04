@@ -38,7 +38,7 @@ class AutoARIMA(_TS):
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         with np.errstate(invalid='ignore'):
-            self.fitted_ = auto_arima_f(
+            self.model_ = auto_arima_f(
                 y,
                 xreg=X,
                 period=self.season_length,
@@ -48,7 +48,7 @@ class AutoARIMA(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None, level: Optional[Tuple[int]] = None):
-        fcst = forecast_arima(self.fitted_, h=h, xreg=X, level=level)
+        fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
         if level is None:
             return fcst['mean']
         out = [
@@ -59,7 +59,36 @@ class AutoARIMA(_TS):
         return np.vstack(out).T
 
     def predict_in_sample(self):
-        return fitted_arima(self.fitted_)
+        return fitted_arima(self.model_)
+
+    def forecast(
+            self,
+            y: np.ndarray,
+            h: int,
+            X: np.ndarray = None,
+            X_future: np.ndarray = None,
+            level: Optional[Tuple[int]] = None, # level
+            fitted: bool = False, # return fitted values?
+        ):
+        with np.errstate(invalid='ignore'):
+            mod = auto_arima_f(
+                y,
+                xreg=X,
+                period=self.season_length,
+                approximation=self.approximation,
+                allowmean=False, allowdrift=False #not implemented yet
+            )
+        fcst = forecast_arima(mod, h, xreg=X_future, level=level)
+        mean = fcst['mean']
+        if fitted:
+            return {'mean': mean, 'fitted': fitted_arima(mod)}
+        if level is None:
+            return {'mean': mean}
+        return {
+            'mean': mean,
+            **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
+            **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+        }
 
 # Cell
 class ETS(_TS):
@@ -72,18 +101,29 @@ class ETS(_TS):
         return f'ETS(sl={self.season_length},model={self.model})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = ets_f(y, m=self.season_length, model=self.model)
+        self.model_ = ets_f(y, m=self.season_length, model=self.model)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return forecast_ets(self.fitted_, h=h)['mean']
-
-    def forecast(self, y: np.ndarray, h: int, X: np.ndarray = None, X_future: np.ndarray = None):
-        mod = ets_f(y, m=self.season_length, model=self.model)
-        return forecast_ets(mod, h=h)['mean']
+        return forecast_ets(self.model_, h=h)['mean']
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        mod = ets_f(y, m=self.season_length, model=self.model)
+        fcst = forecast_ets(mod, h)
+        keys = ['mean']
+        if fitted:
+            keys.append('fitted')
+        return {key: fcst[key] for key in keys}
 
 # Cell
 @njit
@@ -177,17 +217,31 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
         sums[i] = array[start : start + chunk_size].sum()
     return sums
 
-# Internal Cell
 @njit
-def _ses(y: np.ndarray, alpha: float):
-    mean, _, fitted_vals = _ses_fcst_mse(y, alpha)
-    obj = {'mean': np.array([np.float32(mean)])}
-    obj['fitted'] = fitted_vals
-    return obj
+def _repeat_val(val: float, h: int):
+    return np.full(h, val, np.float32)
 
 @njit
-def _predict_ses(obj, h: int):
-    return np.repeat(obj['mean'], h)
+def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
+    out = np.empty(h, np.float32)
+    for i in range(h):
+        out[i] = season_vals[i % season_length]
+    return out
+
+# Internal Cell
+@njit
+def _ses(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+        alpha: float, # smoothing parameter
+    ):
+    fcst, _, fitted_vals = _ses_fcst_mse(y, alpha)
+    mean = _repeat_val(val=fcst, h=h)
+    fcst = {'mean': mean}
+    if fitted:
+        fcst['fitted'] = fitted_vals
+    return fcst
 
 # Cell
 class SimpleExponentialSmoothing(_TS):
@@ -199,24 +253,38 @@ class SimpleExponentialSmoothing(_TS):
         return f'SES(alpha={self.alpha})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _ses(y=y, alpha=self.alpha)
+        self.model_ = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_ses(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
 
-# Cell
-def _ses_optimized(y: np.ndarray):
-    mean, fitted_vals = _optimized_ses_forecast(y, [(0.01, 0.99)])
-    obj = {'mean': np.array([np.float32(mean)])}
-    obj['fitted'] = fitted_vals
-    return obj
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
+        return out
 
-def _predict_ses_optimized(obj, h: int):
-    return np.repeat(obj['mean'], h)
+# Internal Cell
+def _ses_optimized(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
+    fcst, fitted_vals = _optimized_ses_forecast(y, [(0.01, 0.99)])
+    mean = _repeat_val(val=fcst, h=h)
+    fcst = {'mean': mean}
+    if fitted:
+        fcst['fitted'] = fitted_vals
+    return fcst
 
 # Cell
 class SimpleExponentialSmoothingOptimized(_TS):
@@ -228,33 +296,45 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return f'SESOpt()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _ses_optimized(y=y)
+        self.model_ = _ses_optimized(y=y, h=1, fitted=True)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_ses_optimized(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _ses_optimized(y=y, h=h, fitted=fitted)
+        return out
 
 # Internal Cell
 @njit
-def _seasonal_exponential_smoothing(y: np.ndarray, season_length: int, alpha: float):
+def _seasonal_exponential_smoothing(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+        season_length: int, # length of season
+        alpha: float, # smoothing parameter
+    ):
     if y.size < season_length:
-        season_vals = np.full(season_length, np.nan, np.float32)
-        fitted = np.full(y.size, np.nan, np.float32)
-        return {'season_vals': season_vals, 'fitted': fitted}
+        return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
-    fitted = np.full(y.size, np.nan, np.float32)
+    fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        season_vals[i], fitted[i::season_length] = _ses_forecast(y[i::season_length], alpha)
-    return {'season_vals': season_vals, 'fitted': fitted}
-
-@njit
-def _predict_seasonal_es(obj, season_length: int, h: int):
-    fcst = np.empty(h, np.float32)
-    for i in range(h):
-        fcst[i] = obj['season_vals'][i % season_length]
+        season_vals[i], fitted_vals[i::season_length] = _ses_forecast(y[i::season_length], alpha)
+    out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
+    fcst = {'mean': out}
+    if fitted:
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
@@ -268,31 +348,53 @@ class SeasonalExponentialSmoothing(_TS):
         return f'SeasonalES(sl={self.season_length},alpha={self.alpha})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _seasonal_exponential_smoothing(y=y, season_length=self.season_length, alpha=self.alpha)
+        self.model_ = _seasonal_exponential_smoothing(
+            y=y,
+            season_length=self.season_length,
+            alpha=self.alpha,
+            fitted=True,
+            h=self.season_length,
+        )
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_seasonal_es(self.fitted_, season_length=self.season_length, h=h)
+        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _seasonal_exponential_smoothing(
+            y=y, h=h, fitted=fitted,
+            alpha=self.alpha,
+            season_length=self.season_length
+        )
+        return out
 
 # Cell
-def _seasonal_ses_optimized(y: np.ndarray, season_length: int):
+def _seasonal_ses_optimized(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool , # fitted values
+        season_length: int, # season length
+    ):
     if y.size < season_length:
-        season_vals = np.full(season_length, np.nan, np.float32)
-        fitted = np.full(y.size, np.nan, np.float32)
-        return {'season_vals': season_vals, 'fitted': fitted}
+        return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
-    fitted = np.full(y.size, np.nan, np.float32)
+    fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        season_vals[i], fitted[i::season_length] = _optimized_ses_forecast(y[i::season_length], [(0.01, 0.99)])
-    return {'season_vals': season_vals, 'fitted': fitted}
-
-def _predict_seasonal_es_opt(obj, season_length: int, h: int):
-    fcst = np.empty(h, np.float32)
-    for i in range(h):
-        fcst[i] = obj['season_vals'][i % season_length]
+        season_vals[i], fitted_vals[i::season_length] = _optimized_ses_forecast(y[i::season_length], [(0.01, 0.99)])
+    out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
+    fcst = {'mean': out}
+    if fitted:
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
@@ -305,27 +407,48 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return f'SeasESOpt(sl={self.season_length})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _seasonal_ses_optimized(y=y, season_length=self.season_length)
+        self.model_ = _seasonal_ses_optimized(
+            y=y,
+            season_length=self.season_length,
+            fitted=True,
+            h=self.season_length,
+        )
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_seasonal_es_opt(self.fitted_, season_length=self.season_length, h=h)
+        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _seasonal_ses_optimized(
+            y=y, h=h, fitted=fitted,
+            season_length=self.season_length
+        )
+        return out
 
 # Internal Cell
 @njit
-def _historic_average(y: np.ndarray):
-    obj = {'mean': np.array([y.mean()], dtype=np.float32)}
-    fitted_vals = np.full(y.size, np.nan, dtype=np.float32)
-    fitted_vals[1:] = y.cumsum()[:-1] / np.arange(1, y.size)
-    obj['fitted'] = fitted_vals
-    return obj
-
-@njit
-def _predict_historic_average(obj, h: int):
-    return np.repeat(obj['mean'], h)
+def _historic_average(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
+    mean = _repeat_val(val=y.mean(), h=h)
+    fcst = {'mean': mean}
+    if fitted:
+        fitted_vals = np.full(y.size, np.nan, np.float32)
+        fitted_vals[1:] = y.cumsum()[:-1] / np.arange(1, y.size)
+        fcst['fitted'] = fitted_vals
+    return fcst
 
 # Cell
 class HistoricAverage(_TS):
@@ -337,27 +460,39 @@ class HistoricAverage(_TS):
         return f'HistoricAverage()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _historic_average(y)
+        self.model_ = _historic_average(y, h=1, fitted=True)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_historic_average(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _historic_average(y=y, h=h, fitted=fitted)
+        return out
 
 # Internal Cell
 @njit
-def _naive(y: np.ndarray):
-    obj = {'mean': np.array([y[-1]]).astype(np.float32)}
-    fitted_vals = np.full(y.size, np.nan, np.float32)
-    fitted_vals[1:] = np.roll(y, 1)[1:]
-    obj['fitted'] = fitted_vals
-    return obj
-
-@njit
-def _predict_naive(obj, h: int):
-    return np.repeat(obj['mean'], h)
+def _naive(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
+    mean = _repeat_val(val=y[-1], h=h)
+    if fitted:
+        fitted_vals = np.full(y.size, np.nan, np.float32)
+        fitted_vals[1:] = np.roll(y, 1)[1:]
+        return {'mean': mean, 'fitted': fitted_vals}
+    return {'mean': mean}
 
 # Cell
 class Naive(_TS):
@@ -369,30 +504,43 @@ class Naive(_TS):
         return f'Naive()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _naive(y)
+        self.model_ = _naive(y, h=1, fitted=True)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_naive(self.fitted_, h=h)
+        return _repeat_val(self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _naive(y=y, h=h, fitted=fitted)
+        return out
 
 # Internal Cell
 @njit
-def _random_walk_with_drift(y: np.ndarray):
+def _random_walk_with_drift(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
     slope = (y[-1] - y[0]) / (y.size - 1)
-    slope = np.array([slope]).astype(np.float32)
-    mean = np.array([y[-1]]).astype(np.float32)
-    obj = {'mean': mean, 'slope': slope}
-    fitted_vals = np.full(y.size, np.nan, dtype=np.float32)
-    fitted_vals[1:] = (slope + y[:-1]).astype(np.float32)
-    obj['fitted'] = fitted_vals
-    return obj
-
-@njit
-def _predict_rwd(obj, h: int):
-    return obj['mean'] + obj['slope'] * (1 + np.arange(h))
+    mean = slope * (1 + np.arange(h)) + y[-1]
+    fcst = {'mean': mean.astype(np.float32),
+            'slope': np.array([slope], dtype=np.float32),
+            'last_y': np.array([y[-1]], dtype=np.float32)}
+    if fitted:
+        fitted_vals = np.full(y.size, np.nan, dtype=np.float32)
+        fitted_vals[1:] = (slope + y[:-1]).astype(np.float32)
+        fcst['fitted'] = fitted_vals
+    return fcst
 
 # Cell
 class RandomWalkWithDrift(_TS):
@@ -404,35 +552,48 @@ class RandomWalkWithDrift(_TS):
         return f'RWD()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _random_walk_with_drift(y)
+        self.model_ = _random_walk_with_drift(y, h=1, fitted=True)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_rwd(self.fitted_, h=h)
+        hrange = np.arange(h, dtype=np.float32)
+        return self.model_['slope'] * (1 + hrange) + self.model_['last_y']
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
+        return out
 
 # Internal Cell
 @njit
-def _seasonal_naive(y: np.ndarray, season_length: int):
+def _seasonal_naive(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, #fitted values
+        season_length: int, # season length
+    ):
     if y.size < season_length:
-        season_vals = np.full(season_length, np.nan, np.float32)
-        fitted = np.full(y.size, np.nan, np.float32)
-        return {'season_vals': season_vals, 'fitted': fitted}
+        return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
-    fitted = np.full(y.size, np.nan, np.float32)
+    fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        s_naive = _naive(y[i::season_length])
+        s_naive = _naive(y[i::season_length], h=1, fitted=fitted)
         season_vals[i] = s_naive['mean'].item()
-        fitted[i::season_length] = s_naive['fitted']
-    return {'season_vals': season_vals, 'fitted': fitted}
-
-@njit
-def _predict_seasonal_naive(obj, season_length: int, h: int):
-    fcst = np.empty(h, np.float32)
-    for i in range(h):
-        fcst[i] = obj['season_vals'][i % season_length]
+        if fitted:
+            fitted_vals[i::season_length] = s_naive['fitted']
+    out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
+    fcst = {'mean': out}
+    if fitted:
+        fcst['fitted'] = fitted_vals
     return fcst
 
 # Cell
@@ -445,25 +606,49 @@ class SeasonalNaive(_TS):
         return f'SeasonalNaive(sl={self.season_length})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _seasonal_naive(y=y, season_length=self.season_length)
+        self.model_ = _seasonal_naive(
+            y=y,
+            season_length=self.season_length,
+            h=self.season_length,
+            fitted=True,
+        )
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_seasonal_naive(self.fitted_, season_length=self.season_length, h=h)
+        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
-        return self.fitted_['fitted']
+        return self.model_['fitted']
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _seasonal_naive(
+            y=y, h=h, fitted=fitted,
+            season_length=self.season_length
+        )
+        return out
 
 # Internal Cell
 @njit
-def _window_average(y: np.ndarray, window_size: int):
+def _window_average(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+        window_size: int, # window size
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
     if y.size < window_size:
-        return {'mean': np.array([np.nan], dtype=np.float32)}
+        return {'mean': np.full(h, np.nan, np.float32)}
     wavg = y[-window_size:].mean()
-    return {'mean': np.array([wavg], dtype=np.float32)}
-
-def _predict_window_average(obj, h: int):
-    return np.repeat(obj['mean'], h)
+    mean = _repeat_val(val=wavg, h=h)
+    return {'mean': mean}
 
 # Cell
 class WindowAverage(_TS):
@@ -475,33 +660,46 @@ class WindowAverage(_TS):
         return f'WindowAverage(ws={self.window_size})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _window_average(y=y, window_size=self.window_size)
+        self.model_ = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_window_average(self.fitted_, h=h)
+        return _repeat_val(self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
+        return out
+
 # Internal Cell
 @njit
-def _seasonal_window_average(y: np.ndarray, season_length: int, window_size: int):
+def _seasonal_window_average(
+        y: np.ndarray,
+        h: int,
+        fitted: bool,
+        season_length: int,
+        window_size: int,
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
     min_samples = season_length * window_size
     if y.size < min_samples:
-        return {'seas_avgs': np.full(season_length, fill_value=np.nan, dtype=np.float32)}
+        return {'mean': np.full(h, np.nan, np.float32)}
     season_avgs = np.zeros(season_length, np.float32)
     for i, value in enumerate(y[-min_samples:]):
         season = i % season_length
         season_avgs[season] += value / window_size
-    return {'season_avgs': season_avgs}
-
-@njit
-def _predict_seas_wa(obj, season_length: int, h: int):
-    fcst = np.empty(h, np.float32)
-    for i in range(h):
-        fcst[i] = obj['season_avgs'][i % season_length]
-    return fcst
+    out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
+    return {'mean': out}
 
 # Cell
 class SeasonalWindowAverage(_TS):
@@ -514,19 +712,46 @@ class SeasonalWindowAverage(_TS):
         return f'SeasWA(sl={self.season_length},ws={self.window_size})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _seasonal_window_average(y=y, season_length=self.season_length, window_size=self.window_size)
+        self.model_ = _seasonal_window_average(
+            y=y,
+            h=self.season_length,
+            fitted=False,
+            season_length=self.season_length,
+            window_size=self.window_size,
+        )
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_seas_wa(self.fitted_, season_length=self.season_length, h=h)
+        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _seasonal_window_average(
+            y=y, h=h, fitted=fitted,
+            season_length=self.season_length,
+            window_size=self.window_size
+        )
+        return out
+
 # Internal Cell
-def _adida(y: np.ndarray):
+def _adida(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
     if (y == 0).all():
-        return {'mean': np.array([np.float32(0)])}
+        return {'mean': np.repeat(np.float32(0), h)}
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean()
     aggregation_level = round(mean_interval)
@@ -535,10 +760,8 @@ def _adida(y: np.ndarray):
     aggregation_sums = _chunk_sums(y_cut, aggregation_level)
     sums_forecast, _ = _optimized_ses_forecast(aggregation_sums)
     forecast = sums_forecast / aggregation_level
-    return {'mean': np.array([np.float32(forecast)])}
-
-def _predict_adida(obj, h: int):
-    return np.repeat(obj['mean'], h)
+    mean = _repeat_val(val=forecast, h=h)
+    return {'mean': mean}
 
 # Cell
 class ADIDA(_TS):
@@ -550,28 +773,42 @@ class ADIDA(_TS):
         return f'ADIDA()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _adida(y=y)
+        self.model_ = _adida(y=y, h=1, fitted=False)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_adida(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _adida(y=y, h=h, fitted=fitted)
+        return out
+
 # Internal Cell
 @njit
-def _croston_classic(y: np.ndarray):
+def _croston_classic(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
     yd = _demand(y)
     yi = _intervals(y)
     ydp, _ = _ses_forecast(yd, 0.1)
     yip, _ = _ses_forecast(yi, 0.1)
     mean = ydp / yip
-    return {'mean': np.array([np.float32(mean)])}
-
-@njit
-def _predict_croston_classic(obj, h: int):
-    return np.repeat(obj['mean'], h)
+    mean = _repeat_val(val=mean, h=h)
+    return {'mean': mean}
 
 # Cell
 class CrostonClassic(_TS):
@@ -583,26 +820,41 @@ class CrostonClassic(_TS):
         return f'CrostonClassic()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _croston_classic(y=y)
+        self.model_ = _croston_classic(y=y, h=1, fitted=False)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_croston_classic(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _croston_classic(y=y, h=h, fitted=fitted)
+        return out
+
 # Internal Cell
-def _croston_optimized(y: np.ndarray):
+def _croston_optimized(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
     yd = _demand(y)
     yi = _intervals(y)
     ydp, _ = _optimized_ses_forecast(yd)
     yip, _ = _optimized_ses_forecast(yi)
     mean = ydp / yip
-    return {'mean': np.array([np.float32(mean)])}
-
-def _predict_croston_optimized(obj, h: int):
-     return np.repeat(obj['mean'], h)
+    mean = _repeat_val(val=mean, h=h)
+    return {'mean': mean}
 
 # Cell
 class CrostonOptimized(_TS):
@@ -611,25 +863,38 @@ class CrostonOptimized(_TS):
         pass
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _croston_optimized(y=y)
+        self.model_ = _croston_optimized(y=y, h=1, fitted=False)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_croston_optimized(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _croston_optimized(y=y, h=h, fitted=fitted)
+        return out
+
 # Internal Cell
 @njit
-def _croston_sba(y: np.ndarray):
-    mean = _croston_classic(y)
+def _croston_sba(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool,  # fitted values
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
+    mean = _croston_classic(y, h, fitted)
     mean['mean'] *= 0.95
     return mean
-
-@njit
-def _predict_croston_sba(obj, h: int):
-    return np.repeat(obj['mean'], h)
 
 # Cell
 class CrostonSBA(_TS):
@@ -641,19 +906,36 @@ class CrostonSBA(_TS):
         return f'CrostonSBA()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _croston_sba(y=y)
+        self.model_ = _croston_sba(y=y, h=1, fitted=False)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_croston_sba(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _croston_sba(y=y, h=h, fitted=fitted)
+        return out
+
 # Internal Cell
-def _imapa(y: np.ndarray):
+def _imapa(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
     if (y == 0).all():
-        return {'mean': np.array([np.float32(0)])}
+        return {'mean': np.repeat(np.float32(0), h)}
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean().item()
     max_aggregation_level = round(mean_interval)
@@ -665,10 +947,8 @@ def _imapa(y: np.ndarray):
         forecast, _ = _optimized_ses_forecast(aggregation_sums)
         forecasts[aggregation_level - 1] = (forecast / aggregation_level)
     forecast = forecasts.mean()
-    return {'mean': np.array([np.float32(forecast)])}
-
-def _predict_imapa(obj, h: int):
-    return np.repeat(obj['mean'], h)
+    mean = _repeat_val(val=forecast, h=h)
+    return {'mean': mean}
 
 # Cell
 class IMAPA(_TS):
@@ -680,30 +960,46 @@ class IMAPA(_TS):
         return f'IMAPA()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _imapa(y=y)
+        self.model_ = _imapa(y=y, h=1, fitted=False)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_imapa(self.fitted_, h=h)
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _imapa(y=y, h=h, fitted=fitted)
+        return out
+
 # Internal Cell
 @njit
-def _tsb(y: np.ndarray, alpha_d: float, alpha_p: float):
+def _tsb(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: int, # fitted values
+        alpha_d: float,
+        alpha_p: float,
+    ):
+    if fitted:
+        raise NotImplementedError('return fitted')
     if (y == 0).all():
-        return {'mean': np.array([np.float32(0)])}
+        return {'mean': np.repeat(np.float32(0), h)}
     yd = _demand(y)
     yp = _probability(y)
     ypf, _ = _ses_forecast(yp, alpha_p)
     ydf, _ = _ses_forecast(yd, alpha_d)
     forecast = np.float32(ypf * ydf)
-    return {'mean': np.array([np.float32(forecast)])}
-
-@njit
-def _predict_tsb(obj, h: int):
-    return np.repeat(obj['mean'], h)
+    mean = _repeat_val(val=forecast, h=h)
+    return {'mean': mean}
 
 # Cell
 class TSB(_TS):
@@ -716,11 +1012,32 @@ class TSB(_TS):
         return f'TSB(d={self.alpha_d},p={self.alpha_p})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.fitted_ = _tsb(y=y, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
+        self.model_ = _tsb(
+            y=y, h=1,
+            fitted=False,
+            alpha_d=self.alpha_d,
+            alpha_p=self.alpha_p
+        )
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _predict_tsb(self.fitted_, h=h)
+        return _repeat_val(self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False, # return fitted values?
+    ):
+        out = _tsb(
+            y=y, h=h,
+            fitted=fitted,
+            alpha_d=self.alpha_d,
+            alpha_p=self.alpha_p
+        )
+        return out
