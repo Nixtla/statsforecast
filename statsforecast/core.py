@@ -51,12 +51,13 @@ class GroupedArray:
         return np.allclose(self.data, other.data) and np.array_equal(self.indptr, other.indptr)
 
     def fit(self, models):
-        fm = np.full(models.shape, np.nan, dtype=object)
+        fm = np.full((self.n_groups, len(models)), np.nan, dtype=object)
         for i, grp in enumerate(self):
             y = grp[:, 0] if grp.ndim == 2 else grp
             X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
-            for i_model in range(models.shape[1]):
-                fm[i, i_model] = models[i, i_model].fit(y=y, X=X)
+            for i_model, model in enumerate(models):
+                new_model = model.new()
+                fm[i, i_model] = new_model.fit(y=y, X=X)
         return fm
 
     def _output_predict(self, fm, h, X, level=tuple()):
@@ -103,11 +104,41 @@ class GroupedArray:
         fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
         return fm, fcsts, cols
 
+    def _output_forecast(self, models, h, X, level=tuple()):
+        #returns empty output according to method
+        cols = []
+        cuts = np.full(len(fm) + 1, fill_value=np.nan, dtype=np.int32)
+        cuts[0] = 0
+        for i_model, model in enumerate(models):
+            model_name = repr(model)
+            cols_m = [model_name]
+            has_level = 'level' in inspect.signature(model.forecast).parameters and len(level) > 0
+            if has_level:
+                cols_m += [f'{model_name}-lo_{lv}' for lv in level]
+                cols_m += [f'{model_name}-hi_{lv}' for lv in level]
+            cols += cols_m
+            cuts[i_model + 1] = len(cols_m) + cuts[i_model]
+        out = np.full((self.n_groups * h, len(cols)), fill_value=np.nan, dtype=np.float32)
+        return out, cols, cuts
+
     def forecast(self, models, h, X=None, level=tuple()):
-        #fitted models
-        fm = self.fit(models=models)
-        #forecasts
-        fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
+        fcsts, cols, cuts = self._output_forecast(models=models, h=h, X=X, level=level)
+        for i, grp in enumerate(self):
+            y_train = grp[:, 0] if grp.ndim == 2 else grp
+            X_train = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
+            if X is not None:
+                X_f = X[i]
+            else:
+                X_f = None
+            for i_model, model in enumerate(models):
+                has_level = 'level' in inspect.signature(model.forecast).parameters and len(level) > 0
+                kwargs = {}
+                if has_level:
+                    kwargs['level'] = level
+                fcsts_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_f, **kwargs)
+                if fcsts_i.ndim == 1:
+                    fcsts_i = fcsts_i[:, None]
+                fcsts[i * h : (i + 1) * h, cuts[i_model]:cuts[i_model + 1]] = fcsts_i
         return fcsts, cols
 
     def predict_in_sample(self, model_idx, level=tuple()):
@@ -238,10 +269,6 @@ class StatsForecast:
         if df is not None:
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
-            self.fitted_ = np.full((len(self.ga), len(self.models)), fill_value=np.nan, dtype=object)
-            for m in range(len(self.models)):
-                for i in range(len(self.ga)):
-                    self.fitted_[i, m] = self.models[m].new()
 
     def fit(
             self,
@@ -250,7 +277,7 @@ class StatsForecast:
         ):
         self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
-            self.fitted_ = self.ga.fit(models=self.fitted_)
+            self.fitted_ = self.ga.fit(models=self.models)
         else:
             self.fitted_ = self._fit_parallel()
         #idx = pd.Index(self.uids, name='unique_id')
@@ -352,12 +379,11 @@ class StatsForecast:
 
     def _fit_parallel(self):
         gas = self.ga.split(self.n_jobs)
-        fms = self.ga.split_fm(self.fitted_, self.n_jobs)
         Pool, pool_kwargs = self._get_pool()
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
-            for ga, fm in zip(gas, fms):
-                future = executor.apply_async(ga.fit, (fm,))
+            for ga in gas:
+                future = executor.apply_async(ga.fit, (self.models,))
                 futures.append(future)
             fm = np.vstack([f.get() for f in futures])
         return fm
@@ -391,13 +417,12 @@ class StatsForecast:
     def _fit_predict_parallel(self, h, X, level):
         #create elements for each core
         gas, Xs = self._get_gas_Xs(X=X)
-        fms = self.ga.split_fm(self.fitted_, self.n_jobs)
         Pool, pool_kwargs = self._get_pool()
         #compute parallel forecasts
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
-            for ga, X_, fm in zip(gas, Xs, fms):
-                future = executor.apply_async(ga.fit_predict, (fm, h, X_, level,))
+            for ga, X_ in zip(gas, Xs):
+                future = executor.apply_async(ga.fit_predict, (self.models, h, X_, level,))
                 futures.append(future)
             out = [f.get() for f in futures]
             fm, fcsts, cols = list(zip(*out))
@@ -409,13 +434,12 @@ class StatsForecast:
     def _forecast_parallel(self, h, X, level):
         #create elements for each core
         gas, Xs = self._get_gas_Xs(X=X)
-        fms = self.ga.split_fm(self.fitted_, self.n_jobs)
         Pool, pool_kwargs = self._get_pool()
         #compute parallel forecasts
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
-            for ga, X_, fm in zip(gas, Xs, fms):
-                future = executor.apply_async(ga.forecast, (fms, h, X_, level,))
+            for ga, X_ in zip(gas, Xs):
+                future = executor.apply_async(ga.forecast, (self.models, h, X_, level,))
                 futures.append(future)
             out = [f.get() for f in futures]
             fcsts, cols = list(zip(*out))
