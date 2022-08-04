@@ -78,6 +78,10 @@ class ETS(_TS):
     def predict(self, h: int, X: np.ndarray = None):
         return forecast_ets(self.fitted_, h=h)['mean']
 
+    def forecast(self, h: int, X: np.ndarray = None, X_future: np.ndarray = None):
+        mod = ets_f(y, m=self.season_length, model=self.model)
+        return forecast_ets(mod, h=h)['mean']
+
     def predict_in_sample(self):
         return self.fitted_['fitted']
 
