@@ -253,7 +253,8 @@ class SimpleExponentialSmoothing(_TS):
         return f'SES(alpha={self.alpha})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
+        mod = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -296,7 +297,8 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return f'SESOpt()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _ses_optimized(y=y, h=1, fitted=True)
+        mod = _ses_optimized(y=y, h=1, fitted=True)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -348,13 +350,14 @@ class SeasonalExponentialSmoothing(_TS):
         return f'SeasonalES(sl={self.season_length},alpha={self.alpha})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _seasonal_exponential_smoothing(
+        mod = _seasonal_exponential_smoothing(
             y=y,
             season_length=self.season_length,
             alpha=self.alpha,
             fitted=True,
             h=self.season_length,
         )
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -378,7 +381,7 @@ class SeasonalExponentialSmoothing(_TS):
         )
         return out
 
-# Cell
+# Internal Cell
 def _seasonal_ses_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -407,12 +410,13 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return f'SeasESOpt(sl={self.season_length})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _seasonal_ses_optimized(
+        mod = _seasonal_ses_optimized(
             y=y,
             season_length=self.season_length,
             fitted=True,
             h=self.season_length,
         )
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -460,7 +464,8 @@ class HistoricAverage(_TS):
         return f'HistoricAverage()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _historic_average(y, h=1, fitted=True)
+        mod = _historic_average(y, h=1, fitted=True)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -504,7 +509,8 @@ class Naive(_TS):
         return f'Naive()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _naive(y, h=1, fitted=True)
+        mod = _naive(y, h=1, fitted=True)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -552,7 +558,8 @@ class RandomWalkWithDrift(_TS):
         return f'RWD()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _random_walk_with_drift(y, h=1, fitted=True)
+        mod = _random_walk_with_drift(y, h=1, fitted=True)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -606,12 +613,13 @@ class SeasonalNaive(_TS):
         return f'SeasonalNaive(sl={self.season_length})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _seasonal_naive(
+        mod = _seasonal_naive(
             y=y,
             season_length=self.season_length,
             h=self.season_length,
             fitted=True,
         )
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -660,7 +668,8 @@ class WindowAverage(_TS):
         return f'WindowAverage(ws={self.window_size})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
+        mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -712,13 +721,14 @@ class SeasonalWindowAverage(_TS):
         return f'SeasWA(sl={self.season_length},ws={self.window_size})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _seasonal_window_average(
+        mod = _seasonal_window_average(
             y=y,
             h=self.season_length,
             fitted=False,
             season_length=self.season_length,
             window_size=self.window_size,
         )
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -773,7 +783,8 @@ class ADIDA(_TS):
         return f'ADIDA()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _adida(y=y, h=1, fitted=False)
+        mod = _adida(y=y, h=1, fitted=False)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -820,7 +831,8 @@ class CrostonClassic(_TS):
         return f'CrostonClassic()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _croston_classic(y=y, h=1, fitted=False)
+        mod = _croston_classic(y=y, h=1, fitted=False)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -863,7 +875,8 @@ class CrostonOptimized(_TS):
         pass
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _croston_optimized(y=y, h=1, fitted=False)
+        mod = _croston_optimized(y=y, h=1, fitted=False)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -906,7 +919,8 @@ class CrostonSBA(_TS):
         return f'CrostonSBA()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _croston_sba(y=y, h=1, fitted=False)
+        mod = _croston_sba(y=y, h=1, fitted=False)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -960,7 +974,8 @@ class IMAPA(_TS):
         return f'IMAPA()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _imapa(y=y, h=1, fitted=False)
+        mod = _imapa(y=y, h=1, fitted=False)
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
@@ -1012,12 +1027,13 @@ class TSB(_TS):
         return f'TSB(d={self.alpha_d},p={self.alpha_p})'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        self.model_ = _tsb(
+        mod = _tsb(
             y=y, h=1,
             fitted=False,
             alpha_d=self.alpha_d,
             alpha_p=self.alpha_p
         )
+        self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
