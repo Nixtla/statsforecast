@@ -107,7 +107,7 @@ class GroupedArray:
     def _output_forecast(self, models, h, X, level=tuple()):
         #returns empty output according to method
         cols = []
-        cuts = np.full(len(fm) + 1, fill_value=np.nan, dtype=np.int32)
+        cuts = np.full(len(models) + 1, fill_value=np.nan, dtype=np.int32)
         cuts[0] = 0
         for i_model, model in enumerate(models):
             model_name = repr(model)
