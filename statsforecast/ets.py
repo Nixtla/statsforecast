@@ -869,7 +869,10 @@ def etsmodel(y: np.ndarray, m: int,
     ny = len(y)
     aic = lik + 2 * np_
     bic = lik + np.log(ny) * np_
-    aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
+    if ny - np_ - 1 != 0.:
+        aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
+    else:
+        aicc = np.inf
 
     mse = amse[0]
     amse = np.mean(amse)
