@@ -19,7 +19,6 @@ def convert_dates(index, df, horizon, freq, seasonality, dataset, group):
     df['ds'] = pd.date_range(end='2018-01-01', periods=df.shape[0], freq=freq)
     return df
 
-
 def main(dataset: str = 'M3', group: str = 'Other') -> None:
     train, horizon, freq, seasonality = get_data('data/', dataset, group)
     if dataset == 'M4':
