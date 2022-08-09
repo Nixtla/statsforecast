@@ -18,7 +18,7 @@ from scipy.optimize import minimize
 from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ets import ets_f, forecast_ets
 
-# Cell
+# Internal Cell
 class _TS:
 
     def new(self):
@@ -29,14 +29,22 @@ class _TS:
 # Cell
 class AutoARIMA(_TS):
 
-    def __init__(self, season_length: int = 1, approximation: bool = False):
+    def __init__(
+            self,
+            season_length: int = 1, # Number of observations per cycle
+            approximation: bool = False,
+        ):
         self.season_length = season_length
         self.approximation = approximation
 
     def __repr__(self):
         return f'AutoARIMA()'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: Optional[np.ndarray] = None,
+        ):
         with np.errstate(invalid='ignore'):
             self.model_ = auto_arima_f(
                 y,
@@ -47,7 +55,12 @@ class AutoARIMA(_TS):
             )
         return self
 
-    def predict(self, h: int, X: np.ndarray = None, level: Optional[Tuple[int]] = None):
+    def predict(
+            self,
+            h: int, # Forecast horizon
+            X: np.ndarray = None,
+            level: Optional[Tuple[int]] = None,
+        ):
         fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
         if level is None:
             return fcst['mean']
@@ -873,6 +886,9 @@ class CrostonOptimized(_TS):
 
     def __init__(self):
         pass
+
+    def __repr__(self):
+        return f'CrostonSBA()'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _croston_optimized(y=y, h=1, fitted=False)

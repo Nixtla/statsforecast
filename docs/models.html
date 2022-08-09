@@ -60,7 +60,7 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="auto_arima" class="doc_header"><code>auto_arima</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L22" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>auto_arima</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>approximation</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>)</p>
+<h3 id="AutoARIMA" class="doc_header"><code>class</code> <code>AutoARIMA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L30" class="source_link" style="float:right">[source]</a></h3><blockquote><p><code>AutoARIMA</code>(<strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>approximation</code></strong>:<code>bool</code>=<em><code>False</code></em>) :: <code>_TS</code></p>
 </blockquote>
 <table>
 <thead><tr>
@@ -72,46 +72,16 @@ nb_path: "nbs/models.ipynb"
 </thead>
 <tbody>
 <tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td></td>
-<td><code>None</code></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td><code>False</code></td>
-<td>fitted values</td>
-</tr>
-<tr>
 <td><strong><code>season_length</code></strong></td>
 <td><code>int</code></td>
 <td><code>1</code></td>
-<td>season_length</td>
+<td>Number of observations per cycle</td>
 </tr>
 <tr>
 <td><strong><code>approximation</code></strong></td>
 <td><code>bool</code></td>
 <td><code>False</code></td>
-<td>approximation</td>
-</tr>
-<tr>
-<td><strong><code>level</code></strong></td>
-<td><code>typing.Optional[typing.Tuple[int]]</code></td>
-<td><code>None</code></td>
-<td>level</td>
+<td><em>No Content</em></td>
 </tr>
 </tbody>
 </table>
@@ -126,6 +96,328 @@ nb_path: "nbs/models.ipynb"
 </div>
     {% endraw %}
 
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The <a href="/statsforecast/models.html#AutoARIMA"><code>AutoARIMA</code></a> class instantiates the model.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima</span> <span class="o">=</span> <span class="n">AutoARIMA</span><span class="p">(</span><span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="AutoARIMA.forecast" class="doc_header"><code>AutoARIMA.forecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L77" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.forecast</code>(<strong><code>y</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>X</code></strong>:<code>ndarray</code>=<em><code>None</code></em>, <strong><code>X_future</code></strong>:<code>ndarray</code>=<em><code>None</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>y</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>X_future</code></strong></td>
+<td><code>ndarray</code></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>level</code></strong></td>
+<td><code>typing.Union[typing.Tuple[int], NoneType]</code></td>
+<td><code>None</code></td>
+<td>level</td>
+</tr>
+<tr>
+<td><strong><code>fitted</code></strong></td>
+<td><code>bool</code></td>
+<td><code>False</code></td>
+<td>return fitted values?</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Once <a href="/statsforecast/models.html#AutoARIMA"><code>AutoARIMA</code></a> is instantiated, you can make forecasts directly using the <a href="/statsforecast/models.html#AutoARIMA.forecast"><code>AutoARIMA.forecast</code></a> method. The purpose of this method is to avoid computational burden due to object storage. This method can be thought of as a <code>fit_predict</code> without storing information. This method assumes you know the forecast horizon in advance. Observe that the method a returns a <code>dict</code> object instead of a numpy array.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">statsforecast.utils</span> <span class="kn">import</span> <span class="n">AirPassengers</span> <span class="k">as</span> <span class="n">ap</span>
+<span class="n">arima</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">ap</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="AutoARIMA.fit" class="doc_header"><code>AutoARIMA.fit</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L43" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.fit</code>(<strong><code>y</code></strong>:<code>ndarray</code>, <strong><code>X</code></strong>:<code>Optional</code>[<code>ndarray</code>]=<em><code>None</code></em>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>y</code></strong></td>
+<td><code>ndarray</code></td>
+<td></td>
+<td>time series</td>
+</tr>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>typing.Union[numpy.ndarray, NoneType]</code></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If you want to store the fitted model for future analysis, you can use the <a href="/statsforecast/models.html#AutoARIMA.fit"><code>AutoARIMA.fit</code></a> method.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima</span> <span class="o">=</span> <span class="n">arima</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">ap</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="AutoARIMA.predict" class="doc_header"><code>AutoARIMA.predict</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L58" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.predict</code>(<strong><code>h</code></strong>:<code>int</code>, <strong><code>X</code></strong>:<code>ndarray</code>=<em><code>None</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>Forecast horizon</td>
+</tr>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>ndarray</code></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+<tr>
+<td><strong><code>level</code></strong></td>
+<td><code>typing.Union[typing.Tuple[int], NoneType]</code></td>
+<td><code>None</code></td>
+<td><em>No Content</em></td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>You can compute forecasts for the fitted model using <a href="/statsforecast/models.html#AutoARIMA.predict"><code>AutoARIMA.predict</code></a>.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="AutoARIMA.predict_in_sample" class="doc_header"><code>AutoARIMA.predict_in_sample</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L74" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.predict_in_sample</code>()</p>
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>To obtain the fitted values, you can use <a href="/statsforecast/models.html#AutoARIMA.predict_in_sample"><code>AutoARIMA.predict_in_sample</code></a>.</p>
+
+</div>
+</div>
+</div>
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima</span><span class="o">.</span><span class="n">predict_in_sample</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+<div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Model-Description">Model Description<a class="anchor-link" href="#Model-Description"> </a></h3>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing text_cell rendered"><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><strong>Auto ARIMA</strong>: Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average) model using an information criterion. Default is the corrected Akaike Information Criterion (AICc). Information criterions are tests used to check how well a model fits the data it is trying to describe.</p>
@@ -154,13 +446,6 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -168,55 +453,8 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="ets" class="doc_header"><code>ets</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L53" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ets</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>, <strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>model</code></strong>:<code>str</code>=<em><code>'ZZZ'</code></em>)</p>
+<h2 id="ETS" class="doc_header"><code>class</code> <code>ETS</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L107" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ETS</code>(<strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>model</code></strong>:<code>str</code>=<em><code>'ZZZ'</code></em>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td></td>
-<td><code>None</code></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td><code>False</code></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>season_length</code></strong></td>
-<td><code>int</code></td>
-<td><code>1</code></td>
-<td>season length</td>
-</tr>
-<tr>
-<td><strong><code>model</code></strong></td>
-<td><code>str</code></td>
-<td><code>ZZZ</code></td>
-<td>model type</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -224,6 +462,13 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -292,13 +537,6 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -306,49 +544,8 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="ses" class="doc_header"><code>ses</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L177" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ses</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>alpha</code></strong>:<code>float</code>)</p>
+<h2 id="SimpleExponentialSmoothing" class="doc_header"><code>class</code> <code>SimpleExponentialSmoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L260" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SimpleExponentialSmoothing</code>(<strong><code>alpha</code></strong>:<code>float</code>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>alpha</code></strong></td>
-<td><code>float</code></td>
-<td></td>
-<td>smoothing parameter</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -356,6 +553,13 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -379,13 +583,6 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -393,43 +590,8 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="ses_optimized" class="doc_header"><code>ses_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L186" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>ses_optimized</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="SimpleExponentialSmoothingOptimized" class="doc_header"><code>class</code> <code>SimpleExponentialSmoothingOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L304" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SimpleExponentialSmoothingOptimized</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -437,6 +599,13 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -452,13 +621,6 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -466,55 +628,8 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_exponential_smoothing" class="doc_header"><code>seasonal_exponential_smoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L223" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_exponential_smoothing</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>, <strong><code>alpha</code></strong>:<code>float</code>)</p>
+<h2 id="SeasonalExponentialSmoothing" class="doc_header"><code>class</code> <code>SeasonalExponentialSmoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L356" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalExponentialSmoothing</code>(<strong><code>season_length</code></strong>:<code>int</code>, <strong><code>alpha</code></strong>:<code>float</code>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>season_length</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>length of season</td>
-</tr>
-<tr>
-<td><strong><code>alpha</code></strong></td>
-<td><code>float</code></td>
-<td></td>
-<td>smoothing parameter</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -522,6 +637,13 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -537,13 +659,6 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -551,49 +666,8 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_ses_optimized" class="doc_header"><code>seasonal_ses_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L233" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_ses_optimized</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>)</p>
+<h2 id="SeasonalExponentialSmoothingOptimized" class="doc_header"><code>class</code> <code>SeasonalExponentialSmoothingOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L417" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalExponentialSmoothingOptimized</code>(<strong><code>season_length</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>season_length</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>season length</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -601,6 +675,13 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -622,13 +703,6 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -636,43 +710,8 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="historic_average" class="doc_header"><code>historic_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L270" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>historic_average</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="HistoricAverage" class="doc_header"><code>class</code> <code>HistoricAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L471" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>HistoricAverage</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -680,6 +719,13 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -698,13 +744,6 @@ $$ \hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j $$
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -712,43 +751,8 @@ $$ \hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j $$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="naive" class="doc_header"><code>naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L293" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>naive</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="Naive" class="doc_header"><code>class</code> <code>Naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L516" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>Naive</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -756,6 +760,13 @@ $$ \hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j $$
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -774,13 +785,6 @@ $$ \hat{y}_{t+1} = y_t $$
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -788,43 +792,8 @@ $$ \hat{y}_{t+1} = y_t $$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="random_walk_with_drift" class="doc_header"><code>random_walk_with_drift</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L318" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>random_walk_with_drift</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="RandomWalkWithDrift" class="doc_header"><code>class</code> <code>RandomWalkWithDrift</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L565" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>RandomWalkWithDrift</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -832,6 +801,13 @@ $$ \hat{y}_{t+1} = y_t $$
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -851,13 +827,6 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -865,49 +834,8 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_naive" class="doc_header"><code>seasonal_naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L352" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_naive</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>)</p>
+<h2 id="SeasonalNaive" class="doc_header"><code>class</code> <code>SeasonalNaive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L620" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalNaive</code>(<strong><code>season_length</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>season_length</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>length of season</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -915,6 +843,13 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -930,13 +865,6 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -944,49 +872,8 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="window_average" class="doc_header"><code>window_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L378" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>window_average</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>window_size</code></strong>:<code>int</code>)</p>
+<h2 id="WindowAverage" class="doc_header"><code>class</code> <code>WindowAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L675" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>WindowAverage</code>(<strong><code>window_size</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>window_size</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>window size</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -994,6 +881,13 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1009,13 +903,6 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -1023,55 +910,8 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="seasonal_window_average" class="doc_header"><code>seasonal_window_average</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L413" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>seasonal_window_average</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>, <strong><code>season_length</code></strong>:<code>int</code>, <strong><code>window_size</code></strong>:<code>int</code>)</p>
+<h2 id="SeasonalWindowAverage" class="doc_header"><code>class</code> <code>SeasonalWindowAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L727" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalWindowAverage</code>(<strong><code>season_length</code></strong>:<code>int</code>, <strong><code>window_size</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>season_length</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>length of season</td>
-</tr>
-<tr>
-<td><strong><code>window_size</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>window size</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -1079,6 +919,13 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1107,13 +954,6 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -1121,43 +961,8 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="adida" class="doc_header"><code>adida</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L425" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>adida</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="ADIDA" class="doc_header"><code>class</code> <code>ADIDA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L790" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ADIDA</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -1165,6 +970,13 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1180,13 +992,6 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -1194,43 +999,8 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="croston_classic" class="doc_header"><code>croston_classic</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L463" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_classic</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="CrostonClassic" class="doc_header"><code>class</code> <code>CrostonClassic</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L838" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonClassic</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -1238,6 +1008,13 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1255,13 +1032,6 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -1269,43 +1039,8 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="croston_optimized" class="doc_header"><code>croston_optimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L488" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_optimized</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="CrostonOptimized" class="doc_header"><code>class</code> <code>CrostonOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L885" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonOptimized</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -1313,6 +1048,13 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1328,13 +1070,6 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -1342,43 +1077,8 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="croston_sba" class="doc_header"><code>croston_sba</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L510" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>croston_sba</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="CrostonSBA" class="doc_header"><code>class</code> <code>CrostonSBA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L929" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonSBA</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -1386,6 +1086,13 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1402,13 +1109,6 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -1416,43 +1116,8 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="imapa" class="doc_header"><code>imapa</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L519" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>imapa</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>bool</code>)</p>
+<h2 id="IMAPA" class="doc_header"><code>class</code> <code>IMAPA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L984" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>IMAPA</code>() :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -1460,6 +1125,13 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1475,13 +1147,6 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
     
 <div class="cell border-box-sizing code_cell rendered">
 
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
 <div class="output_wrapper">
 <div class="output">
 
@@ -1489,55 +1154,8 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="tsb" class="doc_header"><code>tsb</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L564" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>tsb</code>(<strong><code>X</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>future_xreg</code></strong>:<code>ndarray</code>, <strong><code>fitted</code></strong>:<code>int</code>, <strong><code>alpha_d</code></strong>:<code>float</code>, <strong><code>alpha_p</code></strong>:<code>float</code>)</p>
+<h2 id="TSB" class="doc_header"><code>class</code> <code>TSB</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L1036" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>TSB</code>(<strong><code>alpha_d</code></strong>:<code>float</code>, <strong><code>alpha_p</code></strong>:<code>float</code>) :: <code>_TS</code></p>
 </blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>X</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>time series</td>
-</tr>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>forecasting horizon</td>
-</tr>
-<tr>
-<td><strong><code>future_xreg</code></strong></td>
-<td><code>ndarray</code></td>
-<td></td>
-<td>future regressors</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>fitted values</td>
-</tr>
-<tr>
-<td><strong><code>alpha_d</code></strong></td>
-<td><code>float</code></td>
-<td></td>
-<td><em>No Content</em></td>
-</tr>
-<tr>
-<td><strong><code>alpha_p</code></strong></td>
-<td><code>float</code></td>
-<td></td>
-<td><em>No Content</em></td>
-</tr>
-</tbody>
-</table>
 
 </div>
 
@@ -1545,6 +1163,13 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 </div>
 </div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
 
 </div>
     {% endraw %}
@@ -1621,28 +1246,12 @@ $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">auto_arima</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima</span> <span class="o">=</span> <span class="n">AutoARIMA</span><span class="p">(</span><span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">arima</span> <span class="o">=</span> <span class="n">arima</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">ap</span><span class="p">)</span>
+<span class="n">arima</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>{&#39;mean&#39;: array([444.30005077, 418.2100203 , 446.23703401, 488.22892853,
-        499.23136059, 562.23063085, 649.23084981, 633.23078411,
-        535.23080382, 488.23079791, 417.23079968, 459.23079915])}</pre>
-</div>
-
-</div>
-
 </div>
 </div>
 
@@ -1656,64 +1265,12 @@ $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ets</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fitted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">ets</span> <span class="o">=</span> <span class="n">ETS</span><span class="p">(</span><span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">ets</span> <span class="o">=</span> <span class="n">ets</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">ap</span><span class="p">)</span>
+<span class="n">ets</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>{&#39;mean&#39;: array([442.35716875, 428.26736624, 492.97479339, 477.36999551,
-        477.602817  , 535.8579976 , 600.8320224 , 594.76827626,
-        513.70320272, 448.22263603, 390.31626497, 435.73799675]),
- &#39;fitted&#39;: array([116.728278  , 111.29797225, 130.98552585, 127.18762361,
-        127.91654095, 140.64922159, 155.44717494, 151.17337288,
-        129.5555072 , 115.09973709, 101.48278561, 114.29631571,
-        117.40536016, 112.80113444, 135.43130661, 133.10447674,
-        133.84510101, 146.51419389, 165.35430453, 165.36070888,
-        144.29581048, 130.26971789, 114.32008899, 127.47073496,
-        134.03440491, 133.6681697 , 160.74627987, 161.73732268,
-        162.22614645, 186.01231156, 205.36305947, 200.98582149,
-        173.00563235, 154.4296413 , 136.89230158, 156.54516339,
-        162.400938  , 160.31535237, 192.82553515, 186.71498379,
-        184.68299532, 206.46353076, 236.31557357, 231.65402709,
-        203.42535137, 179.23482696, 159.83439834, 183.40256068,
-        190.08189359, 186.20552738, 218.40929619, 217.61903664,
-        224.04305857, 253.3709849 , 279.90429647, 271.38427151,
-        234.67497927, 205.47924836, 180.7092165 , 201.45075848,
-        204.29344316, 197.78412081, 223.52237619, 220.40730102,
-        222.86122515, 254.53908214, 289.32412258, 291.08384394,
-        252.11058878, 222.1536254 , 195.6382674 , 221.4079707 ,
-        227.52974607, 225.48763067, 262.73849174, 255.80192385,
-        260.68802341, 296.21114303, 339.881661  , 345.25455827,
-        298.87678503, 264.94377309, 233.60829635, 262.17671556,
-        271.97698119, 267.65159022, 312.03658112, 303.78955824,
-        307.22005545, 349.02744252, 401.65213682, 401.73687913,
-        348.19282101, 305.95175602, 266.44370917, 299.34068205,
-        306.29089566, 299.70495408, 345.53425101, 338.1698277 ,
-        341.83809583, 388.86822718, 449.62735213, 450.66550863,
-        394.60984771, 347.25540466, 302.32732891, 338.64086423,
-        342.73803829, 330.93521325, 375.5256836 , 358.72056835,
-        354.89625188, 401.48980081, 463.8793049 , 469.02292832,
-        416.65947678, 359.4471744 , 312.89072992, 348.1532051 ,
-        349.2381522 , 341.97783375, 393.68673734, 385.43804265,
-        389.4421283 , 449.51109971, 513.17950119, 520.63369582,
-        461.89517794, 403.32147034, 352.40484967, 397.33762488,
-        406.19355303, 397.11535573, 454.61389193, 427.4719012 ,
-        439.93408728, 506.75146129, 579.73742316, 589.22425018,
-        514.25494668, 446.66425945, 393.5558558 , 437.9098171 ])}</pre>
-</div>
-
-</div>
-
 </div>
 </div>
 
@@ -1735,7 +1292,7 @@ $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">drift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ap</span><span class="o">.</span><span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">ap</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">drift</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">drift</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">drift</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">drift</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span>
 </pre></div>
 
     </div>
@@ -1770,27 +1327,12 @@ $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">auto_arima</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">future_xreg</span><span class="o">=</span><span class="n">newxreg</span><span class="p">,</span> <span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">arima</span> <span class="o">=</span> <span class="n">AutoARIMA</span><span class="p">(</span><span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="n">arima</span> <span class="o">=</span> <span class="n">arima</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">ap</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">X</span><span class="p">)</span>
+<span class="n">arima</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">newxreg</span><span class="p">)</span>
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>{&#39;mean&#39;: array([444.37994435, 418.3426712 , 446.43052379, 488.47985218,
-        499.54005383, 562.59623451, 649.65290106])}</pre>
-</div>
-
-</div>
-
 </div>
 </div>
 
@@ -1811,147 +1353,10 @@ $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">auto_arima</span><span class="p">(</span><span class="n">ap</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">season_length</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">95</span><span class="p">)))</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">arima</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="n">newxreg</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">95</span><span class="p">)))</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </pre></div>
 
     </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_html rendered_html output_subarea output_execute_result"><div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>mean</th>
-      <th>lo-95</th>
-      <th>lo-80</th>
-      <th>hi-80</th>
-      <th>hi-95</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>444.300051</td>
-      <td>421.179472</td>
-      <td>429.182317</td>
-      <td>459.417784</td>
-      <td>467.420629</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>418.210020</td>
-      <td>389.988431</td>
-      <td>399.756915</td>
-      <td>436.663126</td>
-      <td>446.431610</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <td>446.237034</td>
-      <td>412.620660</td>
-      <td>424.256469</td>
-      <td>468.217599</td>
-      <td>479.853408</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>488.228929</td>
-      <td>450.265291</td>
-      <td>463.405840</td>
-      <td>513.052017</td>
-      <td>526.192566</td>
-    </tr>
-    <tr>
-      <th>4</th>
-      <td>499.231361</td>
-      <td>457.290190</td>
-      <td>471.807503</td>
-      <td>526.655218</td>
-      <td>541.172531</td>
-    </tr>
-    <tr>
-      <th>5</th>
-      <td>562.230631</td>
-      <td>516.679736</td>
-      <td>532.446502</td>
-      <td>592.014760</td>
-      <td>607.781525</td>
-    </tr>
-    <tr>
-      <th>6</th>
-      <td>649.230850</td>
-      <td>600.329866</td>
-      <td>617.256215</td>
-      <td>681.205484</td>
-      <td>698.131833</td>
-    </tr>
-    <tr>
-      <th>7</th>
-      <td>633.230784</td>
-      <td>581.196677</td>
-      <td>599.207510</td>
-      <td>667.254058</td>
-      <td>685.264891</td>
-    </tr>
-    <tr>
-      <th>8</th>
-      <td>535.230804</td>
-      <td>480.241310</td>
-      <td>499.275106</td>
-      <td>571.186501</td>
-      <td>590.220298</td>
-    </tr>
-    <tr>
-      <th>9</th>
-      <td>488.230798</td>
-      <td>430.436989</td>
-      <td>450.441457</td>
-      <td>526.020138</td>
-      <td>546.024607</td>
-    </tr>
-    <tr>
-      <th>10</th>
-      <td>417.230800</td>
-      <td>356.762551</td>
-      <td>377.692737</td>
-      <td>456.768863</td>
-      <td>477.699049</td>
-    </tr>
-    <tr>
-      <th>11</th>
-      <td>459.230799</td>
-      <td>396.201501</td>
-      <td>418.018156</td>
-      <td>500.443442</td>
-      <td>522.260098</td>
-    </tr>
-  </tbody>
-</table>
-</div></div>
-
-</div>
-
 </div>
 </div>
 
@@ -1959,5 +1364,5 @@ $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
     {% endraw %}
 
 </div>
-
+ 
 

@@ -54,7 +54,7 @@ nb_path: "nbs/core.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L202" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>:<code>DataFrame</code>, <strong><code>models</code></strong>:<code>List</code>[<code>typing.Tuple[typing.Callable, typing.Any]</code>], <strong><code>freq</code></strong>:<code>str</code>, <strong><code>n_jobs</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>ray_address</code></strong>:<code>Optional</code>[<code>str</code>]=<em><code>None</code></em>, <strong><code>sort_df</code></strong>:<code>bool</code>=<em><code>True</code></em>)</p>
+<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L261" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>models</code></strong>:<code>List</code>[<code>typing.Tuple[typing.Callable, typing.Any]</code>], <strong><code>freq</code></strong>:<code>str</code>, <strong><code>n_jobs</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>ray_address</code></strong>:<code>Optional</code>[<code>str</code>]=<em><code>None</code></em>, <strong><code>df</code></strong>:<code>Optional</code>[<code>DataFrame</code>]=<em><code>None</code></em>, <strong><code>sort_df</code></strong>:<code>bool</code>=<em><code>True</code></em>)</p>
 </blockquote>
 <table>
 <thead><tr>
@@ -65,12 +65,6 @@ nb_path: "nbs/core.ipynb"
 </tr>
 </thead>
 <tbody>
-<tr>
-<td><strong><code>df</code></strong></td>
-<td><code>DataFrame</code></td>
-<td></td>
-<td>DataFrame with columns <code>ds</code> and <code>y</code>, indexed by <code>unique_id</code></td>
-</tr>
 <tr>
 <td><strong><code>models</code></strong></td>
 <td><code>typing.List[typing.Tuple[typing.Callable, typing.Any]]</code></td>
@@ -94,6 +88,12 @@ nb_path: "nbs/core.ipynb"
 <td><code>typing.Union[str, NoneType]</code></td>
 <td><code>None</code></td>
 <td>Optional ray address to distribute jobs</td>
+</tr>
+<tr>
+<td><strong><code>df</code></strong></td>
+<td><code>typing.Union[pandas.core.frame.DataFrame, NoneType]</code></td>
+<td><code>None</code></td>
+<td>DataFrame with columns <code>ds</code>, <code>y</code>, and exogenous variables, indexed by <code>unique_id</code></td>
 </tr>
 <tr>
 <td><strong><code>sort_df</code></strong></td>
@@ -129,40 +129,46 @@ nb_path: "nbs/core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">statsforecast.models</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">adida</span><span class="p">,</span>
-    <span class="n">auto_arima</span><span class="p">,</span>
-    <span class="n">croston_classic</span><span class="p">,</span>
-    <span class="n">croston_optimized</span><span class="p">,</span>
-    <span class="n">croston_sba</span><span class="p">,</span>
-    <span class="n">ets</span><span class="p">,</span>
-    <span class="n">historic_average</span><span class="p">,</span>
-    <span class="n">imapa</span><span class="p">,</span>
-    <span class="n">naive</span><span class="p">,</span>
-    <span class="n">random_walk_with_drift</span><span class="p">,</span>
-    <span class="n">seasonal_exponential_smoothing</span><span class="p">,</span>
-    <span class="n">seasonal_naive</span><span class="p">,</span>
-    <span class="n">seasonal_window_average</span><span class="p">,</span>
-    <span class="n">ses</span><span class="p">,</span>
-    <span class="n">tsb</span><span class="p">,</span>
-    <span class="n">window_average</span><span class="p">,</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">statsforecast.models</span> <span class="kn">import</span> <span class="p">(</span> 
+    <span class="n">ADIDA</span><span class="p">,</span>
+    <span class="n">AutoARIMA</span><span class="p">,</span>
+    <span class="n">CrostonClassic</span><span class="p">,</span>
+    <span class="n">CrostonOptimized</span><span class="p">,</span>
+    <span class="n">CrostonSBA</span><span class="p">,</span>
+    <span class="n">ETS</span><span class="p">,</span>
+    <span class="n">HistoricAverage</span><span class="p">,</span>
+    <span class="n">IMAPA</span><span class="p">,</span>
+    <span class="n">Naive</span><span class="p">,</span>
+    <span class="n">RandomWalkWithDrift</span><span class="p">,</span>
+    <span class="n">SeasonalExponentialSmoothing</span><span class="p">,</span>
+    <span class="n">SeasonalNaive</span><span class="p">,</span>
+    <span class="n">SeasonalWindowAverage</span><span class="p">,</span>
+    <span class="n">SimpleExponentialSmoothing</span><span class="p">,</span>
+    <span class="n">TSB</span><span class="p">,</span>
+    <span class="n">WindowAverage</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span> <span class="nn">statsforecast.utils</span> <span class="kn">import</span> <span class="n">generate_series</span>
 
-<span class="n">series</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">10_000</span><span class="p">,</span> <span class="n">n_static_features</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">equal_ends</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">series</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">n_static_features</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">equal_ends</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">models</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="n">naive</span><span class="p">,</span> <span class="n">adida</span><span class="p">,</span> <span class="n">croston_classic</span><span class="p">,</span> <span class="n">croston_optimized</span><span class="p">,</span>
-    <span class="n">croston_sba</span><span class="p">,</span> <span class="n">historic_average</span><span class="p">,</span> <span class="n">imapa</span><span class="p">,</span> <span class="n">naive</span><span class="p">,</span> 
-    <span class="n">random_walk_with_drift</span><span class="p">,</span> <span class="p">(</span><span class="n">seasonal_exponential_smoothing</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
-    <span class="p">(</span><span class="n">seasonal_naive</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">(</span><span class="n">seasonal_window_average</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
-    <span class="p">(</span><span class="n">ses</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="p">(</span><span class="n">tsb</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span> <span class="p">(</span><span class="n">window_average</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">ADIDA</span><span class="p">(),</span> <span class="n">CrostonClassic</span><span class="p">(),</span> <span class="n">CrostonOptimized</span><span class="p">(),</span>
+    <span class="n">CrostonSBA</span><span class="p">(),</span> <span class="n">HistoricAverage</span><span class="p">(),</span> 
+    <span class="n">IMAPA</span><span class="p">(),</span> <span class="n">Naive</span><span class="p">(),</span> 
+    <span class="n">RandomWalkWithDrift</span><span class="p">(),</span> 
+    <span class="n">SeasonalExponentialSmoothing</span><span class="p">(</span><span class="n">season_length</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">),</span>
+    <span class="n">SeasonalNaive</span><span class="p">(</span><span class="n">season_length</span><span class="o">=</span><span class="mi">7</span><span class="p">),</span>
+    <span class="n">SeasonalWindowAverage</span><span class="p">(</span><span class="n">season_length</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">window_size</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+    <span class="n">SimpleExponentialSmoothing</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">),</span>
+    <span class="n">TSB</span><span class="p">(</span><span class="n">alpha_d</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">alpha_p</span><span class="o">=</span><span class="mf">0.3</span><span class="p">),</span>
+    <span class="n">WindowAverage</span><span class="p">(</span><span class="n">window_size</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="p">]</span>
 
 <span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
     <span class="n">df</span><span class="o">=</span><span class="n">series</span><span class="p">,</span>
     <span class="n">models</span><span class="o">=</span><span class="n">models</span><span class="p">,</span>
     <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
+    <span class="n">n_jobs</span><span class="o">=</span><span class="mi">1</span>
 <span class="p">)</span>
 </pre></div>
 
@@ -184,162 +190,7 @@ nb_path: "nbs/core.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="StatsForecast" class="doc_header"><code>class</code> <code>StatsForecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L202" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>StatsForecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>n_jobs</code></strong>=<em><code>1</code></em>, <strong><code>ray_address</code></strong>=<em><code>None</code></em>, <strong><code>sort_df</code></strong>=<em><code>True</code></em>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h2 id="ParallelBackend" class="doc_header"><code>class</code> <code>ParallelBackend</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L388" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ParallelBackend</code>()</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h2 id="MultiprocessBackend" class="doc_header"><code>class</code> <code>MultiprocessBackend</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L401" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>MultiprocessBackend</code>(<strong><code>n_jobs</code></strong>:<code>int</code>) :: <a href="/statsforecast/core.html#ParallelBackend"><code>ParallelBackend</code></a></p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h2 id="RayBackend" class="doc_header"><code>class</code> <code>RayBackend</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L418" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>RayBackend</code>(<strong><code>ray_address</code></strong>) :: <a href="/statsforecast/core.html#ParallelBackend"><code>ParallelBackend</code></a></p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="forecast" class="doc_header"><code>forecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L431" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>forecast</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>h</code></strong>, <strong><code>xreg</code></strong>=<em><code>None</code></em>, <strong><code>level</code></strong>=<em><code>None</code></em>, <strong><code>parallel</code></strong>:<code>Optional</code>[<code>ForwardRef('ParallelBackend')</code>]=<em><code>None</code></em>)</p>
-</blockquote>
-
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-</div>
-    {% endraw %}
-
-    {% raw %}
-    
-<div class="cell border-box-sizing code_cell rendered">
-
-<div class="output_wrapper">
-<div class="output">
-
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="cross_validation" class="doc_header"><code>cross_validation</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L447" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>cross_validation</code>(<strong><code>df</code></strong>, <strong><code>models</code></strong>, <strong><code>freq</code></strong>, <strong><code>h</code></strong>, <strong><code>n_windows</code></strong>=<em><code>1</code></em>, <strong><code>step_size</code></strong>=<em><code>1</code></em>, <strong><code>test_size</code></strong>=<em><code>None</code></em>, <strong><code>input_size</code></strong>=<em><code>None</code></em>, <strong><code>parallel</code></strong>:<code>Optional</code>[<code>ForwardRef('ParallelBackend')</code>]=<em><code>None</code></em>)</p>
+<h4 id="StatsForecast.fit" class="doc_header"><code>StatsForecast.fit</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L284" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>StatsForecast.fit</code>(<strong><code>df</code></strong>:<code>Optional</code>[<code>DataFrame</code>]=<em><code>None</code></em>, <strong><code>sort_df</code></strong>:<code>bool</code>=<em><code>True</code></em>)</p>
 </blockquote>
 <table>
 <thead><tr>
@@ -351,34 +202,391 @@ nb_path: "nbs/core.ipynb"
 </thead>
 <tbody>
 <tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>Forecast horizon</td>
-</tr>
-<tr>
-<td><strong><code>xreg</code></strong></td>
+<td><strong><code>df</code></strong></td>
 <td><code>typing.Union[pandas.core.frame.DataFrame, NoneType]</code></td>
 <td><code>None</code></td>
-<td>Future exogenous regressors</td>
+<td>DataFrame with columns <code>ds</code>, <code>y</code>, and exogenous variables, indexed by <code>unique_id</code></td>
 </tr>
 <tr>
-<td><strong><code>fitted</code></strong></td>
+<td><strong><code>sort_df</code></strong></td>
 <td><code>bool</code></td>
-<td><code>False</code></td>
-<td>Save fitted values for each model?</td>
-</tr>
-<tr>
-<td><strong><code>level</code></strong></td>
-<td><code>typing.Union[typing.List[int], NoneType]</code></td>
-<td><code>None</code></td>
-<td>Levels of propabilistic intervals</td>
+<td><code>True</code></td>
+<td>Sort <code>df</code> according to index and <code>ds</code>?</td>
 </tr>
 </tbody>
 </table>
 
 </div>
 
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span><span class="o">.</span><span class="n">fit</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>StatsForecast(models=[ADIDA(),CrostonClassic(),CrostonSBA(),CrostonSBA(),HistoricAverage(),IMAPA(),Naive(),RWD(),SeasonalES(sl=7,alpha=0.1),SeasonalNaive(sl=7),SeasWA(sl=7,ws=4),SES(alpha=0.1),TSB(d=0.1,p=0.3),WindowAverage(ws=4)])</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ds</th>
+      <th>ADIDA()</th>
+      <th>CrostonClassic()</th>
+      <th>CrostonSBA()</th>
+      <th>HistoricAverage()</th>
+      <th>IMAPA()</th>
+      <th>Naive()</th>
+      <th>RWD()</th>
+      <th>SeasonalES(sl=7,alpha=0.1)</th>
+      <th>SeasonalNaive(sl=7)</th>
+      <th>SeasWA(sl=7,ws=4)</th>
+      <th>SES(alpha=0.1)</th>
+      <th>TSB(d=0.1,p=0.3)</th>
+      <th>WindowAverage(ws=4)</th>
+    </tr>
+    <tr>
+      <th>unique_id</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2000-08-10</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>12.181367</td>
+      <td>12.909105</td>
+      <td>12.822492</td>
+      <td>17.374977</td>
+      <td>17.447752</td>
+      <td>0.921986</td>
+      <td>0.547084</td>
+      <td>21.003057</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>11.311981</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-08-11</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>12.181367</td>
+      <td>12.909105</td>
+      <td>12.822492</td>
+      <td>17.374977</td>
+      <td>17.520527</td>
+      <td>5.098412</td>
+      <td>5.596094</td>
+      <td>24.829397</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>11.311981</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-08-12</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>12.181367</td>
+      <td>12.909105</td>
+      <td>12.822492</td>
+      <td>17.374977</td>
+      <td>17.593302</td>
+      <td>8.941383</td>
+      <td>8.371272</td>
+      <td>1.132422</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>11.311981</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-08-13</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>12.181367</td>
+      <td>12.909105</td>
+      <td>12.822492</td>
+      <td>17.374977</td>
+      <td>17.666075</td>
+      <td>12.905209</td>
+      <td>13.905583</td>
+      <td>5.196244</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>11.311981</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-08-14</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>12.181367</td>
+      <td>12.909105</td>
+      <td>12.822492</td>
+      <td>17.374977</td>
+      <td>17.738850</td>
+      <td>17.160389</td>
+      <td>17.374977</td>
+      <td>8.869521</td>
+      <td>12.822492</td>
+      <td>12.822492</td>
+      <td>11.311981</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-25</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>8.634578</td>
+      <td>9.744734</td>
+      <td>9.089029</td>
+      <td>6.184770</td>
+      <td>6.250069</td>
+      <td>3.803416</td>
+      <td>4.165789</td>
+      <td>9.402745</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>7.554559</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-26</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>8.634578</td>
+      <td>9.744734</td>
+      <td>9.089029</td>
+      <td>6.184770</td>
+      <td>6.258231</td>
+      <td>6.820654</td>
+      <td>6.184770</td>
+      <td>12.891891</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>7.554559</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-27</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>8.634578</td>
+      <td>9.744734</td>
+      <td>9.089029</td>
+      <td>6.184770</td>
+      <td>6.266394</td>
+      <td>9.607902</td>
+      <td>9.447885</td>
+      <td>15.676870</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>7.554559</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-28</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>8.634578</td>
+      <td>9.744734</td>
+      <td>9.089029</td>
+      <td>6.184770</td>
+      <td>6.274556</td>
+      <td>12.652048</td>
+      <td>12.557902</td>
+      <td>18.898012</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>7.554559</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-29</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>8.634578</td>
+      <td>9.744734</td>
+      <td>9.089029</td>
+      <td>6.184770</td>
+      <td>6.282719</td>
+      <td>15.778721</td>
+      <td>16.416712</td>
+      <td>0.776590</td>
+      <td>9.089029</td>
+      <td>9.089029</td>
+      <td>7.554559</td>
+    </tr>
+  </tbody>
+</table>
+<p>120 rows × 14 columns</p>
+</div></div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">fitted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+<div class="output_subarea output_text output_error">
+<pre>
+<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
+<span class="ansi-red-fg">NotImplementedError</span>                       Traceback (most recent call last)
+<span class="ansi-green-fg">/var/folders/7x/1l3vkh3x4_q3s4r36b60s8f00000gn/T/ipykernel_78016/1990782390.py</span> in <span class="ansi-cyan-fg">&lt;module&gt;</span>
+<span class="ansi-green-fg">----&gt; 1</span><span class="ansi-red-fg"> </span>fcst<span class="ansi-blue-fg">.</span>forecast<span class="ansi-blue-fg">(</span>h<span class="ansi-blue-fg">=</span><span class="ansi-cyan-fg">12</span><span class="ansi-blue-fg">,</span> fitted<span class="ansi-blue-fg">=</span><span class="ansi-green-fg">True</span><span class="ansi-blue-fg">)</span>
+
+<span class="ansi-green-fg">/var/folders/7x/1l3vkh3x4_q3s4r36b60s8f00000gn/T/ipykernel_78016/1718998499.py</span> in <span class="ansi-cyan-fg">forecast</span><span class="ansi-blue-fg">(self, h, df, X, level, fitted, sort_df)</span>
+<span class="ansi-green-intense-fg ansi-bold">    108</span>         X<span class="ansi-blue-fg">,</span> level <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>_parse_X_level<span class="ansi-blue-fg">(</span>h<span class="ansi-blue-fg">=</span>h<span class="ansi-blue-fg">,</span> X<span class="ansi-blue-fg">=</span>X<span class="ansi-blue-fg">,</span> level<span class="ansi-blue-fg">=</span>level<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    109</span>         <span class="ansi-green-fg">if</span> self<span class="ansi-blue-fg">.</span>n_jobs <span class="ansi-blue-fg">==</span> <span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-fg">--&gt; 110</span><span class="ansi-red-fg">             </span>res_fcsts <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>ga<span class="ansi-blue-fg">.</span>forecast<span class="ansi-blue-fg">(</span>models<span class="ansi-blue-fg">=</span>self<span class="ansi-blue-fg">.</span>models<span class="ansi-blue-fg">,</span> h<span class="ansi-blue-fg">=</span>h<span class="ansi-blue-fg">,</span> fitted<span class="ansi-blue-fg">=</span>fitted<span class="ansi-blue-fg">,</span> X<span class="ansi-blue-fg">=</span>X<span class="ansi-blue-fg">,</span> level<span class="ansi-blue-fg">=</span>level<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    111</span>         <span class="ansi-green-fg">else</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">    112</span>             res_fcsts <span class="ansi-blue-fg">=</span> self<span class="ansi-blue-fg">.</span>_forecast_parallel<span class="ansi-blue-fg">(</span>h<span class="ansi-blue-fg">=</span>h<span class="ansi-blue-fg">,</span> X<span class="ansi-blue-fg">=</span>X<span class="ansi-blue-fg">,</span> level<span class="ansi-blue-fg">=</span>level<span class="ansi-blue-fg">)</span>
+
+<span class="ansi-green-fg">/var/folders/7x/1l3vkh3x4_q3s4r36b60s8f00000gn/T/ipykernel_78016/1911851685.py</span> in <span class="ansi-cyan-fg">forecast</span><span class="ansi-blue-fg">(self, models, h, fitted, X, level)</span>
+<span class="ansi-green-intense-fg ansi-bold">    108</span>                 <span class="ansi-green-fg">if</span> has_level<span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">    109</span>                     kwargs<span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">&#39;level&#39;</span><span class="ansi-blue-fg">]</span> <span class="ansi-blue-fg">=</span> level
+<span class="ansi-green-fg">--&gt; 110</span><span class="ansi-red-fg">                 </span>res_i <span class="ansi-blue-fg">=</span> model<span class="ansi-blue-fg">.</span>forecast<span class="ansi-blue-fg">(</span>h<span class="ansi-blue-fg">=</span>h<span class="ansi-blue-fg">,</span> y<span class="ansi-blue-fg">=</span>y_train<span class="ansi-blue-fg">,</span> X<span class="ansi-blue-fg">=</span>X_train<span class="ansi-blue-fg">,</span> X_future<span class="ansi-blue-fg">=</span>X_f<span class="ansi-blue-fg">,</span> fitted<span class="ansi-blue-fg">=</span>fitted<span class="ansi-blue-fg">,</span> <span class="ansi-blue-fg">**</span>kwargs<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    111</span>                 fcsts_i <span class="ansi-blue-fg">=</span> res_i<span class="ansi-blue-fg">[</span><span class="ansi-blue-fg">&#39;mean&#39;</span><span class="ansi-blue-fg">]</span>
+<span class="ansi-green-intense-fg ansi-bold">    112</span>                 <span class="ansi-green-fg">if</span> fcsts_i<span class="ansi-blue-fg">.</span>ndim <span class="ansi-blue-fg">==</span> <span class="ansi-cyan-fg">1</span><span class="ansi-blue-fg">:</span>
+
+<span class="ansi-green-fg">~/projects/fixes/statsforecast/statsforecast/models.py</span> in <span class="ansi-cyan-fg">forecast</span><span class="ansi-blue-fg">(self, y, h, X, X_future, fitted)</span>
+<span class="ansi-green-intense-fg ansi-bold">    802</span>         fitted<span class="ansi-blue-fg">:</span> bool <span class="ansi-blue-fg">=</span> <span class="ansi-green-fg">False</span><span class="ansi-blue-fg">,</span> <span class="ansi-red-fg"># return fitted values?</span>
+<span class="ansi-green-intense-fg ansi-bold">    803</span>     ):
+<span class="ansi-green-fg">--&gt; 804</span><span class="ansi-red-fg">         </span>out <span class="ansi-blue-fg">=</span> _adida<span class="ansi-blue-fg">(</span>y<span class="ansi-blue-fg">=</span>y<span class="ansi-blue-fg">,</span> h<span class="ansi-blue-fg">=</span>h<span class="ansi-blue-fg">,</span> fitted<span class="ansi-blue-fg">=</span>fitted<span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    805</span>         <span class="ansi-green-fg">return</span> out
+<span class="ansi-green-intense-fg ansi-bold">    806</span> 
+
+<span class="ansi-green-fg">~/projects/fixes/statsforecast/statsforecast/models.py</span> in <span class="ansi-cyan-fg">_adida</span><span class="ansi-blue-fg">(y, h, fitted)</span>
+<span class="ansi-green-intense-fg ansi-bold">    760</span>     ):
+<span class="ansi-green-intense-fg ansi-bold">    761</span>     <span class="ansi-green-fg">if</span> fitted<span class="ansi-blue-fg">:</span>
+<span class="ansi-green-fg">--&gt; 762</span><span class="ansi-red-fg">         </span><span class="ansi-green-fg">raise</span> NotImplementedError<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">&#39;return fitted&#39;</span><span class="ansi-blue-fg">)</span>
+<span class="ansi-green-intense-fg ansi-bold">    763</span>     <span class="ansi-green-fg">if</span> <span class="ansi-blue-fg">(</span>y <span class="ansi-blue-fg">==</span> <span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">.</span>all<span class="ansi-blue-fg">(</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">:</span>
+<span class="ansi-green-intense-fg ansi-bold">    764</span>         <span class="ansi-green-fg">return</span> <span class="ansi-blue-fg">{</span><span class="ansi-blue-fg">&#39;mean&#39;</span><span class="ansi-blue-fg">:</span> np<span class="ansi-blue-fg">.</span>repeat<span class="ansi-blue-fg">(</span>np<span class="ansi-blue-fg">.</span>float32<span class="ansi-blue-fg">(</span><span class="ansi-cyan-fg">0</span><span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">,</span> h<span class="ansi-blue-fg">)</span><span class="ansi-blue-fg">}</span>
+
+<span class="ansi-red-fg">NotImplementedError</span>: return fitted</pre>
+</div>
 </div>
 
 </div>
@@ -401,8 +609,8 @@ nb_path: "nbs/core.ipynb"
 
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">res</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
-<span class="n">res</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">series</span><span class="p">)</span>
+<span class="n">fcst</span><span class="o">.</span><span class="n">fitted_</span>
 </pre></div>
 
     </div>
@@ -423,7 +631,94 @@ nb_path: "nbs/core.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="StatsForecast.forecast_fitted_values" class="doc_header"><code>StatsForecast.forecast_fitted_values</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L260" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>StatsForecast.forecast_fitted_values</code>()</p>
+<h4 id="StatsForecast.predict" class="doc_header"><code>StatsForecast.predict</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L324" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>StatsForecast.predict</code>(<strong><code>h</code></strong>:<code>int</code>, <strong><code>X</code></strong>:<code>Optional</code>[<code>DataFrame</code>]=<em><code>None</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>List</code>[<code>int</code>]]=<em><code>None</code></em>)</p>
+</blockquote>
+<table>
+<thead><tr>
+<th></th>
+<th>Type</th>
+<th>Default</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>h</code></strong></td>
+<td><code>int</code></td>
+<td></td>
+<td>Forecast horizon,</td>
+</tr>
+<tr>
+<td><strong><code>X</code></strong></td>
+<td><code>typing.Union[pandas.core.frame.DataFrame, NoneType]</code></td>
+<td><code>None</code></td>
+<td>Future exogenous regressors</td>
+</tr>
+<tr>
+<td><strong><code>level</code></strong></td>
+<td><code>typing.Union[typing.List[int], NoneType]</code></td>
+<td><code>None</code></td>
+<td>Levels of propabilistic intervals</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span><span class="o">.</span><span class="n">fit_predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">series</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_markdown rendered_html output_subarea ">
+<h4 id="StatsForecast.forecast_fitted_values" class="doc_header"><code>StatsForecast.forecast_fitted_values</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L380" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>StatsForecast.forecast_fitted_values</code>()</p>
 </blockquote>
 
 </div>
@@ -452,10 +747,10 @@ nb_path: "nbs/core.ipynb"
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">fcst</span> <span class="o">=</span> <span class="n">StatsForecast</span><span class="p">(</span>
     <span class="n">df</span><span class="o">=</span><span class="n">series</span><span class="p">,</span>
-    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="n">naive</span><span class="p">],</span>
-    <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">[</span><span class="n">Naive</span><span class="p">()],</span>
+    <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;D&#39;</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span>
 <span class="p">)</span>
-<span class="n">forecasts</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="n">fitted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">forecasts</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">fitted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">fitted</span> <span class="o">=</span> <span class="n">fcst</span><span class="o">.</span><span class="n">forecast_fitted_values</span><span class="p">()</span>
 </pre></div>
 
@@ -469,6 +764,16 @@ nb_path: "nbs/core.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">fitted</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
 
 <div class="output_wrapper">
 <div class="output">
@@ -476,61 +781,126 @@ nb_path: "nbs/core.ipynb"
 <div class="output_area">
 
 
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="StatsForecast.cross_validation" class="doc_header"><code>StatsForecast.cross_validation</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L267" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>StatsForecast.cross_validation</code>(<strong><code>h</code></strong>:<code>int</code>, <strong><code>n_windows</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>step_size</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>test_size</code></strong>:<code>Optional</code>[<code>int</code>]=<em><code>None</code></em>, <strong><code>input_size</code></strong>:<code>Optional</code>[<code>int</code>]=<em><code>None</code></em>, <strong><code>fitted</code></strong>=<em><code>False</code></em>)</p>
-</blockquote>
-<table>
-<thead><tr>
-<th></th>
-<th>Type</th>
-<th>Default</th>
-<th>Details</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong><code>h</code></strong></td>
-<td><code>int</code></td>
-<td></td>
-<td>Forecast horizon</td>
-</tr>
-<tr>
-<td><strong><code>n_windows</code></strong></td>
-<td><code>int</code></td>
-<td><code>1</code></td>
-<td>Number of windows used for cross validation</td>
-</tr>
-<tr>
-<td><strong><code>step_size</code></strong></td>
-<td><code>int</code></td>
-<td><code>1</code></td>
-<td>Step size between each window</td>
-</tr>
-<tr>
-<td><strong><code>test_size</code></strong></td>
-<td><code>typing.Union[int, NoneType]</code></td>
-<td><code>None</code></td>
-<td>Lenght of test size. If passed, set <code>n_windows=None</code></td>
-</tr>
-<tr>
-<td><strong><code>input_size</code></strong></td>
-<td><code>typing.Union[int, NoneType]</code></td>
-<td><code>None</code></td>
-<td>Input size for each window</td>
-</tr>
-<tr>
-<td><strong><code>fitted</code></strong></td>
-<td><code>bool</code></td>
-<td><code>False</code></td>
-<td>Save fitted values for each window and each model?</td>
-</tr>
-</tbody>
+<div class="output_html rendered_html output_subarea output_execute_result"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ds</th>
+      <th>y</th>
+      <th>Naive()</th>
+    </tr>
+    <tr>
+      <th>unique_id</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2000-01-01</td>
+      <td>1.291788</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-01-02</td>
+      <td>4.875175</td>
+      <td>1.291788</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-01-03</td>
+      <td>9.783546</td>
+      <td>4.875175</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-01-04</td>
+      <td>13.927325</td>
+      <td>9.783546</td>
+    </tr>
+    <tr>
+      <th>0</th>
+      <td>2000-01-05</td>
+      <td>16.766884</td>
+      <td>13.927325</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-13</td>
+      <td>16.416712</td>
+      <td>12.557902</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-14</td>
+      <td>19.092569</td>
+      <td>16.416712</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-15</td>
+      <td>0.775108</td>
+      <td>19.092569</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-16</td>
+      <td>4.165789</td>
+      <td>0.775108</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>2000-09-17</td>
+      <td>6.184770</td>
+      <td>4.165789</td>
+    </tr>
+  </tbody>
 </table>
+<p>2376 rows × 3 columns</p>
+</div></div>
 
 </div>
 
 </div>
+</div>
 
+</div>
+    {% endraw %}
+
+    {% raw %}
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
 </div>
 </div>
 
@@ -569,21 +939,14 @@ nb_path: "nbs/core.ipynb"
     {% raw %}
     
 <div class="cell border-box-sizing code_cell rendered">
+<div class="input">
 
-<div class="output_wrapper">
-<div class="output">
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
 
-<div class="output_area">
-
-
-<div class="output_markdown rendered_html output_subarea ">
-<h4 id="StatsForecast.cross_validation_fitted_values" class="doc_header"><code>StatsForecast.cross_validation_fitted_values</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/core.py#L304" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>StatsForecast.cross_validation_fitted_values</code>()</p>
-</blockquote>
-
-</div>
-
-</div>
-
+    </div>
 </div>
 </div>
 
@@ -899,5 +1262,5 @@ nb_path: "nbs/core.ipynb"
     {% endraw %}
 
 </div>
-
+ 
 

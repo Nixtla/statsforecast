@@ -47,11 +47,17 @@ entries:
       title: Outliers
       url: /Outliers
     - output: web,pdf
-      title: Getting started with AutoARIMA and ETS
-      url: Getting_Started_with_Auto_Arima_and_ETS.html
+      title: Non Daily Data
+      url: /NonDailyData
     - output: web,pdf
-      title: AutoArima vs Prophet
-      url: AutoArima_vs_Prophet.html
+      title: Diagnostics
+      url: /Diagnostics
+    - output: web,pdf
+      title: Forecasting at Scale
+      url: /ForecastingAtScale
+    - output: web,pdf
+      title: Getting Help Contributing
+      url: /Contributing
     output: web
     title: StatsForecast
   output: web

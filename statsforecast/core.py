@@ -60,29 +60,35 @@ class GroupedArray:
                 fm[i, i_model] = new_model.fit(y=y, X=X)
         return fm
 
-    def _output_predict(self, fm, h, X, level=tuple()):
+    def _output_fcst(self, models, attr, h, X, level=tuple()):
         #returns empty output according to method
+        n_models = len(models)
         cols = []
-        cuts = np.full(len(fm) + 1, fill_value=np.nan, dtype=np.int32)
+        cuts = np.full(n_models + 1, fill_value=np.nan, dtype=np.int32)
+        has_level_models = np.full(n_models, fill_value=False, dtype=bool)
         cuts[0] = 0
-        for i_model, model in enumerate(fm[0, :]):
+        for i_model, model in enumerate(models):
             model_name = repr(model)
             cols_m = [model_name]
-            has_level = 'level' in inspect.signature(model.predict).parameters and len(level) > 0
+            has_level = 'level' in inspect.signature(getattr(model, attr)).parameters and len(level) > 0
+            has_level_models[i_model] = has_level
             if has_level:
                 cols_m += [f'{model_name}-lo_{lv}' for lv in level]
                 cols_m += [f'{model_name}-hi_{lv}' for lv in level]
             cols += cols_m
             cuts[i_model + 1] = len(cols_m) + cuts[i_model]
         out = np.full((self.n_groups * h, len(cols)), fill_value=np.nan, dtype=np.float32)
-        return out, cols, cuts
+        return out, cols, cuts, has_level_models
 
     def predict(self, fm, h, X=None, level=tuple()):
         #fm stands for fitted_models
         #and fm should have fitted_model
-        fcsts, cols, cuts = self._output_predict(fm=fm, h=h, X=X, level=level)
+        fcsts, cols, cuts, has_level_models = self._output_fcst(
+            models=fm[0], attr='predict',
+            h=h, X=X, level=level
+        )
         for i_model in range(fm.shape[1]):
-            has_level = 'level' in inspect.signature(fm[0, i_model].predict).parameters and len(level) > 0
+            has_level = has_level_models[i_model]
             kwargs = {}
             if has_level:
                 kwargs['level'] = level
@@ -104,25 +110,17 @@ class GroupedArray:
         fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
         return fm, fcsts, cols
 
-    def _output_forecast(self, models, h, X, level=tuple()):
-        #returns empty output according to method
-        cols = []
-        cuts = np.full(len(models) + 1, fill_value=np.nan, dtype=np.int32)
-        cuts[0] = 0
-        for i_model, model in enumerate(models):
-            model_name = repr(model)
-            cols_m = [model_name]
-            has_level = 'level' in inspect.signature(model.forecast).parameters and len(level) > 0
-            if has_level:
-                cols_m += [f'{model_name}-lo_{lv}' for lv in level]
-                cols_m += [f'{model_name}-hi_{lv}' for lv in level]
-            cols += cols_m
-            cuts[i_model + 1] = len(cols_m) + cuts[i_model]
-        out = np.full((self.n_groups * h, len(cols)), fill_value=np.nan, dtype=np.float32)
-        return out, cols, cuts
-
-    def forecast(self, models, h, X=None, level=tuple()):
-        fcsts, cols, cuts = self._output_forecast(models=models, h=h, X=X, level=level)
+    def forecast(self, models, h, fitted=False, X=None, level=tuple()):
+        fcsts, cols, cuts, has_level_models = self._output_fcst(
+            models=models, attr='forecast',
+            h=h, X=X, level=level
+        )
+        if fitted:
+            fitted_vals = np.full((self.data.shape[0], 1 + len(models)), np.nan, dtype=np.float32)
+            if self.data.ndim == 1:
+                fitted_vals[:, 0] = self.data
+            else:
+                fitted_vals[:, 0] = self.data[:, 0]
         for i, grp in enumerate(self):
             y_train = grp[:, 0] if grp.ndim == 2 else grp
             X_train = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
@@ -131,50 +129,63 @@ class GroupedArray:
             else:
                 X_f = None
             for i_model, model in enumerate(models):
-                has_level = 'level' in inspect.signature(model.forecast).parameters and len(level) > 0
+                has_level = has_level_models[i_model]
                 kwargs = {}
                 if has_level:
                     kwargs['level'] = level
-                fcsts_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_f, **kwargs)
+                res_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs)
+                fcsts_i = res_i['mean']
                 if fcsts_i.ndim == 1:
                     fcsts_i = fcsts_i[:, None]
                 fcsts[i * h : (i + 1) * h, cuts[i_model]:cuts[i_model + 1]] = fcsts_i
-        return fcsts, cols
+                if fitted:
+                    fitted_vals[self.indptr[i] : self.indptr[i + 1], i_model + 1] = res_i['fitted']
+        result = {'forecasts': fcsts, 'cols': cols}
+        if fitted:
+            result['fitted'] = {'values': fitted_vals}
+            result['fitted']['cols']  = ['y'] + [repr(model) for model in models]
+        return result
 
-    def predict_in_sample(self, model_idx, level=tuple()):
-        has_level = 'level' in inspect.signature(self.fm[0, model_idx].predict_in_sample).parameters and len(level) > 0
-        kwargs = {}
-        if has_level:
-            kwargs['level'] = level
-        in_sample = np.full((self.data.shape[0],  2 * has_level * len(level) + 1), np.nan, dtype=np.float32)
-        for i, _ in enumerate(self):
-            in_sample_i = self.fm[i, model_idx].predict_in_sample(**kwargs)
-            in_sample[self.indptr[i] : self.indptr[i + 1], : 2 * has_level * len(level) + 1] = in_sample_i
-        return in_sample
-
-    def compute_cv(self, model, h, test_size, step_size=1, input_size=None):
+    def cross_validation(self, models, h, test_size, step_size=1, input_size=None, fitted=False):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
             raise Exception('`test_size - h` should be module `step_size`')
         n_windows = int((test_size - h) / step_size) + 1
-        out = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
-        out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
+        n_models = len(models)
+        # first column of out is the actual y
+        out = np.full((self.n_groups * h, n_windows, n_models + 1), np.nan, dtype=np.float32)
+        #out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
+        if fitted:
+            fitted_vals = np.full((self.data.shape[0] * n_windows, n_models + 1), np.nan, dtype=np.float32)
+            fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
+            last_fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
         for i_ts, grp in enumerate(self):
             for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size
-                #train dataset
-                y_train = grp[(cutoff - in_size_disp):cutoff]
-                y_train = y_train[:, 0] if y_train.ndim == 2 else y_train
-                X_train = y_train[:, 1:] if (y_train.ndim == 2 and y_train.shape[1] > 1) else None
-                #test dataset
+                y = grp[(cutoff - in_size_disp):cutoff]
+                y_train = y[:, 0] if y.ndim == 2 else y
+                X_train = y[:, 1:] if (y.ndim == 2 and y.shape[1] > 1) else None
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
-                y_test = y_test[:, 0] if y_test.ndim == 2 else y_test
-                X_test = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
-                # fit model
-                out[i_ts, i_window] = model.fit(y=y_train, X=X_train).predict(h=h, X=X_test)[:, 0]
-                out_test[i_ts, i_window] = y_test
+                X_future = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
+                out[i_ts * h : (i_ts + 1) * h][i_window, 0] = y_test
+                for i_model, model in enumerate(models):
+                    res_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_future, fitted=fitted, **kwargs)
+                    fcsts_i = res_i['mean']
+                    if fcsts_i.ndim == 1:
+                        fcsts_i = fcsts_i[:, None]
+                    out[i_ts * h : (i_ts + 1) * h][i_window, i_model + 1] = res_fn['mean']
+                    if fitted:
+                        fitted_vals[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
+                            (cutoff - in_size_disp):cutoff
+                        ] = res_fn['fitted']
+                        fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
+                            (cutoff - in_size_disp):cutoff
+                        ] = True
+                        last_fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][cutoff-1] = True
         result = {'forecasts': out, 'y': out_test}
+        if fitted:
+            result['fitted'] = {'values': fitted_vals, 'idxs': fitted_idxs, 'last_idxs': last_fitted_idxs}
         return result
 
     def split(self, n_chunks):
@@ -349,16 +360,30 @@ class StatsForecast:
             df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id`
             X: Optional[pd.DataFrame] = None, # Future exogenous regressors
             level: Optional[List[int]] = None, # Levels of propabilistic intervals
+            fitted: bool = False,
             sort_df: bool = True # Sort `df` according to index and `ds`?
         ):
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X, level=level)
         if self.n_jobs == 1:
-            fcsts, cols = self.ga.forecast(models=self.models, h=h, X=X, level=level)
+            res_fcsts = self.ga.forecast(models=self.models, h=h, fitted=fitted, X=X, level=level)
         else:
-            fcsts, cols = self._forecast_parallel(h=h, X=X, level=level)
+            res_fcsts = self._forecast_parallel(h=h, fitted=fitted, X=X, level=level)
+        if fitted:
+            self.fcst_fitted_values_ = res_fcsts['fitted']
+        fcsts = res_fcsts['forecasts']
+        cols = res_fcsts['cols']
         df = self._make_future_df(h=h)
         df[cols] = fcsts
+        return df
+
+    def forecast_fitted_values(self):
+        if not hasattr(self, 'fcst_fitted_values_'):
+            raise Exception('Please run `forecast` mehtod using `fitted=True`')
+        cols = self.fcst_fitted_values_['cols']
+        df = pd.DataFrame(self.fcst_fitted_values_['values'],
+                          columns=cols,
+                          index=self.ds).reset_index(level=1)
         return df
 
     def _get_pool(self):
@@ -431,21 +456,30 @@ class StatsForecast:
             cols = cols[0]
         return fm, fcsts, cols
 
-    def _forecast_parallel(self, h, X, level):
+    def _forecast_parallel(self, h, fitted, X, level):
         #create elements for each core
         gas, Xs = self._get_gas_Xs(X=X)
         Pool, pool_kwargs = self._get_pool()
         #compute parallel forecasts
+        result = {}
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga, X_ in zip(gas, Xs):
-                future = executor.apply_async(ga.forecast, (self.models, h, X_, level,))
+                future = executor.apply_async(ga.forecast, (self.models, h, fitted, X_, level,))
                 futures.append(future)
             out = [f.get() for f in futures]
-            fcsts, cols = list(zip(*out))
+            fcsts = [d['forecasts'] for d in out]
             fcsts = np.vstack(fcsts)
-            cols = cols[0]
-        return fcsts, cols
+            cols = out[0]['cols']
+            result['forecasts'] = fcsts
+            result['cols'] = cols
+            if fitted:
+                result['fitted'] = {}
+                fitted_vals = [d['fitted']['values'] for d in out]
+                result['fitted']['values'] = np.vstack(fitted_vals)
+                result['fitted']['cols'] = out[0]['fitted']['cols']
+
+        return result
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
