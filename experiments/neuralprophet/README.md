@@ -13,7 +13,9 @@ pip install statsforecast
 
 ## Background
 
-Recently, the [`NeuralProphet`](https://neuralprophet.com/html/index.html) model was introduced as "a successor to Facebook `Prophet`" according to the [original paper](https://arxiv.org/pdf/2111.15397.pdf). Recently, a [benchmark experiment](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter) showed that the `AutoARIMA` model outperforms `Prophet` on accuracy and computational time by a large margin using standard benchmarking datasets. The primary purpose of this experiment is to determine if the `NeuralProphet` model can outperform classical statistical models, mainly because the paper only compares the new model against `Prophet` but not against simple benchmarks. We wanted to test the claim that "Classical models such as Auto-Regressive Integrated Moving Average (ARIMA) and Exponential Smoothing (ETS) have been well studied and provide interpretable components. However, their restrictive assumptions and parametric nature limit their performance in real-world applications." 
+History tends to repeat itself, but it is in the forecasting community's best interest that [FaceBook-`Prophet`'s tainted memory](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter) acts as a warning to not commit the same mistakes and adopt overpromising new models.
+
+In this experiment, we test [`NeuralProphet`](https://neuralprophet.com/html/index.html)'s introduction as a "successor" to Facebook-`Prophet` and compare it with classic Exponential Smoothing (`ETS`). We show that it is not the case that `ETS` has "too restrictive assumptions and parametric nature limit their performance in real-world applications" as claimed by `NeuralProphet`'s [paper](https://arxiv.org/pdf/2111.15397.pdf). Moreover, we show that `NeuralProphet`'s predictions are outperformed both in accuracy and computation time by this half-century-old model.
 
 ## Empirical validation
 
@@ -22,7 +24,9 @@ To compare `NeuralProphet` against `ETS`, we designed a pipeline considering the
 ### Notes
 
 - We used the out-of-the-box configuration of the NeuralProphet model in its global-multistep version. This experiment concludes that hyperparameter optimization could be highly costly, particularly for big datasets.
-- During the execution of the experiment, we found issues with the NeuralProphet implementation related to Monthly, Quarterly, and Yearly frequencies. We [fixed the issue and opened a Pull Request to solve the problem](https://github.com/ourownstory/neural_prophet/pull/705).
+- Additionally, we test the performance of `NeuralProphet` using different learning rates (1e-5, 1e-4, 1e-3, 1e-2, 1e-1). The performance is similar.
+- During the execution of the experiment, we found issues with the `NeuralProphet` implementation related to Monthly, Quarterly, and Yearly frequencies. We [fixed the issue and opened a Pull Request to solve the problem](https://github.com/ourownstory/neural_prophet/pull/705).
+- According to the paper and a [discussion on GitHub](https://github.com/ourownstory/neural_prophet/discussions/408), the `NeuralProphet` implementation is not available in GPU. There is a [work-in-progress Pull Request](https://github.com/ourownstory/neural_prophet/pull/420), though. 
 
 ## Results 
 
