@@ -38,7 +38,7 @@ class AutoARIMA(_TS):
         self.approximation = approximation
 
     def __repr__(self):
-        return f'AutoARIMA()'
+        return f'AutoARIMA'
 
     def fit(
             self,
@@ -62,17 +62,20 @@ class AutoARIMA(_TS):
             level: Optional[Tuple[int]] = None, # level
         ):
         fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
+        mean = fcst['mean']
         if level is None:
-            return fcst['mean']
-        out = [
-            fcst['mean'],
-            *[fcst['lower'][f'{l}%'] for l in level],
-            *[fcst['upper'][f'{l}%'] for l in level],
-        ]
-        return np.vstack(out).T
+            return {'mean': mean}
+        return {
+            'mean': mean,
+            **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
+            **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+        }
 
-    def predict_in_sample(self):
-        return fitted_arima(self.model_)
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+        if level is not None:
+            return NotImplementedError
+        mean = fitted_arima(self.model_)
+        return {'mean': mean}
 
     def forecast(
             self,
@@ -92,16 +95,16 @@ class AutoARIMA(_TS):
                 allowmean=False, allowdrift=False #not implemented yet
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
-        mean = fcst['mean']
+        res = {'mean': fcst['mean']}
         if fitted:
-            return {'mean': mean, 'fitted': fitted_arima(mod)}
-        if level is None:
-            return {'mean': mean}
-        return {
-            'mean': mean,
-            **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
-            **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
-        }
+            res['fitted'] = fitted_arima(mod)
+        if level is not None:
+            res = {
+                **res,
+                **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
+                **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+            }
+        return res
 
 # Cell
 class ETS(_TS):
@@ -111,7 +114,7 @@ class ETS(_TS):
         self.model = model
 
     def __repr__(self):
-        return f'ETS(sl={self.season_length},model={self.model})'
+        return f'ETS'
 
     def fit(
             self,
@@ -129,7 +132,8 @@ class ETS(_TS):
         return forecast_ets(self.model_, h=h)['mean']
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -271,7 +275,7 @@ class SimpleExponentialSmoothing(_TS):
         self.alpha = alpha
 
     def __repr__(self):
-        return f'SES(alpha={self.alpha})'
+        return f'SES'
 
     def fit(
             self,
@@ -290,7 +294,8 @@ class SimpleExponentialSmoothing(_TS):
         return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -323,7 +328,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         pass
 
     def __repr__(self):
-        return f'SESOpt()'
+        return f'SESOpt'
 
     def fit(
             self,
@@ -342,7 +347,8 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -384,7 +390,7 @@ class SeasonalExponentialSmoothing(_TS):
         self.alpha = alpha
 
     def __repr__(self):
-        return f'SeasonalES(sl={self.season_length},alpha={self.alpha})'
+        return f'SeasonalES'
 
     def fit(
             self,
@@ -409,7 +415,8 @@ class SeasonalExponentialSmoothing(_TS):
         return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -452,7 +459,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f'SeasESOpt(sl={self.season_length})'
+        return f'SeasESOpt'
 
     def fit(
             self,
@@ -476,7 +483,8 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -514,7 +522,7 @@ class HistoricAverage(_TS):
         pass
 
     def __repr__(self):
-        return f'HistoricAverage()'
+        return f'HistoricAverage'
 
     def fit(
             self,
@@ -533,7 +541,8 @@ class HistoricAverage(_TS):
         return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -567,7 +576,7 @@ class Naive(_TS):
         pass
 
     def __repr__(self):
-        return f'Naive()'
+        return f'Naive'
 
     def fit(
             self,
@@ -586,7 +595,8 @@ class Naive(_TS):
         return _repeat_val(self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -624,7 +634,7 @@ class RandomWalkWithDrift(_TS):
         pass
 
     def __repr__(self):
-        return f'RWD()'
+        return f'RWD'
 
     def fit(
             self,
@@ -641,10 +651,13 @@ class RandomWalkWithDrift(_TS):
             X: np.ndarray = None # exogenous regressors
         ):
         hrange = np.arange(h, dtype=np.float32)
-        return self.model_['slope'] * (1 + hrange) + self.model_['last_y']
+        mean = self.model_['slope'] * (1 + hrange) + self.model_['last_y']
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -687,7 +700,7 @@ class SeasonalNaive(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f'SeasonalNaive(sl={self.season_length})'
+        return f'SeasonalNaive'
 
     def fit(
             self,
@@ -711,7 +724,8 @@ class SeasonalNaive(_TS):
         return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
             self,
@@ -750,7 +764,7 @@ class WindowAverage(_TS):
         self.window_size = window_size
 
     def __repr__(self):
-        return f'WindowAverage(ws={self.window_size})'
+        return f'WindowAverage'
 
     def fit(
             self,
@@ -811,7 +825,7 @@ class SeasonalWindowAverage(_TS):
         self.window_size = window_size
 
     def __repr__(self):
-        return f'SeasWA(sl={self.season_length},ws={self.window_size})'
+        return f'SeasWA'
 
     def fit(
             self,
@@ -827,7 +841,7 @@ class SeasonalWindowAverage(_TS):
         )
         self.model_ = dict(mod)
         return self
-
+        
     def predict(
             self,
             h: int, # forecasting horizon
@@ -881,7 +895,7 @@ class ADIDA(_TS):
         pass
 
     def __repr__(self):
-        return f'ADIDA()'
+        return f'ADIDA'
 
     def fit(
             self,
@@ -937,7 +951,7 @@ class CrostonClassic(_TS):
         pass
 
     def __repr__(self):
-        return f'CrostonClassic()'
+        return f'CrostonClassic'
 
     def fit(
             self,
@@ -992,7 +1006,7 @@ class CrostonOptimized(_TS):
         pass
 
     def __repr__(self):
-        return f'CrostonSBA()'
+        return f'CrostonOptimized'
 
     def fit(
             self,
@@ -1044,7 +1058,7 @@ class CrostonSBA(_TS):
         pass
 
     def __repr__(self):
-        return f'CrostonSBA()'
+        return f'CrostonSBA'
 
     def fit(
             self,
@@ -1107,7 +1121,7 @@ class IMAPA(_TS):
         pass
 
     def __repr__(self):
-        return f'IMAPA()'
+        return f'IMAPA'
 
     def fit(
             self,
@@ -1168,7 +1182,7 @@ class TSB(_TS):
         self.alpha_p = alpha_p
 
     def __repr__(self):
-        return f'TSB(d={self.alpha_d},p={self.alpha_p})'
+        return f'TSB'
 
     def fit(
             self,

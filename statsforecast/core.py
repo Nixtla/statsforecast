@@ -60,33 +60,35 @@ class GroupedArray:
                 fm[i, i_model] = new_model.fit(y=y, X=X)
         return fm
 
-    def _output_fcst(self, models, attr, h, X, level=tuple()):
-        #returns empty output according to method
+    def _get_cols(self, models, attr, h, X, level=tuple()):
         n_models = len(models)
-        cols = []
         cuts = np.full(n_models + 1, fill_value=np.nan, dtype=np.int32)
         has_level_models = np.full(n_models, fill_value=False, dtype=bool)
         cuts[0] = 0
         for i_model, model in enumerate(models):
-            model_name = repr(model)
-            cols_m = [model_name]
+            len_cols = 1 # mean
             has_level = 'level' in inspect.signature(getattr(model, attr)).parameters and len(level) > 0
             has_level_models[i_model] = has_level
             if has_level:
-                cols_m += [f'{model_name}-lo_{lv}' for lv in level]
-                cols_m += [f'{model_name}-hi_{lv}' for lv in level]
-            cols += cols_m
-            cuts[i_model + 1] = len(cols_m) + cuts[i_model]
-        out = np.full((self.n_groups * h, len(cols)), fill_value=np.nan, dtype=np.float32)
-        return out, cols, cuts, has_level_models
+                len_cols += 2 * len(level) #levels
+            cuts[i_model + 1] = len_cols + cuts[i_model]
+        return cuts, has_level_models
+
+    def _output_fcst(self, models, attr, h, X, level=tuple()):
+        #returns empty output according to method
+        cuts, has_level_models = self._get_cols(models=models, attr=attr, h=h, X=X, level=level)
+        out = np.full((self.n_groups * h, cuts[-1]), fill_value=np.nan, dtype=np.float32)
+        return out, cuts, has_level_models
 
     def predict(self, fm, h, X=None, level=tuple()):
         #fm stands for fitted_models
         #and fm should have fitted_model
-        fcsts, cols, cuts, has_level_models = self._output_fcst(
+        fcsts, cuts, has_level_models = self._output_fcst(
             models=fm[0], attr='predict',
             h=h, X=X, level=level
         )
+        matches = ['mean', 'lo', 'hi']
+        cols = []
         for i_model in range(fm.shape[1]):
             has_level = has_level_models[i_model]
             kwargs = {}
@@ -97,10 +99,15 @@ class GroupedArray:
                     X_ = X[i]
                 else:
                     X_ = None
-                fcsts_i = fm[i, i_model].predict(h=h, X=X_, **kwargs)
+                res_i = fm[i, i_model].predict(h=h, X=X_, **kwargs)
+                cols_m = [key for key in res_i.keys() if any(key.startswith(m) for m in matches)]
+                fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
+                model_name = repr(fm[i, i_model])
+                cols_m = [f'{model_name}' if col == 'mean' else f'{model_name}-{col}' for col in cols_m]
                 if fcsts_i.ndim == 1:
                     fcsts_i = fcsts_i[:, None]
                 fcsts[i * h : (i + 1) * h, cuts[i_model]:cuts[i_model + 1]] = fcsts_i
+            cols += cols_m
         return fcsts, cols
 
     def fit_predict(self, models, h, X=None, level=tuple()):
@@ -111,11 +118,14 @@ class GroupedArray:
         return fm, fcsts, cols
 
     def forecast(self, models, h, fitted=False, X=None, level=tuple()):
-        fcsts, cols, cuts, has_level_models = self._output_fcst(
+        fcsts, cuts, has_level_models = self._output_fcst(
             models=models, attr='forecast',
             h=h, X=X, level=level
         )
+        matches = ['mean', 'lo', 'hi']
         if fitted:
+            #for the moment we dont return levels for fitted values in
+            #forecast mode
             fitted_vals = np.full((self.data.shape[0], 1 + len(models)), np.nan, dtype=np.float32)
             if self.data.ndim == 1:
                 fitted_vals[:, 0] = self.data
@@ -128,37 +138,42 @@ class GroupedArray:
                 X_f = X[i]
             else:
                 X_f = None
+            cols = []
             for i_model, model in enumerate(models):
                 has_level = has_level_models[i_model]
                 kwargs = {}
                 if has_level:
                     kwargs['level'] = level
                 res_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs)
-                fcsts_i = res_i['mean']
+                cols_m = [key for key in res_i.keys() if any(key.startswith(m) for m in matches)]
+                fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
+                cols_m = [f'{repr(model)}' if col == 'mean' else f'{repr(model)}-{col}' for col in cols_m]
                 if fcsts_i.ndim == 1:
                     fcsts_i = fcsts_i[:, None]
                 fcsts[i * h : (i + 1) * h, cuts[i_model]:cuts[i_model + 1]] = fcsts_i
+                cols += cols_m
                 if fitted:
                     fitted_vals[self.indptr[i] : self.indptr[i + 1], i_model + 1] = res_i['fitted']
         result = {'forecasts': fcsts, 'cols': cols}
         if fitted:
             result['fitted'] = {'values': fitted_vals}
-            result['fitted']['cols']  = ['y'] + [repr(model) for model in models]
+            result['fitted']['cols'] = ['y'] + [repr(model) for model in models]
         return result
 
-    def cross_validation(self, models, h, test_size, step_size=1, input_size=None, fitted=False):
+    def cross_validation(self, models, h, test_size, step_size=1, input_size=None, fitted=False, level=tuple()):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
             raise Exception('`test_size - h` should be module `step_size`')
         n_windows = int((test_size - h) / step_size) + 1
         n_models = len(models)
+        cuts, has_level_models = self._get_cols(models=models, attr='forecast', h=h, X=None, level=level)
         # first column of out is the actual y
-        out = np.full((self.n_groups * h, n_windows, n_models + 1), np.nan, dtype=np.float32)
-        #out_test = np.full((self.n_groups, n_windows, h), np.nan, dtype=np.float32)
+        out = np.full((self.n_groups, n_windows, h, 1 + cuts[-1]), np.nan, dtype=np.float32)
         if fitted:
-            fitted_vals = np.full((self.data.shape[0] * n_windows, n_models + 1), np.nan, dtype=np.float32)
-            fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
-            last_fitted_idxs = np.full_like(fitted_vals, False, dtype=bool)
+            fitted_vals = np.full((self.data.shape[0], n_windows, n_models + 1), np.nan, dtype=np.float32)
+            fitted_idxs = np.full((self.data.shape[0], n_windows), False, dtype=bool)
+            last_fitted_idxs = np.full_like(fitted_idxs, False, dtype=bool)
+        matches = ['mean', 'lo', 'hi']
         for i_ts, grp in enumerate(self):
             for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
                 end_cutoff = cutoff + h
@@ -168,24 +183,41 @@ class GroupedArray:
                 X_train = y[:, 1:] if (y.ndim == 2 and y.shape[1] > 1) else None
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
                 X_future = y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
-                out[i_ts * h : (i_ts + 1) * h][i_window, 0] = y_test
+                out[i_ts, i_window, :, 0] = y_test[:, 0] if y.ndim == 2 else y_test
+                if fitted:
+                    fitted_vals[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window, 0][
+                        (cutoff - in_size_disp):cutoff
+                    ] = y_train
+                    fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
+                        (cutoff - in_size_disp):cutoff
+                    ] = True
+                    last_fitted_idxs[
+                        self.indptr[i_ts] : self.indptr[i_ts + 1], i_window
+                    ][cutoff-1] = True
+                cols = ['y']
                 for i_model, model in enumerate(models):
+                    has_level = has_level_models[i_model]
+                    kwargs = {}
+                    if has_level:
+                        kwargs['level'] = level
                     res_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_future, fitted=fitted, **kwargs)
-                    fcsts_i = res_i['mean']
-                    if fcsts_i.ndim == 1:
-                        fcsts_i = fcsts_i[:, None]
-                    out[i_ts * h : (i_ts + 1) * h][i_window, i_model + 1] = res_fn['mean']
+                    cols_m = [key for key in res_i.keys() if any(key.startswith(m) for m in matches)]
+                    fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
+                    cols_m = [f'{repr(model)}' if col == 'mean' else f'{repr(model)}-{col}' for col in cols_m]
+                    out[i_ts, i_window, :, (1 + cuts[i_model]):(1 + cuts[i_model + 1])] = fcsts_i
                     if fitted:
-                        fitted_vals[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
+                        fitted_vals[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window, i_model + 1][
                             (cutoff - in_size_disp):cutoff
-                        ] = res_fn['fitted']
-                        fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][
-                            (cutoff - in_size_disp):cutoff
-                        ] = True
-                        last_fitted_idxs[self.indptr[i_ts] : self.indptr[i_ts + 1], i_window][cutoff-1] = True
-        result = {'forecasts': out, 'y': out_test}
+                        ] = res_i['fitted']
+                    cols += cols_m
+        result = {'forecasts': out.reshape(-1, 1 + cuts[-1]), 'cols': cols}
         if fitted:
-            result['fitted'] = {'values': fitted_vals, 'idxs': fitted_idxs, 'last_idxs': last_fitted_idxs}
+            result['fitted'] = {
+                'values': np.reshape(fitted_vals, (-1, n_models + 1), order='F'),
+                'idxs': fitted_idxs.flatten(order='F'),
+                'last_idxs': last_fitted_idxs.flatten(order='F'),
+                'cols': ['y'] + [repr(model) for model in models]
+            }
         return result
 
     def split(self, n_chunks):
@@ -243,7 +275,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             import ray
         except ModuleNotFoundError as e:
             msg = (
-                '{e}. To use a ray cluster you have to install '
+                f'{e}. To use a ray cluster you have to install '
                 'ray. Please run `pip install ray`. '
             )
             raise ModuleNotFoundError(msg) from e
@@ -278,8 +310,11 @@ class StatsForecast:
 
     def _prepare_fit(self, df, sort_df):
         if df is not None:
+            if df.index.name != 'unique_id':
+                df = df.set_index('unique_id')
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
+            self.sort_df = sort_df
 
     def fit(
             self,
@@ -316,7 +351,7 @@ class StatsForecast:
             expected_shape = (h * len(self.ga), self.ga.data.shape[1])
             if X.shape != expected_shape:
                 raise ValueError(f'Expected X to have shape {expected_shape}, but got {X.shape}')
-            X, _, _, _ = _grouped_array_from_df(xreg, sort_df=self.sort_df)
+            X, _, _, _ = _grouped_array_from_df(X, sort_df=self.sort_df)
         if level is None:
             level = tuple()
         return X, level
@@ -384,6 +419,73 @@ class StatsForecast:
         df = pd.DataFrame(self.fcst_fitted_values_['values'],
                           columns=cols,
                           index=self.ds).reset_index(level=1)
+        return df
+
+    def cross_validation(
+            self,
+            h: int, # Forecast horizon
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id`
+            n_windows: int = 1, # Number of windows used for cross validation
+            step_size: int = 1, # Step size between each window
+            test_size: Optional[int] = None, # Lenght of test size. If passed, set `n_windows=None`
+            input_size: Optional[int] = None, # Input size for each window
+            level: Optional[List[int]] = None, # Levels of propabilistic intervals
+            fitted=False, # Save fitted values for each window and each model?
+            sort_df: bool = True # Sort `df` according to index and `ds`?
+        ):
+        if test_size is None:
+            test_size = h + step_size * (n_windows - 1)
+        elif n_windows is None:
+            if (test_size - h) % step_size:
+                raise Exception('`test_size - h` should be module `step_size`')
+            n_windows = int((test_size - h) / step_size) + 1
+        elif (n_windows is None) and (test_size is None):
+            raise Exception('you must define `n_windows` or `test_size`')
+        else:
+            raise Exception('you must define `n_windows` or `test_size` but not both')
+        self._prepare_fit(df, sort_df)
+        _, level = self._parse_X_level(h=h, X=None, level=level)
+        if self.n_jobs == 1:
+            res_fcsts = self.ga.cross_validation(
+                models=self.models, h=h, test_size=test_size,
+                step_size=step_size,
+                input_size=input_size,
+                fitted=fitted,
+                level=level
+            )
+        else:
+            res_fcsts = self._cross_validation_parallel(
+                h=h,
+                test_size=test_size,
+                step_size=step_size,
+                input_size=input_size,
+                fitted=fitted,
+                level=level
+            )
+
+        if fitted:
+            self.cv_fitted_values_ = res_fcsts['fitted']
+            self.n_cv_ = n_windows
+
+        fcsts = res_fcsts['forecasts']
+        cols = res_fcsts['cols']
+        df = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size, step_size=step_size)
+        #dates = {'ds': dates['ds'].values, 'cutoff': dates['cutoff'].values}
+        idx = pd.Index(np.repeat(self.uids, h * n_windows), name='unique_id')
+        df.index = idx
+        df[cols] = fcsts
+        return df
+
+    def cross_validation_fitted_values(self):
+        if not hasattr(self, 'cv_fitted_values_'):
+            raise Exception('Please run `cross_validation` mehtod using `fitted=True`')
+        index = pd.MultiIndex.from_tuples(np.tile(self.ds, self.n_cv_), names=['unique_id', 'ds'])
+        df = pd.DataFrame(index=index)
+        df['cutoff'] = self.cv_fitted_values_['last_idxs']
+        df[self.cv_fitted_values_['cols']] = self.cv_fitted_values_['values']
+        idxs = self.cv_fitted_values_['idxs']
+        df = df.iloc[idxs].reset_index(level=1)
+        df['cutoff'] = df['ds'].where(df['cutoff']).bfill()
         return df
 
     def _get_pool(self):
@@ -478,82 +580,35 @@ class StatsForecast:
                 fitted_vals = [d['fitted']['values'] for d in out]
                 result['fitted']['values'] = np.vstack(fitted_vals)
                 result['fitted']['cols'] = out[0]['fitted']['cols']
+        return result
 
+    def _cross_validation_parallel(self, h, test_size, step_size, input_size, fitted, level):
+        #create elements for each core
+        gas = self.ga.split(self.n_jobs)
+        Pool, pool_kwargs = self._get_pool()
+        #compute parallel forecasts
+        result = {}
+        with Pool(self.n_jobs, **pool_kwargs) as executor:
+            futures = []
+            for ga in gas:
+                future = executor.apply_async(
+                    ga.cross_validation,
+                    (self.models, h, test_size, step_size, input_size, fitted, level,)
+                )
+                futures.append(future)
+            out = [f.get() for f in futures]
+            fcsts = [d['forecasts'] for d in out]
+            fcsts = np.vstack(fcsts)
+            cols = out[0]['cols']
+            result['forecasts'] = fcsts
+            result['cols'] = cols
+            if fitted:
+                result['fitted'] = {}
+                result['fitted']['values'] = np.vstack([d['fitted']['values'] for d in out])
+                for key in ['last_idxs', 'idxs']:
+                    result['fitted'][key] = np.hstack([d['fitted'][key] for d in out])
+                result['fitted']['cols'] = out[0]['fitted']['cols']
         return result
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
-
-# Internal Cell
-class ParallelBackend:
-    def forecast(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq)
-        return model.forecast(**kwargs)
-
-    def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq)
-        return model.cross_validation(**kwargs)
-
-# Internal Cell
-class MultiprocessBackend(ParallelBackend):
-    def __init__(self, n_jobs: int) -> None:
-        self.n_jobs = n_jobs
-        super().__init__()
-
-    def forecast(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, n_jobs=self.n_jobs)
-        return model.forecast(**kwargs)
-
-    def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, n_jobs=self.n_jobs)
-        return model.cross_validation(**kwargs)
-
-# Internal Cell
-class RayBackend(ParallelBackend):
-    def __init__(self, ray_address) -> None:
-        self.ray_address = ray_address
-
-    def forecast(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, ray_address=self.ray_address)
-        return model.forecast(**kwargs)
-
-    def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, ray_address=self.ray_address)
-        return model.cross_validation(df, models, freq, **kwargs)
-
-# Internal Cell
-def forecast(
-    df,
-    models,
-    freq,
-    h,
-    xreg=None,
-    level=None,
-    parallel: Optional["ParallelBackend"] = None,
-):
-    backend = parallel if parallel is not None else ParallelBackend()
-    return backend.forecast(df, models, freq, h=h, xreg=xreg, level=level)
-
-# Internal Cell
-def cross_validation(
-    df,
-    models,
-    freq,
-    h,
-    n_windows=1,
-    step_size=1,
-    test_size=None,
-    input_size=None,
-    parallel: Optional["ParallelBackend"] = None,
-):
-    backend = parallel if parallel is not None else ParallelBackend()
-    return backend.cross_validation(
-        df,
-        models,
-        freq,
-        h=h,
-        n_windows=n_windows,
-        step_size=step_size,
-        test_size=test_size,
-        input_size=input_size,
-    )

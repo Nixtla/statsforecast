@@ -3,22 +3,23 @@ from os import cpu_count
 import pytest
 import ray
 from statsforecast.core import StatsForecast, _get_n_jobs
-from statsforecast.models import (
-    adida,
-    auto_arima,
-    croston_classic,
-    croston_optimized,
-    croston_sba,
-    historic_average,
-    imapa,
-    naive,
-    random_walk_with_drift,
-    seasonal_exponential_smoothing,
-    seasonal_naive,
-    seasonal_window_average,
-    ses,
-    tsb,
-    window_average,
+from statsforecast.models import ( 
+    ADIDA,
+    AutoARIMA,
+    CrostonClassic,
+    CrostonOptimized,
+    CrostonSBA,
+    ETS,
+    HistoricAverage,
+    IMAPA,
+    Naive,
+    RandomWalkWithDrift,
+    SeasonalExponentialSmoothing,
+    SeasonalNaive,
+    SeasonalWindowAverage,
+    SimpleExponentialSmoothing,
+    TSB,
+    WindowAverage,
 )
 from statsforecast.utils import generate_series
 
@@ -40,17 +41,24 @@ def test_ray_n_jobs(test_input, expected):
 def test_ray_flow():
     n_series = 20
     horizon = 7
-    models = [
-        adida, croston_classic, croston_optimized,
-        croston_sba, historic_average, imapa, naive, 
-        random_walk_with_drift, (seasonal_exponential_smoothing, 7, 0.1),
-        (seasonal_naive, 7), (seasonal_window_average, 7, 4),
-        (ses, 0.1), (tsb, 0.1, 0.3), (window_average, 4)
-    ]
     series = generate_series(20)
+    models = [
+		ADIDA(), AutoARIMA(season_length=12), 
+		CrostonClassic(), CrostonOptimized(),
+		CrostonSBA(), ETS(season_length=12),
+		HistoricAverage(), 
+		IMAPA(), Naive(), 
+		RandomWalkWithDrift(), 
+		SeasonalExponentialSmoothing(season_length=7, alpha=0.1),
+		SeasonalNaive(season_length=7),
+		SeasonalWindowAverage(season_length=7, window_size=4),
+		SimpleExponentialSmoothing(alpha=0.1),
+		TSB(alpha_d=0.1, alpha_p=0.3),
+		WindowAverage(window_size=4)
+	]
     ray_context = ray.init(ignore_reinit_error=True)
     fcst = StatsForecast(
-        series,
+        df=series,
         models=models,
         freq='D',
         n_jobs=-1,
