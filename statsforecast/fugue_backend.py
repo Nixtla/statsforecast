@@ -10,8 +10,6 @@ from fugue import transform
 from .core import (
     ParallelBackend,
     StatsForecast,
-    _as_tuple,
-    _build_forecast_name,
 )
 from triad import Schema
 

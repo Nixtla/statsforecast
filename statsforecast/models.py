@@ -62,17 +62,20 @@ class AutoARIMA(_TS):
             level: Optional[Tuple[int]] = None,
         ):
         fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
+        mean = fcst['mean']
         if level is None:
-            return fcst['mean']
-        out = [
-            fcst['mean'],
-            *[fcst['lower'][f'{l}%'] for l in level],
-            *[fcst['upper'][f'{l}%'] for l in level],
-        ]
-        return np.vstack(out).T
+            return {'mean': mean}
+        return {
+            'mean': mean,
+            **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
+            **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+        }
 
-    def predict_in_sample(self):
-        return fitted_arima(self.model_)
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+        if level is not None:
+            return NotImplementedError
+        mean = fitted_arima(self.model_)
+        return {'mean': mean}
 
     def forecast(
             self,
@@ -92,16 +95,16 @@ class AutoARIMA(_TS):
                 allowmean=False, allowdrift=False #not implemented yet
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
-        mean = fcst['mean']
+        res = {'mean': fcst['mean']}
         if fitted:
-            return {'mean': mean, 'fitted': fitted_arima(mod)}
-        if level is None:
-            return {'mean': mean}
-        return {
-            'mean': mean,
-            **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
-            **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
-        }
+            res['fitted'] = fitted_arima(mod)
+        if level is not None:
+            res = {
+                **res,
+                **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
+                **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+            }
+        return res
 
 # Cell
 class ETS(_TS):
@@ -118,10 +121,12 @@ class ETS(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return forecast_ets(self.model_, h=h)['mean']
+        res = {'mean': forecast_ets(self.model_, h=h)['mean']}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -271,10 +276,12 @@ class SimpleExponentialSmoothing(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': _repeat_val(val=self.model_['mean'][0], h=h)}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -315,10 +322,12 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': _repeat_val(val=self.model_['mean'][0], h=h)}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -374,10 +383,13 @@ class SeasonalExponentialSmoothing(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -433,10 +445,13 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -482,10 +497,13 @@ class HistoricAverage(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -527,10 +545,13 @@ class Naive(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(self.model_['mean'][0], h=h)
+        mean = _repeat_val(self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -577,10 +598,13 @@ class RandomWalkWithDrift(_TS):
 
     def predict(self, h: int, X: np.ndarray = None):
         hrange = np.arange(h, dtype=np.float32)
-        return self.model_['slope'] * (1 + hrange) + self.model_['last_y']
+        mean = self.model_['slope'] * (1 + hrange) + self.model_['last_y']
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -636,10 +660,13 @@ class SeasonalNaive(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
-        return self.model_['fitted']
+        res = {'mean': self.model_['fitted']}
+        return res
 
     def forecast(
         self,
@@ -686,7 +713,9 @@ class WindowAverage(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(self.model_['mean'][0], h=h)
+        mean = _repeat_val(self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -745,7 +774,9 @@ class SeasonalWindowAverage(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -801,7 +832,8 @@ class ADIDA(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': _repeat_val(val=self.model_['mean'][0], h=h)}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -849,7 +881,9 @@ class CrostonClassic(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -896,7 +930,9 @@ class CrostonOptimized(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -940,7 +976,9 @@ class CrostonSBA(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -995,7 +1033,9 @@ class IMAPA(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -1053,7 +1093,9 @@ class TSB(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        return _repeat_val(self.model_['mean'][0], h=h)
+        mean = _repeat_val(self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
