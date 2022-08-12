@@ -56,7 +56,6 @@ def generate_series(
             series['y'] = series['y'] * (1 + series[f'static_{i}'].cat.codes)
     series['unique_id'] = series['unique_id'].astype('category')
     series['unique_id'] = series['unique_id'].cat.as_ordered()
-    series = series.set_index('unique_id')
     return series
 
 # Cell
