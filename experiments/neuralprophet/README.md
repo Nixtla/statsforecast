@@ -64,6 +64,8 @@ The variable `model` can be `statsforecast` (`ETS` model) or `neuralprophet`. Fo
 * Always use strong baselines when forecasting.
 * Quick and easy results are sometimes [misleading](https://en.wikipedia.org/wiki/Streetlight_effect).
 * Simpler models are sometimes [better](https://en.wikipedia.org/wiki/Occam%27s_razor).
+* Both Prophet and NeuralProphet are definitely **not** models for Forecasting at Scale. 
+* We find the claim that __"NeuralProphet bridges the gap between traditional time-series models and deep learning methods."__ simply to be false, given that this model does not outperform classical statistical methods neither in accuracy nor speed.
 
 ## Misc.
 
