@@ -32,7 +32,7 @@ class AutoARIMA(_TS):
     def __init__(
             self,
             season_length: int = 1, # Number of observations per cycle
-            approximation: bool = False,
+            approximation: bool = False, #
         ):
         self.season_length = season_length
         self.approximation = approximation
@@ -43,7 +43,7 @@ class AutoARIMA(_TS):
     def fit(
             self,
             y: np.ndarray, # time series
-            X: Optional[np.ndarray] = None,
+            X: Optional[np.ndarray] = None, # exogenous regressors
         ):
         with np.errstate(invalid='ignore'):
             self.model_ = auto_arima_f(
@@ -57,9 +57,9 @@ class AutoARIMA(_TS):
 
     def predict(
             self,
-            h: int, # Forecast horizon
-            X: np.ndarray = None,
-            level: Optional[Tuple[int]] = None,
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            level: Optional[Tuple[int]] = None, # level
         ):
         fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
         mean = fcst['mean']
@@ -79,10 +79,10 @@ class AutoARIMA(_TS):
 
     def forecast(
             self,
-            y: np.ndarray,
-            h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
             level: Optional[Tuple[int]] = None, # level
             fitted: bool = False, # return fitted values?
         ):
@@ -116,26 +116,33 @@ class ETS(_TS):
     def __repr__(self):
         return f'ETS'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         self.model_ = ets_f(y, m=self.season_length, model=self.model)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        res = {'mean': forecast_ets(self.model_, h=h)['mean']}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return forecast_ets(self.model_, h=h)['mean']
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         mod = ets_f(y, m=self.season_length, model=self.model)
         fcst = forecast_ets(mod, h)
         keys = ['mean']
@@ -270,27 +277,34 @@ class SimpleExponentialSmoothing(_TS):
     def __repr__(self):
         return f'SES'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        res = {'mean': _repeat_val(val=self.model_['mean'][0], h=h)}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
@@ -316,27 +330,34 @@ class SimpleExponentialSmoothingOptimized(_TS):
     def __repr__(self):
         return f'SESOpt'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _ses_optimized(y=y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        res = {'mean': _repeat_val(val=self.model_['mean'][0], h=h)}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
@@ -371,7 +392,11 @@ class SeasonalExponentialSmoothing(_TS):
     def __repr__(self):
         return f'SeasonalES'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _seasonal_exponential_smoothing(
             y=y,
             season_length=self.season_length,
@@ -382,23 +407,25 @@ class SeasonalExponentialSmoothing(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _seasonal_exponential_smoothing(
             y=y, h=h, fitted=fitted,
             alpha=self.alpha,
@@ -434,7 +461,11 @@ class SeasonalExponentialSmoothingOptimized(_TS):
     def __repr__(self):
         return f'SeasESOpt'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _seasonal_ses_optimized(
             y=y,
             season_length=self.season_length,
@@ -444,23 +475,25 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _seasonal_ses_optimized(
             y=y, h=h, fitted=fitted,
             season_length=self.season_length
@@ -491,28 +524,34 @@ class HistoricAverage(_TS):
     def __repr__(self):
         return f'HistoricAverage'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _historic_average(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+        self,
+        h: int, # forecasting horizon
+        X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _historic_average(y=y, h=h, fitted=fitted)
         return out
 
@@ -539,28 +578,34 @@ class Naive(_TS):
     def __repr__(self):
         return f'Naive'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _naive(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _naive(y=y, h=h, fitted=fitted)
         return out
 
@@ -591,12 +636,20 @@ class RandomWalkWithDrift(_TS):
     def __repr__(self):
         return f'RWD'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
         hrange = np.arange(h, dtype=np.float32)
         mean = self.model_['slope'] * (1 + hrange) + self.model_['last_y']
         res = {'mean': mean}
@@ -607,13 +660,13 @@ class RandomWalkWithDrift(_TS):
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
         return out
 
@@ -649,7 +702,11 @@ class SeasonalNaive(_TS):
     def __repr__(self):
         return f'SeasonalNaive'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _seasonal_naive(
             y=y,
             season_length=self.season_length,
@@ -659,23 +716,25 @@ class SeasonalNaive(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _seasonal_naive(
             y=y, h=h, fitted=fitted,
             season_length=self.season_length
@@ -707,27 +766,33 @@ class WindowAverage(_TS):
     def __repr__(self):
         return f'WindowAverage'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
@@ -762,7 +827,11 @@ class SeasonalWindowAverage(_TS):
     def __repr__(self):
         return f'SeasWA'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _seasonal_window_average(
             y=y,
             h=self.season_length,
@@ -772,23 +841,25 @@ class SeasonalWindowAverage(_TS):
         )
         self.model_ = dict(mod)
         return self
-
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
-        res = {'mean': mean}
-        return res
+        
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _seasonal_window_average(
             y=y, h=h, fitted=fitted,
             season_length=self.season_length,
@@ -826,26 +897,33 @@ class ADIDA(_TS):
     def __repr__(self):
         return f'ADIDA'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _adida(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        res = {'mean': _repeat_val(val=self.model_['mean'][0], h=h)}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
@@ -875,27 +953,33 @@ class CrostonClassic(_TS):
     def __repr__(self):
         return f'CrostonClassic'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _croston_classic(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level):
         raise NotImplementedError
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
@@ -924,27 +1008,33 @@ class CrostonOptimized(_TS):
     def __repr__(self):
         return f'CrostonOptimized'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _croston_optimized(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
@@ -970,27 +1060,33 @@ class CrostonSBA(_TS):
     def __repr__(self):
         return f'CrostonSBA'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # # exogenous regressors
+        ):
         mod = _croston_sba(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
@@ -1027,25 +1123,31 @@ class IMAPA(_TS):
     def __repr__(self):
         return f'IMAPA'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _imapa(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(val=self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        X: np.ndarray = None, # exogenous regressors
+        X_future: np.ndarray = None, # future regressors
         fitted: bool = False, # return fitted values?
     ):
         out = _imapa(y=y, h=h, fitted=fitted)
@@ -1082,7 +1184,11 @@ class TSB(_TS):
     def __repr__(self):
         return f'TSB'
 
-    def fit(self, y: np.ndarray, X: np.ndarray = None):
+    def fit(
+            self,
+            y: np.ndarray, # time series
+            X: np.ndarray = None # exogenous regressors
+        ):
         mod = _tsb(
             y=y, h=1,
             fitted=False,
@@ -1092,22 +1198,24 @@ class TSB(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(self, h: int, X: np.ndarray = None):
-        mean = _repeat_val(self.model_['mean'][0], h=h)
-        res = {'mean': mean}
-        return res
+    def predict(
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
+        ):
+        return _repeat_val(self.model_['mean'][0], h=h)
 
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
-        fitted: bool = False, # return fitted values?
-    ):
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            X: np.ndarray = None, # exogenous regressors
+            X_future: np.ndarray = None, # future regressors
+            fitted: bool = False, # return fitted values?
+        ):
         out = _tsb(
             y=y, h=h,
             fitted=fitted,
