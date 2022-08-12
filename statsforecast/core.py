@@ -348,6 +348,8 @@ class StatsForecast:
 
     def _parse_X_level(self, h, X, level):
         if X is not None:
+            if X.index.name != 'unique_id':
+                X = X.set_index('unique_id')
             expected_shape = (h * len(self.ga), self.ga.data.shape[1])
             if X.shape != expected_shape:
                 raise ValueError(f'Expected X to have shape {expected_shape}, but got {X.shape}')
