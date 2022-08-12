@@ -7,7 +7,7 @@ import fire
 import numpy as np
 import pandas as pd
 from statsforecast import StatsForecast
-from statsforecast.models import ets as ets_statsforecast
+from statsforecast.models import ETS
 from statsforecast.utils import AirPassengers as ap
 
 from src.data import get_data
@@ -22,13 +22,11 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
         constant = 100
         train['y'] += constant
     
-    models = [
-        (ets_statsforecast, seasonality)
-    ]
-    ets_statsforecast(ap.astype(np.float32), 12, season_length=seasonality)
+    models = [ETS(season_length=seasonality)]
+    ETS(season_length=seasonality).forecast(ap.astype(np.float32), h=12)
 
     start = time.time()
-    fcst = StatsForecast(train, models=models, freq=freq, n_jobs=os.cpu_count())
+    fcst = StatsForecast(df=train, models=models, freq=freq, n_jobs=os.cpu_count())
     forecasts = fcst.forecast(horizon)
     end = time.time()
     print(end - start)
