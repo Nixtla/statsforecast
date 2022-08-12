@@ -38,7 +38,7 @@ class AutoARIMA(_TS):
         self.approximation = approximation
 
     def __repr__(self):
-        return f'AutoARIMA()'
+        return f'AutoARIMA'
 
     def fit(
             self,
@@ -114,7 +114,7 @@ class ETS(_TS):
         self.model = model
 
     def __repr__(self):
-        return f'ETS(sl={self.season_length},model={self.model})'
+        return f'ETS'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         self.model_ = ets_f(y, m=self.season_length, model=self.model)
@@ -268,7 +268,7 @@ class SimpleExponentialSmoothing(_TS):
         self.alpha = alpha
 
     def __repr__(self):
-        return f'SES(alpha={self.alpha})'
+        return f'SES'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
@@ -314,7 +314,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         pass
 
     def __repr__(self):
-        return f'SESOpt()'
+        return f'SESOpt'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _ses_optimized(y=y, h=1, fitted=True)
@@ -369,7 +369,7 @@ class SeasonalExponentialSmoothing(_TS):
         self.alpha = alpha
 
     def __repr__(self):
-        return f'SeasonalES(sl={self.season_length},alpha={self.alpha})'
+        return f'SeasonalES'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _seasonal_exponential_smoothing(
@@ -432,7 +432,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f'SeasESOpt(sl={self.season_length})'
+        return f'SeasESOpt'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _seasonal_ses_optimized(
@@ -489,7 +489,7 @@ class HistoricAverage(_TS):
         pass
 
     def __repr__(self):
-        return f'HistoricAverage()'
+        return f'HistoricAverage'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _historic_average(y, h=1, fitted=True)
@@ -537,7 +537,7 @@ class Naive(_TS):
         pass
 
     def __repr__(self):
-        return f'Naive()'
+        return f'Naive'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _naive(y, h=1, fitted=True)
@@ -589,7 +589,7 @@ class RandomWalkWithDrift(_TS):
         pass
 
     def __repr__(self):
-        return f'RWD()'
+        return f'RWD'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
@@ -647,7 +647,7 @@ class SeasonalNaive(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f'SeasonalNaive(sl={self.season_length})'
+        return f'SeasonalNaive'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _seasonal_naive(
@@ -705,7 +705,7 @@ class WindowAverage(_TS):
         self.window_size = window_size
 
     def __repr__(self):
-        return f'WindowAverage(ws={self.window_size})'
+        return f'WindowAverage'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
@@ -760,7 +760,7 @@ class SeasonalWindowAverage(_TS):
         self.window_size = window_size
 
     def __repr__(self):
-        return f'SeasWA(sl={self.season_length},ws={self.window_size})'
+        return f'SeasWA'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _seasonal_window_average(
@@ -824,7 +824,7 @@ class ADIDA(_TS):
         pass
 
     def __repr__(self):
-        return f'ADIDA()'
+        return f'ADIDA'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _adida(y=y, h=1, fitted=False)
@@ -873,7 +873,7 @@ class CrostonClassic(_TS):
         pass
 
     def __repr__(self):
-        return f'CrostonClassic()'
+        return f'CrostonClassic'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _croston_classic(y=y, h=1, fitted=False)
@@ -922,7 +922,7 @@ class CrostonOptimized(_TS):
         pass
 
     def __repr__(self):
-        return f'CrostonSBA()'
+        return f'CrostonSBA'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _croston_optimized(y=y, h=1, fitted=False)
@@ -968,7 +968,7 @@ class CrostonSBA(_TS):
         pass
 
     def __repr__(self):
-        return f'CrostonSBA()'
+        return f'CrostonSBA'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _croston_sba(y=y, h=1, fitted=False)
@@ -1025,7 +1025,7 @@ class IMAPA(_TS):
         pass
 
     def __repr__(self):
-        return f'IMAPA()'
+        return f'IMAPA'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _imapa(y=y, h=1, fitted=False)
@@ -1080,7 +1080,7 @@ class TSB(_TS):
         self.alpha_p = alpha_p
 
     def __repr__(self):
-        return f'TSB(d={self.alpha_d},p={self.alpha_p})'
+        return f'TSB'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _tsb(

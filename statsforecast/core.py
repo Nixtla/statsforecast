@@ -275,7 +275,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             import ray
         except ModuleNotFoundError as e:
             msg = (
-                '{e}. To use a ray cluster you have to install '
+                f'{e}. To use a ray cluster you have to install '
                 'ray. Please run `pip install ray`. '
             )
             raise ModuleNotFoundError(msg) from e
@@ -612,77 +612,3 @@ class StatsForecast:
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
-
-# Internal Cell
-class ParallelBackend:
-    def forecast(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq)
-        return model.forecast(**kwargs)
-
-    def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq)
-        return model.cross_validation(**kwargs)
-
-# Internal Cell
-class MultiprocessBackend(ParallelBackend):
-    def __init__(self, n_jobs: int) -> None:
-        self.n_jobs = n_jobs
-        super().__init__()
-
-    def forecast(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, n_jobs=self.n_jobs)
-        return model.forecast(**kwargs)
-
-    def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, n_jobs=self.n_jobs)
-        return model.cross_validation(**kwargs)
-
-# Internal Cell
-class RayBackend(ParallelBackend):
-    def __init__(self, ray_address) -> None:
-        self.ray_address = ray_address
-
-    def forecast(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, ray_address=self.ray_address)
-        return model.forecast(**kwargs)
-
-    def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
-        model = StatsForecast(df.set_index("unique_id"), models, freq, ray_address=self.ray_address)
-        return model.cross_validation(df, models, freq, **kwargs)
-
-# Internal Cell
-def forecast(
-    df,
-    models,
-    freq,
-    h,
-    xreg=None,
-    level=None,
-    parallel: Optional["ParallelBackend"] = None,
-):
-    backend = parallel if parallel is not None else ParallelBackend()
-    return backend.forecast(df, models, freq, h=h, xreg=xreg, level=level)
-
-# Internal Cell
-def cross_validation(
-    df,
-    models,
-    freq,
-    h,
-    n_windows=1,
-    step_size=1,
-    test_size=None,
-    input_size=None,
-    parallel: Optional["ParallelBackend"] = None,
-):
-    backend = parallel if parallel is not None else ParallelBackend()
-    return backend.cross_validation(
-        df,
-        models,
-        freq,
-        h=h,
-        n_windows=n_windows,
-        step_size=step_size,
-        test_size=test_size,
-        input_size=input_size,
-    )
