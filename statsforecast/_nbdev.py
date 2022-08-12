@@ -100,7 +100,8 @@ index = {"AutoARIMAProphet": "adapters.prophet.ipynb",
          "IMAPA": "models.ipynb",
          "TSB": "models.ipynb",
          "generate_series": "utils.ipynb",
-         "AirPassengers": "utils.ipynb"}
+         "AirPassengers": "utils.ipynb",
+         "AirPassengersDF": "utils.ipynb"}
 
 modules = ["adapters/prophet.py",
            "arima.py",
