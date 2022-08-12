@@ -129,7 +129,9 @@ class ETS(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return forecast_ets(self.model_, h=h)['mean']
+        mean = forecast_ets(self.model_, h=h)['mean']
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -291,7 +293,9 @@ class SimpleExponentialSmoothing(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -344,7 +348,9 @@ class SimpleExponentialSmoothingOptimized(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -412,7 +418,9 @@ class SeasonalExponentialSmoothing(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -480,7 +488,9 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -534,11 +544,13 @@ class HistoricAverage(_TS):
         return self
 
     def predict(
-        self,
-        h: int, # forecasting horizon
-        X: np.ndarray = None # exogenous regressors
+            self,
+            h: int, # forecasting horizon
+            X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -592,7 +604,9 @@ class Naive(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(self.model_['mean'][0], h=h)
+        mean = _repeat_val(self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -721,7 +735,10 @@ class SeasonalNaive(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(season_vals=self.model_['mean'],
+                                season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
@@ -780,7 +797,9 @@ class WindowAverage(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(self.model_['mean'][0], h=h)
+        mean = _repeat_val(self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -841,13 +860,16 @@ class SeasonalWindowAverage(_TS):
         )
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
             self,
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(season_vals=self.model_['mean'],
+                                season_length=self.season_length, h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -911,7 +933,9 @@ class ADIDA(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -967,7 +991,9 @@ class CrostonClassic(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self, level):
         raise NotImplementedError
@@ -1022,7 +1048,9 @@ class CrostonOptimized(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -1074,7 +1102,9 @@ class CrostonSBA(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -1137,7 +1167,9 @@ class IMAPA(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(val=self.model_['mean'][0], h=h)
+        mean = _repeat_val(val=self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
@@ -1203,7 +1235,9 @@ class TSB(_TS):
             h: int, # forecasting horizon
             X: np.ndarray = None # exogenous regressors
         ):
-        return _repeat_val(self.model_['mean'][0], h=h)
+        mean = _repeat_val(self.model_['mean'][0], h=h)
+        res = {'mean': mean}
+        return res
 
     def predict_in_sample(self):
         raise NotImplementedError
