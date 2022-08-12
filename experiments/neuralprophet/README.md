@@ -1,4 +1,4 @@
-# ETS is faster and more accurate than NeuralProphet in most cases. 
+# ETS is faster and more accurate than NeuralProphet (in most cases). 
 
 We benchmarked on more than 55K series and show that `ETS` improves _MAPE_ and _sMAPE_ forecast accuracy by _33%_ and _18%_, respectively, with _320x_ less computational time over [`NeuralProphet`](https://neuralprophet.com/html/index.html).
 
@@ -13,9 +13,7 @@ pip install statsforecast
 
 ## Background
 
-History tends to repeat itself, but it is in the forecasting community's best interest that [FaceBook-`Prophet`'s tainted memory](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter) acts as a warning to not commit the same mistakes and adopt overpromising new models.
-
-In this experiment, we test [`NeuralProphet`](https://neuralprophet.com/html/index.html)'s introduction as a "successor" to Facebook-`Prophet` and compare it with classic Exponential Smoothing (`ETS`). We show that it is not the case that `ETS` has "too restrictive assumptions and parametric nature limit their performance in real-world applications" as claimed by `NeuralProphet`'s [paper](https://arxiv.org/pdf/2111.15397.pdf). Moreover, we show that `NeuralProphet`'s predictions are outperformed both in accuracy and computation time by this half-century-old model.
+In this experiment, we test [`NeuralProphet`](https://neuralprophet.com/html/index.html)'s introduction as a "successor" to Facebook-`Prophet` and compare it with classic Exponential Smoothing (`ETS`). We show that it is not the case that `ETS` has "too restrictive assumptions and parametric nature limit their performance in real-world applications" as claimed by `NeuralProphet`'s [paper](https://arxiv.org/pdf/2111.15397.pdf). Moreover, we show that `NeuralProphet`'s predictions are outperformed both in accuracy and computation time by this statistical model.
 
 ## Empirical validation
 
