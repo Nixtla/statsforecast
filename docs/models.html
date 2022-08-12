@@ -131,7 +131,7 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="AutoARIMA.forecast" class="doc_header"><code>AutoARIMA.forecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L77" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.forecast</code>(<strong><code>y</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>X</code></strong>:<code>ndarray</code>=<em><code>None</code></em>, <strong><code>X_future</code></strong>:<code>ndarray</code>=<em><code>None</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>)</p>
+<h4 id="AutoARIMA.forecast" class="doc_header"><code>AutoARIMA.forecast</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L80" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.forecast</code>(<strong><code>y</code></strong>:<code>ndarray</code>, <strong><code>h</code></strong>:<code>int</code>, <strong><code>X</code></strong>:<code>ndarray</code>=<em><code>None</code></em>, <strong><code>X_future</code></strong>:<code>ndarray</code>=<em><code>None</code></em>, <strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>, <strong><code>fitted</code></strong>:<code>bool</code>=<em><code>False</code></em>)</p>
 </blockquote>
 <table>
 <thead><tr>
@@ -375,7 +375,7 @@ nb_path: "nbs/models.ipynb"
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h4 id="AutoARIMA.predict_in_sample" class="doc_header"><code>AutoARIMA.predict_in_sample</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L74" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.predict_in_sample</code>()</p>
+<h4 id="AutoARIMA.predict_in_sample" class="doc_header"><code>AutoARIMA.predict_in_sample</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L74" class="source_link" style="float:right">[source]</a></h4><blockquote><p><code>AutoARIMA.predict_in_sample</code>(<strong><code>level</code></strong>:<code>Optional</code>[<code>Tuple</code>[<code>int</code>]]=<em><code>None</code></em>)</p>
 </blockquote>
 
 </div>
@@ -453,7 +453,7 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="ETS" class="doc_header"><code>class</code> <code>ETS</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L107" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ETS</code>(<strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>model</code></strong>:<code>str</code>=<em><code>'ZZZ'</code></em>) :: <code>_TS</code></p>
+<h2 id="ETS" class="doc_header"><code>class</code> <code>ETS</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L110" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ETS</code>(<strong><code>season_length</code></strong>:<code>int</code>=<em><code>1</code></em>, <strong><code>model</code></strong>:<code>str</code>=<em><code>'ZZZ'</code></em>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -544,7 +544,7 @@ $$y_t = \beta_0+\beta_1y_{t-1}+\beta_2y_{t-2}+\dots+\beta_py{t_p} + \epsilon_t+\
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="SimpleExponentialSmoothing" class="doc_header"><code>class</code> <code>SimpleExponentialSmoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L260" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SimpleExponentialSmoothing</code>(<strong><code>alpha</code></strong>:<code>float</code>) :: <code>_TS</code></p>
+<h2 id="SimpleExponentialSmoothing" class="doc_header"><code>class</code> <code>SimpleExponentialSmoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L265" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SimpleExponentialSmoothing</code>(<strong><code>alpha</code></strong>:<code>float</code>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -590,7 +590,7 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="SimpleExponentialSmoothingOptimized" class="doc_header"><code>class</code> <code>SimpleExponentialSmoothingOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L304" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SimpleExponentialSmoothingOptimized</code>() :: <code>_TS</code></p>
+<h2 id="SimpleExponentialSmoothingOptimized" class="doc_header"><code>class</code> <code>SimpleExponentialSmoothingOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L311" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SimpleExponentialSmoothingOptimized</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -628,7 +628,7 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="SeasonalExponentialSmoothing" class="doc_header"><code>class</code> <code>SeasonalExponentialSmoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L356" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalExponentialSmoothing</code>(<strong><code>season_length</code></strong>:<code>int</code>, <strong><code>alpha</code></strong>:<code>float</code>) :: <code>_TS</code></p>
+<h2 id="SeasonalExponentialSmoothing" class="doc_header"><code>class</code> <code>SeasonalExponentialSmoothing</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L365" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalExponentialSmoothing</code>(<strong><code>season_length</code></strong>:<code>int</code>, <strong><code>alpha</code></strong>:<code>float</code>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -666,7 +666,7 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="SeasonalExponentialSmoothingOptimized" class="doc_header"><code>class</code> <code>SeasonalExponentialSmoothingOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L417" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalExponentialSmoothingOptimized</code>(<strong><code>season_length</code></strong>:<code>int</code>) :: <code>_TS</code></p>
+<h2 id="SeasonalExponentialSmoothingOptimized" class="doc_header"><code>class</code> <code>SeasonalExponentialSmoothingOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L429" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalExponentialSmoothingOptimized</code>(<strong><code>season_length</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -710,7 +710,7 @@ $$\hat{y}_{t+1} = \alpha y_t + \alpha(1-\alpha) \hat{y}_{t-1}$$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="HistoricAverage" class="doc_header"><code>class</code> <code>HistoricAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L471" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>HistoricAverage</code>() :: <code>_TS</code></p>
+<h2 id="HistoricAverage" class="doc_header"><code>class</code> <code>HistoricAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L486" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>HistoricAverage</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -751,7 +751,7 @@ $$ \hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j $$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="Naive" class="doc_header"><code>class</code> <code>Naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L516" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>Naive</code>() :: <code>_TS</code></p>
+<h2 id="Naive" class="doc_header"><code>class</code> <code>Naive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L534" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>Naive</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -792,7 +792,7 @@ $$ \hat{y}_{t+1} = y_t $$
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="RandomWalkWithDrift" class="doc_header"><code>class</code> <code>RandomWalkWithDrift</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L565" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>RandomWalkWithDrift</code>() :: <code>_TS</code></p>
+<h2 id="RandomWalkWithDrift" class="doc_header"><code>class</code> <code>RandomWalkWithDrift</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L586" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>RandomWalkWithDrift</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -834,7 +834,7 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="SeasonalNaive" class="doc_header"><code>class</code> <code>SeasonalNaive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L620" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalNaive</code>(<strong><code>season_length</code></strong>:<code>int</code>) :: <code>_TS</code></p>
+<h2 id="SeasonalNaive" class="doc_header"><code>class</code> <code>SeasonalNaive</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L644" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalNaive</code>(<strong><code>season_length</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -872,7 +872,7 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="WindowAverage" class="doc_header"><code>class</code> <code>WindowAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L675" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>WindowAverage</code>(<strong><code>window_size</code></strong>:<code>int</code>) :: <code>_TS</code></p>
+<h2 id="WindowAverage" class="doc_header"><code>class</code> <code>WindowAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L702" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>WindowAverage</code>(<strong><code>window_size</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -910,7 +910,7 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="SeasonalWindowAverage" class="doc_header"><code>class</code> <code>SeasonalWindowAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L727" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalWindowAverage</code>(<strong><code>season_length</code></strong>:<code>int</code>, <strong><code>window_size</code></strong>:<code>int</code>) :: <code>_TS</code></p>
+<h2 id="SeasonalWindowAverage" class="doc_header"><code>class</code> <code>SeasonalWindowAverage</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L756" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>SeasonalWindowAverage</code>(<strong><code>season_length</code></strong>:<code>int</code>, <strong><code>window_size</code></strong>:<code>int</code>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -961,7 +961,7 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="ADIDA" class="doc_header"><code>class</code> <code>ADIDA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L790" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ADIDA</code>() :: <code>_TS</code></p>
+<h2 id="ADIDA" class="doc_header"><code>class</code> <code>ADIDA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L821" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>ADIDA</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -999,7 +999,7 @@ $$ \hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="CrostonClassic" class="doc_header"><code>class</code> <code>CrostonClassic</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L838" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonClassic</code>() :: <code>_TS</code></p>
+<h2 id="CrostonClassic" class="doc_header"><code>class</code> <code>CrostonClassic</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L870" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonClassic</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -1039,7 +1039,7 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="CrostonOptimized" class="doc_header"><code>class</code> <code>CrostonOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L885" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonOptimized</code>() :: <code>_TS</code></p>
+<h2 id="CrostonOptimized" class="doc_header"><code>class</code> <code>CrostonOptimized</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L919" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonOptimized</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -1077,7 +1077,7 @@ $$ \hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="CrostonSBA" class="doc_header"><code>class</code> <code>CrostonSBA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L929" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonSBA</code>() :: <code>_TS</code></p>
+<h2 id="CrostonSBA" class="doc_header"><code>class</code> <code>CrostonSBA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L965" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>CrostonSBA</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -1116,7 +1116,7 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="IMAPA" class="doc_header"><code>class</code> <code>IMAPA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L984" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>IMAPA</code>() :: <code>_TS</code></p>
+<h2 id="IMAPA" class="doc_header"><code>class</code> <code>IMAPA</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L1022" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>IMAPA</code>() :: <code>_TS</code></p>
 </blockquote>
 
 </div>
@@ -1154,7 +1154,7 @@ $$ \hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t} $$<p></p>
 
 
 <div class="output_markdown rendered_html output_subarea ">
-<h2 id="TSB" class="doc_header"><code>class</code> <code>TSB</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L1036" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>TSB</code>(<strong><code>alpha_d</code></strong>:<code>float</code>, <strong><code>alpha_p</code></strong>:<code>float</code>) :: <code>_TS</code></p>
+<h2 id="TSB" class="doc_header"><code>class</code> <code>TSB</code><a href="https://github.com/Nixtla/statsforecast/tree/main/statsforecast/models.py#L1076" class="source_link" style="float:right">[source]</a></h2><blockquote><p><code>TSB</code>(<strong><code>alpha_d</code></strong>:<code>float</code>, <strong><code>alpha_p</code></strong>:<code>float</code>) :: <code>_TS</code></p>
 </blockquote>
 
 </div>
