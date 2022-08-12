@@ -58,7 +58,7 @@ def test_ray_flow():
 	]
     ray_context = ray.init(ignore_reinit_error=True)
     fcst = StatsForecast(
-        series,
+        df=series,
         models=models,
         freq='D',
         n_jobs=-1,
