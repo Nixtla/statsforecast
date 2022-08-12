@@ -310,6 +310,8 @@ class StatsForecast:
 
     def _prepare_fit(self, df, sort_df):
         if df is not None:
+            if df.index.name != 'unique_id':
+                df = df.set_index('unique_id')
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
             self.sort_df = sort_df
