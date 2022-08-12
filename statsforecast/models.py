@@ -922,7 +922,7 @@ class CrostonOptimized(_TS):
         pass
 
     def __repr__(self):
-        return f'CrostonSBA'
+        return f'CrostonOptimized'
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         mod = _croston_optimized(y=y, h=1, fitted=False)
