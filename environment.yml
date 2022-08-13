@@ -14,5 +14,5 @@ dependencies:
   - tabulate
   - pip:
     - nbdev
-	- ray
-	- fugue
+    - ray
+    - fugue
