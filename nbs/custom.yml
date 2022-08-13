@@ -4,7 +4,7 @@ website:
     collapse-below: lg
     left:
       - text: "Get Started"
-        href: examples/Getting_Started_with_Auto_Arima_and_ETS-ex.ipynb
+        href: examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
       - text: "Experiments"
         href: https://github.com/Nixtla/statsforecast/tree/main/experiments
       - text: "Help"
