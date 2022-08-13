@@ -14,4 +14,3 @@ dependencies:
   - tabulate
   - pip:
     - nbdev
-    - pyarrow
