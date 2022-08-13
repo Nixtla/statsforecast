@@ -12,8 +12,8 @@ try:
     from fugue import transform
 except ModuleNotFoundError as e:
     msg = (
-        f'{e}. To use a ray cluster you have to install '
-        'ray. Please run `pip install ray`. '
+        f'{e}. To use fugue you have to install it.'
+        'Please run `pip install fugue`. '
     )
     raise ModuleNotFoundError(msg) from e
 from ..core import StatsForecast
