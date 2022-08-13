@@ -54,7 +54,7 @@ jobs:
           environment-file: environment.yml
 
       - name: Install pip requirements
-        run: pip install ".[ray, fugue]" nbdev tabulate
+        run: pip install ./ 
 
       - name: Run tests
         run: nbdev_test

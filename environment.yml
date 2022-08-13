@@ -13,4 +13,6 @@ dependencies:
   - statsmodels
   - tabulate
   - pip:
-    - nbdev>2.0.0
+    - nbdev
+	- ray
+	- fugue
