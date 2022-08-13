@@ -48,7 +48,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
-          mamba-version: '*'
+          mamba-version: 0.7.14
           channels: conda-forge
           activate-environment: statsforecast
           environment-file: environment.yml
