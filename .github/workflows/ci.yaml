@@ -54,10 +54,10 @@ jobs:
           environment-file: environment.yml
 
       - name: Install pip requirements
-        run: pip install ./ 
+        run: pip install ./ fugue
 
       - name: Run tests
-        run: nbdev_test
+        run: nbdev_test --n_workers 1 --ignore --fname nbs/distributed.ray.ipynb
 
 
   test-ray:
