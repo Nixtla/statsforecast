@@ -12,3 +12,5 @@ dist
 */data/*
 *.parquet
 tmp
+_docs/
+sidebar.yml

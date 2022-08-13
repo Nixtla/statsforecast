@@ -21,23 +21,17 @@ jobs:
         uses: actions/setup-python@v2
 
       - name: Install nbdev
-        run: pip install nbdev==1.2.10
-
-      - name: Read all notebooks
-        run: nbdev_read_nbs
+        run: pip install nbdev
 
       - name: Check if all notebooks are cleaned
         run: |
           echo "Check we are starting with clean git checkout"
           if [ -n "$(git status -uno -s)" ]; then echo "git status is not clean"; false; fi
           echo "Trying to strip out notebooks"
-          nbdev_clean_nbs
+          nbdev_clean
           echo "Check that strip out was unnecessary"
           git status -s # display the status to see which nbs need cleaning up
           if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks"; false; fi
-      - name: Check if there is no diff library/notebooks
-        run: |
-          if [ -n "$(nbdev_diff_nbs)" ]; then echo -e "!!! Detected difference between the notebooks and the library"; false; fi
 
   run-tests:
     runs-on: ${{ matrix.os }}
@@ -60,11 +54,10 @@ jobs:
           environment-file: environment.yml
 
       - name: Install pip requirements
-        run: pip install fugue nbdev==1.2.10 tabulate ./
-
+        run: pip install nbdev tabulate ".[ray, fugue]"
 
       - name: Run tests
-        run: nbdev_test_nbs
+        run: nbdev_test
 
 
   test-ray:
