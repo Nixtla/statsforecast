@@ -57,7 +57,7 @@ jobs:
         run: pip install ./ fugue
 
       - name: Run tests
-        run: nbdev_test --n_workers 1 --skip_file_re '.*ray.ipynb' --do_print
+        run: nbdev_test --skip_file_re '(ex|ray).ipynb' --do_print
 
 
   test-ray:
