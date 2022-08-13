@@ -874,6 +874,7 @@ def etsmodel(y: np.ndarray, m: int,
         aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
     else:
         aicc = np.inf
+    
     mse = amse[0]
     amse = np.mean(amse)
     
