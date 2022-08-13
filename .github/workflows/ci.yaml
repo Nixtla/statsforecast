@@ -57,7 +57,7 @@ jobs:
         run: pip install ./ fugue
 
       - name: Run tests
-        run: nbdev_test --n_workers 1 --ignore --fname nbs/distributed.ray.ipynb
+        run: nbdev_test --n_workers 1 --ignore_fname nbs/distributed.ray.ipynb
 
 
   test-ray:
