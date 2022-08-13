@@ -54,7 +54,7 @@ jobs:
           environment-file: environment.yml
 
       - name: Install pip requirements
-        run: pip install nbdev tabulate ".[ray, fugue]"
+        run: pip install ".[ray, fugue]" nbdev tabulate
 
       - name: Run tests
         run: nbdev_test
@@ -84,7 +84,7 @@ jobs:
         run: pip3 install redis #https://github.com/ray-project/ray/pull/23991, remove later
 
       - name: Run ray
-        run: python3 -m pytest action_files
+        run: pytest action_files
 
 #separating windows ray due to https://github.com/ray-project/ray/issues/26378
   test-ray-windows:
@@ -111,4 +111,4 @@ jobs:
         run: pip3 install redis #https://github.com/ray-project/ray/pull/23991, remove later
 
       - name: Run ray
-        run: python3 -m pytest action_files
+        run: pytest action_files
