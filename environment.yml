@@ -12,6 +12,6 @@ dependencies:
   - scipy
   - statsmodels
   - tabulate
+  - pyarrow
   - pip:
     - nbdev
-    - pyarrow
