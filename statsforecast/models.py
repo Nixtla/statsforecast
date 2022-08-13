@@ -9,7 +9,7 @@ __all__ = ['AutoARIMA', 'ETS', 'SimpleExponentialSmoothing', 'SimpleExponentialS
 # %% ../nbs/models.ipynb 4
 from itertools import count
 from numbers import Number
-from typing import Collection, List, Optional, Sequence, Tuple
+from typing import Collection, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -31,12 +31,74 @@ class _TS:
 class AutoARIMA(_TS):
     
     def __init__(
-            self, 
-            season_length: int = 1, # Number of observations per cycle
-            approximation: bool = False, #
-        ):
-        self.season_length = season_length
-        self.approximation = approximation
+        self,
+        d: Optional[int] = None, # Order of first-differencing
+        D: Optional[int] = None, # Order of seasonal-differencing 
+        max_p: int = 5, # Maximum value of p
+        max_q: int = 5, # Maximum value of q
+        max_P: int = 2, # Maximum value fo P
+        max_Q: int = 2, # Maximum value of Q
+        max_order: int = 5, # Maximum value of p+q+P+Q if model selection is not stepwise
+        max_d: int = 2, # Maximum number of non-seasonal differences
+        max_D: int = 1, # Maximum number of seasonal differences
+        start_p: int = 2, # Starting value of p in stepwise procedure
+        start_q: int = 2, # Starting value of q in stepwise procedure
+        start_P: int = 1, # Starting value of P in stepwise procedure
+        start_Q: int = 1, # Starting value of Q in stepwise procedure
+        stationary: bool = False, # If True, restricts search to stationary models
+        seasonal: bool = True, # If False, restricts search to non-seasonal models
+        ic: str = 'aicc', # Information criterion to be used in model selection
+        stepwise: bool = True, # If False, searches over all grid (very slow)
+        nmodels: int = 94, # Maximum number of models considered in the stepwise search
+        trace: bool = False, # If True, the list of ARIMA models considered will be reported
+        approximation: Optional[bool] = False, # If True, estimation is via conditional sums of squares
+        method: Optional[str] = None, # maximum likelihood or minimize conditional sum-of-squares
+        truncate: Optional[bool] = None, # An integer value indicating how many observations to use in model selection
+        test: str = 'kpss', #  Type of unit root test to use
+        test_kwargs: Optional[str] = None, # Additional arguments to be passed to the unit root test
+        seasonal_test: str = 'seas', # Method used to select the number of seasonal differences
+        seasonal_test_kwargs: Optional[Dict] = None, # Additional arguments to be passed to the seasonal unit root test
+        allowdrift: bool = False, # If True, models with drift terms are considered
+        allowmean: bool = False, # If True, models with a non-zero mean are considered
+        blambda: Optional[float] = None, # Box-Cox transformation parameter
+        biasadj: bool = False, # Use adjusted back-transformed mean for Box-Cox transformations
+        parallel: bool = False, # If True and stepwise = False, then the specification search is done in parallel 
+        num_cores: int = 2, # Amount of parallel processes to be used 
+        season_length: int = 1 # Number of observations per cycle
+    ):
+        self.d=d
+        self.D=D
+        self.max_p=max_p
+        self.max_q=max_q
+        self.max_P=max_P
+        self.max_Q=max_Q
+        self.max_order=max_order
+        self.max_d=max_d
+        self.max_D=max_D
+        self.start_p=start_p
+        self.start_q=start_q
+        self.start_P=start_P
+        self.start_Q=start_Q
+        self.stationary=stationary
+        self.seasonal=seasonal
+        self.ic=ic
+        self.stepwise=stepwise
+        self.nmodels=nmodels
+        self.trace=trace
+        self.approximation=approximation
+        self.method=method
+        self.truncate=truncate
+        self.test=test
+        self.test_kwargs=test_kwargs
+        self.seasonal_test=seasonal_test
+        self.seasonal_test_kwargs=seasonal_test_kwargs
+        self.allowdrift=allowdrift
+        self.allowmean=allowmean
+        self.blambda=blambda
+        self.biasadj=biasadj
+        self.parallel=parallel
+        self.num_cores=num_cores
+        self.season_length=season_length
         
     def __repr__(self):
         return f'AutoARIMA'
@@ -48,11 +110,41 @@ class AutoARIMA(_TS):
         ):
         with np.errstate(invalid='ignore'):
             self.model_ = auto_arima_f(
-                y, 
-                xreg=X,
-                period=self.season_length, 
+                x=y,
+                d=self.d,
+                D=self.D,
+                max_p=self.max_p,
+                max_q=self.max_q,
+                max_P=self.max_P,
+                max_Q=self.max_Q,
+                max_order=self.max_order,
+                max_d=self.max_d,
+                max_D=self.max_D,
+                start_p=self.start_p,
+                start_q=self.start_q,
+                start_P=self.start_P,
+                start_Q=self.start_Q,
+                stationary=self.stationary,
+                seasonal=self.seasonal,
+                ic=self.ic,
+                stepwise=self.stepwise,
+                nmodels=self.nmodels,
+                trace=self.trace,
                 approximation=self.approximation,
-                allowmean=False, allowdrift=False #not implemented yet
+                method=self.method,
+                truncate=self.truncate,
+                xreg=X,
+                test=self.test,
+                test_kwargs=self.test_kwargs,
+                seasonal_test=self.seasonal_test,
+                seasonal_test_kwargs=self.seasonal_test_kwargs,
+                allowdrift=self.allowdrift,
+                allowmean=self.allowmean,
+                blambda=self.blambda,
+                biasadj=self.biasadj,
+                parallel=self.parallel,
+                num_cores=self.num_cores,
+                period=self.season_length
             )
         return self
     
@@ -107,10 +199,14 @@ class AutoARIMA(_TS):
             }
         return res
 
-# %% ../nbs/models.ipynb 30
+# %% ../nbs/models.ipynb 31
 class ETS(_TS):
     
-    def __init__(self, season_length: int = 1, model: str = 'ZZZ'):
+    def __init__(
+            self, 
+            season_length: int = 1, # Number of observations per cycle
+            model: str = 'ZZZ' # three-character string identifying method using the framework terminology of Hyndman et al. (2002)
+        ):
         self.season_length = season_length
         self.model = model
     
@@ -153,7 +249,7 @@ class ETS(_TS):
             keys.append('fitted')
         return {key: fcst[key] for key in keys}
 
-# %% ../nbs/models.ipynb 40
+# %% ../nbs/models.ipynb 41
 @njit
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float]:
     """Perform simple exponential smoothing on a series.
@@ -256,7 +352,7 @@ def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
         out[i] = season_vals[i % season_length]
     return out
 
-# %% ../nbs/models.ipynb 41
+# %% ../nbs/models.ipynb 42
 @njit
 def _ses(
         y: np.ndarray, # time series
@@ -271,10 +367,13 @@ def _ses(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 42
+# %% ../nbs/models.ipynb 43
 class SimpleExponentialSmoothing(_TS):
     
-    def __init__(self, alpha: float):
+    def __init__(
+            self, 
+            alpha: float # smoothing parameter
+        ):
         self.alpha = alpha
         
     def __repr__(self):
@@ -313,7 +412,7 @@ class SimpleExponentialSmoothing(_TS):
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
-# %% ../nbs/models.ipynb 52
+# %% ../nbs/models.ipynb 53
 def _ses_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -326,7 +425,7 @@ def _ses_optimized(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 53
+# %% ../nbs/models.ipynb 54
 class SimpleExponentialSmoothingOptimized(_TS):
     
     def __init__(self):
@@ -368,7 +467,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 63
+# %% ../nbs/models.ipynb 64
 @njit
 def _seasonal_exponential_smoothing(
         y: np.ndarray, # time series
@@ -389,10 +488,14 @@ def _seasonal_exponential_smoothing(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 64
+# %% ../nbs/models.ipynb 65
 class SeasonalExponentialSmoothing(_TS):
     
-    def __init__(self, season_length: int, alpha: float):
+    def __init__(
+            self, 
+            season_length: int, # Number of observations per cycle
+            alpha: float, # smoothing parameter shared across seasonalities
+        ):
         self.season_length = season_length
         self.alpha = alpha
     
@@ -442,7 +545,7 @@ class SeasonalExponentialSmoothing(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 74
+# %% ../nbs/models.ipynb 75
 def _seasonal_ses_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -461,10 +564,13 @@ def _seasonal_ses_optimized(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 75
+# %% ../nbs/models.ipynb 76
 class SeasonalExponentialSmoothingOptimized(_TS):
     
-    def __init__(self, season_length: int):
+    def __init__(
+            self, 
+            season_length: int, # Number of observations per cycle
+        ):
         self.season_length = season_length
     
     def __repr__(self):
@@ -511,7 +617,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 86
+# %% ../nbs/models.ipynb 87
 @njit
 def _historic_average(
         y: np.ndarray, # time series
@@ -526,7 +632,7 @@ def _historic_average(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 87
+# %% ../nbs/models.ipynb 88
 class HistoricAverage(_TS):
     
     def __init__(self):
@@ -568,7 +674,7 @@ class HistoricAverage(_TS):
         out = _historic_average(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 97
+# %% ../nbs/models.ipynb 98
 @njit
 def _naive(
         y: np.ndarray, # time series
@@ -582,7 +688,7 @@ def _naive(
         return {'mean': mean, 'fitted': fitted_vals}
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 98
+# %% ../nbs/models.ipynb 99
 class Naive(_TS):
     
     def __init__(self):
@@ -624,7 +730,7 @@ class Naive(_TS):
         out = _naive(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 108
+# %% ../nbs/models.ipynb 109
 @njit
 def _random_walk_with_drift(
         y: np.ndarray, # time series
@@ -642,7 +748,7 @@ def _random_walk_with_drift(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 109
+# %% ../nbs/models.ipynb 110
 class RandomWalkWithDrift(_TS):
     
     def __init__(self):
@@ -685,7 +791,7 @@ class RandomWalkWithDrift(_TS):
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 119
+# %% ../nbs/models.ipynb 120
 @njit
 def _seasonal_naive(
         y: np.ndarray, # time series
@@ -708,10 +814,13 @@ def _seasonal_naive(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 120
+# %% ../nbs/models.ipynb 121
 class SeasonalNaive(_TS):
     
-    def __init__(self, season_length: int):
+    def __init__(
+            self, 
+            season_length: int # Number of observations per cycle
+        ):
         self.season_length = season_length
 
     def __repr__(self):
@@ -759,7 +868,7 @@ class SeasonalNaive(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 130
+# %% ../nbs/models.ipynb 131
 @njit
 def _window_average(
         y: np.ndarray, # time series
@@ -775,10 +884,13 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 131
+# %% ../nbs/models.ipynb 132
 class WindowAverage(_TS):
     
-    def __init__(self, window_size: int):
+    def __init__(
+            self, 
+            window_size: int # last observations used to compute average
+        ):
         self.window_size = window_size
 
     def __repr__(self):
@@ -816,7 +928,7 @@ class WindowAverage(_TS):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
-# %% ../nbs/models.ipynb 141
+# %% ../nbs/models.ipynb 142
 @njit
 def _seasonal_window_average(
         y: np.ndarray,
@@ -837,10 +949,14 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {'mean': out}
 
-# %% ../nbs/models.ipynb 142
+# %% ../nbs/models.ipynb 143
 class SeasonalWindowAverage(_TS):
     
-    def __init__(self, season_length: int, window_size: int):
+    def __init__(
+            self, 
+            season_length: int, # Number of observations per cycle
+            window_size: int # Last observations per seasonality to compute average
+        ):
         self.season_length = season_length
         self.window_size = window_size
 
@@ -890,7 +1006,7 @@ class SeasonalWindowAverage(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 154
+# %% ../nbs/models.ipynb 155
 def _adida(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -911,7 +1027,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 155
+# %% ../nbs/models.ipynb 156
 class ADIDA(_TS):
     
     def __init__(self):
@@ -952,7 +1068,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 165
+# %% ../nbs/models.ipynb 166
 @njit
 def _croston_classic(
         y: np.ndarray, # time series
@@ -965,11 +1081,14 @@ def _croston_classic(
     yi = _intervals(y)
     ydp, _ = _ses_forecast(yd, 0.1)
     yip, _ = _ses_forecast(yi, 0.1)
-    mean = ydp / yip
+    if yip == 0.:
+        mean = ydp / yip
+    else:
+        mean = ydp
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 166
+# %% ../nbs/models.ipynb 167
 class CrostonClassic(_TS):
     
     def __init__(self):
@@ -1010,7 +1129,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 176
+# %% ../nbs/models.ipynb 177
 def _croston_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -1022,11 +1141,14 @@ def _croston_optimized(
     yi = _intervals(y)
     ydp, _ = _optimized_ses_forecast(yd)
     yip, _ = _optimized_ses_forecast(yi)
-    mean = ydp / yip
+    if yip == 0.:
+        mean = ydp / yip
+    else:
+        mean = ydp
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 177
+# %% ../nbs/models.ipynb 178
 class CrostonOptimized(_TS):
     
     def __init__(self):
@@ -1067,7 +1189,7 @@ class CrostonOptimized(_TS):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 187
+# %% ../nbs/models.ipynb 188
 @njit
 def _croston_sba(
         y: np.ndarray, # time series
@@ -1080,7 +1202,7 @@ def _croston_sba(
     mean['mean'] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 188
+# %% ../nbs/models.ipynb 189
 class CrostonSBA(_TS):
     
     def __init__(self):
@@ -1121,7 +1243,7 @@ class CrostonSBA(_TS):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 198
+# %% ../nbs/models.ipynb 199
 def _imapa(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -1145,7 +1267,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 199
+# %% ../nbs/models.ipynb 200
 class IMAPA(_TS):
     
     def __init__(self):
@@ -1186,7 +1308,7 @@ class IMAPA(_TS):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 209
+# %% ../nbs/models.ipynb 210
 @njit
 def _tsb(
         y: np.ndarray, # time series
@@ -1207,10 +1329,14 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 210
+# %% ../nbs/models.ipynb 211
 class TSB(_TS):
     
-    def __init__(self, alpha_d: float, alpha_p: float):
+    def __init__(
+            self, 
+            alpha_d: float, # smoothing parameter for demand
+            alpha_p: float # smoothing parameter for probability
+        ):
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
         

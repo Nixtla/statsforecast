@@ -14,12 +14,12 @@ def forecast(
     models,
     freq,
     h,
-    X=None,
+    X_df=None,
     level=None,
     parallel: Optional["ParallelBackend"] = None,
 ):
     backend = parallel if parallel is not None else ParallelBackend()
-    return backend.forecast(df, models, freq, h=h, X=X, level=level)
+    return backend.forecast(df, models, freq, h=h, X_df=X_df, level=level)
 
 # %% ../nbs/distributed.utils.ipynb 6
 def cross_validation(

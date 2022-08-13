@@ -295,12 +295,12 @@ class StatsForecast:
     
     def __init__(
             self, 
-            models: List[Tuple[Callable, Any]], # List of tuples, each containing a fn and its parameters 
+            models: List[Any], # List of instantiated models (`statsforecast.models`) 
             freq: str, # Frequency of the data
             n_jobs: int = 1, # Number of jobs used to parallel processing. Use `-1` to use all cores
             ray_address: Optional[str] = None,  # Optional ray address to distribute jobs
-            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id` 
-            sort_df: bool = True # Sort `df` according to index and `ds`?
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `unique_id`, `ds`,`y`, and exogenous variables 
+            sort_df: bool = True # Sort `df` according to `unique_id` and `ds`?
         ):
         # needed for residuals, think about it later
         self.models = models
@@ -319,7 +319,7 @@ class StatsForecast:
         
     def fit(
             self,
-            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id` 
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
             sort_df: bool = True # Sort `df` according to index and `ds`?
         ):
         self._prepare_fit(df, sort_df)
@@ -327,8 +327,6 @@ class StatsForecast:
             self.fitted_ = self.ga.fit(models=self.models)
         else:
             self.fitted_ = self._fit_parallel()
-        #idx = pd.Index(self.uids, name='unique_id')
-        #self.fitted_ = pd.DataFrame(self.fitted_, index=idx)
         return self
     
     def _make_future_df(self, h: int):
@@ -361,11 +359,11 @@ class StatsForecast:
     
     def predict(
             self,
-            h: int, # Forecast horizon,
-            X: Optional[pd.DataFrame] = None, # Future exogenous regressors
+            h: int, # Forecast horizon
+            X_df: Optional[pd.DataFrame] = None, # Future exogenous regressors
             level: Optional[List[int]] = None, # Levels of propabilistic intervals 
         ):
-        X, level = self._parse_X_level(h=h, X=X, level=level)
+        X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
         else:
@@ -377,13 +375,13 @@ class StatsForecast:
     def fit_predict(
             self,
             h: int, # Forecast horizon
-            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id` 
-            X: Optional[pd.DataFrame] = None, # Future exogenous regressors
-            level: Optional[List[int]] = None, # Levels of propabilistic intervals 
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables 
+            X_df: Optional[pd.DataFrame] = None, # Future exogenous regressors
+            level: Optional[List[int]] = None, # Levels of probabilistic intervals 
             sort_df: bool = True # Sort `df` according to index and `ds`?
         ):
         self._prepare_fit(df, sort_df)
-        X, level = self._parse_X_level(h=h, X=X, level=level)
+        X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             self.fitted_, fcsts, cols = self.ga.fit_predict(models=self.models, h=h, X=X, level=level)
         else:
@@ -395,14 +393,14 @@ class StatsForecast:
     def forecast(
             self,
             h: int, # Forecast horizon
-            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id` 
-            X: Optional[pd.DataFrame] = None, # Future exogenous regressors
-            level: Optional[List[int]] = None, # Levels of propabilistic intervals 
-            fitted: bool = False,
-            sort_df: bool = True # Sort `df` according to index and `ds`?
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables 
+            X_df: Optional[pd.DataFrame] = None, # Future exogenous regressors
+            level: Optional[List[int]] = None, # Levels of probabilistic intervals 
+            fitted: bool = False, # Save fitted values?
+            sort_df: bool = True # Sort `df` according to `unique_id` and `ds`?
         ):
         self._prepare_fit(df, sort_df)
-        X, level = self._parse_X_level(h=h, X=X, level=level)
+        X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             res_fcsts = self.ga.forecast(models=self.models, h=h, fitted=fitted, X=X, level=level)
         else:
@@ -427,14 +425,14 @@ class StatsForecast:
     def cross_validation(
             self,
             h: int, # Forecast horizon
-            df: Optional[pd.DataFrame] = None, # DataFrame with columns `ds`, `y`, and exogenous variables, indexed by `unique_id`
+            df: Optional[pd.DataFrame] = None, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
             n_windows: int = 1, # Number of windows used for cross validation
             step_size: int = 1, # Step size between each window
             test_size: Optional[int] = None, # Lenght of test size. If passed, set `n_windows=None`
             input_size: Optional[int] = None, # Input size for each window
-            level: Optional[List[int]] = None, # Levels of propabilistic intervals 
-            fitted=False, # Save fitted values for each window and each model?
-            sort_df: bool = True # Sort `df` according to index and `ds`?
+            level: Optional[List[int]] = None, # Levels of probabilistic intervals 
+            fitted: bool = False, # Save fitted values for each window and each model?
+            sort_df: bool = True # Sort `df` according to `unique_id` and `ds`?
         ):
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
@@ -473,7 +471,6 @@ class StatsForecast:
         fcsts = res_fcsts['forecasts']
         cols = res_fcsts['cols']
         df = _cv_dates(last_dates=self.last_dates, freq=self.freq, h=h, test_size=test_size, step_size=step_size)
-        #dates = {'ds': dates['ds'].values, 'cutoff': dates['cutoff'].values}
         idx = pd.Index(np.repeat(self.uids, h * n_windows), name='unique_id')
         df.index = idx
         df[cols] = fcsts
