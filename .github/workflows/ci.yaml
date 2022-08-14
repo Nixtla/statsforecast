@@ -48,6 +48,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: ${{ matrix.python-version }}
+          mambda-version: '*'
           channels: conda-forge
           activate-environment: statsforecast
           environment-file: environment.yml
@@ -56,7 +57,7 @@ jobs:
         run: pip install ./ 
 
       - name: Run tests
-        run: nbdev_test --skip_file_re '(ray|fugue).ipynb' --n_workers 1
+        run: nbdev_test --skip_file_re '(ray|fugue).ipynb'
 
 
   test-ray:
