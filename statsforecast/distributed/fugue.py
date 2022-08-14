@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['FugueBackend']
 
-# %% ../nbs/distributed.fugue.ipynb 4
+# %% ../nbs/distributed.fugue.ipynb 5
 from typing import Any, Dict
 
 import numpy as np
@@ -20,9 +20,14 @@ from ..core import StatsForecast
 from .core import ParallelBackend
 from triad import Schema
 
-# %% ../nbs/distributed.fugue.ipynb 5
+# %% ../nbs/distributed.fugue.ipynb 6
 class FugueBackend(ParallelBackend):
-    def __init__(self, engine: Any = None, conf: Any = None, **transform_kwargs: Any):
+    def __init__(
+            self, 
+            engine: Any = None, # Fugue engine
+            conf: Any = None, # Engine configuration
+            **transform_kwargs: Any # Additional kwargs to pass to `transform`'s fugue
+        ):
         self._engine = engine
         self._conf = conf
         self._transform_kwargs = dict(transform_kwargs)
@@ -30,7 +35,13 @@ class FugueBackend(ParallelBackend):
     def __getstate__(self) -> Dict[str, Any]:
         return {}
 
-    def forecast(self, df, models, freq, **kwargs: Any) -> Any:
+    def forecast(
+            self, 
+            df, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables 
+            models, # List of instantiated models (`statsforecast.models`) 
+            freq, # Frequency of the data
+            **kwargs: Any,
+        ) -> Any:
         schema = "*-y+" + str(self._get_output_schema(models))
         return transform(
             df,
@@ -43,7 +54,13 @@ class FugueBackend(ParallelBackend):
             **self._transform_kwargs,
         )
 
-    def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
+    def cross_validation(
+            self, 
+            df, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables 
+            models, # List of instantiated models (`statsforecast.models`) 
+            freq, # Frequency of the data
+            **kwargs: Any, 
+        ) -> Any:
         schema = "*-y+" + str(self._get_output_schema(models, mode="cv"))
         return transform(
             df,

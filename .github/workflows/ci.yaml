@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.7, 3.8, 3.9, '3.10']
     steps:
       - name: Clone repo
@@ -56,7 +56,7 @@ jobs:
         run: pip install ./ 
 
       - name: Run tests
-        run: nbdev_test --skip_file_re '(distributed.*|ex).ipynb' --do_print
+        run: nbdev_test --skip_file_re '(ray|fugue).ipynb'
 
 
   test-ray:
