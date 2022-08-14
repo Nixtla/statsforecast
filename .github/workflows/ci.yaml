@@ -57,7 +57,7 @@ jobs:
         run: pip install ./ 
 
       - name: Run tests
-        run: nbdev_test --skip_file_re '(ray|fugue).ipynb'
+        run: nbdev_test --skip_file_re 'distributed.*.ipynb'
 
 
   test-ray:

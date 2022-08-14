@@ -4,13 +4,13 @@ channels:
 dependencies:
   - jupyterlab
   - matplotlib
-  - numba
-  - numpy
-  - pandas
+  - numba>=0.55.2
+  - numpy>=1.21.6
+  - pandas>=1.3.5
   - pip
   - prophet
-  - scipy
-  - statsmodels
+  - scipy>=1.7.3
+  - statsmodels>=0.13.2
   - tabulate
   - pip:
     - nbdev
