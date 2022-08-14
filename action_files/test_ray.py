@@ -43,9 +43,9 @@ def test_ray_flow():
     horizon = 7
     series = generate_series(20)
     models = [
-		ADIDA(), AutoARIMA(season_length=12), 
+		ADIDA(), AutoARIMA(season_length=7), 
 		CrostonClassic(), CrostonOptimized(),
-		CrostonSBA(), ETS(season_length=12),
+		CrostonSBA(), ETS(season_length=7),
 		HistoricAverage(), 
 		IMAPA(), Naive(), 
 		RandomWalkWithDrift(), 

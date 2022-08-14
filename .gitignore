@@ -14,3 +14,4 @@ dist
 tmp
 _docs/
 sidebar.yml
+.DS_Store
