@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.optimize import minimize
+from scipy.stats import norm
 
 from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ets import ets_f, forecast_ets
@@ -546,6 +547,37 @@ class HistoricAverage(_TS):
         out = _historic_average(y=y, h=h, fitted=fitted)
         return out
 
+    def prediction_intervals(
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            fitted: bool = True, # return fitted values?
+            level: Optional[Tuple[int]] = None # confidence level
+        ):
+        out = _historic_average(y=y, h=h, fitted=fitted)
+        steps = np.arange(1,h+1)
+
+        if level is None:
+            level = (80,95) # default prediction intervals
+
+        residuals = y-out['fitted']
+        sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(residuals,2)))
+        sigmah = sigma*np.sqrt(1+(1/len(y)))
+
+        z = quantiles(np.asarray(level))
+        zz = np.repeat(z,h)
+        zz = zz.reshape(z.shape[0],h)
+
+        lower = out['mean']-zz*sigmah
+        upper = out['mean']+zz*sigmah
+
+        pred_int = {'lower': lower, 'upper': upper}
+
+        return {'mean': out['mean'],
+                'lo': pred_int['lower'],
+                'hi': pred_int['upper']
+               }
+
 # Internal Cell
 @njit
 def _naive(
@@ -554,10 +586,13 @@ def _naive(
         fitted: bool, # fitted values
     ):
     mean = _repeat_val(val=y[-1], h=h)
+
     if fitted:
         fitted_vals = np.full(y.size, np.nan, np.float32)
         fitted_vals[1:] = np.roll(y, 1)[1:]
+
         return {'mean': mean, 'fitted': fitted_vals}
+
     return {'mean': mean}
 
 # Cell
@@ -598,6 +633,37 @@ class Naive(_TS):
         ):
         out = _naive(y=y, h=h, fitted=fitted)
         return out
+
+    def prediction_intervals(
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            fitted: bool = True, # return fitted values?
+            level: Optional[Tuple[int]] = None # confidence level
+        ):
+        out = _naive(y=y, h=h, fitted=fitted)
+        steps = np.arange(1,h+1)
+
+        if level is None:
+            level = (80,95) # default prediction intervals
+
+        residuals = y-out['fitted']
+        sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(residuals,2)))
+        sigmah = sigma*np.sqrt(steps)
+
+        z = quantiles(np.asarray(level))
+        zz = np.repeat(z,h)
+        zz = zz.reshape(z.shape[0],h)
+
+        lower = out['mean']-zz*sigmah
+        upper = out['mean']+zz*sigmah
+
+        pred_int = {'lower': lower, 'upper': upper}
+
+        return {'mean': out['mean'],
+                'lo': pred_int['lower'],
+                'hi': pred_int['upper']
+               }
 
 # Internal Cell
 @njit
@@ -656,6 +722,37 @@ class RandomWalkWithDrift(_TS):
         ):
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
         return out
+
+    def prediction_intervals(
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            fitted: bool = True, # return fitted values?
+            level: Optional[Tuple[int]] = None # confidence level
+        ):
+        out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
+        steps = np.arange(1,h+1)
+
+        if level is None:
+            level = (80,95) # default prediction intervals
+
+        residuals = y-out['fitted']
+        sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(residuals,2)))
+        sigmah = sigma*np.sqrt(steps*(1+steps/(len(y)-1)))
+
+        z = quantiles(np.asarray(level))
+        zz = np.repeat(z,h)
+        zz = zz.reshape(z.shape[0],h)
+
+        lower = out['mean']-zz*sigmah
+        upper = out['mean']+zz*sigmah
+
+        pred_int = {'lower': lower, 'upper': upper}
+
+        return {'mean': out['mean'],
+                'lo': pred_int['lower'],
+                'hi': pred_int['upper']
+               }
 
 # Internal Cell
 @njit
@@ -726,6 +823,43 @@ class SeasonalNaive(_TS):
             season_length=self.season_length
         )
         return out
+
+    def prediction_intervals(
+            self,
+            y: np.ndarray, # time series
+            h: int, # forecasting horizon
+            fitted: bool = True, # return fitted values?
+            level: Optional[Tuple[int]] = None # confidence level
+        ):
+        out = _seasonal_naive(
+            y=y, h=h, fitted=fitted,
+            season_length=self.season_length
+        )
+
+        k = np.floor((h-1)/self.season_length)
+
+        steps = np.arange(1,h+1)
+
+        if level is None:
+            level = (80,95) # default prediction intervals
+
+        residuals = y-out['fitted']
+        sigma = np.sqrt(1/(len(y)-self.season_length)*np.nansum(np.power(residuals,2)))
+        sigmah = sigma*np.sqrt(k+1)
+
+        z = quantiles(np.asarray(level))
+        zz = np.repeat(z,h)
+        zz = zz.reshape(z.shape[0],h)
+
+        lower = out['mean']-zz*sigmah
+        upper = out['mean']+zz*sigmah
+
+        pred_int = {'lower': lower, 'upper': upper}
+
+        return {'mean': out['mean'],
+                'lo': pred_int['lower'],
+                'hi': pred_int['upper']
+               }
 
 # Internal Cell
 @njit
