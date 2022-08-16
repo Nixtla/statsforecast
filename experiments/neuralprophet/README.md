@@ -1,6 +1,6 @@
 # ETS is faster and more accurate than NeuralProphet (in most cases). 
 
-We benchmarked on more than 55K series and show that `ETS` improves _MAPE_ and _sMAPE_ forecast accuracy by _32%_ and _19%_, respectively, with _103x_ less computational time over [`NeuralProphet`](https://neuralprophet.com/html/index.html).
+We benchmarked on more than 55K series and show that `ETS` improves _MAPE_ and _sMAPE_ forecast accuracy by _32%_ and _19%_, respectively, with _104x_ less computational time over [`NeuralProphet`](https://neuralprophet.com/html/index.html).
 
 ### Install StatsForecast
 ```bash
