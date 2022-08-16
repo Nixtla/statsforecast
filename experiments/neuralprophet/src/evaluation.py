@@ -35,9 +35,9 @@ def evaluate(lib: str, dataset: str, group: str):
 
 
 if __name__ == '__main__':
-    groups = ['Yearly', 'Quarterly', 'Monthly', 'Other', 'Daily', 'Hourly', 'Weekly']
+    groups = ['ETTm2', 'Other', 'Yearly', 'Quarterly', 'Monthly', 'Other', 'Daily', 'Hourly', 'Weekly']
     lib = ['statsforecast', 'neuralprophet']
-    datasets = ['M3', 'Tourism', 'M4']
+    datasets = ['LongHorizon', 'ERCOT', 'M3', 'Tourism', 'M4']
     evaluation = [evaluate(lib, dataset, group) for lib, group in product(lib, groups) for dataset in datasets]
     evaluation = [eval_ for eval_ in evaluation if eval_ is not None]
     evaluation = pd.concat(evaluation)

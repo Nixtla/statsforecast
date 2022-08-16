@@ -10,7 +10,7 @@ dependencies:
   - numba
   - fire
   - pip:
-    - git+https://github.com/FedericoGarza/neural_prophet.git@patch-1
-    - neuralforecast
-    - git+https://github.com/nixtla/statsforecast.git@main
+    - git+https://github.com/ourownstory/neural_prophet.git@de24e5d
+    - git+https://github.com/nixtla/neuralforecast.git@main
+    - statsforecast
     - jupyterlab

@@ -15,14 +15,21 @@ from src.data import get_data
 
 def main(dataset: str = 'M3', group: str = 'Other') -> None:
     train, horizon, freq, seasonality = get_data('data/', dataset, group)
+    if dataset == 'ERCOT':
+        train = train[['unique_id', 'ds', 'y']]
     train['ds'] = pd.to_datetime(train['ds']) 
     train = train.set_index('unique_id')
-    if dataset == 'Tourism':
+    if dataset in ['Tourism', 'LongHorizon']:
         #we add a constant to avoid zero errors
-        constant = 100
+        constant = np.abs(train['y'].min()) + 10
         train['y'] += constant
     
-    models = [ETS(season_length=seasonality)]
+    if dataset == 'ERCOT':
+        # we now ercot has strong seasonality
+        model = 'ZZA'
+    else:
+        model = 'ZZZ'
+    models = [ETS(season_length=seasonality, model=model)]
     ETS(season_length=seasonality).forecast(ap.astype(np.float32), h=12)
 
     start = time.time()
@@ -33,7 +40,7 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
 
     forecasts = forecasts.reset_index()
     forecasts.columns = ['unique_id', 'ds', 'ets_statsforecast']
-    if dataset == 'Tourism':
+    if dataset in ['Tourism', 'LongHorizon']:
         #remove constant from forecasts
         forecasts['ets_statsforecast'] -= constant
     forecasts.to_csv(f'data/statsforecast-forecasts-{dataset}-{group}.csv', index=False)
