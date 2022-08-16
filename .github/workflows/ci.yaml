@@ -56,7 +56,7 @@ jobs:
         run: pip install ./ 
 
       - name: Run tests
-        run: nbdev_test --skip_file_re 'distributed.*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
 
   test-ray:
