@@ -32,10 +32,21 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
     else:
         train['ds'] = pd.to_datetime(train['ds'])
     train = train.rename(columns={'unique_id': 'ID'})
-    print(train)
 
     start = time.time()
-    m = NeuralProphet(n_lags=max(horizon, seasonality), n_forecasts=horizon)
+    if dataset == 'ERCOT':
+        m = NeuralProphet(
+            n_forecasts=24,
+            n_lags=7*24,
+            learning_rate=0.01,
+            num_hidden_layers=1,
+            d_hidden=16,
+	)
+        regions = list(train)[1:-2]
+        m = m.add_lagged_regressor(names=regions)#, only_last_value=True)
+        m = m.highlight_nth_step_ahead_of_each_forecast(24)
+    else:
+        m = NeuralProphet(n_lags=max(horizon, seasonality), n_forecasts=horizon)
     metrics = m.fit(train, freq=freq)
     future = m.make_future_dataframe(df=train, periods=horizon)
     forecasts = m.predict(df=future, decompose=False)
