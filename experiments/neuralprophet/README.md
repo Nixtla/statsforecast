@@ -1,6 +1,6 @@
 # ETS is faster and more accurate than NeuralProphet (in most cases). 
 
-We benchmarked on more than 55K series and show that `ETS` improves _MAPE_ and _sMAPE_ forecast accuracy by _33%_ and _18%_, respectively, with _320x_ less computational time over [`NeuralProphet`](https://neuralprophet.com/html/index.html).
+We benchmarked on more than 55K series and show that `ETS` improves _MAPE_ and _sMAPE_ forecast accuracy by _32%_ and _19%_, respectively, with _103x_ less computational time over [`NeuralProphet`](https://neuralprophet.com/html/index.html).
 
 ### Install StatsForecast
 ```bash
@@ -17,14 +17,15 @@ In this experiment, we test [`NeuralProphet`](https://neuralprophet.com/html/ind
 
 ## Empirical validation
 
-To compare `NeuralProphet` against `ETS`, we designed a pipeline considering the M3, M4, and Tourism datasets (standard benchmarks in the forecasting practice). `NeuralProphet` fits the time series globally and produces forecasts using a multistep approach. 
+To compare `NeuralProphet` against `ETS`, we designed a pipeline considering the M3, M4, and Tourism datasets (standard benchmarks in the forecasting practice). In correspondence with the author he suggested to further test the model in electricity datasets and try including auto regresor and covariates. Therefore we also included the ERCOT dataset (used in the [`NeuralProphet`'s documentation](https://neuralprophet.com/html/lagged_covariates_energy_ercot.html#24-steps-ahead-Neural-Model-with-Long-AR-and-Lagged-Regressors)), and ETTm2. `NeuralProphet` fits the time series globally using autoregressive terms and produces forecasts using a multistep approach. 
 
 ### Notes
 
-- We used the out-of-the-box configuration of the NeuralProphet model in its global-multistep version. This experiment concludes that hyperparameter optimization could be highly costly, particularly for big datasets.
+- We used the out-of-the-box configuration of the NeuralProphet model in its global-multistep version, using autoregressive terms based on the seasonality of the data and the forecast horizon. This experiment concludes that hyperparameter optimization could be highly costly, particularly for big datasets.
 - Additionally, we test the performance of `NeuralProphet` using different learning rates (1e-5, 1e-4, 1e-3, 1e-2, 1e-1). The performance is similar.
 - During the execution of the experiment, we found issues with the `NeuralProphet` implementation related to Monthly, Quarterly, and Yearly frequencies. We [fixed the issue and opened a Pull Request to solve the problem](https://github.com/ourownstory/neural_prophet/pull/705).
 - According to the paper and a [discussion on GitHub](https://github.com/ourownstory/neural_prophet/discussions/408), the `NeuralProphet` implementation is not available in GPU. There is a [work-in-progress Pull Request](https://github.com/ourownstory/neural_prophet/pull/420), though. 
+- We also performed experiments for the M4-Monthly data set, but `NeuralProphet` did not finish after three days of computation. `ETS` results are reported.
 
 ## Results 
 
@@ -51,7 +52,7 @@ The following table shows the _MAPE_, _sMAPE_, and _Time_ (in minutes) `ETS` imp
   python -m src.[model] --dataset [dataset] --group [group]
   ```
 
-The variable `model` can be `statsforecast` (`ETS` model) or `neuralprophet`. For `M4`, the groups are `Yearly`, `Quarterly`, `Weekly`, `Daily`, and `Hourly`. For `M3`, the groups are `Yearly`, `Monthly`, `Quarterly`, and `Other`. For `Tourism`, the groups are `Yearly`, `Monthly`, and `Quarterly`. 
+The variable `model` can be `statsforecast` (`ETS` model) or `neuralprophet`. For `M4`, the groups are `Yearly`, `Quarterly`, `Weekly`, `Daily`, and `Hourly`. For `M3`, the groups are `Yearly`, `Monthly`, `Quarterly`, and `Other`. For `Tourism`, the groups are `Yearly`, `Monthly`, and `Quarterly`. To run `ETTm2` use `LongHorizon` as dataset and `ETTm2` as group. To run `ERCOT` use `ERCOT` as dataset and `Other` as group. 
 
 5. Evaluate the results using
 
