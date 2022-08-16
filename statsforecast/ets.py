@@ -13,6 +13,8 @@ import numpy as np
 from numba import njit
 from statsmodels.tsa.seasonal import seasonal_decompose
 
+from .utils import AirPassengers as ap
+
 # %% ../nbs/ets.ipynb 4
 # Global variables 
 NONE = 0
