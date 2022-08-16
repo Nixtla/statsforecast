@@ -7,7 +7,7 @@ We benchmarked on more than 55K series and show that `ETS` improves _MAPE_ and _
 pip install statsforecast
 ```
 
-## Results on M3, M4, and Tourism: 
+## Results on ERCOT, ETTm2, M3, M4, and Tourism: 
 
 ![comparison](./comparison.png)
 
