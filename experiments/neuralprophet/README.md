@@ -22,6 +22,7 @@ To compare `NeuralProphet` against `ETS`, we designed a pipeline considering the
 ### Notes
 
 - We used the out-of-the-box configuration of the NeuralProphet model in its global-multistep version, using autoregressive terms based on the seasonality of the data and the forecast horizon. This experiment concludes that hyperparameter optimization could be highly costly, particularly for big datasets.
+- For the ERCOT dataset, we used the `NeuralProphet` [configuration used in its documentation](https://neuralprophet.com/html/lagged_covariates_energy_ercot.html#24-steps-ahead-Neural-Model-with-Long-AR-and-Lagged-Regressors).
 - Additionally, we test the performance of `NeuralProphet` using different learning rates (1e-5, 1e-4, 1e-3, 1e-2, 1e-1). The performance is similar.
 - During the execution of the experiment, we found issues with the `NeuralProphet` implementation related to Monthly, Quarterly, and Yearly frequencies. We [fixed the issue and opened a Pull Request to solve the problem](https://github.com/ourownstory/neural_prophet/pull/705).
 - According to the paper and a [discussion on GitHub](https://github.com/ourownstory/neural_prophet/discussions/408), the `NeuralProphet` implementation is not available in GPU. There is a [work-in-progress Pull Request](https://github.com/ourownstory/neural_prophet/pull/420), though. 
