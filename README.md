@@ -34,7 +34,7 @@ pip install statsforecast
 <details open>
 <summary>Conda</summary>
   
-Also you can install the *released version* of `StatsForecast` from [conda](https://anaconda.org) with:
+Also you can install the *released version* of `StatsForecast` from [conda](https://anaconda.org/conda-forge/statsforecast) with:
 
 ```python
 conda install -c conda-forge statsforecast
