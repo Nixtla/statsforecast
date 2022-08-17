@@ -54,7 +54,7 @@ pip install -e .
 ```
 </details>
 
-To get started just follow this [guide]([./examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl#scrollTo=awWptcpJGQ5i).
+To get started just follow this [guide]([./examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl#scrollTo=awWptcpJGQ5i)).
 
 
 ## 🎉 New!
