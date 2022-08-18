@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.optimize import minimize
+from scipy.stats import norm
 
 from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ets import ets_f, forecast_ets
@@ -27,7 +28,23 @@ class _TS:
         b.__dict__.update(self.__dict__)
         return b
 
-# %% ../nbs/models.ipynb 8
+# %% ../nbs/models.ipynb 7
+# Functions used for calculating prediction intervals 
+def quantiles(level): 
+    z = norm.ppf(0.5+level/200)   
+    return z
+
+def _calculate_intervals(out, level, h, sigmah, fitted):
+    z = quantiles(np.asarray(level))
+    zz = np.repeat(z,h)
+    zz = zz.reshape(z.shape[0],h)
+    lower = out['mean']-zz*sigmah
+    upper = out['mean']+zz*sigmah
+    pred_int = {**{f'lo-{lv}': lower[i] for i, lv in enumerate(level)}, 
+                **{f'hi-{lv}': upper[i] for i, lv in enumerate(level)}}    
+    return pred_int
+
+# %% ../nbs/models.ipynb 9
 class AutoARIMA(_TS):
     
     def __init__(
@@ -199,7 +216,7 @@ class AutoARIMA(_TS):
             }
         return res
 
-# %% ../nbs/models.ipynb 31
+# %% ../nbs/models.ipynb 32
 class ETS(_TS):
     
     def __init__(
@@ -249,7 +266,7 @@ class ETS(_TS):
             keys.append('fitted')
         return {key: fcst[key] for key in keys}
 
-# %% ../nbs/models.ipynb 41
+# %% ../nbs/models.ipynb 42
 @njit
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float]:
     """Perform simple exponential smoothing on a series.
@@ -352,7 +369,7 @@ def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
         out[i] = season_vals[i % season_length]
     return out
 
-# %% ../nbs/models.ipynb 42
+# %% ../nbs/models.ipynb 43
 @njit
 def _ses(
         y: np.ndarray, # time series
@@ -367,7 +384,7 @@ def _ses(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 43
+# %% ../nbs/models.ipynb 44
 class SimpleExponentialSmoothing(_TS):
     
     def __init__(
@@ -412,7 +429,7 @@ class SimpleExponentialSmoothing(_TS):
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
-# %% ../nbs/models.ipynb 53
+# %% ../nbs/models.ipynb 54
 def _ses_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -425,7 +442,7 @@ def _ses_optimized(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 54
+# %% ../nbs/models.ipynb 55
 class SimpleExponentialSmoothingOptimized(_TS):
     
     def __init__(self):
@@ -467,7 +484,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 64
+# %% ../nbs/models.ipynb 65
 @njit
 def _seasonal_exponential_smoothing(
         y: np.ndarray, # time series
@@ -488,7 +505,7 @@ def _seasonal_exponential_smoothing(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 65
+# %% ../nbs/models.ipynb 66
 class SeasonalExponentialSmoothing(_TS):
     
     def __init__(
@@ -545,7 +562,7 @@ class SeasonalExponentialSmoothing(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 75
+# %% ../nbs/models.ipynb 76
 def _seasonal_ses_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -564,7 +581,7 @@ def _seasonal_ses_optimized(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 76
+# %% ../nbs/models.ipynb 77
 class SeasonalExponentialSmoothingOptimized(_TS):
     
     def __init__(
@@ -617,7 +634,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 87
+# %% ../nbs/models.ipynb 88
 @njit
 def _historic_average(
         y: np.ndarray, # time series
@@ -632,14 +649,14 @@ def _historic_average(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 88
+# %% ../nbs/models.ipynb 89
 class HistoricAverage(_TS):
     
     def __init__(self):
         pass
     
     def __repr__(self):
-        return f'HistoricAverage'
+        return f'HistoricAverage()'
     
     def fit(
             self,
@@ -647,16 +664,31 @@ class HistoricAverage(_TS):
             X: np.ndarray = None # exogenous regressors
         ): 
         mod = _historic_average(y, h=1, fitted=True)
-        self.model_ = dict(mod)
+        mod = dict(mod) 
+        mod['residuals'] = y - mod['fitted']
+        sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(mod['residuals'],2)))
+        mod['sigma'] = sigma
+        mod['len_y'] = len(y)
+        self.model_ = mod
         return self
         
     def predict(
             self, 
             h: int, # forecasting horizon
-            X: np.ndarray = None # exogenous regressors
+            X: np.ndarray = None, # exogenous regressors
+            level: Optional[Tuple[int]] = None # confidence level 
         ): 
         mean = _repeat_val(val=self.model_['mean'][0], h=h)
         res = {'mean': mean}
+        self.model_['mean'] = mean
+        
+        if level is not None: 
+            steps = np.arange(1,h+1)
+            sigma = self.model_['sigma']
+            sigmah = sigma*np.sqrt(1+(1/self.model_['len_y']))
+            pred_int = _calculate_intervals(self.model_, level, h, sigmah, self.model_['fitted'])
+            res = {**res, **pred_int}
+        
         return res
     
     def predict_in_sample(self):
@@ -670,11 +702,25 @@ class HistoricAverage(_TS):
             X: np.ndarray = None, # exogenous regressors
             X_future: np.ndarray = None, # future regressors
             fitted: bool = False, # return fitted values?
+            level: Optional[Tuple[int]] = None # confidence level 
         ):
-        out = _historic_average(y=y, h=h, fitted=fitted)
-        return out
+        out = _historic_average(y=y, h=h, fitted=True)
+        res = {'mean': out['mean']}
+        
+        if fitted:
+            res['fitted'] = out['fitted']
+        
+        if level is not None: 
+            steps = np.arange(1,h+1)
+            residuals = y-out['fitted']
+            sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(residuals,2)))
+            sigmah = sigma*np.sqrt(1+(1/len(y)))
+            pred_int = _calculate_intervals(out, level, h, sigmah, fitted)
+            res = {**res, **pred_int}
 
-# %% ../nbs/models.ipynb 98
+        return res
+
+# %% ../nbs/models.ipynb 101
 @njit
 def _naive(
         y: np.ndarray, # time series
@@ -688,7 +734,7 @@ def _naive(
         return {'mean': mean, 'fitted': fitted_vals}
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 99
+# %% ../nbs/models.ipynb 102
 class Naive(_TS):
     
     def __init__(self):
@@ -703,16 +749,29 @@ class Naive(_TS):
             X: np.ndarray = None # exogenous regressors
         ):
         mod = _naive(y, h=1, fitted=True)
-        self.model_ = dict(mod)
+        mod = dict(mod) 
+        mod['residuals'] = y - mod['fitted']
+        sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(mod['residuals'],2)))
+        mod['sigma'] = sigma
+        self.model_ = mod
         return self
-        
+    
     def predict(
             self, 
             h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
+            X: np.ndarray = None, # exogenous regressors
+            level: Optional[Tuple[int]] = None # confidence level
         ):
         mean = _repeat_val(self.model_['mean'][0], h=h)
         res = {'mean': mean}
+        
+        if level is not None: 
+            steps = np.arange(1,h+1)
+            sigma = self.model_['sigma']
+            sigmah = sigma*np.sqrt(steps)
+            pred_int = _calculate_intervals(self.model_, level, h, sigmah, self.model_['fitted'])
+            res = {**res, **pred_int}
+        
         return res
     
     def predict_in_sample(self):
@@ -726,11 +785,25 @@ class Naive(_TS):
             X: np.ndarray = None, # exogenous regressors
             X_future: np.ndarray = None, # future regressors
             fitted: bool = False, # return fitted values?
+            level: Optional[Tuple[int]] = None # confidence level 
         ):
-        out = _naive(y=y, h=h, fitted=fitted)
-        return out
+        out = _naive(y=y, h=h, fitted=True)
+        res = {'mean': out['mean']}
+        
+        if fitted:
+            res['fitted'] = out['fitted']
+        
+        if level is not None: 
+            steps = np.arange(1,h+1)
+            residuals = y-out['fitted']
+            sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(residuals,2)))
+            sigmah = sigma*np.sqrt(steps)
+            pred_int = _calculate_intervals(out, level, h, sigmah, fitted)
+            res = {**res, **pred_int}
+        
+        return res
 
-# %% ../nbs/models.ipynb 109
+# %% ../nbs/models.ipynb 114
 @njit
 def _random_walk_with_drift(
         y: np.ndarray, # time series
@@ -748,7 +821,7 @@ def _random_walk_with_drift(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 110
+# %% ../nbs/models.ipynb 115
 class RandomWalkWithDrift(_TS):
     
     def __init__(self):
@@ -763,17 +836,32 @@ class RandomWalkWithDrift(_TS):
             X: np.ndarray = None # exogenous regressors
         ):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
-        self.model_ = dict(mod)
+        mod = dict(mod) 
+        mod['residuals'] = y - mod['fitted']
+        sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(mod['residuals'],2)))
+        mod['sigma'] = sigma
+        mod['len_y'] = len(y)
+        self.model_ = mod
         return self
         
     def predict(
             self,
             h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
+            X: np.ndarray = None, # exogenous regressors
+            level: Optional[Tuple[int]] = None
         ):
         hrange = np.arange(h, dtype=np.float32)
         mean = self.model_['slope'] * (1 + hrange) + self.model_['last_y']
         res = {'mean': mean}
+        self.model_['mean'] = mean
+        
+        if level is not None: 
+            steps = np.arange(1,h+1)
+            sigma = self.model_['sigma']
+            sigmah = sigma*np.sqrt(steps*(1+steps/(self.model_['len_y']-1)))
+            pred_int = _calculate_intervals(self.model_, level, h, sigmah, self.model_['fitted'])
+            res = {**res, **pred_int}
+        
         return res
     
     def predict_in_sample(self):
@@ -787,11 +875,25 @@ class RandomWalkWithDrift(_TS):
             X: np.ndarray = None, # exogenous regressors
             X_future: np.ndarray = None, # future regressors
             fitted: bool = False, # return fitted values?
+            level: Optional[Tuple[int]] = None, # confidence level 
         ):
-        out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
-        return out
+        out = _random_walk_with_drift(y=y, h=h, fitted=True)
+        res = {'mean': out['mean']}
+        
+        if fitted:
+            res['fitted'] = out['fitted']
+        
+        if level is not None: 
+            steps = np.arange(1,h+1)
+            residuals = y-out['fitted']
+            sigma = np.sqrt(1/(len(y)-1)*np.nansum(np.power(residuals,2)))
+            sigmah = sigma*np.sqrt(steps*(1+steps/(len(y)-1)))
+            pred_int = _calculate_intervals(out, level, h, sigmah, fitted)
+            res = {**res, **pred_int}
 
-# %% ../nbs/models.ipynb 120
+        return res 
+
+# %% ../nbs/models.ipynb 127
 @njit
 def _seasonal_naive(
         y: np.ndarray, # time series
@@ -814,17 +916,14 @@ def _seasonal_naive(
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 121
+# %% ../nbs/models.ipynb 128
 class SeasonalNaive(_TS):
     
-    def __init__(
-            self, 
-            season_length: int # Number of observations per cycle
-        ):
+    def __init__(self, season_length: int):
         self.season_length = season_length
 
     def __repr__(self):
-        return f'SeasonalNaive'
+        return f'SeasonalNaive(sl={self.season_length})'
     
     def fit(
             self,
@@ -837,19 +936,34 @@ class SeasonalNaive(_TS):
             h=self.season_length, 
             fitted=True,
         )
-        self.model_ = dict(mod)
+        mod = dict(mod) 
+        mod['residuals'] = y - mod['fitted']
+        sigma = np.sqrt(1/(len(y)-self.season_length)*np.nansum(np.power(mod['residuals'],2)))
+        mod['sigma'] = sigma
+        mod['len_y'] = len(y)
+        self.model_ = mod
         return self
+        
         
     def predict(
             self,
             h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
+            X: np.ndarray = None, # exogenous regressors
+            level: Optional[Tuple[int]] = None, # confidence level 
         ):
-        mean = _repeat_val_seas(season_vals=self.model_['mean'], 
-                                season_length=self.season_length, h=h)
+        mean = _repeat_val_seas(season_vals=self.model_['mean'], season_length=self.season_length, h=h)
         res = {'mean': mean}
+        
+        if level is not None: 
+            k = np.floor((h-1)/self.season_length)
+            steps = np.arange(1,h+1)
+            sigma = self.model_['sigma']
+            sigmah = sigma*np.sqrt(k+1)
+            pred_int = _calculate_intervals(self.model_, level, h, sigmah, self.model_['fitted'])
+            res = {**res, **pred_int}
+        
         return res
-    
+        
     def predict_in_sample(self):
         res = {'mean': self.model_['fitted']}
         return res
@@ -861,14 +975,29 @@ class SeasonalNaive(_TS):
             X: np.ndarray = None, # exogenous regressors
             X_future: np.ndarray = None, # future regressors
             fitted: bool = False, # return fitted values?
+            level: Optional[Tuple[int]] = None, # confidence level 
         ):
         out = _seasonal_naive(
-            y=y, h=h, fitted=fitted, 
+            y=y, h=h, fitted=True, 
             season_length=self.season_length
         )
-        return out
+        res = {'mean': out['mean']}
+        
+        if fitted:
+            res['fitted'] = out['fitted']
+        
+        if level is not None: 
+            k = np.floor((h-1)/self.season_length)
+            steps = np.arange(1,h+1)
+            residuals = y-out['fitted']
+            sigma = np.sqrt(1/(len(y)-self.season_length)*np.nansum(np.power(residuals,2)))
+            sigmah = sigma*np.sqrt(k+1)
+            pred_int = _calculate_intervals(out, level, h, sigmah, fitted)
+            res = {**res, **pred_int}
+            
+        return res    
 
-# %% ../nbs/models.ipynb 131
+# %% ../nbs/models.ipynb 140
 @njit
 def _window_average(
         y: np.ndarray, # time series
@@ -884,7 +1013,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 132
+# %% ../nbs/models.ipynb 141
 class WindowAverage(_TS):
     
     def __init__(
@@ -928,7 +1057,7 @@ class WindowAverage(_TS):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
-# %% ../nbs/models.ipynb 142
+# %% ../nbs/models.ipynb 151
 @njit
 def _seasonal_window_average(
         y: np.ndarray,
@@ -949,7 +1078,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {'mean': out}
 
-# %% ../nbs/models.ipynb 143
+# %% ../nbs/models.ipynb 152
 class SeasonalWindowAverage(_TS):
     
     def __init__(
@@ -1006,7 +1135,7 @@ class SeasonalWindowAverage(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 155
+# %% ../nbs/models.ipynb 164
 def _adida(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -1027,7 +1156,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 156
+# %% ../nbs/models.ipynb 165
 class ADIDA(_TS):
     
     def __init__(self):
@@ -1068,7 +1197,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 166
+# %% ../nbs/models.ipynb 175
 @njit
 def _croston_classic(
         y: np.ndarray, # time series
@@ -1088,7 +1217,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 167
+# %% ../nbs/models.ipynb 176
 class CrostonClassic(_TS):
     
     def __init__(self):
@@ -1129,7 +1258,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 177
+# %% ../nbs/models.ipynb 186
 def _croston_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -1148,7 +1277,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 178
+# %% ../nbs/models.ipynb 187
 class CrostonOptimized(_TS):
     
     def __init__(self):
@@ -1189,7 +1318,7 @@ class CrostonOptimized(_TS):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 188
+# %% ../nbs/models.ipynb 197
 @njit
 def _croston_sba(
         y: np.ndarray, # time series
@@ -1202,7 +1331,7 @@ def _croston_sba(
     mean['mean'] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 189
+# %% ../nbs/models.ipynb 198
 class CrostonSBA(_TS):
     
     def __init__(self):
@@ -1243,7 +1372,7 @@ class CrostonSBA(_TS):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 199
+# %% ../nbs/models.ipynb 208
 def _imapa(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -1267,7 +1396,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 200
+# %% ../nbs/models.ipynb 209
 class IMAPA(_TS):
     
     def __init__(self):
@@ -1308,7 +1437,7 @@ class IMAPA(_TS):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 210
+# %% ../nbs/models.ipynb 219
 @njit
 def _tsb(
         y: np.ndarray, # time series
@@ -1329,7 +1458,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 211
+# %% ../nbs/models.ipynb 220
 class TSB(_TS):
     
     def __init__(
