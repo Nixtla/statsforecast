@@ -58,8 +58,8 @@ To get started just follow this [guide]([./examples/Getting_Started_with_Auto_Ar
 
 
 ## 🎉 New!
-* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl#scrollTo=awWptcpJGQ5i)  **ETS Example**: 4x faster than StatsModels with improved accuracy and robustness.
-* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)   **Complete pipeline and comparison**:  20x faster than pmdarima and 500x faster than Prophet. 
+* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb) **ETS Example**: 4x faster than StatsModels with improved accuracy and robustness.
+* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/AutoArima_vs_Prophet.ipynb)   **Complete pipeline and comparison**:  20x faster than pmdarima and 500x faster than Prophet. 
 
 ## 🔥  Highlights
 
@@ -108,11 +108,11 @@ With `StatsForecast` you can fit 9 benchmark models on **1,000,000** series in u
 ## 🧬 Getting Started 
 You can run this notebooks to get you started. 
 
-* Example of different `AutoARIMA` models on M4 data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/arima.ipynb)  
+* Example of different `AutoARIMA` models on M4 data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/AutoArima_vs_Prophet.ipynb)   
     * In this notebook we present Nixtla's `AutoARIMA`. 
     The `AutoARIMA` model is widely used to forecast time series in production and as a benchmark. However, the alternative python implementation (`pmdarima`) is so slow that prevents data scientists from quickly iterating and deploying `AutoARIMA` in production for a large number of time series.
 
-* Shorter Example of fitting and `AutoARIMA` and an `ETS` model.  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/examples/Forecasting_with_Auto_Arima_&_ETS_.ipynb) 
+* Shorter Example of fitting and `AutoARIMA` and an `ETS` model.  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb) 
 
 
 * Benchmarking 9 models on millions of [series](./experiments/benchmarks_at_scale/).
