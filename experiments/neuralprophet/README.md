@@ -34,6 +34,8 @@ The following table shows the _MAPE_, _sMAPE_, and _Time_ (in minutes) `ETS` imp
 
 ![table](./results-table.png)
 
+Notes: 
+* The author of the original paper asked us to point out that NeuralProphet was designed for medium length time-series (1k-1m observations) of higher frequency.
 
 ## Reproducibility
 
