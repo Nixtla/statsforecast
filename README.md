@@ -97,7 +97,7 @@ The `AutoARIMA` model implemented in `StatsForecast` is **20x faster** than `pmd
 
 ### ETS
 
-StatsForecast's exponential smoothing is **4x faster than StatsModels'** and **1.6x faster than R's**, with improved accuracy and robustness. You can see the exact comparison and reproduce the results[here](./experiments/ets/)
+StatsForecast's exponential smoothing is **4x faster than StatsModels'** and **1.6x faster than R's**, with improved accuracy and robustness. You can see the exact comparison and reproduce the results [here](./experiments/ets/)
 
 ### Benchmarks at Scale
 
