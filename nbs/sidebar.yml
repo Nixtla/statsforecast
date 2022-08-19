@@ -16,6 +16,7 @@ website:
           - distributed.ray.ipynb
           - distributed.multiprocess.ipynb
           - distributed.utils.ipynb
+      - examples/AutoArima_vs_Prophet.ipynb
       - examples/CrossValidation.ipynb
       - examples/IntermittentData.ipynb
       - examples/Exogenous.ipynb
