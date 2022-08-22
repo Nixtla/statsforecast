@@ -4,16 +4,16 @@
 __all__ = ['FugueBackend']
 
 # %% ../nbs/distributed.fugue.ipynb 5
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
+
 try:
     from fugue import transform
 except ModuleNotFoundError as e:
     msg = (
-        f'{e}. To use fugue you have to install it.'
-        'Please run `pip install fugue`. '
+        f"{e}. To use fugue you have to install it." "Please run `pip install fugue`. "
     )
     raise ModuleNotFoundError(msg) from e
 from ..core import StatsForecast
@@ -23,11 +23,11 @@ from triad import Schema
 # %% ../nbs/distributed.fugue.ipynb 6
 class FugueBackend(ParallelBackend):
     def __init__(
-            self, 
-            engine: Any = None, # Fugue engine
-            conf: Any = None, # Engine configuration
-            **transform_kwargs: Any # Additional kwargs to pass to `transform`'s fugue
-        ):
+        self,
+        engine: Any = None,  # Fugue engine
+        conf: Any = None,  # Engine configuration
+        **transform_kwargs: Any,  # Additional kwargs to pass to `transform`'s fugue
+    ):
         self._engine = engine
         self._conf = conf
         self._transform_kwargs = dict(transform_kwargs)
@@ -36,12 +36,12 @@ class FugueBackend(ParallelBackend):
         return {}
 
     def forecast(
-            self, 
-            df, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables 
-            models, # List of instantiated models (`statsforecast.models`) 
-            freq, # Frequency of the data
-            **kwargs: Any,
-        ) -> Any:
+        self,
+        df,  # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
+        models,  # List of instantiated models (`statsforecast.models`)
+        freq,  # Frequency of the data
+        **kwargs: Any,
+    ) -> Any:
         schema = "*-y+" + str(self._get_output_schema(models))
         return transform(
             df,
@@ -55,12 +55,12 @@ class FugueBackend(ParallelBackend):
         )
 
     def cross_validation(
-            self, 
-            df, # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables 
-            models, # List of instantiated models (`statsforecast.models`) 
-            freq, # Frequency of the data
-            **kwargs: Any, 
-        ) -> Any:
+        self,
+        df,  # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
+        models,  # List of instantiated models (`statsforecast.models`)
+        freq,  # Frequency of the data
+        **kwargs: Any,
+    ) -> Any:
         schema = "*-y+" + str(self._get_output_schema(models, mode="cv"))
         return transform(
             df,
@@ -84,6 +84,7 @@ class FugueBackend(ParallelBackend):
         return model.cross_validation(**kwargs).reset_index()
 
     def _get_output_schema(self, models, mode="forecast") -> Schema:
+        cols: List[Any]
         cols = [(repr(model), np.float32) for model in models]
         if mode == "cv":
             cols = [("cutoff", "datetime"), ("y", np.float32)] + cols

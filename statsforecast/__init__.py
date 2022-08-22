@@ -1,5 +1,3 @@
 __version__ = "1.0.0"
-
-from .core import (
-    StatsForecast
-)
+__all__ = ['StatsForecast']
+from .core import StatsForecast
