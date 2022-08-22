@@ -21,7 +21,6 @@ from .ets import ets_f, forecast_ets
 
 # %% ../nbs/models.ipynb 6
 class _TS:
-    
     def new(self):
         b = type(self).__new__(type(self))
         b.__dict__.update(self.__dict__)
@@ -29,86 +28,95 @@ class _TS:
 
 # %% ../nbs/models.ipynb 8
 class AutoARIMA(_TS):
-    
     def __init__(
         self,
-        d: Optional[int] = None, # Order of first-differencing
-        D: Optional[int] = None, # Order of seasonal-differencing 
-        max_p: int = 5, # Maximum value of p
-        max_q: int = 5, # Maximum value of q
-        max_P: int = 2, # Maximum value fo P
-        max_Q: int = 2, # Maximum value of Q
-        max_order: int = 5, # Maximum value of p+q+P+Q if model selection is not stepwise
-        max_d: int = 2, # Maximum number of non-seasonal differences
-        max_D: int = 1, # Maximum number of seasonal differences
-        start_p: int = 2, # Starting value of p in stepwise procedure
-        start_q: int = 2, # Starting value of q in stepwise procedure
-        start_P: int = 1, # Starting value of P in stepwise procedure
-        start_Q: int = 1, # Starting value of Q in stepwise procedure
-        stationary: bool = False, # If True, restricts search to stationary models
-        seasonal: bool = True, # If False, restricts search to non-seasonal models
-        ic: str = 'aicc', # Information criterion to be used in model selection
-        stepwise: bool = True, # If False, searches over all grid (very slow)
-        nmodels: int = 94, # Maximum number of models considered in the stepwise search
-        trace: bool = False, # If True, the list of ARIMA models considered will be reported
-        approximation: Optional[bool] = False, # If True, estimation is via conditional sums of squares
-        method: Optional[str] = None, # maximum likelihood or minimize conditional sum-of-squares
-        truncate: Optional[bool] = None, # An integer value indicating how many observations to use in model selection
-        test: str = 'kpss', #  Type of unit root test to use
-        test_kwargs: Optional[str] = None, # Additional arguments to be passed to the unit root test
-        seasonal_test: str = 'seas', # Method used to select the number of seasonal differences
-        seasonal_test_kwargs: Optional[Dict] = None, # Additional arguments to be passed to the seasonal unit root test
-        allowdrift: bool = False, # If True, models with drift terms are considered
-        allowmean: bool = False, # If True, models with a non-zero mean are considered
-        blambda: Optional[float] = None, # Box-Cox transformation parameter
-        biasadj: bool = False, # Use adjusted back-transformed mean for Box-Cox transformations
-        parallel: bool = False, # If True and stepwise = False, then the specification search is done in parallel 
-        num_cores: int = 2, # Amount of parallel processes to be used 
-        season_length: int = 1 # Number of observations per cycle
+        d: Optional[int] = None,  # Order of first-differencing
+        D: Optional[int] = None,  # Order of seasonal-differencing
+        max_p: int = 5,  # Maximum value of p
+        max_q: int = 5,  # Maximum value of q
+        max_P: int = 2,  # Maximum value fo P
+        max_Q: int = 2,  # Maximum value of Q
+        max_order: int = 5,  # Maximum value of p+q+P+Q if model selection is not stepwise
+        max_d: int = 2,  # Maximum number of non-seasonal differences
+        max_D: int = 1,  # Maximum number of seasonal differences
+        start_p: int = 2,  # Starting value of p in stepwise procedure
+        start_q: int = 2,  # Starting value of q in stepwise procedure
+        start_P: int = 1,  # Starting value of P in stepwise procedure
+        start_Q: int = 1,  # Starting value of Q in stepwise procedure
+        stationary: bool = False,  # If True, restricts search to stationary models
+        seasonal: bool = True,  # If False, restricts search to non-seasonal models
+        ic: str = "aicc",  # Information criterion to be used in model selection
+        stepwise: bool = True,  # If False, searches over all grid (very slow)
+        nmodels: int = 94,  # Maximum number of models considered in the stepwise search
+        trace: bool = False,  # If True, the list of ARIMA models considered will be reported
+        approximation: Optional[
+            bool
+        ] = False,  # If True, estimation is via conditional sums of squares
+        method: Optional[
+            str
+        ] = None,  # maximum likelihood or minimize conditional sum-of-squares
+        truncate: Optional[
+            bool
+        ] = None,  # An integer value indicating how many observations to use in model selection
+        test: str = "kpss",  #  Type of unit root test to use
+        test_kwargs: Optional[
+            str
+        ] = None,  # Additional arguments to be passed to the unit root test
+        seasonal_test: str = "seas",  # Method used to select the number of seasonal differences
+        seasonal_test_kwargs: Optional[
+            Dict
+        ] = None,  # Additional arguments to be passed to the seasonal unit root test
+        allowdrift: bool = False,  # If True, models with drift terms are considered
+        allowmean: bool = False,  # If True, models with a non-zero mean are considered
+        blambda: Optional[float] = None,  # Box-Cox transformation parameter
+        biasadj: bool = False,  # Use adjusted back-transformed mean for Box-Cox transformations
+        parallel: bool = False,  # If True and stepwise = False, then the specification search is done in parallel
+        num_cores: int = 2,  # Amount of parallel processes to be used
+        season_length: int = 1,  # Number of observations per cycle
     ):
-        self.d=d
-        self.D=D
-        self.max_p=max_p
-        self.max_q=max_q
-        self.max_P=max_P
-        self.max_Q=max_Q
-        self.max_order=max_order
-        self.max_d=max_d
-        self.max_D=max_D
-        self.start_p=start_p
-        self.start_q=start_q
-        self.start_P=start_P
-        self.start_Q=start_Q
-        self.stationary=stationary
-        self.seasonal=seasonal
-        self.ic=ic
-        self.stepwise=stepwise
-        self.nmodels=nmodels
-        self.trace=trace
-        self.approximation=approximation
-        self.method=method
-        self.truncate=truncate
-        self.test=test
-        self.test_kwargs=test_kwargs
-        self.seasonal_test=seasonal_test
-        self.seasonal_test_kwargs=seasonal_test_kwargs
-        self.allowdrift=allowdrift
-        self.allowmean=allowmean
-        self.blambda=blambda
-        self.biasadj=biasadj
-        self.parallel=parallel
-        self.num_cores=num_cores
-        self.season_length=season_length
-        
+        self.d = d
+        self.D = D
+        self.max_p = max_p
+        self.max_q = max_q
+        self.max_P = max_P
+        self.max_Q = max_Q
+        self.max_order = max_order
+        self.max_d = max_d
+        self.max_D = max_D
+        self.start_p = start_p
+        self.start_q = start_q
+        self.start_P = start_P
+        self.start_Q = start_Q
+        self.stationary = stationary
+        self.seasonal = seasonal
+        self.ic = ic
+        self.stepwise = stepwise
+        self.nmodels = nmodels
+        self.trace = trace
+        self.approximation = approximation
+        self.method = method
+        self.truncate = truncate
+        self.test = test
+        self.test_kwargs = test_kwargs
+        self.seasonal_test = seasonal_test
+        self.seasonal_test_kwargs = seasonal_test_kwargs
+        self.allowdrift = allowdrift
+        self.allowmean = allowmean
+        self.blambda = blambda
+        self.biasadj = biasadj
+        self.parallel = parallel
+        self.num_cores = num_cores
+        self.season_length = season_length
+
     def __repr__(self):
-        return f'AutoARIMA'
-    
+        return f"AutoARIMA"
+
     def fit(
-            self, 
-            y: np.ndarray, # time series
-            X: Optional[np.ndarray] = None, # exogenous regressors
-        ):
-        with np.errstate(invalid='ignore'):
+        self,
+        y: np.ndarray,  # time series
+        X: Optional[np.ndarray] = None,  # exogenous regressors
+    ):
+        with np.errstate(invalid="ignore"):
             self.model_ = auto_arima_f(
                 x=y,
                 d=self.d,
@@ -144,109 +152,107 @@ class AutoARIMA(_TS):
                 biasadj=self.biasadj,
                 parallel=self.parallel,
                 num_cores=self.num_cores,
-                period=self.season_length
+                period=self.season_length,
             )
         return self
-    
+
     def predict(
-            self, 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            level: Optional[Tuple[int]] = None, # level 
-        ):
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        level: Optional[Tuple[int]] = None,  # level
+    ):
         fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
-        mean = fcst['mean']
+        mean = fcst["mean"]
         if level is None:
-            return {'mean': mean}
+            return {"mean": mean}
         return {
-            'mean': mean,
-            **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
-            **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+            "mean": mean,
+            **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
+            **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
         }
-    
+
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
         if level is not None:
             return NotImplementedError
         mean = fitted_arima(self.model_)
-        return {'mean': mean}
-    
+        return {"mean": mean}
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            level: Optional[Tuple[int]] = None, # level
-            fitted: bool = False, # return fitted values?
-        ):
-        with np.errstate(invalid='ignore'):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        level: Optional[Tuple[int]] = None,  # level
+        fitted: bool = False,  # return fitted values?
+    ):
+        with np.errstate(invalid="ignore"):
             mod = auto_arima_f(
                 y,
                 xreg=X,
                 period=self.season_length,
                 approximation=self.approximation,
-                allowmean=False, allowdrift=False #not implemented yet
+                allowmean=False,
+                allowdrift=False,  # not implemented yet
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
-        res = {'mean': fcst['mean']}
+        res = {"mean": fcst["mean"]}
         if fitted:
-            res['fitted'] = fitted_arima(mod)
+            res["fitted"] = fitted_arima(mod)
         if level is not None:
             res = {
                 **res,
-                **{f'lo-{l}': fcst['lower'][f'{l}%'] for l in reversed(level)},
-                **{f'hi-{l}': fcst['upper'][f'{l}%'] for l in level},
+                **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
+                **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
             }
         return res
 
 # %% ../nbs/models.ipynb 31
 class ETS(_TS):
-    
     def __init__(
-            self, 
-            season_length: int = 1, # Number of observations per cycle
-            model: str = 'ZZZ' # three-character string identifying method using the framework terminology of Hyndman et al. (2002)
-        ):
+        self,
+        season_length: int = 1,  # Number of observations per cycle
+        model: str = "ZZZ",  # three-character string identifying method using the framework terminology of Hyndman et al. (2002)
+    ):
         self.season_length = season_length
         self.model = model
-    
+
     def __repr__(self):
-        return f'ETS'
-    
+        return f"ETS"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         self.model_ = ets_f(y, m=self.season_length, model=self.model)
         return self
-    
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = forecast_ets(self.model_, h=h)['mean']
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = forecast_ets(self.model_, h=h)["mean"]
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
-    
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         mod = ets_f(y, m=self.season_length, model=self.model)
         fcst = forecast_ets(mod, h)
-        keys = ['mean']
+        keys = ["mean"]
         if fitted:
-            keys.append('fitted')
+            keys.append("fitted")
         return {key: fcst[key] for key in keys}
 
 # %% ../nbs/models.ipynb 41
@@ -259,7 +265,7 @@ def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float]:
     """
     smoothed = x[0]
     n = x.size
-    mse = 0.
+    mse = 0.0
     fitted = np.full(n, np.nan, np.float32)
 
     for i in range(1, n):
@@ -316,16 +322,11 @@ def _probability(x: np.ndarray) -> np.ndarray:
 
 
 def _optimized_ses_forecast(
-        x: np.ndarray,
-        bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
-    ) -> float:
+    x: np.ndarray, bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
+) -> float:
     """Searches for the optimal alpha and computes SES one step forecast."""
     alpha = minimize(
-        fun=_ses_mse,
-        x0=(0,),
-        args=(x,),
-        bounds=bounds,
-        method='L-BFGS-B'
+        fun=_ses_mse, x0=(0,), args=(x,), bounds=bounds, method="L-BFGS-B"
     ).x[0]
     forecast, fitted = _ses_forecast(x, alpha)
     return forecast, fitted
@@ -341,9 +342,11 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
         sums[i] = array[start : start + chunk_size].sum()
     return sums
 
+
 @njit
 def _repeat_val(val: float, h: int):
     return np.full(h, val, np.float32)
+
 
 @njit
 def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
@@ -355,667 +358,636 @@ def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
 # %% ../nbs/models.ipynb 42
 @njit
 def _ses(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-        alpha: float, # smoothing parameter
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+    alpha: float,  # smoothing parameter
+):
     fcst, _, fitted_vals = _ses_fcst_mse(y, alpha)
     mean = _repeat_val(val=fcst, h=h)
-    fcst = {'mean': mean}
+    fcst = {"mean": mean}
     if fitted:
-        fcst['fitted'] = fitted_vals
+        fcst["fitted"] = fitted_vals
     return fcst
 
 # %% ../nbs/models.ipynb 43
 class SimpleExponentialSmoothing(_TS):
-    
-    def __init__(
-            self, 
-            alpha: float # smoothing parameter
-        ):
+    def __init__(self, alpha: float):  # smoothing parameter
         self.alpha = alpha
-        
+
     def __repr__(self):
-        return f'SES'
-    
+        return f"SES"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
-    
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series
-            h: int, # forecasting horizon
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
 # %% ../nbs/models.ipynb 53
 def _ses_optimized(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ):
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     fcst, fitted_vals = _optimized_ses_forecast(y, [(0.01, 0.99)])
     mean = _repeat_val(val=fcst, h=h)
-    fcst = {'mean': mean}
+    fcst = {"mean": mean}
     if fitted:
-        fcst['fitted'] = fitted_vals
+        fcst["fitted"] = fitted_vals
     return fcst
 
 # %% ../nbs/models.ipynb 54
 class SimpleExponentialSmoothingOptimized(_TS):
-    
     def __init__(self):
         pass
-    
+
     def __repr__(self):
-        return f'SESOpt'
-    
+        return f"SESOpt"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _ses_optimized(y=y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
-    
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 64
 @njit
 def _seasonal_exponential_smoothing(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-        season_length: int, # length of season
-        alpha: float, # smoothing parameter
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+    season_length: int,  # length of season
+    alpha: float,  # smoothing parameter
+):
     if y.size < season_length:
-        return {'mean': np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
     fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        season_vals[i], fitted_vals[i::season_length] = _ses_forecast(y[i::season_length], alpha)
+        season_vals[i], fitted_vals[i::season_length] = _ses_forecast(
+            y[i::season_length], alpha
+        )
     out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
-    fcst = {'mean': out}
+    fcst = {"mean": out}
     if fitted:
-        fcst['fitted'] = fitted_vals
+        fcst["fitted"] = fitted_vals
     return fcst
 
 # %% ../nbs/models.ipynb 65
 class SeasonalExponentialSmoothing(_TS):
-    
     def __init__(
-            self, 
-            season_length: int, # Number of observations per cycle
-            alpha: float, # smoothing parameter shared across seasonalities
-        ):
+        self,
+        season_length: int,  # Number of observations per cycle
+        alpha: float,  # smoothing parameter shared across seasonalities
+    ):
         self.season_length = season_length
         self.alpha = alpha
-    
+
     def __repr__(self):
-        return f'SeasonalES'
-    
+        return f"SeasonalES"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _seasonal_exponential_smoothing(
-            y=y, 
-            season_length=self.season_length, 
+            y=y,
+            season_length=self.season_length,
             alpha=self.alpha,
             fitted=True,
             h=self.season_length,
         )
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val_seas(
+            self.model_["mean"], season_length=self.season_length, h=h
+        )
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
-    
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _seasonal_exponential_smoothing(
-            y=y, h=h, fitted=fitted, 
-            alpha=self.alpha,
-            season_length=self.season_length
+            y=y, h=h, fitted=fitted, alpha=self.alpha, season_length=self.season_length
         )
         return out
 
 # %% ../nbs/models.ipynb 75
 def _seasonal_ses_optimized(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool , # fitted values
-        season_length: int, # season length
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+    season_length: int,  # season length
+):
     if y.size < season_length:
-        return {'mean': np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
     fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
-        season_vals[i], fitted_vals[i::season_length] = _optimized_ses_forecast(y[i::season_length], [(0.01, 0.99)])
+        season_vals[i], fitted_vals[i::season_length] = _optimized_ses_forecast(
+            y[i::season_length], [(0.01, 0.99)]
+        )
     out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
-    fcst = {'mean': out}
+    fcst = {"mean": out}
     if fitted:
-        fcst['fitted'] = fitted_vals
+        fcst["fitted"] = fitted_vals
     return fcst
 
 # %% ../nbs/models.ipynb 76
 class SeasonalExponentialSmoothingOptimized(_TS):
-    
     def __init__(
-            self, 
-            season_length: int, # Number of observations per cycle
-        ):
+        self,
+        season_length: int,  # Number of observations per cycle
+    ):
         self.season_length = season_length
-    
+
     def __repr__(self):
-        return f'SeasESOpt'
-    
+        return f"SeasESOpt"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _seasonal_ses_optimized(
-            y=y, 
-            season_length=self.season_length, 
+            y=y,
+            season_length=self.season_length,
             fitted=True,
             h=self.season_length,
         )
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val_seas(self.model_['mean'], season_length=self.season_length, h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val_seas(
+            self.model_["mean"], season_length=self.season_length, h=h
+        )
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
-    
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _seasonal_ses_optimized(
-            y=y, h=h, fitted=fitted, 
-            season_length=self.season_length
+            y=y, h=h, fitted=fitted, season_length=self.season_length
         )
         return out
 
 # %% ../nbs/models.ipynb 87
 @njit
 def _historic_average(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ):
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     mean = _repeat_val(val=y.mean(), h=h)
-    fcst = {'mean': mean}
+    fcst = {"mean": mean}
     if fitted:
         fitted_vals = np.full(y.size, np.nan, np.float32)
         fitted_vals[1:] = y.cumsum()[:-1] / np.arange(1, y.size)
-        fcst['fitted'] = fitted_vals
+        fcst["fitted"] = fitted_vals
     return fcst
 
 # %% ../nbs/models.ipynb 88
 class HistoricAverage(_TS):
-    
     def __init__(self):
         pass
-    
+
     def __repr__(self):
-        return f'HistoricAverage'
-    
+        return f"HistoricAverage"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ): 
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _historic_average(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self, 
-            h: int, # forecasting horizon
-            X: np.ndarray = None # exogenous regressors
-        ): 
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
-    
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _historic_average(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 98
 @njit
 def _naive(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     mean = _repeat_val(val=y[-1], h=h)
     if fitted:
         fitted_vals = np.full(y.size, np.nan, np.float32)
         fitted_vals[1:] = np.roll(y, 1)[1:]
-        return {'mean': mean, 'fitted': fitted_vals}
-    return {'mean': mean}
+        return {"mean": mean, "fitted": fitted_vals}
+    return {"mean": mean}
 
 # %% ../nbs/models.ipynb 99
 class Naive(_TS):
-    
     def __init__(self):
         pass
-    
+
     def __repr__(self):
-        return f'Naive'
-    
+        return f"Naive"
+
     def fit(
-            self, 
-            y: np.ndarray, # time series
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _naive(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self, 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
-    
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _naive(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 109
 @njit
 def _random_walk_with_drift(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     slope = (y[-1] - y[0]) / (y.size - 1)
     mean = slope * (1 + np.arange(h)) + y[-1]
-    fcst = {'mean': mean.astype(np.float32), 
-            'slope': np.array([slope], dtype=np.float32), 
-            'last_y': np.array([y[-1]], dtype=np.float32)}
+    fcst = {
+        "mean": mean.astype(np.float32),
+        "slope": np.array([slope], dtype=np.float32),
+        "last_y": np.array([y[-1]], dtype=np.float32),
+    }
     if fitted:
         fitted_vals = np.full(y.size, np.nan, dtype=np.float32)
         fitted_vals[1:] = (slope + y[:-1]).astype(np.float32)
-        fcst['fitted'] = fitted_vals
+        fcst["fitted"] = fitted_vals
     return fcst
 
 # %% ../nbs/models.ipynb 110
 class RandomWalkWithDrift(_TS):
-    
     def __init__(self):
         pass
-    
+
     def __repr__(self):
-        return f'RWD'
-    
+        return f"RWD"
+
     def fit(
-            self,
-            y: np.ndarray, # time series
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
         hrange = np.arange(h, dtype=np.float32)
-        mean = self.model_['slope'] * (1 + hrange) + self.model_['last_y']
-        res = {'mean': mean}
+        mean = self.model_["slope"] * (1 + hrange) + self.model_["last_y"]
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
+        res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 120
 @njit
 def _seasonal_naive(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, #fitted values
-        season_length: int, # season length
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+    season_length: int,  # season length
+):
     if y.size < season_length:
-        return {'mean': np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
     fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
         s_naive = _naive(y[i::season_length], h=1, fitted=fitted)
-        season_vals[i] = s_naive['mean'].item()
+        season_vals[i] = s_naive["mean"].item()
         if fitted:
-            fitted_vals[i::season_length] = s_naive['fitted']
+            fitted_vals[i::season_length] = s_naive["fitted"]
     out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
-    fcst = {'mean': out}
+    fcst = {"mean": out}
     if fitted:
-        fcst['fitted'] = fitted_vals
+        fcst["fitted"] = fitted_vals
     return fcst
 
 # %% ../nbs/models.ipynb 121
 class SeasonalNaive(_TS):
-    
-    def __init__(
-            self, 
-            season_length: int # Number of observations per cycle
-        ):
+    def __init__(self, season_length: int):  # Number of observations per cycle
         self.season_length = season_length
 
     def __repr__(self):
-        return f'SeasonalNaive'
-    
+        return f"SeasonalNaive"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _seasonal_naive(
-            y=y, 
-            season_length=self.season_length, 
-            h=self.season_length, 
+            y=y,
+            season_length=self.season_length,
+            h=self.season_length,
             fitted=True,
         )
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val_seas(season_vals=self.model_['mean'], 
-                                season_length=self.season_length, h=h)
-        res = {'mean': mean}
-        return res
-    
-    def predict_in_sample(self):
-        res = {'mean': self.model_['fitted']}
-        return res
-    
-    def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
-        out = _seasonal_naive(
-            y=y, h=h, fitted=fitted, 
-            season_length=self.season_length
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val_seas(
+            season_vals=self.model_["mean"], season_length=self.season_length, h=h
         )
+        res = {"mean": mean}
+        return res
+
+    def predict_in_sample(self):
+        res = {"mean": self.model_["fitted"]}
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
+        out = _seasonal_naive(y=y, h=h, fitted=fitted, season_length=self.season_length)
         return out
 
 # %% ../nbs/models.ipynb 131
 @njit
 def _window_average(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-        window_size: int, # window size
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+    window_size: int,  # window size
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     if y.size < window_size:
-        return {'mean': np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, np.float32)}
     wavg = y[-window_size:].mean()
     mean = _repeat_val(val=wavg, h=h)
-    return {'mean': mean}
+    return {"mean": mean}
 
 # %% ../nbs/models.ipynb 132
 class WindowAverage(_TS):
-    
-    def __init__(
-            self, 
-            window_size: int # last observations used to compute average
-        ):
+    def __init__(self, window_size: int):  # last observations used to compute average
         self.window_size = window_size
 
     def __repr__(self):
-        return f'WindowAverage'
-    
+        return f"WindowAverage"
+
     def fit(
-            self,
-            y: np.ndarray, # time series  
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self, 
-            h: int, # forecasting horizon
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
         raise NotImplementedError
-        
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
 # %% ../nbs/models.ipynb 142
 @njit
 def _seasonal_window_average(
-        y: np.ndarray,
-        h: int,
-        fitted: bool,
-        season_length: int,
-        window_size: int,
-    ):
+    y: np.ndarray,
+    h: int,
+    fitted: bool,
+    season_length: int,
+    window_size: int,
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     min_samples = season_length * window_size
     if y.size < min_samples:
-        return {'mean': np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, np.float32)}
     season_avgs = np.zeros(season_length, np.float32)
     for i, value in enumerate(y[-min_samples:]):
         season = i % season_length
         season_avgs[season] += value / window_size
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
-    return {'mean': out}
+    return {"mean": out}
 
 # %% ../nbs/models.ipynb 143
 class SeasonalWindowAverage(_TS):
-    
     def __init__(
-            self, 
-            season_length: int, # Number of observations per cycle
-            window_size: int # Last observations per seasonality to compute average
-        ):
+        self,
+        season_length: int,  # Number of observations per cycle
+        window_size: int,  # Last observations per seasonality to compute average
+    ):
         self.season_length = season_length
         self.window_size = window_size
 
     def __repr__(self):
-        return f'SeasWA'
-    
+        return f"SeasWA"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _seasonal_window_average(
-            y=y, 
+            y=y,
             h=self.season_length,
             fitted=False,
-            season_length=self.season_length, 
+            season_length=self.season_length,
             window_size=self.window_size,
         )
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val_seas(season_vals=self.model_['mean'], 
-                                season_length=self.season_length, h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val_seas(
+            season_vals=self.model_["mean"], season_length=self.season_length, h=h
+        )
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _seasonal_window_average(
-            y=y, h=h, fitted=fitted, 
+            y=y,
+            h=h,
+            fitted=fitted,
             season_length=self.season_length,
-            window_size=self.window_size
+            window_size=self.window_size,
         )
         return out
 
 # %% ../nbs/models.ipynb 155
 def _adida(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ):
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     if (y == 0).all():
-        return {'mean': np.repeat(np.float32(0), h)}
+        return {"mean": np.repeat(np.float32(0), h)}
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean()
     aggregation_level = round(mean_interval)
@@ -1025,234 +997,224 @@ def _adida(
     sums_forecast, _ = _optimized_ses_forecast(aggregation_sums)
     forecast = sums_forecast / aggregation_level
     mean = _repeat_val(val=forecast, h=h)
-    return {'mean': mean}
+    return {"mean": mean}
 
 # %% ../nbs/models.ipynb 156
 class ADIDA(_TS):
-    
     def __init__(self):
         pass
 
     def __repr__(self):
-        return f'ADIDA'
-    
+        return f"ADIDA"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _adida(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
         raise NotImplementedError
-        
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 166
 @njit
 def _croston_classic(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     yd = _demand(y)
     yi = _intervals(y)
     ydp, _ = _ses_forecast(yd, 0.1)
     yip, _ = _ses_forecast(yi, 0.1)
-    if yip == 0.:
+    if yip == 0.0:
         mean = ydp / yip
     else:
         mean = ydp
     mean = _repeat_val(val=mean, h=h)
-    return {'mean': mean}
+    return {"mean": mean}
 
 # %% ../nbs/models.ipynb 167
 class CrostonClassic(_TS):
-    
     def __init__(self):
         pass
 
     def __repr__(self):
-        return f'CrostonClassic'
-    
+        return f"CrostonClassic"
+
     def fit(
-            self,
-            y: np.ndarray, # time series
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _croston_classic(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self, level):
         raise NotImplementedError
-        
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 177
 def _croston_optimized(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     yd = _demand(y)
     yi = _intervals(y)
     ydp, _ = _optimized_ses_forecast(yd)
     yip, _ = _optimized_ses_forecast(yi)
-    if yip == 0.:
+    if yip == 0.0:
         mean = ydp / yip
     else:
         mean = ydp
     mean = _repeat_val(val=mean, h=h)
-    return {'mean': mean}
+    return {"mean": mean}
 
 # %% ../nbs/models.ipynb 178
 class CrostonOptimized(_TS):
-    
     def __init__(self):
         pass
-    
+
     def __repr__(self):
-        return f'CrostonOptimized'
-    
+        return f"CrostonOptimized"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _croston_optimized(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
         raise NotImplementedError
 
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 188
 @njit
 def _croston_sba(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool,  # fitted values
-    ):
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     mean = _croston_classic(y, h, fitted)
-    mean['mean'] *= 0.95
+    mean["mean"] *= 0.95
     return mean
 
 # %% ../nbs/models.ipynb 189
 class CrostonSBA(_TS):
-    
     def __init__(self):
         pass
 
     def __repr__(self):
-        return f'CrostonSBA'
-    
+        return f"CrostonSBA"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # # exogenous regressors
-        ):
+        self,
+        y: np.ndarray,  # time series
+        X: np.ndarray = None,  # # exogenous regressors
+    ):
         mod = _croston_sba(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon  
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
         raise NotImplementedError
-        
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
 # %% ../nbs/models.ipynb 199
 def _imapa(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: bool, # fitted values
-    ): 
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: bool,  # fitted values
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     if (y == 0).all():
-        return {'mean': np.repeat(np.float32(0), h)}
+        return {"mean": np.repeat(np.float32(0), h)}
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean().item()
     max_aggregation_level = round(mean_interval)
@@ -1262,48 +1224,45 @@ def _imapa(
         y_cut = y[lost_remainder_data:]
         aggregation_sums = _chunk_sums(y_cut, aggregation_level)
         forecast, _ = _optimized_ses_forecast(aggregation_sums)
-        forecasts[aggregation_level - 1] = (forecast / aggregation_level)
+        forecasts[aggregation_level - 1] = forecast / aggregation_level
     forecast = forecasts.mean()
     mean = _repeat_val(val=forecast, h=h)
-    return {'mean': mean}
+    return {"mean": mean}
 
 # %% ../nbs/models.ipynb 200
 class IMAPA(_TS):
-    
     def __init__(self):
         pass
 
     def __repr__(self):
-        return f'IMAPA'
-    
+        return f"IMAPA"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
         mod = _imapa(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(val=self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(val=self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
         raise NotImplementedError
-        
+
     def forecast(
-        self, 
-        y: np.ndarray, # time series 
-        h: int, # forecasting horizon 
-        X: np.ndarray = None, # exogenous regressors
-        X_future: np.ndarray = None, # future regressors
-        fitted: bool = False, # return fitted values?
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
     ):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
@@ -1311,76 +1270,63 @@ class IMAPA(_TS):
 # %% ../nbs/models.ipynb 210
 @njit
 def _tsb(
-        y: np.ndarray, # time series
-        h: int, # forecasting horizon
-        fitted: int, # fitted values
-        alpha_d: float,
-        alpha_p: float,
-    ):
+    y: np.ndarray,  # time series
+    h: int,  # forecasting horizon
+    fitted: int,  # fitted values
+    alpha_d: float,
+    alpha_p: float,
+):
     if fitted:
-        raise NotImplementedError('return fitted')
+        raise NotImplementedError("return fitted")
     if (y == 0).all():
-        return {'mean': np.repeat(np.float32(0), h)}
+        return {"mean": np.repeat(np.float32(0), h)}
     yd = _demand(y)
     yp = _probability(y)
     ypf, _ = _ses_forecast(yp, alpha_p)
     ydf, _ = _ses_forecast(yd, alpha_d)
     forecast = np.float32(ypf * ydf)
     mean = _repeat_val(val=forecast, h=h)
-    return {'mean': mean}
+    return {"mean": mean}
 
 # %% ../nbs/models.ipynb 211
 class TSB(_TS):
-    
     def __init__(
-            self, 
-            alpha_d: float, # smoothing parameter for demand
-            alpha_p: float # smoothing parameter for probability
-        ):
+        self,
+        alpha_d: float,  # smoothing parameter for demand
+        alpha_p: float,  # smoothing parameter for probability
+    ):
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
-        
+
     def __repr__(self):
-        return f'TSB'
-    
+        return f"TSB"
+
     def fit(
-            self,
-            y: np.ndarray, # time series 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mod = _tsb(
-            y=y, h=1, 
-            fitted=False, 
-            alpha_d=self.alpha_d, 
-            alpha_p=self.alpha_p
-        )
+        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
+    ):
+        mod = _tsb(y=y, h=1, fitted=False, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         self.model_ = dict(mod)
         return self
-        
+
     def predict(
-            self,
-            h: int, # forecasting horizon 
-            X: np.ndarray = None # exogenous regressors
-        ):
-        mean = _repeat_val(self.model_['mean'][0], h=h)
-        res = {'mean': mean}
+        self,
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+    ):
+        mean = _repeat_val(self.model_["mean"][0], h=h)
+        res = {"mean": mean}
         return res
-    
+
     def predict_in_sample(self):
         raise NotImplementedError
-        
+
     def forecast(
-            self, 
-            y: np.ndarray, # time series 
-            h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
-            X_future: np.ndarray = None, # future regressors
-            fitted: bool = False, # return fitted values?
-        ):
-        out = _tsb(
-            y=y, h=h, 
-            fitted=fitted, 
-            alpha_d=self.alpha_d, 
-            alpha_p=self.alpha_p
-        )
+        self,
+        y: np.ndarray,  # time series
+        h: int,  # forecasting horizon
+        X: np.ndarray = None,  # exogenous regressors
+        X_future: np.ndarray = None,  # future regressors
+        fitted: bool = False,  # return fitted values?
+    ):
+        out = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         return out
