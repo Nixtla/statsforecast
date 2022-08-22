@@ -7,8 +7,6 @@ __all__ = ['AutoARIMAProphet']
 import sys
 from copy import deepcopy
 
-import numpy as np
-import statsmodels.api as sm
 import pandas as pd
 from ..arima import AutoARIMA
 

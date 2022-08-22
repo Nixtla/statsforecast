@@ -4,7 +4,7 @@
 __all__ = ['FugueBackend']
 
 # %% ../nbs/distributed.fugue.ipynb 5
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -84,6 +84,7 @@ class FugueBackend(ParallelBackend):
         return model.cross_validation(**kwargs).reset_index()
 
     def _get_output_schema(self, models, mode="forecast") -> Schema:
+        cols: List[Any]
         cols = [(repr(model), np.float32) for model in models]
         if mode == "cv":
             cols = [("cutoff", "datetime"), ("y", np.float32)] + cols

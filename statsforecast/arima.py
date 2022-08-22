@@ -6,7 +6,6 @@ __all__ = ['predict_arima', 'arima_string', 'forecast_arima', 'fitted_arima', 'a
 
 # %% ../nbs/arima.ipynb 3
 import math
-import os
 import warnings
 from collections import namedtuple
 from functools import partial
@@ -19,10 +18,8 @@ from numba import njit
 from scipy.optimize import minimize
 from scipy.stats import norm
 
-from .utils import AirPassengers as ap
-
 # %% ../nbs/arima.ipynb 4
-OptimResult = namedtuple("OptimResult", "success status x fun")
+OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
 # %% ../nbs/arima.ipynb 5
 @njit
@@ -75,8 +72,6 @@ def arima_gradtrans(x, arma):
 @njit
 def arima_undopars(x, arma):
     mp, mq, msp = arma[:3]
-    n = len(x)
-
     res = x.copy()
     if mp > 0:
         partrans(mp, x, res)
@@ -149,25 +144,9 @@ def invpartrans(p, phi, new):
 
 # %% ../nbs/arima.ipynb 14
 @njit
-def arima_undopars(x, arma):
-    mp, mq, msp = arma[:3]
-    n = len(x)
-
-    res = x.copy()
-    if mp > 0:
-        partrans(mp, x, res)
-    v = mp + mq
-    if msp > 0:
-        partrans(msp, x[v:], res[v:])
-    return res
-
-# %% ../nbs/arima.ipynb 15
-@njit
 def ARIMA_invtrans(x, arma):
     mp, mq, msp = arma[:3]
-    n = len(x)
     y = x.copy()
-
     if mp > 0:
         invpartrans(mp, x, y)
     v = mp + mq
@@ -175,7 +154,7 @@ def ARIMA_invtrans(x, arma):
         invpartrans(msp, x[v:], y[v:])
     return y
 
-# %% ../nbs/arima.ipynb 17
+# %% ../nbs/arima.ipynb 16
 @njit
 def getQ0(phi, theta):
     p = len(phi)
@@ -305,7 +284,7 @@ def getQ0(phi, theta):
     res = res.reshape((r, r))
     return res
 
-# %% ../nbs/arima.ipynb 19
+# %% ../nbs/arima.ipynb 18
 @njit
 def arima_transpar(params_in, arma, trans):
     # TODO check trans=True results
@@ -318,7 +297,7 @@ def arima_transpar(params_in, arma, trans):
     params = params_in.copy()
 
     if trans:
-        n = mp + mq + msp + msq
+        # n = mp + mq + msp + msq
         if mp > 0:
             partrans(mp, params_in, params)
         v = mp + mq
@@ -344,7 +323,7 @@ def arima_transpar(params_in, arma, trans):
 
     return phi, theta
 
-# %% ../nbs/arima.ipynb 22
+# %% ../nbs/arima.ipynb 21
 @njit
 def arima_css(y, arma, phi, theta, ncond):
     n = len(y)
@@ -388,7 +367,7 @@ def arima_css(y, arma, phi, theta, ncond):
 
     return res, resid
 
-# %% ../nbs/arima.ipynb 24
+# %% ../nbs/arima.ipynb 23
 @njit
 def _make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps):
     # check nas phi
@@ -441,7 +420,7 @@ def make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(np.float64).eps):
     res = _make_arima(phi, theta, delta, kappa, tol)
     return dict(zip(keys, res))
 
-# %% ../nbs/arima.ipynb 26
+# %% ../nbs/arima.ipynb 25
 @njit
 def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
     n = len(y)
@@ -578,7 +557,7 @@ def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
         rsResid = None
     return ssq, sumlog, nu, rsResid
 
-# %% ../nbs/arima.ipynb 28
+# %% ../nbs/arima.ipynb 27
 @njit
 def diff1d(x, lag, differences):
     y = x.copy()
@@ -610,7 +589,7 @@ def diff(x, lag, differences):
         raise ValueError(x.ndim)
     return y[~nan_mask]
 
-# %% ../nbs/arima.ipynb 29
+# %% ../nbs/arima.ipynb 28
 def arima(
     x: np.ndarray,
     order=(0, 0, 0),
@@ -642,7 +621,8 @@ def arima(
             if SSG:
                 mod["Pn"][:r, :r] = getQ0(phi, theta)
             else:
-                mod["Pn"][:r, :r] = getQ0bis(phi, theta, tol=0)
+                raise NotImplementedError('SSinit != "Gardner1980"')
+                # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
         else:
             mod["Pn"][0, 0] = 1 / (1 - phi**2) if p > 0 else 1
         mod["a"][:] = 0  # a es vector?
@@ -885,7 +865,9 @@ def arima(
     # parscale definition, think about it, scipy doesn't use it
     if method == "CSS":
         if no_optim:
-            res = OptimResult(True, 0, np.array([]), arma_css_op(np.array([]), x))
+            res = OptimResult(
+                True, 0, np.array([]), arma_css_op(np.array([]), x), np.array([])
+            )
         else:
             res = minimize(
                 arma_css_op,
@@ -912,7 +894,9 @@ def arima(
     else:
         if method == "CSS-ML":
             if no_optim:
-                res = OptimResult(True, 0, np.array([]), arma_css_op(np.array([]), x))
+                res = OptimResult(
+                    True, 0, np.array([]), arma_css_op(np.array([]), x), np.array([])
+                )
             else:
                 res = minimize(
                     arma_css_op,
@@ -945,7 +929,11 @@ def arima(
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         if no_optim:
             res = OptimResult(
-                True, 0, np.array([]), armafn(np.array([]), x, transform_pars)
+                True,
+                0,
+                np.array([]),
+                armafn(np.array([]), x, transform_pars),
+                np.array([]),
             )
         else:
             res = minimize(
@@ -981,7 +969,7 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-                res.status = oldcode
+                res = OptimResult(res.success, oldcode, res.x, res.fun, res.hess_inv)
                 coef[mask] = res.x
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
@@ -1012,20 +1000,19 @@ def arima(
         nm.extend([f"sma{i+1}" for i in range(arma[3])])
     if ncxreg > 0:
         nm += cn
-        if not orig_xreg:
+        if not orig_xreg and (var is not None):
             ind = narma + np.arange(ncxreg)
             coef[ind] = np.matmul(vt, coef[ind])
             A = np.identity(narma + ncxreg)
             A[np.ix_(ind, ind)] = vt
             A = A[np.ix_(mask, mask)]
             var = np.matmul(np.matmul(A, var), A.T)
-    coef = dict(zip(nm, coef))
     # if no_optim:
     #     var = pd.DataFrame(var, columns=nm[mask], index=nm[mask])
     resid = val[1]
 
     ans = {
-        "coef": coef,
+        "coef": dict(zip(nm, coef)),
         "sigma2": sigma2,
         "var_coef": var,
         "mask": mask,
@@ -1055,7 +1042,6 @@ def kalman_forecast(n, Z, a, P, T, V, h):
     P = P.copy()
 
     for l in range(n):
-        fc = 0.0
         anew = T @ a
 
         a[:] = anew[:]
@@ -1094,11 +1080,11 @@ def checkarima(obj):
 def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
 
     myNCOL = lambda x: x.shape[1] if x is not None else 0
-    rsd = model["residuals"]
+    # rsd = model['residuals']
     # xreg = model['xreg']
     # ncxreg = myNCOL(xreg)
 
-    n = len(rsd)
+    # n = len(rsd)
     arma = model["arma"]
     ncoefs, coefs = list(model["coef"].keys()), list(model["coef"].values())
 
@@ -1224,7 +1210,7 @@ def myarima(
                 )
             else:
                 fit = arima(x, order, include_mean=constant, method=method, xreg=xreg)
-        nxreg = 0 if xreg is None else xreg.shape[1]
+        # nxreg = 0 if xreg is None else xreg.shape[1]
         nstar = n - order[1] - seas_order[1] * m
         if diffs == 1 and constant:
             fit["xreg"] = xreg
@@ -1299,7 +1285,7 @@ def search_arima(
     m = period
     allow_drift = allow_drift and (d + D) == 1
     allow_mean = allow_mean and (d + D) == 0
-    max_K = allow_drift or allow_mean
+    # max_K = allow_drift or allow_mean
 
     if not parallel:
         best_ic = np.inf
@@ -1340,9 +1326,10 @@ def Arima(
     origx = x.copy()
     seas_order = seasonal["order"]
     if blambda is not None:
-        x = boxcox(x, blambda)
-        if not hasattr(blambda, "biasadj"):
-            setattr(blambda, "biasadj", biasadj)
+        raise NotImplementedError("blambda != None")
+        # x = boxcox(x, blambda)
+        # if not hasattr(blambda, 'biasadj'):
+        #    setattr(blambda, 'biasadj', biasadj)
     if xreg is not None:
         if xreg.dtype not in (np.float32, np.float64):
             raise ValueError("xreg should be a float array")
@@ -1452,7 +1439,7 @@ def forecast_arima(
         if xreg.dtype not in (np.float32, np.float64):
             raise ValueError("xreg should be a float array")
 
-        origxreg = xreg
+        # origxreg = xreg
         h = xreg.shape[0]
     else:
         if xreg is not None:
@@ -1460,7 +1447,7 @@ def forecast_arima(
                 "xreg not required by this model, ignoring the provided regressors"
             )
             xreg = None
-        origxreg = None
+        # origxreg = None
 
     if fan:
         level = np.arange(51, 100, 3)
@@ -1491,7 +1478,7 @@ def forecast_arima(
         pred, se = predict_arima(model, n_ahead=h)
 
     if level is not None:
-        nint = len(level)
+        # nint = len(level)
         if bootstrap:
             raise NotImplementedError("bootstrap=True")
         else:
@@ -1544,14 +1531,14 @@ def mstl(x, period, blambda=None, s_window=7 + 4 * np.arange(1, 7)):
     origx = x
     n = len(x)
     msts = period
-    iterate = 1
+    # iterate = 1
     if x.ndim == 2:
         x = x[:, 0]
     if np.isnan(x).any():
         ...  # na.interp
     if blambda is not None:
         ...  # boxcox
-    tt = np.arange(n)
+    # tt = np.arange(n)
     if msts > 1:
         fit = sm.tsa.STL(x, period=msts, seasonal=s_window[0]).fit()
         seas = fit.seasonal
@@ -1577,7 +1564,7 @@ def mstl(x, period, blambda=None, s_window=7 + 4 * np.arange(1, 7)):
 
 # %% ../nbs/arima.ipynb 70
 def seas_heuristic(x, period):
-    nperiods = period > 1
+    # nperiods = period > 1
     season = math.nan
     stlfit = mstl(x, period)
     remainder = stlfit["remainder"]
@@ -1789,8 +1776,9 @@ def auto_arima_f(
     if series_len <= 3:
         ic = "aic"
     if blambda is not None:
-        x = boxcox(x, blambda)
-        setattr(blambda, "biasadj", biasadj)
+        raise NotImplementedError("blambda != None")
+        # x = boxcox(x, blambda)
+        # setattr(blambda, 'biasadj', biasadj)
     if xreg is not None:
         xx = x.copy()
         xregg = xreg.copy()
@@ -2600,7 +2588,7 @@ class AutoARIMA:
         """
         fitted_values = pd.DataFrame({"mean": fitted_arima(self.model_.model)})
         if level is not None:
-            _level = (level,) if isinstance(level, int) else level
+            _level = [level] if isinstance(level, int) else level
             _level = sorted(_level)
             arr_level = np.asarray(_level)
             se = np.sqrt(self.model_.model["sigma2"])

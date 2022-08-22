@@ -7,12 +7,9 @@ __all__ = ['AutoARIMA', 'ETS', 'SimpleExponentialSmoothing', 'SimpleExponentialS
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB']
 
 # %% ../nbs/models.ipynb 4
-from itertools import count
-from numbers import Number
-from typing import Collection, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 import numpy as np
-import pandas as pd
 from numba import njit
 from scipy.optimize import minimize
 
@@ -109,7 +106,7 @@ class AutoARIMA(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f"AutoARIMA"
+        return "AutoARIMA"
 
     def fit(
         self,
@@ -219,7 +216,7 @@ class ETS(_TS):
         self.model = model
 
     def __repr__(self):
-        return f"ETS"
+        return "ETS"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -257,7 +254,7 @@ class ETS(_TS):
 
 # %% ../nbs/models.ipynb 41
 @njit
-def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float]:
+def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
 
     This function returns the one step ahead prediction
@@ -286,7 +283,7 @@ def _ses_mse(alpha: float, x: np.ndarray) -> float:
 
 
 @njit
-def _ses_forecast(x: np.ndarray, alpha: float) -> float:
+def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     """One step ahead forecast with simple exponential smoothing."""
     forecast, _, fitted = _ses_fcst_mse(x, alpha)
     return forecast, fitted
@@ -311,8 +308,7 @@ def _intervals(x: np.ndarray) -> np.ndarray:
             y.append(ctr)
             ctr = 1
 
-    y = np.array(y)
-    return y
+    return np.array(y)
 
 
 @njit
@@ -323,7 +319,7 @@ def _probability(x: np.ndarray) -> np.ndarray:
 
 def _optimized_ses_forecast(
     x: np.ndarray, bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
-) -> float:
+) -> Tuple[float, np.ndarray]:
     """Searches for the optimal alpha and computes SES one step forecast."""
     alpha = minimize(
         fun=_ses_mse, x0=(0,), args=(x,), bounds=bounds, method="L-BFGS-B"
@@ -376,7 +372,7 @@ class SimpleExponentialSmoothing(_TS):
         self.alpha = alpha
 
     def __repr__(self):
-        return f"SES"
+        return "SES"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -415,8 +411,8 @@ def _ses_optimized(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
-    fcst, fitted_vals = _optimized_ses_forecast(y, [(0.01, 0.99)])
-    mean = _repeat_val(val=fcst, h=h)
+    fcst_, fitted_vals = _optimized_ses_forecast(y, [(0.01, 0.99)])
+    mean = _repeat_val(val=fcst_, h=h)
     fcst = {"mean": mean}
     if fitted:
         fcst["fitted"] = fitted_vals
@@ -428,7 +424,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         pass
 
     def __repr__(self):
-        return f"SESOpt"
+        return "SESOpt"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -495,7 +491,7 @@ class SeasonalExponentialSmoothing(_TS):
         self.alpha = alpha
 
     def __repr__(self):
-        return f"SeasonalES"
+        return "SeasonalES"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -568,7 +564,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f"SeasESOpt"
+        return "SeasESOpt"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -631,7 +627,7 @@ class HistoricAverage(_TS):
         pass
 
     def __repr__(self):
-        return f"HistoricAverage"
+        return "HistoricAverage"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -684,7 +680,7 @@ class Naive(_TS):
         pass
 
     def __repr__(self):
-        return f"Naive"
+        return "Naive"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -743,7 +739,7 @@ class RandomWalkWithDrift(_TS):
         pass
 
     def __repr__(self):
-        return f"RWD"
+        return "RWD"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -806,7 +802,7 @@ class SeasonalNaive(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f"SeasonalNaive"
+        return "SeasonalNaive"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -868,7 +864,7 @@ class WindowAverage(_TS):
         self.window_size = window_size
 
     def __repr__(self):
-        return f"WindowAverage"
+        return "WindowAverage"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -932,7 +928,7 @@ class SeasonalWindowAverage(_TS):
         self.window_size = window_size
 
     def __repr__(self):
-        return f"SeasWA"
+        return "SeasWA"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -1005,7 +1001,7 @@ class ADIDA(_TS):
         pass
 
     def __repr__(self):
-        return f"ADIDA"
+        return "ADIDA"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -1063,7 +1059,7 @@ class CrostonClassic(_TS):
         pass
 
     def __repr__(self):
-        return f"CrostonClassic"
+        return "CrostonClassic"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -1120,7 +1116,7 @@ class CrostonOptimized(_TS):
         pass
 
     def __repr__(self):
-        return f"CrostonOptimized"
+        return "CrostonOptimized"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -1171,7 +1167,7 @@ class CrostonSBA(_TS):
         pass
 
     def __repr__(self):
-        return f"CrostonSBA"
+        return "CrostonSBA"
 
     def fit(
         self,
@@ -1235,7 +1231,7 @@ class IMAPA(_TS):
         pass
 
     def __repr__(self):
-        return f"IMAPA"
+        return "IMAPA"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
@@ -1299,7 +1295,7 @@ class TSB(_TS):
         self.alpha_p = alpha_p
 
     def __repr__(self):
-        return f"TSB"
+        return "TSB"
 
     def fit(
         self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors

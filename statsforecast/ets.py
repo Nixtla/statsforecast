@@ -6,14 +6,13 @@ __all__ = ['NONE', 'ADD', 'MULT', 'DAMPED', 'TOL', 'HUGEN', 'NA', 'smalno', 'NOG
 # %% ../nbs/ets.ipynb 1
 import math
 import os
+import warnings
 from collections import namedtuple
 from typing import Tuple
 
 import numpy as np
 from numba import njit
 from statsmodels.tsa.seasonal import seasonal_decompose
-
-from .utils import AirPassengers as ap
 
 # %% ../nbs/ets.ipynb 4
 # Global variables
@@ -192,7 +191,7 @@ def etssimulate(x, m, error, trend, season, alpha, beta, gamma, phi, h, y, e):
         return
     elif m < 1:
         m = 1
-    nstates = m * (season > NONE) + 1 + (trend > NONE)
+    # nstates = m * (season > NONE) + 1 + (trend > NONE)
     # Copy initial state components
     l = x[0]
     if trend > NONE:
@@ -242,7 +241,7 @@ def etsforecast(x, m, trend, season, phi, h, f):
     # compute forecasts
     forecast(l, b, s, m, trend, season, phi, f, h)
 
-# %% ../nbs/ets.ipynb 12
+# %% ../nbs/ets.ipynb 13
 @njit(nogil=NOGIL, cache=CACHE)
 def initparam(
     alpha: float,
@@ -287,7 +286,7 @@ def initparam(
             phi = upper[3] - 1e-3
     return {"alpha": alpha, "beta": beta, "gamma": gamma, "phi": phi}
 
-# %% ../nbs/ets.ipynb 14
+# %% ../nbs/ets.ipynb 15
 def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     if np.isnan(phi):
         phi = 1
@@ -324,7 +323,7 @@ def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     # passed all tests
     return True
 
-# %% ../nbs/ets.ipynb 15
+# %% ../nbs/ets.ipynb 16
 def check_param(
     alpha: float,
     beta: float,
@@ -353,7 +352,7 @@ def check_param(
             return False
     return True
 
-# %% ../nbs/ets.ipynb 16
+# %% ../nbs/ets.ipynb 17
 @njit(nogil=NOGIL, cache=CACHE)
 def sinpi(x):
     return np.sin(np.pi * x)
@@ -363,7 +362,7 @@ def sinpi(x):
 def cospi(x):
     return np.cos(np.pi * x)
 
-# %% ../nbs/ets.ipynb 17
+# %% ../nbs/ets.ipynb 18
 @njit(nogil=NOGIL, cache=CACHE)
 def fourier(x, period, K, h=None):
     if h is None:
@@ -394,7 +393,7 @@ def fourier(x, period, K, h=None):
     X = X[:, ~np.isnan(X.sum(axis=0))]
     return X
 
-# %% ../nbs/ets.ipynb 19
+# %% ../nbs/ets.ipynb 20
 def initstate(y, m, trendtype, seasontype):
     n = len(y)
     if seasontype != "N":
@@ -460,12 +459,12 @@ def initstate(y, m, trendtype, seasontype):
                 b0 = max(y_sa[1] / y_sa[0], 1e-3)
     return np.concatenate([[l0, b0], init_seas])
 
-# %% ../nbs/ets.ipynb 21
+# %% ../nbs/ets.ipynb 22
 @njit(nogil=NOGIL, cache=CACHE)
 def switch(x: str):
     return {"N": 0, "A": 1, "M": 2}[x]
 
-# %% ../nbs/ets.ipynb 23
+# %% ../nbs/ets.ipynb 24
 @njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_C(
     y: np.ndarray,
@@ -515,7 +514,7 @@ def pegelsresid_C(
             lik = np.nan
     return amse, e, x, lik
 
-# %% ../nbs/ets.ipynb 24
+# %% ../nbs/ets.ipynb 25
 results = namedtuple("results", "x fn nit simplex")
 
 
@@ -650,7 +649,7 @@ def nelder_mead(
             f_simplex[i] = fn(simplex[i], *args)
     return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
 
-# %% ../nbs/ets.ipynb 25
+# %% ../nbs/ets.ipynb 26
 @njit(nogil=NOGIL, cache=CACHE)
 def ets_target_fn(
     par,
@@ -679,7 +678,7 @@ def ets_target_fn(
     gamma,
     phi,
 ):
-    p_par_length = len(par)
+    # p_par_length = len(par)
     j = 0
     if p_optAlpha:
         alpha = par[j]
@@ -757,7 +756,7 @@ def ets_target_fn(
         objval = mean
     return objval
 
-# %% ../nbs/ets.ipynb 26
+# %% ../nbs/ets.ipynb 27
 def optimize_ets_target_fn(
     x0,
     par,
@@ -866,7 +865,7 @@ def optimize_ets_target_fn(
     )
     return res
 
-# %% ../nbs/ets.ipynb 27
+# %% ../nbs/ets.ipynb 28
 def etsmodel(
     y: np.ndarray,
     m: int,
@@ -1035,7 +1034,7 @@ def etsmodel(
         par=fit_par,
     )
 
-# %% ../nbs/ets.ipynb 29
+# %% ../nbs/ets.ipynb 30
 def ets_f(
     y,
     m,
@@ -1194,7 +1193,7 @@ def ets_f(
     model["method"] = f"ETS({best_e},{best_t}{'d' if best_d else ''},{best_s})"
     return model
 
-# %% ../nbs/ets.ipynb 30
+# %% ../nbs/ets.ipynb 31
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     states = obj["states"][-1, :]
@@ -1204,7 +1203,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     etsforecast(x=states, m=m, trend=ttype, season=stype, phi=phi, h=h, f=forecast)
     return forecast
 
-# %% ../nbs/ets.ipynb 31
+# %% ../nbs/ets.ipynb 32
 def forecast_ets(obj, h):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}

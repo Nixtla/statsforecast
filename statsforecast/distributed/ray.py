@@ -6,14 +6,6 @@ __all__ = ['RayBackend']
 # %% ../nbs/distributed.ray.ipynb 4
 from typing import Any
 
-try:
-    import ray
-except ModuleNotFoundError as e:
-    msg = (
-        f"{e}. To use a ray cluster you have to install "
-        "ray. Please run `pip install ray`. "
-    )
-    raise ModuleNotFoundError(msg) from e
 from ..core import StatsForecast
 from .core import ParallelBackend
 

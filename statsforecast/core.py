@@ -6,10 +6,8 @@ __all__ = ['StatsForecast']
 # %% ../nbs/core.ipynb 4
 import inspect
 import logging
-from copy import deepcopy
-from functools import partial
 from os import cpu_count
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, List, Optional
 
 import numpy as np
 import pandas as pd
