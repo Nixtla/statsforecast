@@ -768,7 +768,7 @@ def arima(
             anyna |= np.isnan(xreg).any()
         if anyna:
             method = "ML"
-    if method.startswith("CSS"):
+    if method in ["CSS", "CSS-ML"]:
         ncond = order[1] + seasonal["order"][1] * seasonal["period"]
         ncond1 = order[0] + seasonal["order"][0] * seasonal["period"]
         ncond = ncond + ncond1
@@ -1358,10 +1358,23 @@ def Arima(
                 xreg = drift
         if xreg is None:
             tmp = arima(
-                x, order, seasonal, include_mean=include_mean, method=method, **kwargs
+                x,
+                order=order,
+                seasonal=seasonal,
+                include_mean=include_mean,
+                method=method,
+                **kwargs
             )
         else:
-            tmp = arima(x, order, seasonal, xreg, include_mean, method=method, **kwargs)
+            tmp = arima(
+                x,
+                order=order,
+                seasonal=seasonal,
+                xreg=xreg,
+                include_mean=include_mean,
+                method=method,
+                **kwargs
+            )
             if include_drift:
                 tmp["coef"] = change_drift_name(tmp["coef"])
 
@@ -1855,7 +1868,7 @@ def auto_arima_f(
                     order=(0, d, 0),
                     seasonal={"order": (0, D, 0), "period": m},
                     include_constant=True,
-                    fixed=np.mean(dx / m),
+                    fixed=np.array([np.mean(dx / m)]),
                     method=method,
                 )
             elif D > 0 and d > 0:
@@ -1872,7 +1885,7 @@ def auto_arima_f(
                     x,
                     order=(0, d, 0),
                     include_constant=True,
-                    fixed=np.mean(dx),
+                    fixed=np.array([np.mean(dx)]),
                     method=method,
                 )
             else:
@@ -2238,7 +2251,7 @@ def auto_arima_f(
 
     return bestfit
 
-# %% ../nbs/arima.ipynb 84
+# %% ../nbs/arima.ipynb 85
 def print_statsforecast_ARIMA(model, digits=3, se=True):
     print(arima_string(model, padding=False))
     if model["lambda"] is not None:
@@ -2268,7 +2281,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if not np.isnan(model["aic"]):
         print(f'AIC={round(model["aic"], 2)}')
 
-# %% ../nbs/arima.ipynb 86
+# %% ../nbs/arima.ipynb 87
 class ARIMASummary:
     """ARIMA Summary."""
 
@@ -2281,7 +2294,7 @@ class ARIMASummary:
     def summary(self):
         return print_statsforecast_ARIMA(self.model)
 
-# %% ../nbs/arima.ipynb 87
+# %% ../nbs/arima.ipynb 88
 class AutoARIMA:
     """An AutoARIMA estimator.
 
