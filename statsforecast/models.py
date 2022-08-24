@@ -25,7 +25,7 @@ class _TS:
 
 # %% ../nbs/models.ipynb 8
 class AutoARIMA(_TS):
-    """AutoARIMA estimator.
+    """AutoARIMA model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py).
 
     Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average)
@@ -151,7 +151,7 @@ class AutoARIMA(_TS):
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the AutoARIMA estimator.
+        """Fit the AutoARIMA model.
 
         Fit an AutoARIMA to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -161,7 +161,7 @@ class AutoARIMA(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: AutoARIMA fitted estimator.
+        `self`: AutoARIMA fitted model.
         """
         with np.errstate(invalid="ignore"):
             self.model_ = auto_arima_f(
@@ -209,7 +209,7 @@ class AutoARIMA(_TS):
         X: np.ndarray = None,
         level: Optional[Tuple[int]] = None,
     ):
-        """Forecast with fitted AutoArima.
+        """Predict with fitted AutoArima.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -230,11 +230,11 @@ class AutoARIMA(_TS):
         }
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
-        """Forecast with fitted AutoArima insample predictions.
+        """Access fitted AutoArima insample predictions.
 
         **Parameters:**<br>
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -265,7 +265,7 @@ class AutoARIMA(_TS):
         `h`: int, forecast horizon.<br>
         `X`: array-like of shape (t, n_x) optional insample exogenous (default=None).<br>
         `X_future`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -295,7 +295,7 @@ class AutoARIMA(_TS):
 
 # %% ../nbs/models.ipynb 18
 class ETS(_TS):
-    """ETS estimator.
+    """ETS model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/ets.py).
 
     Automatically selects the best ETS (Error, Trend, Seasonality)
@@ -325,7 +325,7 @@ class ETS(_TS):
         return "ETS"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the ETS estimator.
+        """Fit the ETS model.
 
         Fit an ETS to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -335,13 +335,13 @@ class ETS(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: ETS fitted estimator.
+        `self`: ETS fitted model.
         """
         self.model_ = ets_f(y, m=self.season_length, model=self.model)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted ETS.
+        """Predict with fitted ETS.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -356,11 +356,11 @@ class ETS(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted ETS insample predictions.
+        """Access fitted ETS insample predictions.
 
         **Parameters:**<br>
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -388,7 +388,7 @@ class ETS(_TS):
         `h`: int, forecast horizon.<br>
         `X`: array-like of shape (t, n_x) optional insample exogenous (default=None).<br>
         `X_future`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -518,7 +518,7 @@ def _ses(
 
 # %% ../nbs/models.ipynb 29
 class SimpleExponentialSmoothing(_TS):
-    """SimpleExponentialSmoothing estimator.
+    """SimpleExponentialSmoothing model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
@@ -542,7 +542,7 @@ class SimpleExponentialSmoothing(_TS):
         return "SES"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the SimpleExponentialSmoothing estimator.
+        """Fit the SimpleExponentialSmoothing model.
 
         Fit an SimpleExponentialSmoothing to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -552,14 +552,14 @@ class SimpleExponentialSmoothing(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: SimpleExponentialSmoothing fitted estimator.
+        `self`: SimpleExponentialSmoothing fitted model.
         """
         mod = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted SimpleExponentialSmoothing.
+        """Predict with fitted SimpleExponentialSmoothing.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -573,10 +573,10 @@ class SimpleExponentialSmoothing(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted SimpleExponentialSmoothing insample predictions.
+        """Access fitted SimpleExponentialSmoothing insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -602,7 +602,7 @@ class SimpleExponentialSmoothing(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -627,7 +627,7 @@ def _ses_optimized(
 
 # %% ../nbs/models.ipynb 39
 class SimpleExponentialSmoothingOptimized(_TS):
-    """SimpleExponentialSmoothing estimator.
+    """SimpleExponentialSmoothing model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
@@ -650,7 +650,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return "SESOpt"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the SimpleExponentialSmoothingOptimized estimator.
+        """Fit the SimpleExponentialSmoothingOptimized model.
 
         Fit an SimpleExponentialSmoothingOptimized to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -660,14 +660,14 @@ class SimpleExponentialSmoothingOptimized(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: SimpleExponentialSmoothingOptimized fitted estimator.
+        `self`: SimpleExponentialSmoothingOptimized fitted model.
         """
         mod = _ses_optimized(y=y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted SimpleExponentialSmoothingOptimized.
+        """Predict with fitted SimpleExponentialSmoothingOptimized.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -681,10 +681,10 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted SimpleExponentialSmoothingOptimized insample predictions.
+        """Access fitted SimpleExponentialSmoothingOptimized insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -710,7 +710,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -745,7 +745,7 @@ def _seasonal_exponential_smoothing(
 
 # %% ../nbs/models.ipynb 49
 class SeasonalExponentialSmoothing(_TS):
-    """SeasonalExponentialSmoothing estimator.
+    """SeasonalExponentialSmoothing model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
@@ -779,7 +779,7 @@ class SeasonalExponentialSmoothing(_TS):
         return "SeasonalES"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the SeasonalExponentialSmoothing estimator.
+        """Fit the SeasonalExponentialSmoothing model.
 
         Fit an SeasonalExponentialSmoothing to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -789,7 +789,7 @@ class SeasonalExponentialSmoothing(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: SeasonalExponentialSmoothing fitted estimator.
+        `self`: SeasonalExponentialSmoothing fitted model.
         """
         mod = _seasonal_exponential_smoothing(
             y=y,
@@ -802,7 +802,7 @@ class SeasonalExponentialSmoothing(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted SeasonalExponentialSmoothing.
+        """Predict with fitted SeasonalExponentialSmoothing.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -818,10 +818,10 @@ class SeasonalExponentialSmoothing(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted SeasonalExponentialSmoothing insample predictions.
+        """Access fitted SeasonalExponentialSmoothing insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -847,7 +847,7 @@ class SeasonalExponentialSmoothing(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -886,7 +886,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self,
         season_length: int,
     ):
-        """SeasonalExponentialSmoothingOptimized estimator.
+        """SeasonalExponentialSmoothingOptimized model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
         Uses a weighted average of all past observations where the weights decrease exponentially into the past.
@@ -914,7 +914,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return "SeasESOpt"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the SeasonalExponentialSmoothingOptimized estimator.
+        """Fit the SeasonalExponentialSmoothingOptimized model.
 
         Fit an SeasonalExponentialSmoothingOptimized to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -924,7 +924,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: SeasonalExponentialSmoothingOptimized fitted estimator.
+        `self`: SeasonalExponentialSmoothingOptimized fitted model.
         """
         mod = _seasonal_ses_optimized(
             y=y,
@@ -936,7 +936,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted SeasonalExponentialSmoothingOptimized.
+        """Predict with fitted SeasonalExponentialSmoothingOptimized.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -952,10 +952,10 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted SeasonalExponentialSmoothingOptimized insample predictions.
+        """Access fitted SeasonalExponentialSmoothingOptimized insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -981,7 +981,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1011,7 +1011,7 @@ def _historic_average(
 # %% ../nbs/models.ipynb 69
 class HistoricAverage(_TS):
     def __init__(self):
-        """HistoricAverage estimator.
+        """HistoricAverage model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         Also known as mean method. Uses a simple average of all past observations.
@@ -1029,7 +1029,7 @@ class HistoricAverage(_TS):
         return "HistoricAverage"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the HistoricAverage estimator.
+        """Fit the HistoricAverage model.
 
         Fit an HistoricAverage to a time series (numpy array) `y`.
 
@@ -1037,14 +1037,14 @@ class HistoricAverage(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: HistoricAverage fitted estimator.
+        `self`: HistoricAverage fitted model.
         """
         mod = _historic_average(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted HistoricAverage.
+        """Predict with fitted HistoricAverage.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1058,10 +1058,10 @@ class HistoricAverage(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted HistoricAverage insample predictions.
+        """Access fitted HistoricAverage insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1087,7 +1087,7 @@ class HistoricAverage(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1114,7 +1114,7 @@ def _naive(
 # %% ../nbs/models.ipynb 79
 class Naive(_TS):
     def __init__(self):
-        """Naive estimator.
+        """Naive model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         Also known as mean method. Uses a simple average of all past observations.
@@ -1132,7 +1132,7 @@ class Naive(_TS):
         return "Naive"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the Naive estimator.
+        """Fit the Naive model.
 
         Fit an Naive to a time series (numpy array) `y`.
 
@@ -1140,14 +1140,14 @@ class Naive(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: Naive fitted estimator.
+        `self`: Naive fitted model.
         """
         mod = _naive(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted Naive.
+        """Predict with fitted Naive.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1161,10 +1161,10 @@ class Naive(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted Naive insample predictions.
+        """Access fitted Naive insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1190,7 +1190,7 @@ class Naive(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1223,7 +1223,7 @@ def _random_walk_with_drift(
 # %% ../nbs/models.ipynb 89
 class RandomWalkWithDrift(_TS):
     def __init__(self):
-        """RandomWalkWithDrift estimator.
+        """RandomWalkWithDrift model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         A variation of the naive method allows the forecasts to change over time.
@@ -1245,7 +1245,7 @@ class RandomWalkWithDrift(_TS):
         return "RWD"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the RandomWalkWithDrift estimator.
+        """Fit the RandomWalkWithDrift model.
 
         Fit an RandomWalkWithDrift to a time series (numpy array) `y`.
 
@@ -1253,14 +1253,14 @@ class RandomWalkWithDrift(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: RandomWalkWithDrift fitted estimator.
+        `self`: RandomWalkWithDrift fitted model.
         """
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted RandomWalkWithDrift.
+        """Predict with fitted RandomWalkWithDrift.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1275,10 +1275,10 @@ class RandomWalkWithDrift(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted RandomWalkWithDrift insample predictions.
+        """Access fitted RandomWalkWithDrift insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1304,7 +1304,7 @@ class RandomWalkWithDrift(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1340,7 +1340,7 @@ def _seasonal_naive(
 # %% ../nbs/models.ipynb 99
 class SeasonalNaive(_TS):
     def __init__(self, season_length: int):
-        """SeasonalNaive estimator.
+        """SeasonalNaive model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         Similar to the naive method, but uses the last known observation of the same period
@@ -1358,7 +1358,7 @@ class SeasonalNaive(_TS):
         return "SeasonalNaive"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the SeasonalNaive estimator.
+        """Fit the SeasonalNaive model.
 
         Fit an SeasonalNaive to a time series (numpy array) `y`.
 
@@ -1366,7 +1366,7 @@ class SeasonalNaive(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: SeasonalNaive fitted estimator.
+        `self`: SeasonalNaive fitted model.
         """
         mod = _seasonal_naive(
             y=y,
@@ -1378,7 +1378,7 @@ class SeasonalNaive(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted SeasonalNaive.
+        """Predict with fitted SeasonalNaive.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1394,10 +1394,10 @@ class SeasonalNaive(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted SeasonalNaive insample predictions.
+        """Access fitted SeasonalNaive insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1423,7 +1423,7 @@ class SeasonalNaive(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1452,7 +1452,7 @@ def _window_average(
 # %% ../nbs/models.ipynb 109
 class WindowAverage(_TS):
     def __init__(self, window_size: int):
-        """WindowAverage estimator.
+        """WindowAverage model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         Uses the average of the last $k$ observations, with $k$ the length of the window.
@@ -1472,7 +1472,7 @@ class WindowAverage(_TS):
         return "WindowAverage"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the WindowAverage estimator.
+        """Fit the WindowAverage model.
 
         Fit an WindowAverage to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -1482,14 +1482,14 @@ class WindowAverage(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: WindowAverage fitted estimator.
+        `self`: WindowAverage fitted model.
         """
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted WindowAverage.
+        """Predict with fitted WindowAverage.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1503,10 +1503,10 @@ class WindowAverage(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted WindowAverage insample predictions.
+        """Access fitted WindowAverage insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1531,7 +1531,7 @@ class WindowAverage(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1565,7 +1565,7 @@ def _seasonal_window_average(
 # %% ../nbs/models.ipynb 119
 class SeasonalWindowAverage(_TS):
     def __init__(self, season_length: int, window_size: int):
-        """SeasonalWindowAverage estimator.
+        """SeasonalWindowAverage model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         An average of the last $k$ observations of the same period, with $k$ the length of the window.
@@ -1584,7 +1584,7 @@ class SeasonalWindowAverage(_TS):
         return "SeasWA"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the SeasonalWindowAverage estimator.
+        """Fit the SeasonalWindowAverage model.
 
         Fit an SeasonalWindowAverage to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -1594,7 +1594,7 @@ class SeasonalWindowAverage(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: SeasonalWindowAverage fitted estimator.
+        `self`: SeasonalWindowAverage fitted model.
         """
         mod = _seasonal_window_average(
             y=y,
@@ -1607,7 +1607,7 @@ class SeasonalWindowAverage(_TS):
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted SeasonalWindowAverage.
+        """Predict with fitted SeasonalWindowAverage.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1623,10 +1623,10 @@ class SeasonalWindowAverage(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted SeasonalWindowAverage insample predictions.
+        """Access fitted SeasonalWindowAverage insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1651,7 +1651,7 @@ class SeasonalWindowAverage(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1691,7 +1691,7 @@ def _adida(
 # %% ../nbs/models.ipynb 129
 class ADIDA(_TS):
     def __init__(self):
-        """ADIDA estimator.
+        """ADIDA model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal aggregation to reduce the
@@ -1714,7 +1714,7 @@ class ADIDA(_TS):
         return "ADIDA"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the ADIDA estimator.
+        """Fit the ADIDA model.
 
         Fit an ADIDA to a time series (numpy array) `y`.
 
@@ -1722,14 +1722,14 @@ class ADIDA(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: ADIDA fitted estimator.
+        `self`: ADIDA fitted model.
         """
         mod = _adida(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted ADIDA.
+        """Predict with fitted ADIDA.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1743,10 +1743,10 @@ class ADIDA(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted ADIDA insample predictions.
+        """Access fitted ADIDA insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1771,7 +1771,7 @@ class ADIDA(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1804,7 +1804,7 @@ def _croston_classic(
 # %% ../nbs/models.ipynb 139
 class CrostonClassic(_TS):
     def __init__(self):
-        """CrostonClassic estimator.
+        """CrostonClassic model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         A method to forecast time series that exhibit intermittent demand.
@@ -1826,7 +1826,7 @@ class CrostonClassic(_TS):
         return "CrostonClassic"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the CrostonClassic estimator.
+        """Fit the CrostonClassic model.
 
         Fit an CrostonClassic to a time series (numpy array) `y`.
 
@@ -1834,14 +1834,14 @@ class CrostonClassic(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: CrostonClassic fitted estimator.
+        `self`: CrostonClassic fitted model.
         """
         mod = _croston_classic(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted CrostonClassic.
+        """Predict with fitted CrostonClassic.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1855,10 +1855,10 @@ class CrostonClassic(_TS):
         return res
 
     def predict_in_sample(self, level):
-        """Forecast with fitted CrostonClassic insample predictions.
+        """Access fitted CrostonClassic insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1883,7 +1883,7 @@ class CrostonClassic(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -1915,7 +1915,7 @@ def _croston_optimized(
 # %% ../nbs/models.ipynb 149
 class CrostonOptimized(_TS):
     def __init__(self):
-        """CrostonOptimized estimator.
+        """CrostonOptimized model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         A method to forecast time series that exhibit intermittent demand.
@@ -1938,7 +1938,7 @@ class CrostonOptimized(_TS):
         return "CrostonOptimized"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the CrostonOptimized estimator.
+        """Fit the CrostonOptimized model.
 
         Fit an CrostonOptimized to a time series (numpy array) `y`.
 
@@ -1946,14 +1946,14 @@ class CrostonOptimized(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: CrostonOptimized fitted estimator.
+        `self`: CrostonOptimized fitted model.
         """
         mod = _croston_optimized(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted CrostonOptimized.
+        """Predict with fitted CrostonOptimized.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -1967,10 +1967,10 @@ class CrostonOptimized(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted CrostonOptimized insample predictions.
+        """Access fitted CrostonOptimized insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -1995,7 +1995,7 @@ class CrostonOptimized(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -2021,7 +2021,7 @@ def _croston_sba(
 # %% ../nbs/models.ipynb 160
 class CrostonSBA(_TS):
     def __init__(self):
-        """CrostonSBA estimator.
+        """CrostonSBA model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         A method to forecast time series that exhibit intermittent demand.
@@ -2044,7 +2044,7 @@ class CrostonSBA(_TS):
         return "CrostonSBA"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the CrostonSBA estimator.
+        """Fit the CrostonSBA model.
 
         Fit an CrostonSBA to a time series (numpy array) `y`.
 
@@ -2052,14 +2052,14 @@ class CrostonSBA(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: CrostonSBA fitted estimator.
+        `self`: CrostonSBA fitted model.
         """
         mod = _croston_sba(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted CrostonSBA.
+        """Predict with fitted CrostonSBA.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -2073,10 +2073,10 @@ class CrostonSBA(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted CrostonSBA insample predictions.
+        """Access fitted CrostonSBA insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -2101,7 +2101,7 @@ class CrostonSBA(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -2138,7 +2138,7 @@ def _imapa(
 # %% ../nbs/models.ipynb 170
 class IMAPA(_TS):
     def __init__(self):
-        """IMAPA estimator.
+        """IMAPA model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         Intermittent Multiple Aggregation Prediction Algorithm: Similar to ADIDA, but instead of
@@ -2157,7 +2157,7 @@ class IMAPA(_TS):
         return "IMAPA"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the IMAPA estimator.
+        """Fit the IMAPA model.
 
         Fit an IMAPA to a time series (numpy array) `y`.
 
@@ -2165,14 +2165,14 @@ class IMAPA(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: IMAPA fitted estimator.
+        `self`: IMAPA fitted model.
         """
         mod = _imapa(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted IMAPA.
+        """Predict with fitted IMAPA.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -2186,10 +2186,10 @@ class IMAPA(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted IMAPA insample predictions.
+        """Access fitted IMAPA insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -2214,7 +2214,7 @@ class IMAPA(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
@@ -2248,7 +2248,7 @@ def _tsb(
 # %% ../nbs/models.ipynb 180
 class TSB(_TS):
     def __init__(self, alpha_d: float, alpha_p: float):
-        """TSB estimator.
+        """TSB model.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
@@ -2282,7 +2282,7 @@ class TSB(_TS):
         return "TSB"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the TSB estimator.
+        """Fit the TSB model.
 
         Fit an TSB to a time series (numpy array) `y`.
 
@@ -2290,14 +2290,14 @@ class TSB(_TS):
         `y`: numpy array of shape (t, ), clean time series.<br>
 
         **Returns:**<br>
-        `self`: TSB fitted estimator.
+        `self`: TSB fitted model.
         """
         mod = _tsb(y=y, h=1, fitted=False, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         self.model_ = dict(mod)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Forecast with fitted TSB.
+        """Predict with fitted TSB.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -2311,10 +2311,10 @@ class TSB(_TS):
         return res
 
     def predict_in_sample(self):
-        """Forecast with fitted TSB insample predictions.
+        """Access fitted TSB insample predictions.
 
         **Parameters:**<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
 
         **Returns:**<br>
         `forecasts`: dictionary, with entries 'mean' for point predictions and
@@ -2339,7 +2339,7 @@ class TSB(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
-        `level`: int list, confidence levels for prediction intervals.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
         **Returns:**<br>
