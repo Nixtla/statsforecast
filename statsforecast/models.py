@@ -304,6 +304,9 @@ class ETS(_TS):
     $Z$ optimized or $N$ ommited components. The `model` string parameter defines the ETS equations:
     E in [$M, A, Z$], T in [$N, A, M, Z$], and S in [$N, A, M, Z$].
 
+    For example when model='ANN' (additive error, no trend, and no seasonality), ETS will
+    explore only a simple exponential smoothing.
+
     **Parameters:**<br>
     `model`: str, controlling state-space-equations.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>

@@ -10,7 +10,9 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 
-# %% ../nbs/utils.ipynb 4
+from nbdev.showdoc import add_docs, show_doc
+
+# %% ../nbs/utils.ipynb 6
 def generate_series(
     n_series: int,
     freq: str = "D",
@@ -20,9 +22,23 @@ def generate_series(
     equal_ends: bool = False,
     seed: int = 0,
 ) -> pd.DataFrame:
-    """Generates `n_series` of frequency `freq` of different lengths in the interval [`min_length`, `max_length`].
+    """Generate Synthetic Panel Series.
+
+    Generates `n_series` of frequency `freq` of different lengths in the interval [`min_length`, `max_length`].
     If `n_static_features > 0`, then each serie gets static features with random values.
-    If `equal_ends == True` then all series end at the same date."""
+    If `equal_ends == True` then all series end at the same date.
+
+    **Parameters:**<br>
+    `n_series`: int, number of series for synthetic panel.<br>
+    `min_length`: int, minimal length of synthetic panel's series.<br>
+    `max_length`: int, minimal length of synthetic panel's series.<br>
+    `n_static_features`: int, default=0, number of static exogenous variables for synthetic panel's series.<br>
+    `equal_ends`: bool, if True, series finish in the same date stamp `ds`.<br>
+    `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+
+    **Returns:**<br>
+    `freq`: pandas.DataFrame, synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
+    """
     seasonalities = {"D": 7, "M": 12}
     season = seasonalities[freq]
 
@@ -58,7 +74,7 @@ def generate_series(
     series = series.set_index("unique_id")
     return series
 
-# %% ../nbs/utils.ipynb 8
+# %% ../nbs/utils.ipynb 10
 AirPassengers = np.array(
     [
         112.0,
@@ -208,7 +224,7 @@ AirPassengers = np.array(
     ]
 )
 
-# %% ../nbs/utils.ipynb 9
+# %% ../nbs/utils.ipynb 11
 AirPassengersDF = pd.DataFrame(
     {
         "unique_id": np.ones(len(AirPassengers)),
