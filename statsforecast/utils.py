@@ -10,8 +10,6 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 
-from nbdev.showdoc import add_docs, show_doc
-
 # %% ../nbs/utils.ipynb 6
 def generate_series(
     n_series: int,
