@@ -398,7 +398,7 @@ class StatsForecast:
 
         **Parameters:**<br>
         `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `models`: List[typing.Any], list of StatsForecast instantiated models.<br>
+        `models`: List[typing.Any], list of instantiated objects models.StatsForecast.<br>
         `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
         `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
@@ -481,7 +481,7 @@ class StatsForecast:
         X_df: Optional[pd.DataFrame] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with StatsForecast Core.
+        """Predict with core.StatsForecast.
 
         Use stored fitted `models` to predict large set of time series from DataFrame `df`.
 
@@ -622,13 +622,14 @@ class StatsForecast:
         fitted: bool = False,
         sort_df: bool = True,
     ):
-        """Time Series Cross Validation with core.StatsForecast.
+        """Temporal Cross-Validation with core.StatsForecast.
 
-        `StatsForecast` allows for the efficient computation of time series cross validation.
-        The technique creates multiple training windows and predicts on chained or rolled windows.
-        `StatsForecast`'s' speed allows to overcome this evaluation technique high computational
-        costs. Its usage allows for better test model's generalization measurements by increasing
-        the test's length and diversity.
+        `core.StatsForecast`'s cross-validation efficiently fits a list of StatsForecast
+        models through multiple training windows, in either chained or rolled manner.
+
+        `StatsForecast.models`' speed allows to overcome this evaluation technique
+        high computational costs. Temporal cross-validation provides better model's
+        generalization measurements by increasing the test's length and diversity.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -644,6 +645,8 @@ class StatsForecast:
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
+
+
         """
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)

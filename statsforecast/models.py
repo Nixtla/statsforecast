@@ -295,7 +295,7 @@ class AutoARIMA(_TS):
 
 # %% ../nbs/models.ipynb 18
 class ETS(_TS):
-    """ETS model.
+    """AutoETS model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/ets.py).
 
     Automatically selects the best ETS (Error, Trend, Seasonality)
@@ -306,6 +306,9 @@ class ETS(_TS):
 
     For example when model='ANN' (additive error, no trend, and no seasonality), ETS will
     explore only a simple exponential smoothing.
+
+    If the component is selected as 'Z', it operates as a placeholder to ask the AutoETS model
+    to figure out the best parameter.
 
     **Parameters:**<br>
     `model`: str, controlling state-space-equations.<br>
@@ -328,9 +331,9 @@ class ETS(_TS):
         return "ETS"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
-        """Fit the ETS model.
+        """Fit the AutoETS model.
 
-        Fit an ETS to a time series (numpy array) `y`
+        Fit an AutoETS to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
 
         **Parameters:**<br>
@@ -338,13 +341,13 @@ class ETS(_TS):
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
 
         **Returns:**<br>
-        `self`: ETS fitted model.
+        `self`: AutoETS fitted model.
         """
         self.model_ = ets_f(y, m=self.season_length, model=self.model)
         return self
 
     def predict(self, h: int, X: np.ndarray = None):
-        """Predict with fitted ETS.
+        """Predict with fitted AutoETS.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -359,7 +362,7 @@ class ETS(_TS):
         return res
 
     def predict_in_sample(self):
-        """Access fitted ETS insample predictions.
+        """Access fitted AutoETS insample predictions.
 
         **Parameters:**<br>
         `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
@@ -380,7 +383,7 @@ class ETS(_TS):
         X_future: np.ndarray = None,
         fitted: bool = False,
     ):
-        """Memory Efficient ETS predictions.
+        """Memory Efficient AutoETS predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -1024,7 +1027,7 @@ class HistoricAverage(_TS):
         **Parameters:**<br>
 
         **References:**<br>
-        [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+        [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
         """
         pass
 
