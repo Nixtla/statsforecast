@@ -710,8 +710,8 @@ class StatsForecast:
         Check `StatsForecast.cross_validation` parameters, use `fitted=True`.<br>
 
         **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions
+        and probabilistic predictions for all fitted `models`.<br>
         """
         if not hasattr(self, "cv_fitted_values_"):
             raise Exception("Please run `cross_validation` mehtod using `fitted=True`")
