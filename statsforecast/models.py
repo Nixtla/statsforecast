@@ -23,7 +23,7 @@ class _TS:
         b.__dict__.update(self.__dict__)
         return b
 
-# %% ../nbs/models.ipynb 8
+# %% ../nbs/models.ipynb 9
 class AutoARIMA(_TS):
     """AutoARIMA model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py).
@@ -293,7 +293,7 @@ class AutoARIMA(_TS):
             }
         return res
 
-# %% ../nbs/models.ipynb 18
+# %% ../nbs/models.ipynb 19
 class ETS(_TS):
     """AutoETS model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/ets.py).
@@ -408,7 +408,7 @@ class ETS(_TS):
             keys.append("fitted")
         return {key: fcst[key] for key in keys}
 
-# %% ../nbs/models.ipynb 27
+# %% ../nbs/models.ipynb 29
 @njit
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
@@ -507,7 +507,7 @@ def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
         out[i] = season_vals[i % season_length]
     return out
 
-# %% ../nbs/models.ipynb 28
+# %% ../nbs/models.ipynb 30
 @njit
 def _ses(
     y: np.ndarray,  # time series
@@ -522,7 +522,7 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 29
+# %% ../nbs/models.ipynb 31
 class SimpleExponentialSmoothing(_TS):
     """SimpleExponentialSmoothing model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
@@ -618,7 +618,7 @@ class SimpleExponentialSmoothing(_TS):
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
-# %% ../nbs/models.ipynb 38
+# %% ../nbs/models.ipynb 40
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -631,7 +631,7 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 39
+# %% ../nbs/models.ipynb 41
 class SimpleExponentialSmoothingOptimized(_TS):
     """SimpleExponentialSmoothing model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
@@ -726,7 +726,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 48
+# %% ../nbs/models.ipynb 50
 @njit
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
@@ -749,7 +749,7 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 49
+# %% ../nbs/models.ipynb 51
 class SeasonalExponentialSmoothing(_TS):
     """SeasonalExponentialSmoothing model.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
@@ -865,7 +865,7 @@ class SeasonalExponentialSmoothing(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 58
+# %% ../nbs/models.ipynb 60
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -886,7 +886,7 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 59
+# %% ../nbs/models.ipynb 61
 class SeasonalExponentialSmoothingOptimized(_TS):
     def __init__(
         self,
@@ -999,7 +999,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 68
+# %% ../nbs/models.ipynb 71
 @njit
 def _historic_average(
     y: np.ndarray,  # time series
@@ -1014,7 +1014,7 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 69
+# %% ../nbs/models.ipynb 72
 class HistoricAverage(_TS):
     def __init__(self):
         """HistoricAverage model.
@@ -1103,7 +1103,7 @@ class HistoricAverage(_TS):
         out = _historic_average(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 78
+# %% ../nbs/models.ipynb 81
 @njit
 def _naive(
     y: np.ndarray,  # time series
@@ -1117,7 +1117,7 @@ def _naive(
         return {"mean": mean, "fitted": fitted_vals}
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 79
+# %% ../nbs/models.ipynb 82
 class Naive(_TS):
     def __init__(self):
         """Naive model.
@@ -1206,7 +1206,7 @@ class Naive(_TS):
         out = _naive(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 88
+# %% ../nbs/models.ipynb 91
 @njit
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -1226,7 +1226,7 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 89
+# %% ../nbs/models.ipynb 92
 class RandomWalkWithDrift(_TS):
     def __init__(self):
         """RandomWalkWithDrift model.
@@ -1320,7 +1320,7 @@ class RandomWalkWithDrift(_TS):
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 98
+# %% ../nbs/models.ipynb 101
 @njit
 def _seasonal_naive(
     y: np.ndarray,  # time series
@@ -1343,7 +1343,7 @@ def _seasonal_naive(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 99
+# %% ../nbs/models.ipynb 102
 class SeasonalNaive(_TS):
     def __init__(self, season_length: int):
         """SeasonalNaive model.
@@ -1439,7 +1439,7 @@ class SeasonalNaive(_TS):
         out = _seasonal_naive(y=y, h=h, fitted=fitted, season_length=self.season_length)
         return out
 
-# %% ../nbs/models.ipynb 108
+# %% ../nbs/models.ipynb 111
 @njit
 def _window_average(
     y: np.ndarray,  # time series
@@ -1455,7 +1455,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 109
+# %% ../nbs/models.ipynb 112
 class WindowAverage(_TS):
     def __init__(self, window_size: int):
         """WindowAverage model.
@@ -1547,7 +1547,7 @@ class WindowAverage(_TS):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
-# %% ../nbs/models.ipynb 118
+# %% ../nbs/models.ipynb 121
 @njit
 def _seasonal_window_average(
     y: np.ndarray,
@@ -1568,7 +1568,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/models.ipynb 119
+# %% ../nbs/models.ipynb 122
 class SeasonalWindowAverage(_TS):
     def __init__(self, season_length: int, window_size: int):
         """SeasonalWindowAverage model.
@@ -1673,7 +1673,7 @@ class SeasonalWindowAverage(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 128
+# %% ../nbs/models.ipynb 132
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1694,7 +1694,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 129
+# %% ../nbs/models.ipynb 133
 class ADIDA(_TS):
     def __init__(self):
         """ADIDA model.
@@ -1787,7 +1787,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 138
+# %% ../nbs/models.ipynb 142
 @njit
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -1807,7 +1807,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 139
+# %% ../nbs/models.ipynb 143
 class CrostonClassic(_TS):
     def __init__(self):
         """CrostonClassic model.
@@ -1899,7 +1899,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 148
+# %% ../nbs/models.ipynb 152
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1918,7 +1918,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 149
+# %% ../nbs/models.ipynb 153
 class CrostonOptimized(_TS):
     def __init__(self):
         """CrostonOptimized model.
@@ -2011,7 +2011,7 @@ class CrostonOptimized(_TS):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 159
+# %% ../nbs/models.ipynb 163
 @njit
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -2024,7 +2024,7 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 160
+# %% ../nbs/models.ipynb 164
 class CrostonSBA(_TS):
     def __init__(self):
         """CrostonSBA model.
@@ -2117,7 +2117,7 @@ class CrostonSBA(_TS):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 169
+# %% ../nbs/models.ipynb 173
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2141,7 +2141,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 170
+# %% ../nbs/models.ipynb 174
 class IMAPA(_TS):
     def __init__(self):
         """IMAPA model.
@@ -2230,7 +2230,7 @@ class IMAPA(_TS):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 179
+# %% ../nbs/models.ipynb 183
 @njit
 def _tsb(
     y: np.ndarray,  # time series
@@ -2251,7 +2251,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 180
+# %% ../nbs/models.ipynb 184
 class TSB(_TS):
     def __init__(self, alpha_d: float, alpha_p: float):
         """TSB model.
