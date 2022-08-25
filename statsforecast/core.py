@@ -373,20 +373,41 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 25
+# %% ../nbs/core.ipynb 26
 class StatsForecast:
     def __init__(
         self,
-        models: List[Any],  # List of instantiated models (`statsforecast.models`)
-        freq: str,  # Frequency of the data
-        n_jobs: int = 1,  # Number of jobs used to parallel processing. Use `-1` to use all cores
-        ray_address: Optional[str] = None,  # Optional ray address to distribute jobs
-        df: Optional[
-            pd.DataFrame
-        ] = None,  # DataFrame with columns `unique_id`, `ds`,`y`, and exogenous variables
-        sort_df: bool = True,  # Sort `df` according to `unique_id` and `ds`?
+        models: List[Any],
+        freq: str,
+        n_jobs: int = 1,
+        ray_address: Optional[str] = None,
+        df: Optional[pd.DataFrame] = None,
+        sort_df: bool = True,
     ):
-        # needed for residuals, think about it later
+        """core.StatsForecast.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py).
+
+        The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
+        for large sets of time series. It operates with pandas DataFrame `df` that identifies series
+        and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target
+        time series variable.
+
+        The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
+        model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
+        Scikit-learn interface store the fitted models.
+
+        **Parameters:**<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
+        `models`: List[typing.Any], list of instantiated objects models.StatsForecast.<br>
+        `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+        `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
+        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+
+        **Notes:**<br>
+        The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
+        See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+        """
+        # TODO @fede: needed for residuals, think about it later
         self.models = models
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
@@ -403,13 +424,19 @@ class StatsForecast:
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
             self.sort_df = sort_df
 
-    def fit(
-        self,
-        df: Optional[
-            pd.DataFrame
-        ] = None,  # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
-        sort_df: bool = True,  # Sort `df` according to index and `ds`?
-    ):
+    def fit(self, df: Optional[pd.DataFrame] = None, sort_df: bool = True):
+        """Fit the core.StatsForecast.
+
+        Fit `models` to a large set of time series from DataFrame `df`.
+        and store fitted models for later inspection.
+
+        **Parameters:**<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
+        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+
+        **Returns:**<br>
+        `self`: Returns with stored `StatsForecast` fitted `models`.
+        """
         self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
             self.fitted_ = self.ga.fit(models=self.models)
@@ -450,29 +477,59 @@ class StatsForecast:
 
     def predict(
         self,
-        h: int,  # Forecast horizon
-        X_df: Optional[pd.DataFrame] = None,  # Future exogenous regressors
-        level: Optional[List[int]] = None,  # Levels of propabilistic intervals
+        h: int,
+        X_df: Optional[pd.DataFrame] = None,
+        level: Optional[List[int]] = None,
     ):
+        """Predict with core.StatsForecast.
+
+        Use stored fitted `models` to predict large set of time series from DataFrame `df`.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+        `X_df`: pandas.DataFrame, with [`unique_id`, `ds`] columns and `df`'s future exogenous.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
+        predictions for all fitted `models`.<br>
+        """
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
         else:
             fcsts, cols = self._predict_parallel(h=h, X=X, level=level)
-        df = self._make_future_df(h=h)
-        df[cols] = fcsts
-        return df
+        fcsts_df = self._make_future_df(h=h)
+        fcsts_df[cols] = fcsts
+        return fcsts_df
 
     def fit_predict(
         self,
-        h: int,  # Forecast horizon
-        df: Optional[
-            pd.DataFrame
-        ] = None,  # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
-        X_df: Optional[pd.DataFrame] = None,  # Future exogenous regressors
-        level: Optional[List[int]] = None,  # Levels of probabilistic intervals
-        sort_df: bool = True,  # Sort `df` according to index and `ds`?
+        h: int,
+        df: Optional[pd.DataFrame] = None,
+        X_df: Optional[pd.DataFrame] = None,
+        level: Optional[List[int]] = None,
+        sort_df: bool = True,
     ):
+        """Fit and Predict with core.StatsForecast.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to Scikit-Learn `fit_predict` without storing information.
+        It requires the forecast horizon `h` in advance.
+
+        In contrast to `StatsForecast.forecast` this method stores partial models outputs.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.
+        `X_df`: pandas.DataFrame, with [`unique_id`, `ds`] columns and `df`'s future exogenous.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].
+
+        **Returns:**<br>
+        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
+        predictions for all fitted `models`.<br>
+        """
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -483,21 +540,37 @@ class StatsForecast:
             self.fitted_, fcsts, cols = self._fit_predict_parallel(
                 h=h, X=X, level=level
             )
-        df = self._make_future_df(h=h)
-        df[cols] = fcsts
-        return df
+        fcsts_df = self._make_future_df(h=h)
+        fcsts_df[cols] = fcsts
+        return fcsts_df
 
     def forecast(
         self,
-        h: int,  # Forecast horizon
-        df: Optional[
-            pd.DataFrame
-        ] = None,  # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
-        X_df: Optional[pd.DataFrame] = None,  # Future exogenous regressors
-        level: Optional[List[int]] = None,  # Levels of probabilistic intervals
-        fitted: bool = False,  # Save fitted values?
-        sort_df: bool = True,  # Sort `df` according to `unique_id` and `ds`?
+        h: int,
+        df: Optional[pd.DataFrame] = None,
+        X_df: Optional[pd.DataFrame] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+        sort_df: bool = True,
     ):
+        """Memory Efficient core.StatsForecast predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to Scikit-Learn `fit_predict` without storing information.
+        It requires the forecast horizon `h` in advance.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
+        `X_df`: pandas.DataFrame, with [`unique_id`, `ds`] columns and `df`'s future exogenous.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+
+        **Returns:**<br>
+        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
+        predictions for all fitted `models`.<br>
+        """
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -510,11 +583,25 @@ class StatsForecast:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
         fcsts = res_fcsts["forecasts"]
         cols = res_fcsts["cols"]
-        df = self._make_future_df(h=h)
-        df[cols] = fcsts
-        return df
+        fcsts_df = self._make_future_df(h=h)
+        fcsts_df[cols] = fcsts
+        return fcsts_df
 
     def forecast_fitted_values(self):
+        """Access core.StatsForecast insample predictions.
+
+        After executing `StatsForecast.forecast`, you can access the insample
+        prediction values for each model. To get them, you need to pass `fitted=True`
+        to the `StatsForecast.forecast` method and then use the
+        `StatsForecast.forecast_fitted_values` method.
+
+        **Parameters:**<br>
+        Check `StatsForecast.forecast` parameters, use `fitted=True`.<br>
+
+        **Returns:**<br>
+        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
+        predictions for all fitted `models`.<br>
+        """
         if not hasattr(self, "fcst_fitted_values_"):
             raise Exception("Please run `forecast` mehtod using `fitted=True`")
         cols = self.fcst_fitted_values_["cols"]
@@ -525,20 +612,42 @@ class StatsForecast:
 
     def cross_validation(
         self,
-        h: int,  # Forecast horizon
-        df: Optional[
-            pd.DataFrame
-        ] = None,  # DataFrame with columns `unique_id`, `ds`, `y`, and exogenous variables
-        n_windows: int = 1,  # Number of windows used for cross validation
-        step_size: int = 1,  # Step size between each window
-        test_size: Optional[
-            int
-        ] = None,  # Lenght of test size. If passed, set `n_windows=None`
-        input_size: Optional[int] = None,  # Input size for each window
-        level: Optional[List[int]] = None,  # Levels of probabilistic intervals
-        fitted: bool = False,  # Save fitted values for each window and each model?
-        sort_df: bool = True,  # Sort `df` according to `unique_id` and `ds`?
+        h: int,
+        df: Optional[pd.DataFrame] = None,
+        n_windows: int = 1,
+        step_size: int = 1,
+        test_size: Optional[int] = None,
+        input_size: Optional[int] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+        sort_df: bool = True,
     ):
+        """Temporal Cross-Validation with core.StatsForecast.
+
+        `core.StatsForecast`'s cross-validation efficiently fits a list of StatsForecast
+        models through multiple training windows, in either chained or rolled manner.
+
+        `StatsForecast.models`' speed allows to overcome this evaluation technique
+        high computational costs. Temporal cross-validation provides better model's
+        generalization measurements by increasing the test's length and diversity.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
+        `n_windows`: int, number of windows used for cross validation.<br>
+        `step_size`: int = 1, step size between each window.<br>
+        `test_size`: Optional[int] = None, length of test size. If passed, set `n_windows=None`.<br>
+        `input_size`: Optional[int] = None, input size for each window, if not none rolled windows.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+        `sort_df`: bool, if True, sort `df` by `unique_id` and `ds`.
+
+        **Returns:**<br>
+        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
+        predictions for all fitted `models`.<br>
+
+
+        """
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
         elif n_windows is None:
@@ -577,7 +686,7 @@ class StatsForecast:
 
         fcsts = res_fcsts["forecasts"]
         cols = res_fcsts["cols"]
-        df = _cv_dates(
+        fcsts_df = _cv_dates(
             last_dates=self.last_dates,
             freq=self.freq,
             h=h,
@@ -585,11 +694,25 @@ class StatsForecast:
             step_size=step_size,
         )
         idx = pd.Index(np.repeat(self.uids, h * n_windows), name="unique_id")
-        df.index = idx
-        df[cols] = fcsts
-        return df
+        fcsts_df.index = idx
+        fcsts_df[cols] = fcsts
+        return fcsts_df
 
     def cross_validation_fitted_values(self):
+        """Access core.StatsForecast insample cross validated predictions.
+
+        After executing `StatsForecast.cross_validation`, you can access the insample
+        prediction values for each model and window. To get them, you need to pass `fitted=True`
+        to the `StatsForecast.cross_validation` method and then use the
+        `StatsForecast.cross_validation_fitted_values` method.
+
+        **Parameters:**<br>
+        Check `StatsForecast.cross_validation` parameters, use `fitted=True`.<br>
+
+        **Returns:**<br>
+        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions
+        and probabilistic predictions for all fitted `models`.<br>
+        """
         if not hasattr(self, "cv_fitted_values_"):
             raise Exception("Please run `cross_validation` mehtod using `fitted=True`")
         index = pd.MultiIndex.from_tuples(
