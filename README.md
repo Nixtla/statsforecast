@@ -56,9 +56,7 @@ pip install -e .
 
 ## 🏃 Getting Started
 To get started just follow this [guide](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl?usp=sharing).
-In the guide, we describe the `AutoARIMA` and `AutoETS` models and apply them to predict the classic Box-Jenkins AirPassengers dataset.
-We go further into probabilistic predictions, exogenous variables, and other [baseline models](https://nixtla.github.io/statsforecast/models.html).
-
+In the guide, we showcase `AutoARIMA` and `AutoETS`, and go further into probabilistic predictions, exogenous variables, and other [baseline models](https://nixtla.github.io/statsforecast/models.html).
 
 ## 🎉 New!
 * [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb) **ETS Example**: 4x faster than StatsModels with improved accuracy and robustness.
