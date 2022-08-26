@@ -18,7 +18,7 @@
 **StatsForecast** offers a collection of widely used univariate time series forecasting models, including automatic `ARIMA` and `ETS` modeling optimized for high performance using `numba`. It also includes a large battery of benchmarking models.
 </div>
 
-## 💻 Installation and Getting Started
+## 💻 Installation
 <details open>
 <summary>PyPI</summary>
 
@@ -54,7 +54,10 @@ pip install -e .
 ```
 </details>
 
-To get started just follow this [guide]([./examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl#scrollTo=awWptcpJGQ5i)).
+## 🏃 Getting Started
+To get started just follow this [guide](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl?usp=sharing).
+In the guide, we describe the `AutoARIMA` and `AutoETS` models and apply them to predict the classic Box-Jenkins AirPassengers dataset.
+We go further into probabilistic predictions, exogenous variables, and other [baseline models](https://nixtla.github.io/statsforecast/models.html).
 
 
 ## 🎉 New!
