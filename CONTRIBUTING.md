@@ -41,22 +41,29 @@ conda env create -f environment.yml
 ```
 
 #### 3. Install the library
-Once you have your environment setup, activate it using `conda activate statsforecast` and then install the library in editable mode using `pip install -e .`
+Once you have your environment setup, activate it using `conda activate statsforecast` and then install the library in editable mode using `pip install -e ".[dev]"`
 
 #### 4. Install git hooks
 Before doing any changes to the code, please install the git hooks that run automatic scripts during each commit and merge to strip the notebooks of superfluous metadata (and avoid merge conflicts).
 ```
-nbdev_install_git_hooks
+nbdev_install_hooks
 ```
 
 ### Building the library
-The library is built using the notebooks contained in the `nbs` folder. If you want to make any changes to the library you have to find the relevant notebook, make your changes and then call `nbdev_build_lib`.
+The library is built using the notebooks contained in the `nbs` folder. If you want to make any changes to the library you have to find the relevant notebook, make your changes and then call `nbdev_export`.
 
 ### Running tests
-If you're working on the local interface you can just use `nbdev_test_nbs`. 
+If you're working on the local interface you can just use `nbdev_test`. 
+
+### Linters
+This project uses a couple of linters to validate different aspects of the code. Before opening a PR, please make sure that it passes all the linting tasks by following the next steps.
+
+#### Run the linting tasks
+* `mypy statsforecast/`
+* `flake8 --select=F statsforecast/`
 
 ### Cleaning notebooks
-Since the notebooks output cells can vary from run to run (even if they produce the same outputs) the notebooks are cleaned before committing them. Please make sure to run `nbdev_clean_nbs` before committing your changes.
+Since the notebooks output cells can vary from run to run (even if they produce the same outputs) the notebooks are cleaned before committing them. Please make sure to run `nbdev_clean` before committing your changes.
 
 ## Do you want to contribute to the documentation?
 
@@ -65,14 +72,6 @@ Since the notebooks output cells can vary from run to run (even if they produce 
     1. Find the relevant notebook.
     2. Make your changes.
     3. Run all cells.
-    4. Run `nbdev_build_docs --mk_readme False --fname nbs/{modified_nb}.ipynb`.
-    5. Clean the notebook outputs using `nbdev_clean_nbs`.
-    6. You can visualize the new documentation using `make docs_serve`.
-
-## Full pipeline
-Before committing your changes you can just use `make nbdev_flow` to run the following `nbdev` tasks:
-1. Install git hooks.
-2. Build the library.
-3. Clean notebooks.
-4. Check if there are differences between the notebooks and the exported library.
-5. Run tests.
+    4. If you are modifying library notebooks (not in `nbs/examples`), clean all outputs using `Edit > Clear All Outputs`.
+    5. Run `nbdev_preview`.
+    6. Clean the notebook metadata using `nbdev_clean`.

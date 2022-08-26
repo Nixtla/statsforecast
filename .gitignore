@@ -15,3 +15,6 @@ tmp
 _docs/
 sidebar.yml
 .DS_Store
+.gitattributes
+.gitconfig
+nbs/.last_checked
