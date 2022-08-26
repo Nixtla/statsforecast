@@ -54,7 +54,7 @@ pip install -e .
 ```
 </details>
 
-## 🏃 Getting Started
+## 🏃🏻‍♀️🏃 Getting Started
 To get started just follow this [guide](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl?usp=sharing).
 In the guide, we showcase `AutoARIMA` and `AutoETS`, and go further into probabilistic predictions, exogenous variables, and other [baseline models](https://nixtla.github.io/statsforecast/models.html).
 
