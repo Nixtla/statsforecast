@@ -7,11 +7,12 @@ __all__ = ['AutoARIMA', 'ETS', 'SimpleExponentialSmoothing', 'SimpleExponentialS
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB']
 
 # %% ../nbs/models.ipynb 4
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from numba import njit
 from scipy.optimize import minimize
+from scipy.stats import norm
 
 from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ets import ets_f, forecast_ets
@@ -251,7 +252,7 @@ class AutoARIMA(_TS):
         h: int,
         X: np.ndarray = None,
         X_future: np.ndarray = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient AutoARIMA predictions.
@@ -274,23 +275,65 @@ class AutoARIMA(_TS):
         """
         with np.errstate(invalid="ignore"):
             mod = auto_arima_f(
-                y,
-                xreg=X,
-                period=self.season_length,
+                x=y,
+                d=self.d,
+                D=self.D,
+                max_p=self.max_p,
+                max_q=self.max_q,
+                max_P=self.max_P,
+                max_Q=self.max_Q,
+                max_order=self.max_order,
+                max_d=self.max_d,
+                max_D=self.max_D,
+                start_p=self.start_p,
+                start_q=self.start_q,
+                start_P=self.start_P,
+                start_Q=self.start_Q,
+                stationary=self.stationary,
+                seasonal=self.seasonal,
+                ic=self.ic,
+                stepwise=self.stepwise,
+                nmodels=self.nmodels,
+                trace=self.trace,
                 approximation=self.approximation,
-                allowmean=False,
-                allowdrift=False,  # not implemented yet
+                method=self.method,
+                truncate=self.truncate,
+                xreg=X,
+                test=self.test,
+                test_kwargs=self.test_kwargs,
+                seasonal_test=self.seasonal_test,
+                seasonal_test_kwargs=self.seasonal_test_kwargs,
+                allowdrift=self.allowdrift,
+                allowmean=self.allowmean,
+                blambda=self.blambda,
+                biasadj=self.biasadj,
+                parallel=self.parallel,
+                num_cores=self.num_cores,
+                period=self.season_length,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
         if fitted:
             res["fitted"] = fitted_arima(mod)
         if level is not None:
+            level = sorted(level)
             res = {
                 **res,
                 **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
                 **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
             }
+            if fitted:
+                # add prediction intervals for fitted values
+                arr_level = np.asarray(level)
+                se = np.sqrt(mod["sigma2"])
+                quantiles = norm.ppf(0.5 * (1 + arr_level / 100))
+
+                lo = res["fitted"].reshape(-1, 1) - quantiles * se.reshape(-1, 1)
+                hi = res["fitted"].reshape(-1, 1) + quantiles * se.reshape(-1, 1)
+                lo = lo[:, ::-1]
+                lo = {f"fitted-lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
+                hi = {f"fitted-hi-{l}": hi[:, i] for i, l in enumerate(level)}
+                res = {**res, **lo, **hi}
         return res
 
 # %% ../nbs/models.ipynb 19

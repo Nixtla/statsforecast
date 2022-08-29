@@ -135,11 +135,12 @@ class GroupedArray:
             models=models, attr="forecast", h=h, X=X, level=level
         )
         matches = ["mean", "lo", "hi"]
+        matches_fitted = ["fitted", "fitted-lo", "fitted-hi"]
         if fitted:
             # for the moment we dont return levels for fitted values in
             # forecast mode
             fitted_vals = np.full(
-                (self.data.shape[0], 1 + len(models)), np.nan, dtype=np.float32
+                (self.data.shape[0], 1 + cuts[-1]), np.nan, dtype=np.float32
             )
             if self.data.ndim == 1:
                 fitted_vals[:, 0] = self.data
@@ -153,6 +154,7 @@ class GroupedArray:
             else:
                 X_f = None
             cols = []
+            cols_fitted = []
             for i_model, model in enumerate(models):
                 has_level = has_level_models[i_model]
                 kwargs = {}
@@ -176,13 +178,27 @@ class GroupedArray:
                 fcsts[i * h : (i + 1) * h, cuts[i_model] : cuts[i_model + 1]] = fcsts_i
                 cols += cols_m
                 if fitted:
+                    cols_m_fitted = [
+                        key
+                        for key in res_i.keys()
+                        if any(key.startswith(m) for m in matches_fitted)
+                    ]
+                    fitted_i = np.vstack([res_i[key] for key in cols_m_fitted]).T
+                    cols_m_fitted = [
+                        f"{repr(model)}"
+                        if col == "fitted"
+                        else f"{repr(model)}-{col.replace('fitted-', '')}"
+                        for col in cols_m_fitted
+                    ]
                     fitted_vals[
-                        self.indptr[i] : self.indptr[i + 1], i_model + 1
-                    ] = res_i["fitted"]
+                        self.indptr[i] : self.indptr[i + 1],
+                        (cuts[i_model] + 1) : (cuts[i_model + 1] + 1),
+                    ] = fitted_i
+                    cols_fitted += cols_m_fitted
         result = {"forecasts": fcsts, "cols": cols}
         if fitted:
             result["fitted"] = {"values": fitted_vals}
-            result["fitted"]["cols"] = ["y"] + [repr(model) for model in models]
+            result["fitted"]["cols"] = ["y"] + cols_fitted
         return result
 
     def cross_validation(
