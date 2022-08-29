@@ -7,7 +7,7 @@ __all__ = ['AutoARIMA', 'ETS', 'SimpleExponentialSmoothing', 'SimpleExponentialS
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB']
 
 # %% ../nbs/models.ipynb 4
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from numba import njit
@@ -252,7 +252,7 @@ class AutoARIMA(_TS):
         h: int,
         X: np.ndarray = None,
         X_future: np.ndarray = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient AutoARIMA predictions.
