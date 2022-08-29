@@ -10,30 +10,42 @@ from itertools import chain
 import numpy as np
 import pandas as pd
 
-# %% ../nbs/utils.ipynb 4
+# %% ../nbs/utils.ipynb 6
 def generate_series(
     n_series: int,
-    freq: str = 'D',
+    freq: str = "D",
     min_length: int = 50,
     max_length: int = 500,
     n_static_features: int = 0,
     equal_ends: bool = False,
     seed: int = 0,
 ) -> pd.DataFrame:
-    """Generates `n_series` of frequency `freq` of different lengths in the interval [`min_length`, `max_length`].
+    """Generate Synthetic Panel Series.
+
+    Generates `n_series` of frequency `freq` of different lengths in the interval [`min_length`, `max_length`].
     If `n_static_features > 0`, then each serie gets static features with random values.
-    If `equal_ends == True` then all series end at the same date."""
-    seasonalities = {'D': 7, 'M': 12}
+    If `equal_ends == True` then all series end at the same date.
+
+    **Parameters:**<br>
+    `n_series`: int, number of series for synthetic panel.<br>
+    `min_length`: int, minimal length of synthetic panel's series.<br>
+    `max_length`: int, minimal length of synthetic panel's series.<br>
+    `n_static_features`: int, default=0, number of static exogenous variables for synthetic panel's series.<br>
+    `equal_ends`: bool, if True, series finish in the same date stamp `ds`.<br>
+    `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+
+    **Returns:**<br>
+    `freq`: pandas.DataFrame, synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
+    """
+    seasonalities = {"D": 7, "M": 12}
     season = seasonalities[freq]
-    
+
     rng = np.random.RandomState(seed)
     series_lengths = rng.randint(min_length, max_length + 1, n_series)
     total_length = series_lengths.sum()
 
-    dates = pd.date_range('2000-01-01', periods=max_length, freq=freq).values
-    uids = [
-        np.repeat(i, serie_length) for i, serie_length in enumerate(series_lengths)
-    ]
+    dates = pd.date_range("2000-01-01", periods=max_length, freq=freq).values
+    uids = [np.repeat(i, serie_length) for i, serie_length in enumerate(series_lengths)]
     if equal_ends:
         ds = [dates[-serie_length:] for serie_length in series_lengths]
     else:
@@ -41,9 +53,9 @@ def generate_series(
     y = np.arange(total_length) % season + rng.rand(total_length) * 0.5
     series = pd.DataFrame(
         {
-            'unique_id': chain.from_iterable(uids),
-            'ds': chain.from_iterable(ds),
-            'y': y,
+            "unique_id": chain.from_iterable(uids),
+            "ds": chain.from_iterable(ds),
+            "y": y,
         }
     )
     for i in range(n_static_features):
@@ -51,36 +63,170 @@ def generate_series(
         static_values = [
             [random.randint(0, 100)] * serie_length for serie_length in series_lengths
         ]
-        series[f'static_{i}'] = np.hstack(static_values)
-        series[f'static_{i}'] = series[f'static_{i}'].astype('category')
+        series[f"static_{i}"] = np.hstack(static_values)
+        series[f"static_{i}"] = series[f"static_{i}"].astype("category")
         if i == 0:
-            series['y'] = series['y'] * (1 + series[f'static_{i}'].cat.codes)
-    series['unique_id'] = series['unique_id'].astype('category')
-    series['unique_id'] = series['unique_id'].cat.as_ordered()
-    series = series.set_index('unique_id')
+            series["y"] = series["y"] * (1 + series[f"static_{i}"].cat.codes)
+    series["unique_id"] = series["unique_id"].astype("category")
+    series["unique_id"] = series["unique_id"].cat.as_ordered()
+    series = series.set_index("unique_id")
     return series
 
-# %% ../nbs/utils.ipynb 8
-AirPassengers = np.array([112., 118., 132., 129., 121., 135., 148., 148., 136., 119., 104.,
-       118., 115., 126., 141., 135., 125., 149., 170., 170., 158., 133.,
-       114., 140., 145., 150., 178., 163., 172., 178., 199., 199., 184.,
-       162., 146., 166., 171., 180., 193., 181., 183., 218., 230., 242.,
-       209., 191., 172., 194., 196., 196., 236., 235., 229., 243., 264.,
-       272., 237., 211., 180., 201., 204., 188., 235., 227., 234., 264.,
-       302., 293., 259., 229., 203., 229., 242., 233., 267., 269., 270.,
-       315., 364., 347., 312., 274., 237., 278., 284., 277., 317., 313.,
-       318., 374., 413., 405., 355., 306., 271., 306., 315., 301., 356.,
-       348., 355., 422., 465., 467., 404., 347., 305., 336., 340., 318.,
-       362., 348., 363., 435., 491., 505., 404., 359., 310., 337., 360.,
-       342., 406., 396., 420., 472., 548., 559., 463., 407., 362., 405.,
-       417., 391., 419., 461., 472., 535., 622., 606., 508., 461., 390.,
-       432.])
+# %% ../nbs/utils.ipynb 10
+AirPassengers = np.array(
+    [
+        112.0,
+        118.0,
+        132.0,
+        129.0,
+        121.0,
+        135.0,
+        148.0,
+        148.0,
+        136.0,
+        119.0,
+        104.0,
+        118.0,
+        115.0,
+        126.0,
+        141.0,
+        135.0,
+        125.0,
+        149.0,
+        170.0,
+        170.0,
+        158.0,
+        133.0,
+        114.0,
+        140.0,
+        145.0,
+        150.0,
+        178.0,
+        163.0,
+        172.0,
+        178.0,
+        199.0,
+        199.0,
+        184.0,
+        162.0,
+        146.0,
+        166.0,
+        171.0,
+        180.0,
+        193.0,
+        181.0,
+        183.0,
+        218.0,
+        230.0,
+        242.0,
+        209.0,
+        191.0,
+        172.0,
+        194.0,
+        196.0,
+        196.0,
+        236.0,
+        235.0,
+        229.0,
+        243.0,
+        264.0,
+        272.0,
+        237.0,
+        211.0,
+        180.0,
+        201.0,
+        204.0,
+        188.0,
+        235.0,
+        227.0,
+        234.0,
+        264.0,
+        302.0,
+        293.0,
+        259.0,
+        229.0,
+        203.0,
+        229.0,
+        242.0,
+        233.0,
+        267.0,
+        269.0,
+        270.0,
+        315.0,
+        364.0,
+        347.0,
+        312.0,
+        274.0,
+        237.0,
+        278.0,
+        284.0,
+        277.0,
+        317.0,
+        313.0,
+        318.0,
+        374.0,
+        413.0,
+        405.0,
+        355.0,
+        306.0,
+        271.0,
+        306.0,
+        315.0,
+        301.0,
+        356.0,
+        348.0,
+        355.0,
+        422.0,
+        465.0,
+        467.0,
+        404.0,
+        347.0,
+        305.0,
+        336.0,
+        340.0,
+        318.0,
+        362.0,
+        348.0,
+        363.0,
+        435.0,
+        491.0,
+        505.0,
+        404.0,
+        359.0,
+        310.0,
+        337.0,
+        360.0,
+        342.0,
+        406.0,
+        396.0,
+        420.0,
+        472.0,
+        548.0,
+        559.0,
+        463.0,
+        407.0,
+        362.0,
+        405.0,
+        417.0,
+        391.0,
+        419.0,
+        461.0,
+        472.0,
+        535.0,
+        622.0,
+        606.0,
+        508.0,
+        461.0,
+        390.0,
+        432.0,
+    ]
+)
 
-# %% ../nbs/utils.ipynb 9
-AirPassengersDF = pd.DataFrame({
-    'unique_id': np.ones(len(AirPassengers)),
-    'ds': pd.date_range(
-        start='1949-01-01', 
-        periods=len(AirPassengers), freq='M'),
-    'y': AirPassengers
-})
+# %% ../nbs/utils.ipynb 11
+AirPassengersDF = pd.DataFrame(
+    {
+        "unique_id": np.ones(len(AirPassengers)),
+        "ds": pd.date_range(start="1949-01-01", periods=len(AirPassengers), freq="M"),
+        "y": AirPassengers,
+    }
+)

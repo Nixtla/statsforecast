@@ -1,6 +1,6 @@
 # Nixtla &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Statistical%20Forecasting%20Algorithms%20by%20Nixtla%20&url=https://github.com/Nixtla/statsforecast&via=nixtlainc&hashtags=StatisticalModels,TimeSeries,Forecasting) &nbsp;[![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-19-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-20-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 <div align="center">
@@ -18,7 +18,7 @@
 **StatsForecast** offers a collection of widely used univariate time series forecasting models, including automatic `ARIMA` and `ETS` modeling optimized for high performance using `numba`. It also includes a large battery of benchmarking models.
 </div>
 
-## 💻 Installation and Getting Started
+## 💻 Installation
 <details open>
 <summary>PyPI</summary>
 
@@ -54,8 +54,9 @@ pip install -e .
 ```
 </details>
 
-To get started just follow this [guide]([./examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl#scrollTo=awWptcpJGQ5i)).
-
+## 🏃🏻‍♀️🏃 Getting Started
+To get started just follow this [guide](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl?usp=sharing).
+In the guide, we showcase `AutoARIMA` and `AutoETS`, and go further into probabilistic predictions, exogenous variables, and other [baseline models](https://nixtla.github.io/statsforecast/models.html).
 
 ## 🎉 New!
 * [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb) **ETS Example**: 4x faster than StatsModels with improved accuracy and robustness.
@@ -160,6 +161,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/MMenchero"><img src="https://avatars.githubusercontent.com/u/47995617?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Mariana Menchero García </b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=MMenchero" title="Code">💻</a></td>
     <td align="center"><a href="https://www.linkedin.com/in/guptanick/"><img src="https://avatars.githubusercontent.com/u/33585645?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Nikhil Gupta</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/issues?q=author%3Angupta23" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/jdegene"><img src="https://avatars.githubusercontent.com/u/17744939?v=4?s=100" width="100px;" alt=""/><br /><sub><b>JD</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/issues?q=author%3Ajdegene" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/jattenberg"><img src="https://avatars.githubusercontent.com/u/924185?v=4?s=100" width="100px;" alt=""/><br /><sub><b>josh attenberg</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=jattenberg" title="Code">💻</a></td>
   </tr>
 </table>
 
