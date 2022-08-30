@@ -82,7 +82,7 @@ def cescalc(
     n = len(y)
     for i in range(m, n + m):
         # one step forecast
-        forecast(states, i, m, season, f, nmse, alpha_0, alpha_1, beta_0, beta_1)
+        cesfcst(states, i, m, season, f, nmse, alpha_0, alpha_1, beta_0, beta_1)
         if math.fabs(f[0] - NA) < TOL:
             lik = NA
             return lik
@@ -93,10 +93,10 @@ def cescalc(
                 tmp = y[i + j] - f[j]
                 amse[j] = (amse[j] * (denom[j] - 1.0) + (tmp * tmp)) / denom[j]
         # update state
-        update(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y[i - m])
+        cesupdate(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y[i - m])
         lik = lik + e[i - m] * e[i - m]
         lik2 += math.log(math.fabs(f[0]))
-    new_states = forecast(
+    new_states = cesfcst(
         states, n + m, m, season, f, m, alpha_0, alpha_1, beta_0, beta_1
     )
     states[-m:] = new_states[-m:]
@@ -125,7 +125,7 @@ def cescalc(
 
 # %% ../nbs/ces.ipynb 9
 @njit(nogil=NOGIL, cache=CACHE)
-def forecast(states, i, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
+def cesfcst(states, i, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
     # obs:
     # forecast are obtained in a recursive manner
     # this is not standard, for example in ets
@@ -139,12 +139,16 @@ def forecast(states, i, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
             f[i_h - m] = new_states[i_h - m, 0]
         if season > SIMPLE:
             f[i_h - m] += new_states[i_h - m, 2]
-        update(new_states, i_h, m, season, alpha_0, alpha_1, beta_0, beta_1, f[i_h - m])
+        cesupdate(
+            new_states, i_h, m, season, alpha_0, alpha_1, beta_0, beta_1, f[i_h - m]
+        )
     return new_states
 
 # %% ../nbs/ces.ipynb 10
 @njit(nogil=NOGIL, cache=CACHE)
-def update(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y):  # kind of season
+def cesupdate(
+    states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y  # kind of season
+):
     # season
     if season in [NONE, PARTIAL, FULL]:
         e = y - states[i - 1, 0]
@@ -191,7 +195,7 @@ def update(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y):  # kind o
 def cesforecast(states, n, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
     # compute forecasts
     m = 1 if season == NONE else m
-    new_states = forecast(
+    new_states = cesfcst(
         states=states,
         i=m + n,
         m=m,
@@ -207,7 +211,7 @@ def cesforecast(states, n, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
 
 # %% ../nbs/ces.ipynb 20
 @njit(nogil=NOGIL, cache=CACHE)
-def initparam(
+def initparamces(
     alpha_0: float, alpha_1: float, beta_0: float, beta_1: float, seasontype: str
 ):
     if np.isnan(alpha_0):
@@ -258,12 +262,12 @@ def initparam(
 
 # %% ../nbs/ces.ipynb 22
 @njit(nogil=NOGIL, cache=CACHE)
-def switch(x: str):
+def switch_ces(x: str):
     return {"N": 0, "S": 1, "P": 2, "F": 3}[x]
 
 # %% ../nbs/ces.ipynb 24
 @njit(nogil=NOGIL, cache=CACHE)
-def pegelsresid_C(
+def pegelsresid_ces(
     y: np.ndarray,
     m: int,
     init_states: np.ndarray,
@@ -284,7 +288,7 @@ def pegelsresid_C(
         y=y,
         states=states,
         m=m,
-        season=switch(seasontype),
+        season=switch_ces(seasontype),
         alpha_0=alpha_0,
         alpha_1=alpha_1,
         beta_0=beta_0,
@@ -351,7 +355,7 @@ def ces_target_fn(
         y=y,
         states=states,
         m=m,
-        season=switch(seasontype),
+        season=switch_ces(seasontype),
         alpha_0=alpha_0,
         alpha_1=alpha_1,
         beta_0=beta_0,
@@ -431,7 +435,7 @@ def cesmodel(
     if seasontype == "N":
         m = 1
     # initial parameters
-    par = initparam(alpha_0, alpha_1, beta_1, beta_0, seasontype)
+    par = initparamces(alpha_0, alpha_1, beta_1, beta_0, seasontype)
     optimize_params = {
         key.replace("optimize_", ""): val for key, val in par.items() if "optim" in key
     }
@@ -466,7 +470,7 @@ def cesmodel(
         par["beta_1"] = fit_par[j]
         j += 1
 
-    amse, e, states, lik = pegelsresid_C(
+    amse, e, states, lik = pegelsresid_ces(
         y=y,
         m=m,
         init_states=init_state,
@@ -513,7 +517,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
         states=states,
         n=n,
         m=m,
-        season=switch(obj["seasontype"]),
+        season=switch_ces(obj["seasontype"]),
         h=h,
         f=forecast,
         **obj["par"]
