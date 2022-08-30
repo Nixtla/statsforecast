@@ -60,19 +60,19 @@ def initstate(y, m, seasontype):
 # %% ../nbs/ces.ipynb 8
 @njit(nogil=NOGIL, cache=CACHE)
 def cescalc(
-    y,
-    states,  # states
-    m,
-    season,
-    alpha_0,
-    alpha_1,
-    beta_0,
-    beta_1,
-    e,
-    amse,
-    nmse,
-    backfit,
-):
+    y: np.ndarray,
+    states: np.ndarray,  # states
+    m: int,
+    season: int,
+    alpha_0: float,
+    alpha_1: float,
+    beta_0: float,
+    beta_1: float,
+    e: np.ndarray,
+    amse: np.ndarray,
+    nmse: int,
+    backfit: int,
+) -> float:
     denom = np.zeros(nmse)
     m = 1 if season == NONE else m
     f = np.zeros(max(nmse, m))
