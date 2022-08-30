@@ -116,10 +116,10 @@ def cescalc(
             e[::-1],
             amse,
             nmse,
-            False,
+            0,
         )
         lik = cescalc(
-            y, states, m, season, alpha_0, alpha_1, beta_0, beta_1, e, amse, nmse, False
+            y, states, m, season, alpha_0, alpha_1, beta_0, beta_1, e, amse, nmse, 0
         )
         return lik
 
@@ -280,7 +280,7 @@ def pegelsresid_ces(
     nmse: int,
 ):
     n = len(y)
-    states = np.full((len(y) + 2 * m, n_components), fill_value=np.nan)
+    states = np.zeros((len(y) + 2 * m, n_components), dtype=np.float32)
     states[:m] = init_states
     e = np.full_like(y, fill_value=np.nan)
     amse = np.full(nmse, fill_value=np.nan)
@@ -296,7 +296,7 @@ def pegelsresid_ces(
         e=e,
         amse=amse,
         nmse=nmse,
-        backfit=True,
+        backfit=1,
     )
     if not np.isnan(lik):
         if np.abs(lik + 99999) < 1e-7:
@@ -322,7 +322,7 @@ def ces_target_fn(
     seasontype,
     nmse,
 ):
-    states = np.full((len(y) + 2 * m, n_components), fill_value=np.nan)
+    states = np.zeros((len(y) + 2 * m, n_components), dtype=np.float32)
     states[:m] = init_states
     j = 0
     if opt_alpha_0:
@@ -363,7 +363,7 @@ def ces_target_fn(
         e=e,
         amse=amse,
         nmse=nmse,
-        backfit=True,
+        backfit=1,
     )
     if lik < -1e10:
         lik = -1e10
