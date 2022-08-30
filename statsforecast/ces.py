@@ -413,10 +413,10 @@ def optimize_ces_target_fn(
         ),
         # method='Nelder-Mead',
         # options={'maxiter': 100}
-        # tol_std=1e-4,
+        tol_std=1e-4,
         lower=np.array([0.01, 0.01, 0.01, 0.01]),
-        upper=np.array([1.5, 1.5, 1.5, 1.5]),
-        max_iter=1_000,
+        upper=np.array([1.5, 1.2, 1.5, 1.5]),
+        max_iter=100,
         adaptive=True,
     )
     return res
