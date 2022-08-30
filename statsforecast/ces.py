@@ -13,6 +13,7 @@ from typing import Tuple
 import numpy as np
 from numba import njit
 from scipy.optimize import minimize
+from .ets import nelder_mead
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 # %% ../nbs/ces.ipynb 4
@@ -387,7 +388,7 @@ def optimize_ces_target_fn(
     opt_beta_0 = optimize_params["beta_0"]
     opt_beta_1 = optimize_params["beta_1"]
 
-    res = minimize(
+    res = nelder_mead(
         ces_target_fn,
         x0,
         args=(
@@ -406,11 +407,13 @@ def optimize_ces_target_fn(
             seasontype,
             nmse,
         ),
-        method="Nelder-Mead",
-        options={"maxiter": 100}
+        # method='Nelder-Mead',
+        # options={'maxiter': 100}
         # tol_std=1e-4,
-        # max_iter=100,
-        # adaptive=True,
+        lower=np.array([0.01, 0.01, 0.01, 0.01]),
+        upper=np.array([1.5, 1.5, 1.5, 1.5]),
+        max_iter=1_000,
+        adaptive=True,
     )
     return res
 
@@ -562,7 +565,7 @@ def auto_ces(
     if seasontype in ["F", "Z"]:
         npars += 2
     # ses for non-optimized tiny datasets
-    if n <= npars + 4:
+    if n <= npars:
         # we need HoltWintersZZ function
         raise NotImplementedError("tiny datasets")
     if seasontype == "Z":
@@ -587,5 +590,4 @@ def auto_ces(
                 best_s = stype
     if np.isinf(best_ic):
         raise Exception("no model able to be fitted")
-    model["seasontype"] = stype
     return model

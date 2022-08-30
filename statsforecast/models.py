@@ -344,7 +344,7 @@ class AutoCES(_TS):
         self.model = model
 
     def __repr__(self):
-        return "ETS"
+        return "CES"
 
     def forecast(
         self,
