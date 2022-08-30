@@ -10,7 +10,23 @@ from ..core import StatsForecast
 from .core import ParallelBackend
 
 # %% ../../nbs/distributed.multiprocess.ipynb 5
+# This parent class holds common `forecast` and `cross_validation` methods
+# from `core.StatsForecast` to enable the `FugueBackend` and the `RayBackend`.
+
+# This Parent class is inherited by [FugueBakend](https://nixtla.github.io/statsforecast/distributed.fugue.html)
+# and [RayBackend](https://nixtla.github.io/statsforecast/distributed.ray.html).
+
+
 class MultiprocessBackend(ParallelBackend):
+    """MultiprocessBackend Parent Class for Distributed Computation.
+
+    **Parameters:**<br>
+    `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
+
+    **Notes:**<br>
+
+    """
+
     def __init__(self, n_jobs: int) -> None:
         self.n_jobs = n_jobs
         super().__init__()

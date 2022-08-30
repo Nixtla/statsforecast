@@ -7,11 +7,12 @@ __all__ = ['AutoARIMA', 'ETS', 'SimpleExponentialSmoothing', 'SimpleExponentialS
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB']
 
 # %% ../nbs/models.ipynb 4
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from numba import njit
 from scipy.optimize import minimize
+from scipy.stats import norm
 
 from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ets import ets_f, forecast_ets
@@ -23,53 +24,91 @@ class _TS:
         b.__dict__.update(self.__dict__)
         return b
 
-# %% ../nbs/models.ipynb 8
+# %% ../nbs/models.ipynb 9
 class AutoARIMA(_TS):
+    """AutoARIMA model.
+    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py).
+
+    Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average)
+    model using an information criterion. Default is Akaike Information Criterion (AICc).
+
+    **Parameters:**<br>
+    `d`: int, order of first-differencing.<br>
+    `D`: int, order of seasonal-differencing.<br>
+    `max_p`: int, max autorregresives p.<br>
+    `max_q`: int, max moving averages q.<br>
+    `max_P`: int, max seasonal autorregresives P.<br>
+    `max_Q`: int, max seasonal moving averages Q.<br>
+    `max_order`: int, max p+q+P+Q value if not stepwise selection.<br>
+    `max_d`: int, max non-seasonal differences.<br>
+    `max_D`: int, max seasonal differences.<br>
+    `start_p`: int, starting value of p in stepwise procedure.<br>
+    `start_q`: int, starting value of q in stepwise procedure.<br>
+    `start_P`: int, starting value of P in stepwise procedure.<br>
+    `start_Q`: int, starting value of Q in stepwise procedure.<br>
+    `stationary`: bool, if True, restricts search to stationary models.<br>
+    `seasonal`: bool, if False, restricts search to non-seasonal models.<br>
+    `ic`: str, information criterion to be used in model selection.<br>
+    `stepwise`: bool, if True, will do stepwise selection (faster).<br>
+    `nmodels`: int, number of models considered in stepwise search.<br>
+    `trace`: bool, if True, the searched ARIMA models is reported.<br>
+    `approximation`: bool, if True, conditional sums-of-squares estimation, final MLE.<br>
+    `method`: str, fitting method between maximum likelihood or sums-of-squares.<br>
+    `truncate`: int, observations truncated series used in model selection.<br>
+    `test`: str (default 'kpss'), unit root test to use. See `ndiffs` for details.<br>
+    `test_kwargs`: str optional (default None), unit root test additional arguments.<br>
+    `seasonal_test`: str (default 'seas'), selection method for seasonal differences.<br>
+    `seasonal_test_kwargs`: dict (optional), seasonal unit root test arguments.<br>
+    `allowdrift`: bool (default True), If True, drift models terms considered.<br>
+    `allowmean`: bool (default True), If True, non-zero mean models considered.<br>
+    `blambda`: float optional (default None), Box-Cox transformation parameter.<br>
+    `biasadj`: bool (default False), Use adjusted back-transformed mean Box-Cox.<br>
+    `parallel`: bool, If True and stepwise=False, then parallel search.<br>
+    `num_cores`: int, amount of parallel processes to be used if parallel=True.<br>
+    `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+
+    **Note:**<br>
+    This implementation is a mirror of Hyndman's [forecast::auto.arima](https://github.com/robjhyndman/forecast).
+
+    **References:**<br>
+    [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
+    """
+
     def __init__(
         self,
-        d: Optional[int] = None,  # Order of first-differencing
-        D: Optional[int] = None,  # Order of seasonal-differencing
-        max_p: int = 5,  # Maximum value of p
-        max_q: int = 5,  # Maximum value of q
-        max_P: int = 2,  # Maximum value fo P
-        max_Q: int = 2,  # Maximum value of Q
-        max_order: int = 5,  # Maximum value of p+q+P+Q if model selection is not stepwise
-        max_d: int = 2,  # Maximum number of non-seasonal differences
-        max_D: int = 1,  # Maximum number of seasonal differences
-        start_p: int = 2,  # Starting value of p in stepwise procedure
-        start_q: int = 2,  # Starting value of q in stepwise procedure
-        start_P: int = 1,  # Starting value of P in stepwise procedure
-        start_Q: int = 1,  # Starting value of Q in stepwise procedure
-        stationary: bool = False,  # If True, restricts search to stationary models
-        seasonal: bool = True,  # If False, restricts search to non-seasonal models
-        ic: str = "aicc",  # Information criterion to be used in model selection
-        stepwise: bool = True,  # If False, searches over all grid (very slow)
-        nmodels: int = 94,  # Maximum number of models considered in the stepwise search
-        trace: bool = False,  # If True, the list of ARIMA models considered will be reported
-        approximation: Optional[
-            bool
-        ] = False,  # If True, estimation is via conditional sums of squares
-        method: Optional[
-            str
-        ] = None,  # maximum likelihood or minimize conditional sum-of-squares
-        truncate: Optional[
-            bool
-        ] = None,  # An integer value indicating how many observations to use in model selection
-        test: str = "kpss",  #  Type of unit root test to use
-        test_kwargs: Optional[
-            str
-        ] = None,  # Additional arguments to be passed to the unit root test
-        seasonal_test: str = "seas",  # Method used to select the number of seasonal differences
-        seasonal_test_kwargs: Optional[
-            Dict
-        ] = None,  # Additional arguments to be passed to the seasonal unit root test
-        allowdrift: bool = False,  # If True, models with drift terms are considered
-        allowmean: bool = False,  # If True, models with a non-zero mean are considered
-        blambda: Optional[float] = None,  # Box-Cox transformation parameter
-        biasadj: bool = False,  # Use adjusted back-transformed mean for Box-Cox transformations
-        parallel: bool = False,  # If True and stepwise = False, then the specification search is done in parallel
-        num_cores: int = 2,  # Amount of parallel processes to be used
-        season_length: int = 1,  # Number of observations per cycle
+        d: Optional[int] = None,
+        D: Optional[int] = None,
+        max_p: int = 5,
+        max_q: int = 5,
+        max_P: int = 2,
+        max_Q: int = 2,
+        max_order: int = 5,
+        max_d: int = 2,
+        max_D: int = 1,
+        start_p: int = 2,
+        start_q: int = 2,
+        start_P: int = 1,
+        start_Q: int = 1,
+        stationary: bool = False,
+        seasonal: bool = True,
+        ic: str = "aicc",
+        stepwise: bool = True,
+        nmodels: int = 94,
+        trace: bool = False,
+        approximation: Optional[bool] = False,
+        method: Optional[str] = None,
+        truncate: Optional[bool] = None,
+        test: str = "kpss",
+        test_kwargs: Optional[str] = None,
+        seasonal_test: str = "seas",
+        seasonal_test_kwargs: Optional[Dict] = None,
+        allowdrift: bool = False,
+        allowmean: bool = False,
+        blambda: Optional[float] = None,
+        biasadj: bool = False,
+        parallel: bool = False,
+        num_cores: int = 2,
+        season_length: int = 1,
     ):
         self.d = d
         self.D = D
@@ -110,9 +149,21 @@ class AutoARIMA(_TS):
 
     def fit(
         self,
-        y: np.ndarray,  # time series
-        X: Optional[np.ndarray] = None,  # exogenous regressors
+        y: np.ndarray,
+        X: Optional[np.ndarray] = None,
     ):
+        """Fit the AutoARIMA model.
+
+        Fit an AutoARIMA to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: AutoARIMA fitted model.
+        """
         with np.errstate(invalid="ignore"):
             self.model_ = auto_arima_f(
                 x=y,
@@ -155,10 +206,20 @@ class AutoARIMA(_TS):
 
     def predict(
         self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        level: Optional[Tuple[int]] = None,  # level
+        h: int,
+        X: np.ndarray = None,
+        level: Optional[Tuple[int]] = None,
     ):
+        """Predict with fitted AutoArima.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+        `X`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
         mean = fcst["mean"]
         if level is None:
@@ -170,6 +231,16 @@ class AutoARIMA(_TS):
         }
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+        """Access fitted AutoArima insample predictions.
+
+        **Parameters:**<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         if level is not None:
             return NotImplementedError
         mean = fitted_arima(self.model_)
@@ -177,74 +248,202 @@ class AutoARIMA(_TS):
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        level: Optional[Tuple[int]] = None,  # level
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient AutoARIMA predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `X`: array-like of shape (t, n_x) optional insample exogenous (default=None).<br>
+        `X_future`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         with np.errstate(invalid="ignore"):
             mod = auto_arima_f(
-                y,
-                xreg=X,
-                period=self.season_length,
+                x=y,
+                d=self.d,
+                D=self.D,
+                max_p=self.max_p,
+                max_q=self.max_q,
+                max_P=self.max_P,
+                max_Q=self.max_Q,
+                max_order=self.max_order,
+                max_d=self.max_d,
+                max_D=self.max_D,
+                start_p=self.start_p,
+                start_q=self.start_q,
+                start_P=self.start_P,
+                start_Q=self.start_Q,
+                stationary=self.stationary,
+                seasonal=self.seasonal,
+                ic=self.ic,
+                stepwise=self.stepwise,
+                nmodels=self.nmodels,
+                trace=self.trace,
                 approximation=self.approximation,
-                allowmean=False,
-                allowdrift=False,  # not implemented yet
+                method=self.method,
+                truncate=self.truncate,
+                xreg=X,
+                test=self.test,
+                test_kwargs=self.test_kwargs,
+                seasonal_test=self.seasonal_test,
+                seasonal_test_kwargs=self.seasonal_test_kwargs,
+                allowdrift=self.allowdrift,
+                allowmean=self.allowmean,
+                blambda=self.blambda,
+                biasadj=self.biasadj,
+                parallel=self.parallel,
+                num_cores=self.num_cores,
+                period=self.season_length,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
         if fitted:
             res["fitted"] = fitted_arima(mod)
         if level is not None:
+            level = sorted(level)
             res = {
                 **res,
                 **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
                 **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
             }
+            if fitted:
+                # add prediction intervals for fitted values
+                arr_level = np.asarray(level)
+                se = np.sqrt(mod["sigma2"])
+                quantiles = norm.ppf(0.5 * (1 + arr_level / 100))
+
+                lo = res["fitted"].reshape(-1, 1) - quantiles * se.reshape(-1, 1)
+                hi = res["fitted"].reshape(-1, 1) + quantiles * se.reshape(-1, 1)
+                lo = lo[:, ::-1]
+                lo = {f"fitted-lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
+                hi = {f"fitted-hi-{l}": hi[:, i] for i, l in enumerate(level)}
+                res = {**res, **lo, **hi}
         return res
 
-# %% ../nbs/models.ipynb 31
+# %% ../nbs/models.ipynb 19
 class ETS(_TS):
-    def __init__(
-        self,
-        season_length: int = 1,  # Number of observations per cycle
-        model: str = "ZZZ",  # three-character string identifying method using the framework terminology of Hyndman et al. (2002)
-    ):
+    """AutoETS model.
+    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/ets.py).
+
+    Automatically selects the best ETS (Error, Trend, Seasonality)
+    model using an information criterion. Default is Akaike Information Criterion (AICc), while particular models are estimated using maximum likelihood.
+    The state-space equations can be determined based on their $M$ multiplicative, $A$ additive,
+    $Z$ optimized or $N$ ommited components. The `model` string parameter defines the ETS equations:
+    E in [$M, A, Z$], T in [$N, A, M, Z$], and S in [$N, A, M, Z$].
+
+    For example when model='ANN' (additive error, no trend, and no seasonality), ETS will
+    explore only a simple exponential smoothing.
+
+    If the component is selected as 'Z', it operates as a placeholder to ask the AutoETS model
+    to figure out the best parameter.
+
+    **Parameters:**<br>
+    `model`: str, controlling state-space-equations.<br>
+    `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+
+    **Note:**<br>
+    This implementation is a mirror of Hyndman's [forecast::ets](https://github.com/robjhyndman/forecast).
+
+    **References:**<br>
+    [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
+
+    [Hyndman, Rob, et al (2008). "Forecasting with exponential smoothing: the state space approach"](https://robjhyndman.com/expsmooth/).
+    """
+
+    def __init__(self, season_length: int = 1, model: str = "ZZZ"):
         self.season_length = season_length
         self.model = model
 
     def __repr__(self):
         return "ETS"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the AutoETS model.
+
+        Fit an AutoETS to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: AutoETS fitted model.
+        """
         self.model_ = ets_f(y, m=self.season_length, model=self.model)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted AutoETS.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+        `X`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = forecast_ets(self.model_, h=h)["mean"]
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted AutoETS insample predictions.
+
+        **Parameters:**<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient AutoETS predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `X`: array-like of shape (t, n_x) optional insample exogenous (default=None).<br>
+        `X_future`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mod = ets_f(y, m=self.season_length, model=self.model)
         fcst = forecast_ets(mod, h)
         keys = ["mean"]
@@ -252,7 +451,7 @@ class ETS(_TS):
             keys.append("fitted")
         return {key: fcst[key] for key in keys}
 
-# %% ../nbs/models.ipynb 41
+# %% ../nbs/models.ipynb 29
 @njit
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
@@ -351,7 +550,7 @@ def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
         out[i] = season_vals[i % season_length]
     return out
 
-# %% ../nbs/models.ipynb 42
+# %% ../nbs/models.ipynb 30
 @njit
 def _ses(
     y: np.ndarray,  # time series
@@ -366,46 +565,103 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 43
+# %% ../nbs/models.ipynb 31
 class SimpleExponentialSmoothing(_TS):
-    def __init__(self, alpha: float):  # smoothing parameter
+    """SimpleExponentialSmoothing model.
+    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
+
+    Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+    Suitable for data with no clear trend or seasonality.
+    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1}$
+
+    The rate $0 \leq \\alpha \leq 1$ at which the weights decrease is called the smoothing parameter. When $\\alpha = 1$, SES is equal to the naive method.
+
+    **Parameters:**<br>
+    `alpha`: float, smoothing parameter.<br>
+
+    **References:**<br>
+    [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
+
+    """
+
+    def __init__(self, alpha: float):
         self.alpha = alpha
 
     def __repr__(self):
         return "SES"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the SimpleExponentialSmoothing model.
+
+        Fit an SimpleExponentialSmoothing to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: SimpleExponentialSmoothing fitted model.
+        """
         mod = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted SimpleExponentialSmoothing.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted SimpleExponentialSmoothing insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient SimpleExponentialSmoothing predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
-# %% ../nbs/models.ipynb 53
+# %% ../nbs/models.ipynb 40
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -418,46 +674,102 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 54
+# %% ../nbs/models.ipynb 41
 class SimpleExponentialSmoothingOptimized(_TS):
+    """SimpleExponentialSmoothing model.
+    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
+
+    Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+    Suitable for data with no clear trend or seasonality.
+    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1}$
+
+    The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
+
+    **Parameters:**<br>
+
+    **References:**<br>
+    [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
+
+    """
+
     def __init__(self):
         pass
 
     def __repr__(self):
         return "SESOpt"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the SimpleExponentialSmoothingOptimized model.
+
+        Fit an SimpleExponentialSmoothingOptimized to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: SimpleExponentialSmoothingOptimized fitted model.
+        """
         mod = _ses_optimized(y=y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted SimpleExponentialSmoothingOptimized.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted SimpleExponentialSmoothingOptimized insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient SimpleExponentialSmoothingOptimized predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 64
+# %% ../nbs/models.ipynb 50
 @njit
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
@@ -480,12 +792,34 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 65
+# %% ../nbs/models.ipynb 51
 class SeasonalExponentialSmoothing(_TS):
+    """SeasonalExponentialSmoothing model.
+    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
+
+    Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+    Suitable for data with no clear trend or seasonality.
+    Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
+    $\hat{y}_{t+1,s} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1,s}$
+
+    **Note:**<br>
+    This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
+    And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
+
+    **Parameters:**<br>
+    `alpha`: float, smoothing parameter.<br>
+    `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+
+    **References:**<br>
+    [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
+
+    [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
+    """
+
     def __init__(
         self,
-        season_length: int,  # Number of observations per cycle
-        alpha: float,  # smoothing parameter shared across seasonalities
+        season_length: int,
+        alpha: float,
     ):
         self.season_length = season_length
         self.alpha = alpha
@@ -493,9 +827,19 @@ class SeasonalExponentialSmoothing(_TS):
     def __repr__(self):
         return "SeasonalES"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the SeasonalExponentialSmoothing model.
+
+        Fit an SeasonalExponentialSmoothing to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: SeasonalExponentialSmoothing fitted model.
+        """
         mod = _seasonal_exponential_smoothing(
             y=y,
             season_length=self.season_length,
@@ -506,11 +850,16 @@ class SeasonalExponentialSmoothing(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted SeasonalExponentialSmoothing.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val_seas(
             self.model_["mean"], season_length=self.season_length, h=h
         )
@@ -518,23 +867,48 @@ class SeasonalExponentialSmoothing(_TS):
         return res
 
     def predict_in_sample(self):
+        """Access fitted SeasonalExponentialSmoothing insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient SeasonalExponentialSmoothing predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _seasonal_exponential_smoothing(
             y=y, h=h, fitted=fitted, alpha=self.alpha, season_length=self.season_length
         )
         return out
 
-# %% ../nbs/models.ipynb 75
+# %% ../nbs/models.ipynb 60
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -555,20 +929,52 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 76
+# %% ../nbs/models.ipynb 61
 class SeasonalExponentialSmoothingOptimized(_TS):
     def __init__(
         self,
-        season_length: int,  # Number of observations per cycle
+        season_length: int,
     ):
+        """SeasonalExponentialSmoothingOptimized model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
+
+        Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+        Suitable for data with no clear trend or seasonality.
+        Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
+        $\hat{y}_{t+1,s} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1,s}$
+
+        The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
+
+        **Note:**<br>
+        This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
+        And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
+
+        **Parameters:**<br>
+        `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+
+        **References:**<br>
+        [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
+
+        [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
+        """
         self.season_length = season_length
 
     def __repr__(self):
         return "SeasESOpt"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the SeasonalExponentialSmoothingOptimized model.
+
+        Fit an SeasonalExponentialSmoothingOptimized to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: SeasonalExponentialSmoothingOptimized fitted model.
+        """
         mod = _seasonal_ses_optimized(
             y=y,
             season_length=self.season_length,
@@ -578,11 +984,16 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted SeasonalExponentialSmoothingOptimized.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val_seas(
             self.model_["mean"], season_length=self.season_length, h=h
         )
@@ -590,23 +1001,48 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return res
 
     def predict_in_sample(self):
+        """Access fitted SeasonalExponentialSmoothingOptimized insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _seasonal_ses_optimized(
             y=y, h=h, fitted=fitted, season_length=self.season_length
         )
         return out
 
-# %% ../nbs/models.ipynb 87
+# %% ../nbs/models.ipynb 71
 @njit
 def _historic_average(
     y: np.ndarray,  # time series
@@ -621,46 +1057,96 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 88
+# %% ../nbs/models.ipynb 72
 class HistoricAverage(_TS):
     def __init__(self):
+        """HistoricAverage model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
+
+        Also known as mean method. Uses a simple average of all past observations.
+        Assuming there are $t$ observations, the one-step forecast is given by:
+        $$ \hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j $$
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+        """
         pass
 
     def __repr__(self):
         return "HistoricAverage"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the HistoricAverage model.
+
+        Fit an HistoricAverage to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: HistoricAverage fitted model.
+        """
         mod = _historic_average(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted HistoricAverage.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted HistoricAverage insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient HistoricAverage predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _historic_average(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 98
+# %% ../nbs/models.ipynb 81
 @njit
 def _naive(
     y: np.ndarray,  # time series
@@ -674,46 +1160,96 @@ def _naive(
         return {"mean": mean, "fitted": fitted_vals}
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 99
+# %% ../nbs/models.ipynb 82
 class Naive(_TS):
     def __init__(self):
+        """Naive model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
+
+        Also known as mean method. Uses a simple average of all past observations.
+        Assuming there are $t$ observations, the one-step forecast is given by:
+        $$ \hat{y}_{t+1} = y_t $$
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+        """
         pass
 
     def __repr__(self):
         return "Naive"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the Naive model.
+
+        Fit an Naive to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: Naive fitted model.
+        """
         mod = _naive(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted Naive.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted Naive insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient Naive predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _naive(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 109
+# %% ../nbs/models.ipynb 91
 @njit
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -733,47 +1269,101 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 110
+# %% ../nbs/models.ipynb 92
 class RandomWalkWithDrift(_TS):
     def __init__(self):
+        """RandomWalkWithDrift model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
+
+        A variation of the naive method allows the forecasts to change over time.
+        The amout of change, called drift, is the average change seen in the historical data.
+
+        $$ \hat{y}_{t+1} = y_t+\\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \\frac{y_t-y_1}{t-1} $$
+
+        From the previous equation, we can see that this is equivalent to extrapolating a line between
+        the first and the last observation.
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+        """
         pass
 
     def __repr__(self):
         return "RWD"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the RandomWalkWithDrift model.
+
+        Fit an RandomWalkWithDrift to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: RandomWalkWithDrift fitted model.
+        """
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted RandomWalkWithDrift.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         hrange = np.arange(h, dtype=np.float32)
         mean = self.model_["slope"] * (1 + hrange) + self.model_["last_y"]
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted RandomWalkWithDrift insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient RandomWalkWithDrift predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 120
+# %% ../nbs/models.ipynb 101
 @njit
 def _seasonal_naive(
     y: np.ndarray,  # time series
@@ -796,17 +1386,37 @@ def _seasonal_naive(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 121
+# %% ../nbs/models.ipynb 102
 class SeasonalNaive(_TS):
-    def __init__(self, season_length: int):  # Number of observations per cycle
+    def __init__(self, season_length: int):
+        """SeasonalNaive model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
+
+        Similar to the naive method, but uses the last known observation of the same period
+        (e.g. the same month of the previous year) in order to capture seasonal variations.
+
+        **Parameters:**<br>
+        `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+
+        **References:**<br>
+        [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+        """
         self.season_length = season_length
 
     def __repr__(self):
         return "SeasonalNaive"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the SeasonalNaive model.
+
+        Fit an SeasonalNaive to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: SeasonalNaive fitted model.
+        """
         mod = _seasonal_naive(
             y=y,
             season_length=self.season_length,
@@ -816,11 +1426,16 @@ class SeasonalNaive(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted SeasonalNaive.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val_seas(
             season_vals=self.model_["mean"], season_length=self.season_length, h=h
         )
@@ -828,21 +1443,46 @@ class SeasonalNaive(_TS):
         return res
 
     def predict_in_sample(self):
+        """Access fitted SeasonalNaive insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         res = {"mean": self.model_["fitted"]}
         return res
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient SeasonalNaive predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _seasonal_naive(y=y, h=h, fitted=fitted, season_length=self.season_length)
         return out
 
-# %% ../nbs/models.ipynb 131
+# %% ../nbs/models.ipynb 111
 @njit
 def _window_average(
     y: np.ndarray,  # time series
@@ -858,45 +1498,99 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 132
+# %% ../nbs/models.ipynb 112
 class WindowAverage(_TS):
-    def __init__(self, window_size: int):  # last observations used to compute average
+    def __init__(self, window_size: int):
+        """WindowAverage model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
+
+        Uses the average of the last $k$ observations, with $k$ the length of the window.
+        Wider windows will capture global trends, while narrow windows will reveal local trends.
+        The length of the window selected should take into account the importance of past
+        observations and how fast the series changes.
+
+        **Parameters:**<br>
+        `window_size`: int, size of truncated series on which average is estimated.
+
+        **References:**<br>
+        [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+        """
         self.window_size = window_size
 
     def __repr__(self):
         return "WindowAverage"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the WindowAverage model.
+
+        Fit an WindowAverage to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: WindowAverage fitted model.
+        """
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted WindowAverage.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted WindowAverage insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient WindowAverage predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
-# %% ../nbs/models.ipynb 142
+# %% ../nbs/models.ipynb 121
 @njit
 def _seasonal_window_average(
     y: np.ndarray,
@@ -917,22 +1611,40 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/models.ipynb 143
+# %% ../nbs/models.ipynb 122
 class SeasonalWindowAverage(_TS):
-    def __init__(
-        self,
-        season_length: int,  # Number of observations per cycle
-        window_size: int,  # Last observations per seasonality to compute average
-    ):
+    def __init__(self, season_length: int, window_size: int):
+        """SeasonalWindowAverage model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
+
+        An average of the last $k$ observations of the same period, with $k$ the length of the window.
+
+        **Parameters:**<br>
+        `window_size`: int, size of truncated series on which average is estimated.
+        `seasonal_length`: int, number of observations per cycle.
+
+        **References:**<br>
+        [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+        """
         self.season_length = season_length
         self.window_size = window_size
 
     def __repr__(self):
         return "SeasWA"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the SeasonalWindowAverage model.
+
+        Fit an SeasonalWindowAverage to a time series (numpy array) `y`
+        and optionally exogenous variables (numpy array) `X`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: SeasonalWindowAverage fitted model.
+        """
         mod = _seasonal_window_average(
             y=y,
             h=self.season_length,
@@ -943,11 +1655,16 @@ class SeasonalWindowAverage(_TS):
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted SeasonalWindowAverage.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val_seas(
             season_vals=self.model_["mean"], season_length=self.season_length, h=h
         )
@@ -955,16 +1672,41 @@ class SeasonalWindowAverage(_TS):
         return res
 
     def predict_in_sample(self):
+        """Access fitted SeasonalWindowAverage insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient SeasonalWindowAverage predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _seasonal_window_average(
             y=y,
             h=h,
@@ -974,7 +1716,7 @@ class SeasonalWindowAverage(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 155
+# %% ../nbs/models.ipynb 132
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -995,45 +1737,100 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 156
+# %% ../nbs/models.ipynb 133
 class ADIDA(_TS):
     def __init__(self):
+        """ADIDA model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
+
+        Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal aggregation to reduce the
+        number of zero observations. Once the data has been agregated, it uses the optimized SES to
+        generate the forecasts at the new level. It then breaks down the forecast to the original
+        level using equal weights.
+
+        ADIDA specializes on sparse or intermittent series are series with very few non-zero observations.
+        They are notoriously hard to forecast, and so, different methods have been developed
+        especifically for them.
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        [Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F., & Assimakopoulos, V. (2011). An aggregate–disaggregate intermittent demand approach (ADIDA) to forecasting: an empirical proposition and analysis. Journal of the Operational Research Society, 62(3), 544-554.](https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f).
+        """
         pass
 
     def __repr__(self):
         return "ADIDA"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the ADIDA model.
+
+        Fit an ADIDA to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: ADIDA fitted model.
+        """
         mod = _adida(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted ADIDA.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted ADIDA insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient ADIDA predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 166
+# %% ../nbs/models.ipynb 142
 @njit
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -1053,45 +1850,99 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 167
+# %% ../nbs/models.ipynb 143
 class CrostonClassic(_TS):
     def __init__(self):
+        """CrostonClassic model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
+
+        A method to forecast time series that exhibit intermittent demand.
+        It decomposes the original time series into a non-zero demand size $z_t$ and
+        inter-demand intervals $p_t$. Then the forecast is given by:
+        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+
+        where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter
+        of both components is set equal to 0.1
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50)
+        """
         pass
 
     def __repr__(self):
         return "CrostonClassic"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the CrostonClassic model.
+
+        Fit an CrostonClassic to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: CrostonClassic fitted model.
+        """
         mod = _croston_classic(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted CrostonClassic.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self, level):
+        """Access fitted CrostonClassic insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient CrostonClassic predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 177
+# %% ../nbs/models.ipynb 152
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1110,45 +1961,100 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 178
+# %% ../nbs/models.ipynb 153
 class CrostonOptimized(_TS):
     def __init__(self):
+        """CrostonOptimized model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
+
+        A method to forecast time series that exhibit intermittent demand.
+        It decomposes the original time series into a non-zero demand size $z_t$ and
+        inter-demand intervals $p_t$. Then the forecast is given by:
+        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+
+        A variation of the classic Croston's method where the smooting paramater is optimally
+        selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
+        intervals $p_t$ are smoothed separately, so their smoothing parameters can be different.
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
+        """
         pass
 
     def __repr__(self):
         return "CrostonOptimized"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the CrostonOptimized model.
+
+        Fit an CrostonOptimized to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: CrostonOptimized fitted model.
+        """
         mod = _croston_optimized(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted CrostonOptimized.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted CrostonOptimized insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient CrostonOptimized predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 188
+# %% ../nbs/models.ipynb 163
 @njit
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -1161,47 +2067,100 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 189
+# %% ../nbs/models.ipynb 164
 class CrostonSBA(_TS):
     def __init__(self):
+        """CrostonSBA model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
+
+        A method to forecast time series that exhibit intermittent demand.
+        It decomposes the original time series into a non-zero demand size $z_t$ and
+        inter-demand intervals $p_t$. Then the forecast is given by:
+        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+
+        A variation of the classic Croston's method that uses a debiasing factor, so that the
+        forecast is given by:
+        $$ \hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t} $$
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
+        """
         pass
 
     def __repr__(self):
         return "CrostonSBA"
 
-    def fit(
-        self,
-        y: np.ndarray,  # time series
-        X: np.ndarray = None,  # # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the CrostonSBA model.
+
+        Fit an CrostonSBA to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: CrostonSBA fitted model.
+        """
         mod = _croston_sba(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted CrostonSBA.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted CrostonSBA insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient CrostonSBA predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 199
+# %% ../nbs/models.ipynb 173
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1225,45 +2184,96 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 200
+# %% ../nbs/models.ipynb 174
 class IMAPA(_TS):
     def __init__(self):
+        """IMAPA model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
+
+        Intermittent Multiple Aggregation Prediction Algorithm: Similar to ADIDA, but instead of
+        using a single aggregation level, it considers multiple in order to capture different
+        dynamics of the data. Uses the optimized SES to generate the forecasts at the new levels
+        and then combines them using a simple average.
+
+        **Parameters:**<br>
+
+        **References:**<br>
+        - [Syntetos, A. A., & Boylan, J. E. (2021). Intermittent demand forecasting: Context, methods and applications. John Wiley & Sons.](https://www.ifors.org/intermittent-demand-forecasting-context-methods-and-applications/).
+        """
         pass
 
     def __repr__(self):
         return "IMAPA"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the IMAPA model.
+
+        Fit an IMAPA to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: IMAPA fitted model.
+        """
         mod = _imapa(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted IMAPA.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted IMAPA insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient IMAPA predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 210
+# %% ../nbs/models.ipynb 183
 @njit
 def _tsb(
     y: np.ndarray,  # time series
@@ -1284,45 +2294,106 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 211
+# %% ../nbs/models.ipynb 184
 class TSB(_TS):
-    def __init__(
-        self,
-        alpha_d: float,  # smoothing parameter for demand
-        alpha_p: float,  # smoothing parameter for probability
-    ):
+    def __init__(self, alpha_d: float, alpha_p: float):
+        """TSB model.
+        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
+
+        Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
+        intervals with the demand probability $d_t$, which is defined as follows.
+
+        $$
+        d_t = \\begin{cases}
+            1  & \\text{if demand occurs at time t} \\\
+            0  & \\text{otherwise.}
+        \\end{cases}
+        $$
+
+        Hence, the forecast is given by
+
+        $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
+
+        Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ,
+        like in the optimized Croston's method.
+
+        **Parameters:**<br>
+        `alpha_d`: float, smoothing parameter for demand<br>
+        `alpha_p`: float, smoothing parameter for probability<br>
+
+        **References:**<br>
+        - [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011). Intermittent demand: Linking forecasting to inventory obsolescence. European Journal of Operational Research, 214(3), 606-615.](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437)
+        """
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
 
     def __repr__(self):
         return "TSB"
 
-    def fit(
-        self, y: np.ndarray, X: np.ndarray = None  # time series  # exogenous regressors
-    ):
+    def fit(self, y: np.ndarray, X: np.ndarray = None):
+        """Fit the TSB model.
+
+        Fit an TSB to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+
+        **Returns:**<br>
+        `self`: TSB fitted model.
+        """
         mod = _tsb(y=y, h=1, fitted=False, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         self.model_ = dict(mod)
         return self
 
-    def predict(
-        self,
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-    ):
+    def predict(self, h: int, X: np.ndarray = None):
+        """Predict with fitted TSB.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
         return res
 
     def predict_in_sample(self):
+        """Access fitted TSB insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         raise NotImplementedError
 
     def forecast(
         self,
-        y: np.ndarray,  # time series
-        h: int,  # forecasting horizon
-        X: np.ndarray = None,  # exogenous regressors
-        X_future: np.ndarray = None,  # future regressors
-        fitted: bool = False,  # return fitted values?
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray = None,
+        X_future: np.ndarray = None,
+        fitted: bool = False,
     ):
+        """Memory Efficient TSB predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
         out = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         return out

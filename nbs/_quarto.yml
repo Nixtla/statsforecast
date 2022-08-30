@@ -16,7 +16,7 @@ format:
 
 website:
   title: "statsforecast"
-  site-url: "https://Nixtla.github.io/statsforecast"
+  site-url: "https://Nixtla.github.io/statsforecast/"
   description: "Time series forecasting suite using statistical models"
   twitter-card: true
   open-graph: true
