@@ -103,25 +103,59 @@ def cescalc(
     lik = n * math.log(lik)
     if not backfit:
         return lik
-    else:
-        cescalc(
-            y[::-1],
-            states[::-1],
-            m,
-            season,
-            alpha_0,
-            alpha_1,
-            beta_0,
-            beta_1,
-            e[::-1],
-            amse,
-            nmse,
-            0,
-        )
-        lik = cescalc(
-            y, states, m, season, alpha_0, alpha_1, beta_0, beta_1, e, amse, nmse, 0
-        )
-        return lik
+    y[:] = y[::-1]
+    states[:] = states[::-1]
+    e[:] = e[::-1]
+    lik = 0.0
+    lik2 = 0.0
+    for i in range(m, n + m):
+        # one step forecast
+        cesfcst(states, i, m, season, f, nmse, alpha_0, alpha_1, beta_0, beta_1)
+        if math.fabs(f[0] - NA) < TOL:
+            lik = NA
+            return lik
+        e[i - m] = y[i - m] - f[0]
+        for j in range(nmse):
+            if (i + j) < n:
+                denom[j] += 1.0
+                tmp = y[i + j] - f[j]
+                amse[j] = (amse[j] * (denom[j] - 1.0) + (tmp * tmp)) / denom[j]
+        # update state
+        cesupdate(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y[i - m])
+        lik = lik + e[i - m] * e[i - m]
+        lik2 += math.log(math.fabs(f[0]))
+    new_states = cesfcst(
+        states, n + m, m, season, f, m, alpha_0, alpha_1, beta_0, beta_1
+    )
+    states[-m:] = new_states[-m:]
+    # fit again
+    lik = 0.0
+    lik2 = 0.0
+    y[:] = y[::-1]
+    states[:] = states[::-1]
+    e[:] = e[::-1]
+    for i in range(m, n + m):
+        # one step forecast
+        cesfcst(states, i, m, season, f, nmse, alpha_0, alpha_1, beta_0, beta_1)
+        if math.fabs(f[0] - NA) < TOL:
+            lik = NA
+            return lik
+        e[i - m] = y[i - m] - f[0]
+        for j in range(nmse):
+            if (i + j) < n:
+                denom[j] += 1.0
+                tmp = y[i + j] - f[j]
+                amse[j] = (amse[j] * (denom[j] - 1.0) + (tmp * tmp)) / denom[j]
+        # update state
+        cesupdate(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y[i - m])
+        lik = lik + e[i - m] * e[i - m]
+        lik2 += math.log(math.fabs(f[0]))
+    new_states = cesfcst(
+        states, n + m, m, season, f, m, alpha_0, alpha_1, beta_0, beta_1
+    )
+    states[-m:] = new_states[-m:]
+    lik = n * math.log(lik)
+    return lik
 
 # %% ../nbs/ces.ipynb 9
 @njit(nogil=NOGIL, cache=CACHE)
