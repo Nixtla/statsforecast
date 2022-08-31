@@ -1562,7 +1562,7 @@ class SeasonalNaive(_TS):
         self.season_length = season_length
 
     def __repr__(self):
-        return f"SeasonalNaive(sl={self.season_length})"
+        return "SeasonalNaive"
 
     def fit(self, y: np.ndarray, X: np.ndarray = None):
         """Fit the SeasonalNaive model.
