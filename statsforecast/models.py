@@ -44,10 +44,9 @@ def _calculate_intervals(out, level, h, sigmah):
     return pred_int
 
 
-def _calculate_sigma(residuals):
-    n = len(residuals)
+def _calculate_sigma(residuals, n):
     sigma = np.nansum(residuals**2)
-    sigma = sigma / (n - 1)
+    sigma = sigma / n
     sigma = np.sqrt(sigma)
     return sigma
 
@@ -1092,7 +1091,7 @@ class Holt(ETS):
         super().__init__(season_length, model)
 
     def __rep__(self):
-        return f"Holt"
+        return "Holt"
 
 # %% ../nbs/models.ipynb 81
 class HoltWinters(ETS):
@@ -1120,7 +1119,7 @@ class HoltWinters(ETS):
         super().__init__(season_length, model)
 
     def __rep__(self):
-        return f"HoltWinters"
+        return "HoltWinters"
 
 # %% ../nbs/models.ipynb 92
 @njit
@@ -1172,8 +1171,8 @@ class HistoricAverage(_TS):
         mod = _historic_average(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        mod["sigma"] = _calculate_sigma(residuals)
-        mod["len_y"] = len(y)
+        mod["sigma"] = _calculate_sigma(residuals, len(residuals) - 1)
+        mod["n"] = len(y)
         self.model_ = mod
         return self
 
@@ -1196,9 +1195,8 @@ class HistoricAverage(_TS):
         res = {"mean": mean}
 
         if level is not None:
-            steps = np.arange(1, h + 1)
             sigma = self.model_["sigma"]
-            sigmah = sigma * np.sqrt(1 + (1 / self.model_["len_y"]))
+            sigmah = sigma * np.sqrt(1 + (1 / self.model_["n"]))
             pred_int = _calculate_intervals(res, level, h, sigmah)
             res = {**res, **pred_int}
 
@@ -1250,9 +1248,8 @@ class HistoricAverage(_TS):
             res["fitted"] = out["fitted"]
 
         if level is not None:
-            steps = np.arange(1, h + 1)
             residuals = y - out["fitted"]
-            sigma = _calculate_sigma(residuals)
+            sigma = _calculate_sigma(residuals, len(residuals) - 1)
             sigmah = sigma * np.sqrt(1 + (1 / len(y)))
             pred_int = _calculate_intervals(out, level, h, sigmah)
             res = {**res, **pred_int}
@@ -1307,7 +1304,7 @@ class Naive(_TS):
         mod = _naive(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals)
+        sigma = _calculate_sigma(residuals, len(residuals) - 1)
         mod["sigma"] = sigma
         self.model_ = mod
         return self
@@ -1387,7 +1384,7 @@ class Naive(_TS):
         if level is not None:
             steps = np.arange(1, h + 1)
             residuals = y - out["fitted"]
-            sigma = _calculate_sigma(residuals)
+            sigma = _calculate_sigma(residuals, len(residuals) - 1)
             sigmah = sigma * np.sqrt(steps)
             pred_int = _calculate_intervals(out, level, h, sigmah)
             res = {**res, **pred_int}
@@ -1452,9 +1449,9 @@ class RandomWalkWithDrift(_TS):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals)
+        sigma = _calculate_sigma(residuals, len(residuals) - 1)
         mod["sigma"] = sigma
-        mod["len_y"] = len(y)
+        mod["n"] = len(y)
         self.model_ = mod
         return self
 
@@ -1475,7 +1472,7 @@ class RandomWalkWithDrift(_TS):
         if level is not None:
             steps = np.arange(1, h + 1)
             sigma = self.model_["sigma"]
-            sigmah = sigma * np.sqrt(steps * (1 + steps / (self.model_["len_y"] - 1)))
+            sigmah = sigma * np.sqrt(steps * (1 + steps / (self.model_["n"] - 1)))
             pred_int = _calculate_intervals(res, level, h, sigmah)
             res = {**res, **pred_int}
 
@@ -1529,7 +1526,7 @@ class RandomWalkWithDrift(_TS):
         if level is not None:
             steps = np.arange(1, h + 1)
             residuals = y - out["fitted"]
-            sigma = _calculate_sigma(residuals)
+            sigma = _calculate_sigma(residuals, len(residuals) - 1)
             sigmah = sigma * np.sqrt(steps * (1 + steps / (len(y) - 1)))
             pred_int = _calculate_intervals(out, level, h, sigmah)
             res = {**res, **pred_int}
@@ -1586,10 +1583,7 @@ class SeasonalNaive(_TS):
         )
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = np.nansum(residuals**2)
-        sigma = sigma / (len(y) - self.season_length)
-        sigma = np.sqrt(sigma)
-        mod["sigma"] = sigma
+        mod["sigma"] = _calculate_sigma(residuals, len(y) - self.season_length)
         self.model_ = mod
         return self
 
@@ -1615,7 +1609,6 @@ class SeasonalNaive(_TS):
 
         if level is not None:
             k = np.floor((h - 1) / self.season_length)
-            steps = np.arange(1, h + 1)
             sigma = self.model_["sigma"]
             sigmah = sigma * np.sqrt(k + 1)
             pred_int = _calculate_intervals(res, level, h, sigmah)
@@ -1670,11 +1663,8 @@ class SeasonalNaive(_TS):
 
         if level is not None:
             k = np.floor((h - 1) / self.season_length)
-            steps = np.arange(1, h + 1)
             residuals = y - out["fitted"]
-            sigma = np.nansum(residuals**2)
-            sigma = sigma / (len(y) - self.season_length)
-            sigma = np.sqrt(sigma)
+            sigma = _calculate_sigma(residuals, len(y) - self.season_length)
             sigmah = sigma * np.sqrt(k + 1)
             pred_int = _calculate_intervals(out, level, h, sigmah)
             res = {**res, **pred_int}
