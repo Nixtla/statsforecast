@@ -4,7 +4,7 @@ website:
       - index.ipynb
       - examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
       - examples/Installation.ipynb
-      - section: Reference
+      - section: API Reference
         contents:
         - core.ipynb
         - models.ipynb
@@ -16,12 +16,14 @@ website:
           - distributed.ray.ipynb
           - distributed.multiprocess.ipynb
           - distributed.utils.ipynb
-      - examples/AutoArima_vs_Prophet.ipynb
-      - examples/CrossValidation.ipynb
-      - examples/IntermittentData.ipynb
-      - examples/Exogenous.ipynb
-      - examples/UncertaintyIntervals.ipynb
-      - section: Forecasting At Scale
+      - section: Tutorials
         contents:
-        - examples/Prophet_spark_m5.ipynb
-        - examples/ETS_ray_m5.ipynb
+        - examples/AutoArima_vs_Prophet.ipynb
+        - examples/CrossValidation.ipynb
+        - examples/IntermittentData.ipynb
+        - examples/Exogenous.ipynb
+        - examples/UncertaintyIntervals.ipynb
+        - section: Forecasting At Scale
+          contents:
+          - examples/Prophet_spark_m5.ipynb
+          - examples/ETS_ray_m5.ipynb
