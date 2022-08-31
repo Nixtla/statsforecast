@@ -21,7 +21,7 @@ website:
       - examples/IntermittentData.ipynb
       - examples/Exogenous.ipynb
       - examples/UncertaintyIntervals.ipynb
-      - examples/Outliers.ipynb
-      - examples/NonDailyData.ipynb
-      - examples/ForecastingAtScale.ipynb
-      - examples/Contributing.ipynb
+      - section: Forecasting At Scale
+        contents:
+        - examples/Prophet_spark_m5.ipynb
+        - examples/ETS_ray_m5.ipynb
