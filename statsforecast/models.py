@@ -2,9 +2,9 @@
 
 # %% auto 0
 __all__ = ['AutoARIMA', 'ETS', 'SimpleExponentialSmoothing', 'SimpleExponentialSmoothingOptimized',
-           'SeasonalExponentialSmoothing', 'SeasonalExponentialSmoothingOptimized', 'Holt', 'HW', 'HistoricAverage',
-           'Naive', 'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA',
-           'CrostonClassic', 'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB']
+           'SeasonalExponentialSmoothing', 'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters',
+           'HistoricAverage', 'Naive', 'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage',
+           'ADIDA', 'CrostonClassic', 'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB']
 
 # %% ../nbs/models.ipynb 4
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -1084,21 +1084,18 @@ class Holt(ETS):
     - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with trend"](https://otexts.com/fpp3/holt.html).
     """
 
-    def __init__(
-        self,
-        season_length: int = 1,  # season length
-        error_type: str = "A",  # error type. Can be additive (A) or multiplicative (M)
-    ):
+    def __init__(self, season_length: int = 1, error_type: str = "A"):
+
         self.season_length = season_length
         self.error_type = error_type
         model = error_type + "AN"
         super().__init__(season_length, model)
 
     def __rep__(self):
-        return f"Holt's linear method"
+        return f"Holt"
 
 # %% ../nbs/models.ipynb 81
-class HW(ETS):
+class HoltWinters(ETS):
     """Holt-Winters' method.
 
     Also known as triple exponential smoothing, Holt-Winters' method is an extension of exponential smoothing for series that contain both trend and seasonality.
@@ -1123,7 +1120,7 @@ class HW(ETS):
         super().__init__(season_length, model)
 
     def __rep__(self):
-        return f"Holt-Winters' linear method"
+        return f"HoltWinters"
 
 # %% ../nbs/models.ipynb 92
 @njit
