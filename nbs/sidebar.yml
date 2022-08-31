@@ -22,7 +22,7 @@ website:
         - examples/CrossValidation.ipynb
         - examples/IntermittentData.ipynb
         - examples/Exogenous.ipynb
-        - examples/UncertaintyIntervals.ipynb
+        - examples/AnomalyDetection.ipynb
         - section: Forecasting At Scale
           contents:
           - examples/Prophet_spark_m5.ipynb
