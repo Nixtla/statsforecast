@@ -6,13 +6,9 @@ __all__ = ['ces_target_fn']
 # %% ../nbs/ces.ipynb 1
 import math
 import os
-import warnings
-from collections import namedtuple
-from typing import Tuple
 
 import numpy as np
 from numba import njit
-from scipy.optimize import minimize
 from .ets import nelder_mead
 from statsmodels.tsa.seasonal import seasonal_decompose
 
@@ -313,7 +309,6 @@ def pegelsresid_ces(
     beta_1: float,
     nmse: int,
 ):
-    n = len(y)
     states = np.zeros((len(y) + 2 * m, n_components), dtype=np.float32)
     states[:m] = init_states
     e = np.full_like(y, fill_value=np.nan)
@@ -445,12 +440,10 @@ def optimize_ces_target_fn(
             seasontype,
             nmse,
         ),
-        # method='Nelder-Mead',
-        # options={'maxiter': 100}
         tol_std=1e-4,
         lower=np.array([0.01, 0.01, 0.01, 0.01]),
-        upper=np.array([1.5, 1.2, 1.5, 1.5]),
-        max_iter=100,
+        upper=np.array([1.8, 1.9, 1.5, 1.5]),
+        max_iter=1_000,
         adaptive=True,
     )
     return res
@@ -625,7 +618,6 @@ def auto_ces(
             if fit_ic < best_ic:
                 model = fit
                 best_ic = fit_ic
-                best_s = stype
     if np.isinf(best_ic):
         raise Exception("no model able to be fitted")
     return model
