@@ -1323,7 +1323,19 @@ class Naive(_TS):
         residuals = y - mod["fitted"]
         sigma = _calculate_sigma(residuals, len(residuals) - 1)
         mod["sigma"] = sigma
+
+        sigma_vals = np.zeros(len(y))
+        sigma_vals[0] = float("nan")
+        for k in range(2, len(y)):
+            model = _naive(y[:k], h=1, fitted=True)
+            residuals = y[:k] - model["fitted"]
+            sigma = _calculate_sigma(residuals, len(residuals) - 1)
+            sigma_vals[k - 1] = sigma
+
+        mod["sigma_vals"] = sigma_vals
+
         self.model_ = mod
+
         return self
 
     def predict(
@@ -1353,7 +1365,7 @@ class Naive(_TS):
 
         return res
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
         """Access fitted Naive insample predictions.
 
         **Parameters:**<br>
@@ -1364,6 +1376,26 @@ class Naive(_TS):
             'level_*' for probabilistic predictions.<br>
         """
         res = {"mean": self.model_["fitted"]}
+
+        if level is not None:
+            pi = np.zeros([len(self.model_["sigma_vals"]), len(level) * 2])
+            pi[0:2, :] = float("nan")
+            for k in range(1, len(pi)):
+                sigma = self.model_["sigma_vals"][k - 1]
+                vals = {"mean": mod["fitted"][: k + 1]}
+                intervals = _calculate_intervals(vals, level, 1, sigma)
+                vals_int = np.array(list(intervals.values()))
+                pi[
+                    k,
+                ] = vals_int[:, vals_int.shape[1] - 1]
+
+            fitted_int = {
+                **{f"fitted-lo-{lv}": pi[:, i] for i, lv in enumerate(level)},
+                **{f"fitted-hi-{lv}": pi[:, i + 2] for i, lv in enumerate(level)},
+            }
+
+            res = {**res, **fitted_int}
+
         return res
 
     def forecast(
@@ -1406,25 +1438,34 @@ class Naive(_TS):
             pred_int = _calculate_intervals(out, level, h, sigmah)
             res = {**res, **pred_int}
 
-        #             if fitted:
-        #                 pi = np.zeros([len(y),len(level)*2])
-        #                 pi[0] = float("nan")
-        #                 pi[1] = float("nan")
-        #                 for k in range(2,len(y)):
-        #                     model = _naive(y=y[:k,], h=1, fitted=fitted)
-        #                     residuals = y[:k]-model['fitted']
-        #                     sigma = _calculate_sigma(residuals, len(residuals)-1)
-        #                     intervals = _calculate_intervals(model, level, 1, sigma)
-        #                     pi[k,] = np.array(list(intervals.values())).reshape(1,len(level)*2)
+            if fitted:
+                pi = np.zeros([len(y), len(level) * 2])
+                pi[0:2, :] = float("nan")
+                for k in range(2, len(y)):
+                    model = _naive(
+                        y=y[
+                            :k,
+                        ],
+                        h=1,
+                        fitted=fitted,
+                    )
+                    residuals = y[:k] - model["fitted"]
+                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                    intervals = _calculate_intervals(model, level, 1, sigma)
+                    pi[k,] = np.array(
+                        list(intervals.values())
+                    ).reshape(1, len(level) * 2)
 
-        #                 fitted_int = {**{f'fitted-lo-{lv}': pi[:,i] for i, lv in enumerate(level)},
-        #                               **{f'fitted-hi-{lv}': pi[:,i+2] for i, lv in enumerate(level)}}
+                fitted_int = {
+                    **{f"fitted-lo-{lv}": pi[:, i] for i, lv in enumerate(level)},
+                    **{f"fitted-hi-{lv}": pi[:, i + 2] for i, lv in enumerate(level)},
+                }
 
-        #                 res = {**res, **fitted_int}
+                res = {**res, **fitted_int}
 
         return res
 
-# %% ../nbs/models.ipynb 123
+# %% ../nbs/models.ipynb 122
 @njit
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -1444,7 +1485,7 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 124
+# %% ../nbs/models.ipynb 123
 class RandomWalkWithDrift(_TS):
     def __init__(self):
         """RandomWalkWithDrift model.
@@ -1485,6 +1526,17 @@ class RandomWalkWithDrift(_TS):
         sigma = _calculate_sigma(residuals, len(residuals) - 1)
         mod["sigma"] = sigma
         mod["n"] = len(y)
+
+        sigma_vals = np.zeros(len(y))
+        sigma_vals[0] = float("nan")
+        for k in range(2, len(y)):
+            model = _random_walk_with_drift(y[:k], h=1, fitted=True)
+            residuals = y[:k] - model["fitted"]
+            sigma = _calculate_sigma(residuals, len(residuals) - 1)
+            sigma_vals[k - 1] = sigma
+
+        mod["sigma_vals"] = sigma_vals
+
         self.model_ = mod
         return self
 
@@ -1511,7 +1563,7 @@ class RandomWalkWithDrift(_TS):
 
         return res
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
         """Access fitted RandomWalkWithDrift insample predictions.
 
         **Parameters:**<br>
@@ -1522,6 +1574,26 @@ class RandomWalkWithDrift(_TS):
             'level_*' for probabilistic predictions.<br>
         """
         res = {"mean": self.model_["fitted"]}
+
+        if level is not None:
+            pi = np.zeros([len(self.model_["sigma_vals"]), len(level) * 2])
+            pi[0:2, :] = float("nan")
+            for k in range(1, len(pi)):
+                sigma = self.model_["sigma_vals"][k - 1]
+                vals = {"mean": mod["fitted"][: k + 1]}
+                intervals = _calculate_intervals(vals, level, 1, sigma)
+                vals_int = np.array(list(intervals.values()))
+                pi[
+                    k,
+                ] = vals_int[:, vals_int.shape[1] - 1]
+
+            fitted_int = {
+                **{f"fitted-lo-{lv}": pi[:, i] for i, lv in enumerate(level)},
+                **{f"fitted-hi-{lv}": pi[:, i + 2] for i, lv in enumerate(level)},
+            }
+
+            res = {**res, **fitted_int}
+
         return res
 
     def forecast(
@@ -1564,25 +1636,34 @@ class RandomWalkWithDrift(_TS):
             pred_int = _calculate_intervals(out, level, h, sigmah)
             res = {**res, **pred_int}
 
-        #             if fitted:
-        #                 pi = np.zeros([len(y),len(level)*2])
-        #                 pi[0] = float("nan")
-        #                 pi[1] = float("nan")
-        #                 for k in range(2,len(y)):
-        #                     model = _random_walk_with_drift(y=y[:k,], h=1, fitted=fitted)
-        #                     residuals = y[:k]-model['fitted']
-        #                     sigma = _calculate_sigma(residuals, len(residuals)-1)
-        #                     intervals = _calculate_intervals(model, level, 1, sigma)
-        #                     pi[k,] = np.array(list(intervals.values())).reshape(1,len(level)*2)
+            if fitted:
+                pi = np.zeros([len(y), len(level) * 2])
+                pi[0:3, :] = float("nan")
+                for k in range(3, len(y)):
+                    model = _random_walk_with_drift(
+                        y=y[
+                            :k,
+                        ],
+                        h=1,
+                        fitted=fitted,
+                    )
+                    residuals = y[:k] - model["fitted"]
+                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                    intervals = _calculate_intervals(model, level, 1, sigma)
+                    pi[k,] = np.array(
+                        list(intervals.values())
+                    ).reshape(1, len(level) * 2)
 
-        #                 fitted_int = {**{f'fitted-lo-{lv}': pi[:,i] for i, lv in enumerate(level)},
-        #                               **{f'fitted-hi-{lv}': pi[:,i+2] for i, lv in enumerate(level)}}
+                fitted_int = {
+                    **{f"fitted-lo-{lv}": pi[:, i] for i, lv in enumerate(level)},
+                    **{f"fitted-hi-{lv}": pi[:, i + 2] for i, lv in enumerate(level)},
+                }
 
-        #                 res = {**res, **fitted_int}
+                res = {**res, **fitted_int}
 
         return res
 
-# %% ../nbs/models.ipynb 140
+# %% ../nbs/models.ipynb 137
 @njit
 def _seasonal_naive(
     y: np.ndarray,  # time series
@@ -1605,7 +1686,7 @@ def _seasonal_naive(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 141
+# %% ../nbs/models.ipynb 138
 class SeasonalNaive(_TS):
     def __init__(self, season_length: int):
         self.season_length = season_length
@@ -1720,7 +1801,7 @@ class SeasonalNaive(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 153
+# %% ../nbs/models.ipynb 150
 @njit
 def _window_average(
     y: np.ndarray,  # time series
@@ -1736,7 +1817,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 154
+# %% ../nbs/models.ipynb 151
 class WindowAverage(_TS):
     def __init__(self, window_size: int):
         """WindowAverage model.
@@ -1868,7 +1949,7 @@ class WindowAverage(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 165
+# %% ../nbs/models.ipynb 162
 @njit
 def _seasonal_window_average(
     y: np.ndarray,
@@ -1889,7 +1970,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/models.ipynb 166
+# %% ../nbs/models.ipynb 163
 class SeasonalWindowAverage(_TS):
     def __init__(self, season_length: int, window_size: int):
         """SeasonalWindowAverage model.
@@ -2057,7 +2138,7 @@ class SeasonalWindowAverage(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 178
+# %% ../nbs/models.ipynb 175
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2078,7 +2159,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 179
+# %% ../nbs/models.ipynb 176
 class ADIDA(_TS):
     def __init__(self):
         """ADIDA model.
@@ -2171,7 +2252,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 188
+# %% ../nbs/models.ipynb 185
 @njit
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -2191,7 +2272,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 189
+# %% ../nbs/models.ipynb 186
 class CrostonClassic(_TS):
     def __init__(self):
         """CrostonClassic model.
@@ -2283,7 +2364,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 198
+# %% ../nbs/models.ipynb 195
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2302,7 +2383,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 199
+# %% ../nbs/models.ipynb 196
 class CrostonOptimized(_TS):
     def __init__(self):
         """CrostonOptimized model.
@@ -2395,7 +2476,7 @@ class CrostonOptimized(_TS):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 209
+# %% ../nbs/models.ipynb 206
 @njit
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -2408,7 +2489,7 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 210
+# %% ../nbs/models.ipynb 207
 class CrostonSBA(_TS):
     def __init__(self):
         """CrostonSBA model.
@@ -2501,7 +2582,7 @@ class CrostonSBA(_TS):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 219
+# %% ../nbs/models.ipynb 216
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2525,7 +2606,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 220
+# %% ../nbs/models.ipynb 217
 class IMAPA(_TS):
     def __init__(self):
         """IMAPA model.
@@ -2614,7 +2695,7 @@ class IMAPA(_TS):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 229
+# %% ../nbs/models.ipynb 226
 @njit
 def _tsb(
     y: np.ndarray,  # time series
@@ -2635,7 +2716,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 230
+# %% ../nbs/models.ipynb 227
 class TSB(_TS):
     def __init__(self, alpha_d: float, alpha_p: float):
         """TSB model.
