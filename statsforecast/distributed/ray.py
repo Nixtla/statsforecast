@@ -14,8 +14,8 @@ class RayBackend(ParallelBackend):
     """RayBackend for Distributed Computation.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/ray.py).
 
-    This class uses [Ray](https://github.com/ray-project/ray) backend.
-    Ray consists of a core distributed runtime and a toolkit of libraries (Ray AIR)
+    This class uses [Ray](https://github.com/ray-project/ray) backend. 
+    Ray consists of a core distributed runtime and a toolkit of libraries (Ray AIR) 
     for accelerating ML workloads.
 
     **Parameters:**<br>
@@ -24,16 +24,15 @@ class RayBackend(ParallelBackend):
     **Notes:**<br>
     A short introduction to Ray, with examples on how to train and select ML models
     is available [here](https://docs.ray.io/en/latest/ray-overview/).
-    """
-
+    """    
     def __init__(self, ray_address) -> None:
         self.ray_address = ray_address
 
     def forecast(self, df, models, freq, **kwargs: Any) -> Any:
         """Memory Efficient core.StatsForecast predictions with RayBackend.
 
-        This method uses a Ray's cluster, in combination with
-        `core.StatsForecast`'s forecast to distribute the predictions of
+        This method uses a Ray's cluster, in combination with 
+        `core.StatsForecast`'s forecast to distribute the predictions of 
         StatsForecast models.
 
         **Parameters:**<br>
@@ -45,27 +44,24 @@ class RayBackend(ParallelBackend):
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-
+        
         **References:**<br>
-        """
-        model = StatsForecast(
-            df=df.set_index("unique_id"),
-            models=models,
-            freq=freq,
-            ray_address=self.ray_address,
-        )
+        """        
+        model = StatsForecast(df=df.set_index("unique_id"), 
+                              models=models, freq=freq, 
+                              ray_address=self.ray_address)
         return model.forecast(**kwargs)
 
     def cross_validation(self, df, models, freq, **kwargs: Any) -> Any:
         """Temporal Cross-Validation with core.StatsForecast and RayBackend.
 
-        This method uses a Ray's cluster, in combination with
-        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast
+        This method uses a Ray's cluster, in combination with 
+        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast 
         models through multiple training windows, in either chained or rolled manner.
 
-        `StatsForecast.models`' speed along with Rays's distributed computation allow to
-        overcome this evaluation technique high computational costs. Temporal cross-validation
-        provides better model's generalization measurements by increasing the test's length
+        `StatsForecast.models`' speed along with Rays's distributed computation allow to 
+        overcome this evaluation technique high computational costs. Temporal cross-validation 
+        provides better model's generalization measurements by increasing the test's length 
         and diversity.
 
         **Parameters:**<br>
@@ -76,16 +72,11 @@ class RayBackend(ParallelBackend):
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-
+        
         **References:**<br>
         The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
         method documentation.<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
         """
-        model = StatsForecast(
-            df=df.set_index("unique_id"),
-            models=models,
-            freq=freq,
-            ray_address=self.ray_address,
-        )
+        model = StatsForecast(df=df.set_index("unique_id"), models=models, freq=freq, ray_address=self.ray_address)
         return model.cross_validation(df, models, freq, **kwargs)

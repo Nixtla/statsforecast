@@ -8,12 +8,12 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-
 try:
     from fugue import transform
 except ModuleNotFoundError as e:
     msg = (
-        f"{e}. To use fugue you have to install it." "Please run `pip install fugue`. "
+        f'{e}. To use fugue you have to install it.'
+        'Please run `pip install fugue`. '
     )
     raise ModuleNotFoundError(msg) from e
 from ..core import StatsForecast
@@ -25,7 +25,7 @@ class FugueBackend(ParallelBackend):
     """FugueBackend for Distributed Computation.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
 
-    This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
+    This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing 
     computation on Spark and Dask without any rewrites.
 
     **Parameters:**<br>
@@ -34,11 +34,15 @@ class FugueBackend(ParallelBackend):
     `**transform_kwargs`: additional kwargs for Fugue's transform method.<br>
 
     **Notes:**<br>
-    A short introduction to Fugue, with examples on how to scale pandas code to scale pandas
+    A short introduction to Fugue, with examples on how to scale pandas code to scale pandas 
     based code to Spark or Dask is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
     """
-
-    def __init__(self, engine: Any = None, conf: Any = None, **transform_kwargs: Any):
+    def __init__(
+            self, 
+            engine: Any = None,
+            conf: Any = None,
+            **transform_kwargs: Any
+        ):        
         self._engine = engine
         self._conf = conf
         self._transform_kwargs = dict(transform_kwargs)
@@ -47,15 +51,15 @@ class FugueBackend(ParallelBackend):
         return {}
 
     def forecast(
-        self,
-        df,
-        models,
-        freq,
-        **kwargs: Any,
-    ) -> Any:
+            self, 
+            df,
+            models,
+            freq,
+            **kwargs: Any,
+        ) -> Any:
         """Memory Efficient core.StatsForecast predictions with FugueBackend.
 
-        This method uses Fugue's transform function, in combination with
+        This method uses Fugue's transform function, in combination with 
         `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models.
 
         **Parameters:**<br>
@@ -67,9 +71,9 @@ class FugueBackend(ParallelBackend):
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-
+        
         **References:**<br>
-        For more information check the
+        For more information check the 
         [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/introduction.html#fugue-transform)
         tutorial.<br>
         The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
@@ -89,21 +93,21 @@ class FugueBackend(ParallelBackend):
         )
 
     def cross_validation(
-        self,
-        df,
-        models,
-        freq,
-        **kwargs: Any,
-    ) -> Any:
+            self, 
+            df,
+            models,
+            freq,
+            **kwargs: Any, 
+        ) -> Any:
         """Temporal Cross-Validation with core.StatsForecast and FugueBackend.
 
-        This method uses Fugue's transform function, in combination with
-        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast
+        This method uses Fugue's transform function, in combination with 
+        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast 
         models through multiple training windows, in either chained or rolled manner.
 
-        `StatsForecast.models`' speed along with Fugue's distributed computation allow to
-        overcome this evaluation technique high computational costs. Temporal cross-validation
-        provides better model's generalization measurements by increasing the test's length
+        `StatsForecast.models`' speed along with Fugue's distributed computation allow to 
+        overcome this evaluation technique high computational costs. Temporal cross-validation 
+        provides better model's generalization measurements by increasing the test's length 
         and diversity.
 
         **Parameters:**<br>
@@ -114,7 +118,7 @@ class FugueBackend(ParallelBackend):
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-
+        
         **References:**<br>
         The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
         method documentation.<br>
