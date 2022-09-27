@@ -13,6 +13,7 @@ dist
 *.parquet
 tmp
 _docs/
+_proc/
 sidebar.yml
 .DS_Store
 .gitattributes
