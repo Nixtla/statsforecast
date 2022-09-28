@@ -8,4 +8,3 @@ jobs:
     runs-on: macos-latest
     steps: 
       - uses: fastai/workflows/quarto-ghp@master
-        with: {pre: 1}
