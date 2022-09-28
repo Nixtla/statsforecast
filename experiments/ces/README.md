@@ -20,6 +20,10 @@
 
 (Time in minutes.)
 
+## Plots (Monthly dataset)
+
+![fig](./plots-models.png)
+
 
 ## Reproducibility
 
