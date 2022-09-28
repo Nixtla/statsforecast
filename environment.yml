@@ -13,4 +13,4 @@ dependencies:
   - statsmodels>=0.13.2
   - tabulate
   - pip:
-    - nbdev<2.2.7
+    - nbdev
