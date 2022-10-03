@@ -1210,3 +1210,275 @@ def forecast_ets(obj, h):
     out["residuals"] = obj["residuals"]
     out["fitted"] = obj["fitted"]
     return out
+
+# %% ../nbs/ets.ipynb 33
+def _compute_fcst_var(model, season_length, pf, h, sigma):
+
+    model_type = model["components"]
+    steps = steps = np.arange(1, h + 1)
+    hm = np.floor((h - 1) / season_length)
+    last_state = model["states"][-1]
+
+    # error, trend, and seasonality type
+    error = model_type[0]
+    trend = model_type[1]
+    seasonality = model_type[2]
+    damped = model_type[3]
+
+    # parameters
+    alpha = model["par"][0]
+    beta = model["par"][1]
+    gamma = model["par"][2]
+    phi = model["par"][3]
+
+    exp1 = (
+        alpha**2
+        + alpha * beta * steps
+        + (1 / 6) * beta**2 * steps * (2 * steps - 1)
+    )
+    exp2 = (beta * phi * steps) / (1 - phi) ** 2
+    exp3 = 2 * alpha * (1 - phi) + beta * phi
+    exp4 = (beta * phi * (1 - phi**steps)) / ((1 - phi) ** 2 * (1 - phi**2))
+    exp5 = 2 * alpha * (1 - phi**2) + beta * phi * (1 + 2 * phi - phi**steps)
+
+    # Class 1 models
+    if error == "A" and trend == "N" and seasonality == "N" and damped == "N":
+        # Model ANN
+        sigmah = 1 + alpha**2 * (steps - 1)
+        sigmah = sigma * sigmah
+
+    elif error == "A" and trend == "A" and seasonality == "N" and damped == "N":
+        # Model AAN
+        sigmah = 1 + (steps - 1) * exp1
+        sigmah = sigma * sigmah
+
+    elif error == "A" and trend == "A" and seasonality == "N" and damped == "D":
+        # Model AAdN
+        sigmah = 1 + alpha**2 * (steps - 1) + exp2 * exp3 - exp4 * exp5
+        sigmah = sigma * sigmah
+
+    elif error == "A" and trend == "N" and seasonality == "A" and damped == "N":
+        # Model ANA
+        sigmah = 1 + alpha**2 * (steps - 1) + gamma * hm * (2 * alpha + gamma)
+        sigmah = sigma * sigmah
+
+    elif error == "A" and trend == "A" and seasonality == "A" and damped == "N":
+        # Model AAA
+        exp6 = 2 * alpha + gamma + beta * season_length * (hm + 1)
+        sigmah = 1 + (steps - 1) * exp1 + gamma * hm * exp6
+        sigmah = sigma * sigmah
+
+    elif error == "A" and trend == "A" and seasonality == "A" and damped == "D":
+        # Model AAdA
+        exp7 = (2 * beta * gamma * phi) / ((1 - phi) * (1 - phi**season_length))
+        exp8 = hm * (1 - phi**season_length) - phi**season_length * (
+            1 - phi ** (season_length * hm)
+        )
+        sigmah = (
+            1
+            + alpha**2 * (steps - 1)
+            + exp2 * exp3
+            - exp4 * exp5
+            + gamma * hm * (2 * alpha + gamma)
+            + exp7 * exp8
+        )
+        sigmah = sigma * sigmah
+
+    # Class 2 models
+    elif error == "M" and trend == "N" and seasonality == "N" and damped == "N":
+        # Model MNN
+        cvals = np.full(h, alpha)
+        sigmah = _compute_sigmah(pf, h, sigma, cvals)
+
+    elif error == "M" and trend == "A" and seasonality == "N" and damped == "N":
+        # Model MAN
+        cvals = alpha + beta * steps
+        sigmah = _compute_sigmah(pf, h, sigma, cvals)
+
+    elif error == "M" and trend == "A" and seasonality == "N" and damped == "D":
+        # Model MAdN
+        cvals = np.full(h, np.nan)
+        for k in range(1, h + 1):
+            sum_phi = 0
+            for j in range(1, k + 1):
+                sum_phi = sum_phi + phi**j
+            cvals[k - 1] = alpha + beta * sum_phi
+        sigmah = _compute_sigmah(pf, h, sigma, cvals)
+
+    elif error == "M" and trend == "N" and seasonality == "A" and damped == "N":
+        # Model MNA
+        dvals = np.zeros(h)
+        for k in range(1, h + 1):
+            val = k % season_length
+            if val == 0:
+                dvals[k - 1] = 1
+        cvals = alpha + gamma * dvals
+        sigmah = _compute_sigmah(pf, h, sigma, cvals)
+
+    elif error == "M" and trend == "A" and seasonality == "A" and damped == "N":
+        # Model MAA
+        dvals = np.zeros(h)
+        for k in range(1, h + 1):
+            val = k % season_length
+            if val == 0:
+                dvals[k - 1] = 1
+        cvals = alpha * beta * steps + gamma * dvals
+        sigmah = _compute_sigmah(pf, h, sigma, cvals)
+
+    elif error == "M" and trend == "A" and seasonality == "A" and damped == "D":
+        # Model MAdA
+        dvals = np.zeros(h)
+        for k in range(1, h + 1):
+            val = k % season_length
+            if val == 0:
+                dvals[k - 1] = 1
+        cvals = np.full(h, np.nan)
+        for k in range(1, h + 1):
+            sum_phi = 0
+            for j in range(1, k + 1):
+                sum_phi = sum_phi + phi**j
+            cvals[k - 1] = alpha + beta * sum_phi + gamma * dvals[k - 1]
+        sigmah = _compute_sigmah(pf, h, sigma, cvals)
+
+    elif error == "M" and seasonality == "M":
+        sigmah = _class3models(
+            h,
+            sigma,
+            last_state,
+            season_length,
+            error,
+            trend,
+            seasonality,
+            damped,
+            alpha,
+            beta,
+            gamma,
+            phi,
+        )
+
+    else:
+        raise NotImplementedError
+
+    return sigmah
+
+
+def _compute_sigmah(pf, h, sigma, cvals):
+
+    theta = np.full(h, np.nan)
+    theta[0] = pf[0] ** 2
+
+    for k in range(1, h):
+        sum_val = 0
+        for j in range(1, k + 1):
+            val = cvals[j - 1] ** 2 * theta[k - j]
+            sum_val = sum_val + val
+        theta[k] = pf[k] ** 2 + sigma * sum_val
+
+    sigmah = np.full(h, np.nan)
+    for k in range(0, h):
+        sigmah[k] = (1 + sigma) * theta[k] - pf[k] ** 2
+
+    return sigmah
+
+
+def _class3models(
+    h,
+    sigma,
+    last_state,
+    season_length,
+    error,
+    trend,
+    seasonality,
+    damped,
+    alpha,
+    beta,
+    gamma,
+    phi,
+):
+
+    if damped == "N":
+        damped_val = False
+    else:
+        damped_val = True
+
+    p = len(last_state)
+
+    if trend != "N":
+        H1 = np.array([[1, 1]])
+    else:
+        H1 = np.array([[1]])
+
+    H2 = np.concatenate((np.zeros(season_length - 1), np.array([1]))).reshape(
+        1, season_length
+    )
+
+    if trend == "N":
+        F1 = 1
+        G1 = alpha
+    else:
+        f1 = 1
+        if damped_val:
+            f1 = phi
+        F1 = np.array([[1, 1], [0, f1]])
+        G1 = np.array([[alpha, alpha], [beta, beta]])
+
+    f2_top = np.concatenate((np.zeros(season_length - 1), np.array([1]))).reshape(
+        1, season_length
+    )
+    f2_bottom = np.c_[
+        (
+            np.identity(season_length - 1),
+            np.zeros(season_length - 1).reshape(season_length - 1, 1),
+        )
+    ]
+    F2 = np.r_[f2_top, f2_bottom]
+
+    G2 = np.zeros((season_length, season_length))
+    G2[0, season_length - 1] = gamma
+    Mh = np.matmul(
+        last_state[0 : (p - season_length)].reshape(
+            last_state[0 : (p - season_length)].shape[0], 1
+        ),
+        last_state[(p - season_length) : p].reshape(1, season_length),
+    )
+    Vh = np.zeros((Mh.shape[0] * Mh.shape[1], Mh.shape[0] * Mh.shape[1]))
+    H21 = np.kron(H2, H1)
+    F21 = np.kron(F2, F1)
+    G21 = np.kron(G2, G1)
+    K = np.kron(G2, F1) + np.kron(F2, G1)
+    mu = np.zeros(h)
+    var = np.zeros(h)
+
+    for i in range(0, h):
+        mu[i] = np.matmul(H1, np.matmul(Mh, np.transpose(H2)))
+        var[i] = (1 + sigma) * np.matmul(
+            H21, np.matmul(Vh, np.transpose(H21))
+        ) + sigma * mu[i] ** 2
+        vecMh = Mh.flatten()
+        exp1 = np.matmul(F21, np.matmul(Vh, np.transpose(F21)))
+        exp2 = np.matmul(F21, np.matmul(Vh, np.transpose(G21)))
+        exp3 = np.matmul(G21, np.matmul(Vh, np.transpose(F21)))
+        exp4 = np.matmul(
+            K,
+            np.matmul(Vh + (vecMh * vecMh.reshape(vecMh.shape[0], 1)), np.transpose(K)),
+        )
+        exp5 = np.matmul(
+            sigma * G21,
+            np.matmul(
+                3 * Vh + 2 * vecMh * vecMh.reshape(vecMh.shape[0], 1), np.transpose(G21)
+            ),
+        )
+        Vh = exp1 + sigma * (exp2 + exp3 + exp4 + exp5)
+
+    if trend == "N":
+        Mh = (
+            F1 * np.matmul(Mh, np.transpose(F2))
+            + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
+        )
+    else:
+        Mh = (
+            np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
+            + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
+        )
+
+    return var
