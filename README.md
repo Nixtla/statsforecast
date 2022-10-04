@@ -4,7 +4,7 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/Nixtla/neuralforecast/main/nbs/indx_imgs/branding/logo_mid.png">
+<img src="https://raw.githubusercontent.com/Nixtla/neuralforecast/main/nbs/imgs_indx/logo_mid.png">
 <h1 align="center">Statistical ⚡️ Forecast</h1>
 <h3 align="center">Lightning fast forecasting with statistical and econometric models</h3>
     
