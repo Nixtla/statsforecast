@@ -26,5 +26,6 @@ website:
         - examples/AnomalyDetection.ipynb
         - section: Forecasting At Scale
           contents:
+          - examples/Distributed_Fugue.qmd
           - examples/Prophet_spark_m5.ipynb
           - examples/ETS_ray_m5.ipynb
