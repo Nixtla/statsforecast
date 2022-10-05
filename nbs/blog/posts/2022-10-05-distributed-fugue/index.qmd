@@ -1,15 +1,14 @@
 ---
+author: [Fugue, Nixtla]
+date: 2022-10-05
 title: Distributed Forecast of 1M Time Series in Under 15 Minutes with Spark, Nixtla, and Fugue
 description: Scalable Time Series Modeling with open-source projects StatsForecast, Fugue, and Spark 
-order: 3
-execute:
-  echo: false
-  output: asis
+tags: [fugue, scalability]
 ---
 
 [![](https://img.shields.io/github/stars/nixtla/statsforecast?label=GitHub%20Stars&style=social){fig-align="left"}](https://github.com/nixtla/statsforecast)
 
-By [Fugue](https://github.com/fugue-project/) and [Nixtla](https://github.com/nixtla/). Originally posted in [TDS](https://medium.com/towards-data-science/distributed-forecast-of-1m-time-series-in-under-15-minutes-with-spark-nixtla-and-fugue-e9892da6fd5c).
+By [Fugue](https://github.com/fugue-project/) and [Nixtla](https://github.com/nixtla/). Originally posted on [TDS](https://medium.com/towards-data-science/distributed-forecast-of-1m-time-series-in-under-15-minutes-with-spark-nixtla-and-fugue-e9892da6fd5c).
 
 > **TL:DR We will show how you can leverage the distributed power of Spark and the highly efficient code from StatsForecast to fit millions of models in a couple of minutes.**
 
