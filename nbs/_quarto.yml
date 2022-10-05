@@ -10,10 +10,29 @@ format:
 website:
   twitter-card: true
   open-graph: true
-  repo-actions: [issue]
+  repo-actions: [issue] 
+  favicon: favicon.png
   navbar:
     background: primary
     search: true
+    left:
+      - text: "Get Started"
+        href: examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
+      - text: "Help"
+        menu:
+          - text: "Report an Issue"
+            icon: bug
+            href: https://github.com/nixtla/statsforecast/issues/new/choose
+          - text: "Join our Slack"
+            icon: chat-right-text
+            href: https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A
+    right:
+      - icon: github
+        href: "https://github.com/nixtla/statsforecast"
+      - icon: twitter
+        href: https://twitter.com/nixtlainc
+        aria-label: Nixtla Twitter
+
   sidebar:
     style: floating
 
