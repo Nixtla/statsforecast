@@ -116,7 +116,7 @@ class GroupedArray:
         fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
         return fm, fcsts, cols
     
-    def forecast(self, models, h, fitted=False, X=None, level=tuple()):
+    def forecast(self, models, h, fallback_model=None, fitted=False, X=None, level=tuple()):
         fcsts, cuts, has_level_models = self._output_fcst(
             models=models, attr='forecast', 
             h=h, X=X, level=level
@@ -145,7 +145,13 @@ class GroupedArray:
                 kwargs = {}
                 if has_level:
                     kwargs['level'] = level
-                res_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs)
+                try:
+                    res_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs)
+                except Exception as error:
+                    if fallback_model is not None:
+                        res_i = fallback_model.forecast(h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs)
+                    else:
+                        raise error
                 cols_m = [key for key in res_i.keys() if any(key.startswith(m) for m in matches)]
                 fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
                 cols_m = [f'{repr(model)}' if col == 'mean' else f'{repr(model)}-{col}' for col in cols_m]
@@ -233,7 +239,7 @@ class GroupedArray:
     def split_fm(self, fm, n_chunks):
         return [fm[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks) if x.size]
 
-# %% ../nbs/core.ipynb 16
+# %% ../nbs/core.ipynb 17
 def _grouped_array_from_df(df, sort_df):
     df = df.set_index('ds', append=True)
     if not df.index.is_monotonic_increasing and sort_df:
@@ -247,7 +253,7 @@ def _grouped_array_from_df(df, sort_df):
     indptr = np.append(0, cum_sizes).astype(np.int32)
     return GroupedArray(data, indptr), indices, dates, df.index
 
-# %% ../nbs/core.ipynb 18
+# %% ../nbs/core.ipynb 19
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     #assuming step_size = 1
     if (test_size - h) % step_size:
@@ -271,7 +277,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/core.ipynb 22
+# %% ../nbs/core.ipynb 23
 def _get_n_jobs(n_groups, n_jobs, ray_address):
     if ray_address is not None:
         logger.info(
@@ -296,7 +302,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 26
+# %% ../nbs/core.ipynb 27
 class StatsForecast:
     
     def __init__(
@@ -306,7 +312,8 @@ class StatsForecast:
             n_jobs: int = 1,
             ray_address: Optional[str] = None,
             df: Optional[pd.DataFrame] = None,
-            sort_df: bool = True
+            sort_df: bool = True,
+            fallback_model: Any = None
         ):
         """core.StatsForecast.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py).
@@ -326,6 +333,7 @@ class StatsForecast:
         `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
         `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+        `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` method.<br>
 
         **Notes:**<br>
         The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
@@ -336,6 +344,7 @@ class StatsForecast:
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.ray_address = ray_address
+        self.fallback_model = fallback_model
         self._prepare_fit(df=df, sort_df=sort_df)
         
     def _prepare_fit(self, df, sort_df):
@@ -493,7 +502,9 @@ class StatsForecast:
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
-            res_fcsts = self.ga.forecast(models=self.models, h=h, fitted=fitted, X=X, level=level)
+            res_fcsts = self.ga.forecast(models=self.models, 
+                                         h=h, fallback_model=self.fallback_model, 
+                                         fitted=fitted, X=X, level=level)
         else:
             res_fcsts = self._forecast_parallel(h=h, fitted=fitted, X=X, level=level)
         if fitted:
@@ -713,7 +724,10 @@ class StatsForecast:
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga, X_ in zip(gas, Xs):
-                future = executor.apply_async(ga.forecast, (self.models, h, fitted, X_, level,))
+                future = executor.apply_async(
+                    ga.forecast, 
+                    (self.models, h, self.fallback_model, fitted, X_, level,)
+                )
                 futures.append(future)
             out = [f.get() for f in futures]
             fcsts = [d['forecasts'] for d in out]
