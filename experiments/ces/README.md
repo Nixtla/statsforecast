@@ -1,24 +1,17 @@
-# CES experiments
+# The Complex Exponential Smoothing
+
+We are excited to release the only implementation for Python of the Complex Exponential Smoothing Algorithm, originally developed by [Ivan Sventunkov](https://forecasting.svetunkov.ru/en/2022/08/02/complex-exponential-smoothing/) for R. The CES algorithm models the time series using “information potential”, modeling the non-linearity in time series using a complex-valued representation. The weights exponentially decrease over time on complex and real plains rather than the constant weights in simple moving average methods.
+
+
+The complex representation of the model gives it flexibility and allows it to deal with both stationary and non-stationary time series. Our implementation, optimized using numba, was tested on the M4 dataset (100k time series), getting similar accuracy and computational time results. Additionally, you can use StatsForecast to build ensembles. In our experiments, the ensemble between ETS and CES gives the best results.
 
 ## Main results
 
-| dataset   | metric   |   AutoETS + AutoCES (StatsForecast) |   AutoETS (StatsForecast) |   AutoCES (StatsForecast) |   auto_ces (R) |
-|:----------|:---------|-----------:|------:|------:|--------:|
-| Yearly    | MASE     |      **2.992** | 3.338 | 3.417 |   3.35  |
-| Yearly    | time     |      0.213 | 0.124 | 0.089 |   0.355 |
-| Quarterly | MASE     |      **1.147** | 1.173 | 1.184 |   1.182 |
-| Quarterly | time     |      2.935 | 1.441 | 1.494 |   2.081 |
-| Monthly   | MASE     |      **0.927** | 0.97  | 0.936 |   0.943 |
-| Monthly   | time     |     14.713 | 8.407 | 6.305 |   8.18  |
-| Daily     | MASE     |      3.267 | 3.252 | 3.313 |   **3.251** |
-| Daily     | time     |      1.217 | 0.428 | 0.789 |   1.01  |
-| Weekly    | MASE     |      **2.392** | 2.405 | 2.464 |   2.426 |
-| Weekly    | time     |      0.083 | 0.034 | 0.049 |   0.085 |
-| Hourly    | MASE     |      1.273 | 1.608 | 1.184 |   **1.088** |
-| Hourly    | time     |      1.284 | 0.298 | 0.986 |   0.21  |
+![](ces-results.png)
 
+### Table
 
-(Time in minutes.)
+![](table-ces-results.png)
 
 ## Plots (Monthly dataset)
 
