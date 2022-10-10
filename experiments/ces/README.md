@@ -1,4 +1,4 @@
-# Complex Exponential Smoothing (CES) is now avaialable in StatsForecast
+# Complex Exponential Smoothing (CES) is now avaialable in Pyhton
 
 We are excited to release the only implementation for Python of the Complex Exponential Smoothing Algorithm, originally developed by [Ivan Sventunkov](https://forecasting.svetunkov.ru/en/2022/08/02/complex-exponential-smoothing/) for R. The CES algorithm models the time series using “information potential”, modeling the non-linearity in time series using a complex-valued representation. The weights exponentially decrease over time on complex and real plains rather than the constant weights in simple moving average methods.
 
