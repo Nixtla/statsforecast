@@ -1,9 +1,16 @@
-# Complex Exponential Smoothing (CES)
+# Complex Exponential Smoothing (CES) is now avaialable in StatsForecast
 
 We are excited to release the only implementation for Python of the Complex Exponential Smoothing Algorithm, originally developed by [Ivan Sventunkov](https://forecasting.svetunkov.ru/en/2022/08/02/complex-exponential-smoothing/) for R. The CES algorithm models the time series using “information potential”, modeling the non-linearity in time series using a complex-valued representation. The weights exponentially decrease over time on complex and real plains rather than the constant weights in simple moving average methods.
 
+![](cspweights.png)
 
-The complex representation of the model gives it flexibility and allows it to deal with both stationary and non-stationary time series. Our implementation, optimized using numba, was tested on the M4 dataset (100k time series), getting similar accuracy and computational time results. Additionally, you can use StatsForecast to build ensembles. In our experiments, the ensemble between ETS and CES gives the best results.
+The CES model has two main advantages over conventional exponential smoothing models:
+* it can model and forecast both stationary and non-stationary processes and
+* it can capture both level and trend cases
+
+Our implementation, optimized using numba, was tested on the M4 dataset (100k time series), getting similar accuracy and computational time results than the original implementation in R. 
+
+Additionally, with StatsForecast you can easly build ensembles of all statstical models. In this experiment, we show how the ensemble between ETS and CES gives the best results.
 
 ## Main results
 
@@ -16,6 +23,13 @@ The complex representation of the model gives it flexibility and allows it to de
 ## Plots (Monthly dataset)
 
 ![fig](./plots-models.png)
+
+## References
+
+* Check the StatsForecast [documentation](https://nixtla.github.io/statsforecast/models.html#autoces) on the CES
+* [Link](https://forecasting.svetunkov.ru/wp-content/uploads/2022/07/Svetunkov-et-al.-2022-Complex-Exponential-Smoothing.pdf) to the original paper
+* [Link](https://forecasting.svetunkov.ru/en/2022/08/02/the-long-and-winding-road-the-story-of-complex-exponential-smoothing/) to the story of the paper
+
 
 
 ## Reproducibility
