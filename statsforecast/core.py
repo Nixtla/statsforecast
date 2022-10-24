@@ -13,10 +13,11 @@ import numpy as np
 import pandas as pd
 
 # %% ../nbs/core.ipynb 5
-logging.basicConfig(
-    format='%(asctime)s %(name)s %(levelname)s: %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-)
+if __name__ == '__main__':
+    logging.basicConfig(
+        format='%(asctime)s %(name)s %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
 logger = logging.getLogger(__name__)
 
 # %% ../nbs/core.ipynb 8
