@@ -346,7 +346,7 @@ class StatsForecast:
         `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
         `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` method.<br>
-        `verbose`: bool, Whether print progress bar. Only used when `n_jobs=1`.<br>
+        `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
 
         **Notes:**<br>
         The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
