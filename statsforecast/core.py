@@ -132,7 +132,11 @@ class GroupedArray:
                 fitted_vals[:, 0] = self.data
             else:
                 fitted_vals[:, 0] = self.data[:, 0]
-        for i, grp in tqdm(enumerate(self), disable=(not verbose)):
+        iterable = tqdm(enumerate(self), 
+                        disable=(not verbose), 
+                        total=len(self),
+                        desc='Forecast')
+        for i, grp in iterable:
             y_train = grp[:, 0] if grp.ndim == 2 else grp
             X_train = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
             if X is not None:
@@ -189,8 +193,13 @@ class GroupedArray:
             fitted_idxs = np.full((self.data.shape[0], n_windows), False, dtype=bool)
             last_fitted_idxs = np.full_like(fitted_idxs, False, dtype=bool)
         matches = ['mean', 'lo', 'hi']
+        steps = list(range(-test_size, -h + 1, step_size))
         for i_ts, grp in enumerate(self):
-            for i_window, cutoff in tqdm(enumerate(range(-test_size, -h + 1, step_size), start=0), desc=f'CV Time Series {i_ts + 1}', disable=(not verbose)):
+            iterable = tqdm(enumerate(steps, start=0), 
+                            desc=f'Cross Validation Time Series {i_ts + 1}', 
+                            disable=(not verbose),
+                            total=len(steps))
+            for i_window, cutoff in iterable:
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size 
                 y = grp[(cutoff - in_size_disp):cutoff]
