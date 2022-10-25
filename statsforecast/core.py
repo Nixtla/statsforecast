@@ -11,6 +11,7 @@ from typing import Any, List, Optional
 
 import numpy as np
 import pandas as pd
+from tqdm.autonotebook import tqdm
 
 # %% ../nbs/core.ipynb 5
 logging.basicConfig(
@@ -116,7 +117,7 @@ class GroupedArray:
         fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
         return fm, fcsts, cols
     
-    def forecast(self, models, h, fallback_model=None, fitted=False, X=None, level=tuple()):
+    def forecast(self, models, h, fallback_model=None, fitted=False, X=None, level=tuple(), verbose=False):
         fcsts, cuts, has_level_models = self._output_fcst(
             models=models, attr='forecast', 
             h=h, X=X, level=level
@@ -131,7 +132,11 @@ class GroupedArray:
                 fitted_vals[:, 0] = self.data
             else:
                 fitted_vals[:, 0] = self.data[:, 0]
-        for i, grp in enumerate(self):
+        iterable = tqdm(enumerate(self), 
+                        disable=(not verbose), 
+                        total=len(self),
+                        desc='Forecast')
+        for i, grp in iterable:
             y_train = grp[:, 0] if grp.ndim == 2 else grp
             X_train = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
             if X is not None:
@@ -173,7 +178,8 @@ class GroupedArray:
             result['fitted']['cols'] = ['y'] + cols_fitted
         return result
     
-    def cross_validation(self, models, h, test_size, step_size=1, input_size=None, fitted=False, level=tuple()):
+    def cross_validation(self, models, h, test_size, step_size=1, input_size=None, fitted=False, level=tuple(), 
+                         verbose=False):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
             raise Exception('`test_size - h` should be module `step_size`')
@@ -187,8 +193,13 @@ class GroupedArray:
             fitted_idxs = np.full((self.data.shape[0], n_windows), False, dtype=bool)
             last_fitted_idxs = np.full_like(fitted_idxs, False, dtype=bool)
         matches = ['mean', 'lo', 'hi']
+        steps = list(range(-test_size, -h + 1, step_size))
         for i_ts, grp in enumerate(self):
-            for i_window, cutoff in enumerate(range(-test_size, -h + 1, step_size), start=0):
+            iterable = tqdm(enumerate(steps, start=0), 
+                            desc=f'Cross Validation Time Series {i_ts + 1}', 
+                            disable=(not verbose),
+                            total=len(steps))
+            for i_window, cutoff in iterable:
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size 
                 y = grp[(cutoff - in_size_disp):cutoff]
@@ -313,7 +324,8 @@ class StatsForecast:
             ray_address: Optional[str] = None,
             df: Optional[pd.DataFrame] = None,
             sort_df: bool = True,
-            fallback_model: Any = None
+            fallback_model: Any = None,
+            verbose: bool = False
         ):
         """core.StatsForecast.
         [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py).
@@ -334,6 +346,7 @@ class StatsForecast:
         `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
         `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` method.<br>
+        `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
 
         **Notes:**<br>
         The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
@@ -346,6 +359,7 @@ class StatsForecast:
         self.ray_address = ray_address
         self.fallback_model = fallback_model
         self._prepare_fit(df=df, sort_df=sort_df)
+        self.verbose = verbose and self.n_jobs == 1
         
     def _prepare_fit(self, df, sort_df):
         if df is not None:
@@ -504,7 +518,8 @@ class StatsForecast:
         if self.n_jobs == 1:
             res_fcsts = self.ga.forecast(models=self.models, 
                                          h=h, fallback_model=self.fallback_model, 
-                                         fitted=fitted, X=X, level=level)
+                                         fitted=fitted, X=X, level=level, 
+                                         verbose=self.verbose)
         else:
             res_fcsts = self._forecast_parallel(h=h, fitted=fitted, X=X, level=level)
         if fitted:
@@ -594,7 +609,8 @@ class StatsForecast:
                 step_size=step_size, 
                 input_size=input_size, 
                 fitted=fitted,
-                level=level
+                level=level,
+                verbose=self.verbose
             )
         else:
             res_fcsts = self._cross_validation_parallel(
