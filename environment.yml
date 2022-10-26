@@ -12,6 +12,6 @@ dependencies:
   - scipy>=1.7.3
   - statsmodels>=0.13.2
   - tabulate
+  - tqdm
   - pip:
     - nbdev
-    - tqdm
