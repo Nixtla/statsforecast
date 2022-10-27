@@ -4,10 +4,12 @@
 __all__ = ['AutoARIMA', 'ETS', 'AutoCES', 'SimpleExponentialSmoothing', 'SimpleExponentialSmoothingOptimized',
            'SeasonalExponentialSmoothing', 'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters',
            'HistoricAverage', 'Naive', 'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage',
-           'ADIDA', 'CrostonClassic', 'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB']
+           'ADIDA', 'CrostonClassic', 'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL']
 
 # %% ../nbs/models.ipynb 4
-from typing import Dict, List, Optional, Sequence, Tuple
+from inspect import signature
+from math import trunc
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numba import njit
@@ -17,6 +19,7 @@ from scipy.stats import norm
 from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ces import auto_ces, forecast_ces
 from .ets import ets_f, forecast_ets
+from .mstl import mstl
 
 # %% ../nbs/models.ipynb 6
 class _TS:
@@ -265,7 +268,7 @@ class AutoARIMA(_TS):
             'level_*' for probabilistic predictions.<br>
         """
         if level is not None:
-            return NotImplementedError
+            raise NotImplementedError
         mean = fitted_arima(self.model_)
         return {'mean': mean}
     
@@ -2868,3 +2871,150 @@ class TSB(_TS):
             alpha_p=self.alpha_p
         )
         return out
+
+# %% ../nbs/models.ipynb 235
+def _predict_mstl_seas(mstl_ob, h, season_length):
+    seasoncolumns = mstl_ob.filter(regex='seasonal*').columns
+    nseasons = len(seasoncolumns)
+    seascomp = np.full((h, nseasons), np.nan)
+    seasonal_periods = [season_length] if isinstance(season_length, int) else season_length
+    for i in range(nseasons):
+        mp = seasonal_periods[i]
+        colname = seasoncolumns[i]
+        seascomp[:, i] = np.tile(mstl_ob[colname].values[-mp:], trunc(1 + (h-1)/mp))[:h]
+    lastseas = seascomp.sum(axis=1)
+    return lastseas
+
+# %% ../nbs/models.ipynb 236
+class MSTL(_TS):
+    
+    def __init__(
+        self, 
+        season_length: Union[int, List[int]],
+        trend_forecaster: _TS = ETS(model='ZZN')
+    ):
+        self.season_length = season_length
+        self.trend_forecaster = trend_forecaster
+        # check ETS model doesnt have seasonality
+        
+        # check if trend forecaster has season_length=1
+        
+    def __repr__(self):
+        return 'MSTL'
+
+    def fit(
+            self,
+            y: np.ndarray,
+            X: np.ndarray = None
+        ):
+        """Fit the MSTL model.
+
+        Fit MSTL to a time series (numpy array) `y`.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (t, ), clean time series.<br>
+        `X`: array-like of shape (t, n_x) optional exogenous (default=None).<br>
+
+        **Returns:**<br>
+        `self`: MSTL fitted model.
+        """
+        self.model_ = mstl(
+            x=y, 
+            period=self.season_length
+        )
+        x_sa = self.model_[['trend', 'remainder']].sum(axis=1).values
+        self.trend_forecaster = self.trend_forecaster.fit(y=x_sa, X=X)
+        return self
+        
+    def predict(
+            self,
+            h: int,
+            X: np.ndarray = None,
+            level: Optional[Tuple[int]] = None,
+        ):
+        """Predict with fitted TSB.
+
+        **Parameters:**<br>
+        `h`: int, forecast horizon.<br>
+        `X`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
+        kwargs = {'h': h, 'X': X}
+        if 'level' in signature(self.trend_forecaster.predict).parameters:
+            kwargs['level'] = level
+        res = self.trend_forecaster.predict(**kwargs)
+        seas = _predict_mstl_seas(self.model_, h=h, season_length=self.season_length)
+        res = {key: val + seas for key, val in res.items()}
+        return res
+    
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+        """Access fitted TSB insample predictions.
+
+        **Parameters:**<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
+        kwargs = {}
+        if 'level' in signature(self.trend_forecaster.predict_in_sample).parameters:
+            kwargs['level'] = level
+        
+        res = self.trend_forecaster.predict_in_sample(**kwargs)
+        seas = self.model_.filter(regex='seasonal*').sum(axis=1).values
+        res = {key: val + seas for key, val in res.items()}
+        return res
+        
+    def forecast(
+            self, 
+            y: np.ndarray,
+            h: int,
+            X: np.ndarray = None,
+            X_future: np.ndarray = None,
+            level: Optional[List[int]] = None,
+            fitted: bool = False,
+        ):
+        """Memory Efficient TSB predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
+        model_ = mstl(
+            x=y, 
+            period=self.season_length
+        )
+        x_sa = model_[['trend', 'remainder']].sum(axis=1).values
+        kwargs = {
+            'y': x_sa,
+            'h': h,
+            'X': X,
+            'X_future': X_future,
+            'fitted': fitted
+        }
+        if 'level' in signature(self.trend_forecaster.forecast).parameters:
+            kwargs['level'] = level
+        res = self.trend_forecaster.forecast(**kwargs)
+        #reseasonalize results
+        seas_h = _predict_mstl_seas(model_, h=h, season_length=self.season_length)
+        seas_insample = model_.filter(regex='seasonal*').sum(axis=1).values
+        res = {
+            key: val + (seas_insample if 'fitted' in key else seas_h) \
+            for key, val in res.items()
+        }
+        return res
