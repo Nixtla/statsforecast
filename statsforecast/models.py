@@ -2887,15 +2887,42 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
 
 # %% ../nbs/models.ipynb 236
 class MSTL(_TS):
+    """MSTL model.
+    
+    The MSTL (Multiple Seasonal-Trend decomposition using LOESS) decomposes the time series
+    in multiple seasonalities using LOESS. Then forecasts the trend using 
+    a custom non-seaonal model and each seasonality using a SeasonalNaive model.
+    
+    **Parameters:**<br>
+    `season_length`: Union[int, List[int], number of observations per unit of time. For multiple seasonalities use a list.<br>
+    `trend_forecaster`: StatsForecast model used to forecast the trend component.<br>
+    
+    **References:**<br>
+    [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). "MSTL: A Seasonal-Trend Decomposition Algorithm for Time Series with Multiple Seasonal Patterns".](https://arxiv.org/abs/2107.13462).
+    """
     
     def __init__(
         self, 
         season_length: Union[int, List[int]],
         trend_forecaster: _TS = ETS(model='ZZN')
     ):
+        
+        # check ETS model doesnt have seasonality
+        if repr(trend_forecaster) == 'ETS':
+            if trend_forecaster.model[2] != 'N':
+                raise Exception(
+                    'Trend forecaster should not adjust '
+                    'seasonal models.'
+                )
+        if hasattr(trend_forecaster, 'season_length'):
+            if trend_forecaster.season_length != 1:
+                raise Exception(
+                    'Trend forecaster should not adjust '
+                    'seasonal models. Please pass `season_length=1` '
+                    'to your trend forecaster'
+                )
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
-        # check ETS model doesnt have seasonality
         
         # check if trend forecaster has season_length=1
         
@@ -2932,7 +2959,7 @@ class MSTL(_TS):
             X: np.ndarray = None,
             level: Optional[Tuple[int]] = None,
         ):
-        """Predict with fitted TSB.
+        """Predict with fitted MSTL.
 
         **Parameters:**<br>
         `h`: int, forecast horizon.<br>
@@ -2952,7 +2979,7 @@ class MSTL(_TS):
         return res
     
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
-        """Access fitted TSB insample predictions.
+        """Access fitted MSTL insample predictions.
 
         **Parameters:**<br>
         `level`: float list 0-100, confidence levels for prediction intervals.<br>
@@ -2979,7 +3006,7 @@ class MSTL(_TS):
             level: Optional[List[int]] = None,
             fitted: bool = False,
         ):
-        """Memory Efficient TSB predictions.
+        """Memory Efficient MSTL predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -2988,6 +3015,8 @@ class MSTL(_TS):
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
         `h`: int, forecast horizon.<br>
+        `X`: array-like of shape (t, n_x) optional insample exogenous (default=None).<br>
+        `X_future`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
         `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
 
