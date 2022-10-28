@@ -23,7 +23,6 @@ def mstl(x: np.ndarray, period: Union[int, List[int]], blambda: Optional[float] 
         ...  # na.interp
     if blambda is not None:
         ...  # boxcox
-    tt = np.arange(n)
     if msts[0] > 1:
         seas = np.zeros((len(msts), n))
         deseas = np.copy(x)
