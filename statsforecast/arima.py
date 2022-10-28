@@ -18,6 +18,8 @@ from numba import njit
 from scipy.optimize import minimize
 from scipy.stats import norm
 
+from .mstl import mstl
+
 # %% ../nbs/arima.ipynb 4
 OptimResult = namedtuple('OptimResult', 'success status x fun hess_inv')
 
@@ -1454,43 +1456,7 @@ def fitted_arima(model, h=1):
     else:
         raise NotImplementedError('h > 1')
 
-# %% ../nbs/arima.ipynb 68
-def mstl(x, period, blambda=None, s_window=7 + 4 * np.arange(1, 7)):
-    origx = x
-    n = len(x)
-    msts = period
-    #iterate = 1
-    if x.ndim == 2:
-        x = x[:, 0]
-    if np.isnan(x).any():
-        ...  # na.interp
-    if blambda is not None:
-        ...  # boxcox
-    #tt = np.arange(n)
-    if msts > 1:
-        fit = sm.tsa.STL(x, period=msts, seasonal=s_window[0]).fit()
-        seas = fit.seasonal
-        deseas = x - seas
-        trend = fit.trend
-    else:
-        try:
-            from supersmoother import SuperSmoother
-        except ImportError as e:
-            print('supersmoother is required for mstl with period=1')
-            raise e
-        msts = None
-        deseas = x
-        t = 1 + np.arange(n)
-        trend = SuperSmoother().fit(t, x).predict(t)
-    deseas[np.isnan(origx)] = np.nan
-    remainder = deseas - trend
-    output = {'data': origx, 'trend': trend}
-    if msts is not None:
-        output['seasonal'] = seas
-    output['remainder'] = remainder
-    return pd.DataFrame(output)
-
-# %% ../nbs/arima.ipynb 70
+# %% ../nbs/arima.ipynb 69
 def seas_heuristic(x, period):
     #nperiods = period > 1
     season = math.nan
@@ -1502,7 +1468,7 @@ def seas_heuristic(x, period):
         season = max(0, min(1, 1 - vare / np.var(remainder + seasonal, ddof=1)))
     return season
 
-# %% ../nbs/arima.ipynb 72
+# %% ../nbs/arima.ipynb 71
 def nsdiffs(x, test='seas', alpha=0.05, period=1, max_D=1, **kwargs):
     D = 0
     if alpha < 0.01:
@@ -1565,7 +1531,7 @@ def nsdiffs(x, test='seas', alpha=0.05, period=1, max_D=1, **kwargs):
             dodiff = False
     return D
 
-# %% ../nbs/arima.ipynb 74
+# %% ../nbs/arima.ipynb 73
 def ndiffs(x, alpha=0.05, test='kpss', kind='level', max_d=2):
     x = x[~np.isnan(x)]
     d = 0
@@ -1610,13 +1576,13 @@ def ndiffs(x, alpha=0.05, test='kpss', kind='level', max_d=2):
             return d - 1
     return d
 
-# %% ../nbs/arima.ipynb 76
+# %% ../nbs/arima.ipynb 75
 def newmodel(p, d, q, P, D, Q, constant, results):
     curr = np.array([p, d, q, P, D, Q, constant])
     in_results = (curr == results[:, :7]).all(1).any()
     return not in_results
 
-# %% ../nbs/arima.ipynb 78
+# %% ../nbs/arima.ipynb 77
 def auto_arima_f(
     x,
     d=None,
@@ -2088,7 +2054,7 @@ def auto_arima_f(
     
     return bestfit
 
-# %% ../nbs/arima.ipynb 85
+# %% ../nbs/arima.ipynb 84
 def print_statsforecast_ARIMA(model, digits=3, se=True):
     print(arima_string(model, padding=False))
     if model['lambda'] is not None:
@@ -2114,7 +2080,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if not np.isnan(model['aic']):
         print(f'AIC={round(model["aic"], 2)}')
 
-# %% ../nbs/arima.ipynb 87
+# %% ../nbs/arima.ipynb 86
 class ARIMASummary:
     """ARIMA Summary."""
     
@@ -2127,7 +2093,7 @@ class ARIMASummary:
     def summary(self):
         return print_statsforecast_ARIMA(self.model)
 
-# %% ../nbs/arima.ipynb 88
+# %% ../nbs/arima.ipynb 87
 class AutoARIMA:
     """An AutoARIMA estimator.
     
