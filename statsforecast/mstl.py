@@ -3,16 +3,23 @@
 # %% auto 0
 __all__ = ['mstl']
 
-# %% ../nbs/mstl.ipynb 2
+# %% ../nbs/mstl.ipynb 3
 from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-# %% ../nbs/mstl.ipynb 3
-def mstl(x: np.ndarray, period: Union[int, List[int]], blambda: Optional[float] = None, 
-         iterate: int = 1, s_window: np.ndarray = 7 + 4 * np.arange(1, 7)):
+# %% ../nbs/mstl.ipynb 4
+def mstl(
+        x: np.ndarray, # time series
+        period: Union[int, List[int]], # seasom length
+        blambda: Optional[float] = None, # box-cox transform
+        iterate: int = 1, # number of iterations
+        s_window: Optional[np.ndarray] = None, # seasonal window
+    ):
+    if s_window is None:
+        s_window = 7 + 4 * np.arange(1, 7)
     origx = x
     n = len(x)
     msts = [period] if isinstance(period, int) else period
