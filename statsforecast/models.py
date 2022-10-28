@@ -9,7 +9,7 @@ __all__ = ['AutoARIMA', 'ETS', 'AutoCES', 'SimpleExponentialSmoothing', 'SimpleE
 # %% ../nbs/models.ipynb 4
 from inspect import signature
 from math import trunc
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from numba import njit
@@ -2904,7 +2904,7 @@ class MSTL(_TS):
     def __init__(
         self, 
         season_length: Union[int, List[int]],
-        trend_forecaster: _TS = ETS(model='ZZN')
+        trend_forecaster = ETS(model='ZZN')
     ):
         
         # check ETS model doesnt have seasonality
@@ -2970,7 +2970,7 @@ class MSTL(_TS):
         `forecasts`: dictionary, with entries 'mean' for point predictions and
             'level_*' for probabilistic predictions.<br>
         """
-        kwargs = {'h': h, 'X': X}
+        kwargs: Dict[str, Any] = {'h': h, 'X': X}
         if 'level' in signature(self.trend_forecaster.predict).parameters:
             kwargs['level'] = level
         res = self.trend_forecaster.predict(**kwargs)
