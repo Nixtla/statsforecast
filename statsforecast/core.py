@@ -178,7 +178,8 @@ class GroupedArray:
             result['fitted']['cols'] = ['y'] + cols_fitted
         return result
     
-    def cross_validation(self, models, h, test_size, step_size=1, input_size=None, fitted=False, level=tuple(), 
+    def cross_validation(self, models, h, test_size, fallback_model=None,
+                         step_size=1, input_size=None, fitted=False, level=tuple(), 
                          verbose=False):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
@@ -224,7 +225,15 @@ class GroupedArray:
                     kwargs = {}
                     if has_level:
                         kwargs['level'] = level
-                    res_i = model.forecast(h=h, y=y_train, X=X_train, X_future=X_future, fitted=fitted, **kwargs)
+                    try:
+                        res_i = model.forecast(h=h, y=y_train, X=X_train, 
+                                               X_future=X_future, fitted=fitted, **kwargs)
+                    except Exception as error:
+                        if fallback_model is not None:
+                            res_i = fallback_model.forecast(h=h, y=y_train, X=X_train, 
+                                                            X_future=X_future, fitted=fitted, **kwargs)
+                        else:
+                            raise error
                     cols_m = [key for key in res_i.keys() if any(key.startswith(m) for m in matches)]
                     fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
                     cols_m = [f'{repr(model)}' if col == 'mean' else f'{repr(model)}-{col}' for col in cols_m]
@@ -250,7 +259,7 @@ class GroupedArray:
     def split_fm(self, fm, n_chunks):
         return [fm[x[0] : x[-1] + 1] for x in np.array_split(range(self.n_groups), n_chunks) if x.size]
 
-# %% ../nbs/core.ipynb 17
+# %% ../nbs/core.ipynb 18
 def _grouped_array_from_df(df, sort_df):
     df = df.set_index('ds', append=True)
     if not df.index.is_monotonic_increasing and sort_df:
@@ -264,7 +273,7 @@ def _grouped_array_from_df(df, sort_df):
     indptr = np.append(0, cum_sizes).astype(np.int32)
     return GroupedArray(data, indptr), indices, dates, df.index
 
-# %% ../nbs/core.ipynb 19
+# %% ../nbs/core.ipynb 20
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     #assuming step_size = 1
     if (test_size - h) % step_size:
@@ -288,7 +297,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/core.ipynb 23
+# %% ../nbs/core.ipynb 24
 def _get_n_jobs(n_groups, n_jobs, ray_address):
     if ray_address is not None:
         logger.info(
@@ -313,7 +322,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 27
+# %% ../nbs/core.ipynb 28
 class StatsForecast:
     
     def __init__(
@@ -345,7 +354,7 @@ class StatsForecast:
         `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
         `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
-        `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` method.<br>
+        `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
         `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
 
         **Notes:**<br>
@@ -606,6 +615,7 @@ class StatsForecast:
         if self.n_jobs == 1:
             res_fcsts = self.ga.cross_validation(
                 models=self.models, h=h, test_size=test_size, 
+                fallback_model=self.fallback_model, 
                 step_size=step_size, 
                 input_size=input_size, 
                 fitted=fitted,
@@ -769,7 +779,7 @@ class StatsForecast:
             for ga in gas:
                 future = executor.apply_async(
                     ga.cross_validation, 
-                    (self.models, h, test_size, step_size, input_size, fitted, level,)
+                    (self.models, h, test_size, self.fallback_model, step_size, input_size, fitted, level,)
                 )
                 futures.append(future)
             out = [f.get() for f in futures]

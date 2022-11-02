@@ -67,7 +67,7 @@ class FugueBackend(ParallelBackend):
         `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
         `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
         `models`: List[typing.Any], list of instantiated objects `StatsForecast.models`.<br>
-        `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` method.<br>
+        `fallback_model`: Any, Model to be used if a model fails.<br>
         `**kwargs`: Additional `core.StatsForecast` parameters. Example forecast horizon `h`.<br>
 
         **Returns:**<br>
@@ -100,6 +100,7 @@ class FugueBackend(ParallelBackend):
             df,
             models,
             freq,
+            fallback_model=None,
             **kwargs: Any, 
         ) -> Any:
         """Temporal Cross-Validation with core.StatsForecast and FugueBackend.
@@ -117,6 +118,7 @@ class FugueBackend(ParallelBackend):
         `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
         `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
         `models`: List[typing.Any], list of instantiated objects `StatsForecast.models`.<br>
+        `fallback_model`: Any, Model to be used if a model fails.<br>
 
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
@@ -132,7 +134,8 @@ class FugueBackend(ParallelBackend):
             df,
             self._cv,
             params=dict(models=models, freq=freq, 
-                        kwargs=kwargs),
+                        kwargs=kwargs, 
+                        fallback_model=fallback_model),
             schema=schema,
             partition={"by": "unique_id"},
             engine=self._engine,
@@ -145,8 +148,8 @@ class FugueBackend(ParallelBackend):
                               fallback_model=fallback_model, n_jobs=1)
         return model.forecast(**kwargs).reset_index()
 
-    def _cv(self, df: pd.DataFrame, models, freq, kwargs) -> pd.DataFrame:
-        model = StatsForecast(df=df, models=models, freq=freq, n_jobs=1)
+    def _cv(self, df: pd.DataFrame, models, freq, fallback_model, kwargs) -> pd.DataFrame:
+        model = StatsForecast(df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1)
         return model.cross_validation(**kwargs).reset_index()
 
     def _get_output_schema(self, models, mode="forecast") -> Schema:
