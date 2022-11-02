@@ -2245,7 +2245,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 184
+# %% ../nbs/models.ipynb 185
 @njit
 def _croston_classic(
         y: np.ndarray, # time series
@@ -2256,16 +2256,18 @@ def _croston_classic(
         raise NotImplementedError('return fitted')
     yd = _demand(y)
     yi = _intervals(y)
+    if not yd.size: #no demand
+        return {'mean': _repeat_val(val=y[-1], h=h)}
     ydp, _ = _ses_forecast(yd, 0.1)
     yip, _ = _ses_forecast(yi, 0.1)
-    if yip == 0.:
+    if yip != 0.:
         mean = ydp / yip
     else:
         mean = ydp
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 185
+# %% ../nbs/models.ipynb 186
 class CrostonClassic(_TS):
     
     def __init__(self):
@@ -2366,7 +2368,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 194
+# %% ../nbs/models.ipynb 195
 def _croston_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -2376,6 +2378,8 @@ def _croston_optimized(
         raise NotImplementedError('return fitted')
     yd = _demand(y)
     yi = _intervals(y)
+    if not yd.size:
+        return {'mean': _repeat_val(val=y[-1], h=h)}
     ydp, _ = _optimized_ses_forecast(yd)
     yip, _ = _optimized_ses_forecast(yi)
     if yip == 0.:
@@ -2385,7 +2389,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 195
+# %% ../nbs/models.ipynb 196
 class CrostonOptimized(_TS):
     
     def __init__(self):
