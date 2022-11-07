@@ -23,6 +23,7 @@ website:
         - examples/Exogenous.ipynb
         - examples/UncertaintyIntervals.ipynb
         - examples/AnomalyDetection.ipynb
+        - examples/ElectricityLoadForecasting.ipynb
         - examples/MultipleSeasonalities.ipynb
         - section: Forecasting At Scale
           contents:
