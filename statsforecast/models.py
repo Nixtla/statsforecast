@@ -54,7 +54,6 @@ def _calculate_sigma(residuals, n):
 # %% ../nbs/models.ipynb 10
 class AutoARIMA(_TS):
     """AutoARIMA model.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py).
 
     Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average) 
     model using an information criterion. Default is Akaike Information Criterion (AICc). 
@@ -365,7 +364,6 @@ class AutoARIMA(_TS):
 # %% ../nbs/models.ipynb 20
 class ETS(_TS):
     """Exponential Smoothing model.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/ets.py).
 
     Automatically selects the best ETS (Error, Trend, Seasonality) 
     model using an information criterion. Default is Akaike Information Criterion (AICc), while particular models are estimated using maximum likelihood.
@@ -491,7 +489,6 @@ class ETS(_TS):
 # %% ../nbs/models.ipynb 29
 class AutoCES(_TS):
     """Complex Exponential Smoothing model.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/ces.py).
 
     Automatically selects the best Complex Exponential Smoothing
     model using an information criterion. Default is Akaike Information Criterion (AICc), while particular 
@@ -730,7 +727,6 @@ def _ses(
 # %% ../nbs/models.ipynb 41
 class SimpleExponentialSmoothing(_TS):
     """SimpleExponentialSmoothing model.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past. 
     Suitable for data with no clear trend or seasonality. 
@@ -849,7 +845,6 @@ def _ses_optimized(
 # %% ../nbs/models.ipynb 51
 class SimpleExponentialSmoothingOptimized(_TS):
     """SimpleExponentialSmoothing model.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past. 
     Suitable for data with no clear trend or seasonality. 
@@ -972,7 +967,6 @@ def _seasonal_exponential_smoothing(
 # %% ../nbs/models.ipynb 61
 class SeasonalExponentialSmoothing(_TS):
     """SeasonalExponentialSmoothing model.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past. 
     Suitable for data with no clear trend or seasonality. 
@@ -1119,7 +1113,6 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             season_length: int,
         ):
         """SeasonalExponentialSmoothingOptimized model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/smoothing.py).
 
         Uses a weighted average of all past observations where the weights decrease exponentially into the past. 
         Suitable for data with no clear trend or seasonality. 
@@ -1310,7 +1303,6 @@ class HistoricAverage(_TS):
 
     def __init__(self):
         """HistoricAverage model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         Also known as mean method. Uses a simple average of all past observations. 
         Assuming there are $t$ observations, the one-step forecast is given by: 
@@ -1448,7 +1440,6 @@ class Naive(_TS):
     
     def __init__(self):
         """Naive model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         Also known as mean method. Uses a simple average of all past observations. 
         Assuming there are $t$ observations, the one-step forecast is given by: 
@@ -1592,7 +1583,6 @@ class RandomWalkWithDrift(_TS):
     
     def __init__(self):
         """RandomWalkWithDrift model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         A variation of the naive method allows the forecasts to change over time. 
         The amout of change, called drift, is the average change seen in the historical data. 
@@ -1890,7 +1880,6 @@ class WindowAverage(_TS):
             window_size: int
         ):
         """WindowAverage model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         Uses the average of the last $k$ observations, with $k$ the length of the window.
         Wider windows will capture global trends, while narrow windows will reveal local trends.
@@ -2016,7 +2005,6 @@ class SeasonalWindowAverage(_TS):
             window_size: int
         ):
         """SeasonalWindowAverage model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/simple_methods.py).
 
         An average of the last $k$ observations of the same period, with $k$ the length of the window.
 
@@ -2148,7 +2136,6 @@ class ADIDA(_TS):
 
     def __init__(self):
         """ADIDA model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal aggregation to reduce the 
         number of zero observations. Once the data has been agregated, it uses the optimized SES to 
@@ -2272,7 +2259,6 @@ class CrostonClassic(_TS):
     
     def __init__(self):
         """CrostonClassic model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and 
@@ -2394,7 +2380,6 @@ class CrostonOptimized(_TS):
     
     def __init__(self):
         """CrostonOptimized model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and 
@@ -2509,7 +2494,6 @@ class CrostonSBA(_TS):
     
     def __init__(self):
         """CrostonSBA model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and 
@@ -2635,7 +2619,6 @@ class IMAPA(_TS):
     
     def __init__(self):
         """IMAPA model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         Intermittent Multiple Aggregation Prediction Algorithm: Similar to ADIDA, but instead of
         using a single aggregation level, it considers multiple in order to capture different
@@ -2758,7 +2741,6 @@ class TSB(_TS):
             alpha_p: float
         ):
         """TSB model.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/sparse.py).
 
         Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand 
         intervals with the demand probability $d_t$, which is defined as follows.
