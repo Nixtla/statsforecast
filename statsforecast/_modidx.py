@@ -3,7 +3,7 @@
 d = { 'settings': { 'branch': 'main',
                 'doc_baseurl': '/statsforecast/',
                 'doc_host': 'https://Nixtla.github.io',
-                'git_url': 'https://github.com/Nixtla/statsforecast/tree/main/',
+                'git_url': 'https://github.com/Nixtla/statsforecast/',
                 'lib_path': 'statsforecast'},
   'syms': { 'statsforecast.adapters.prophet': { 'statsforecast.adapters.prophet.AutoARIMAProphet': ( 'adapters.prophet.html#autoarimaprophet',
                                                                                                      'statsforecast/adapters/prophet.py'),
