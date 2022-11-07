@@ -44,7 +44,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v2
 
-     - name: Set up environment
+      - name: Set up environment
         uses: mamba-org/provision-with-micromamba@main
         with:
           extra-specs: python=${{ matrix.python-version }}
@@ -73,7 +73,7 @@ jobs:
       - name: Clone repo
         uses: actions/checkout@v2
 
-     - name: Set up environment
+      - name: Set up environment
         uses: mamba-org/provision-with-micromamba@main
         with:
           extra-specs: python=${{ matrix.python-version }}
