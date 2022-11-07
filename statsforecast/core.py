@@ -337,7 +337,6 @@ class StatsForecast:
             verbose: bool = False
         ):
         """core.StatsForecast.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py).
 
         The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models 
         for large sets of time series. It operates with pandas DataFrame `df` that identifies series 
