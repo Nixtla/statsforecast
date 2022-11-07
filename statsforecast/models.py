@@ -2368,7 +2368,7 @@ def _croston_optimized(
         return {'mean': _repeat_val(val=y[-1], h=h)}
     ydp, _ = _optimized_ses_forecast(yd)
     yip, _ = _optimized_ses_forecast(yi)
-    if yip == 0.:
+    if yip != 0.:
         mean = ydp / yip
     else:
         mean = ydp
