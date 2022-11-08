@@ -9,6 +9,8 @@ import os
 
 import numpy as np
 from numba import njit
+from scipy.stats import norm
+
 from .ets import nelder_mead
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
@@ -407,10 +409,9 @@ def auto_theta(
     decompose = False
     # seasonal test
     if m >= 4:
-        xacf = acf(y, nlags=m + 1, fft=False)[1:]
-        xacf2 = np.hstack([np.array([1.]), 2 * xacf ** 2])
-        clim = 1.64 / np.sqrt(len(y)) * np.sqrt(np.cumsum(xacf2))
-        decompose = np.abs(xacf[m - 1]) > clim[m - 1]
+        r = acf(y, nlags=m, fft=False)[1:]
+        stat = np.sqrt((1 + 2 * np.sum(r[:-1]**2)) / len(y))
+        decompose = np.abs(r[-1]) / stat > norm.ppf(0.95)
     
     if decompose:
         y_decompose = seasonal_decompose(y, model=decomposition_type, period=m).seasonal
