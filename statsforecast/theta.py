@@ -12,8 +12,7 @@ from numba import njit
 from .ets import nelder_mead
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
-
-from .models import _seasonal_naive, _repeat_val_seas
+from .utils import _seasonal_naive, _repeat_val_seas
 
 # %% ../nbs/theta.ipynb 4
 # Global variables 
