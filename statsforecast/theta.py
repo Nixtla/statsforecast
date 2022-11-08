@@ -210,7 +210,7 @@ def pegelsresid_theta(y: np.ndarray,
                     e=e, amse=amse, nmse=nmse)
     if not np.isnan(mse):
         if np.abs(mse + 99999) < 1e-7:
-            lik = np.nan
+            mse = np.nan
     return amse, e, states, mse
 
 # %% ../nbs/theta.ipynb 21
@@ -344,7 +344,7 @@ def compute_pi_samples(n, h, states, sigma, alpha, theta, mean_y, seed=0, n_samp
     samples = np.full((h, n_samples), fill_value=np.nan, dtype=np.float32)
     # states: level, meany, An, Bn, mu
     smoothed, _, A, B, _ = states[-1]
-    seeded_prng = np.random.seed(seed)
+    np.random.seed(seed)
     for i in range(n, n + h):
         samples[i - n] = smoothed + (1 - 1 / theta)*(A*((1 - alpha) ** i) + B * (1 - (1 - alpha)**(i + 1)) / alpha)
         samples[i - n] += np.random.normal(scale=sigma, size=n_samples)
