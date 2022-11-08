@@ -30,9 +30,9 @@ CACHE = os.environ.get('NUMBA_CACHE', 'False').lower() in ['true']
 
 # %% ../nbs/theta.ipynb 6
 @njit(nogil=NOGIL, cache=CACHE)
-def initstate(y, modeltype, level_0, alpha, theta):
+def initstate(y, modeltype, initial_smoothed, alpha, theta):
     states = np.zeros((1, 5), dtype=np.float32)
-    states[0, 0] = alpha * y[0] + (1 - alpha) * level_0 # level
+    states[0, 0] = alpha * y[0] + (1 - alpha) * initial_smoothed # level
     states[0, 1] = y[0] #mean y
     if modeltype in [DSTM, DOTM]:
         # dynamic models
@@ -43,10 +43,10 @@ def initstate(y, modeltype, level_0, alpha, theta):
         # nodynamic models
         n = len(y)
         Bn = 6 * (2 * np.mean(np.arange(1, n + 1) * y) - (1 + n) * np.mean(y)) / ( n ** 2 - 1)
-        An = np.mean(y) - ( n + 1) * Bn / 2
+        An = np.mean(y) - (n + 1) * Bn / 2
         states[0, 2] = An
         states[0, 3] = Bn
-        states[0, 4] = level_0 + (1 - 1 / theta) * (An + Bn)
+        states[0, 4] = initial_smoothed + (1 - 1 / theta) * (An + Bn)
         
     return states
 
@@ -55,7 +55,7 @@ def initstate(y, modeltype, level_0, alpha, theta):
 def thetacalc(y: np.ndarray,
               states: np.ndarray, # states
               modeltype: int, 
-              level_0: float, 
+              initial_smoothed: float, 
               alpha: float,
               theta: float, 
               e: np.ndarray, 
@@ -65,7 +65,7 @@ def thetacalc(y: np.ndarray,
     f = np.zeros(nmse)
     # update first state
     states[0, :] = initstate(y=y, modeltype=modeltype, 
-                             level_0=level_0, 
+                             initial_smoothed=initial_smoothed, 
                              alpha=alpha, theta=theta) 
     
     amse[:nmse] = 0.
@@ -152,12 +152,12 @@ def thetaforecast(states, n, modeltype,
 
 # %% ../nbs/theta.ipynb 16
 @njit(nogil=NOGIL, cache=CACHE)
-def initparamtheta(level: float, alpha: float, theta: float,
+def initparamtheta(initial_smoothed: float, alpha: float, theta: float,
                    y: np.ndarray,
                    modeltype: str):
     if modeltype in ['STM', 'DSTM']:
-        if np.isnan(level):
-            level = y[0] / 2
+        if np.isnan(initial_smoothed):
+            initial_smoothed = y[0] / 2
             optimize_level = 1
         else:
             optimize_level = 0
@@ -169,8 +169,8 @@ def initparamtheta(level: float, alpha: float, theta: float,
         theta = 2. # no optimize
         optimize_theta = 0
     elif modeltype in ['OTM', 'DOTM']:
-        if np.isnan(level):
-            level = y[0] / 2
+        if np.isnan(initial_smoothed):
+            initial_smoothed = y[0] / 2
             optimize_level = 1
         else:
             optimize_level = 0
@@ -184,7 +184,7 @@ def initparamtheta(level: float, alpha: float, theta: float,
             optimize_theta = 1
         else:
             optimize_theta = 0
-    return {'level': level, 'optimize_level': optimize_level,
+    return {'initial_smoothed': initial_smoothed, 'optimize_initial_smoothed': optimize_level,
             'alpha': alpha, 'optimize_alpha': optimize_alpha,
             'theta': theta, 'optimize_theta': optimize_theta}
 
@@ -197,7 +197,7 @@ def switch_theta(x: str):
 @njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_theta(y: np.ndarray, 
                       modeltype: str, 
-                      level: float, alpha: float,
+                      initial_smoothed: float, alpha: float,
                       theta: float, 
                       nmse: int):
     states = np.zeros((len(y), 5), dtype=np.float32)
@@ -205,7 +205,7 @@ def pegelsresid_theta(y: np.ndarray,
     amse = np.full(nmse, fill_value=np.nan)
     mse = thetacalc(y=y, states=states, 
                     modeltype=switch_theta(modeltype), 
-                    level_0=level, alpha=alpha, theta=theta, 
+                    initial_smoothed=initial_smoothed, alpha=alpha, theta=theta, 
                     e=e, amse=amse, nmse=nmse)
     if not np.isnan(mse):
         if np.abs(mse + 99999) < 1e-7:
@@ -250,7 +250,7 @@ def theta_target_fn(
     amse = np.full(nmse, fill_value=np.nan)
     mse = thetacalc(y=y, states=states, 
                     modeltype=switch_theta(modeltype), 
-                    level_0=level, alpha=alpha, theta=theta, 
+                    initial_smoothed=level, alpha=alpha, theta=theta, 
                     e=e, amse=amse, nmse=nmse)
     if mse < -1e10: 
         mse = -1e10 
@@ -270,11 +270,11 @@ def optimize_theta_target_fn(
     if not len(x0):
         return
     
-    init_level = init_par['theta']
+    init_level = init_par['initial_smoothed']
     init_alpha = init_par['alpha']
     init_theta = init_par['theta']
     
-    opt_level = optimize_params['level']
+    opt_level = optimize_params['initial_smoothed']
     opt_alpha = optimize_params['alpha']
     opt_theta = optimize_params['theta']
     
@@ -303,11 +303,13 @@ def optimize_theta_target_fn(
 def thetamodel(
         y: np.ndarray, m: int, 
         modeltype: str, 
-        level: float, alpha: float,
+        initial_smoothed: float, alpha: float,
         theta: float, nmse: int
     ):
     #initial parameters
-    par = initparamtheta(level=level, alpha=alpha, theta=theta, y=y, modeltype=modeltype)
+    par = initparamtheta(initial_smoothed=initial_smoothed, 
+                         alpha=alpha, theta=theta, 
+                         y=y, modeltype=modeltype)
     optimize_params = {key.replace('optimize_', ''): val for key, val in par.items() if 'optim' in key}
     par = {key: val for key, val in par.items() if 'optim' not in key}
     # parameter optimization
@@ -318,7 +320,7 @@ def thetamodel(
     if fred is not None:
         fit_par = fred.x
     j = 0
-    if optimize_params['level']:
+    if optimize_params['initial_smoothed']:
         j += 1
     if optimize_params['alpha']:
         par['alpha'] = fit_par[j]
@@ -334,43 +336,68 @@ def thetamodel(
     
     return dict(mse=mse, amse=amse, fit=fred, residuals=e,
                 m=m, states=states, par=par, n=len(y), 
-                modeltype=modeltype)
+                modeltype=modeltype, mean_y=np.mean(y))
 
 # %% ../nbs/theta.ipynb 25
-def pegelsfcast_C_theta(h, obj, npaths=None, level=None, bootstrap=None):
+def compute_pi_samples(n, h, states, sigma, alpha, theta, mean_y, seed=0, n_samples=200):
+    samples = np.full((h, n_samples), fill_value=np.nan, dtype=np.float32)
+    # states: level, meany, An, Bn, mu
+    smoothed, _, A, B, _ = states[-1]
+    seeded_prng = np.random.seed(seed)
+    for i in range(n, n + h):
+        samples[i - n] = smoothed + (1 - 1 / theta)*(A*((1 - alpha) ** i) + B * (1 - (1 - alpha)**(i + 1)) / alpha)
+        samples[i - n] += np.random.normal(scale=sigma, size=n_samples)
+        smoothed = alpha * samples[i - n] + (1 - alpha) * smoothed
+        mean_y = (i * mean_y + samples[i - n]) / (i + 1)
+        B = ((i - 1) * B + 6 * (samples[i - n] - mean_y) / (i + 1)) / (i + 2)
+        A = mean_y - B * (i + 2) / 2
+    return samples
+
+# %% ../nbs/theta.ipynb 26
+def forecast_theta(obj, h, level=None):
     forecast = np.full(h, fill_value=np.nan)
     n = obj['n']
     states = obj['states']
+    alpha=obj['par']['alpha']
+    theta=obj['par']['theta']
     thetaforecast(
         states=states, n=n, modeltype=switch_theta(obj['modeltype']), 
-        h=h, f=forecast, alpha=obj['par']['alpha'], theta=obj['par']['theta'],
+        h=h, f=forecast, alpha=alpha, theta=theta
     )
+    res = {'mean': forecast}
+    
+    if level is not None:
+        sigma = np.std(obj['residuals'][3:], ddof=1)
+        mean_y = obj['mean_y']
+        samples = compute_pi_samples(n=n, h=h, states=states, sigma=sigma, alpha=alpha, 
+                                     theta=theta, mean_y=mean_y)
+        for lv in level:
+            min_q = (100 - lv) / 200
+            max_q = min_q + lv / 100
+            res[f'lo-{lv}'] = np.quantile(samples, min_q, axis=1)
+            res[f'hi-{lv}'] = np.quantile(samples, max_q, axis=1)
+            
     if obj.get('decompose', False):
         seas_forecast = _repeat_val_seas(obj['seas_forecast']['mean'], h=h, season_length=obj['m'])
-        if obj['decomposition_type'] == 'multiplicative':
-            forecast = forecast * seas_forecast
-        else:
-            forecast = forecast + seas_forecast
-    return forecast
-
-# %% ../nbs/theta.ipynb 26
-def forecast_theta(obj, h):
-    fcst = pegelsfcast_C_theta(h, obj)
-    out = {'mean': fcst}
-    return out
+        for key in res:
+            if obj['decomposition_type'] == 'multiplicative':
+                res[key] = res[key] * seas_forecast
+            else:
+                res[key] = res[key] + seas_forecast
+    return res
 
 # %% ../nbs/theta.ipynb 28
 def auto_theta(
         y, m, model=None, 
-        level_0=None, alpha=None, 
+        initial_smoothed=None, alpha=None, 
         theta=None,
         nmse=3,
         decomposition_type='multiplicative'
     ):
     # converting params to floats 
     # to improve numba compilation
-    if level_0 is None:
-        level_0 = np.nan
+    if initial_smoothed is None:
+        initial_smoothed = np.nan
     if alpha is None:
         alpha = np.nan
     if theta is None:
@@ -414,7 +441,7 @@ def auto_theta(
     best_ic = np.inf
     for mtype in modeltype:
         fit = thetamodel(y=y, m=m, modeltype=mtype, nmse=nmse, 
-                         level=level_0, alpha=alpha, theta=theta)
+                         initial_smoothed=initial_smoothed, alpha=alpha, theta=theta)
         fit_ic = fit['mse']
         if not np.isnan(fit_ic):
             if fit_ic < best_ic:
