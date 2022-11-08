@@ -4,7 +4,8 @@
 __all__ = ['AutoARIMA', 'ETS', 'AutoCES', 'AutoTheta', 'SimpleExponentialSmoothing', 'SimpleExponentialSmoothingOptimized',
            'SeasonalExponentialSmoothing', 'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters',
            'HistoricAverage', 'Naive', 'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage',
-           'ADIDA', 'CrostonClassic', 'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL']
+           'ADIDA', 'CrostonClassic', 'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'Theta',
+           'OptimizedTheta', 'DynamicTheta', 'DynamicOptimizedTheta']
 
 # %% ../nbs/models.ipynb 4
 from inspect import signature
@@ -616,8 +617,8 @@ class AutoCES(_TS):
 class AutoTheta(_TS):
     """AutoTheta model.
 
-    Automatically selects the best Theta (Simple Theta Model ('STM'),
-    Optimzed Theta Model ('OTM'), Dynamic Simple Theta Model ('DSTM'),
+    Automatically selects the best Theta (Standard Theta Model ('STM'),
+    Optimized Theta Model ('OTM'), Dynamic Standard Theta Model ('DSTM'),
     Dynamic Optimized Theta Model ('DOTM')) model using mse. 
     
     **Parameters:**<br>
@@ -3126,3 +3127,99 @@ class MSTL(_TS):
             for key, val in res.items()
         }
         return res
+
+# %% ../nbs/models.ipynb 254
+class Theta(AutoTheta): 
+    """ Standard Theta Method. 
+
+    **Parameters:**<br>
+    `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+    `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    
+    **References:**<br>
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    """
+
+    def __init__(
+            self, 
+            season_length: int = 1, 
+            decomposition_type: str = 'multiplicative',
+        ): 
+        super().__init__(season_length=season_length, 
+                         model='STM', 
+                         decomposition_type=decomposition_type)
+        
+    def __rep__(self):
+        return 'Theta'
+
+# %% ../nbs/models.ipynb 264
+class OptimizedTheta(AutoTheta): 
+    """ Optimized Theta Method. 
+
+    **Parameters:**<br>
+    `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+    `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    
+    **References:**<br>
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    """
+
+    def __init__(
+            self, 
+            season_length: int = 1, 
+            decomposition_type: str = 'multiplicative',
+        ): 
+        super().__init__(season_length=season_length, 
+                         model='OTM', 
+                         decomposition_type=decomposition_type)
+        
+    def __rep__(self):
+        return 'OptimizedTheta'
+
+# %% ../nbs/models.ipynb 274
+class DynamicTheta(AutoTheta): 
+    """ Dynamic Standard Theta Method. 
+
+    **Parameters:**<br>
+    `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+    `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    
+    **References:**<br>
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    """
+
+    def __init__(
+            self, 
+            season_length: int = 1, 
+            decomposition_type: str = 'multiplicative',
+        ): 
+        super().__init__(season_length=season_length, 
+                         model='DSTM', 
+                         decomposition_type=decomposition_type)
+        
+    def __rep__(self):
+        return 'DynamicTheta'
+
+# %% ../nbs/models.ipynb 284
+class DynamicOptimizedTheta(AutoTheta): 
+    """ Dynamic Optimized Theta Method. 
+
+    **Parameters:**<br>
+    `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+    `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    
+    **References:**<br>
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    """
+
+    def __init__(
+            self, 
+            season_length: int = 1, 
+            decomposition_type: str = 'multiplicative',
+        ): 
+        super().__init__(season_length=season_length, 
+                         model='DOTM', 
+                         decomposition_type=decomposition_type)
+        
+    def __rep__(self):
+        return 'DynamicOptimizedTheta'
