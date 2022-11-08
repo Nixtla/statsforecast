@@ -97,6 +97,13 @@ AirPassengersDF = pd.DataFrame({'unique_id': np.ones(len(AirPassengers)),
 
 # %% ../nbs/utils.ipynb 15
 @njit
+def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
+    out = np.empty(h, np.float32)
+    for i in range(h):
+        out[i] = season_vals[i % season_length]
+    return out
+
+@njit
 def _seasonal_naive(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -105,9 +112,10 @@ def _seasonal_naive(
     ): 
     if y.size < season_length:
         return {'mean': np.full(h, np.nan, np.float32)}
-    if not y.size % season_length:
+    n = y.size
+    if n % season_length:
         # complete series with nan
-        y = np.concatenate((np.full(y.size % season_length, np.nan, y.dtype), y))
+        y = np.concatenate((np.full(n % season_length, np.nan, y.dtype), y))
     season_vals = np.empty(season_length, np.float32)
     fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
@@ -118,15 +126,12 @@ def _seasonal_naive(
     out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
     fcst = {'mean': out}
     if fitted:
-        fcst['fitted'] = fitted_vals
+        fcst['fitted'] = fitted_vals[-n:]
     return fcst
 
 @njit
-def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
-    out = np.empty(h, np.float32)
-    for i in range(h):
-        out[i] = season_vals[i % season_length]
-    return out
+def _repeat_val(val: float, h: int):
+    return np.full(h, val, np.float32)
 
 @njit
 def _naive(
@@ -140,7 +145,3 @@ def _naive(
         fitted_vals[1:] = np.roll(y, 1)[1:]
         return {'mean': mean, 'fitted': fitted_vals}
     return {'mean': mean}
-
-@njit
-def _repeat_val(val: float, h: int):
-    return np.full(h, val, np.float32)
