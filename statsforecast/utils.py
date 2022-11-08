@@ -105,6 +105,9 @@ def _seasonal_naive(
     ): 
     if y.size < season_length:
         return {'mean': np.full(h, np.nan, np.float32)}
+    if not y.size % season_length:
+        # complete series with nan
+        y = np.concatenate((np.full(y.size % season_length, np.nan, y.dtype), y))
     season_vals = np.empty(season_length, np.float32)
     fitted_vals = np.full(y.size, np.nan, np.float32)
     for i in range(season_length):
