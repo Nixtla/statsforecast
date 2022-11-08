@@ -421,7 +421,7 @@ def auto_theta(
             y = y - y_decompose
         else:
             y = y / y_decompose
-            seas_forecast = _seasonal_naive(y=y_decompose, h=m, season_length=m, fitted=False)
+        seas_forecast = _seasonal_naive(y=y_decompose, h=m, season_length=m, fitted=False)
     
     # validate model
     if model not in [None, 'STM', 'OTM', 'DSTM', 'DOTM']:
