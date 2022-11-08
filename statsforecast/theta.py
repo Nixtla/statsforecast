@@ -407,7 +407,7 @@ def auto_theta(
     decompose = False
     # seasonal test
     if m >= 4:
-        xacf = acf(y, nlags=m + 1)
+        xacf = acf(y, nlags=m)
         xacf2 = np.hstack([np.array([1.]), 2 * xacf ** 2])
         clim = 1.64 / np.sqrt(len(y)) * np.sqrt(np.cumsum(xacf2))
         decompose = np.abs(xacf[m - 1]) > clim[m - 1]
