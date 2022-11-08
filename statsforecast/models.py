@@ -3149,7 +3149,7 @@ class Theta(AutoTheta):
                          model='STM', 
                          decomposition_type=decomposition_type)
         
-    def __rep__(self):
+    def __repr__(self):
         return 'Theta'
 
 # %% ../nbs/models.ipynb 264
@@ -3173,7 +3173,7 @@ class OptimizedTheta(AutoTheta):
                          model='OTM', 
                          decomposition_type=decomposition_type)
         
-    def __rep__(self):
+    def __repr__(self):
         return 'OptimizedTheta'
 
 # %% ../nbs/models.ipynb 274
@@ -3197,7 +3197,7 @@ class DynamicTheta(AutoTheta):
                          model='DSTM', 
                          decomposition_type=decomposition_type)
         
-    def __rep__(self):
+    def __repr__(self):
         return 'DynamicTheta'
 
 # %% ../nbs/models.ipynb 284
@@ -3221,5 +3221,5 @@ class DynamicOptimizedTheta(AutoTheta):
                          model='DOTM', 
                          decomposition_type=decomposition_type)
         
-    def __rep__(self):
+    def __repr__(self):
         return 'DynamicOptimizedTheta'
