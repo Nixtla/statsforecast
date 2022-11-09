@@ -10,14 +10,8 @@ dependencies:
   - numba
   - tabulate
   - scikit-learn
-  - r-base==3.6.3
-  - r-urca
-  - r-tidyverse
-  - r-future
-  - r-future.apply
-  - r-forecast
-  - r-furrr
   - fire
   - pip:
+    - statsforecast
     - datasetsforecast
     - jupyterlab
