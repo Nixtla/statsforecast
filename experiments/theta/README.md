@@ -23,21 +23,22 @@ In terms of computational cost, the `StatsForecast` implementation is very effic
 
 ### Comparison with SOTA benchmarks
 
-In the paper [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), the use of Deep Learning models in the M3 dataset is studied. The paper uses as a statistical benchmark the ensemble between the `AutoARIMA` and `ETS` models. Using `StatsForecast`, we included the `DynamicOptimizedTheta` model in addition to `AutoARIMA` and `ETS` in the ensemble. The results are shown below (`N-BEATS` and `Gluon-TS` results were taken from the original paper). 
+In the paper [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), the use of Deep Learning models in the M3 dataset is studied. The paper uses as a statistical benchmark the ensemble between the `AutoARIMA` and `ETS` models. Using `StatsForecast`, we included the `DynamicOptimizedTheta` and `AutoCES` as suggested in [A simple combination of univariate models](https://www.sciencedirect.com/science/article/abs/pii/S0169207019300585). The emsemble formed by the `AutoARIMA`, `ETS`, `AutoCES` and `DynamicOptimizedTheta` models won sixth place in the M4 competition, being one of the simplest models to be in the top places. The results are shown below (`N-BEATS` and `Gluon-TS` results were taken from the original paper). 
 
-<img width="748" alt="image" src="https://user-images.githubusercontent.com/10517170/200728018-7bb655cf-c2ba-4724-945e-13dbe4db1730.png">
+<img width="717" alt="image" src="https://user-images.githubusercontent.com/10517170/200745682-0cf03ab0-5b54-409a-a5fd-75a3925a33ec.png">
+
 
 We can see that the StatsForecast ensemble:
-- Has better performance than the `N-BEATS` model for the yearly frequency.
+- Has better performance than the `N-BEATS` model for the yearly and other groups.
 - Has a better average performance than the individual `Gluon-TS` models.
 - It is consistently better than the `Transformer`, `Wavenet`, and `Feed-Forward` models.
-- It performs better than all `Gluont-TS` models for the monthly frequency. 
+- It performs better than all `Gluont-TS` models for the monthly and other groups. 
 
 In terms of computational cost, `StatsForecast` generated the ensemble in only 6 minutes as shown in the table below,
 
 | Time (mins) | Yearly | Quarterly | Monthly | Other |
 |-----|-------:|-------:|--------:|--------:|
-|StatsForecast ensemble| 1.03 | 1.32 | 2.38 | 1.01 |
+|StatsForecast ensemble| 1.10 | 1.32 | 2.38 | 1.08 |
 
 The mentioned paper also shows the computational cost of the models used. To ensure the comparability of the results, the relative computational complexity (RCC) is shown below. To calculate the RCC of `StatsForecast`, we took the time to generate naive forecasts in the same environment.
 
@@ -48,7 +49,7 @@ The mentioned paper also shows the computational cost of the models used. To ens
 |Transformer| DL | 47,500 |
 |WaveNet| DL | 306,000 |
 |Ensemble-DL | DL | 713,800 |
-|StatsForecast | Statistical | 27 |
+|StatsForecast | Statistical | 28 |
 
 We observe that `StatsForecast` yields average SMAPE results similar to DeepAR with computational savings of 99%.
 
@@ -59,6 +60,7 @@ We observe that `StatsForecast` yields average SMAPE results similar to DeepAR w
 - [Spyros Makridakis, Evangelos Spiliotis, Vassilios Assimakopoulos, ArtemiosAnargyros Semenoglou, Gary Mulder & Konstantinos Nikolopoulos (2022): Statistical, machine
 learning and deep learning forecasting methods: Comparisons and ways forward, Journal of the
 Operational Research Society, DOI: 10.1080/01605682.2022.2118629](https://www.tandfonline.com/doi/pdf/10.1080/01605682.2022.2118629?needAccess=true)
+- [Fotios Petropoulos, Ivan Svetunkov: A simple combination of univariate models, International Journal of Forecasting, Volume 36, Issue 1, 2020, Pages 110-115, ISSN 0169-2070.](https://doi.org/10.1016/j.ijforecast.2019.01.006)
 
 
 ## Reproducibility
