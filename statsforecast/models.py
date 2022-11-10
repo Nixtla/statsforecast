@@ -232,7 +232,7 @@ class AutoARIMA(_TS):
     def predict(
             self, 
             h: int,
-            X: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
             level: Optional[Tuple[int]] = None,
         ):
         """Predict with fitted AutoArima.
@@ -275,8 +275,8 @@ class AutoARIMA(_TS):
             self,
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             level: Optional[List[int]] = None,
             fitted: bool = False,
         ):
@@ -403,7 +403,7 @@ class ETS(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the Exponential Smoothing model.
 
@@ -423,7 +423,7 @@ class ETS(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted Exponential Smoothing.
 
@@ -457,8 +457,8 @@ class ETS(_TS):
             self,
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient Exponential Smoothing predictions.
@@ -524,7 +524,7 @@ class AutoCES(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the Complex Exponential Smoothing model.
 
@@ -544,7 +544,7 @@ class AutoCES(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted Exponential Smoothing.
 
@@ -579,8 +579,8 @@ class AutoCES(_TS):
             self,
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient Complex Exponential Smoothing predictions.
@@ -753,7 +753,7 @@ class SimpleExponentialSmoothing(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the SimpleExponentialSmoothing model.
 
@@ -774,7 +774,7 @@ class SimpleExponentialSmoothing(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted SimpleExponentialSmoothing.
 
@@ -806,8 +806,8 @@ class SimpleExponentialSmoothing(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient SimpleExponentialSmoothing predictions.
@@ -867,7 +867,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the SimpleExponentialSmoothingOptimized model.
 
@@ -888,7 +888,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted SimpleExponentialSmoothingOptimized.
 
@@ -920,8 +920,8 @@ class SimpleExponentialSmoothingOptimized(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient SimpleExponentialSmoothingOptimized predictions.
@@ -1000,7 +1000,7 @@ class SeasonalExponentialSmoothing(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the SeasonalExponentialSmoothing model.
 
@@ -1027,7 +1027,7 @@ class SeasonalExponentialSmoothing(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted SeasonalExponentialSmoothing.
 
@@ -1059,8 +1059,8 @@ class SeasonalExponentialSmoothing(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient SeasonalExponentialSmoothing predictions.
@@ -1141,7 +1141,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the SeasonalExponentialSmoothingOptimized model.
 
@@ -1167,7 +1167,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted SeasonalExponentialSmoothingOptimized.
 
@@ -1199,8 +1199,8 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
@@ -1321,7 +1321,7 @@ class HistoricAverage(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the HistoricAverage model.
 
@@ -1344,7 +1344,7 @@ class HistoricAverage(_TS):
     def predict(
             self, 
             h: int,
-            X: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
             level: Optional[Tuple[int]] = None,
         ):
         """Predict with fitted HistoricAverage.
@@ -1384,8 +1384,8 @@ class HistoricAverage(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
             level: Optional[Tuple[int]] = None,
         ):
@@ -1458,7 +1458,7 @@ class Naive(_TS):
     def fit(
             self, 
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the Naive model.
 
@@ -1481,7 +1481,7 @@ class Naive(_TS):
     def predict(
             self, 
             h: int, # forecasting horizon 
-            X: np.ndarray = None, # exogenous regressors
+            X: Optional[np.ndarray] = None,
             level: Optional[Tuple[int]] = None # confidence level
         ):
         """Predict with fitted Naive.
@@ -1522,8 +1522,8 @@ class Naive(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
             level: Optional[Tuple[int]] = None,
         ):
@@ -1605,7 +1605,7 @@ class RandomWalkWithDrift(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the RandomWalkWithDrift model.
 
@@ -1629,7 +1629,7 @@ class RandomWalkWithDrift(_TS):
     def predict(
             self,
             h: int, 
-            X: np.ndarray = None, 
+            X: Optional[np.ndarray] = None,
             level: Optional[Tuple[int]] = None
         ):
         """Predict with fitted RandomWalkWithDrift.
@@ -1671,8 +1671,8 @@ class RandomWalkWithDrift(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
             level: Optional[Tuple[int]] = None,
         ):
@@ -1717,22 +1717,23 @@ def _seasonal_naive(
         fitted: bool, #fitted values
         season_length: int, # season length
     ): 
-    if y.size < season_length:
+    n = y.size
+    if n < season_length:
         return {'mean': np.full(h, np.nan, np.float32)}
     season_vals = np.empty(season_length, np.float32)
-    fitted_vals = np.full(y.size, np.nan, np.float32)
+    fitted_vals = np.full(n, np.nan, np.float32)
     for i in range(season_length):
-        s_naive = _naive(y[i::season_length], h=1, fitted=fitted)
+        s_naive = _naive(y[(i + n % season_length)::season_length], h=1, fitted=fitted)
         season_vals[i] = s_naive['mean'].item()
         if fitted:
-            fitted_vals[i::season_length] = s_naive['fitted']
+            fitted_vals[(i + n % season_length)::season_length] = s_naive['fitted']
     out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
     fcst = {'mean': out}
     if fitted:
         fcst['fitted'] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 141
+# %% ../nbs/models.ipynb 142
 class SeasonalNaive(_TS):
     
     def __init__(self, season_length: int):
@@ -1744,7 +1745,7 @@ class SeasonalNaive(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the SeasonalNaive model.
 
@@ -1773,7 +1774,7 @@ class SeasonalNaive(_TS):
     def predict(
             self,
             h: int,  
-            X: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
             level: Optional[Tuple[int]] = None, 
         ):
         """Predict with fitted Naive.
@@ -1815,8 +1816,8 @@ class SeasonalNaive(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
             level: Optional[Tuple[int]] = None,
         ):
@@ -1856,7 +1857,7 @@ class SeasonalNaive(_TS):
             
         return res    
 
-# %% ../nbs/models.ipynb 153
+# %% ../nbs/models.ipynb 154
 @njit
 def _window_average(
         y: np.ndarray, # time series
@@ -1872,7 +1873,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 154
+# %% ../nbs/models.ipynb 155
 class WindowAverage(_TS):
     
     def __init__(
@@ -1900,7 +1901,7 @@ class WindowAverage(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the WindowAverage model.
 
@@ -1921,7 +1922,7 @@ class WindowAverage(_TS):
     def predict(
             self, 
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted WindowAverage.
 
@@ -1952,8 +1953,8 @@ class WindowAverage(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient WindowAverage predictions.
@@ -1975,7 +1976,7 @@ class WindowAverage(_TS):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
-# %% ../nbs/models.ipynb 163
+# %% ../nbs/models.ipynb 164
 @njit
 def _seasonal_window_average(
         y: np.ndarray,
@@ -1996,7 +1997,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {'mean': out}
 
-# %% ../nbs/models.ipynb 164
+# %% ../nbs/models.ipynb 165
 class SeasonalWindowAverage(_TS):
     
     def __init__(
@@ -2024,7 +2025,7 @@ class SeasonalWindowAverage(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the SeasonalWindowAverage model.
 
@@ -2051,7 +2052,7 @@ class SeasonalWindowAverage(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted SeasonalWindowAverage.
 
@@ -2083,8 +2084,8 @@ class SeasonalWindowAverage(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient SeasonalWindowAverage predictions.
@@ -2110,7 +2111,7 @@ class SeasonalWindowAverage(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 174
+# %% ../nbs/models.ipynb 175
 def _adida(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -2131,7 +2132,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 175
+# %% ../nbs/models.ipynb 176
 class ADIDA(_TS):
 
     def __init__(self):
@@ -2159,7 +2160,7 @@ class ADIDA(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the ADIDA model.
 
@@ -2178,7 +2179,7 @@ class ADIDA(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted ADIDA.
 
@@ -2209,8 +2210,8 @@ class ADIDA(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient ADIDA predictions.
@@ -2232,7 +2233,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 184
+# %% ../nbs/models.ipynb 186
 @njit
 def _croston_classic(
         y: np.ndarray, # time series
@@ -2243,16 +2244,18 @@ def _croston_classic(
         raise NotImplementedError('return fitted')
     yd = _demand(y)
     yi = _intervals(y)
+    if not yd.size: #no demand
+        return {'mean': _repeat_val(val=y[-1], h=h)}
     ydp, _ = _ses_forecast(yd, 0.1)
     yip, _ = _ses_forecast(yi, 0.1)
-    if yip == 0.:
+    if yip != 0.:
         mean = ydp / yip
     else:
         mean = ydp
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 185
+# %% ../nbs/models.ipynb 187
 class CrostonClassic(_TS):
     
     def __init__(self):
@@ -2279,7 +2282,7 @@ class CrostonClassic(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the CrostonClassic model.
 
@@ -2298,7 +2301,7 @@ class CrostonClassic(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted CrostonClassic.
 
@@ -2329,8 +2332,8 @@ class CrostonClassic(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient CrostonClassic predictions.
@@ -2352,7 +2355,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 194
+# %% ../nbs/models.ipynb 196
 def _croston_optimized(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -2362,16 +2365,18 @@ def _croston_optimized(
         raise NotImplementedError('return fitted')
     yd = _demand(y)
     yi = _intervals(y)
+    if not yd.size:
+        return {'mean': _repeat_val(val=y[-1], h=h)}
     ydp, _ = _optimized_ses_forecast(yd)
     yip, _ = _optimized_ses_forecast(yi)
-    if yip == 0.:
+    if yip != 0.:
         mean = ydp / yip
     else:
         mean = ydp
     mean = _repeat_val(val=mean, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 195
+# %% ../nbs/models.ipynb 197
 class CrostonOptimized(_TS):
     
     def __init__(self):
@@ -2399,7 +2404,7 @@ class CrostonOptimized(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the CrostonOptimized model.
 
@@ -2418,7 +2423,7 @@ class CrostonOptimized(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted CrostonOptimized.
 
@@ -2449,8 +2454,8 @@ class CrostonOptimized(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient CrostonOptimized predictions.
@@ -2472,7 +2477,7 @@ class CrostonOptimized(_TS):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 205
+# %% ../nbs/models.ipynb 206
 @njit
 def _croston_sba(
         y: np.ndarray, # time series
@@ -2485,7 +2490,7 @@ def _croston_sba(
     mean['mean'] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 206
+# %% ../nbs/models.ipynb 207
 class CrostonSBA(_TS):
     
     def __init__(self):
@@ -2513,7 +2518,7 @@ class CrostonSBA(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the CrostonSBA model.
 
@@ -2532,7 +2537,7 @@ class CrostonSBA(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted CrostonSBA.
 
@@ -2563,8 +2568,8 @@ class CrostonSBA(_TS):
             self,
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient CrostonSBA predictions.
@@ -2586,7 +2591,7 @@ class CrostonSBA(_TS):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 215
+# %% ../nbs/models.ipynb 216
 def _imapa(
         y: np.ndarray, # time series
         h: int, # forecasting horizon
@@ -2610,7 +2615,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 216
+# %% ../nbs/models.ipynb 217
 class IMAPA(_TS):
     
     def __init__(self):
@@ -2634,7 +2639,7 @@ class IMAPA(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the IMAPA model.
 
@@ -2653,7 +2658,7 @@ class IMAPA(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted IMAPA.
 
@@ -2684,8 +2689,8 @@ class IMAPA(_TS):
         self, 
         y: np.ndarray,
         h: int,
-        X: np.ndarray = None,
-        X_future: np.ndarray = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
         fitted: bool = False,
     ):
         """Memory Efficient IMAPA predictions.
@@ -2707,7 +2712,7 @@ class IMAPA(_TS):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 225
+# %% ../nbs/models.ipynb 226
 @njit
 def _tsb(
         y: np.ndarray, # time series
@@ -2728,7 +2733,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {'mean': mean}
 
-# %% ../nbs/models.ipynb 226
+# %% ../nbs/models.ipynb 227
 class TSB(_TS):
     
     def __init__(
@@ -2771,7 +2776,7 @@ class TSB(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the TSB model.
 
@@ -2795,7 +2800,7 @@ class TSB(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Predict with fitted TSB.
 
@@ -2826,8 +2831,8 @@ class TSB(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             fitted: bool = False,
         ):
         """Memory Efficient TSB predictions.
@@ -2854,7 +2859,7 @@ class TSB(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 235
+# %% ../nbs/models.ipynb 236
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex='seasonal*').columns
     nseasons = len(seasoncolumns)
@@ -2867,7 +2872,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/models.ipynb 236
+# %% ../nbs/models.ipynb 237
 class MSTL(_TS):
     """MSTL model.
     
@@ -2914,7 +2919,7 @@ class MSTL(_TS):
     def fit(
             self,
             y: np.ndarray,
-            X: np.ndarray = None
+            X: Optional[np.ndarray] = None,
         ):
         """Fit the MSTL model.
 
@@ -2938,7 +2943,7 @@ class MSTL(_TS):
     def predict(
             self,
             h: int,
-            X: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
             level: Optional[Tuple[int]] = None,
         ):
         """Predict with fitted MSTL.
@@ -2983,8 +2988,8 @@ class MSTL(_TS):
             self, 
             y: np.ndarray,
             h: int,
-            X: np.ndarray = None,
-            X_future: np.ndarray = None,
+            X: Optional[np.ndarray] = None,
+            X_future: Optional[np.ndarray] = None,
             level: Optional[List[int]] = None,
             fitted: bool = False,
         ):
