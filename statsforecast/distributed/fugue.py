@@ -13,7 +13,6 @@ try:
     from fugue.collections.yielded import Yielded
     from fugue.constants import FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT
     from fugue.dataframe import DataFrame
-    from fugue.exceptions import FugueWorkflowCompileError
     from fugue.workflow import FugueWorkflow
 except ModuleNotFoundError as e:
     msg = (
