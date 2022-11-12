@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['FugueBackend']
 
-# %% ../../nbs/distributed.fugue.ipynb 5
+# %% ../../nbs/distributed.fugue.ipynb 4
 from typing import Any, Dict, List
 
 import numpy as np
@@ -24,7 +24,7 @@ from ..core import StatsForecast
 from .core import ParallelBackend
 from triad import Schema
 
-# %% ../../nbs/distributed.fugue.ipynb 6
+# %% ../../nbs/distributed.fugue.ipynb 5
 def _cotransform(
     df1: Any,
     df2: Any,
@@ -53,7 +53,7 @@ def _cotransform(
         return result
     return result.as_pandas() if result.is_local else result.native  # type:ignore
 
-# %% ../../nbs/distributed.fugue.ipynb 7
+# %% ../../nbs/distributed.fugue.ipynb 6
 class FugueBackend(ParallelBackend):
     """FugueBackend for Distributed Computation.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
