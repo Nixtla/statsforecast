@@ -323,7 +323,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
     return min(n_groups, actual_n_jobs)
 
 # %% ../nbs/core.ipynb 28
-class StatsForecast:
+class _StatsForecast:
     
     def __init__(
             self, 
@@ -797,3 +797,47 @@ class StatsForecast:
     
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
+
+# %% ../nbs/core.ipynb 29
+class StatsForecast:
+    
+    def __new__(
+            cls, 
+            models: List[Any],
+            freq: str,
+            n_jobs: int = 1,
+            ray_address: Optional[str] = None,
+            df: Optional[pd.DataFrame] = None,
+            sort_df: bool = True,
+            fallback_model: Any = None,
+            verbose: bool = False,
+            backend: Any = None
+        ):
+        """core.StatsForecast.
+
+        The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models 
+        for large sets of time series. It operates with pandas DataFrame `df` that identifies series 
+        and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target 
+        time series variable. 
+
+        The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial 
+        model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with 
+        Scikit-learn interface store the fitted models.
+
+        **Parameters:**<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
+        `models`: List[typing.Any], list of instantiated objects models.StatsForecast.<br>
+        `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+        `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
+        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+        `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
+        `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
+
+        **Notes:**<br>
+        The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
+        See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+        """
+        if backend is None:
+            return _StatsForecast(models=models, freq=freq, n_jobs=n_jobs, 
+                                  ray_address=ray_address, df=df, sort_df=sort_df,
+                                  fallback_model=fallback_model, verbose=verbose)
