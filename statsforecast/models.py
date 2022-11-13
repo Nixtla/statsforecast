@@ -627,7 +627,7 @@ class AutoTheta(_TS):
     `model`: str, controlling Theta Model. By default searchs the best model.<br>
     
     **References:**<br>
-    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
     """
     def __init__(
         self,
@@ -3137,7 +3137,7 @@ class Theta(AutoTheta):
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
     
     **References:**<br>
-    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
     """
 
     def __init__(
@@ -3161,7 +3161,7 @@ class OptimizedTheta(AutoTheta):
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
     
     **References:**<br>
-    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
     """
 
     def __init__(
@@ -3185,7 +3185,7 @@ class DynamicTheta(AutoTheta):
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
     
     **References:**<br>
-    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting]( https://www.sciencedirect.com/science/article/pii/S0169207016300243)
     """
 
     def __init__(
@@ -3209,7 +3209,7 @@ class DynamicOptimizedTheta(AutoTheta):
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
     
     **References:**<br>
-    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.jstatsoft.org/article/view/v027i03)
+    [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting]( https://www.sciencedirect.com/science/article/pii/S0169207016300243)
     """
 
     def __init__(
