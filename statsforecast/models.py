@@ -1746,7 +1746,7 @@ class RandomWalkWithDrift(_TS):
     def predict(
             self,
             h: int, 
-            X: Optional[np.ndarray] = None, 
+            X: Optional[np.ndarray] = None,
             level: Optional[Tuple[int]] = None
         ):
         """Predict with fitted RandomWalkWithDrift.
