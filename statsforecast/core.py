@@ -836,7 +836,10 @@ class _DistributedStatsForecast:
         )
     
     def forecast_fitted_values(self):
-        raise NotImplementedError('Backend execution does not support the `forecast_fitted_values` method')
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
 
     def cross_validation(
             self,
@@ -866,7 +869,8 @@ class _DistributedStatsForecast:
 
     def cross_validation_fitted_values(self):
         raise NotImplementedError(
-            'Backend execution does not support the `cross_validation_fitted_values` method'
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
         )
     
     def fit(
@@ -874,7 +878,10 @@ class _DistributedStatsForecast:
             df: Optional[pd.DataFrame] = None, 
             sort_df: bool = True 
         ):
-        raise NotImplementedError('Backend execution does not support the `fit` method')
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
         
     def predict(
             self,
@@ -882,7 +889,10 @@ class _DistributedStatsForecast:
             X_df: Optional[pd.DataFrame] = None,
             level: Optional[List[int]] = None,
         ):
-        raise NotImplementedError('Backend execution does not support the `predict` method')
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
     
     def fit_predict(
             self,
@@ -892,7 +902,10 @@ class _DistributedStatsForecast:
             level: Optional[List[int]] = None,
             sort_df: bool = True
         ):
-        raise NotImplementedError('Backend execution does not support the `fit_predict` method')
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
 
 
     def __repr__(self):
