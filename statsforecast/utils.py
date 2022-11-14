@@ -9,6 +9,7 @@ from itertools import chain
 
 import numpy as np
 import pandas as pd
+from numba import njit
 
 # %% ../nbs/utils.ipynb 6
 def generate_series(n_series: int,
@@ -93,3 +94,51 @@ AirPassengersDF = pd.DataFrame({'unique_id': np.ones(len(AirPassengers)),
                                 'ds': pd.date_range(start='1949-01-01',
                                                     periods=len(AirPassengers), freq='M'),
                                 'y': AirPassengers})
+
+# %% ../nbs/utils.ipynb 15
+@njit
+def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
+    out = np.empty(h, np.float32)
+    for i in range(h):
+        out[i] = season_vals[i % season_length]
+    return out
+
+@njit
+def _seasonal_naive(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, #fitted values
+        season_length: int, # season length
+    ): 
+    if y.size < season_length:
+        return {'mean': np.full(h, np.nan, np.float32)}
+    n = y.size
+    season_vals = np.empty(season_length, np.float32)
+    fitted_vals = np.full(y.size, np.nan, np.float32)
+    for i in range(season_length):
+        s_naive = _naive(y[(i +  n % season_length)::season_length], h=1, fitted=fitted)
+        season_vals[i] = s_naive['mean'].item()
+        if fitted:
+            fitted_vals[(i +  n % season_length)::season_length] = s_naive['fitted']
+    out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
+    fcst = {'mean': out}
+    if fitted:
+        fcst['fitted'] = fitted_vals[-n:]
+    return fcst
+
+@njit
+def _repeat_val(val: float, h: int):
+    return np.full(h, val, np.float32)
+
+@njit
+def _naive(
+        y: np.ndarray, # time series
+        h: int, # forecasting horizon
+        fitted: bool, # fitted values
+    ): 
+    mean = _repeat_val(val=y[-1], h=h)
+    if fitted:
+        fitted_vals = np.full(y.size, np.nan, np.float32)
+        fitted_vals[1:] = np.roll(y, 1)[1:]
+        return {'mean': mean, 'fitted': fitted_vals}
+    return {'mean': mean}
