@@ -834,6 +834,9 @@ class _DistributedStatsForecast:
             level=level,
             fitted=fitted
         )
+    
+    def forecast_fitted_values(self):
+        raise NotImplementedError('Backend execution does not support the `forecast_fitted_values` method')
 
     def cross_validation(
             self,
@@ -860,7 +863,38 @@ class _DistributedStatsForecast:
             level=level,
             fitted=fitted
         )
+
+    def cross_validation_fitted_values(self):
+        raise NotImplementedError(
+            'Backend execution does not support the `cross_validation_fitted_values` method'
+        )
     
+    def fit(
+            self,
+            df: Optional[pd.DataFrame] = None, 
+            sort_df: bool = True 
+        ):
+        raise NotImplementedError('Backend execution does not support the `fit` method')
+        
+    def predict(
+            self,
+            h: int,
+            X_df: Optional[pd.DataFrame] = None,
+            level: Optional[List[int]] = None,
+        ):
+        raise NotImplementedError('Backend execution does not support the `predict` method')
+    
+    def fit_predict(
+            self,
+            h: int,
+            df: Optional[pd.DataFrame] = None,
+            X_df: Optional[pd.DataFrame] = None,
+            level: Optional[List[int]] = None,
+            sort_df: bool = True
+        ):
+        raise NotImplementedError('Backend execution does not support the `fit_predict` method')
+
+
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
