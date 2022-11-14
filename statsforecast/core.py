@@ -323,7 +323,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
     return min(n_groups, actual_n_jobs)
 
 # %% ../nbs/core.ipynb 28
-class StatsForecast:
+class _StatsForecast:
     
     def __init__(
             self, 
@@ -797,3 +797,165 @@ class StatsForecast:
     
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
+
+# %% ../nbs/core.ipynb 29
+class _DistributedStatsForecast:
+    
+    def __init__(
+            self, 
+            models: List[Any],
+            freq: str,
+            df: Optional[pd.DataFrame] = None,
+            fallback_model: Any = None,
+            backend: Any = None
+        ):
+        self.models = models
+        self.freq = freq
+        self.fallback_model = fallback_model
+        self.df = df
+        self.backend = backend
+    
+    def forecast(
+            self,
+            h: int,
+            df: Optional[pd.DataFrame] = None,
+            X_df: Optional[pd.DataFrame] = None,
+            level: Optional[List[int]] = None,
+            fitted: bool = False,
+            sort_df: bool = True
+        ):
+        return self.backend.forecast(
+            df=self.df if self.df is not None else df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            X_df=X_df,
+            level=level,
+            fitted=fitted
+        )
+    
+    def forecast_fitted_values(self):
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
+
+    def cross_validation(
+            self,
+            h: int,
+            df: Optional[pd.DataFrame] = None,
+            n_windows: int = 1,
+            step_size: int = 1,
+            test_size: Optional[int] = None,
+            input_size: Optional[int] = None,
+            level: Optional[List[int]] = None,
+            fitted: bool = False,
+            sort_df: bool = True
+        ):
+        return self.backend.cross_validation(
+            df=self.df if self.df is not None else df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            n_windows=n_windows,
+            step_size=step_size,
+            test_size=test_size,
+            input_size=input_size,
+            level=level,
+            fitted=fitted
+        )
+
+    def cross_validation_fitted_values(self):
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
+    
+    def fit(
+            self,
+            df: Optional[pd.DataFrame] = None, 
+            sort_df: bool = True 
+        ):
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
+        
+    def predict(
+            self,
+            h: int,
+            X_df: Optional[pd.DataFrame] = None,
+            level: Optional[List[int]] = None,
+        ):
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
+    
+    def fit_predict(
+            self,
+            h: int,
+            df: Optional[pd.DataFrame] = None,
+            X_df: Optional[pd.DataFrame] = None,
+            level: Optional[List[int]] = None,
+            sort_df: bool = True
+        ):
+        raise NotImplementedError(
+            'Execution with a distributed backend only supports `forecast` and `cross_validation` methods. ' 
+            'Try setting the backend parameter to None.'
+        )
+
+
+    def __repr__(self):
+        return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
+
+# %% ../nbs/core.ipynb 30
+class StatsForecast:
+    """core.StatsForecast.
+
+    The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models 
+    for large sets of time series. It operates with pandas DataFrame `df` that identifies series 
+    and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target 
+    time series variable. 
+
+    The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial 
+    model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with 
+    Scikit-learn interface store the fitted models.
+
+    **Parameters:**<br>
+    `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
+    `models`: List[typing.Any], list of instantiated objects models.StatsForecast.<br>
+    `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+    `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
+    `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+    `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
+    `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
+    `backend`: Any, backend used to distributed processing. Only methods `forecast` add `cross_validation` are currently supported.<br>
+
+    **Notes:**<br>
+    The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
+    See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+    """
+    
+    def __new__(
+            cls, 
+            models: List[Any],
+            freq: str,
+            n_jobs: int = 1,
+            ray_address: Optional[str] = None,
+            df: Optional[pd.DataFrame] = None,
+            sort_df: bool = True,
+            fallback_model: Any = None,
+            verbose: bool = False,
+            backend: Any = None
+        ):
+        if backend is None:
+            return _StatsForecast(models=models, freq=freq, n_jobs=n_jobs, 
+                                  ray_address=ray_address, df=df, sort_df=sort_df,
+                                  fallback_model=fallback_model, verbose=verbose)
+        else:
+            return _DistributedStatsForecast(models=models, freq=freq, 
+                                             df=df, fallback_model=fallback_model, 
+                                             backend=backend)

@@ -6,7 +6,7 @@ __all__ = ['MultiprocessBackend']
 # %% ../../nbs/distributed.multiprocess.ipynb 4
 from typing import Any
 
-from ..core import StatsForecast
+from ..core import _StatsForecast
 from .core import ParallelBackend
 
 # %% ../../nbs/distributed.multiprocess.ipynb 5
@@ -30,11 +30,11 @@ class MultiprocessBackend(ParallelBackend):
         super().__init__()
 
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
-        model = StatsForecast(df=df, models=models, freq=freq, 
+        model = _StatsForecast(df=df, models=models, freq=freq, 
                               fallback_model=fallback_model, n_jobs=self.n_jobs)
         return model.forecast(**kwargs)
 
     def cross_validation(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
-        model = StatsForecast(df=df, models=models, freq=freq, 
+        model = _StatsForecast(df=df, models=models, freq=freq, 
                               fallback_model=fallback_model, n_jobs=self.n_jobs)
         return model.cross_validation(**kwargs)
