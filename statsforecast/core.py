@@ -334,7 +334,8 @@ class _StatsForecast:
             df: Optional[pd.DataFrame] = None,
             sort_df: bool = True,
             fallback_model: Any = None,
-            verbose: bool = False
+            verbose: bool = False,
+            precompile: bool = True
         ):
         """core.StatsForecast.
 
@@ -355,6 +356,7 @@ class _StatsForecast:
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
         `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
         `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
+        `precompile`: bool, Precompile models using numba.<br>
 
         **Notes:**<br>
         The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
@@ -362,6 +364,12 @@ class _StatsForecast:
         """
         # TODO @fede: needed for residuals, think about it later
         self.models = models
+        if precompile:
+            ts = np.arange(10, dtype=np.float32)
+            for model in self.models:
+                model.forecast(y=ts, h=1, 
+                               X=np.random.normal(size=len(ts)).reshape(-1, 1).astype(np.float32), 
+                               X_future=np.array([1.], dtype=np.float32).reshape(-1, 1))
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.ray_address = ray_address
@@ -933,6 +941,7 @@ class StatsForecast:
     `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
     `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
     `backend`: Any, backend used to distributed processing. Only methods `forecast` add `cross_validation` are currently supported.<br>
+    `precompile`: bool, Precompile models using numba.<br>
 
     **Notes:**<br>
     The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
@@ -949,12 +958,14 @@ class StatsForecast:
             sort_df: bool = True,
             fallback_model: Any = None,
             verbose: bool = False,
-            backend: Any = None
+            backend: Any = None,
+            precompile: bool = True
         ):
         if backend is None:
             return _StatsForecast(models=models, freq=freq, n_jobs=n_jobs, 
                                   ray_address=ray_address, df=df, sort_df=sort_df,
-                                  fallback_model=fallback_model, verbose=verbose)
+                                  fallback_model=fallback_model, 
+                                  verbose=verbose, precompile=precompile)
         else:
             return _DistributedStatsForecast(models=models, freq=freq, 
                                              df=df, fallback_model=fallback_model, 
