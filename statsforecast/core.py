@@ -815,7 +815,7 @@ class _StatsForecast:
         """
         
         if unique_ids is None:
-            if panel_df.index.name == 'unique_id':
+            if df_train.index.name == 'unique_id':
                 unique_ids = df_train.index.unique()
             else:
                 unique_ids = df_train['unique_id'].unique()
@@ -832,17 +832,16 @@ class _StatsForecast:
             fig, axes = plt.subplots(n_cols, 2, figsize = (24, 3.5 * n_cols))
             if n_cols == 1:
                 axes = np.array([axes])
-                
-        if models is None:
-            exclude_str = ['lo', 'hi', 'unique_id', 'ds']
-            models = [c for c in df_test.columns if all(item not in c for item in exclude_str)]
-        if 'y' not in models:
-            models = ['y'] + models
             
         for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
             train_uid = df_train.query('unique_id == @uid')
             axes[idx, idy].plot(train_uid['ds'], train_uid['y'], label = 'y')
             if df_test is not None:
+                if models is None:
+                    exclude_str = ['lo', 'hi', 'unique_id', 'ds']
+                    models = [c for c in df_test.columns if all(item not in c for item in exclude_str)]
+                if 'y' not in models:
+                    models = ['y'] + models
                 max_ds = train_uid['ds'].max()
                 test_uid = df_test.query('unique_id == @uid')
                 colors = plt.cm.get_cmap('tab20b', len(models))
