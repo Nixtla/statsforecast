@@ -822,7 +822,7 @@ class _StatsForecast:
         if plot_random:
             unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
         else:
-            unique_uids = unique_ids[:8]
+            unique_ids = unique_ids[:8]
         if len(unique_ids) == 1:
             fig, axes = plt.subplots(figsize = (24, 3.5))
             axes = np.array([[axes]])
@@ -842,7 +842,6 @@ class _StatsForecast:
                     models = [c for c in df_test.columns if all(item not in c for item in exclude_str)]
                 if 'y' not in models:
                     models = ['y'] + models
-                max_ds = train_uid['ds'].max()
                 test_uid = df_test.query('unique_id == @uid')
                 colors = plt.cm.get_cmap('tab20b', len(models))
                 colors = ['blue'] + [colors(i) for i in range(len(models))]
