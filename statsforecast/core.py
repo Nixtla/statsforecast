@@ -6,9 +6,12 @@ __all__ = ['StatsForecast']
 # %% ../nbs/core.ipynb 4
 import inspect
 import logging
+import random
+from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tqdm.autonotebook import tqdm
@@ -604,8 +607,6 @@ class _StatsForecast:
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-        
-        
         """
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
@@ -802,6 +803,77 @@ class _StatsForecast:
                     result['fitted'][key] = np.concatenate([d['fitted'][key] for d in out])
                 result['fitted']['cols'] = out[0]['fitted']['cols']
         return result
+    
+    @staticmethod
+    def plot(df_train: pd.DataFrame, 
+             df_test: Optional[pd.DataFrame] = None, 
+             unique_ids: Optional[List[str]] = None,
+             plot_random: bool = True, 
+             models: Optional[List[str]] = None, 
+             level: Optional[List[float]] = None):
+        """Plot forecasts and insample values.
+        
+        **Parameters:**<br>
+        `df_train`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`].<br>
+        `df_test`: pandas.DataFrame, with columns [`unique_id`, `ds`] and models.<br>
+        `unique_ids`: List[str], Time Series to plot.<br>
+        `plot_random`: bool, Select time series to plot randomly.<br>
+        `models`: List[str], List of models to plot.<br>
+        `level`: List[float], List of prediction intervals to plot if paseed.<br>
+        """
+        
+        if unique_ids is None:
+            if df_train.index.name == 'unique_id':
+                unique_ids = df_train.index.unique()
+            else:
+                unique_ids = df_train['unique_id'].unique()
+        if plot_random:
+            unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
+        else:
+            unique_ids = unique_ids[:8]
+        if len(unique_ids) == 1:
+            fig, axes = plt.subplots(figsize = (24, 3.5))
+            axes = np.array([[axes]])
+            n_cols = 1
+        else:
+            n_cols = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
+            fig, axes = plt.subplots(n_cols, 2, figsize = (24, 3.5 * n_cols))
+            if n_cols == 1:
+                axes = np.array([axes])
+            
+        for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
+            train_uid = df_train.query('unique_id == @uid')
+            axes[idx, idy].plot(train_uid['ds'], train_uid['y'], label = 'y')
+            if df_test is not None:
+                if models is None:
+                    exclude_str = ['lo', 'hi', 'unique_id', 'ds']
+                    models = [c for c in df_test.columns if all(item not in c for item in exclude_str)]
+                if 'y' not in models:
+                    models = ['y'] + models
+                test_uid = df_test.query('unique_id == @uid')
+                colors = plt.cm.get_cmap('tab20b', len(models))
+                colors = ['blue'] + [colors(i) for i in range(len(models))]
+                for col, color in zip(models, colors):
+                    if col in test_uid:
+                        axes[idx, idy].plot(test_uid['ds'], test_uid[col], label=col, color=color)
+                    if level is not None and any(f'{col}-lo' in c for c in test_uid):
+                        for l, alpha in zip(sorted(level), [0.5, .4, .35, .2]):
+                            axes[idx, idy].fill_between(
+                                test_uid['ds'], 
+                                test_uid[f'{col}-lo-{l}'], 
+                                test_uid[f'{col}-hi-{l}'],
+                                alpha=alpha,
+                                color=color,
+                                label=f'{col}_level_{l}',
+                            )
+            axes[idx, idy].set_title(f'{uid}')
+            axes[idx, idy].set_xlabel('Timestamp [t]')
+            axes[idx, idy].set_ylabel('Target')
+            axes[idx, idy].legend(loc='upper left')
+            axes[idx, idy].xaxis.set_major_locator(plt.MaxNLocator(min(len(df_train) // 30, 10)))
+            axes[idx, idy].grid()
+        fig.subplots_adjust(hspace=0.5)
+        plt.show()
     
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
