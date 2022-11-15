@@ -3223,3 +3223,14 @@ class DynamicOptimizedTheta(AutoTheta):
         
     def __repr__(self):
         return 'DynamicOptimizedTheta'
+
+# %% ../nbs/models.ipynb 293
+def precompile_models(models):
+    max_season_length = max([obj.season_length for obj in models \
+                             if (type(obj).__name__ != 'MSTL' and hasattr(obj, 'season_length'))],
+                            default=10)
+    ts = np.arange(1, max(2 * max_season_length, 10) + 1, dtype=np.float32)
+    X = np.random.normal(size=len(ts)).reshape(-1, 1).astype(np.float32)
+    X_future = np.array([1.], dtype=np.float32).reshape(-1, 1)
+    for model in models:
+        model.forecast(y=ts, h=1, X=X, X_future=X_future)

@@ -16,6 +16,8 @@ import numpy as np
 import pandas as pd
 from tqdm.autonotebook import tqdm
 
+from .models import precompile_models
+
 # %% ../nbs/core.ipynb 5
 logging.basicConfig(
     format='%(asctime)s %(name)s %(levelname)s: %(message)s',
@@ -368,11 +370,7 @@ class _StatsForecast:
         # TODO @fede: needed for residuals, think about it later
         self.models = models
         if precompile:
-            ts = np.arange(10, dtype=np.float32)
-            for model in self.models:
-                model.forecast(y=ts, h=1, 
-                               X=np.random.normal(size=len(ts)).reshape(-1, 1).astype(np.float32), 
-                               X_future=np.array([1.], dtype=np.float32).reshape(-1, 1))
+            precompile_models(self.models)
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.ray_address = ray_address
