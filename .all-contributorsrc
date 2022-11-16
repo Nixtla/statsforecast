@@ -186,6 +186,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "JeroenPeterBos",
+      "name": "JeroenPeterBos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/15342738?v=4",
+      "profile": "https://github.com/JeroenPeterBos",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -193,5 +202,6 @@
   "projectOwner": "Nixtla",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "skipCi": true
+  "skipCi": true,
+  "commitConvention": "angular"
 }
