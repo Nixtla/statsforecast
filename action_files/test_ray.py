@@ -42,6 +42,7 @@ def test_ray_flow():
     n_series = 20
     horizon = 7
     series = generate_series(20)
+    series['ds'] = series['ds'].atype(str)
     models = [
 		ADIDA(), AutoARIMA(season_length=7), 
 		CrostonClassic(), CrostonOptimized(),
