@@ -338,7 +338,6 @@ class _StatsForecast:
             sort_df: bool = True,
             fallback_model: Any = None,
             verbose: bool = False,
-            ds_format: Optional[str] = None
         ):
         """core.StatsForecast.
 
@@ -359,7 +358,6 @@ class _StatsForecast:
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
         `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
         `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
-        `ds_format`: str, Format used to parse `ds` column to datetime if needed.<br>
 
         **Notes:**<br>
         The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
