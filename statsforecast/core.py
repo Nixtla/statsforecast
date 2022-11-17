@@ -868,6 +868,11 @@ class _StatsForecast:
                     models = ['y'] + models
                 test_uid = forecasts_df.query('unique_id == @uid')
                 test_uid = _parse_ds_type(test_uid)
+                first_ds_fcst = test_uid['ds'].min()
+                axes[idx, idy].axvline(x=first_ds_fcst, 
+                                       color='black', 
+                                       label='First ds Forecast', 
+                                       linestyle='--')
                 colors = plt.cm.get_cmap('tab20b', len(models))
                 colors = ['blue'] + [colors(i) for i in range(len(models))]
                 for col, color in zip(models, colors):
