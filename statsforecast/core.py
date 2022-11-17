@@ -338,7 +338,7 @@ class _StatsForecast:
             df: Optional[pd.DataFrame] = None,
             sort_df: bool = True,
             fallback_model: Any = None,
-            verbose: bool = False
+            verbose: bool = False,
         ):
         """core.StatsForecast.
 
@@ -369,14 +369,25 @@ class _StatsForecast:
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.ray_address = ray_address
-        self.fallback_model = fallback_model
-        self._prepare_fit(df=df, sort_df=sort_df)
+        self.fallback_model = fallback_model        
         self.verbose = verbose and self.n_jobs == 1
+        self._prepare_fit(df=df, sort_df=sort_df)
         
     def _prepare_fit(self, df, sort_df):
         if df is not None:
             if df.index.name != 'unique_id':
                 df = df.set_index('unique_id')
+            if not pd.api.types.is_datetime64_any_dtype(df['ds']) and not issubclass(df['ds'].dtype.type, np.integer):
+                df = df.copy()
+                try:
+                    df['ds'] = pd.to_datetime(df['ds'])
+                except Exception as e:
+                    msg = (
+                        'Failed to parse `ds` column as datetime. '
+                        'Please use `pd.to_datetime` outside to fix the error. '
+                        f'{e}'
+                    )
+                    raise Exception(msg) from e 
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
             self.sort_df = sort_df
@@ -1027,7 +1038,8 @@ class StatsForecast:
         if backend is None:
             return _StatsForecast(models=models, freq=freq, n_jobs=n_jobs, 
                                   ray_address=ray_address, df=df, sort_df=sort_df,
-                                  fallback_model=fallback_model, verbose=verbose)
+                                  fallback_model=fallback_model, 
+                                  verbose=verbose)
         else:
             return _DistributedStatsForecast(models=models, freq=freq, 
                                              df=df, fallback_model=fallback_model, 
