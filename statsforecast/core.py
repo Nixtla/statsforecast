@@ -326,7 +326,22 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 28
+# %% ../nbs/core.ipynb 27
+def _parse_ds_type(df):
+    if not pd.api.types.is_datetime64_any_dtype(df['ds']) and not issubclass(df['ds'].dtype.type, np.integer):
+        df = df.copy()
+        try:
+            df['ds'] = pd.to_datetime(df['ds'])
+        except Exception as e:
+            msg = (
+                'Failed to parse `ds` column as datetime. '
+                'Please use `pd.to_datetime` outside to fix the error. '
+                f'{e}'
+            )
+            raise Exception(msg) from e
+    return df
+
+# %% ../nbs/core.ipynb 29
 class _StatsForecast:
     
     def __init__(
@@ -377,17 +392,7 @@ class _StatsForecast:
         if df is not None:
             if df.index.name != 'unique_id':
                 df = df.set_index('unique_id')
-            if not pd.api.types.is_datetime64_any_dtype(df['ds']) and not issubclass(df['ds'].dtype.type, np.integer):
-                df = df.copy()
-                try:
-                    df['ds'] = pd.to_datetime(df['ds'])
-                except Exception as e:
-                    msg = (
-                        'Failed to parse `ds` column as datetime. '
-                        'Please use `pd.to_datetime` outside to fix the error. '
-                        f'{e}'
-                    )
-                    raise Exception(msg) from e 
+            df = _parse_ds_type(df)
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
             self.sort_df = sort_df
@@ -847,6 +852,7 @@ class _StatsForecast:
             
         for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
             train_uid = df_train.query('unique_id == @uid')
+            train_uid = _parse_ds_type(train_uid)
             axes[idx, idy].plot(train_uid['ds'], train_uid['y'], label = 'y')
             if df_test is not None:
                 if models is None:
@@ -855,6 +861,7 @@ class _StatsForecast:
                 if 'y' not in models:
                     models = ['y'] + models
                 test_uid = df_test.query('unique_id == @uid')
+                test_uid = _parse_ds_type(test_uid)
                 colors = plt.cm.get_cmap('tab20b', len(models))
                 colors = ['blue'] + [colors(i) for i in range(len(models))]
                 for col, color in zip(models, colors):
@@ -871,8 +878,8 @@ class _StatsForecast:
                                 label=f'{col}_level_{l}',
                             )
             axes[idx, idy].set_title(f'{uid}')
-            axes[idx, idy].set_xlabel('Timestamp [t]')
-            axes[idx, idy].set_ylabel('Target')
+            axes[idx, idy].set_xlabel('Datestamp [ds]')
+            axes[idx, idy].set_ylabel('Target [y]')
             axes[idx, idy].legend(loc='upper left')
             axes[idx, idy].xaxis.set_major_locator(plt.MaxNLocator(min(len(df_train) // 30, 10)))
             axes[idx, idy].grid()
@@ -882,7 +889,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 29
+# %% ../nbs/core.ipynb 30
 class _DistributedStatsForecast:
     
     def __init__(
@@ -995,7 +1002,7 @@ class _DistributedStatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 30
+# %% ../nbs/core.ipynb 31
 class StatsForecast:
     """core.StatsForecast.
 
