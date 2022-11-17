@@ -12,6 +12,7 @@ from typing import Tuple
 
 import numpy as np
 from numba import njit
+from numba.typed import List
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 # %% ../nbs/ets.ipynb 4
@@ -393,7 +394,7 @@ def initstate(y, m, trendtype, seasontype):
         if n < 4:
             raise ValueError("You've got to be joking (not enough data).")
         elif n < 3 * m: #fit simple Fourier model
-            fouriery = fourier(y, [m], [1])
+            fouriery = fourier(y, List(x for x in [m]), List(x for x in [1]))
             X_fourier = np.full((n, 4), fill_value=np.nan)
             X_fourier[:, 0] = np.ones(n)
             X_fourier[:, 1] = np.arange(1, n + 1)
