@@ -873,14 +873,14 @@ class _StatsForecast:
                     if col in test_uid:
                         axes[idx, idy].plot(test_uid['ds'], test_uid[col], label=col, color=color)
                     if level is not None and any(f'{col}-lo' in c for c in test_uid):
-                        for l, alpha in zip(sorted(level), [0.5, .4, .35, .2]):
+                        for lv in level:
                             axes[idx, idy].fill_between(
                                 test_uid['ds'], 
-                                test_uid[f'{col}-lo-{l}'], 
-                                test_uid[f'{col}-hi-{l}'],
-                                alpha=alpha,
+                                test_uid[f'{col}-lo-{lv}'], 
+                                test_uid[f'{col}-hi-{lv}'],
+                                alpha=-lv/50 + 2,
                                 color=color,
-                                label=f'{col}_level_{l}',
+                                label=f'{col}_level_{lv}',
                             )
             axes[idx, idy].set_title(f'{uid}')
             axes[idx, idy].set_xlabel('Datestamp [ds]')
