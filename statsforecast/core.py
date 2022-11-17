@@ -814,8 +814,8 @@ class _StatsForecast:
         return result
     
     @staticmethod
-    def plot(df_train: pd.DataFrame, 
-             df_test: Optional[pd.DataFrame] = None, 
+    def plot(df: pd.DataFrame, 
+             forecasts_df: Optional[pd.DataFrame] = None, 
              unique_ids: Optional[List[str]] = None,
              plot_random: bool = True, 
              models: Optional[List[str]] = None, 
@@ -823,19 +823,24 @@ class _StatsForecast:
         """Plot forecasts and insample values.
         
         **Parameters:**<br>
-        `df_train`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`].<br>
-        `df_test`: pandas.DataFrame, with columns [`unique_id`, `ds`] and models.<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`].<br>
+        `forecasts_df`: pandas.DataFrame, with columns [`unique_id`, `ds`] and models.<br>
         `unique_ids`: List[str], Time Series to plot.<br>
         `plot_random`: bool, Select time series to plot randomly.<br>
         `models`: List[str], List of models to plot.<br>
         `level`: List[float], List of prediction intervals to plot if paseed.<br>
         """
+        if level is not None and not isinstance(level, list):
+            raise Exception(
+                'Please use a list for the `level` argument '
+                'If you only have one level, use `level=[your_level]`'
+            )
         
         if unique_ids is None:
-            if df_train.index.name == 'unique_id':
-                unique_ids = df_train.index.unique()
+            if df.index.name == 'unique_id':
+                unique_ids = df.index.unique()
             else:
-                unique_ids = df_train['unique_id'].unique()
+                unique_ids = df['unique_id'].unique()
         if plot_random:
             unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
         else:
@@ -851,16 +856,16 @@ class _StatsForecast:
                 axes = np.array([axes])
             
         for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
-            train_uid = df_train.query('unique_id == @uid')
+            train_uid = df.query('unique_id == @uid')
             train_uid = _parse_ds_type(train_uid)
             axes[idx, idy].plot(train_uid['ds'], train_uid['y'], label = 'y')
-            if df_test is not None:
+            if forecasts_df is not None:
                 if models is None:
                     exclude_str = ['lo', 'hi', 'unique_id', 'ds']
-                    models = [c for c in df_test.columns if all(item not in c for item in exclude_str)]
+                    models = [c for c in forecasts_df.columns if all(item not in c for item in exclude_str)]
                 if 'y' not in models:
                     models = ['y'] + models
-                test_uid = df_test.query('unique_id == @uid')
+                test_uid = forecasts_df.query('unique_id == @uid')
                 test_uid = _parse_ds_type(test_uid)
                 colors = plt.cm.get_cmap('tab20b', len(models))
                 colors = ['blue'] + [colors(i) for i in range(len(models))]
@@ -881,7 +886,7 @@ class _StatsForecast:
             axes[idx, idy].set_xlabel('Datestamp [ds]')
             axes[idx, idy].set_ylabel('Target [y]')
             axes[idx, idy].legend(loc='upper left')
-            axes[idx, idy].xaxis.set_major_locator(plt.MaxNLocator(min(len(df_train) // 30, 10)))
+            axes[idx, idy].xaxis.set_major_locator(plt.MaxNLocator(min(len(df) // 30, 10)))
             axes[idx, idy].grid()
         fig.subplots_adjust(hspace=0.5)
         plt.show()
