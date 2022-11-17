@@ -402,6 +402,10 @@ def initstate(y, m, trendtype, seasontype):
             if seasontype == 'A':
                 y_d = dict(seasonal=y - coefs[0] - coefs[1] * X_fourier[:, 1])
             else:
+                if not min(y) > 0:
+                    raise Exception(
+                        'Multiplicative seasonality is not appropriate for zero and negative values'
+                    )
                 y_d = dict(seasonal=y/(coefs[0] + coefs[1] * X_fourier[:, 1]))
         else:
             #n is large enough to do a decomposition
@@ -442,20 +446,28 @@ def initstate(y, m, trendtype, seasontype):
             if abs(l0) < 1e-8:
                 l0 = 1e-7
             b0 = (l + 2 * b) / l0
-            l0 = l0 / b0
+            if math.isclose(b0, 0.0, abs_tol=1e-8):
+                div = 1e-8
+            else:
+                div = b0
+            l0 = l0 / div
             if abs(b0) > 1e10:
                 b0 = np.sign(b0) * 1e10
             if l0 < 1e-8 or b0 < 1e-8: # simple linear approximation didnt work
                 l0 = max(y_sa[0], 1e-3)
-                b0 = max(y_sa[1] / y_sa[0], 1e-3)
+                if math.isclose(y_sa[0], 0.0, abs_tol=1e-8):
+                    div = 1e-8
+                else:
+                    div = y_sa[0]
+                b0 = max(y_sa[1] / div, 1e-3)
     return np.concatenate([[l0, b0], init_seas])
 
-# %% ../nbs/ets.ipynb 23
+# %% ../nbs/ets.ipynb 24
 @njit(nogil=NOGIL, cache=CACHE)
 def switch(x: str):
     return {'N': 0, 'A': 1, 'M': 2}[x]
 
-# %% ../nbs/ets.ipynb 25
+# %% ../nbs/ets.ipynb 26
 @njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_C(y: np.ndarray, 
                   m: int, 
@@ -490,7 +502,7 @@ def pegelsresid_C(y: np.ndarray,
             lik = np.nan
     return amse, e, x, lik
 
-# %% ../nbs/ets.ipynb 26
+# %% ../nbs/ets.ipynb 27
 results = namedtuple('results', 'x fn nit simplex')
 
 @njit(nogil=NOGIL, cache=CACHE)
@@ -619,7 +631,7 @@ def nelder_mead(
             f_simplex[i] = fn(simplex[i], *args)
     return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
 
-# %% ../nbs/ets.ipynb 27
+# %% ../nbs/ets.ipynb 28
 @njit(nogil=NOGIL, cache=CACHE)
 def ets_target_fn(
         par,
@@ -699,7 +711,7 @@ def ets_target_fn(
         objval = mean
     return objval
 
-# %% ../nbs/ets.ipynb 28
+# %% ../nbs/ets.ipynb 29
 def optimize_ets_target_fn(
         x0, par, y, nstate, 
         errortype, trendtype, seasontype, damped, 
@@ -775,7 +787,7 @@ def optimize_ets_target_fn(
     )
     return res
 
-# %% ../nbs/ets.ipynb 29
+# %% ../nbs/ets.ipynb 30
 def etsmodel(y: np.ndarray, m: int, 
              errortype: str, trendtype: str, seasontype: str, 
              damped: bool,
@@ -891,7 +903,7 @@ def etsmodel(y: np.ndarray, m: int,
                 m=m, nstate=nstate,
                 fitted=fits, states=states, par=fit_par)
 
-# %% ../nbs/ets.ipynb 31
+# %% ../nbs/ets.ipynb 32
 def ets_f(y, m, model='ZZZ', 
           damped=None, alpha=None, beta=None, gamma=None, phi=None,
           additive_only=None, blambda=None, biasadj=None, 
@@ -926,7 +938,7 @@ def ets_f(y, m, model='ZZZ',
     if seasontype not in ['N', 'A', 'M', 'Z']:
         raise ValueError('Invalid season type')
     if m < 1 or len(y) <= m:
-        seasontype = 'M'
+        seasontype = 'N'
     if m == 1:
         if seasontype == 'A' or seasontype == 'M':
             raise ValueError('Nonseasonal data')
@@ -1003,6 +1015,7 @@ def ets_f(y, m, model='ZZZ',
                                    nmse=nmse, bounds=bounds, 
                                    maxit=maxit)
                     fit_ic = fit[ic]
+                    print(etype, ttype, stype, stype, fit_ic)
                     if not np.isnan(fit_ic):
                         if fit_ic < best_ic:
                             model = fit
@@ -1016,7 +1029,7 @@ def ets_f(y, m, model='ZZZ',
     model['method'] = f"ETS({best_e},{best_t}{'d' if best_d else ''},{best_s})"
     return model
 
-# %% ../nbs/ets.ipynb 32
+# %% ../nbs/ets.ipynb 33
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     states = obj['states'][-1,:]
@@ -1027,7 +1040,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
                 phi=phi, h=h, f=forecast)
     return forecast
 
-# %% ../nbs/ets.ipynb 33
+# %% ../nbs/ets.ipynb 34
 def forecast_ets(obj, h):
     fcst = pegelsfcast_C(h, obj)
     out = {'mean': fcst}
