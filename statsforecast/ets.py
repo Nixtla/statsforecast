@@ -398,7 +398,7 @@ def initstate(y, m, trendtype, seasontype):
             X_fourier[:, 0] = np.ones(n)
             X_fourier[:, 1] = np.arange(1, n + 1)
             X_fourier[:, 2:4] = fouriery
-            coefs, *_ = np.linalg.lstsq(X_fourier, y)
+            coefs, *_ = np.linalg.lstsq(X_fourier, y, rcond=-1)
             if seasontype == 'A':
                 y_d = dict(seasonal=y - coefs[0] - coefs[1] * X_fourier[:, 1])
             else:
@@ -450,12 +450,12 @@ def initstate(y, m, trendtype, seasontype):
                 b0 = max(y_sa[1] / y_sa[0], 1e-3)
     return np.concatenate([[l0, b0], init_seas])
 
-# %% ../nbs/ets.ipynb 22
+# %% ../nbs/ets.ipynb 23
 @njit(nogil=NOGIL, cache=CACHE)
 def switch(x: str):
     return {'N': 0, 'A': 1, 'M': 2}[x]
 
-# %% ../nbs/ets.ipynb 24
+# %% ../nbs/ets.ipynb 25
 @njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_C(y: np.ndarray, 
                   m: int, 
@@ -490,7 +490,7 @@ def pegelsresid_C(y: np.ndarray,
             lik = np.nan
     return amse, e, x, lik
 
-# %% ../nbs/ets.ipynb 25
+# %% ../nbs/ets.ipynb 26
 results = namedtuple('results', 'x fn nit simplex')
 
 @njit(nogil=NOGIL, cache=CACHE)
@@ -619,7 +619,7 @@ def nelder_mead(
             f_simplex[i] = fn(simplex[i], *args)
     return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
 
-# %% ../nbs/ets.ipynb 26
+# %% ../nbs/ets.ipynb 27
 @njit(nogil=NOGIL, cache=CACHE)
 def ets_target_fn(
         par,
@@ -699,7 +699,7 @@ def ets_target_fn(
         objval = mean
     return objval
 
-# %% ../nbs/ets.ipynb 27
+# %% ../nbs/ets.ipynb 28
 def optimize_ets_target_fn(
         x0, par, y, nstate, 
         errortype, trendtype, seasontype, damped, 
@@ -775,7 +775,7 @@ def optimize_ets_target_fn(
     )
     return res
 
-# %% ../nbs/ets.ipynb 28
+# %% ../nbs/ets.ipynb 29
 def etsmodel(y: np.ndarray, m: int, 
              errortype: str, trendtype: str, seasontype: str, 
              damped: bool,
@@ -891,7 +891,7 @@ def etsmodel(y: np.ndarray, m: int,
                 m=m, nstate=nstate,
                 fitted=fits, states=states, par=fit_par)
 
-# %% ../nbs/ets.ipynb 30
+# %% ../nbs/ets.ipynb 31
 def ets_f(y, m, model='ZZZ', 
           damped=None, alpha=None, beta=None, gamma=None, phi=None,
           additive_only=None, blambda=None, biasadj=None, 
@@ -1016,7 +1016,7 @@ def ets_f(y, m, model='ZZZ',
     model['method'] = f"ETS({best_e},{best_t}{'d' if best_d else ''},{best_s})"
     return model
 
-# %% ../nbs/ets.ipynb 31
+# %% ../nbs/ets.ipynb 32
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     states = obj['states'][-1,:]
@@ -1027,7 +1027,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
                 phi=phi, h=h, f=forecast)
     return forecast
 
-# %% ../nbs/ets.ipynb 32
+# %% ../nbs/ets.ipynb 33
 def forecast_ets(obj, h):
     fcst = pegelsfcast_C(h, obj)
     out = {'mean': fcst}
