@@ -1003,7 +1003,7 @@ class _DistributedStatsForecast:
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
 # %% ../nbs/core.ipynb 31
-class StatsForecast:
+class StatsForecast(_StatsForecast):
     """core.StatsForecast.
 
     The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models 
