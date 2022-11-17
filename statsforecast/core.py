@@ -7,6 +7,7 @@ __all__ = ['StatsForecast']
 import inspect
 import logging
 import random
+import re
 from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional
@@ -872,16 +873,25 @@ class _StatsForecast:
                 for col, color in zip(models, colors):
                     if col in test_uid:
                         axes[idx, idy].plot(test_uid['ds'], test_uid[col], label=col, color=color)
-                    if level is not None and any(f'{col}-lo' in c for c in test_uid):
-                        for lv in level:
-                            axes[idx, idy].fill_between(
-                                test_uid['ds'], 
-                                test_uid[f'{col}-lo-{lv}'], 
-                                test_uid[f'{col}-hi-{lv}'],
-                                alpha=-lv/50 + 2,
-                                color=color,
-                                label=f'{col}_level_{lv}',
-                            )
+                    model_has_level = any(f'{col}-lo' in c for c in test_uid)
+                    if level is not None and model_has_level:
+                        level_ = level
+                    elif model_has_level:
+                        level_col = test_uid.filter(like=f'{col}-lo').columns[0]
+                        level_col = re.findall('[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+', level_col)[0]
+                        level_ = [level_col]
+                    else:
+                        level_ = []
+                    for lv in level_:
+                        axes[idx, idy].fill_between(
+                            test_uid['ds'], 
+                            test_uid[f'{col}-lo-{lv}'], 
+                            test_uid[f'{col}-hi-{lv}'],
+                            alpha=-float(lv)/50 + 2,
+                            color=color,
+                            label=f'{col}_level_{lv}',
+                        )
+                        
             axes[idx, idy].set_title(f'{uid}')
             axes[idx, idy].set_xlabel('Datestamp [ds]')
             axes[idx, idy].set_ylabel('Target [y]')
