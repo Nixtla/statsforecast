@@ -820,7 +820,8 @@ class _StatsForecast:
              unique_ids: Optional[List[str]] = None,
              plot_random: bool = True, 
              models: Optional[List[str]] = None, 
-             level: Optional[List[float]] = None):
+             level: Optional[List[float]] = None,
+             max_insample_length: Optional[int] = None):
         """Plot forecasts and insample values.
         
         **Parameters:**<br>
@@ -830,6 +831,7 @@ class _StatsForecast:
         `plot_random`: bool, Select time series to plot randomly.<br>
         `models`: List[str], List of models to plot.<br>
         `level`: List[float], List of prediction intervals to plot if paseed.<br>
+        `max_insample_length`: int, max number of train/insample observations to be plotted.<br>
         """
         if level is not None and not isinstance(level, list):
             raise Exception(
@@ -864,7 +866,12 @@ class _StatsForecast:
         for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
             train_uid = df.query('unique_id == @uid')
             train_uid = _parse_ds_type(train_uid)
-            axes[idx, idy].plot(train_uid['ds'], train_uid['y'], label = 'y')
+            ds = train_uid['ds']
+            y = train_uid['y']
+            if max_insample_length is not None:
+                ds = ds[-max_insample_length:]
+                y = y[-max_insample_length:]
+            axes[idx, idy].plot(ds, y, label = 'y')
             if forecasts_df is not None:
                 if models is None:
                     exclude_str = ['lo', 'hi', 'unique_id', 'ds']
