@@ -842,6 +842,11 @@ class _StatsForecast:
                 unique_ids = df.index.unique()
             else:
                 unique_ids = df['unique_id'].unique()
+            if forecasts_df is not None:
+                if forecasts_df.index.name == 'unique_id':
+                    unique_ids = np.intersect1d(unique_ids, forecasts_df.index.unique())
+                else:
+                    unique_ids = np.intersect1d(unique_ids, forecasts_df['unique_id'].unique())
         if plot_random:
             unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
         else:
@@ -855,7 +860,7 @@ class _StatsForecast:
             fig, axes = plt.subplots(n_cols, 2, figsize = (24, 3.5 * n_cols))
             if n_cols == 1:
                 axes = np.array([axes])
-            
+
         for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
             train_uid = df.query('unique_id == @uid')
             train_uid = _parse_ds_type(train_uid)
