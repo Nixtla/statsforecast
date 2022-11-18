@@ -7,9 +7,10 @@ __all__ = ['StatsForecast']
 import inspect
 import logging
 import random
+import re
 from itertools import product
 from os import cpu_count
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -326,7 +327,22 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 28
+# %% ../nbs/core.ipynb 27
+def _parse_ds_type(df):
+    if not pd.api.types.is_datetime64_any_dtype(df['ds']) and not issubclass(df['ds'].dtype.type, np.integer):
+        df = df.copy()
+        try:
+            df['ds'] = pd.to_datetime(df['ds'])
+        except Exception as e:
+            msg = (
+                'Failed to parse `ds` column as datetime. '
+                'Please use `pd.to_datetime` outside to fix the error. '
+                f'{e}'
+            )
+            raise Exception(msg) from e
+    return df
+
+# %% ../nbs/core.ipynb 29
 class _StatsForecast:
     
     def __init__(
@@ -377,17 +393,7 @@ class _StatsForecast:
         if df is not None:
             if df.index.name != 'unique_id':
                 df = df.set_index('unique_id')
-            if not pd.api.types.is_datetime64_any_dtype(df['ds']) and not issubclass(df['ds'].dtype.type, np.integer):
-                df = df.copy()
-                try:
-                    df['ds'] = pd.to_datetime(df['ds'])
-                except Exception as e:
-                    msg = (
-                        'Failed to parse `ds` column as datetime. '
-                        'Please use `pd.to_datetime` outside to fix the error. '
-                        f'{e}'
-                    )
-                    raise Exception(msg) from e 
+            df = _parse_ds_type(df)
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(df, sort_df)
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs, self.ray_address)
             self.sort_df = sort_df
@@ -809,28 +815,40 @@ class _StatsForecast:
         return result
     
     @staticmethod
-    def plot(df_train: pd.DataFrame, 
-             df_test: Optional[pd.DataFrame] = None, 
-             unique_ids: Optional[List[str]] = None,
+    def plot(df: pd.DataFrame, 
+             forecasts_df: Optional[pd.DataFrame] = None, 
+             unique_ids: Union[Optional[List[str]], np.ndarray] = None,
              plot_random: bool = True, 
              models: Optional[List[str]] = None, 
-             level: Optional[List[float]] = None):
+             level: Optional[List[float]] = None,
+             max_insample_length: Optional[int] = None):
         """Plot forecasts and insample values.
         
         **Parameters:**<br>
-        `df_train`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`].<br>
-        `df_test`: pandas.DataFrame, with columns [`unique_id`, `ds`] and models.<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`].<br>
+        `forecasts_df`: pandas.DataFrame, with columns [`unique_id`, `ds`] and models.<br>
         `unique_ids`: List[str], Time Series to plot.<br>
         `plot_random`: bool, Select time series to plot randomly.<br>
         `models`: List[str], List of models to plot.<br>
         `level`: List[float], List of prediction intervals to plot if paseed.<br>
+        `max_insample_length`: int, max number of train/insample observations to be plotted.<br>
         """
+        if level is not None and not isinstance(level, list):
+            raise Exception(
+                'Please use a list for the `level` argument '
+                'If you only have one level, use `level=[your_level]`'
+            )
         
         if unique_ids is None:
-            if df_train.index.name == 'unique_id':
-                unique_ids = df_train.index.unique()
+            if df.index.name == 'unique_id':
+                unique_ids = df.index.unique()
             else:
-                unique_ids = df_train['unique_id'].unique()
+                unique_ids = df['unique_id'].unique()
+            if forecasts_df is not None:
+                if forecasts_df.index.name == 'unique_id':
+                    unique_ids = np.intersect1d(unique_ids, forecasts_df.index.unique())
+                else:
+                    unique_ids = np.intersect1d(unique_ids, forecasts_df['unique_id'].unique())
         if plot_random:
             unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
         else:
@@ -844,37 +862,58 @@ class _StatsForecast:
             fig, axes = plt.subplots(n_cols, 2, figsize = (24, 3.5 * n_cols))
             if n_cols == 1:
                 axes = np.array([axes])
-            
+
         for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
-            train_uid = df_train.query('unique_id == @uid')
-            axes[idx, idy].plot(train_uid['ds'], train_uid['y'], label = 'y')
-            if df_test is not None:
+            train_uid = df.query('unique_id == @uid')
+            train_uid = _parse_ds_type(train_uid)
+            ds = train_uid['ds']
+            y = train_uid['y']
+            if max_insample_length is not None:
+                ds = ds[-max_insample_length:]
+                y = y[-max_insample_length:]
+            axes[idx, idy].plot(ds, y, label = 'y')
+            if forecasts_df is not None:
                 if models is None:
                     exclude_str = ['lo', 'hi', 'unique_id', 'ds']
-                    models = [c for c in df_test.columns if all(item not in c for item in exclude_str)]
+                    models = [c for c in forecasts_df.columns if all(item not in c for item in exclude_str)]
                 if 'y' not in models:
                     models = ['y'] + models
-                test_uid = df_test.query('unique_id == @uid')
+                test_uid = forecasts_df.query('unique_id == @uid')
+                test_uid = _parse_ds_type(test_uid)
+                first_ds_fcst = test_uid['ds'].min()
+                axes[idx, idy].axvline(x=first_ds_fcst, 
+                                       color='black', 
+                                       label='First ds Forecast', 
+                                       linestyle='--')
                 colors = plt.cm.get_cmap('tab20b', len(models))
                 colors = ['blue'] + [colors(i) for i in range(len(models))]
                 for col, color in zip(models, colors):
                     if col in test_uid:
                         axes[idx, idy].plot(test_uid['ds'], test_uid[col], label=col, color=color)
-                    if level is not None and any(f'{col}-lo' in c for c in test_uid):
-                        for l, alpha in zip(sorted(level), [0.5, .4, .35, .2]):
-                            axes[idx, idy].fill_between(
-                                test_uid['ds'], 
-                                test_uid[f'{col}-lo-{l}'], 
-                                test_uid[f'{col}-hi-{l}'],
-                                alpha=alpha,
-                                color=color,
-                                label=f'{col}_level_{l}',
-                            )
+                    model_has_level = any(f'{col}-lo' in c for c in test_uid)
+                    if level is not None and model_has_level:
+                        level_ = level
+                    elif model_has_level:
+                        level_col = test_uid.filter(like=f'{col}-lo').columns[0]
+                        level_col = re.findall('[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+', level_col)[0]
+                        level_ = [level_col]
+                    else:
+                        level_ = []
+                    for lv in level_:
+                        axes[idx, idy].fill_between(
+                            test_uid['ds'], 
+                            test_uid[f'{col}-lo-{lv}'], 
+                            test_uid[f'{col}-hi-{lv}'],
+                            alpha=-float(lv)/50 + 2,
+                            color=color,
+                            label=f'{col}_level_{lv}',
+                        )
+                        
             axes[idx, idy].set_title(f'{uid}')
-            axes[idx, idy].set_xlabel('Timestamp [t]')
-            axes[idx, idy].set_ylabel('Target')
+            axes[idx, idy].set_xlabel('Datestamp [ds]')
+            axes[idx, idy].set_ylabel('Target [y]')
             axes[idx, idy].legend(loc='upper left')
-            axes[idx, idy].xaxis.set_major_locator(plt.MaxNLocator(min(len(df_train) // 30, 10)))
+            axes[idx, idy].xaxis.set_major_locator(plt.MaxNLocator(min(len(df) // 30, 10)))
             axes[idx, idy].grid()
         fig.subplots_adjust(hspace=0.5)
         plt.show()
@@ -882,7 +921,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 29
+# %% ../nbs/core.ipynb 30
 class _DistributedStatsForecast:
     
     def __init__(
@@ -995,8 +1034,8 @@ class _DistributedStatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 30
-class StatsForecast:
+# %% ../nbs/core.ipynb 31
+class StatsForecast(_StatsForecast):
     """core.StatsForecast.
 
     The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models 
