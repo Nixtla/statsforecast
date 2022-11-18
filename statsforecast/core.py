@@ -10,7 +10,7 @@ import random
 import re
 from itertools import product
 from os import cpu_count
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -817,7 +817,7 @@ class _StatsForecast:
     @staticmethod
     def plot(df: pd.DataFrame, 
              forecasts_df: Optional[pd.DataFrame] = None, 
-             unique_ids: Optional[List[str]] = None,
+             unique_ids: Union[Optional[List[str]], np.ndarray] = None,
              plot_random: bool = True, 
              models: Optional[List[str]] = None, 
              level: Optional[List[float]] = None,
