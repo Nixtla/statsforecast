@@ -931,6 +931,14 @@ class _StatsForecast:
                                            showlegend=(idx==1 and idy==1)),
                                 row=idx, col=idy
                             )
+            #fig.update_layout(
+            #    legend=dict(
+            #        x=0,
+            #
+            #y=1,
+            #        font=dict(size=8)
+            #    )
+            #)
             fig.update_xaxes(matches=None, showticklabels=True, visible=True)
             fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
             fig.update_layout(template="plotly_white", font=dict(size=10))
