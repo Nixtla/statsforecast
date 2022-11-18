@@ -853,6 +853,88 @@ class _StatsForecast:
             unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
         else:
             unique_ids = unique_ids[:8]
+            
+        from plotly.subplots import make_subplots
+        import plotly.graph_objects as go    
+        import matplotlib.colors as cm
+        
+        n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
+        fig = make_subplots(rows=n_rows, cols=2 if len(unique_ids) >= 2 else 1, 
+                            vertical_spacing=0.1, 
+                            horizontal_spacing=0.07, 
+                            x_title='Datestamp [ds]',
+                            y_title='Target [y]',
+                            subplot_titles=[str(uid) for uid in unique_ids])
+        
+        for uid, (idx, idy) in zip(unique_ids, product(range(1, n_rows + 1), range(1, 2 + 1))):
+            train_uid = df.query('unique_id == @uid')
+            train_uid = _parse_ds_type(train_uid)
+            ds = train_uid['ds']
+            y = train_uid['y']
+            if max_insample_length is not None:
+                ds = ds[-max_insample_length:]
+                y = y[-max_insample_length:]
+            fig.add_trace(
+                go.Scatter(x=ds, y=y, 
+                           mode='lines', 
+                           name='y', 
+                           line=dict(color='#1f77b4'), 
+                           showlegend=(idx==1 and idy==1)),
+                row=idx, col=idy
+            )
+            if forecasts_df is not None:
+                if models is None:
+                    exclude_str = ['lo', 'hi', 'unique_id', 'ds']
+                    models = [c for c in forecasts_df.columns if all(item not in c for item in exclude_str)]
+                if 'y' not in models:
+                    models = ['y'] + models
+                test_uid = forecasts_df.query('unique_id == @uid')
+                test_uid = _parse_ds_type(test_uid)
+                first_ds_fcst = test_uid['ds'].min()
+                colors = plt.cm.get_cmap('tab20b', len(models))
+                colors = ['#1f77b4'] + [cm.to_hex(colors(i)) for i in range(len(models))]
+                for col, color in zip(models, colors):
+                    if col in test_uid:
+                        fig.add_trace(
+                            go.Scatter(x=test_uid['ds'], y=test_uid[col], 
+                                       mode='lines', 
+                                       name=col, 
+                                       line=dict(color=color), 
+                                       showlegend=(idx==1 and idy==1)),
+                            row=idx, col=idy
+                        )
+                    model_has_level = any(f'{col}-lo' in c for c in test_uid)
+                    if level is not None and model_has_level:
+                        level_ = level
+                    elif model_has_level:
+                        level_col = test_uid.filter(like=f'{col}-lo').columns[0]
+                        level_col = re.findall('[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+', level_col)[0]
+                        level_ = [level_col]
+                    else:
+                        level_ = []
+                    ds_test = test_uid['ds'].to_list()    
+                    for lv in level_:
+                        lo = test_uid[f'{col}-lo-{lv}'].to_list()
+                        hi = test_uid[f'{col}-hi-{lv}'].to_list()
+                        fig.add_trace(
+                            go.Scatter(x=ds_test + ds_test[::-1], 
+                                       y=hi + lo[::-1], 
+                                       fill='toself',
+                                       mode='lines',
+                                       fillcolor=color,
+                                       opacity=-float(lv)/50 + 2,
+                                       name=f'{col}_level_{lv}', 
+                                       line=dict(color=color), 
+                                       showlegend=(idx==1 and idy==1)),
+                            row=idx, col=idy
+                        )
+        fig.update_xaxes(matches=None, showticklabels=True, visible=True)
+        fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
+        fig.update_layout(template="plotly_white", font=dict(size=10))
+        fig.update_annotations(font_size=10)
+        fig.update_layout(autosize=False, width=800, height=150 * n_rows)
+        return fig
+            
         if len(unique_ids) == 1:
             fig, axes = plt.subplots(figsize = (24, 3.5))
             axes = np.array([[axes]])
