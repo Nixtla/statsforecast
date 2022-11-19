@@ -943,7 +943,7 @@ class _StatsForecast:
             fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
             fig.update_layout(template="plotly_white", font=dict(size=10))
             fig.update_annotations(font_size=10)
-            fig.update_layout(autosize=False, width=800, height=150 * n_rows)
+            fig.update_layout(autosize=True, height=150 * n_rows)
             fig.show()
             return
         elif engine == 'matplotlib':
