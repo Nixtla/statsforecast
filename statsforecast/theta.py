@@ -413,7 +413,11 @@ def auto_theta(
         stat = np.sqrt((1 + 2 * np.sum(r[:-1]**2)) / len(y))
         decompose = np.abs(r[-1]) / stat > norm.ppf(0.95)
     
+    data_positive = min(y) > 0
     if decompose:
+        # change decomposition type if data is not positive
+        if decomposition_type == 'multiplicative' and not data_positive:
+            decomposition_type = 'additive'
         y_decompose = seasonal_decompose(y, model=decomposition_type, period=m).seasonal
         if decomposition_type == 'multiplicative' and any(y_decompose < 0.01):
             decomposition_type = 'additive'
