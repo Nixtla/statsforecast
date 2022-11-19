@@ -1022,6 +1022,9 @@ def ets_f(y, m, model='ZZZ',
                             continue
                     if (not data_positive) and etype == 'M':
                         continue
+                    if (not data_positive) and stype == 'M':
+                        # see https://github.com/statsmodels/statsmodels/blob/46116c493697b5456e960b1dc2932264703b6c59/statsmodels/tsa/seasonal.py#L157
+                        continue
                     if stype != 'N' and m == 1:
                         continue
                     fit = etsmodel(y, m, etype, ttype, stype, dtype,
