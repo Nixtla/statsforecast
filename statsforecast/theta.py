@@ -17,7 +17,7 @@ from statsmodels.tsa.stattools import acf
 from .utils import _seasonal_naive, _repeat_val_seas
 
 # %% ../nbs/theta.ipynb 4
-# Global variables 
+# Global variables
 STM = 0
 OTM = 1
 DSTM = 2
@@ -26,96 +26,122 @@ TOL = 1.0e-10
 HUGEN = 1.0e10
 NA = -99999.0
 smalno = np.finfo(float).eps
-NOGIL = os.environ.get('NUMBA_RELEASE_GIL', 'False').lower() in ['true']
-CACHE = os.environ.get('NUMBA_CACHE', 'False').lower() in ['true']
+NOGIL = os.environ.get("NUMBA_RELEASE_GIL", "False").lower() in ["true"]
+CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
 
 # %% ../nbs/theta.ipynb 6
 @njit(nogil=NOGIL, cache=CACHE)
 def initstate(y, modeltype, initial_smoothed, alpha, theta):
     states = np.zeros((1, 5), dtype=np.float32)
-    states[0, 0] = alpha * y[0] + (1 - alpha) * initial_smoothed # level
-    states[0, 1] = y[0] #mean y
+    states[0, 0] = alpha * y[0] + (1 - alpha) * initial_smoothed  # level
+    states[0, 1] = y[0]  # mean y
     if modeltype in [DSTM, DOTM]:
         # dynamic models
-        states[0, 2] = y[0] # An
-        states[0, 3] = 0 # Bn
-        states[0, 4] = y[0] # mu
+        states[0, 2] = y[0]  # An
+        states[0, 3] = 0  # Bn
+        states[0, 4] = y[0]  # mu
     else:
         # nodynamic models
         n = len(y)
-        Bn = 6 * (2 * np.mean(np.arange(1, n + 1) * y) - (1 + n) * np.mean(y)) / ( n ** 2 - 1)
+        Bn = (
+            6
+            * (2 * np.mean(np.arange(1, n + 1) * y) - (1 + n) * np.mean(y))
+            / (n**2 - 1)
+        )
         An = np.mean(y) - (n + 1) * Bn / 2
         states[0, 2] = An
         states[0, 3] = Bn
         states[0, 4] = initial_smoothed + (1 - 1 / theta) * (An + Bn)
-        
+
     return states
 
 # %% ../nbs/theta.ipynb 8
 @njit(nogil=NOGIL, cache=CACHE)
-def thetacalc(y: np.ndarray,
-              states: np.ndarray, # states
-              modeltype: int, 
-              initial_smoothed: float, 
-              alpha: float,
-              theta: float, 
-              e: np.ndarray, 
-              amse: np.ndarray, 
-              nmse: int) -> float:
+def thetacalc(
+    y: np.ndarray,
+    states: np.ndarray,  # states
+    modeltype: int,
+    initial_smoothed: float,
+    alpha: float,
+    theta: float,
+    e: np.ndarray,
+    amse: np.ndarray,
+    nmse: int,
+) -> float:
     denom = np.zeros(nmse)
     f = np.zeros(nmse)
     # update first state
-    states[0, :] = initstate(y=y, modeltype=modeltype, 
-                             initial_smoothed=initial_smoothed, 
-                             alpha=alpha, theta=theta) 
-    
-    amse[:nmse] = 0.
+    states[0, :] = initstate(
+        y=y,
+        modeltype=modeltype,
+        initial_smoothed=initial_smoothed,
+        alpha=alpha,
+        theta=theta,
+    )
+
+    amse[:nmse] = 0.0
     e[0] = y[0] - states[0, 4]
     n = len(y)
     for i in range(1, n):
-        # one step forecast 
-        thetafcst(states=states, i=i, modeltype=modeltype, f=f, h=nmse, alpha=alpha, theta=theta)
+        # one step forecast
+        thetafcst(
+            states=states,
+            i=i,
+            modeltype=modeltype,
+            f=f,
+            h=nmse,
+            alpha=alpha,
+            theta=theta,
+        )
         if math.fabs(f[0] - NA) < TOL:
             mse = NA
             return mse
         e[i] = y[i] - f[0]
         for j in range(nmse):
             if (i + j) < n:
-                denom[j] += 1.
+                denom[j] += 1.0
                 tmp = y[i + j] - f[j]
                 amse[j] = (amse[j] * (denom[j] - 1.0) + (tmp * tmp)) / denom[j]
         # update state
-        thetaupdate(states=states, i=i, modeltype=modeltype, 
-                    alpha=alpha, theta=theta, y=y[i], usemu=0)
+        thetaupdate(
+            states=states,
+            i=i,
+            modeltype=modeltype,
+            alpha=alpha,
+            theta=theta,
+            y=y[i],
+            usemu=0,
+        )
     mean_y = np.mean(np.abs(y))
-    if math.fabs(mean_y - 0.) < TOL:
+    if math.fabs(mean_y - 0.0) < TOL:
         mean_y = TOL
     mse = np.sum(e[3:] ** 2) / mean_y
     return mse
 
 # %% ../nbs/theta.ipynb 9
 @njit(nogil=NOGIL, cache=CACHE)
-def thetafcst(states, i, 
-              modeltype, 
-              f, h, 
-              alpha, theta):
+def thetafcst(states, i, modeltype, f, h, alpha, theta):
     # obs:
     # forecast are obtained in a recursive manner
     # this is not standard, for example in ets
-    #forecasts
+    # forecasts
     new_states = np.zeros((i + h, states.shape[1]), dtype=np.float32)
     new_states[:i] = states[:i]
     for i_h in range(h):
-        thetaupdate(states=new_states, i=i + i_h, modeltype=modeltype, 
-                    alpha=alpha, theta=theta, y=0, usemu=1)
+        thetaupdate(
+            states=new_states,
+            i=i + i_h,
+            modeltype=modeltype,
+            alpha=alpha,
+            theta=theta,
+            y=0,
+            usemu=1,
+        )
         f[i_h] = new_states[i + i_h, 4]  # mu is the forecast
 
 # %% ../nbs/theta.ipynb 10
 @njit(nogil=NOGIL, cache=CACHE)
-def thetaupdate(states, i,
-                modeltype, # kind of model 
-                alpha, theta,
-                y, usemu):
+def thetaupdate(states, i, modeltype, alpha, theta, y, usemu):  # kind of model
     # states
     # level, meany, An, Bn, mu
     # get params
@@ -124,7 +150,9 @@ def thetaupdate(states, i,
     An = states[i - 1, 2]
     Bn = states[i - 1, 3]
     # update mu
-    states[i, 4] = level + (1 - 1 / theta) * (An * ((1 - alpha) ** i) + Bn * (1 - (1 - alpha)**(i + 1)) / alpha)
+    states[i, 4] = level + (1 - 1 / theta) * (
+        An * ((1 - alpha) ** i) + Bn * (1 - (1 - alpha) ** (i + 1)) / alpha
+    )
     if usemu:
         y = states[i, 4]
     # update level
@@ -140,26 +168,21 @@ def thetaupdate(states, i,
         states[i, 2] = An
         states[i, 3] = Bn
 
-
 # %% ../nbs/theta.ipynb 11
 @njit(nogil=NOGIL, cache=CACHE)
-def thetaforecast(states, n, modeltype, 
-                  f, h, alpha, theta):
+def thetaforecast(states, n, modeltype, f, h, alpha, theta):
     # compute forecasts
     new_states = thetafcst(
-        states=states, i=n, modeltype=modeltype, 
-        f=f, h=h, 
-        alpha=alpha,
-        theta=theta
-    ) 
+        states=states, i=n, modeltype=modeltype, f=f, h=h, alpha=alpha, theta=theta
+    )
     return new_states
 
 # %% ../nbs/theta.ipynb 16
 @njit(nogil=NOGIL, cache=CACHE)
-def initparamtheta(initial_smoothed: float, alpha: float, theta: float,
-                   y: np.ndarray,
-                   modeltype: str):
-    if modeltype in ['STM', 'DSTM']:
+def initparamtheta(
+    initial_smoothed: float, alpha: float, theta: float, y: np.ndarray, modeltype: str
+):
+    if modeltype in ["STM", "DSTM"]:
         if np.isnan(initial_smoothed):
             initial_smoothed = y[0] / 2
             optimize_level = 1
@@ -170,9 +193,9 @@ def initparamtheta(initial_smoothed: float, alpha: float, theta: float,
             optimize_alpha = 1
         else:
             optimize_alpha = 0
-        theta = 2. # no optimize
+        theta = 2.0  # no optimize
         optimize_theta = 0
-    elif modeltype in ['OTM', 'DOTM']:
+    elif modeltype in ["OTM", "DOTM"]:
         if np.isnan(initial_smoothed):
             initial_smoothed = y[0] / 2
             optimize_level = 1
@@ -184,33 +207,48 @@ def initparamtheta(initial_smoothed: float, alpha: float, theta: float,
         else:
             optimize_alpha = 0
         if np.isnan(theta):
-            theta = 2.
+            theta = 2.0
             optimize_theta = 1
         else:
             optimize_theta = 0
-    return {'initial_smoothed': initial_smoothed, 'optimize_initial_smoothed': optimize_level,
-            'alpha': alpha, 'optimize_alpha': optimize_alpha,
-            'theta': theta, 'optimize_theta': optimize_theta}
+    return {
+        "initial_smoothed": initial_smoothed,
+        "optimize_initial_smoothed": optimize_level,
+        "alpha": alpha,
+        "optimize_alpha": optimize_alpha,
+        "theta": theta,
+        "optimize_theta": optimize_theta,
+    }
 
 # %% ../nbs/theta.ipynb 18
 @njit(nogil=NOGIL, cache=CACHE)
 def switch_theta(x: str):
-    return {'STM': 0, 'OTM': 1, 'DSTM': 2, 'DOTM': 3}[x]
+    return {"STM": 0, "OTM": 1, "DSTM": 2, "DOTM": 3}[x]
 
 # %% ../nbs/theta.ipynb 20
 @njit(nogil=NOGIL, cache=CACHE)
-def pegelsresid_theta(y: np.ndarray, 
-                      modeltype: str, 
-                      initial_smoothed: float, alpha: float,
-                      theta: float, 
-                      nmse: int):
+def pegelsresid_theta(
+    y: np.ndarray,
+    modeltype: str,
+    initial_smoothed: float,
+    alpha: float,
+    theta: float,
+    nmse: int,
+):
     states = np.zeros((len(y), 5), dtype=np.float32)
     e = np.full_like(y, fill_value=np.nan)
     amse = np.full(nmse, fill_value=np.nan)
-    mse = thetacalc(y=y, states=states, 
-                    modeltype=switch_theta(modeltype), 
-                    initial_smoothed=initial_smoothed, alpha=alpha, theta=theta, 
-                    e=e, amse=amse, nmse=nmse)
+    mse = thetacalc(
+        y=y,
+        states=states,
+        modeltype=switch_theta(modeltype),
+        initial_smoothed=initial_smoothed,
+        alpha=alpha,
+        theta=theta,
+        e=e,
+        amse=amse,
+        nmse=nmse,
+    )
     if not np.isnan(mse):
         if np.abs(mse + 99999) < 1e-7:
             mse = np.nan
@@ -219,71 +257,76 @@ def pegelsresid_theta(y: np.ndarray,
 # %% ../nbs/theta.ipynb 21
 @njit(nogil=NOGIL, cache=CACHE)
 def theta_target_fn(
-        optimal_param,
-        init_level,
-        init_alpha,
-        init_theta,
-        opt_level,
-        opt_alpha,
-        opt_theta,
-        y,
-        modeltype,
-        nmse
-    ):
+    optimal_param,
+    init_level,
+    init_alpha,
+    init_theta,
+    opt_level,
+    opt_alpha,
+    opt_theta,
+    y,
+    modeltype,
+    nmse,
+):
     states = np.zeros((len(y), 5), dtype=np.float32)
     j = 0
     if opt_level:
         level = optimal_param[j]
-        j+=1
+        j += 1
     else:
         level = init_level
-        
+
     if opt_alpha:
         alpha = optimal_param[j]
-        j+=1
+        j += 1
     else:
         alpha = init_alpha
-        
+
     if opt_theta:
         theta = optimal_param[j]
-        j+=1
+        j += 1
     else:
         theta = init_theta
-        
+
     e = np.full_like(y, fill_value=np.nan)
     amse = np.full(nmse, fill_value=np.nan)
-    mse = thetacalc(y=y, states=states, 
-                    modeltype=switch_theta(modeltype), 
-                    initial_smoothed=level, alpha=alpha, theta=theta, 
-                    e=e, amse=amse, nmse=nmse)
-    if mse < -1e10: 
-        mse = -1e10 
-    if math.isnan(mse): 
+    mse = thetacalc(
+        y=y,
+        states=states,
+        modeltype=switch_theta(modeltype),
+        initial_smoothed=level,
+        alpha=alpha,
+        theta=theta,
+        e=e,
+        amse=amse,
+        nmse=nmse,
+    )
+    if mse < -1e10:
+        mse = -1e10
+    if math.isnan(mse):
         mse = -np.inf
-    if math.fabs(mse + 99999) < 1e-7: 
+    if math.fabs(mse + 99999) < 1e-7:
         mse = -np.inf
     return mse
 
 # %% ../nbs/theta.ipynb 22
-def optimize_theta_target_fn(
-        init_par, optimize_params, y, 
-        modeltype, nmse
-    ):
+def optimize_theta_target_fn(init_par, optimize_params, y, modeltype, nmse):
     x0 = [init_par[key] for key, val in optimize_params.items() if val]
     x0 = np.array(x0, dtype=np.float32)
     if not len(x0):
         return
-    
-    init_level = init_par['initial_smoothed']
-    init_alpha = init_par['alpha']
-    init_theta = init_par['theta']
-    
-    opt_level = optimize_params['initial_smoothed']
-    opt_alpha = optimize_params['alpha']
-    opt_theta = optimize_params['theta']
-    
+
+    init_level = init_par["initial_smoothed"]
+    init_alpha = init_par["alpha"]
+    init_theta = init_par["theta"]
+
+    opt_level = optimize_params["initial_smoothed"]
+    opt_alpha = optimize_params["alpha"]
+    opt_theta = optimize_params["theta"]
+
     res = nelder_mead(
-        theta_target_fn, x0, 
+        theta_target_fn,
+        x0,
         args=(
             init_level,
             init_alpha,
@@ -293,9 +336,9 @@ def optimize_theta_target_fn(
             opt_theta,
             y,
             modeltype,
-            nmse
+            nmse,
         ),
-        tol_std=1e-4, 
+        tol_std=1e-4,
         lower=np.array([-1e10, 0.1, 1.0]),
         upper=np.array([1e10, 0.99, 1e10]),
         max_iter=1_000,
@@ -310,51 +353,73 @@ def is_constant(x):
 
 # %% ../nbs/theta.ipynb 25
 def thetamodel(
-        y: np.ndarray, m: int, 
-        modeltype: str, 
-        initial_smoothed: float, alpha: float,
-        theta: float, nmse: int
-    ):
-    #initial parameters
-    par = initparamtheta(initial_smoothed=initial_smoothed, 
-                         alpha=alpha, theta=theta, 
-                         y=y, modeltype=modeltype)
-    optimize_params = {key.replace('optimize_', ''): val for key, val in par.items() if 'optim' in key}
-    par = {key: val for key, val in par.items() if 'optim' not in key}
+    y: np.ndarray,
+    m: int,
+    modeltype: str,
+    initial_smoothed: float,
+    alpha: float,
+    theta: float,
+    nmse: int,
+):
+    # initial parameters
+    par = initparamtheta(
+        initial_smoothed=initial_smoothed,
+        alpha=alpha,
+        theta=theta,
+        y=y,
+        modeltype=modeltype,
+    )
+    optimize_params = {
+        key.replace("optimize_", ""): val for key, val in par.items() if "optim" in key
+    }
+    par = {key: val for key, val in par.items() if "optim" not in key}
     # parameter optimization
     fred = optimize_theta_target_fn(
-        init_par=par, optimize_params=optimize_params, y=y, 
-        modeltype=modeltype, nmse=nmse
+        init_par=par,
+        optimize_params=optimize_params,
+        y=y,
+        modeltype=modeltype,
+        nmse=nmse,
     )
     if fred is not None:
         fit_par = fred.x
     j = 0
-    if optimize_params['initial_smoothed']:
+    if optimize_params["initial_smoothed"]:
         j += 1
-    if optimize_params['alpha']:
-        par['alpha'] = fit_par[j]
+    if optimize_params["alpha"]:
+        par["alpha"] = fit_par[j]
         j += 1
-    if optimize_params['theta']:
-        par['theta'] = fit_par[j]
+    if optimize_params["theta"]:
+        par["theta"] = fit_par[j]
         j += 1
-    
-    amse, e, states, mse = pegelsresid_theta(
-        y=y, modeltype=modeltype,
-        nmse=nmse, **par
+
+    amse, e, states, mse = pegelsresid_theta(y=y, modeltype=modeltype, nmse=nmse, **par)
+
+    return dict(
+        mse=mse,
+        amse=amse,
+        fit=fred,
+        residuals=e,
+        m=m,
+        states=states,
+        par=par,
+        n=len(y),
+        modeltype=modeltype,
+        mean_y=np.mean(y),
     )
-    
-    return dict(mse=mse, amse=amse, fit=fred, residuals=e,
-                m=m, states=states, par=par, n=len(y), 
-                modeltype=modeltype, mean_y=np.mean(y))
 
 # %% ../nbs/theta.ipynb 27
-def compute_pi_samples(n, h, states, sigma, alpha, theta, mean_y, seed=0, n_samples=200):
+def compute_pi_samples(
+    n, h, states, sigma, alpha, theta, mean_y, seed=0, n_samples=200
+):
     samples = np.full((h, n_samples), fill_value=np.nan, dtype=np.float32)
     # states: level, meany, An, Bn, mu
     smoothed, _, A, B, _ = states[-1]
     np.random.seed(seed)
     for i in range(n, n + h):
-        samples[i - n] = smoothed + (1 - 1 / theta)*(A*((1 - alpha) ** i) + B * (1 - (1 - alpha)**(i + 1)) / alpha)
+        samples[i - n] = smoothed + (1 - 1 / theta) * (
+            A * ((1 - alpha) ** i) + B * (1 - (1 - alpha) ** (i + 1)) / alpha
+        )
         samples[i - n] += np.random.normal(scale=sigma, size=n_samples)
         smoothed = alpha * samples[i - n] + (1 - alpha) * smoothed
         mean_y = (i * mean_y + samples[i - n]) / (i + 1)
@@ -365,31 +430,45 @@ def compute_pi_samples(n, h, states, sigma, alpha, theta, mean_y, seed=0, n_samp
 # %% ../nbs/theta.ipynb 28
 def forecast_theta(obj, h, level=None):
     forecast = np.full(h, fill_value=np.nan)
-    n = obj['n']
-    states = obj['states']
-    alpha=obj['par']['alpha']
-    theta=obj['par']['theta']
+    n = obj["n"]
+    states = obj["states"]
+    alpha = obj["par"]["alpha"]
+    theta = obj["par"]["theta"]
     thetaforecast(
-        states=states, n=n, modeltype=switch_theta(obj['modeltype']), 
-        h=h, f=forecast, alpha=alpha, theta=theta
+        states=states,
+        n=n,
+        modeltype=switch_theta(obj["modeltype"]),
+        h=h,
+        f=forecast,
+        alpha=alpha,
+        theta=theta,
     )
-    res = {'mean': forecast}
-    
+    res = {"mean": forecast}
+
     if level is not None:
-        sigma = np.std(obj['residuals'][3:], ddof=1)
-        mean_y = obj['mean_y']
-        samples = compute_pi_samples(n=n, h=h, states=states, sigma=sigma, alpha=alpha, 
-                                     theta=theta, mean_y=mean_y)
+        sigma = np.std(obj["residuals"][3:], ddof=1)
+        mean_y = obj["mean_y"]
+        samples = compute_pi_samples(
+            n=n,
+            h=h,
+            states=states,
+            sigma=sigma,
+            alpha=alpha,
+            theta=theta,
+            mean_y=mean_y,
+        )
         for lv in level:
             min_q = (100 - lv) / 200
             max_q = min_q + lv / 100
-            res[f'lo-{lv}'] = np.quantile(samples, min_q, axis=1)
-            res[f'hi-{lv}'] = np.quantile(samples, max_q, axis=1)
-            
-    if obj.get('decompose', False):
-        seas_forecast = _repeat_val_seas(obj['seas_forecast']['mean'], h=h, season_length=obj['m'])
+            res[f"lo-{lv}"] = np.quantile(samples, min_q, axis=1)
+            res[f"hi-{lv}"] = np.quantile(samples, max_q, axis=1)
+
+    if obj.get("decompose", False):
+        seas_forecast = _repeat_val_seas(
+            obj["seas_forecast"]["mean"], h=h, season_length=obj["m"]
+        )
         for key in res:
-            if obj['decomposition_type'] == 'multiplicative':
+            if obj["decomposition_type"] == "multiplicative":
                 res[key] = res[key] * seas_forecast
             else:
                 res[key] = res[key] + seas_forecast
@@ -397,13 +476,16 @@ def forecast_theta(obj, h, level=None):
 
 # %% ../nbs/theta.ipynb 30
 def auto_theta(
-        y, m, model=None, 
-        initial_smoothed=None, alpha=None, 
-        theta=None,
-        nmse=3,
-        decomposition_type='multiplicative'
-    ):
-    # converting params to floats 
+    y,
+    m,
+    model=None,
+    initial_smoothed=None,
+    alpha=None,
+    theta=None,
+    nmse=3,
+    decomposition_type="multiplicative",
+):
+    # converting params to floats
     # to improve numba compilation
     if initial_smoothed is None:
         initial_smoothed = np.nan
@@ -412,66 +494,82 @@ def auto_theta(
     if theta is None:
         theta = np.nan
     if nmse < 1 or nmse > 30:
-        raise ValueError('nmse out of range')
+        raise ValueError("nmse out of range")
     # constan values
     if is_constant(y):
-        thetamodel(y=y, m=m, modeltype='STM', nmse=nmse, 
-                  initial_smoothed=np.mean(y) / 2, alpha=0.5, theta=2.0)
+        thetamodel(
+            y=y,
+            m=m,
+            modeltype="STM",
+            nmse=nmse,
+            initial_smoothed=np.mean(y) / 2,
+            alpha=0.5,
+            theta=2.0,
+        )
     # seasonal decomposition if needed
     decompose = False
     # seasonal test
     if m >= 4:
         r = acf(y, nlags=m, fft=False)[1:]
-        stat = np.sqrt((1 + 2 * np.sum(r[:-1]**2)) / len(y))
+        stat = np.sqrt((1 + 2 * np.sum(r[:-1] ** 2)) / len(y))
         decompose = np.abs(r[-1]) / stat > norm.ppf(0.95)
-    
+
     data_positive = min(y) > 0
     if decompose:
         # change decomposition type if data is not positive
-        if decomposition_type == 'multiplicative' and not data_positive:
-            decomposition_type = 'additive'
+        if decomposition_type == "multiplicative" and not data_positive:
+            decomposition_type = "additive"
         y_decompose = seasonal_decompose(y, model=decomposition_type, period=m).seasonal
-        if decomposition_type == 'multiplicative' and any(y_decompose < 0.01):
-            decomposition_type = 'additive'
-            y_decompose = seasonal_decompose(y, model='additive', period=m).seasonal
-        if decomposition_type == 'additive':
+        if decomposition_type == "multiplicative" and any(y_decompose < 0.01):
+            decomposition_type = "additive"
+            y_decompose = seasonal_decompose(y, model="additive", period=m).seasonal
+        if decomposition_type == "additive":
             y = y - y_decompose
         else:
             y = y / y_decompose
-        seas_forecast = _seasonal_naive(y=y_decompose, h=m, season_length=m, fitted=False)
-    
+        seas_forecast = _seasonal_naive(
+            y=y_decompose, h=m, season_length=m, fitted=False
+        )
+
     # validate model
-    if model not in [None, 'STM', 'OTM', 'DSTM', 'DOTM']:
-        raise ValueError('Invalid model type')
+    if model not in [None, "STM", "OTM", "DSTM", "DOTM"]:
+        raise ValueError("Invalid model type")
 
     n = len(y)
-    npars = 3 
-    #non-optimized tiny datasets
+    npars = 3
+    # non-optimized tiny datasets
     if n <= npars:
-        raise NotImplementedError('tiny datasets')
+        raise NotImplementedError("tiny datasets")
     if model is None:
-        modeltype = ['STM', 'OTM', 'DSTM', 'DOTM']
+        modeltype = ["STM", "OTM", "DSTM", "DOTM"]
     else:
         modeltype = [model]
-        
+
     best_ic = np.inf
     for mtype in modeltype:
-        fit = thetamodel(y=y, m=m, modeltype=mtype, nmse=nmse, 
-                         initial_smoothed=initial_smoothed, alpha=alpha, theta=theta)
-        fit_ic = fit['mse']
+        fit = thetamodel(
+            y=y,
+            m=m,
+            modeltype=mtype,
+            nmse=nmse,
+            initial_smoothed=initial_smoothed,
+            alpha=alpha,
+            theta=theta,
+        )
+        fit_ic = fit["mse"]
         if not np.isnan(fit_ic):
             if fit_ic < best_ic:
                 model = fit
                 best_ic = fit_ic
     if np.isinf(best_ic):
-        raise Exception('no model able to be fitted')
-        
+        raise Exception("no model able to be fitted")
+
     if decompose:
-        if decomposition_type == 'multiplicative':
-            model['residuals'] = model['residuals'] * y_decompose
+        if decomposition_type == "multiplicative":
+            model["residuals"] = model["residuals"] * y_decompose
         else:
-            model['residuals'] = model['residuals'] + y_decompose
-        model['decompose'] = decompose
-        model['decomposition_type'] = decomposition_type
-        model['seas_forecast'] = dict(seas_forecast)
+            model["residuals"] = model["residuals"] + y_decompose
+        model["decompose"] = decompose
+        model["decomposition_type"] = decomposition_type
+        model["seas_forecast"] = dict(seas_forecast)
     return model

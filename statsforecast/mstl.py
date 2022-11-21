@@ -12,12 +12,12 @@ import statsmodels.api as sm
 
 # %% ../nbs/mstl.ipynb 4
 def mstl(
-        x: np.ndarray, # time series
-        period: Union[int, List[int]], # seasom length
-        blambda: Optional[float] = None, # box-cox transform
-        iterate: int = 1, # number of iterations
-        s_window: Optional[np.ndarray] = None, # seasonal window
-    ):
+    x: np.ndarray,  # time series
+    period: Union[int, List[int]],  # seasom length
+    blambda: Optional[float] = None,  # box-cox transform
+    iterate: int = 1,  # number of iterations
+    s_window: Optional[np.ndarray] = None,  # seasonal window
+):
     if s_window is None:
         s_window = 7 + 4 * np.arange(1, 7)
     origx = x
@@ -46,19 +46,19 @@ def mstl(
         try:
             from supersmoother import SuperSmoother
         except ImportError as e:
-            print('supersmoother is required for mstl with period=1')
+            print("supersmoother is required for mstl with period=1")
             raise e
         deseas = x
         t = 1 + np.arange(n)
         trend = SuperSmoother().fit(t, x).predict(t)
     deseas[np.isnan(origx)] = np.nan
     remainder = deseas - trend
-    output = {'data': origx, 'trend': trend}
+    output = {"data": origx, "trend": trend}
     if msts is not None:
         if len(msts) == 1:
-            output['seasonal'] = seas[0]
+            output["seasonal"] = seas[0]
         else:
             for i, seas_ in enumerate(msts, start=0):
-                output[f'seasonal{seas_}'] = seas[i]
-    output['remainder'] = remainder
+                output[f"seasonal{seas_}"] = seas[i]
+    output["remainder"] = remainder
     return pd.DataFrame(output)

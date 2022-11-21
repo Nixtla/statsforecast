@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
+
 try:
     from fugue import transform
     from fugue.collections.yielded import Yielded
@@ -16,8 +17,7 @@ try:
     from fugue.workflow import FugueWorkflow
 except ModuleNotFoundError as e:
     msg = (
-        f'{e}. To use fugue you have to install it.'
-        'Please run `pip install fugue`. '
+        f"{e}. To use fugue you have to install it." "Please run `pip install fugue`. "
     )
     raise ModuleNotFoundError(msg) from e
 from ..core import _StatsForecast
@@ -38,7 +38,7 @@ def _cotransform(
     as_local: bool = False,
 ) -> Any:
     dag = FugueWorkflow(compile_conf={FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT: 0})
-    
+
     src = dag.create_data(df1).zip(dag.create_data(df2), partition=partition)
     tdf = src.transform(
         using=using,
@@ -58,7 +58,7 @@ class FugueBackend(ParallelBackend):
     """FugueBackend for Distributed Computation.
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
 
-    This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing 
+    This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
     computation on Spark and Dask without any rewrites.
 
     **Parameters:**<br>
@@ -67,15 +67,11 @@ class FugueBackend(ParallelBackend):
     `**transform_kwargs`: additional kwargs for Fugue's transform method.<br>
 
     **Notes:**<br>
-    A short introduction to Fugue, with examples on how to scale pandas code to scale pandas 
+    A short introduction to Fugue, with examples on how to scale pandas code to scale pandas
     based code to Spark or Dask is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
     """
-    def __init__(
-            self, 
-            engine: Any = None,
-            conf: Any = None,
-            **transform_kwargs: Any
-        ):        
+
+    def __init__(self, engine: Any = None, conf: Any = None, **transform_kwargs: Any):
         self._engine = engine
         self._conf = conf
         self._transform_kwargs = dict(transform_kwargs)
@@ -84,17 +80,17 @@ class FugueBackend(ParallelBackend):
         return {}
 
     def forecast(
-            self, 
-            df,
-            models,
-            freq,
-            fallback_model = None,
-            X_df = None,
-            **kwargs: Any,
-        ) -> Any:
+        self,
+        df,
+        models,
+        freq,
+        fallback_model=None,
+        X_df=None,
+        **kwargs: Any,
+    ) -> Any:
         """Memory Efficient core.StatsForecast predictions with FugueBackend.
 
-        This method uses Fugue's transform function, in combination with 
+        This method uses Fugue's transform function, in combination with
         `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models.
 
         **Parameters:**<br>
@@ -108,9 +104,9 @@ class FugueBackend(ParallelBackend):
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-        
+
         **References:**<br>
-        For more information check the 
+        For more information check the
         [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/introduction.html#fugue-transform)
         tutorial.<br>
         The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
@@ -122,8 +118,12 @@ class FugueBackend(ParallelBackend):
             return transform(
                 df,
                 self._forecast_series,
-                params=dict(models=models, freq=freq, 
-                            kwargs=kwargs, fallback_model=fallback_model),
+                params=dict(
+                    models=models,
+                    freq=freq,
+                    kwargs=kwargs,
+                    fallback_model=fallback_model,
+                ),
                 schema=schema,
                 partition={"by": "unique_id"},
                 engine=self._engine,
@@ -136,33 +136,36 @@ class FugueBackend(ParallelBackend):
                 df,
                 X_df,
                 self._forecast_series_X,
-                params=dict(models=models, freq=freq, 
-                            kwargs=kwargs, fallback_model=fallback_model),
+                params=dict(
+                    models=models,
+                    freq=freq,
+                    kwargs=kwargs,
+                    fallback_model=fallback_model,
+                ),
                 schema=schema,
                 partition={"by": "unique_id"},
                 engine=self._engine,
                 engine_conf=self._conf,
                 **self._transform_kwargs,
             )
-            
 
     def cross_validation(
-            self, 
-            df,
-            models,
-            freq,
-            fallback_model=None,
-            **kwargs: Any, 
-        ) -> Any:
+        self,
+        df,
+        models,
+        freq,
+        fallback_model=None,
+        **kwargs: Any,
+    ) -> Any:
         """Temporal Cross-Validation with core.StatsForecast and FugueBackend.
 
-        This method uses Fugue's transform function, in combination with 
-        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast 
+        This method uses Fugue's transform function, in combination with
+        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast
         models through multiple training windows, in either chained or rolled manner.
 
-        `StatsForecast.models`' speed along with Fugue's distributed computation allow to 
-        overcome this evaluation technique high computational costs. Temporal cross-validation 
-        provides better model's generalization measurements by increasing the test's length 
+        `StatsForecast.models`' speed along with Fugue's distributed computation allow to
+        overcome this evaluation technique high computational costs. Temporal cross-validation
+        provides better model's generalization measurements by increasing the test's length
         and diversity.
 
         **Parameters:**<br>
@@ -174,7 +177,7 @@ class FugueBackend(ParallelBackend):
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-        
+
         **References:**<br>
         The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
         method documentation.<br>
@@ -184,9 +187,9 @@ class FugueBackend(ParallelBackend):
         return transform(
             df,
             self._cv,
-            params=dict(models=models, freq=freq, 
-                        kwargs=kwargs, 
-                        fallback_model=fallback_model),
+            params=dict(
+                models=models, freq=freq, kwargs=kwargs, fallback_model=fallback_model
+            ),
             schema=schema,
             partition={"by": "unique_id"},
             engine=self._engine,
@@ -194,25 +197,34 @@ class FugueBackend(ParallelBackend):
             **self._transform_kwargs,
         )
 
-    def _forecast_series(self, df: pd.DataFrame, models, freq, fallback_model, kwargs) -> pd.DataFrame:
-        model = _StatsForecast(df=df, models=models, freq=freq, 
-                               fallback_model=fallback_model, n_jobs=1)
+    def _forecast_series(
+        self, df: pd.DataFrame, models, freq, fallback_model, kwargs
+    ) -> pd.DataFrame:
+        model = _StatsForecast(
+            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
+        )
         return model.forecast(**kwargs).reset_index()
-    
+
     # schema: unique_id:str, ds:str, *
-    def _forecast_series_X(self, df: pd.DataFrame, X_df: pd.DataFrame, models, freq, fallback_model, kwargs) -> pd.DataFrame:
-        model = _StatsForecast(df=df, models=models, freq=freq, 
-                               fallback_model=fallback_model, n_jobs=1)
-        if len(X_df) != kwargs['h']:
+    def _forecast_series_X(
+        self, df: pd.DataFrame, X_df: pd.DataFrame, models, freq, fallback_model, kwargs
+    ) -> pd.DataFrame:
+        model = _StatsForecast(
+            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
+        )
+        if len(X_df) != kwargs["h"]:
             raise Exception(
-                'Please be sure that your exogenous variables `X_df` '
-                'have the same length than your forecast horizon `h`'
+                "Please be sure that your exogenous variables `X_df` "
+                "have the same length than your forecast horizon `h`"
             )
         return model.forecast(X_df=X_df, **kwargs).reset_index()
 
-    def _cv(self, df: pd.DataFrame, models, freq, fallback_model, kwargs) -> pd.DataFrame:
-        model = _StatsForecast(df=df, models=models, freq=freq, 
-                               fallback_model=fallback_model, n_jobs=1)
+    def _cv(
+        self, df: pd.DataFrame, models, freq, fallback_model, kwargs
+    ) -> pd.DataFrame:
+        model = _StatsForecast(
+            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
+        )
         return model.cross_validation(**kwargs).reset_index()
 
     def _get_output_schema(self, models, mode="forecast") -> Schema:
