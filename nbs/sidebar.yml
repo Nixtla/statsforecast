@@ -1,31 +1,45 @@
 website:
+  reader-mode: false
   sidebar:
+    style: "floating"
+    collapse-level: 1
+    background: none
     contents:
       - index.ipynb
-      - examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
-      - examples/Installation.ipynb
-      - section: API Reference
+      - text: "--"
+      - section: "Getting Started"
+        contents:
+        - examples/Installation.ipynb
+        - examples/Getting_Started_short.ipynb
+        - examples/Getting_Started_complete.ipynb
+      - section: "Tutorials"
+        contents:
+        - examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
+        - examples/AnomalyDetection.ipynb
+        - section: "Forecast at scale"
+          contents:
+          - examples/scale/dask.qmd
+          - examples/scale/ray.qmd
+          - examples/scale/spark.qmd
+        - examples/CrossValidation.ipynb
+        - examples/MultipleSeasonalities.ipynb
+        - examples/ElectricityLoadForecasting.ipynb
+        - examples/IntermittentData.ipynb
+        - examples/UncertaintyIntervals.ipynb
+        - examples/Exogenous.ipynb
+        - adapters.prophet.ipynb
+        - examples/migrating_R.qmd
+      - examples/models_intro.qmd
+      - section: "API Reference"
         contents:
         - core.ipynb
         - models.ipynb
-        - utils.ipynb
-        - adapters.prophet.ipynb
-        - section: Distributed
-          contents:
-          - distributed.fugue.ipynb
-          - distributed.multiprocess.ipynb
-          - distributed.utils.ipynb
-      - section: Tutorials
+        - distributed.fugue.ipynb
+      - section: examples/experiments.qmd
         contents:
         - examples/AutoArima_vs_Prophet.ipynb
-        - examples/CrossValidation.ipynb
-        - examples/IntermittentData.ipynb
-        - examples/Exogenous.ipynb
-        - examples/UncertaintyIntervals.ipynb
-        - examples/AnomalyDetection.ipynb
-        - examples/ElectricityLoadForecasting.ipynb
-        - examples/MultipleSeasonalities.ipynb
-        - section: Forecasting At Scale
-          contents:
-          - examples/Prophet_spark_m5.ipynb
-          - examples/ETS_ray_m5.ipynb
+        - examples/Prophet_spark_m5.ipynb
+        - examples/ETS_ray_m5.ipynb
+      - section: Community
+        contents:
+          - Contributing

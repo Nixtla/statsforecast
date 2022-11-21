@@ -4,23 +4,33 @@ project:
 format:
   html:
     theme: cosmo
+    fontsize: 1em
+    linestretch: 1.7
     css: styles.css
     toc: true
 
 website:
   twitter-card: true
   open-graph: true
-  repo-actions: [issue] 
-  favicon: favicon.png
+  google-analytics: "G-NXJNCVR18L"
+  repo-actions: [issue]
+  favicon: favicon_png.png
   navbar:
     background: primary
     search: true
     collapse-below: lg
     left:
       - text: "Get Started"
-        href: examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
-      - text: "Blog"
-        href: blog/index.qmd
+        href: examples/Getting_Started_short.ipynb
+      - text: "NixtlaVerse"
+        menu:
+          - text: "MLForecast 🤖"
+            href: https://github.com/nixtla/statsforecast/issues/new/choose
+          - text: "NeuralForecast 🧠"
+            href: https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A
+          - text: "HierarchicalForecast 👑"
+            href: https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A
+          
       - text: "Help"
         menu:
           - text: "Report an Issue"
@@ -38,5 +48,7 @@ website:
 
   sidebar:
     style: floating
+  body-footer: |
+    Give us a ⭐ on [Github](https://github.com/nixtla/stats)
 
 metadata-files: [nbdev.yml, sidebar.yml]
