@@ -11,9 +11,15 @@ from ..core import _StatsForecast
 # %% ../../nbs/distributed.core.ipynb 5
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
-        model = _StatsForecast(df=df, models=models, freq=freq, fallback_model=fallback_model)
+        model = _StatsForecast(
+            df=df, models=models, freq=freq, fallback_model=fallback_model
+        )
         return model.forecast(**kwargs)
 
-    def cross_validation(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
-        model = _StatsForecast(df=df, models=models, freq=freq, fallback_model=fallback_model)
+    def cross_validation(
+        self, df, models, freq, fallback_model=None, **kwargs: Any
+    ) -> Any:
+        model = _StatsForecast(
+            df=df, models=models, freq=freq, fallback_model=fallback_model
+        )
         return model.cross_validation(**kwargs)
