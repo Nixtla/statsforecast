@@ -28,9 +28,19 @@ In this experiment we used the PJM dataset:
 
 > PJM Interconnection LLC (PJM) is a regional transmission organization (RTO) in the United States. It is part of the Eastern Interconnection grid operating an electric transmission system serving all or parts of Delaware, Illinois, Indiana, Kentucky, Maryland, Michigan, New Jersey, North Carolina, Ohio, Pennsylvania, Tennessee, Virginia, West Virginia, and the District of Columbia. The hourly power consumption data comes from PJM’s website and are in megawatts (MW).
 
+#### Accuracy
+
 The performance of the models was evaluated retraining the models each 24 hours and forecasting the next 24 hours for 7 days.
 
 <img width="528" alt="image" src="https://user-images.githubusercontent.com/10517170/203425099-c096d129-d26e-4af9-a048-2b31549e9bfc.png">
+
+#### Time
+
+| Model | Time (mins) |
+| -------| -----------|                                  
+| MSTL   |  1.066439|                                    
+|Prophet  |2.343852|                            
+|  NeuralProphet  |9.643826 |
 
 
 ### Reproducibility
