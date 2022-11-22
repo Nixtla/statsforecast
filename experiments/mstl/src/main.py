@@ -53,7 +53,7 @@ def experiment():
     )
     sf = StatsForecast(
         df=df,
-	models=[mstl, SeasonalNaive(season_length=24)], # add SeasonalNaive model to the list
+	models=[mstl], 
 	freq='H'
     )
     init = time()
@@ -62,9 +62,22 @@ def experiment():
     time_mstl = (end - init) / 60
     print(f'MSTL Time: {time_mstl:.2f} minutes')
 
+    # SeasonalNaive model
+    sf = StatsForecast(
+        df=df,
+	models=[SeasonalNaive(season_length=24)], 
+	freq='H'
+    )
+    init = time()
+    forecasts_cv_seas = sf.cross_validation(h=24, n_windows=7, step_size=24)
+    end = time()
+    time_seas = (end - init) / 60
+    print(f'SeasonalNaive Time: {time_seas:.2f} minutes')
+    forecasts_cv = forecasts_cv.merge(forecasts_cv_seas.drop(columns='y'), how='left', on=['unique_id', 'ds', 'cutoff'])
+
     cutoffs = forecasts_cv['cutoff'].unique()
-    forecasts_cv['Prophet'] = None
     # Prophet model
+    forecasts_cv['Prophet'] = None
     time_prophet = 0
     for cutoff in cutoffs:
         df_train = df.query('ds <= @cutoff')
@@ -81,7 +94,10 @@ def experiment():
         # data wrangling
         time_prophet += (end - init) / 60
     print(f'Prophet Time: {time_prophet:.2f} minutes')
-    times = pd.DataFrame({'model': ['MSTL', 'Prophet'], 'time (mins)': [time_mstl, time_prophet]})
+    times = pd.DataFrame({
+        'model': ['MSTL', 'SeasonalNaive', 'Prophet'], 
+        'time (mins)': [time_mstl, time_seas, time_prophet]
+    })
 
     # NeuralProphet
     forecasts_cv['NeuralProphet'] = None
