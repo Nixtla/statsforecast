@@ -14,7 +14,7 @@ import numpy as np
 from numba import njit
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-# %% ../nbs/ets.ipynb 4
+# %% ../nbs/ets.ipynb 5
 # Global variables
 NONE = 0
 ADD = 1
@@ -27,7 +27,7 @@ smalno = np.finfo(float).eps
 NOGIL = os.environ.get("NUMBA_RELEASE_GIL", "False").lower() in ["true"]
 CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
 
-# %% ../nbs/ets.ipynb 5
+# %% ../nbs/ets.ipynb 6
 @njit(nogil=NOGIL, cache=CACHE)
 def etscalc(y, n, x, m, error, trend, season, alpha, beta, gamma, phi, e, amse, nmse):
     oldb = 0.0
@@ -96,7 +96,7 @@ def etscalc(y, n, x, m, error, trend, season, alpha, beta, gamma, phi, e, amse, 
         lik += 2 * lik2
     return lik
 
-# %% ../nbs/ets.ipynb 6
+# %% ../nbs/ets.ipynb 7
 @njit(nogil=NOGIL, cache=CACHE)
 def forecast(l, b, s, m, trend, season, phi, f, h):
     # f is modified and it is mutable
@@ -125,7 +125,7 @@ def forecast(l, b, s, m, trend, season, phi, f, h):
             else:
                 phistar = phistar + math.pow(phi, i + 1)
 
-# %% ../nbs/ets.ipynb 7
+# %% ../nbs/ets.ipynb 8
 @njit(nogil=NOGIL, cache=CACHE)
 def update(oldl, l, oldb, b, olds, s, m, trend, season, alpha, beta, gamma, phi, y):
     # New Level
@@ -180,7 +180,7 @@ def update(oldl, l, oldb, b, olds, s, m, trend, season, alpha, beta, gamma, phi,
             s[j] = olds[j - 1]  # s[t] = s[t]
     return l, b, s
 
-# %% ../nbs/ets.ipynb 8
+# %% ../nbs/ets.ipynb 9
 @njit(nogil=NOGIL, cache=CACHE)
 def etssimulate(x, m, error, trend, season, alpha, beta, gamma, phi, h, y, e):
     oldb = 0.0
@@ -217,11 +217,11 @@ def etssimulate(x, m, error, trend, season, alpha, beta, gamma, phi, h, y, e):
         else:
             y[i] = f[0] * (1.0 + e[i])
         # Update state
-        update(
+        l, b, s = update(
             oldl, l, oldb, b, olds, s, m, trend, season, alpha, beta, gamma, phi, y[i]
         )
 
-# %% ../nbs/ets.ipynb 9
+# %% ../nbs/ets.ipynb 10
 @njit(nogil=NOGIL, cache=CACHE)
 def etsforecast(x, m, trend, season, phi, h, f):
     s = np.zeros(24)
@@ -241,7 +241,7 @@ def etsforecast(x, m, trend, season, phi, h, f):
     # compute forecasts
     forecast(l, b, s, m, trend, season, phi, f, h)
 
-# %% ../nbs/ets.ipynb 13
+# %% ../nbs/ets.ipynb 14
 @njit(nogil=NOGIL, cache=CACHE)
 def initparam(
     alpha: float,
@@ -286,7 +286,7 @@ def initparam(
             phi = upper[3] - 1e-3
     return {"alpha": alpha, "beta": beta, "gamma": gamma, "phi": phi}
 
-# %% ../nbs/ets.ipynb 15
+# %% ../nbs/ets.ipynb 16
 def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     if np.isnan(phi):
         phi = 1
@@ -323,7 +323,7 @@ def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     # passed all tests
     return True
 
-# %% ../nbs/ets.ipynb 16
+# %% ../nbs/ets.ipynb 17
 def check_param(
     alpha: float,
     beta: float,
@@ -352,7 +352,7 @@ def check_param(
             return False
     return True
 
-# %% ../nbs/ets.ipynb 17
+# %% ../nbs/ets.ipynb 18
 @njit(nogil=NOGIL, cache=CACHE)
 def sinpi(x):
     return np.sin(np.pi * x)
@@ -362,7 +362,7 @@ def sinpi(x):
 def cospi(x):
     return np.cos(np.pi * x)
 
-# %% ../nbs/ets.ipynb 18
+# %% ../nbs/ets.ipynb 19
 @njit(nogil=NOGIL, cache=CACHE)
 def fourier(x, period, K, h=None):
     if h is None:
@@ -393,7 +393,7 @@ def fourier(x, period, K, h=None):
     X = X[:, ~np.isnan(X.sum(axis=0))]
     return X
 
-# %% ../nbs/ets.ipynb 20
+# %% ../nbs/ets.ipynb 21
 def initstate(y, m, trendtype, seasontype):
     n = len(y)
     if seasontype != "N":
@@ -459,12 +459,12 @@ def initstate(y, m, trendtype, seasontype):
                 b0 = max(y_sa[1] / y_sa[0], 1e-3)
     return np.concatenate([[l0, b0], init_seas])
 
-# %% ../nbs/ets.ipynb 22
+# %% ../nbs/ets.ipynb 23
 @njit(nogil=NOGIL, cache=CACHE)
 def switch(x: str):
     return {"N": 0, "A": 1, "M": 2}[x]
 
-# %% ../nbs/ets.ipynb 24
+# %% ../nbs/ets.ipynb 25
 @njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_C(
     y: np.ndarray,
@@ -514,7 +514,7 @@ def pegelsresid_C(
             lik = np.nan
     return amse, e, x, lik
 
-# %% ../nbs/ets.ipynb 25
+# %% ../nbs/ets.ipynb 26
 results = namedtuple("results", "x fn nit simplex")
 
 
@@ -649,7 +649,7 @@ def nelder_mead(
             f_simplex[i] = fn(simplex[i], *args)
     return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
 
-# %% ../nbs/ets.ipynb 26
+# %% ../nbs/ets.ipynb 27
 @njit(nogil=NOGIL, cache=CACHE)
 def ets_target_fn(
     par,
@@ -756,7 +756,7 @@ def ets_target_fn(
         objval = mean
     return objval
 
-# %% ../nbs/ets.ipynb 27
+# %% ../nbs/ets.ipynb 28
 def optimize_ets_target_fn(
     x0,
     par,
@@ -865,7 +865,7 @@ def optimize_ets_target_fn(
     )
     return res
 
-# %% ../nbs/ets.ipynb 28
+# %% ../nbs/ets.ipynb 29
 def etsmodel(
     y: np.ndarray,
     m: int,
@@ -1034,7 +1034,7 @@ def etsmodel(
         par=fit_par,
     )
 
-# %% ../nbs/ets.ipynb 30
+# %% ../nbs/ets.ipynb 31
 def ets_f(
     y,
     m,
@@ -1193,7 +1193,7 @@ def ets_f(
     model["method"] = f"ETS({best_e},{best_t}{'d' if best_d else ''},{best_s})"
     return model
 
-# %% ../nbs/ets.ipynb 31
+# %% ../nbs/ets.ipynb 32
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     states = obj["states"][-1, :]
@@ -1203,7 +1203,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     etsforecast(x=states, m=m, trend=ttype, season=stype, phi=phi, h=h, f=forecast)
     return forecast
 
-# %% ../nbs/ets.ipynb 32
+# %% ../nbs/ets.ipynb 33
 def forecast_ets(obj, h):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
@@ -1211,8 +1211,8 @@ def forecast_ets(obj, h):
     out["fitted"] = obj["fitted"]
     return out
 
-# %% ../nbs/ets.ipynb 33
-def _compute_fcst_var(model, season_length, pf, h, sigma):
+# %% ../nbs/ets.ipynb 34
+def _compute_fcst_var(model, season_length, pf, h, sigma, level):
 
     model_type = model["components"]
     steps = steps = np.arange(1, h + 1)
@@ -1240,6 +1240,8 @@ def _compute_fcst_var(model, season_length, pf, h, sigma):
     exp3 = 2 * alpha * (1 - phi) + beta * phi
     exp4 = (beta * phi * (1 - phi**steps)) / ((1 - phi) ** 2 * (1 - phi**2))
     exp5 = 2 * alpha * (1 - phi**2) + beta * phi * (1 + 2 * phi - phi**steps)
+
+    vals = {}
 
     # Class 1 models
     if error == "A" and trend == "N" and seasonality == "N" and damped == "N":
@@ -1341,6 +1343,7 @@ def _compute_fcst_var(model, season_length, pf, h, sigma):
         sigmah = _compute_sigmah(pf, h, sigma, cvals)
 
     elif error == "M" and seasonality == "M":
+        # Class 3 models
         sigmah = _class3models(
             h,
             sigma,
@@ -1357,9 +1360,51 @@ def _compute_fcst_var(model, season_length, pf, h, sigma):
         )
 
     else:
-        raise NotImplementedError
+        # Classes 4 and 5 models
+        sigmah = np.nan
+        nsim = 5000
+        y_path = np.zeros([nsim, h])
 
-    return sigmah
+        if math.isnan(beta):
+            beta = 0
+        if math.isnan(gamma):
+            gamma = 0
+        if math.isnan(phi):
+            phi = 0
+
+        for k in range(nsim):
+            e = np.random.normal(0, np.sqrt(sigma), h)
+            yhat = np.zeros(h)
+            etssimulate(
+                last_state,
+                season_length,
+                switch(error),
+                switch(trend),
+                switch(seasonality),
+                alpha,
+                beta,
+                gamma,
+                phi,
+                h,
+                yhat,
+                e,
+            )
+            y_path[
+                k,
+            ] = yhat
+
+        lower = np.quantile(y_path, 0.5 - np.array(level) / 200, axis=0)
+        upper = np.quantile(y_path, 0.5 + np.array(level) / 200, axis=0)
+        pi = {
+            **{f"lo-{lv}": lower[i] for i, lv in enumerate(level)},
+            **{f"hi-{lv}": upper[i] for i, lv in enumerate(level)},
+        }
+
+        vals["pi"] = pi
+
+    vals["sigmah"] = sigmah
+
+    return vals
 
 
 def _compute_sigmah(pf, h, sigma, cvals):

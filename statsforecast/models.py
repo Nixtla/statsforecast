@@ -10,6 +10,7 @@ __all__ = ['AutoARIMA', 'ETS', 'SimpleExponentialSmoothing', 'SimpleExponentialS
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
+import math
 from numba import njit
 from scipy.optimize import minimize
 from scipy.stats import norm
@@ -23,9 +24,13 @@ from statsforecast.arima import (
 from statsforecast.ets import (
     ets_f,
     forecast_ets,
-    _compute_fcst_var,
     _compute_sigmah,
     _class3models,
+    switch,
+    etssimulate,
+    forecast,
+    update,
+    _compute_fcst_var,
 )
 
 # %% ../nbs/models.ipynb 6
@@ -429,7 +434,7 @@ class ETS(_TS):
         """
         mod = ets_f(y, m=self.season_length, model=self.model, damped=self.damped)
         mod = dict(mod)
-        mod["residuals"] = y - mod["fitted"]
+        mod["res"] = y - mod["fitted"]
         self.model_ = mod
         return self
 
@@ -452,9 +457,14 @@ class ETS(_TS):
             residuals = fcst["residuals"]
             sigma = _calculate_sigma(residuals, len(residuals))
             sigmah = _compute_fcst_var(
-                self.model_, self.season_length, fcst["mean"], h, sigma**2
+                self.model_, self.season_length, fcst["mean"], h, sigma**2, level
             )
-            pred_int = _calculate_intervals(fcst, level, h, np.sqrt(sigmah))
+            if "pi" in sigmah:
+                pred_int = sigmah["pi"]
+            else:
+                pred_int = _calculate_intervals(
+                    fcst, level, h, np.sqrt(sigmah["sigmah"])
+                )
             res = {**res, **pred_int}
 
         return res
@@ -471,7 +481,7 @@ class ETS(_TS):
             'level_*' for probabilistic predictions.<br>
         """
         res = {"mean": self.model_["fitted"]}
-        residuals = self.model_["residuals"]
+        residuals = self.model_["res"]
 
         if level is not None:
             sigma = _calculate_sigma(residuals, len(residuals))
@@ -520,18 +530,26 @@ class ETS(_TS):
         res = {key: fcst[key] for key in keys}
 
         if level is not None:
-            residuals = y - fcst["fitted"]
+            residuals = mod["residuals"]
             sigma = _calculate_sigma(residuals, len(residuals))
             sigmah = _compute_fcst_var(
-                mod, self.season_length, fcst["mean"], h, sigma**2
+                mod, self.season_length, fcst["mean"], h, sigma**2, level
             )
-            pred_int = _calculate_intervals(fcst, level, h, np.sqrt(sigmah))
+
+            if "pi" in sigmah:
+                pred_int = sigmah["pi"]
+            else:
+                pred_int = _calculate_intervals(
+                    fcst, level, h, np.sqrt(sigmah["sigmah"])
+                )
+
             res = {**res, **pred_int}
 
             if fitted:
                 mod["mean"] = mod[
                     "fitted"
                 ]  # here the fitted values will work as point forecasts
+                sigma = _calculate_sigma(y - mod["fitted"], len(residuals))
                 intervals_fit = _calculate_intervals(mod, level, len(residuals), sigma)
                 pi_fit = {
                     f"fitted-{key}": value for key, value in intervals_fit.items()
