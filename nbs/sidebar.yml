@@ -1,9 +1,7 @@
 website:
   reader-mode: false
   sidebar:
-    style: "floating"
     collapse-level: 1
-    background: none
     contents:
       - index.ipynb
       - text: "--"
