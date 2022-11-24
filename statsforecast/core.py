@@ -1059,8 +1059,8 @@ class _StatsForecast:
                 ds = train_uid["ds"]
                 y = train_uid["y"]
                 if max_insample_length is not None:
-                    ds = ds[-max_insample_length:]
-                    y = y[-max_insample_length:]
+                    ds = ds.iloc[-max_insample_length:]
+                    y = y.iloc[-max_insample_length:]
                 fig.add_trace(
                     go.Scatter(
                         x=ds,
@@ -1169,8 +1169,8 @@ class _StatsForecast:
                 ds = train_uid["ds"]
                 y = train_uid["y"]
                 if max_insample_length is not None:
-                    ds = ds[-max_insample_length:]
-                    y = y[-max_insample_length:]
+                    ds = ds.iloc[-max_insample_length:]
+                    y = y.iloc[-max_insample_length:]
                 axes[idx, idy].plot(ds, y, label="y")
                 if forecasts_df is not None:
                     if models is None:
