@@ -47,7 +47,7 @@
 ![image](https://user-images.githubusercontent.com/10517170/203870246-d383f1be-fa65-468b-be4d-9339e2180d91.png)
 
 
-## Training Time
+### Training Time
 
 ![image](https://user-images.githubusercontent.com/10517170/203870312-1b64df8d-5551-4f27-85b6-a2725d5ceb30.png)
 
