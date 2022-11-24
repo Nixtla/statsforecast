@@ -8,8 +8,44 @@ listing:
   filter-ui: false
 ---
 
+In this experiment, we compare in time and accuracy `AmazonForecast` with a fully open-source solution provided by `StatsForecast`. For the comparison, we use two datasets: M5 and M4 Daily.
+
+The results show that the open-source solution from `StatsForecast` is:
+
+- 60% more accurate than `AmazonForecast` and 16 times faster on M5.
+- As accurate as `AmazonForecast` and 11 times faster in M4.
+
+Detailed results per dataset are shown below.
+
+## M5
+
+### Time
+
+| Model | Time (hours) | Cost (USD) |
+|:-------|-------------:|-----:|
+| StatsForecast | 0.26 |  1.2    |
+| AmazonForecast | 4.1 | 795.54 |
+
+
+### Performance
+
+The table shows the performance of `StatsForecast` and `AmazonForecast` on the M5 dataset using the official evaluation metric.
 
 ![M5 comparison](https://user-images.githubusercontent.com/10517170/203872568-71b27a9b-6b45-4b89-99bf-01a1a5b574d9.png)
 
+## M4
+
+| Model | Time (hours) | Cost (USD) |
+|:-------|-------------:|-----:|
+| StatsForecast | 0.21      |   0.96 |
+| AmazonForecast | 2.26 | 120.52|
+
+### Performance
+
+The table shows the performance of `StatsForecast` and `AmazonForecast` on the M4 dataset using the official evaluation metric.
+
 ![M4 comparison](https://user-images.githubusercontent.com/10517170/203872622-9cec0afc-e78f-4756-8ed5-1053412f3506.png)
 
+## Reproduce the results
+
+To reproduce the results, just follow the following guides.
