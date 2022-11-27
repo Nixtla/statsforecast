@@ -12,5 +12,7 @@ dependencies:
   - scipy>=1.7.3
   - statsmodels>=0.13.2
   - tabulate
+  - plotly
   - pip:
-    - nbdev<2.2.7
+    - nbdev
+    - tqdm

@@ -3,23 +3,32 @@
 # %% auto 0
 __all__ = ['StatsForecast']
 
-# %% ../nbs/core.ipynb 4
+# %% ../nbs/core.ipynb 5
 import inspect
 import logging
+import random
+import re
+from itertools import product
 from os import cpu_count
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
+import matplotlib.pyplot as plt
+import matplotlib.colors as cm
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from tqdm.autonotebook import tqdm
 
-# %% ../nbs/core.ipynb 5
-logging.basicConfig(
-    format="%(asctime)s %(name)s %(levelname)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+# %% ../nbs/core.ipynb 6
+if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(asctime)s %(name)s %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
 logger = logging.getLogger(__name__)
 
-# %% ../nbs/core.ipynb 8
+# %% ../nbs/core.ipynb 9
 class GroupedArray:
     def __init__(self, data, indptr):
         self.data = data
@@ -130,7 +139,16 @@ class GroupedArray:
         fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
         return fm, fcsts, cols
 
-    def forecast(self, models, h, fitted=False, X=None, level=tuple()):
+    def forecast(
+        self,
+        models,
+        h,
+        fallback_model=None,
+        fitted=False,
+        X=None,
+        level=tuple(),
+        verbose=False,
+    ):
         fcsts, cuts, has_level_models = self._output_fcst(
             models=models, attr="forecast", h=h, X=X, level=level
         )
@@ -146,7 +164,10 @@ class GroupedArray:
                 fitted_vals[:, 0] = self.data
             else:
                 fitted_vals[:, 0] = self.data[:, 0]
-        for i, grp in enumerate(self):
+        iterable = tqdm(
+            enumerate(self), disable=(not verbose), total=len(self), desc="Forecast"
+        )
+        for i, grp in iterable:
             y_train = grp[:, 0] if grp.ndim == 2 else grp
             X_train = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
             if X is not None:
@@ -160,9 +181,22 @@ class GroupedArray:
                 kwargs = {}
                 if has_level:
                     kwargs["level"] = level
-                res_i = model.forecast(
-                    h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs
-                )
+                try:
+                    res_i = model.forecast(
+                        h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs
+                    )
+                except Exception as error:
+                    if fallback_model is not None:
+                        res_i = fallback_model.forecast(
+                            h=h,
+                            y=y_train,
+                            X=X_train,
+                            X_future=X_f,
+                            fitted=fitted,
+                            **kwargs,
+                        )
+                    else:
+                        raise error
                 cols_m = [
                     key
                     for key in res_i.keys()
@@ -206,10 +240,12 @@ class GroupedArray:
         models,
         h,
         test_size,
+        fallback_model=None,
         step_size=1,
         input_size=None,
         fitted=False,
         level=tuple(),
+        verbose=False,
     ):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
@@ -230,10 +266,15 @@ class GroupedArray:
             fitted_idxs = np.full((self.data.shape[0], n_windows), False, dtype=bool)
             last_fitted_idxs = np.full_like(fitted_idxs, False, dtype=bool)
         matches = ["mean", "lo", "hi"]
+        steps = list(range(-test_size, -h + 1, step_size))
         for i_ts, grp in enumerate(self):
-            for i_window, cutoff in enumerate(
-                range(-test_size, -h + 1, step_size), start=0
-            ):
+            iterable = tqdm(
+                enumerate(steps, start=0),
+                desc=f"Cross Validation Time Series {i_ts + 1}",
+                disable=(not verbose),
+                total=len(steps),
+            )
+            for i_window, cutoff in iterable:
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size
                 y = grp[(cutoff - in_size_disp) : cutoff]
@@ -262,14 +303,27 @@ class GroupedArray:
                     kwargs = {}
                     if has_level:
                         kwargs["level"] = level
-                    res_i = model.forecast(
-                        h=h,
-                        y=y_train,
-                        X=X_train,
-                        X_future=X_future,
-                        fitted=fitted,
-                        **kwargs,
-                    )
+                    try:
+                        res_i = model.forecast(
+                            h=h,
+                            y=y_train,
+                            X=X_train,
+                            X_future=X_future,
+                            fitted=fitted,
+                            **kwargs,
+                        )
+                    except Exception as error:
+                        if fallback_model is not None:
+                            res_i = fallback_model.forecast(
+                                h=h,
+                                y=y_train,
+                                X=X_train,
+                                X_future=X_future,
+                                fitted=fitted,
+                                **kwargs,
+                            )
+                        else:
+                            raise error
                     cols_m = [
                         key
                         for key in res_i.keys()
@@ -314,7 +368,7 @@ class GroupedArray:
             if x.size
         ]
 
-# %% ../nbs/core.ipynb 16
+# %% ../nbs/core.ipynb 19
 def _grouped_array_from_df(df, sort_df):
     df = df.set_index("ds", append=True)
     if not df.index.is_monotonic_increasing and sort_df:
@@ -328,7 +382,7 @@ def _grouped_array_from_df(df, sort_df):
     indptr = np.append(0, cum_sizes).astype(np.int32)
     return GroupedArray(data, indptr), indices, dates, df.index
 
-# %% ../nbs/core.ipynb 18
+# %% ../nbs/core.ipynb 21
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -367,7 +421,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/core.ipynb 22
+# %% ../nbs/core.ipynb 25
 def _get_n_jobs(n_groups, n_jobs, ray_address):
     if ray_address is not None:
         logger.info("Using ray address," "using available resources insted of `n_jobs`")
@@ -389,8 +443,25 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 26
-class StatsForecast:
+# %% ../nbs/core.ipynb 28
+def _parse_ds_type(df):
+    if not pd.api.types.is_datetime64_any_dtype(df["ds"]) and not issubclass(
+        df["ds"].dtype.type, np.integer
+    ):
+        df = df.copy()
+        try:
+            df["ds"] = pd.to_datetime(df["ds"])
+        except Exception as e:
+            msg = (
+                "Failed to parse `ds` column as datetime. "
+                "Please use `pd.to_datetime` outside to fix the error. "
+                f"{e}"
+            )
+            raise Exception(msg) from e
+    return df
+
+# %% ../nbs/core.ipynb 29
+class _StatsForecast:
     def __init__(
         self,
         models: List[Any],
@@ -399,9 +470,10 @@ class StatsForecast:
         ray_address: Optional[str] = None,
         df: Optional[pd.DataFrame] = None,
         sort_df: bool = True,
+        fallback_model: Any = None,
+        verbose: bool = False,
     ):
         """core.StatsForecast.
-        [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py).
 
         The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
         for large sets of time series. It operates with pandas DataFrame `df` that identifies series
@@ -418,6 +490,8 @@ class StatsForecast:
         `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
         `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
         `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+        `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
+        `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
 
         **Notes:**<br>
         The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
@@ -428,12 +502,15 @@ class StatsForecast:
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.ray_address = ray_address
+        self.fallback_model = fallback_model
+        self.verbose = verbose and self.n_jobs == 1
         self._prepare_fit(df=df, sort_df=sort_df)
 
     def _prepare_fit(self, df, sort_df):
         if df is not None:
             if df.index.name != "unique_id":
                 df = df.set_index("unique_id")
+            df = _parse_ds_type(df)
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(
                 df, sort_df
             )
@@ -591,7 +668,13 @@ class StatsForecast:
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             res_fcsts = self.ga.forecast(
-                models=self.models, h=h, fitted=fitted, X=X, level=level
+                models=self.models,
+                h=h,
+                fallback_model=self.fallback_model,
+                fitted=fitted,
+                X=X,
+                level=level,
+                verbose=self.verbose,
             )
         else:
             res_fcsts = self._forecast_parallel(h=h, fitted=fitted, X=X, level=level)
@@ -661,8 +744,6 @@ class StatsForecast:
         **Returns:**<br>
         `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
         predictions for all fitted `models`.<br>
-
-
         """
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
@@ -681,10 +762,12 @@ class StatsForecast:
                 models=self.models,
                 h=h,
                 test_size=test_size,
+                fallback_model=self.fallback_model,
                 step_size=step_size,
                 input_size=input_size,
                 fitted=fitted,
                 level=level,
+                verbose=self.verbose,
             )
         else:
             res_fcsts = self._cross_validation_parallel(
@@ -846,6 +929,7 @@ class StatsForecast:
                     (
                         self.models,
                         h,
+                        self.fallback_model,
                         fitted,
                         X_,
                         level,
@@ -882,6 +966,7 @@ class StatsForecast:
                         self.models,
                         h,
                         test_size,
+                        self.fallback_model,
                         step_size,
                         input_size,
                         fitted,
@@ -907,5 +992,413 @@ class StatsForecast:
                 result["fitted"]["cols"] = out[0]["fitted"]["cols"]
         return result
 
+    @staticmethod
+    def plot(
+        df: pd.DataFrame,
+        forecasts_df: Optional[pd.DataFrame] = None,
+        unique_ids: Union[Optional[List[str]], np.ndarray] = None,
+        plot_random: bool = True,
+        models: Optional[List[str]] = None,
+        level: Optional[List[float]] = None,
+        max_insample_length: Optional[int] = None,
+        engine: str = "plotly",
+    ):
+        """Plot forecasts and insample values.
+
+        **Parameters:**<br>
+        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`].<br>
+        `forecasts_df`: pandas.DataFrame, with columns [`unique_id`, `ds`] and models.<br>
+        `unique_ids`: List[str], Time Series to plot.<br>
+        `plot_random`: bool, Select time series to plot randomly.<br>
+        `models`: List[str], List of models to plot.<br>
+        `level`: List[float], List of prediction intervals to plot if paseed.<br>
+        `max_insample_length`: int, max number of train/insample observations to be plotted.<br>
+        `engine`: str, library used to plot. 'plotly' or 'matplotlib'.<br>
+        """
+        if level is not None and not isinstance(level, list):
+            raise Exception(
+                "Please use a list for the `level` argument "
+                "If you only have one level, use `level=[your_level]`"
+            )
+
+        if unique_ids is None:
+            if df.index.name == "unique_id":
+                unique_ids = df.index.unique()
+            else:
+                unique_ids = df["unique_id"].unique()
+            if forecasts_df is not None:
+                if forecasts_df.index.name == "unique_id":
+                    unique_ids = np.intersect1d(unique_ids, forecasts_df.index.unique())
+                else:
+                    unique_ids = np.intersect1d(
+                        unique_ids, forecasts_df["unique_id"].unique()
+                    )
+        if plot_random:
+            unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
+        else:
+            unique_ids = unique_ids[:8]
+
+        if engine == "plotly":
+
+            n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
+            fig = make_subplots(
+                rows=n_rows,
+                cols=2 if len(unique_ids) >= 2 else 1,
+                vertical_spacing=0.1,
+                horizontal_spacing=0.07,
+                x_title="Datestamp [ds]",
+                y_title="Target [y]",
+                subplot_titles=[str(uid) for uid in unique_ids],
+            )
+
+            for uid, (idx, idy) in zip(
+                unique_ids, product(range(1, n_rows + 1), range(1, 2 + 1))
+            ):
+                train_uid = df.query("unique_id == @uid")
+                train_uid = _parse_ds_type(train_uid)
+                ds = train_uid["ds"]
+                y = train_uid["y"]
+                if max_insample_length is not None:
+                    ds = ds.iloc[-max_insample_length:]
+                    y = y.iloc[-max_insample_length:]
+                fig.add_trace(
+                    go.Scatter(
+                        x=ds,
+                        y=y,
+                        mode="lines",
+                        name="y",
+                        legendgroup="y",
+                        line=dict(color="#1f77b4", width=1),
+                        showlegend=(idx == 1 and idy == 1),
+                    ),
+                    row=idx,
+                    col=idy,
+                )
+                if forecasts_df is not None:
+                    if models is None:
+                        exclude_str = ["lo", "hi", "unique_id", "ds"]
+                        models = [
+                            c
+                            for c in forecasts_df.columns
+                            if all(item not in c for item in exclude_str)
+                        ]
+                    if "y" not in models:
+                        models = ["y"] + models
+                    test_uid = forecasts_df.query("unique_id == @uid")
+                    test_uid = _parse_ds_type(test_uid)
+                    first_ds_fcst = test_uid["ds"].min()
+                    colors = plt.cm.get_cmap("tab20b", len(models))
+                    colors = ["#1f77b4"] + [
+                        cm.to_hex(colors(i)) for i in range(len(models))
+                    ]
+                    for col, color in zip(models, colors):
+                        if col in test_uid:
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=test_uid["ds"],
+                                    y=test_uid[col],
+                                    mode="lines",
+                                    name=col,
+                                    legendgroup=col,
+                                    line=dict(color=color, width=1),
+                                    showlegend=(idx == 1 and idy == 1),
+                                ),
+                                row=idx,
+                                col=idy,
+                            )
+                        model_has_level = any(f"{col}-lo" in c for c in test_uid)
+                        if level is not None and model_has_level:
+                            level_ = level
+                        elif model_has_level:
+                            level_col = test_uid.filter(like=f"{col}-lo").columns[0]
+                            level_col = re.findall(
+                                "[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+", level_col
+                            )[0]
+                            level_ = [level_col]
+                        else:
+                            level_ = []
+                        ds_test = test_uid["ds"].to_list()
+                        for lv in level_:
+                            lo = test_uid[f"{col}-lo-{lv}"].to_list()
+                            hi = test_uid[f"{col}-hi-{lv}"].to_list()
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=ds_test + ds_test[::-1],
+                                    y=hi + lo[::-1],
+                                    fill="toself",
+                                    mode="lines",
+                                    fillcolor=color,
+                                    opacity=-float(lv) / 50 + 2,
+                                    name=f"{col}_level_{lv}",
+                                    legendgroup=f"{col}_level_{lv}",
+                                    line=dict(color=color, width=1),
+                                    showlegend=(idx == 1 and idy == 1),
+                                ),
+                                row=idx,
+                                col=idy,
+                            )
+            # fig.update_layout(
+            #    legend=dict(
+            #        x=0,
+            #
+            # y=1,
+            #        font=dict(size=8)
+            #    )
+            # )
+            fig.update_xaxes(matches=None, showticklabels=True, visible=True)
+            fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
+            fig.update_layout(template="plotly_white", font=dict(size=10))
+            fig.update_annotations(font_size=10)
+            fig.update_layout(autosize=True, height=150 * n_rows)
+            fig.show()
+            return
+        elif engine == "matplotlib":
+            if len(unique_ids) == 1:
+                fig, axes = plt.subplots(figsize=(24, 3.5))
+                axes = np.array([[axes]])
+                n_cols = 1
+            else:
+                n_cols = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
+                fig, axes = plt.subplots(n_cols, 2, figsize=(24, 3.5 * n_cols))
+                if n_cols == 1:
+                    axes = np.array([axes])
+
+            for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
+                train_uid = df.query("unique_id == @uid")
+                train_uid = _parse_ds_type(train_uid)
+                ds = train_uid["ds"]
+                y = train_uid["y"]
+                if max_insample_length is not None:
+                    ds = ds.iloc[-max_insample_length:]
+                    y = y.iloc[-max_insample_length:]
+                axes[idx, idy].plot(ds, y, label="y")
+                if forecasts_df is not None:
+                    if models is None:
+                        exclude_str = ["lo", "hi", "unique_id", "ds"]
+                        models = [
+                            c
+                            for c in forecasts_df.columns
+                            if all(item not in c for item in exclude_str)
+                        ]
+                    if "y" not in models:
+                        models = ["y"] + models
+                    test_uid = forecasts_df.query("unique_id == @uid")
+                    test_uid = _parse_ds_type(test_uid)
+                    first_ds_fcst = test_uid["ds"].min()
+                    axes[idx, idy].axvline(
+                        x=first_ds_fcst,
+                        color="black",
+                        label="First ds Forecast",
+                        linestyle="--",
+                    )
+                    colors = plt.cm.get_cmap("tab20b", len(models))
+                    colors = ["blue"] + [colors(i) for i in range(len(models))]
+                    for col, color in zip(models, colors):
+                        if col in test_uid:
+                            axes[idx, idy].plot(
+                                test_uid["ds"], test_uid[col], label=col, color=color
+                            )
+                        model_has_level = any(f"{col}-lo" in c for c in test_uid)
+                        if level is not None and model_has_level:
+                            level_ = level
+                        elif model_has_level:
+                            level_col = test_uid.filter(like=f"{col}-lo").columns[0]
+                            level_col = re.findall(
+                                "[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+", level_col
+                            )[0]
+                            level_ = [level_col]
+                        else:
+                            level_ = []
+                        for lv in level_:
+                            axes[idx, idy].fill_between(
+                                test_uid["ds"],
+                                test_uid[f"{col}-lo-{lv}"],
+                                test_uid[f"{col}-hi-{lv}"],
+                                alpha=-float(lv) / 50 + 2,
+                                color=color,
+                                label=f"{col}_level_{lv}",
+                            )
+
+                axes[idx, idy].set_title(f"{uid}")
+                axes[idx, idy].set_xlabel("Datestamp [ds]")
+                axes[idx, idy].set_ylabel("Target [y]")
+                axes[idx, idy].legend(loc="upper left")
+                axes[idx, idy].xaxis.set_major_locator(
+                    plt.MaxNLocator(min(len(df) // 30, 10))
+                )
+                axes[idx, idy].grid()
+            fig.subplots_adjust(hspace=0.5)
+            plt.show()
+            return
+        else:
+            raise Exception(f"Unkwon plot engine {engine}")
+
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
+
+# %% ../nbs/core.ipynb 30
+class _DistributedStatsForecast:
+    def __init__(
+        self,
+        models: List[Any],
+        freq: str,
+        df: Optional[pd.DataFrame] = None,
+        fallback_model: Any = None,
+        backend: Any = None,
+    ):
+        self.models = models
+        self.freq = freq
+        self.fallback_model = fallback_model
+        self.df = df
+        self.backend = backend
+
+    def forecast(
+        self,
+        h: int,
+        df: Optional[pd.DataFrame] = None,
+        X_df: Optional[pd.DataFrame] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+        sort_df: bool = True,
+    ):
+        return self.backend.forecast(
+            df=self.df if self.df is not None else df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            X_df=X_df,
+            level=level,
+            fitted=fitted,
+        )
+
+    def forecast_fitted_values(self):
+        raise NotImplementedError(
+            "Execution with a distributed backend only supports `forecast` and `cross_validation` methods. "
+            "Try setting the backend parameter to None."
+        )
+
+    def cross_validation(
+        self,
+        h: int,
+        df: Optional[pd.DataFrame] = None,
+        n_windows: int = 1,
+        step_size: int = 1,
+        test_size: Optional[int] = None,
+        input_size: Optional[int] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+        sort_df: bool = True,
+    ):
+        return self.backend.cross_validation(
+            df=self.df if self.df is not None else df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            n_windows=n_windows,
+            step_size=step_size,
+            test_size=test_size,
+            input_size=input_size,
+            level=level,
+            fitted=fitted,
+        )
+
+    def cross_validation_fitted_values(self):
+        raise NotImplementedError(
+            "Execution with a distributed backend only supports `forecast` and `cross_validation` methods. "
+            "Try setting the backend parameter to None."
+        )
+
+    def fit(self, df: Optional[pd.DataFrame] = None, sort_df: bool = True):
+        raise NotImplementedError(
+            "Execution with a distributed backend only supports `forecast` and `cross_validation` methods. "
+            "Try setting the backend parameter to None."
+        )
+
+    def predict(
+        self,
+        h: int,
+        X_df: Optional[pd.DataFrame] = None,
+        level: Optional[List[int]] = None,
+    ):
+        raise NotImplementedError(
+            "Execution with a distributed backend only supports `forecast` and `cross_validation` methods. "
+            "Try setting the backend parameter to None."
+        )
+
+    def fit_predict(
+        self,
+        h: int,
+        df: Optional[pd.DataFrame] = None,
+        X_df: Optional[pd.DataFrame] = None,
+        level: Optional[List[int]] = None,
+        sort_df: bool = True,
+    ):
+        raise NotImplementedError(
+            "Execution with a distributed backend only supports `forecast` and `cross_validation` methods. "
+            "Try setting the backend parameter to None."
+        )
+
+    def __repr__(self):
+        return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
+
+# %% ../nbs/core.ipynb 31
+class StatsForecast(_StatsForecast):
+    """core.StatsForecast.
+
+    The `core.StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
+    for large sets of time series. It operates with pandas DataFrame `df` that identifies series
+    and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target
+    time series variable.
+
+    The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
+    model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
+    Scikit-learn interface store the fitted models.
+
+    **Parameters:**<br>
+    `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
+    `models`: List[typing.Any], list of instantiated objects models.StatsForecast.<br>
+    `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+    `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
+    `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+    `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
+    `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
+    `backend`: Any, backend used to distributed processing. Only methods `forecast` add `cross_validation` are currently supported.<br>
+
+    **Notes:**<br>
+    The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
+    See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+    """
+
+    def __new__(
+        cls,
+        models: List[Any],
+        freq: str,
+        n_jobs: int = 1,
+        ray_address: Optional[str] = None,
+        df: Optional[pd.DataFrame] = None,
+        sort_df: bool = True,
+        fallback_model: Any = None,
+        verbose: bool = False,
+        backend: Any = None,
+    ):
+        if backend is None:
+            return _StatsForecast(
+                models=models,
+                freq=freq,
+                n_jobs=n_jobs,
+                ray_address=ray_address,
+                df=df,
+                sort_df=sort_df,
+                fallback_model=fallback_model,
+                verbose=verbose,
+            )
+        else:
+            return _DistributedStatsForecast(
+                models=models,
+                freq=freq,
+                df=df,
+                fallback_model=fallback_model,
+                backend=backend,
+            )

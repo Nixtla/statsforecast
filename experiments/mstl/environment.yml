@@ -1,0 +1,17 @@
+name: exp_mstl
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.8
+  - pip==20.3.3
+  - numpy
+  - numba
+  - fire
+  - prophet
+  - pip:
+    - git+https://github.com/nixtla/statsforecast.git@main
+    - neuralprophet
+    - datasetsforecast
+    - jupyterlab
