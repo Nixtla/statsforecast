@@ -22,6 +22,7 @@ website:
         - examples/CrossValidation.ipynb
         - examples/MultipleSeasonalities.ipynb
         - examples/ElectricityLoadForecasting.ipynb
+        - examples/ElectricityPeakForecasting.ipynb
         - examples/IntermittentData.ipynb
         - examples/UncertaintyIntervals.ipynb
         - examples/Exogenous.ipynb
