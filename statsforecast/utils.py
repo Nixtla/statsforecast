@@ -9,6 +9,7 @@ from itertools import chain
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from numba import njit
 
 # %% ../nbs/utils.ipynb 6
@@ -284,3 +285,29 @@ def _naive(
         fitted_vals[1:] = np.roll(y, 1)[1:]
         return {"mean": mean, "fitted": fitted_vals}
     return {"mean": mean}
+
+# %% ../nbs/utils.ipynb 17
+# Functions used for calculating prediction intervals
+def _quantiles(level):
+    z = norm.ppf(0.5 + level / 200)
+    return z
+
+
+def _calculate_intervals(out, level, h, sigmah):
+    z = _quantiles(np.asarray(level))
+    zz = np.repeat(z, h)
+    zz = zz.reshape(z.shape[0], h)
+    lower = out["mean"] - zz * sigmah
+    upper = out["mean"] + zz * sigmah
+    pred_int = {
+        **{f"lo-{lv}": lower[i] for i, lv in enumerate(level)},
+        **{f"hi-{lv}": upper[i] for i, lv in enumerate(level)},
+    }
+    return pred_int
+
+
+def _calculate_sigma(residuals, n):
+    sigma = np.nansum(residuals**2)
+    sigma = sigma / n
+    sigma = np.sqrt(sigma)
+    return sigma

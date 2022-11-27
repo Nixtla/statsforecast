@@ -15,6 +15,8 @@ from numba import njit
 from numba.typed import List
 from statsmodels.tsa.seasonal import seasonal_decompose
 
+from .utils import _calculate_intervals
+
 # %% ../nbs/ets.ipynb 5
 # Global variables
 NONE = 0
@@ -1030,6 +1032,8 @@ def etsmodel(
     else:
         fits = y / (1 + e)
 
+    sigma2 = np.sum(e**2) / (ny - np_ - 1)
+
     return dict(
         loglik=-0.5 * lik,
         aic=aic,
@@ -1045,6 +1049,7 @@ def etsmodel(
         fitted=fits,
         states=states,
         par=fit_par,
+        sigma2=sigma2,
     )
 
 # %% ../nbs/ets.ipynb 33
@@ -1245,15 +1250,133 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     return forecast
 
 # %% ../nbs/ets.ipynb 37
-def forecast_ets(obj, h):
-    fcst = pegelsfcast_C(h, obj)
-    out = {"mean": fcst}
-    out["residuals"] = obj["residuals"]
-    out["fitted"] = obj["fitted"]
-    return out
+@njit(nogil=NOGIL, cache=CACHE)
+def _compute_sigmah(pf, h, sigma, cvals):
+
+    theta = np.full(h, np.nan)
+    theta[0] = pf[0] ** 2
+
+    for k in range(1, h):
+        sum_val = 0
+        for j in range(1, k + 1):
+            val = cvals[j - 1] ** 2 * theta[k - j]
+            sum_val = sum_val + val
+        theta[k] = pf[k] ** 2 + sigma * sum_val
+
+    sigmah = np.full(h, np.nan)
+    for k in range(0, h):
+        sigmah[k] = (1 + sigma) * theta[k] - pf[k] ** 2
+
+    return sigmah
 
 # %% ../nbs/ets.ipynb 38
-def _compute_fcst_var(model, season_length, pf, h, sigma, level):
+def _class3models(
+    h,
+    sigma,
+    last_state,
+    season_length,
+    error,
+    trend,
+    seasonality,
+    damped,
+    alpha,
+    beta,
+    gamma,
+    phi,
+):
+
+    if damped == "N":
+        damped_val = False
+    else:
+        damped_val = True
+
+    p = len(last_state)
+
+    if trend != "N":
+        H1 = np.array([[1, 1]])
+    else:
+        H1 = np.array([[1]])
+
+    H2 = np.concatenate((np.zeros(season_length - 1), np.array([1]))).reshape(
+        1, season_length
+    )
+
+    if trend == "N":
+        F1 = 1
+        G1 = alpha
+    else:
+        f1 = 1
+        if damped_val:
+            f1 = phi
+        F1 = np.array([[1, 1], [0, f1]])
+        G1 = np.array([[alpha, alpha], [beta, beta]])
+
+    f2_top = np.concatenate((np.zeros(season_length - 1), np.array([1]))).reshape(
+        1, season_length
+    )
+    f2_bottom = np.c_[
+        (
+            np.identity(season_length - 1),
+            np.zeros(season_length - 1).reshape(season_length - 1, 1),
+        )
+    ]
+    F2 = np.r_[f2_top, f2_bottom]
+
+    G2 = np.zeros((season_length, season_length))
+    G2[0, season_length - 1] = gamma
+    Mh = np.matmul(
+        last_state[0 : (p - season_length)].reshape(
+            last_state[0 : (p - season_length)].shape[0], 1
+        ),
+        last_state[(p - season_length) : p].reshape(1, season_length),
+    )
+    Vh = np.zeros((Mh.shape[0] * Mh.shape[1], Mh.shape[0] * Mh.shape[1]))
+    H21 = np.kron(H2, H1)
+    F21 = np.kron(F2, F1)
+    G21 = np.kron(G2, G1)
+    K = np.kron(G2, F1) + np.kron(F2, G1)
+    mu = np.zeros(h)
+    var = np.zeros(h)
+
+    for i in range(0, h):
+        mu[i] = np.matmul(H1, np.matmul(Mh, np.transpose(H2)))
+        var[i] = (1 + sigma) * np.matmul(
+            H21, np.matmul(Vh, np.transpose(H21))
+        ) + sigma * mu[i] ** 2
+        vecMh = Mh.flatten()
+        exp1 = np.matmul(F21, np.matmul(Vh, np.transpose(F21)))
+        exp2 = np.matmul(F21, np.matmul(Vh, np.transpose(G21)))
+        exp3 = np.matmul(G21, np.matmul(Vh, np.transpose(F21)))
+        exp4 = np.matmul(
+            K,
+            np.matmul(Vh + (vecMh * vecMh.reshape(vecMh.shape[0], 1)), np.transpose(K)),
+        )
+        exp5 = np.matmul(
+            sigma * G21,
+            np.matmul(
+                3 * Vh + 2 * vecMh * vecMh.reshape(vecMh.shape[0], 1), np.transpose(G21)
+            ),
+        )
+        Vh = exp1 + sigma * (exp2 + exp3 + exp4 + exp5)
+
+    if trend == "N":
+        Mh = (
+            F1 * np.matmul(Mh, np.transpose(F2))
+            + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
+        )
+    else:
+        Mh = (
+            np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
+            + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
+        )
+
+    return var
+
+# %% ../nbs/ets.ipynb 39
+def _compute_pred_intervals(model, forecasts, h, level):
+    sigma = model["sigma2"]
+    season_length = model["m"]
+    pf = forecasts["mean"]
 
     model_type = model["components"]
     steps = steps = np.arange(1, h + 1)
@@ -1284,6 +1407,7 @@ def _compute_fcst_var(model, season_length, pf, h, sigma, level):
 
     vals = {}
 
+    compute_intervals = True
     # Class 1 models
     if error == "A" and trend == "N" and seasonality == "N" and damped == "N":
         # Model ANN
@@ -1402,7 +1526,7 @@ def _compute_fcst_var(model, season_length, pf, h, sigma, level):
 
     else:
         # Classes 4 and 5 models
-        sigmah = np.nan
+        compute_intervals = False
         nsim = 5000
         y_path = np.zeros([nsim, h])
 
@@ -1441,130 +1565,18 @@ def _compute_fcst_var(model, season_length, pf, h, sigma, level):
             **{f"hi-{lv}": upper[i] for i, lv in enumerate(level)},
         }
 
-        vals["pi"] = pi
+    if compute_intervals:
+        pi = _calculate_intervals(forecasts, level=level, h=h, sigmah=np.sqrt(sigmah))
 
-    vals["sigmah"] = sigmah
+    return pi
 
-    return vals
-
-
-def _compute_sigmah(pf, h, sigma, cvals):
-
-    theta = np.full(h, np.nan)
-    theta[0] = pf[0] ** 2
-
-    for k in range(1, h):
-        sum_val = 0
-        for j in range(1, k + 1):
-            val = cvals[j - 1] ** 2 * theta[k - j]
-            sum_val = sum_val + val
-        theta[k] = pf[k] ** 2 + sigma * sum_val
-
-    sigmah = np.full(h, np.nan)
-    for k in range(0, h):
-        sigmah[k] = (1 + sigma) * theta[k] - pf[k] ** 2
-
-    return sigmah
-
-
-def _class3models(
-    h,
-    sigma,
-    last_state,
-    season_length,
-    error,
-    trend,
-    seasonality,
-    damped,
-    alpha,
-    beta,
-    gamma,
-    phi,
-):
-
-    if damped == "N":
-        damped_val = False
-    else:
-        damped_val = True
-
-    p = len(last_state)
-
-    if trend != "N":
-        H1 = np.array([[1, 1]])
-    else:
-        H1 = np.array([[1]])
-
-    H2 = np.concatenate((np.zeros(season_length - 1), np.array([1]))).reshape(
-        1, season_length
-    )
-
-    if trend == "N":
-        F1 = 1
-        G1 = alpha
-    else:
-        f1 = 1
-        if damped_val:
-            f1 = phi
-        F1 = np.array([[1, 1], [0, f1]])
-        G1 = np.array([[alpha, alpha], [beta, beta]])
-
-    f2_top = np.concatenate((np.zeros(season_length - 1), np.array([1]))).reshape(
-        1, season_length
-    )
-    f2_bottom = np.c_[
-        (
-            np.identity(season_length - 1),
-            np.zeros(season_length - 1).reshape(season_length - 1, 1),
-        )
-    ]
-    F2 = np.r_[f2_top, f2_bottom]
-
-    G2 = np.zeros((season_length, season_length))
-    G2[0, season_length - 1] = gamma
-    Mh = np.matmul(
-        last_state[0 : (p - season_length)].reshape(
-            last_state[0 : (p - season_length)].shape[0], 1
-        ),
-        last_state[(p - season_length) : p].reshape(1, season_length),
-    )
-    Vh = np.zeros((Mh.shape[0] * Mh.shape[1], Mh.shape[0] * Mh.shape[1]))
-    H21 = np.kron(H2, H1)
-    F21 = np.kron(F2, F1)
-    G21 = np.kron(G2, G1)
-    K = np.kron(G2, F1) + np.kron(F2, G1)
-    mu = np.zeros(h)
-    var = np.zeros(h)
-
-    for i in range(0, h):
-        mu[i] = np.matmul(H1, np.matmul(Mh, np.transpose(H2)))
-        var[i] = (1 + sigma) * np.matmul(
-            H21, np.matmul(Vh, np.transpose(H21))
-        ) + sigma * mu[i] ** 2
-        vecMh = Mh.flatten()
-        exp1 = np.matmul(F21, np.matmul(Vh, np.transpose(F21)))
-        exp2 = np.matmul(F21, np.matmul(Vh, np.transpose(G21)))
-        exp3 = np.matmul(G21, np.matmul(Vh, np.transpose(F21)))
-        exp4 = np.matmul(
-            K,
-            np.matmul(Vh + (vecMh * vecMh.reshape(vecMh.shape[0], 1)), np.transpose(K)),
-        )
-        exp5 = np.matmul(
-            sigma * G21,
-            np.matmul(
-                3 * Vh + 2 * vecMh * vecMh.reshape(vecMh.shape[0], 1), np.transpose(G21)
-            ),
-        )
-        Vh = exp1 + sigma * (exp2 + exp3 + exp4 + exp5)
-
-    if trend == "N":
-        Mh = (
-            F1 * np.matmul(Mh, np.transpose(F2))
-            + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
-        )
-    else:
-        Mh = (
-            np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
-            + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
-        )
-
-    return var
+# %% ../nbs/ets.ipynb 40
+def forecast_ets(obj, h, level=None):
+    fcst = pegelsfcast_C(h, obj)
+    out = {"mean": fcst}
+    out["residuals"] = obj["residuals"]
+    out["fitted"] = obj["fitted"]
+    if level is not None:
+        pi = _compute_pred_intervals(model=obj, forecasts=out, level=level, h=h)
+        out = {**out, **pi}
+    return out
