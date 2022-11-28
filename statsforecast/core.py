@@ -1001,6 +1001,7 @@ class _StatsForecast:
         models: Optional[List[str]] = None,
         level: Optional[List[float]] = None,
         max_insample_length: Optional[int] = None,
+        plot_anomalies: Optional[bool] = False,
         engine: str = "plotly",
     ):
         """Plot forecasts and insample values.
@@ -1013,6 +1014,7 @@ class _StatsForecast:
         `models`: List[str], List of models to plot.<br>
         `level`: List[float], List of prediction intervals to plot if paseed.<br>
         `max_insample_length`: int, max number of train/insample observations to be plotted.<br>
+        `plot_anomalies`: bool, Plot anomalies for each prediction interval.<br>
         `engine`: str, library used to plot. 'plotly' or 'matplotlib'.<br>
         """
         if level is not None and not isinstance(level, list):
@@ -1085,6 +1087,7 @@ class _StatsForecast:
                     if "y" not in models:
                         models = ["y"] + models
                     test_uid = forecasts_df.query("unique_id == @uid")
+                    plot_anomalies = "y" in test_uid and plot_anomalies
                     test_uid = _parse_ds_type(test_uid)
                     first_ds_fcst = test_uid["ds"].min()
                     colors = plt.cm.get_cmap("tab20b", len(models))
@@ -1093,10 +1096,11 @@ class _StatsForecast:
                     ]
                     for col, color in zip(models, colors):
                         if col in test_uid:
+                            y_test = test_uid[col]
                             fig.add_trace(
                                 go.Scatter(
                                     x=test_uid["ds"],
-                                    y=test_uid[col],
+                                    y=y_test,
                                     mode="lines",
                                     name=col,
                                     legendgroup=col,
@@ -1117,18 +1121,18 @@ class _StatsForecast:
                             level_ = [level_col]
                         else:
                             level_ = []
-                        ds_test = test_uid["ds"].to_list()
+                        ds_test = test_uid["ds"]
                         for lv in level_:
-                            lo = test_uid[f"{col}-lo-{lv}"].to_list()
-                            hi = test_uid[f"{col}-hi-{lv}"].to_list()
+                            lo = test_uid[f"{col}-lo-{lv}"]
+                            hi = test_uid[f"{col}-hi-{lv}"]
                             fig.add_trace(
                                 go.Scatter(
-                                    x=ds_test + ds_test[::-1],
-                                    y=hi + lo[::-1],
+                                    x=np.concatenate([ds_test, ds_test[::-1]]),
+                                    y=np.concatenate([hi, lo[::-1]]),
                                     fill="toself",
                                     mode="lines",
                                     fillcolor=color,
-                                    opacity=-float(lv) / 50 + 2,
+                                    opacity=-float(lv) / 100 + 1,
                                     name=f"{col}_level_{lv}",
                                     legendgroup=f"{col}_level_{lv}",
                                     line=dict(color=color, width=1),
@@ -1137,14 +1141,26 @@ class _StatsForecast:
                                 row=idx,
                                 col=idy,
                             )
-            # fig.update_layout(
-            #    legend=dict(
-            #        x=0,
-            #
-            # y=1,
-            #        font=dict(size=8)
-            #    )
-            # )
+                            if col != "y" and plot_anomalies:
+                                anomalies = (test_uid["y"] < lo) | (test_uid["y"] > hi)
+                                fig.add_trace(
+                                    go.Scatter(
+                                        x=ds_test[anomalies],
+                                        y=test_uid["y"][anomalies],
+                                        fillcolor=color,
+                                        mode="markers",
+                                        opacity=float(lv) / 100,
+                                        name=f"{col}_anomalies_level_{lv}",
+                                        legendgroup=f"{col}_anomalies_level_{lv}",
+                                        line=dict(color=color, width=0.7),
+                                        marker=dict(
+                                            size=4, line=dict(color="red", width=0.5)
+                                        ),
+                                        showlegend=(idx == 1 and idy == 1),
+                                    ),
+                                    row=idx,
+                                    col=idy,
+                                )
             fig.update_xaxes(matches=None, showticklabels=True, visible=True)
             fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
             fig.update_layout(template="plotly_white", font=dict(size=10))
@@ -1183,6 +1199,7 @@ class _StatsForecast:
                     if "y" not in models:
                         models = ["y"] + models
                     test_uid = forecasts_df.query("unique_id == @uid")
+                    plot_anomalies = "y" in test_uid and plot_anomalies
                     test_uid = _parse_ds_type(test_uid)
                     first_ds_fcst = test_uid["ds"].min()
                     axes[idx, idy].axvline(
@@ -1210,14 +1227,29 @@ class _StatsForecast:
                         else:
                             level_ = []
                         for lv in level_:
+                            ds_test = test_uid["ds"]
+                            lo = test_uid[f"{col}-lo-{lv}"]
+                            hi = test_uid[f"{col}-hi-{lv}"]
                             axes[idx, idy].fill_between(
-                                test_uid["ds"],
-                                test_uid[f"{col}-lo-{lv}"],
-                                test_uid[f"{col}-hi-{lv}"],
-                                alpha=-float(lv) / 50 + 2,
+                                ds_test,
+                                lo,
+                                hi,
+                                alpha=-float(lv) / 100 + 1,
                                 color=color,
                                 label=f"{col}_level_{lv}",
                             )
+                            if col != "y" and plot_anomalies:
+                                anomalies = (test_uid["y"] < lo) | (test_uid["y"] > hi)
+                                axes[idx, idy].scatter(
+                                    x=ds_test[anomalies],
+                                    y=test_uid["y"][anomalies],
+                                    color=color,
+                                    s=30,
+                                    alpha=float(lv) / 100,
+                                    label=f"{col}_anomalies_level_{lv}",
+                                    linewidths=0.5,
+                                    edgecolors="red",
+                                )
 
                 axes[idx, idy].set_title(f"{uid}")
                 axes[idx, idy].set_xlabel("Datestamp [ds]")
