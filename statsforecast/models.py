@@ -612,8 +612,7 @@ class AutoCES(_TS):
         `forecasts`: dictionary, with entries 'mean' for point predictions and
             'level_*' for probabilistic predictions.<br>
         """
-        raise NotImplementedError("fitted CES values")
-        res = {"mean": self.model_["fitted"]}
+        res = {"fitted": self.model_["fitted"]}
         return res
 
     def forecast(
@@ -645,8 +644,9 @@ class AutoCES(_TS):
         fcst = forecast_ces(mod, h)
         keys = ["mean"]
         if fitted:
-            raise NotImplementedError("ces insample predictions")
-        return {key: fcst[key] for key in keys}
+            keys.append("fitted")
+        res = {key: fcst[key] for key in keys}
+        return res
 
 # %% ../nbs/models.ipynb 47
 class AutoTheta(_TS):
