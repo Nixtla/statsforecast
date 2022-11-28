@@ -1405,8 +1405,6 @@ def _compute_pred_intervals(model, forecasts, h, level):
     exp4 = (beta * phi * (1 - phi**steps)) / ((1 - phi) ** 2 * (1 - phi**2))
     exp5 = 2 * alpha * (1 - phi**2) + beta * phi * (1 + 2 * phi - phi**steps)
 
-    vals = {}
-
     compute_intervals = True
     # Class 1 models
     if error == "A" and trend == "N" and seasonality == "N" and damped == "N":

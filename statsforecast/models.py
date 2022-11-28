@@ -17,7 +17,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 from numba import njit
 from scipy.optimize import minimize
-from scipy.stats import norm
 
 from .arima import auto_arima_f, forecast_arima, fitted_arima
 from .ces import auto_ces, forecast_ces
