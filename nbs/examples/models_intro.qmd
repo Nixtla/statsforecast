@@ -6,7 +6,7 @@
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`AutoARIMA`](../models.html#autoarima)|✅|✅|✅|✅|✅|
 |[`AutoETS`](../models.html#autoets)|✅|✅|✅|✅|✅|
-|[`AutoCES`](../models.html#autoces)|✅|||||
+|[`AutoCES`](../models.html#autoces)|✅||✅|||
 |[`AutoTheta`](../models.html#autotheta)|✅|✅|✅|✅|✅|
 
 ## Exponential Smoothing
