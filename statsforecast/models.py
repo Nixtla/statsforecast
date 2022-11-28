@@ -237,7 +237,7 @@ class AutoARIMA(_TS):
         self,
         h: int,
         X: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted AutoArima.
 
@@ -424,7 +424,7 @@ class AutoETS(_TS):
         return self
 
     def predict(
-        self, h: int, X: Optional[np.ndarray] = None, level: Optional[Tuple[int]] = None
+        self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
     ):
         """Predict with fitted Exponential Smoothing.
 
@@ -522,7 +522,7 @@ class ETS(AutoETS):
         )
 
     def __init__(
-        self, season_length: int = 1, model: str = "ZZZ", damped: Optional[str] = None
+        self, season_length: int = 1, model: str = "ZZZ", damped: Optional[bool] = None
     ):
         ETS._warn()
         self.season_length = season_length
