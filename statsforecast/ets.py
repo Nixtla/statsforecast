@@ -1050,6 +1050,7 @@ def etsmodel(
         states=states,
         par=fit_par,
         sigma2=sigma2,
+        n_params=np_,
     )
 
 # %% ../nbs/ets.ipynb 33

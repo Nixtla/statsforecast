@@ -460,7 +460,7 @@ class AutoETS(_TS):
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
             residuals = self.model_["actual_residuals"]
-            se = _calculate_sigma(residuals, len(residuals))
+            se = _calculate_sigma(residuals, len(residuals) - self.model_["n_params"])
             res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
@@ -506,7 +506,7 @@ class AutoETS(_TS):
             }
             if fitted:
                 # add prediction intervals for fitted values
-                se = _calculate_sigma(y - mod["fitted"], len(y))
+                se = _calculate_sigma(y - mod["fitted"], len(y) - mod["n_params"])
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
