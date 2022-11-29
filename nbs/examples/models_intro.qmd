@@ -1,6 +1,10 @@
-# Available Models
+---
+title: "StatsForecast's Models"
+---
+
 
 ## Automatic Forecasting
+Automatic forecasting tools search for the best parameters and select the best possible model for a series of time series. These tools are useful for large collections of univariate time series.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
@@ -9,7 +13,38 @@
 |[`AutoCES`](../models.html#autoces)|✅||✅|||
 |[`AutoTheta`](../models.html#autotheta)|✅|✅|✅|✅|✅|
 
+## Theta Family
+fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[`Theta`](../models.html#theta)|✅|✅|✅|✅|✅|
+|[`OptimizedTheta`](../models.html#optimizedtheta)|✅|✅|✅|✅|✅|
+|[`DynamicTheta`](../models.html#dynamictheta)|✅|✅|✅|✅|✅|
+|[`DynamicOptimizedTheta`](../models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
+
+
+## Multiple Seasonalities
+Suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[`MSTL`](../models.html#mstl)|✅|✅|✅|✅|✅|
+
+## Baseline Models
+Classical models for establishing baseline.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[`HistoricAverage`](../models.html#historicaverage)|✅|✅|✅|✅|✅|
+|[`Naive`](../models.html#naive)|✅|✅|✅|✅|✅|
+|[`RandomWalkWithDrift`](../models.html#randomwalkwithdrift)|✅|✅|✅|✅|✅|
+|[`SeasonalNaive`](../models.html#seasonalnaive)|✅|✅|✅|✅|✅|
+|[`WindowAverage`](../models.html#windowaverage)|✅|||||
+|[`SeasonalWindowAverage`](../models.html#seasonalwindowaverage)|✅|||||
+
 ## Exponential Smoothing
+Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with no clear trend or seasonality.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
@@ -21,19 +56,11 @@
 |[`HoltWinters`](../models.html#holtwinters)|✅|✅|✅|✅|✅|
 
 
-## Baseline Models
 
-|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
-|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`HistoricAverage`](../models.html#historicaverage)|✅|✅|✅|✅|✅|
-|[`Naive`](../models.html#naive)|✅|✅|✅|✅|✅|
-|[`RandomWalkWithDrift`](../models.html#randomwalkwithdrift)|✅|✅|✅|✅|✅|
-|[`SeasonalNaive`](../models.html#seasonalnaive)|✅|✅|✅|✅|✅|
-|[`WindowAverage`](../models.html#windowaverage)|✅|||||
-|[`SeasonalWindowAverage`](../models.html#seasonalwindowaverage)|✅|||||
 
 
 ## Sparse of Inttermitent
+Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
@@ -45,17 +72,3 @@
 |[`TSB`](../models.html#tsb)|✅|||||
 
 
-## Multiple Seasonalities
-
-|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
-|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`MSTL`](../models.html#mstl)|✅|✅|✅|✅|✅|
-
-## Theta Family
-
-|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
-|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`Theta`](../models.html#theta)|✅|✅|✅|✅|✅|
-|[`OptimizedTheta`](../models.html#optimizedtheta)|✅|✅|✅|✅|✅|
-|[`DynamicTheta`](../models.html#dynamictheta)|✅|✅|✅|✅|✅|
-|[`DynamicOptimizedTheta`](../models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
