@@ -1051,7 +1051,7 @@ class _StatsForecast:
                 y_title="Target [y]",
                 subplot_titles=[str(uid) for uid in unique_ids],
             )
-            showed_legends = set()
+            showed_legends: set = set()
 
             def plotly(
                 df,
@@ -1080,7 +1080,6 @@ class _StatsForecast:
                         df_uid = df_uid.iloc[-max_insample_length:]
                     plot_anomalies = "y" in df_uid and plot_anomalies
                     df_uid = _parse_ds_type(df_uid)
-                    first_ds = df_uid["ds"].min()
                     colors = plt.cm.get_cmap("tab20b", len(models))
                     colors = ["#1f77b4"] + [
                         cm.to_hex(colors(i)) for i in range(len(models))
