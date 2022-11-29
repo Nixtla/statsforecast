@@ -10,8 +10,11 @@ format:
     toc: true
 
 website:
-  twitter-card: true
-  open-graph: true
+  twitter-card: 
+    image: "https://farm6.staticflickr.com/5510/14338202952_93595258ff_z.jpg"
+    site: "@Nixtlainc"
+  open-graph:
+    image: "https://github.com/Nixtla/styles/blob/2abf51612584169874c90cd7c4d347e3917eaf73/images/Banner%20Github.png"
   google-analytics: "G-NXJNCVR18L"
   repo-actions: [issue]
   favicon: favicon_png.png
