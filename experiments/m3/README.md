@@ -4,9 +4,11 @@
 
 We present a reproducible experiment that shows that:
 
-1. A simple ensemble of univariate models outperforms individual deep learning models and achieves so-called SOTA.
+1. A simple statistical ensemble outperforms most individual deep-learning models. 
 
-2. A simple ensemble of univariate models is 25,000 more efficient and only slightly less accurate than an ensemble of deep learning models.
+2. A simple statistical ensemble is 25,000 faster and only slightly less accurate than an ensemble of deep learning models.
+
+In other words, deep-learning ensembles outperform statistical ensembles by 0.36 points in SMAPE; but the DL ensemble (12.27 SMAPE) takes more than 15 days to run and costs around USD 11,000, while the statistical ensemble (12.63) takes 6 minutes to run and costs $0.5c. 
 
 
 ## Background
@@ -20,15 +22,15 @@ The authors conclude that:
 > We find that combinations of DL models perform better than most standard models, both statistical and ML, especially for the case of monthly series and long-term forecasts.
 
 
-We don't agree.
+We don't think that's the full picture.
 
-By including a combination of four classical univariate models we show that these claims are in no way warranted and that one should rather conclude that, for this setting at least, Deep Learning is second best to statistical univariate models.
+By including a statistical ensemble, we show that these claims are not completely warranted and that one should rather conclude that, for this setting at least, Deep Learning is rather unattractive.
 
 ## Experiment
 
 Building upon the original design, we further included [A simple combination of univariate models](https://www.sciencedirect.com/science/article/abs/pii/S0169207019300585) in the comparison. 
 
-This ensemble is formed by averaging four models: `ARIMA`, `ETS`, `CES` and `DynamicOptimizedTheta`. This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
+This ensemble is formed by averaging four statistical models: `ARIMA`, `ETS`, `CES` and `DynamicOptimizedTheta`. This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
  
 For the experiment, we use StatsForecast's implementation of Arima, ETS, CES and DOT. 
 
@@ -71,16 +73,12 @@ Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to trai
 
 ### Summary: Comparison with SOTA benchmarks
 
-In real-world use cases, the cost of computation also plays a role and should be considered. In the next table you can see the summarized results for all models and ensembles. We compare accuracy measure in SMAPE, RCC, Cost proxy, and self reported computational time.  
+In real-world use cases, the cost of computation also plays a role and should be considered. In the next table, you can see the summarized results for all models and ensembles. We compare accuracy measured in SMAPE, RCC, Cost proxy, and self-reported computational time.  
 
 <img width="848" alt="image" src="https://user-images.githubusercontent.com/10517170/204921326-ff3ae863-d248-4994-9fd7-8ab7fafc873f.png">
 
-The deep learning ensemble achieves 12.27 of accuracy, with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
-The simple univariate ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
-
 We observe that `StatsForecast` yields average SMAPE results similar to DeepAR with computational savings of 99%.
 
-Therefore, the DL Ensemble is only 0.36 points more accurate than the statistical ensemble, but 25,000 times more expensive. 
 
 Furthermore, we can see that the StatsForecast ensemble:
 - Has better performance than the `N-BEATS` model for the yearly and other groups.
@@ -88,11 +86,19 @@ Furthermore, we can see that the StatsForecast ensemble:
 - It is consistently better than the `Transformer`, `Wavenet`, and `Feed-Forward` models.
 - It performs better than all `Gluont-TS` models for the monthly and other groups. 
 
+The deep learning ensemble achieves 12.27 of accuracy, with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
+The simple statistical ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
+Therefore, the DL Ensemble is only 0.36 points more accurate than the statistical ensemble, but 25,000 times more expensive. 
+
+In plain English: a deep-learning ensemble that takes more than 15 days to run and costs around USD 11,000, outperforms a statistical ensemble that takes 6 minutes to run and costs $0.5c by only 0.36 points of SMAPE. 
+
 
 ## Conclusions
-For this setting: Deep Learning models are simply worse or marginally better than simpler univariate models in terms of accuracy. In terms of speed, costs, simplicity and interpretability, deep learning is far behind the simple univariate ensemble.
+For this setting: Deep Learning models are simply worse than a statistical ensemble. To outperform this statistical ensemble by 0.36 points of SMAPE complicated deep learning is needed. The deep learning ensemble takes more than two weeks to run, several thousands of dollars and many engineering hours. 
 
-This conclusion might or not hold in other datasets, however, given the a priori uncertainty of the benefits and the certainty of cost, statistical methods should be considered the first option in daily forecasting practice. 
+In conclusion: in terms of speed, costs, simplicity and interpretability, deep learning is far behind the simple statistical ensemble. In terms of accuracy, they seem to be rather close.
+
+This conclusion might or not hold in other datasets, however, given the a priori uncertainty of the benefits and the certainty of cost, statistical methods should be considered the first option in daily forecasting practice.
 
 ## Unsolicited Advice
 
