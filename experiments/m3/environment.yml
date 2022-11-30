@@ -1,4 +1,4 @@
-name: theta
+name: m3-dl
 channels:
   - conda-forge
   - defaults

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from statsforecast import StatsForecast
 from statsforecast.models import (
-        AutoTheta, ETS, AutoARIMA,
+        AutoTheta, AutoETS, AutoCES,AutoARIMA,
         Theta, OptimizedTheta, 
         DynamicTheta, DynamicOptimizedTheta
 )
@@ -33,7 +33,8 @@ def main(dataset: str = 'M3', group: str = 'Other', model: str = 'Theta') -> Non
         models = [models_dict[model]]
     else:
         models = [
-            ETS(season_length=seasonality),
+            AutoETS(season_length=seasonality),
+            AutoCES(season_length=seasonality),
             AutoARIMA(season_length=seasonality),
             DynamicOptimizedTheta(season_length=seasonality),
         ]

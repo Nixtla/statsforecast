@@ -40,7 +40,7 @@ def evaluate(lib: str, dataset: str, group: str):
 
 if __name__ == '__main__':
     groups = ['Monthly', 'Yearly', 'Other', 'Quarterly']
-    lib = ['Theta', 'OptimizedTheta', 'DynamicTheta', 'DynamicOptimizedTheta', 'ThetaEnsemble']
+    lib = ['ThetaEnsemble']
     datasets = ['M3']
     evaluation = [evaluate(lib, dataset, group) for lib, group in product(lib, groups) for dataset in datasets]
     evaluation = [eval_ for eval_ in evaluation if eval_ is not None]
