@@ -19,25 +19,14 @@ from statsforecast.utils import AirPassengers as ap
 from src.data import get_data
 
 
-def main(dataset: str = 'M3', group: str = 'Other', model: str = 'Theta') -> None:
+def main(dataset: str = 'M3', group: str = 'Other') -> None:
     train, horizon, freq, seasonality = get_data('data/', dataset, group)
-    train['ds'] = pd.to_datetime(train['ds']) 
-    train = train.set_index('unique_id')
-    models_dict = {
-        'Theta': Theta(season_length=seasonality),
-        'OptimizedTheta': OptimizedTheta(season_length=seasonality),
-        'DynamicTheta': DynamicTheta(season_length=seasonality),
-        'DynamicOptimizedTheta': DynamicOptimizedTheta(season_length=seasonality),
-    }
-    if model != 'ThetaEnsemble':
-        models = [models_dict[model]]
-    else:
-        models = [
-            AutoETS(season_length=seasonality),
-            AutoCES(season_length=seasonality),
-            AutoARIMA(season_length=seasonality),
-            DynamicOptimizedTheta(season_length=seasonality),
-        ]
+    models = [
+        AutoETS(season_length=seasonality),
+        AutoCES(season_length=seasonality),
+        AutoARIMA(season_length=seasonality),
+        DynamicOptimizedTheta(season_length=seasonality),
+    ]
     
     start = time.time()
     fcst = StatsForecast(df=train, models=models, freq=freq, n_jobs=cpu_count())
@@ -46,12 +35,11 @@ def main(dataset: str = 'M3', group: str = 'Other', model: str = 'Theta') -> Non
     print(end - start)
 
     forecasts = forecasts.reset_index()
-    if model == 'ThetaEnsemble':
-        forecasts['ThetaEnsemble'] = forecasts.set_index(['unique_id', 'ds']).median(axis=1).values
-    forecasts.to_csv(f'data/{model}-forecasts-{dataset}-{group}.csv', index=False)
+    forecasts['UnivariateComination'] = forecasts.set_index(['unique_id', 'ds']).median(axis=1).values
+    forecasts.to_csv(f'data/UnivariateCombination-forecasts-{dataset}-{group}.csv', index=False)
 
-    time_df = pd.DataFrame({'time': [end - start], 'model': [model]})
-    time_df.to_csv(f'data/{model}-time-{dataset}-{group}.csv', index=False)
+    time_df = pd.DataFrame({'time': [end - start], 'model': ['UnivariateCombination']})
+    time_df.to_csv(f'data/UnivariateCombination-time-{dataset}-{group}.csv', index=False)
 
 
 if __name__ == '__main__':
