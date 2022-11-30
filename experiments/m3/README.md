@@ -1,4 +1,4 @@
-# Comparison of Statistical and deep learning forecasting methods in M3
+# Comparison of Statistical and Deep Learning forecasting methods in M3
 
 ## Abstract
 
