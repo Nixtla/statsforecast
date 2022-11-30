@@ -1,7 +1,6 @@
-# Comparison of Statistical and deep learning forecasting methods in M3. 
+# Comparison of Statistical and deep learning forecasting methods in M3
 
-
-## Abstract
+## Abstract
 
 We present a reproducible experiment that shows that:
 
@@ -46,26 +45,24 @@ For the DL models, we reproduce the reported metrics and results from the mentio
 
 ### Accuracy: Comparison with SOTA benchmarks 
 
-
-<img width="717" alt="image" src="https://user-images.githubusercontent.com/10517170/200745682-0cf03ab0-5b54-409a-a5fd-75a3925a33ec.png">
+<img width="696" alt="image" src="https://user-images.githubusercontent.com/10517170/204910605-c12a7b2a-af36-4541-9ff3-c01489481867.png">
 
 The results are shown below (`N-BEATS` and `Gluon-TS` results were taken from the original paper).
 
-
 ### Computational Complexity: Comparison with SOTA benchmarks 
 
-Using `StatsForecast` and a 96 cores EC2 instance (XXXX) it takes 6 mins to train, forecast and ensemble the four models for the 3,003 series of M3. 
+Using `StatsForecast` and a 96 cores EC2 instance (c5d.24xlarge) it takes 6 mins to train, forecast and ensemble the four models for the 3,003 series of M3. 
 
 | Time (mins) | Yearly | Quarterly | Monthly | Other |
 |-----|-------:|-------:|--------:|--------:|
 |StatsForecast ensemble| 1.10 | 1.32 | 2.38 | 1.08 |
 
 
-Furthermore, this experiment including downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. (In comparison, [This](https://github.com/gjmulder/m3-gluonts-ensemble) repo](https://github.com/gjmulder/m3-gluonts-ensemble) has more than 1,000 lines of code and needs Python, R, Mongo and Shell code)
+Furthermore, this experiment including downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. In comparison, [this](https://github.com/gjmulder/m3-gluonts-ensemble) repo has more than 1,000 lines of code and needs Python, R, Mongo and Shell code)
 
 The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. To calculate the RCC of `StatsForecast`, we took the time to generate naive forecasts in the same environment. 
 
-Using XXX it takes 12 seconds to train and predict 3,003 instances of a Naive forecast. Therefore, the RCC of the simple ensemble is 28.  [REVISAR FEDE!!!]
+Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to train and predict 3,003 instances of a Seasonal Naive forecast. Therefore, the RCC of the simple ensemble is 28. 
 
 | Method | Type | Relative Computational Complexity (RCC)|
 |--------|------|----------------------------------------:|
@@ -75,31 +72,29 @@ Using XXX it takes 12 seconds to train and predict 3,003 instances of a Naive fo
 |WaveNet| DL | 306,000 |
 |Ensemble-DL | DL | 713,800 |
 |StatsForecast | Statistical | 28 |
-|Naive| Naive| 1 | 
-
+|SeasonalNaive| Statistical | 1 | 
 
 
 ### Costs: Comparison with SOTA benchmarks 
 In actual use cases, the cost of computation also should be considered. Given the hourly cost of the setting we used, the table can be "translated" to dollars. 
 
+<img width="845" alt="image" src="https://user-images.githubusercontent.com/10517170/204915533-9930d8d6-0a7f-4d4e-8073-095fb7ffb929.png">
 
 ### Summary: Comparison with SOTA benchmarks
 
 We observe that `StatsForecast` yields average SMAPE results similar to DeepAR with computational savings of 99%.
 
 * On average: 
- * the deep learning ensemble achieves XXX of accuracy, with a Computational cost of 713,000 and a proxy monetary cost of X.
- * The simple univariate ensemble achieves XXX of accuracy, with a computational cost of 28 and a proxy monetary cost of X. 
+ * The deep learning ensemble achieves 12.27 of accuracy, with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
+ * The simple univariate ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
 
- That means, DL is only 0.16 points more accurate than Statistical Models, but 25,000 times more expensive. 
-
+ That means, DL is only 0.36 points more accurate than Statistical Models, but 25,000 times more expensive. 
 
 We can see that the StatsForecast ensemble:
 - Has better performance than the `N-BEATS` model for the yearly and other groups.
-- Has a better average performance than the individual `Gluon-TS` models. In particular, the ensemble is better than XXX for all 4 groups. XXX
+- Has a better average performance than the individual `Gluon-TS` models. In particular, the ensemble is better than Feed-Forward, Transformer and Wavenet for all 4 groups.
 - It is consistently better than the `Transformer`, `Wavenet`, and `Feed-Forward` models.
 - It performs better than all `Gluont-TS` models for the monthly and other groups. 
-
 
 
 ## Conclusions
@@ -114,8 +109,6 @@ Choose your models wisely.
 It would be extremely expensive and borderline irresponsible to favor deep learning models in an organization before establishing solid baselines. 
 
 Simpler is sometimes better. Not everything that glows is gold. 
-
-
 
 
 ## References
