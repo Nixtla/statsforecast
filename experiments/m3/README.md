@@ -11,7 +11,7 @@ We present a reproducible experiment that shows that:
 
 ## Background
 
-In [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), prominent participants of the forecasting science community compare Deep Learning models and Statistical models for all 3,003 series of the M3 competition.
+In [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), Makridakis and other prominent participants of the forecasting science community compare Deep Learning models and Statistical models for all 3,003 series of the M3 competition.
 
 > The purpose of [the] paper is to test empirically the value currently added by Deep Learning (DL) approaches in time series forecasting by comparing the accuracy of some state-of-theart DL methods with that of popular Machine Learning (ML) and statistical ones.
 
@@ -32,7 +32,7 @@ This ensemble is formed by averaging four models: `ARIMA`, `ETS`, `CES` and `Dyn
  
 For the experiment, we use StatsForecast's implementation of Arima, ETS, CES and DOT. 
 
-For the DL models, we reproduce the reported metrics and results from the mentioned paper and included
+For the DL models, we reproduce the reported metrics and results from the mentioned paper.
 
 ## Results
 
