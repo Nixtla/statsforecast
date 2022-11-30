@@ -104,7 +104,7 @@ Missing something? Please open an issue or write us in [![Slack](https://img.shi
 ## Models
 
 ### Automatic Forecasting
-Automatic forecasting tools search for the best parameters and select the best possible model for a series of time series. These tools are useful for large collections of univariate time series.
+Automatic forecasting tools search for the best parameters and select the best possible model for a group of time series. These tools are useful for large collections of univariate time series.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
@@ -156,7 +156,7 @@ Uses a weighted average of all past observations where the weights decrease expo
 |[HoltWinters](https://nixtla.github.io/statsforecast/models.html#holtwinters)|✅|✅|✅|✅|✅|
 
 
-### Sparse of Inttermitent
+### Sparse or Inttermitent
 Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
