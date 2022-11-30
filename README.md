@@ -15,119 +15,161 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/Nixtla/statsforecast/blob/main/LICENSE)
 [![docs](https://img.shields.io/website-up-down-green-red/http/nixtla.github.io/statsforecast.svg?label=docs)](https://nixtla.github.io/statsforecast/)  
     
-**StatsForecast** offers a collection of widely used univariate time series forecasting models, including automatic `ARIMA` and `ETS` modeling optimized for high performance using `numba`. It also includes a large battery of benchmarking models.
+**StatsForecast** offers a collection of widely used univariate time series forecasting models, including automatic `ARIMA`, `ETS`, `CES`, and `Theta` modeling optimized for high performance using `numba`. It also includes a large battery of benchmarking models.
 </div>
 
-## 💻 Installation
-<details open>
-<summary>PyPI</summary>
+## Installation
 
-You can install the *released version* of `StatsForecast` from the Python package index [pip](https://pypi.org/project/statsforecast/) with:
+You can install `StatsForecast` with:
 
 ```python
 pip install statsforecast
 ```
 
-(Installing inside a python virtualenvironment or a conda environment is recommended.)
-</details>
-
-<details open>
-<summary>Conda</summary>
-  
-Also you can install the *released version* of `StatsForecast` from [conda](https://anaconda.org/conda-forge/statsforecast) with:
+or 
 
 ```python
 conda install -c conda-forge statsforecast
+``` 
+
+
+Vist our [Installation Guide](https://nixtla.github.io/statsforecast/examples/installation.html) for further instructions.
+
+## Quick Start
+
+**Minimal Example**
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
+
+sf = StatsForecast(
+    models = [AutoARIMA(season_length = 12)],
+    freq = 'M'
+)
+
+sf.fit(df)
+sf.predict(h=12, level=[95])
 ```
 
-(Installing inside a python virtualenvironment or a conda environment is recommended.)
-</details>
+**Get Started with this [quick guide](https://nixtla.github.io/statsforecast/examples/getting_started_short.html).**
 
-<details>
-<summary>Dev Mode</summary>
-If you want to make some modifications to the code and see the effects in real time (without reinstalling), follow the steps below:
+**Follow this [end-to-end walkthrough](https://nixtla.github.io/statsforecast/examples/getting_started_complete.html) for best practices.**
 
-```bash
-git clone https://github.com/Nixtla/statsforecast.git
-cd statsforecast
-pip install -e .
-```
-</details>
-
-## 🏃🏻‍♀️🏃 Getting Started
-To get started just follow this [guide](https://colab.research.google.com/drive/1GKoLXb5KENLPMuSE9torLGvKPCyXh-Cl?usp=sharing).
-In the guide, we showcase `AutoARIMA` and `AutoETS`, and go further into probabilistic predictions, exogenous variables, and other [baseline models](https://nixtla.github.io/statsforecast/models.html).
-
-## 🎉 New!
-* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb) **ETS Example**: 4x faster than StatsModels with improved accuracy and robustness.
-* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/AutoArima_vs_Prophet.ipynb)   **Complete pipeline and comparison**:  20x faster than pmdarima and 500x faster than Prophet. 
-
-## 🔥  Highlights
-
-* Fastest and most accurate `AutoARIMA` in `Python` and `R`.
-* Fastest and most accurate `ETS` in `Python` and `R`.
-
-* Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter).
-* Distributed computation in clusters with [ray](https://github.com/ray-project/ray). (Forecast 1M series in [30min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray))
-* Good Ol' sklearn interface with `AutoARIMA().fit(y).predict(h=7)`.
-
-## 🎊 Features 
-
-* Inclusion of `exogenous variables` and `prediction intervals` for ARIMA.
-* 20x faster than `pmdarima`.
-* 1.5x faster than `R`.
-* 500x faster than `Prophet`.
-* 100x faster than `NeuralProphet`.
-* 4x faster than `statsmodels`.
-* Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
-* 1,000,000 series in [30 min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray) with [ray](https://github.com/ray-project/ray).
-
-* Out of the box implementation of `ADIDA`, `HistoricAverage`, `CrostonClassic`, `CrostonSBA`, `CrostonOptimized`, `SeasonalWindowAverage`, `SeasonalNaive`, `IMAPA`
-`Naive`, `RandomWalkWithDrift`, `WindowAverage`, `SeasonalExponentialSmoothing`, `TSB`, `AutoARIMA` and `ETS`.
-
-Missing something? Please open an issue or write us in [![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
-
-## 📖 Why? 
+## Why? 
 
 Current Python alternatives for statistical models are slow, inaccurate and don't scale well. So we created a library that can be used to forecast in production environments or as benchmarks.  `StatsForecast` includes an extensive battery of models that can efficiently fit millions of time series.
 
-## 🔬 Accuracy & ⏲ Speed 
+## Features
 
-### ARIMA 
-The `AutoARIMA` model implemented in `StatsForecast` is **20x faster** than `pmdarima` and **1.5x faster** than `R`  while improving accuracy. You can see the exact comparison and reproduce the results [here](./experiments/arima/).
+* Fastest and most accurate implementations of `AutoARIMA`, `AutoETS`, `AutoCES`, `MSTL` and `Theta` in Python. 
+* Out-of-the-box compatibility with Spark, Dask, and Ray.
+* Probabilistic Forecasting and Confidence Intervals.
+* Support for exogenous Variables and static covariates.
+* Anomaly Detection.
+* Familiar sklearn syntax: `.fit` and `.predict`.
 
-### ETS
+## Highlights
 
-StatsForecast's exponential smoothing is **4x faster than StatsModels'** and **1.6x faster than R's**, with improved accuracy and robustness. You can see the exact comparison and reproduce the results [here](./experiments/ets/)
-
-### Benchmarks at Scale
-
-With `StatsForecast` you can fit 9 benchmark models on **1,000,000** series in under **5 min**. Reproduce the results [here](./experiments/benchmarks_at_scale/). 
-
-
-
-## 🧬 Getting Started 
-You can run this notebooks to get you started. 
-
-* Example of different `AutoARIMA` models on M4 data [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/AutoArima_vs_Prophet.ipynb)   
-    * In this notebook we present Nixtla's `AutoARIMA`. 
-    The `AutoARIMA` model is widely used to forecast time series in production and as a benchmark. However, the alternative python implementation (`pmdarima`) is so slow that prevents data scientists from quickly iterating and deploying `AutoARIMA` in production for a large number of time series.
-
-* Shorter Example of fitting and `AutoARIMA` and an `ETS` model.  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/nixtla/statsforecast/blob/main/nbs/examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb) 
+* Inclusion of `exogenous variables` and `prediction intervals` for ARIMA.
+* 20x [faster](./experiments/arima/) than `pmdarima`.
+* 1.5x faster than `R`.
+* 500x faster than `Prophet`. 
+* 4x [faster](./experiments/ets/) than `statsmodels`.
+* Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
+* 1,000,000 series in [30 min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray) with [ray](https://github.com/ray-project/ray).
+* Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter).
+* Fit 10 benchmark models on **1,000,000** series in [under **5 min**](./experiments/benchmarks_at_scale/). 
 
 
-* Benchmarking 9 models on millions of [series](./experiments/benchmarks_at_scale/).
+Missing something? Please open an issue or write us in [![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 
-## 📖 Documentation (WIP)
-Here is a link to the [documentation](https://nixtla.github.io/statsforecast/).
+## Examples and Guides
+
+📚 [End to End Walkthrough](https://nixtla.github.io/statsforecast/examples/getting_started_complete.html): Model training, evaluation and selection for multiple time series
+
+🔎 [Anomaly Detection](https://nixtla.github.io/statsforecast/examples/anomalydetection.html): detect anomalies for time series using in-sample prediction intervals.
+
+👩‍🔬 [Cross Validation](https://nixtla.github.io/statsforecast/examples/crossvalidation.html): robust model’s performance evaluation.
+
+❄️ [Multiple Seasonalities](https://nixtla.github.io/statsforecast/examples/multipleseasonalities.html): how to forecast data with multiple seasonalities using an MSTL.
+
+🔌 [Predict Demand Peaks](https://nixtla.github.io/statsforecast/examples/electricitypeakforecasting.html): electricity load forecasting for detecting daily peaks and reducing electric bills.
+
+📈 [Intermittent Demand](https://nixtla.github.io/statsforecast/examples/intermittentdata.html): forecast series with very few non-zero observations. 
+
+🌡️ [Exogenous Regressors](https://nixtla.github.io/statsforecast/examples/exogenous.html): like weather or prices
+
+
+## Models
+
+### Automatic Forecasting
+Automatic forecasting tools search for the best parameters and select the best possible model for a series of time series. These tools are useful for large collections of univariate time series.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[AutoARIMA](https://nixtla.github.io/statsforecast/models.html#autoarima)|✅|✅|✅|✅|✅|
+|[AutoETS](https://nixtla.github.io/statsforecast/models.html#autoets)|✅|✅|✅|✅|✅|
+|[AutoCES](https://nixtla.github.io/statsforecast/models.html#autoces)|✅||✅|||
+|[AutoTheta](https://nixtla.github.io/statsforecast/models.html#autotheta)|✅|✅|✅|✅|✅|
+
+### Theta Family
+fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[Theta](https://nixtla.github.io/statsforecast/models.html#theta)|✅|✅|✅|✅|✅|
+|[OptimizedTheta](https://nixtla.github.io/statsforecast/models.html#optimizedtheta)|✅|✅|✅|✅|✅|
+|[DynamicTheta](https://nixtla.github.io/statsforecast/models.html#dynamictheta)|✅|✅|✅|✅|✅|
+|[DynamicOptimizedTheta](https://nixtla.github.io/statsforecast/models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
+
+
+### Multiple Seasonalities
+Suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[MSTL](https://nixtla.github.io/statsforecast/models.html#mstl)|✅|✅|✅|✅|✅|
+
+### Baseline Models
+Classical models for establishing baseline.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[HistoricAverage](https://nixtla.github.io/statsforecast/models.html#historicaverage)|✅|✅|✅|✅|✅|
+|[Naive](https://nixtla.github.io/statsforecast/models.html#naive)|✅|✅|✅|✅|✅|
+|[RandomWalkWithDrift](https://nixtla.github.io/statsforecast/models.html#randomwalkwithdrift)|✅|✅|✅|✅|✅|
+|[SeasonalNaive](https://nixtla.github.io/statsforecast/models.html#seasonalnaive)|✅|✅|✅|✅|✅|
+|[WindowAverage](https://nixtla.github.io/statsforecast/models.html#windowaverage)|✅|||||
+|[SeasonalWindowAverage](https://nixtla.github.io/statsforecast/models.html#seasonalwindowaverage)|✅|||||
+
+### Exponential Smoothing
+Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with no clear trend or seasonality.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[SimpleExponentialSmoothing](https://nixtla.github.io/statsforecast/models.html#simpleexponentialsmoothing)|✅|||||
+|[SimpleExponentialSmoothingOptimized](https://nixtla.github.io/statsforecast/models.html#simpleexponentialsmoothingoptimized)|✅|||||
+|[SeasonalExponentialSmoothing](https://nixtla.github.io/statsforecast/models.html#seasonalexponentialsmoothing)|✅|||||
+|[SeasonalExponentialSmoothingOptimized](https://nixtla.github.io/statsforecast/models.html#seasonalexponentialsmoothingoptimized)|✅|||||
+|[Holt](https://nixtla.github.io/statsforecast/models.html#holt)|✅|✅|✅|✅|✅|
+|[HoltWinters](https://nixtla.github.io/statsforecast/models.html#holtwinters)|✅|✅|✅|✅|✅|
+
+
+### Sparse of Inttermitent
+Suited for series with very few non-zero observations
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[ADIDA](https://nixtla.github.io/statsforecast/models.html#adida)|✅|||||
+|[CrostonClassic](https://nixtla.github.io/statsforecast/models.html#crostonclassic)|✅|||||
+|[CrostonOptimized](https://nixtla.github.io/statsforecast/models.html#crostonoptimized)|✅|||||
+|[CrostonSBA](https://nixtla.github.io/statsforecast/models.html#crostonsba)|✅|||||
+|[IMAPA](https://nixtla.github.io/statsforecast/models.html#imapa)|✅|||||
+|[TSB](https://nixtla.github.io/statsforecast/models.html#tsb)|✅|||||
 
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md).
-
-## 📃 References
-
-*  The `AutoARIMA` model is based (translated) from the R implementation included in the [forecast](https://github.com/robjhyndman/forecast) package developed by Rob Hyndman.
-*  The `ETS` model is based (translated) from the R implementation included in the [forecast](https://github.com/robjhyndman/forecast) package developed by Rob Hyndman.
 
 ## Contributors ✨
 
