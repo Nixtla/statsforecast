@@ -38,8 +38,9 @@ For the DL models, we reproduce the reported metrics and results from the mentio
 
 ### Accuracy: Comparison with SOTA benchmarks 
 
-<img width="696" alt="image" src="https://user-images.githubusercontent.com/10517170/204910605-c12a7b2a-af36-4541-9ff3-c01489481867.png">
+![image](https://user-images.githubusercontent.com/10517170/204921409-f948280c-cb56-4a5e-9d0c-bb572290b815.png)
 
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204921235-0836152f-133c-4c23-999f-c2a5b772116e.png">
 
 ### Computational Complexity: Comparison with SOTA benchmarks 
 
@@ -72,7 +73,7 @@ Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to trai
 
 In real-world use cases, the cost of computation also plays a role and should be considered. In the next table you can see the summarized results for all models and ensembles. We compare accuracy measure in SMAPE, RCC, Cost proxy, and self reported computational time.  
 
-<img width="845" alt="image" src="https://user-images.githubusercontent.com/10517170/204915533-9930d8d6-0a7f-4d4e-8073-095fb7ffb929.png">
+<img width="848" alt="image" src="https://user-images.githubusercontent.com/10517170/204921326-ff3ae863-d248-4994-9fd7-8ab7fafc873f.png">
 
 The deep learning ensemble achieves 12.27 of accuracy, with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
 The simple univariate ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
