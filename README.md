@@ -144,7 +144,7 @@ Classical models for establishing baseline.
 |[SeasonalWindowAverage](https://nixtla.github.io/statsforecast/models.html#seasonalwindowaverage)|✅|||||
 
 ### Exponential Smoothing
-Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with no clear trend or seasonality.
+Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with clear trend and/or seasonality. Use the `SimpleExponential` family for data with no clear trend or seasonality.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
