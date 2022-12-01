@@ -1,5 +1,5 @@
 # Statistical vs Deep Learning forecasting methods
-Comparison of several Deep Learning models and ensembles to classical statistical univariate models for the 3,0003 series of the M3 competition.
+Comparison of several Deep Learning models and ensembles to classical statistical univariate models for the 3,003 series of the M3 competition.
 
 ## Abstract
 
@@ -21,7 +21,6 @@ In [Statistical, machine learning and deep learning forecasting methods: Compari
 The authors conclude that:
 
 > We find that combinations of DL models perform better than most standard models, both statistical and ML, especially for the case of monthly series and long-term forecasts.
-
 
 We don't think that's the full picture.
 
@@ -61,7 +60,7 @@ Using `StatsForecast` and a 96 cores EC2 instance (c5d.24xlarge) it takes 5.6 mi
 |-----|-------:|-------:|--------:|--------:|
 |StatsForecast ensemble| 1.10 | 1.32 | 2.38 | 1.08 |
 
-The authors of the paper only report computational time for the monthly group, which amounts to 20,680 mins or 14.3 days. In comparison, the StatsForecast ensemble only takes 2.38 minutes to run for that group. Furthermore, the authors don't report times for Hyperparameter optimization. 
+The authors of the paper only report computational time for the monthly group, which amounts to 20,680 mins or 14.3 days. In comparison, the StatsForecast ensemble only takes 2.38 minutes to run for that group. Furthermore, the authors don't include times for Hyperparameter optimization. 
 
 For this comparison, we will take the reported 14 days of computational time. However, it must be noted that the true computational time must be significantly higher for all groups. 
 
@@ -90,7 +89,6 @@ In the next table, you can find the RCC of the deep learning models and the ense
 ### Summary: Comparison with SOTA benchmarks
 
 We present a summary comparison, including SMAPE, RCC, Cost proxy, and self-reported computational time. 
-
 
 <img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958747-ea9e53ce-d0fc-41d1-bb71-eac7bed4be94.png">
 
