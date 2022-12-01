@@ -12,23 +12,13 @@ def evaluate(lib: str, dataset: str, group: str):
     y_test, horizon, freq, seasonality = get_data('data/', dataset, group, False)
     y_test = y_test['y'].values.reshape(-1, horizon)
 
-    if '-r' not in lib:
-        try:
-            forecast = pd.read_csv(f'data/{lib}-forecasts-{dataset}-{group}.csv')
-            y_hat = forecast[lib].values.reshape(-1, horizon)
-        except:
-            return None
-    else:
-        try:
-            y_hat = np.loadtxt(f'data/{lib}-forecasts-{dataset}-{group}.txt')
-        except:
-            return None
-    
+    forecast = pd.read_csv(f'data/{lib}-forecasts-{dataset}-{group}.csv')
+    y_hat = forecast[lib].values.reshape(-1, horizon)
 
     evals = {}
     for metric in (mape, smape):
         metric_name = metric.__name__
-        loss = metric(y_test, y_hat)#.mean()
+        loss = metric(y_test, y_hat)
         evals[metric_name] = loss 
 
     evals = pd.DataFrame(evals, index=[f'{dataset}_{group}']).rename_axis('dataset').reset_index()
@@ -40,7 +30,7 @@ def evaluate(lib: str, dataset: str, group: str):
 
 if __name__ == '__main__':
     groups = ['Monthly', 'Yearly', 'Other', 'Quarterly']
-    lib = ['ThetaEnsemble']
+    lib = ['StatisticalEnsemble']
     datasets = ['M3']
     evaluation = [evaluate(lib, dataset, group) for lib, group in product(lib, groups) for dataset in datasets]
     evaluation = [eval_ for eval_ in evaluation if eval_ is not None]
