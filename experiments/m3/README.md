@@ -30,7 +30,7 @@ By including a statistical ensemble, we show that these claims are not completel
 
 Building upon the original design, we further included [A simple combination of univariate models](https://www.sciencedirect.com/science/article/abs/pii/S0169207019300585) in the comparison. 
 
-This ensemble is formed by averaging four statistical models: `ARIMA`, `ETS`, `CES` and `DynamicOptimizedTheta`. This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
+This ensemble is formed by averaging four statistical models: [`AutoARIMA`](https://www.jstatsoft.org/article/view/v027i03), [`ETS`](https://robjhyndman.com/expsmooth/), [`CES`](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074) and [`DynamicOptimizedTheta`](https://doi.org/10.1016/j.ijforecast.2016.02.005). This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
  
 For the experiment, we use StatsForecast's implementation of Arima, ETS, CES and DOT. 
 
@@ -119,9 +119,13 @@ To reproduce the main results you have to:
 
 ## References
 
+- [Hyndman, Rob J. & Khandakar, Yeasmin (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03)
+- [Hyndman, Rob J., et al (2008). "Forecasting with exponential smoothing: the state space approach"](https://robjhyndman.com/expsmooth/)
+- [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing". 10.13140/RG.2.1.3757.2562. ](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074)
 - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler: Models for optimising the theta method and their relationship to state space models, International Journal of Forecasting, Volume 32, Issue 4, 2016, Pages 1151-1161, ISSN 0169-2070](https://doi.org/10.1016/j.ijforecast.2016.02.005)
+- [Fotios Petropoulos, Ivan Svetunkov: A simple combination of univariate models, International Journal of Forecasting, Volume 36, Issue 1, 2020, Pages 110-115, ISSN 0169-2070.](https://doi.org/10.1016/j.ijforecast.2019.01.006)
 - [Spyros Makridakis, Evangelos Spiliotis, Vassilios Assimakopoulos, ArtemiosAnargyros Semenoglou, Gary Mulder & Konstantinos Nikolopoulos (2022): Statistical, machine
 learning and deep learning forecasting methods: Comparisons and ways forward, Journal of the
 Operational Research Society, DOI: 10.1080/01605682.2022.2118629](https://www.tandfonline.com/doi/pdf/10.1080/01605682.2022.2118629?needAccess=true)
-- [Fotios Petropoulos, Ivan Svetunkov: A simple combination of univariate models, International Journal of Forecasting, Volume 36, Issue 1, 2020, Pages 110-115, ISSN 0169-2070.](https://doi.org/10.1016/j.ijforecast.2019.01.006)
+
 
