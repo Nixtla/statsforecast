@@ -40,7 +40,7 @@ For the DL models, we reproduce the reported metrics and results from the mentio
 
 ### Accuracy: Comparison with SOTA benchmarks 
 
-<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958433-c216c651-3a12-46ec-88bf-fb1e580742cc.png">
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204959437-6a124ad6-a1b5-47c7-ba24-91d447efb1ce.png">
 <img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958689-38cdea5f-58d7-42f5-b825-0f2a0b63f617.png">
 
 ### Computational Complexity: Comparison with SOTA benchmarks 
