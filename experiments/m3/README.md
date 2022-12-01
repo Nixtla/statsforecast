@@ -1,17 +1,19 @@
-# Comparison of Statistical and Deep Learning forecasting methods in M3
+# Statistical vs Deep Learning forecasting methods for time series
 
 ## Abstract
 
 We present a reproducible experiment that shows that:
 
-1. A simple ensemble of univariate models outperforms individual deep learning models and achieves so-called SOTA.
+1. A simple statistical ensemble outperforms most individual deep-learning models. 
 
-2. A simple ensemble of univariate models is 25,000 more efficient and only slightly less accurate than an ensemble of deep learning models.
+2. A simple statistical ensemble is 25,000 faster and only slightly less accurate than an ensemble of deep learning models.
+
+In other words, deep-learning ensembles outperform statistical ensembles by 0.36 points in SMAPE; but the DL ensemble (12.27 SMAPE) takes more than 15 days to run and costs around USD 11,000, while the statistical ensemble (12.63) takes 6 minutes to run and costs $0.5c. 
 
 
 ## Background
 
-In [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), prominent participants of the forecasting science community compare Deep Learning models and Statistical models for all 3,003 series of the M3 competition.
+In [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), Makridakis and other prominent participants of the forecasting science community compare Deep Learning models and Statistical models for all 3,003 series of the M3 competition.
 
 > The purpose of [the] paper is to test empirically the value currently added by Deep Learning (DL) approaches in time series forecasting by comparing the accuracy of some state-of-theart DL methods with that of popular Machine Learning (ML) and statistical ones.
 
@@ -20,27 +22,26 @@ The authors conclude that:
 > We find that combinations of DL models perform better than most standard models, both statistical and ML, especially for the case of monthly series and long-term forecasts.
 
 
-We don't agree.
+We don't think that's the full picture.
 
-By including a combination of four classical univariate models we show that these claims are in no way warranted and that one should rather conclude that, for this setting at least, Deep Learning is second best to statistical univariate models.
+By including a statistical ensemble, we show that these claims are not completely warranted and that one should rather conclude that, for this setting at least, Deep Learning is rather unattractive.
 
 ## Experiment
 
 Building upon the original design, we further included [A simple combination of univariate models](https://www.sciencedirect.com/science/article/abs/pii/S0169207019300585) in the comparison. 
 
-This ensemble is formed by averaging four models: `ARIMA`, `ETS`, `CES` and `DynamicOptimizedTheta`. This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
+This ensemble is formed by averaging four statistical models: [`AutoARIMA`](https://www.jstatsoft.org/article/view/v027i03), [`ETS`](https://robjhyndman.com/expsmooth/), [`CES`](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074) and [`DynamicOptimizedTheta`](https://doi.org/10.1016/j.ijforecast.2016.02.005). This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
  
 For the experiment, we use StatsForecast's implementation of Arima, ETS, CES and DOT. 
 
-For the DL models, we reproduce the reported metrics and results from the mentioned paper and included
+For the DL models, we reproduce the reported metrics and results from the mentioned paper.
 
 ## Results
 
 ### Accuracy: Comparison with SOTA benchmarks 
 
-![image](https://user-images.githubusercontent.com/10517170/204921409-f948280c-cb56-4a5e-9d0c-bb572290b815.png)
-
-<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204921235-0836152f-133c-4c23-999f-c2a5b772116e.png">
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204959437-6a124ad6-a1b5-47c7-ba24-91d447efb1ce.png">
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958689-38cdea5f-58d7-42f5-b825-0f2a0b63f617.png">
 
 ### Computational Complexity: Comparison with SOTA benchmarks 
 
@@ -53,7 +54,7 @@ Using `StatsForecast` and a 96 cores EC2 instance (c5d.24xlarge) it takes 5.6 mi
 
 Furthermore, this experiment including downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. In comparison, [this](https://github.com/gjmulder/m3-gluonts-ensemble) repo has more than 1,000 lines of code and needs Python, R, Mongo and Shell code.
 
-The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. We stick to that metric for comparability's sake. To calculate the RCC of `StatsForecast`, we measured the time it takes to generate naive forecasts for all 3,0003 series in the same environment. 
+The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. We stick to that metric for comparability's sake. To calculate the RCC of `StatsForecast`, we measured the time it takes to generate naive forecasts for all 3,003 series in the same environment. 
 
 Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to train and predict 3,003 instances of a Seasonal Naive forecast. Therefore, the RCC of the simple ensemble is 28. 
 
@@ -68,31 +69,34 @@ Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to trai
 |SeasonalNaive| Statistical | 1 | 
 
 
-
 ### Summary: Comparison with SOTA benchmarks
 
-In real-world use cases, the cost of computation also plays a role and should be considered. In the next table you can see the summarized results for all models and ensembles. We compare accuracy measure in SMAPE, RCC, Cost proxy, and self reported computational time.  
+In real-world use cases, the cost of computation also plays a role and should be considered. In the next table, you can see the summarized results for all models and ensembles. We compare accuracy measured in SMAPE, RCC, Cost proxy, and self-reported computational time.  
 
-<img width="848" alt="image" src="https://user-images.githubusercontent.com/10517170/204921326-ff3ae863-d248-4994-9fd7-8ab7fafc873f.png">
-
-The deep learning ensemble achieves 12.27 of accuracy, with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
-The simple univariate ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958747-ea9e53ce-d0fc-41d1-bb71-eac7bed4be94.png">
 
 We observe that `StatsForecast` yields average SMAPE results similar to DeepAR with computational savings of 99%.
 
-Therefore, the DL Ensemble is only 0.36 points more accurate than the statistical ensemble, but 25,000 times more expensive. 
 
 Furthermore, we can see that the StatsForecast ensemble:
-- Has better performance than the `N-BEATS` model for the yearly and other groups.
+- Has better performance than the `N-BEATS` model for the `Yearly` and `Other` groups.
 - Has a better average performance than the individual `Gluon-TS` models. In particular, the ensemble is better than Feed-Forward, Transformer and Wavenet for all 4 groups.
 - It is consistently better than the `Transformer`, `Wavenet`, and `Feed-Forward` models.
-- It performs better than all `Gluont-TS` models for the monthly and other groups. 
+- It performs better than all `Gluont-TS` models for the `Monthly` and `Other` groups. 
+
+The deep learning ensemble achieves 12.27 of accuracy (sMAPE), with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
+The simple statistical ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
+Therefore, the DL Ensemble is only 0.36 points more accurate than the statistical ensemble, but 25,000 times more expensive. 
+
+In plain English: a deep-learning ensemble that takes more than 15 days to run and costs around USD 11,000, outperforms a statistical ensemble that takes 6 minutes to run and costs $0.5c by only 0.36 points of SMAPE. 
 
 
 ## Conclusions
-For this setting: Deep Learning models are simply worse or marginally better than simpler univariate models in terms of accuracy. In terms of speed, costs, simplicity and interpretability, deep learning is far behind the simple univariate ensemble.
+For this setting: Deep Learning models are simply worse than a statistical ensemble. To outperform this statistical ensemble by 0.36 points of SMAPE complicated deep learning is needed. The deep learning ensemble takes more than two weeks to run, several thousands of dollars and many engineering hours. 
 
-This conclusion might or not hold in other datasets, however, given the a priori uncertainty of the benefits and the certainty of cost, statistical methods should be considered the first option in daily forecasting practice. 
+In conclusion: in terms of speed, costs, simplicity and interpretability, deep learning is far behind the simple statistical ensemble. In terms of accuracy, they seem to be rather close.
+
+This conclusion might or not hold in other datasets, however, given the a priori uncertainty of the benefits and the certainty of cost, statistical methods should be considered the first option in daily forecasting practice.
 
 ## Unsolicited Advice
 
@@ -115,9 +119,13 @@ To reproduce the main results you have to:
 
 ## References
 
+- [Hyndman, Rob J. & Khandakar, Yeasmin (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03)
+- [Hyndman, Rob J., et al (2008). "Forecasting with exponential smoothing: the state space approach"](https://robjhyndman.com/expsmooth/)
+- [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing". 10.13140/RG.2.1.3757.2562. ](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074)
 - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler: Models for optimising the theta method and their relationship to state space models, International Journal of Forecasting, Volume 32, Issue 4, 2016, Pages 1151-1161, ISSN 0169-2070](https://doi.org/10.1016/j.ijforecast.2016.02.005)
+- [Fotios Petropoulos, Ivan Svetunkov: A simple combination of univariate models, International Journal of Forecasting, Volume 36, Issue 1, 2020, Pages 110-115, ISSN 0169-2070.](https://doi.org/10.1016/j.ijforecast.2019.01.006)
 - [Spyros Makridakis, Evangelos Spiliotis, Vassilios Assimakopoulos, ArtemiosAnargyros Semenoglou, Gary Mulder & Konstantinos Nikolopoulos (2022): Statistical, machine
 learning and deep learning forecasting methods: Comparisons and ways forward, Journal of the
 Operational Research Society, DOI: 10.1080/01605682.2022.2118629](https://www.tandfonline.com/doi/pdf/10.1080/01605682.2022.2118629?needAccess=true)
-- [Fotios Petropoulos, Ivan Svetunkov: A simple combination of univariate models, International Journal of Forecasting, Volume 36, Issue 1, 2020, Pages 110-115, ISSN 0169-2070.](https://doi.org/10.1016/j.ijforecast.2019.01.006)
+
 
