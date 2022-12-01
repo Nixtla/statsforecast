@@ -54,7 +54,7 @@ Using `StatsForecast` and a 96 cores EC2 instance (c5d.24xlarge) it takes 5.6 mi
 
 Furthermore, this experiment including downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. In comparison, [this](https://github.com/gjmulder/m3-gluonts-ensemble) repo has more than 1,000 lines of code and needs Python, R, Mongo and Shell code.
 
-The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. We stick to that metric for comparability's sake. To calculate the RCC of `StatsForecast`, we measured the time it takes to generate naive forecasts for all 3,0003 series in the same environment. 
+The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. We stick to that metric for comparability's sake. To calculate the RCC of `StatsForecast`, we measured the time it takes to generate naive forecasts for all 3,003 series in the same environment. 
 
 Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to train and predict 3,003 instances of a Seasonal Naive forecast. Therefore, the RCC of the simple ensemble is 28. 
 
@@ -79,12 +79,12 @@ We observe that `StatsForecast` yields average SMAPE results similar to DeepAR w
 
 
 Furthermore, we can see that the StatsForecast ensemble:
-- Has better performance than the `N-BEATS` model for the yearly and other groups.
+- Has better performance than the `N-BEATS` model for the `Yearly` and `Other` groups.
 - Has a better average performance than the individual `Gluon-TS` models. In particular, the ensemble is better than Feed-Forward, Transformer and Wavenet for all 4 groups.
 - It is consistently better than the `Transformer`, `Wavenet`, and `Feed-Forward` models.
-- It performs better than all `Gluont-TS` models for the monthly and other groups. 
+- It performs better than all `Gluont-TS` models for the `Monthly` and `Other` groups. 
 
-The deep learning ensemble achieves 12.27 of accuracy, with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
+The deep learning ensemble achieves 12.27 of accuracy (sMAPE), with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
 The simple statistical ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
 Therefore, the DL Ensemble is only 0.36 points more accurate than the statistical ensemble, but 25,000 times more expensive. 
 
