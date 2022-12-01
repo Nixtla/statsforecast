@@ -1,4 +1,5 @@
-# Statistical vs Deep Learning forecasting methods for time series
+# Statistical vs Deep Learning forecasting methods
+Comparison of several Deep Learning models and ensembles to classical statistical univariate models for the 3,0003 series of the M3 competition.
 
 ## Abstract
 
@@ -8,12 +9,12 @@ We present a reproducible experiment that shows that:
 
 2. A simple statistical ensemble is 25,000 faster and only slightly less accurate than an ensemble of deep learning models.
 
-In other words, deep-learning ensembles outperform statistical ensembles by 0.36 points in SMAPE; but the DL ensemble (12.27 SMAPE) takes more than 15 days to run and costs around USD 11,000, while the statistical ensemble (12.63) takes 6 minutes to run and costs $0.5c. 
+In other words, deep-learning ensembles outperform statistical ensembles just by 0.36 points in SMAPE. However, the DL ensemble takes more than 14 days to run and costs around USD 11,000, while the statistical ensemble takes 6 minutes to run and costs $0.5c. 
 
 
 ## Background
 
-In [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), Makridakis and other prominent participants of the forecasting science community compare Deep Learning models and Statistical models for all 3,003 series of the M3 competition.
+In [Statistical, machine learning and deep learning forecasting methods: Comparisons and ways forward](https://www.tandfonline.com/doi/full/10.1080/01605682.2022.2118629), Makridakis and other prominent participants of the forecasting science community compare several Deep Learning and Statistical models for all 3,003 series of the M3 competition.
 
 > The purpose of [the] paper is to test empirically the value currently added by Deep Learning (DL) approaches in time series forecasting by comparing the accuracy of some state-of-theart DL methods with that of popular Machine Learning (ML) and statistical ones.
 
@@ -32,31 +33,48 @@ Building upon the original design, we further included [A simple combination of 
 
 This ensemble is formed by averaging four statistical models: [`AutoARIMA`](https://www.jstatsoft.org/article/view/v027i03), [`ETS`](https://robjhyndman.com/expsmooth/), [`CES`](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074) and [`DynamicOptimizedTheta`](https://doi.org/10.1016/j.ijforecast.2016.02.005). This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
  
-For the experiment, we use StatsForecast's implementation of Arima, ETS, CES and DOT. 
+For the experiment, we use StatsForecast's implementation of [Arima](https://nixtla.github.io/statsforecast/models.html#autoarima), [ETS](https://nixtla.github.io/statsforecast/models.html#autoets), [CES](https://nixtla.github.io/statsforecast/models.html#autoces) and [DOT](https://nixtla.github.io/statsforecast/models.html#dynamic-optimized-theta-method). 
 
-For the DL models, we reproduce the reported metrics and results from the mentioned paper.
+For the DL models and ensembles, we reproduce the reported metrics and results from the mentioned paper.
 
 ## Results
 
 ### Accuracy: Comparison with SOTA benchmarks 
+Accuracy is reported in Symmetric mean absolute percentage error ([SMAPE](https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error))
+
+The M3 dataset has four groups of time series. In the next graph, you can see the performance of all models and ensembles.
 
 <img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204959437-6a124ad6-a1b5-47c7-ba24-91d447efb1ce.png">
+
+In the next table, you can see the performance of the models across all four groups and the average performance for all groups.
+
 <img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958689-38cdea5f-58d7-42f5-b825-0f2a0b63f617.png">
 
 ### Computational Complexity: Comparison with SOTA benchmarks 
 
+Computational complexity is reported in time, lines of code and, Relative Computational Complexity (RCC). 
+
+#### Tine
 Using `StatsForecast` and a 96 cores EC2 instance (c5d.24xlarge) it takes 5.6 mins to train, forecast and ensemble the four models for the 3,003 series of M3. 
 
 | Time (mins) | Yearly | Quarterly | Monthly | Other |
 |-----|-------:|-------:|--------:|--------:|
 |StatsForecast ensemble| 1.10 | 1.32 | 2.38 | 1.08 |
 
+The authors of the paper only report computational time for the monthly group, which amounts to 20,680 mins or 14.3 days. In comparison, the StatsForecast ensemble only takes 2.38 minutes to run for that group. Furthermore, the authors don't report times for Hyperparameter optimization. 
 
-Furthermore, this experiment including downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. In comparison, [this](https://github.com/gjmulder/m3-gluonts-ensemble) repo has more than 1,000 lines of code and needs Python, R, Mongo and Shell code.
+For this comparison, we will take the reported 14 days of computational time. However, it must be noted that the true computational time must be significantly higher for all groups. 
 
-The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. We stick to that metric for comparability's sake. To calculate the RCC of `StatsForecast`, we measured the time it takes to generate naive forecasts for all 3,003 series in the same environment. 
+#### Engineering 
+
+Furthermore, running all statatistical models, including data downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. In comparison, [this](https://github.com/gjmulder/m3-gluonts-ensemble) repo has more than 1,000 lines of code and needs Python, R, Mongo and Shell code.
+
+#### Relative Computational Complexity 
+The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. To calculate the RCC of `StatsForecast`, we followed the same methodology and measured the time it takes to generate naive forecasts for all 3,003 series in our environment. 
 
 Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to train and predict 3,003 instances of a Seasonal Naive forecast. Therefore, the RCC of the simple ensemble is 28. 
+
+In the next table, you can find the RCC of the deep learning models and the ensembles
 
 | Method | Type | Relative Computational Complexity (RCC)|
 |--------|------|----------------------------------------:|
@@ -65,34 +83,35 @@ Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to trai
 |Transformer| DL | 47,500 |
 |WaveNet| DL | 306,000 |
 |Ensemble-DL | DL | 713,800 |
-|StatsForecast | Statistical | 28 |
-|SeasonalNaive| Statistical | 1 | 
+|Ensemble - Stats | Statistical | 28 |
+|SeasonalNaive| Benchmark | 1 | 
 
 
 ### Summary: Comparison with SOTA benchmarks
 
-In real-world use cases, the cost of computation also plays a role and should be considered. In the next table, you can see the summarized results for all models and ensembles. We compare accuracy measured in SMAPE, RCC, Cost proxy, and self-reported computational time.  
+We present a summary comparison, including SMAPE, RCC, Cost proxy, and self-reported computational time. 
+
 
 <img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958747-ea9e53ce-d0fc-41d1-bb71-eac7bed4be94.png">
 
 We observe that `StatsForecast` yields average SMAPE results similar to DeepAR with computational savings of 99%.
 
-
-Furthermore, we can see that the StatsForecast ensemble:
+Furthermore, the StatsForecast ensemble:
 - Has better performance than the `N-BEATS` model for the `Yearly` and `Other` groups.
-- Has a better average performance than the individual `Gluon-TS` models. In particular, the ensemble is better than Feed-Forward, Transformer and Wavenet for all 4 groups.
-- It is consistently better than the `Transformer`, `Wavenet`, and `Feed-Forward` models.
+- Has a better average performance than the individual `Gluon-TS` models. 
 - It performs better than all `Gluont-TS` models for the `Monthly` and `Other` groups. 
+- It is consistently better than the `Transformer`, `Wavenet`, and `Feed-Forward` models.
 
-The deep learning ensemble achieves 12.27 of accuracy (sMAPE), with a relative computational cost of 713,000 and a proxy monetary cost of 11,420 USD.
-The simple statistical ensemble achieves 12.63 of accuracy, with a relative computational cost of 28 and a proxy monetary cost of 0.5 USD. 
+In conclusion, the deep learning ensemble achieves 12.27 points of accuracy (sMAPE), with a relative computational cost of 713,000 and a proxy monetary cost of USD 11,4200. 
+The simple statistical ensemble achieves 12.63 points of accuracy, with a relative computational cost of 28 and a proxy monetary cost of USD 0.5c.
+
 Therefore, the DL Ensemble is only 0.36 points more accurate than the statistical ensemble, but 25,000 times more expensive. 
 
-In plain English: a deep-learning ensemble that takes more than 15 days to run and costs around USD 11,000, outperforms a statistical ensemble that takes 6 minutes to run and costs $0.5c by only 0.36 points of SMAPE. 
+In plain English: a deep-learning ensemble that takes more than 14 days to run and costs around USD 11,000, outperforms a statistical ensemble that takes 6 minutes to run and costs $0.5c by only 0.36 points of SMAPE. 
 
 
 ## Conclusions
-For this setting: Deep Learning models are simply worse than a statistical ensemble. To outperform this statistical ensemble by 0.36 points of SMAPE complicated deep learning is needed. The deep learning ensemble takes more than two weeks to run, several thousands of dollars and many engineering hours. 
+For this setting: Deep Learning models are simply worse than a statistical ensemble. To outperform this statistical ensemble by 0.36 points of SMAPE a complicated deep learning ensemble is needed. The deep learning ensemble, however, takes more than two weeks to run, costs several thousands of dollars and demands several engineering hours. 
 
 In conclusion: in terms of speed, costs, simplicity and interpretability, deep learning is far behind the simple statistical ensemble. In terms of accuracy, they seem to be rather close.
 
