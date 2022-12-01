@@ -67,7 +67,7 @@ For this comparison, we will take the reported 14 days of computational time. Ho
 
 #### Engineering 
 
-Furthermore, running all statatistical models, including data downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. In comparison, [this](https://github.com/gjmulder/m3-gluonts-ensemble) repo has more than 1,000 lines of code and needs Python, R, Mongo and Shell code.
+Furthermore, running all statistical models, including data downloading, data wrangling, training, forecasting and ensembling the models, can be achieved in less than 150 lines of Python code. In comparison, [this](https://github.com/gjmulder/m3-gluonts-ensemble) repo has more than 1,000 lines of code and needs Python, R, Mongo and Shell code.
 
 #### Relative Computational Complexity 
 The mentioned paper uses Relative Computational Complexity (RCC) for comparing the models. To calculate the RCC of `StatsForecast`, we followed the same methodology and measured the time it takes to generate naive forecasts for all 3,003 series in our environment. 
