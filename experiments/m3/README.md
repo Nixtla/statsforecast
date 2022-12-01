@@ -40,9 +40,8 @@ For the DL models, we reproduce the reported metrics and results from the mentio
 
 ### Accuracy: Comparison with SOTA benchmarks 
 
-![image](https://user-images.githubusercontent.com/10517170/204921409-f948280c-cb56-4a5e-9d0c-bb572290b815.png)
-
-<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204921235-0836152f-133c-4c23-999f-c2a5b772116e.png">
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958433-c216c651-3a12-46ec-88bf-fb1e580742cc.png">
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958689-38cdea5f-58d7-42f5-b825-0f2a0b63f617.png">
 
 ### Computational Complexity: Comparison with SOTA benchmarks 
 
@@ -70,12 +69,11 @@ Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to trai
 |SeasonalNaive| Statistical | 1 | 
 
 
-
 ### Summary: Comparison with SOTA benchmarks
 
 In real-world use cases, the cost of computation also plays a role and should be considered. In the next table, you can see the summarized results for all models and ensembles. We compare accuracy measured in SMAPE, RCC, Cost proxy, and self-reported computational time.  
 
-<img width="848" alt="image" src="https://user-images.githubusercontent.com/10517170/204921326-ff3ae863-d248-4994-9fd7-8ab7fafc873f.png">
+<img width="734" alt="image" src="https://user-images.githubusercontent.com/10517170/204958747-ea9e53ce-d0fc-41d1-bb71-eac7bed4be94.png">
 
 We observe that `StatsForecast` yields average SMAPE results similar to DeepAR with computational savings of 99%.
 
