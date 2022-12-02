@@ -53,7 +53,7 @@ In the next table, you can see the performance of the models across all four gro
 
 Computational complexity is reported in time, lines of code and, Relative Computational Complexity (RCC). 
 
-#### Tine
+#### Time
 Using `StatsForecast` and a 96 cores EC2 instance (c5d.24xlarge) it takes 5.6 mins to train, forecast and ensemble the four models for the 3,003 series of M3. 
 
 | Time (mins) | Yearly | Quarterly | Monthly | Other |
