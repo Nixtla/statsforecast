@@ -94,6 +94,7 @@ class AutoARIMA(_TS):
     `parallel`: bool, If True and stepwise=False, then parallel search.<br>
     `num_cores`: int, amount of parallel processes to be used if parallel=True.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
 
     **Note:**<br>
     This implementation is a mirror of Hyndman's [forecast::auto.arima](https://github.com/robjhyndman/forecast).
@@ -137,6 +138,7 @@ class AutoARIMA(_TS):
         parallel: bool = False,
         num_cores: int = 2,
         season_length: int = 1,
+        alias: str = "AutoARIMA",
     ):
         self.d = d
         self.D = D
@@ -171,9 +173,10 @@ class AutoARIMA(_TS):
         self.parallel = parallel
         self.num_cores = num_cores
         self.season_length = season_length
+        self.alias = alias
 
     def __repr__(self):
-        return "AutoARIMA"
+        return self.alias
 
     def fit(
         self,
@@ -359,7 +362,7 @@ class AutoARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/models.ipynb 23
+# %% ../nbs/models.ipynb 24
 class AutoETS(_TS):
     """Automatic Exponential Smoothing model.
 
@@ -379,6 +382,7 @@ class AutoETS(_TS):
     `model`: str, controlling state-space-equations.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `damped`: bool, a parameter that 'dampens' the trend. <br>
+    `alias`: srt, Custom name of the model. Default `AutoETS`.<br>
 
     **Note:**<br>
     This implementation is a mirror of Hyndman's [forecast::ets](https://github.com/robjhyndman/forecast).
@@ -390,14 +394,19 @@ class AutoETS(_TS):
     """
 
     def __init__(
-        self, season_length: int = 1, model: str = "ZZZ", damped: Optional[bool] = None
+        self,
+        season_length: int = 1,
+        model: str = "ZZZ",
+        damped: Optional[bool] = None,
+        alias: str = "AutoETS",
     ):
         self.season_length = season_length
         self.model = model
         self.damped = damped
+        self.alias = alias
 
     def __repr__(self):
-        return "AutoETS"
+        return self.alias
 
     def fit(
         self,
@@ -510,7 +519,7 @@ class AutoETS(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/models.ipynb 34
+# %% ../nbs/models.ipynb 36
 class ETS(AutoETS):
     @classmethod
     def _warn(cls):
@@ -521,17 +530,22 @@ class ETS(AutoETS):
         )
 
     def __init__(
-        self, season_length: int = 1, model: str = "ZZZ", damped: Optional[bool] = None
+        self,
+        season_length: int = 1,
+        model: str = "ZZZ",
+        damped: Optional[bool] = None,
+        alias: str = "ETS",
     ):
         ETS._warn()
         self.season_length = season_length
         self.model = model
         self.damped = damped
+        self.alias = alias
 
     def __repr__(self):
-        return "ETS"
+        return self.alias
 
-# %% ../nbs/models.ipynb 38
+# %% ../nbs/models.ipynb 41
 class AutoCES(_TS):
     """Complex Exponential Smoothing model.
 
@@ -550,17 +564,19 @@ class AutoCES(_TS):
     **Parameters:**<br>
     `model`: str, controlling state-space-equations.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+    `alias`: srt, Custom name of the model. Default `CES`.<br>
 
     **References:**<br>
     [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing". 10.13140/RG.2.1.3757.2562. ](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074).
     """
 
-    def __init__(self, season_length: int = 1, model: str = "Z"):
+    def __init__(self, season_length: int = 1, model: str = "Z", alias: str = "CES"):
         self.season_length = season_length
         self.model = model
+        self.alias = alias
 
     def __repr__(self):
-        return "CES"
+        return self.alias
 
     def fit(
         self,
@@ -648,7 +664,7 @@ class AutoCES(_TS):
         res = {key: fcst[key] for key in keys}
         return res
 
-# %% ../nbs/models.ipynb 47
+# %% ../nbs/models.ipynb 51
 class AutoTheta(_TS):
     """AutoTheta model.
 
@@ -660,6 +676,7 @@ class AutoTheta(_TS):
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
     `model`: str, controlling Theta Model. By default searchs the best model.<br>
+    `alias`: srt, Custom name of the model. Default `AutoTheta`.<br>
 
     **References:**<br>
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -670,13 +687,15 @@ class AutoTheta(_TS):
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
         model: Optional[str] = None,
+        alias: str = "AutoTheta",
     ):
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
+        self.alias = alias
 
     def __repr__(self):
-        return "AutoTheta"
+        return self.alias
 
     def fit(
         self,
@@ -782,7 +801,7 @@ class AutoTheta(_TS):
             res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/models.ipynb 57
+# %% ../nbs/models.ipynb 62
 @njit
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
@@ -868,7 +887,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
         sums[i] = array[start : start + chunk_size].sum()
     return sums
 
-# %% ../nbs/models.ipynb 58
+# %% ../nbs/models.ipynb 63
 @njit
 def _ses(
     y: np.ndarray,  # time series
@@ -883,7 +902,7 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 59
+# %% ../nbs/models.ipynb 64
 class SimpleExponentialSmoothing(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -895,17 +914,19 @@ class SimpleExponentialSmoothing(_TS):
 
     **Parameters:**<br>
     `alpha`: float, smoothing parameter.<br>
+    `alias`: srt, Custom name of the model. Default `SES`.<br>
 
     **References:**<br>
     [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
 
     """
 
-    def __init__(self, alpha: float):
+    def __init__(self, alpha: float, alias: str = "SES"):
         self.alpha = alpha
+        self.alias = alias
 
     def __repr__(self):
-        return "SES"
+        return self.alias
 
     def fit(
         self,
@@ -989,7 +1010,7 @@ class SimpleExponentialSmoothing(_TS):
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
-# %% ../nbs/models.ipynb 68
+# %% ../nbs/models.ipynb 74
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1002,7 +1023,7 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 69
+# %% ../nbs/models.ipynb 75
 class SimpleExponentialSmoothingOptimized(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -1013,17 +1034,18 @@ class SimpleExponentialSmoothingOptimized(_TS):
     The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
 
     **Parameters:**<br>
+    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
 
     **References:**<br>
     [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
 
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, alias: str = "SESOpt"):
+        self.alias = alias
 
     def __repr__(self):
-        return "SESOpt"
+        return self.alias
 
     def fit(
         self,
@@ -1107,7 +1129,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 78
+# %% ../nbs/models.ipynb 85
 @njit
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
@@ -1130,7 +1152,7 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 79
+# %% ../nbs/models.ipynb 86
 class SeasonalExponentialSmoothing(_TS):
     """SeasonalExponentialSmoothing model.
 
@@ -1146,6 +1168,7 @@ class SeasonalExponentialSmoothing(_TS):
     **Parameters:**<br>
     `alpha`: float, smoothing parameter.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
 
     **References:**<br>
     [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
@@ -1153,16 +1176,13 @@ class SeasonalExponentialSmoothing(_TS):
     [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
     """
 
-    def __init__(
-        self,
-        season_length: int,
-        alpha: float,
-    ):
+    def __init__(self, season_length: int, alpha: float, alias: str = "SeasonalES"):
         self.season_length = season_length
         self.alpha = alpha
+        self.alias = alias
 
     def __repr__(self):
-        return "SeasonalES"
+        return self.alias
 
     def fit(
         self,
@@ -1256,7 +1276,7 @@ class SeasonalExponentialSmoothing(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 88
+# %% ../nbs/models.ipynb 96
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1277,12 +1297,9 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 89
+# %% ../nbs/models.ipynb 97
 class SeasonalExponentialSmoothingOptimized(_TS):
-    def __init__(
-        self,
-        season_length: int,
-    ):
+    def __init__(self, season_length: int, alias: str = "SeasESOpt"):
         """SeasonalExponentialSmoothingOptimized model.
 
         Uses a weighted average of all past observations where the weights decrease exponentially into the past.
@@ -1298,6 +1315,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
 
         **Parameters:**<br>
         `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
+        `alias`: srt, Custom name of the model. Default `SeasESOpt`.<br>
 
         **References:**<br>
         [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
@@ -1305,9 +1323,10 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
         """
         self.season_length = season_length
+        self.alias = alias
 
     def __repr__(self):
-        return "SeasESOpt"
+        return self.alias
 
     def fit(
         self,
@@ -1400,7 +1419,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 98
+# %% ../nbs/models.ipynb 107
 class Holt(AutoETS):
     """Holt's method.
 
@@ -1410,22 +1429,26 @@ class Holt(AutoETS):
     **Parameters:**<br>
      `season_length`: int, number of observations per unit of time. Ex: 12 Monthly data. <br>
      `error_type`: The type of error of the ETS model. Can be additive (A) or multiplicative (M). <br>
+     `alias`: srt, Custom name of the model. Default `Holt`.<br>
 
     **References:**<br>
     - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with trend"](https://otexts.com/fpp3/holt.html).
     """
 
-    def __init__(self, season_length: int = 1, error_type: str = "A"):
+    def __init__(
+        self, season_length: int = 1, error_type: str = "A", alias: str = "Holt"
+    ):
 
         self.season_length = season_length
         self.error_type = error_type
+        self.alias = alias
         model = error_type + "AN"
-        super().__init__(season_length, model)
+        super().__init__(season_length, model, alias=alias)
 
     def __repr__(self):
-        return "Holt"
+        return self.alias
 
-# %% ../nbs/models.ipynb 108
+# %% ../nbs/models.ipynb 118
 class HoltWinters(AutoETS):
     """Holt-Winters' method.
 
@@ -1435,6 +1458,7 @@ class HoltWinters(AutoETS):
     **Parameters:**<br>
      `season_length`: int, number of observations per unit of time. Ex: 12 Monthly data. <br>
      `error_type`: The type of error of the ETS model. Can be additive (A) or multiplicative (M). <br>
+    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
 
     **References:**<br>
     - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with seasonality"](https://otexts.com/fpp3/holt-winters.html).
@@ -1444,16 +1468,18 @@ class HoltWinters(AutoETS):
         self,
         season_length: int = 1,  # season length
         error_type: str = "A",  # error type
+        alias: str = "HoltWinters",
     ):
         self.season_length = season_length
         self.error_type = error_type
+        self.alias = alias
         model = error_type + "A" + error_type
-        super().__init__(season_length, model)
+        super().__init__(season_length, model, alias=alias)
 
     def __repr__(self):
-        return "HoltWinters"
+        return self.alias
 
-# %% ../nbs/models.ipynb 119
+# %% ../nbs/models.ipynb 130
 @njit
 def _historic_average(
     y: np.ndarray,  # time series
@@ -1469,9 +1495,9 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 120
+# %% ../nbs/models.ipynb 131
 class HistoricAverage(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "HistoricAverage"):
         """HistoricAverage model.
 
         Also known as mean method. Uses a simple average of all past observations.
@@ -1479,14 +1505,15 @@ class HistoricAverage(_TS):
         $$ \hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j $$
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `HistoricAverage`.<br>
 
         **References:**<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "HistoricAverage"
+        return self.alias
 
     def fit(
         self,
@@ -1601,22 +1628,23 @@ class HistoricAverage(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 130
+# %% ../nbs/models.ipynb 142
 class Naive(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "Naive"):
         """Naive model.
 
          A random walk model, defined as $\hat{y}_{t+1} = y_t$ $\forall t$
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `Naive`.<br>
 
         **References:**<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "Naive"
+        return self.alias
 
     def fit(
         self,
@@ -1731,7 +1759,7 @@ class Naive(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 142
+# %% ../nbs/models.ipynb 155
 @njit
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -1751,9 +1779,9 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 143
+# %% ../nbs/models.ipynb 156
 class RandomWalkWithDrift(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "RWD"):
         """RandomWalkWithDrift model.
 
         A variation of the naive method allows the forecasts to change over time.
@@ -1765,14 +1793,15 @@ class RandomWalkWithDrift(_TS):
         the first and the last observation.
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `RWD`.<br>
 
         **References:**<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "RWD"
+        return self.alias
 
     def fit(
         self,
@@ -1885,13 +1914,14 @@ class RandomWalkWithDrift(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 155
+# %% ../nbs/models.ipynb 169
 class SeasonalNaive(_TS):
-    def __init__(self, season_length: int):
+    def __init__(self, season_length: int, alias: str = "SeasonalNaive"):
         self.season_length = season_length
+        self.alias = alias
 
     def __repr__(self):
-        return "SeasonalNaive"
+        return self.alias
 
     def fit(
         self,
@@ -2017,7 +2047,7 @@ class SeasonalNaive(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 167
+# %% ../nbs/models.ipynb 182
 @njit
 def _window_average(
     y: np.ndarray,  # time series
@@ -2033,9 +2063,9 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 168
+# %% ../nbs/models.ipynb 183
 class WindowAverage(_TS):
-    def __init__(self, window_size: int):
+    def __init__(self, window_size: int, alias: str = "WindowAverage"):
         """WindowAverage model.
 
         Uses the average of the last $k$ observations, with $k$ the length of the window.
@@ -2044,15 +2074,17 @@ class WindowAverage(_TS):
         observations and how fast the series changes.
 
         **Parameters:**<br>
-        `window_size`: int, size of truncated series on which average is estimated.
+        `window_size`: int, size of truncated series on which average is estimated.<br>
+        `alias`: str, Custom name of the model. Default `WindowAverage`.<br>
 
         **References:**<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
         """
         self.window_size = window_size
+        self.alias = alias
 
     def __repr__(self):
-        return "WindowAverage"
+        return self.alias
 
     def fit(
         self,
@@ -2134,7 +2166,7 @@ class WindowAverage(_TS):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
-# %% ../nbs/models.ipynb 177
+# %% ../nbs/models.ipynb 193
 @njit
 def _seasonal_window_average(
     y: np.ndarray,
@@ -2155,9 +2187,9 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/models.ipynb 178
+# %% ../nbs/models.ipynb 194
 class SeasonalWindowAverage(_TS):
-    def __init__(self, season_length: int, window_size: int):
+    def __init__(self, season_length: int, window_size: int, alias: str = "SeasWA"):
         """SeasonalWindowAverage model.
 
         An average of the last $k$ observations of the same period, with $k$ the length of the window.
@@ -2165,15 +2197,17 @@ class SeasonalWindowAverage(_TS):
         **Parameters:**<br>
         `window_size`: int, size of truncated series on which average is estimated.
         `seasonal_length`: int, number of observations per cycle.
+        `alias`: str, Custom name of the model. Default `SeasWA`.<br>
 
         **References:**<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
         """
         self.season_length = season_length
         self.window_size = window_size
+        self.alias = alias
 
     def __repr__(self):
-        return "SeasWA"
+        return self.alias
 
     def fit(
         self,
@@ -2269,7 +2303,7 @@ class SeasonalWindowAverage(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 188
+# %% ../nbs/models.ipynb 205
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2290,9 +2324,9 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 189
+# %% ../nbs/models.ipynb 206
 class ADIDA(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "ADIDA"):
         """ADIDA model.
 
         Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal aggregation to reduce the
@@ -2305,14 +2339,15 @@ class ADIDA(_TS):
         especifically for them.
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `ADIDA`.<br>
 
         **References:**<br>
         [Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F., & Assimakopoulos, V. (2011). An aggregate–disaggregate intermittent demand approach (ADIDA) to forecasting: an empirical proposition and analysis. Journal of the Operational Research Society, 62(3), 544-554.](https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f).
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "ADIDA"
+        return self.alias
 
     def fit(
         self,
@@ -2391,7 +2426,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 199
+# %% ../nbs/models.ipynb 217
 @njit
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -2413,9 +2448,9 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 200
+# %% ../nbs/models.ipynb 218
 class CrostonClassic(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "CrostonClassic"):
         """CrostonClassic model.
 
         A method to forecast time series that exhibit intermittent demand.
@@ -2427,14 +2462,15 @@ class CrostonClassic(_TS):
         of both components is set equal to 0.1
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `CrostonClassic`.<br>
 
         **References:**<br>
         [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50)
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "CrostonClassic"
+        return self.alias
 
     def fit(
         self,
@@ -2513,7 +2549,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 209
+# %% ../nbs/models.ipynb 228
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2534,9 +2570,9 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 210
+# %% ../nbs/models.ipynb 229
 class CrostonOptimized(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "CrostonOptimized"):
         """CrostonOptimized model.
 
         A method to forecast time series that exhibit intermittent demand.
@@ -2549,14 +2585,15 @@ class CrostonOptimized(_TS):
         intervals $p_t$ are smoothed separately, so their smoothing parameters can be different.
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `CrostonOptimized`.<br>
 
         **References:**<br>
         [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "CrostonOptimized"
+        return self.alias
 
     def fit(
         self,
@@ -2635,7 +2672,7 @@ class CrostonOptimized(_TS):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 219
+# %% ../nbs/models.ipynb 239
 @njit
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -2648,9 +2685,9 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 220
+# %% ../nbs/models.ipynb 240
 class CrostonSBA(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "CrostonSBA"):
         """CrostonSBA model.
 
         A method to forecast time series that exhibit intermittent demand.
@@ -2663,14 +2700,15 @@ class CrostonSBA(_TS):
         $$ \hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t} $$
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `CrostonSBA`.<br>
 
         **References:**<br>
         [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "CrostonSBA"
+        return self.alias
 
     def fit(
         self,
@@ -2749,7 +2787,7 @@ class CrostonSBA(_TS):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 229
+# %% ../nbs/models.ipynb 250
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2773,9 +2811,9 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 230
+# %% ../nbs/models.ipynb 251
 class IMAPA(_TS):
-    def __init__(self):
+    def __init__(self, alias: str = "IMAPA"):
         """IMAPA model.
 
         Intermittent Multiple Aggregation Prediction Algorithm: Similar to ADIDA, but instead of
@@ -2784,14 +2822,15 @@ class IMAPA(_TS):
         and then combines them using a simple average.
 
         **Parameters:**<br>
+        `alias`: str, Custom name of the model. Default `IMAPA`.<br>
 
         **References:**<br>
         - [Syntetos, A. A., & Boylan, J. E. (2021). Intermittent demand forecasting: Context, methods and applications. John Wiley & Sons.](https://www.ifors.org/intermittent-demand-forecasting-context-methods-and-applications/).
         """
-        pass
+        self.alias = alias
 
     def __repr__(self):
-        return "IMAPA"
+        return self.alias
 
     def fit(
         self,
@@ -2870,7 +2909,7 @@ class IMAPA(_TS):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 239
+# %% ../nbs/models.ipynb 261
 @njit
 def _tsb(
     y: np.ndarray,  # time series
@@ -2891,9 +2930,9 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 240
+# %% ../nbs/models.ipynb 262
 class TSB(_TS):
-    def __init__(self, alpha_d: float, alpha_p: float):
+    def __init__(self, alpha_d: float, alpha_p: float, alias: str = "TSB"):
         """TSB model.
 
         Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
@@ -2916,15 +2955,17 @@ class TSB(_TS):
         **Parameters:**<br>
         `alpha_d`: float, smoothing parameter for demand<br>
         `alpha_p`: float, smoothing parameter for probability<br>
+        `alias`: str, Custom name of the model. Default `TSB`.<br>
 
         **References:**<br>
         - [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011). Intermittent demand: Linking forecasting to inventory obsolescence. European Journal of Operational Research, 214(3), 606-615.](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437)
         """
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
+        self.alias = alias
 
     def __repr__(self):
-        return "TSB"
+        return self.alias
 
     def fit(
         self,
@@ -3003,7 +3044,7 @@ class TSB(_TS):
         out = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         return out
 
-# %% ../nbs/models.ipynb 249
+# %% ../nbs/models.ipynb 272
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -3020,7 +3061,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/models.ipynb 250
+# %% ../nbs/models.ipynb 273
 class MSTL(_TS):
     """MSTL model.
 
@@ -3031,6 +3072,7 @@ class MSTL(_TS):
     **Parameters:**<br>
     `season_length`: Union[int, List[int], number of observations per unit of time. For multiple seasonalities use a list.<br>
     `trend_forecaster`: StatsForecast model used to forecast the trend component.<br>
+    `alias`: str, Custom name of the model. Default `AutoARIMA`.<br>
 
     **References:**<br>
     [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). "MSTL: A Seasonal-Trend Decomposition Algorithm for Time Series with Multiple Seasonal Patterns".](https://arxiv.org/abs/2107.13462).
@@ -3040,6 +3082,7 @@ class MSTL(_TS):
         self,
         season_length: Union[int, List[int]],
         trend_forecaster=AutoETS(model="ZZN"),
+        alias: str = "MSTL",
     ):
 
         # check ETS model doesnt have seasonality
@@ -3048,6 +3091,7 @@ class MSTL(_TS):
                 raise Exception(
                     "Trend forecaster should not adjust " "seasonal models."
                 )
+        # check if trend forecaster has season_length=1
         if hasattr(trend_forecaster, "season_length"):
             if trend_forecaster.season_length != 1:
                 raise Exception(
@@ -3057,11 +3101,10 @@ class MSTL(_TS):
                 )
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
-
-        # check if trend forecaster has season_length=1
+        self.alias = alias
 
     def __repr__(self):
-        return "MSTL"
+        return self.alias
 
     def fit(
         self,
@@ -3170,13 +3213,14 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/models.ipynb 261
+# %% ../nbs/models.ipynb 285
 class Theta(AutoTheta):
     """Standard Theta Method.
 
     **Parameters:**<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    `alias`: str, Custom name of the model. Default `Theta`.<br>
 
     **References:**<br>
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -3186,23 +3230,23 @@ class Theta(AutoTheta):
         self,
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
+        alias: str = "Theta",
     ):
         super().__init__(
             season_length=season_length,
             model="STM",
             decomposition_type=decomposition_type,
+            alias=alias,
         )
 
-    def __repr__(self):
-        return "Theta"
-
-# %% ../nbs/models.ipynb 271
+# %% ../nbs/models.ipynb 296
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
     **Parameters:**<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    `alias`: str, Custom name of the model. Default `OptimizedTheta`.<br>
 
     **References:**<br>
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -3212,23 +3256,23 @@ class OptimizedTheta(AutoTheta):
         self,
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
+        alias: str = "OptimizedTheta",
     ):
         super().__init__(
             season_length=season_length,
             model="OTM",
             decomposition_type=decomposition_type,
+            alias=alias,
         )
 
-    def __repr__(self):
-        return "OptimizedTheta"
-
-# %% ../nbs/models.ipynb 281
+# %% ../nbs/models.ipynb 307
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
     **Parameters:**<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    `alias`: str, Custom name of the model. Default `DynamicTheta`.<br>
 
     **References:**<br>
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting]( https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -3238,23 +3282,23 @@ class DynamicTheta(AutoTheta):
         self,
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
+        alias: str = "DynamicTheta",
     ):
         super().__init__(
             season_length=season_length,
             model="DSTM",
             decomposition_type=decomposition_type,
+            alias=alias,
         )
 
-    def __repr__(self):
-        return "DynamicTheta"
-
-# %% ../nbs/models.ipynb 291
+# %% ../nbs/models.ipynb 318
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
     **Parameters:**<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
+    `alias`: str, Custom name of the model. Default `DynamicOptimizedTheta`.<br>
 
     **References:**<br>
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting]( https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -3264,12 +3308,11 @@ class DynamicOptimizedTheta(AutoTheta):
         self,
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
+        alias: str = "DynamicOptimizedTheta",
     ):
         super().__init__(
             season_length=season_length,
             model="DOTM",
             decomposition_type=decomposition_type,
+            alias=alias,
         )
-
-    def __repr__(self):
-        return "DynamicOptimizedTheta"
