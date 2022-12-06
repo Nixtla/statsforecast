@@ -94,7 +94,7 @@ class AutoARIMA(_TS):
     `parallel`: bool, If True and stepwise=False, then parallel search.<br>
     `num_cores`: int, amount of parallel processes to be used if parallel=True.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
-    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
+    `alias`: str, Custom name of the model. Default `AutoARIMA`.<br>
 
     **Note:**<br>
     This implementation is a mirror of Hyndman's [forecast::auto.arima](https://github.com/robjhyndman/forecast).
@@ -382,7 +382,7 @@ class AutoETS(_TS):
     `model`: str, controlling state-space-equations.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `damped`: bool, a parameter that 'dampens' the trend. <br>
-    `alias`: srt, Custom name of the model. Default `AutoETS`.<br>
+    `alias`: str, Custom name of the model. Default `AutoETS`.<br>
 
     **Note:**<br>
     This implementation is a mirror of Hyndman's [forecast::ets](https://github.com/robjhyndman/forecast).
@@ -564,7 +564,7 @@ class AutoCES(_TS):
     **Parameters:**<br>
     `model`: str, controlling state-space-equations.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
-    `alias`: srt, Custom name of the model. Default `CES`.<br>
+    `alias`: str, Custom name of the model. Default `CES`.<br>
 
     **References:**<br>
     [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing". 10.13140/RG.2.1.3757.2562. ](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074).
@@ -676,7 +676,7 @@ class AutoTheta(_TS):
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
     `decomposition_type`: str, Sesonal decomposition type, 'multiplicative' (default) or 'additive'.<br>
     `model`: str, controlling Theta Model. By default searchs the best model.<br>
-    `alias`: srt, Custom name of the model. Default `AutoTheta`.<br>
+    `alias`: str, Custom name of the model. Default `AutoTheta`.<br>
 
     **References:**<br>
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -914,7 +914,7 @@ class SimpleExponentialSmoothing(_TS):
 
     **Parameters:**<br>
     `alpha`: float, smoothing parameter.<br>
-    `alias`: srt, Custom name of the model. Default `SES`.<br>
+    `alias`: str, Custom name of the model. Default `SES`.<br>
 
     **References:**<br>
     [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
@@ -1034,7 +1034,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
     The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
 
     **Parameters:**<br>
-    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
+    `alias`: str, Custom name of the model. Default `SESOpt`.<br>
 
     **References:**<br>
     [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
@@ -1168,7 +1168,7 @@ class SeasonalExponentialSmoothing(_TS):
     **Parameters:**<br>
     `alpha`: float, smoothing parameter.<br>
     `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
-    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
+    `alias`: str, Custom name of the model. Default `SeasonalES`.<br>
 
     **References:**<br>
     [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
@@ -1315,7 +1315,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
 
         **Parameters:**<br>
         `season_length`: int, number of observations per unit of time. Ex: 24 Hourly data.<br>
-        `alias`: srt, Custom name of the model. Default `SeasESOpt`.<br>
+        `alias`: str, Custom name of the model. Default `SeasESOpt`.<br>
 
         **References:**<br>
         [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
@@ -1429,7 +1429,7 @@ class Holt(AutoETS):
     **Parameters:**<br>
      `season_length`: int, number of observations per unit of time. Ex: 12 Monthly data. <br>
      `error_type`: The type of error of the ETS model. Can be additive (A) or multiplicative (M). <br>
-     `alias`: srt, Custom name of the model. Default `Holt`.<br>
+     `alias`: str, Custom name of the model. Default `Holt`.<br>
 
     **References:**<br>
     - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with trend"](https://otexts.com/fpp3/holt.html).
@@ -1458,7 +1458,7 @@ class HoltWinters(AutoETS):
     **Parameters:**<br>
      `season_length`: int, number of observations per unit of time. Ex: 12 Monthly data. <br>
      `error_type`: The type of error of the ETS model. Can be additive (A) or multiplicative (M). <br>
-    `alias`: srt, Custom name of the model. Default `AutoARIMA`.<br>
+    `alias`: str, Custom name of the model. Default `HoltWinters`.<br>
 
     **References:**<br>
     - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with seasonality"](https://otexts.com/fpp3/holt-winters.html).
@@ -3072,7 +3072,7 @@ class MSTL(_TS):
     **Parameters:**<br>
     `season_length`: Union[int, List[int], number of observations per unit of time. For multiple seasonalities use a list.<br>
     `trend_forecaster`: StatsForecast model used to forecast the trend component.<br>
-    `alias`: str, Custom name of the model. Default `AutoARIMA`.<br>
+    `alias`: str, Custom name of the model. Default `MSTL`.<br>
 
     **References:**<br>
     [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). "MSTL: A Seasonal-Trend Decomposition Algorithm for Time Series with Multiple Seasonal Patterns".](https://arxiv.org/abs/2107.13462).
