@@ -1,6 +1,6 @@
 ---
 order: 1
-title: Amazon Forecast vs StatsForecast (Open Source)
+title: Amazon Forecast vs StatsForecast
 listing:
   fields: [title, description]
   type: table
@@ -9,28 +9,9 @@ listing:
 ---
 
 ## Amazon Forecast vs open source statistical methods
+>Tl:Dr: We paid USD $1,404.00 and spend 4 hours in the AWS console so you don't have to. 
 
-In this experiment, we compare Amazon Forecast and StatsForecast on two classical benchmark data sets. 
-
-We conclude that: 
-* Amazon Forecast is 30% less effective and x times more expensive than running an open source alternative in a cloud server. 
-* Machine Learning methods are outperformed by classical methods in terms of speed, accuracy and cost. 
-
-We compare Amazon's managed forecasting solution with running an open-source alternative in a single server. We find that using Amazon Forecast is 32% less accurate, 34 times slower and order's of magnitude more expensive. 
-
-For the comparison we used to standar benchmark datasets from the M3 and M4 competitions and present a reproducible experiment that shows that:
-
-- 60% more accurate than `AmazonForecast` and 16 times faster on M5.
-- 4% more accurate than `AmazonForecast` and 18 times faster on M4.
-
-In summary, we paid USD 2,500 and spend hours in the AWS console so you don't have to. 
-
-### Intro 
-Forecasting. Different alternatives. 
-
-
-
-### Data
+In this reproducible experiment, we compare Amazon Forecast and StatsForecast. Given the prominent use of AWS Forecast in demand forecasting, for this experiment, we used the 30,490 series of daily sales at Walmart from the M5 competition. 
 
 
 ### Amazon Forecast
@@ -40,20 +21,39 @@ Amazon Forecast is a time-series forecasting service based on machine learning (
 It uses machine learning (ML) to generate more accurate demand forecasts with just a few clicks, without requiring any prior ML experience. Amazon Forecast includes algorithms that are based on over twenty years of forecasting experience and developed expertise used by Amazon.com bringing the same technology used at Amazon to developers as a fully managed service, removing the need to manage resources. Amazon Forecast uses ML to learn not only the best algorithm for each item, but the best ensemble of algorithms for each item, automatically creating the best model for your data.
 ```
 
+Amazon Forecast is one of the leading forecasting services out there. You can read more about its features and pricing tiers here. 
+
 ### StatsForecast
- StatsForecast is an open-source library from Nixtla, that offers a wide variety of statistical methods. 
+StatsForecast is an open-source python library from Nixtla. Nixtla offers a wide variety of statistical methods.
+LLENAR
+
+### Conclusions
+
+Amazon Forecast achieved XXX in accruacy, took XXX hours to run and cost XXX usd. Statsforecast, on a XXX machine, achieved XXX in accuracy, took XXX minutes to run and cost only XXX cents. 
+
+For this data set, we show therefore that: 
+
+* Amazon Forecast is 30% less accurate and x times more expensive than running an open-source alternative in a cloud server. 
+* Machine Learning methods are outperformed by classical methods in terms of speed, accuracy and cost. 
+
+Although using StatsForecast requires some basic knowledge of Python and cloud computing, the results are simply better. 
 
 
+### Data
+M5 description. XXX
+
+## Experiment
+
+XXX Experimetnal setting:
+* Horzions
+* Error metrics, bla bla
+
+We ran the Amazon forecast according to the the instructions and forecasted 3 quantiles for the next x days.
+We spined of a xxx EC2 instance and run statsforecast with just X models. 
 
 Detailed results per dataset are shown below.
 
-## Experiment
-We ran the Amazon forecast according the the instructions and forecasted 3 quantiles for the next x days.
-We spined of a xxx EC2 instance and run statsforecast with just X models. 
-
-
 ## Results
-
 
 ## Performance
 
@@ -73,15 +73,18 @@ The table shows the performance of `StatsForecast` and `AmazonForecast` on the M
 
 ### Time
 
-Excluding time spent in the console and just accounting for processing and computing time, Amazon Forecast took 6.3 hours to run. In comparison, StatsForecast took just 48 minutes to run.
+Excluding time spent in the console and just accounting for processing and computing time, Amazon Forecast took 6.3 hours to run. In comparison, StatsForecast took just 48 minutes to run. XXX
 
 Running time includes the end-to-end pipeline including loading data, training and forecasting. 
 
 ### Cost 
 
-Although the calculator estimated a total of XXX USD, we end of paying XXX for running this experiment. In comparison, we paid XXX of EC2 associated costs. (This could have been further reduced by using spot instances)
+Amazon included a cost calculator that is quite accurate. We fill in the followig data corresponding to the experiment. XXX
+The estimated cost was XXX dolars. 
 
-Below, you can find the detailed results for each data set. 
+In comparison, we paid XXX of EC2 associated costs. (This could have been further reduced by using spot instances)
+
+Below, you can find the detailed results. 
 
 **Speed and Cost on M5 Data set**
 
@@ -90,19 +93,16 @@ Below, you can find the detailed results for each data set.
 | StatsForecast | 0.26 |  1.2    |
 | AmazonForecast | 4.1 | 795.54 |
 
-**Speed and Cost on M4 Data set**
-
-| Model | Time (hours) | Cost (USD) |
-|:-------|-------------:|-----:|
-| StatsForecast | 0.12      |   0.55 |
-| AmazonForecast | 2.26 | 120.52|
-
 
 ## Conclusions
 
+Although this experiment does not focus on comparing machine learning and deep learning vs statistical methods, it supports our previous conclusions on the current validity of simpler methods for many forecasting tasks.
 
-## Reproduce the results
+XXX
 
-To reproduce the results, just follow the following guides.
+
+## Unsolicited Advice
+Don't always grab for the low-hanging fruit. It pays off. 
+
 ## Reproducibility
-You can fully reproduce the experiment by following this step-by-step notebook. 
+You can fully reproduce the experiment by following this step-by-step notebook.
