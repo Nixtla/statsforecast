@@ -1,33 +1,63 @@
 ---
 order: 1
-title: Amazon Forecast Comparison
+title: Amazon Forecast vs StatsForecast (Open Source)
 listing:
   fields: [title, description]
   type: table
-  sort-ui: false
-  filter-ui: false
+  sort-ui: true
+  filter-ui: true 
 ---
 
-In this experiment, we compare in time and accuracy `AmazonForecast` with a fully open-source solution provided by `StatsForecast`. For the comparison, we use two datasets: M5 and M4 Daily.
+## Amazon Forecast vs open source statistical methods
 
-The results show that the open-source solution from `StatsForecast` is:
+In this experiment, we compare Amazon Forecast and StatsForecast on two classical benchmark data sets. 
+
+We conclude that: 
+* Amazon Forecast is 30% less effective and x times more expensive than running an open source alternative in a cloud server. 
+* Machine Learning methods are outperformed by classical methods in terms of speed, accuracy and cost. 
+
+We compare Amazon's managed forecasting solution with running an open-source alternative in a single server. We find that using Amazon Forecast is 32% less accurate, 34 times slower and order's of magnitude more expensive. 
+
+For the comparison we used to standar benchmark datasets from the M3 and M4 competitions and present a reproducible experiment that shows that:
 
 - 60% more accurate than `AmazonForecast` and 16 times faster on M5.
 - 4% more accurate than `AmazonForecast` and 18 times faster on M4.
 
+In summary, we paid USD 2,500 and spend hours in the AWS console so you don't have to. 
+
+### Intro 
+Forecasting. Different alternatives. 
+
+
+
+### Data
+
+
+### Amazon Forecast
+Amazon Forecast is a time-series forecasting service based on machine learning (ML) and built for business metrics analysis. 
+
+```
+It uses machine learning (ML) to generate more accurate demand forecasts with just a few clicks, without requiring any prior ML experience. Amazon Forecast includes algorithms that are based on over twenty years of forecasting experience and developed expertise used by Amazon.com bringing the same technology used at Amazon to developers as a fully managed service, removing the need to manage resources. Amazon Forecast uses ML to learn not only the best algorithm for each item, but the best ensemble of algorithms for each item, automatically creating the best model for your data.
+```
+
+### StatsForecast
+ StatsForecast is an open-source library from Nixtla, that offers a wide variety of statistical methods. 
+
+
+
 Detailed results per dataset are shown below.
 
-## M5
-
-### Time
-
-| Model | Time (hours) | Cost (USD) |
-|:-------|-------------:|-----:|
-| StatsForecast | 0.26 |  1.2    |
-| AmazonForecast | 4.1 | 795.54 |
+## Experiment
+We ran the Amazon forecast according the the instructions and forecasted 3 quantiles for the next x days.
+We spined of a xxx EC2 instance and run statsforecast with just X models. 
 
 
-### Performance
+## Results
+
+
+## Performance
+
+SUMMARY OF PERFOMANCE
 
 The table shows the performance of `StatsForecast` and `AmazonForecast` on the M5 dataset using the official evaluation metric.
 
@@ -38,19 +68,42 @@ The following table shows the performance across all levels of the hierarchy:
 ![M5 comparison across hierarchies](https://user-images.githubusercontent.com/10517170/203890019-01dae128-ef53-4d16-9b7c-e3d07f04e869.png)
 
 
-## M4
+The table shows the performance of `StatsForecast` and `AmazonForecast` on the M4 dataset using the official evaluation metric.
+
+![M4 comparison](https://user-images.githubusercontent.com/10517170/203902170-50b554c2-df20-4870-9fdb-08a47be91060.png)
+
+### Time
+
+Excluding time spent in the console and just accounting for processing and computing time, Amazon Forecast took 6.3 hours to run. In comparison, StatsForecast took just 48 minutes to run.
+
+Running time includes the end-to-end pipeline including loading data, training and forecasting. 
+
+### Cost 
+
+Although the calculator estimated a total of XXX USD, we end of paying XXX for running this experiment. In comparison, we paid XXX of EC2 associated costs. (This could have been further reduced by using spot instances)
+
+Below, you can find the detailed results for each data set. 
+
+**Speed and Cost on M5 Data set**
+
+| Model | Time (hours) | Cost (USD) |
+|:-------|-------------:|-----:|
+| StatsForecast | 0.26 |  1.2    |
+| AmazonForecast | 4.1 | 795.54 |
+
+**Speed and Cost on M4 Data set**
 
 | Model | Time (hours) | Cost (USD) |
 |:-------|-------------:|-----:|
 | StatsForecast | 0.12      |   0.55 |
 | AmazonForecast | 2.26 | 120.52|
 
-### Performance
 
-The table shows the performance of `StatsForecast` and `AmazonForecast` on the M4 dataset using the official evaluation metric.
+## Conclusions
 
-![M4 comparison](https://user-images.githubusercontent.com/10517170/203902170-50b554c2-df20-4870-9fdb-08a47be91060.png)
 
 ## Reproduce the results
 
 To reproduce the results, just follow the following guides.
+## Reproducibility
+You can fully reproduce the experiment by following this step-by-step notebook. 
