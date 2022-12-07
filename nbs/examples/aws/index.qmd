@@ -61,12 +61,11 @@ SUMMARY OF PERFOMANCE
 
 The table shows the performance of `StatsForecast` and `AmazonForecast` on the M5 dataset using the official evaluation metric.
 
-![M5 comparison](https://user-images.githubusercontent.com/10517170/203889962-ebe05f58-5373-4e7b-a5c0-c035d83a166f.png)
+<img width="623" alt="image" src="https://user-images.githubusercontent.com/10517170/206248653-3ed6e9eb-9bce-4f6f-8d4b-7ade3c305ce5.png">
 
 The following table shows the performance across all levels of the hierarchy:
 
-![M5 comparison across hierarchies](https://user-images.githubusercontent.com/10517170/203890019-01dae128-ef53-4d16-9b7c-e3d07f04e869.png)
-
+<img width="623" alt="image" src="https://user-images.githubusercontent.com/10517170/206248740-d84455b4-451e-4bc8-b9ae-6b7d9010bb1d.png">
 
 The table shows the performance of `StatsForecast` and `AmazonForecast` on the M4 dataset using the official evaluation metric.
 
