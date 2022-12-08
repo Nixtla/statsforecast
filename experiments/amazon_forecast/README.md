@@ -1,13 +1,13 @@
-## Amazon Forecast AutoML vs open source statistical methods
->TL;DR: We paid USD $1,404.00 and spend 4 hours in the AWS console so you don't have to. 
+## Amazon's AutoML vs open source statistical methods
+>TL;DR: We paid USD $800 USD and spend 4 hours in the AWS Forecast console so you don't have to. 
 
-In this reproducible experiment, we compare [Amazon Forecast](https://aws.amazon.com/forecast/) and the open-source library [StatsForecast](https://github.com/Nixtla/statsforecast). For this experiment, given the prominent use of AWS Forecast in demand forecasting, we used the 30,490 series of daily sales at Walmart from the [M5 competition](https://mofc.unic.ac.cy/m5-competition/). 
+In this reproducible experiment, we compare [Amazon Forecast](https://aws.amazon.com/forecast/) and [StatsForecast](https://github.com/Nixtla/statsforecast) a python open-source library. For this experiment, given the prominent use of AWS Forecast in demand forecasting, we used the 30,490 series of daily sales at Walmart from the [M5 competition](https://mofc.unic.ac.cy/m5-competition/). We conclude that Amazon Forecast is 60% less accurate and 669 times more expensive than running an open-source alternative in a simple cloud server. 
 
-This dataset is interesting in terms of scale, but also because it includes many sparse or intermittent time-series. Such time series are common in retail scenarios and are difficult for traditional time-series forecasting techniques to address.
+We also provide a step-by-step guide to reproduce the results.
 
 
 ### Amazon Forecast
-Amazon Forecast is a time-series forecasting service based on machine learning (ML). 
+Amazon Forecast is an AutoML time-series forecasting service. 
 
 > It uses machine learning (ML) to generate more accurate demand forecasts with just a few clicks, without requiring any prior ML experience. Amazon Forecast includes algorithms that are based on over twenty years of forecasting experience and developed expertise used by Amazon.com bringing the same technology used at Amazon to developers as a fully managed service, removing the need to manage resources. Amazon Forecast uses ML to learn not only the best algorithm for each item, but the best ensemble of algorithms for each item, automatically creating the best model for your data.
 
@@ -30,17 +30,17 @@ For this experiment, we used a `c5d.24xlarge` EC2 instance and trained two simpl
 Amazon Forecast: 
 
 * achieved 1.617 in error (measured in wRMSSE, the official evaluation metric used in the competition), 
-* took 4.1 hours to run 
-* and cost 1,404 USD. 
+* took 4.1 hours to run,
+* and cost 803.53 USD. 
 
 Statsforecast with a simple ensemble of statistical methods trained on a `c5d.24xlarge` EC2 instance:
 * achieved 0.669 in error (wRMSSE), 
-* took 14.5 minutes to run 
+* took 14.5 minutes to run,
 * and cost only 1.2 USD. 
 
 For this data set, we show therefore that: 
 
-* Amazon Forecast is 60% less accurate and 1,100 times more expensive than running an open-source alternative in a simple cloud server. 
+* Amazon Forecast is 60% less accurate and 669 times more expensive than running an open-source alternative in a simple cloud server. 
 * Machine Learning methods are outperformed by classical methods in terms of speed, accuracy and cost. 
 
 Although using StatsForecast requires some basic knowledge of Python and cloud computing, the results are simply better for this dataset.
@@ -72,7 +72,6 @@ Where the `RMSSE` is defined by,
 
 The `wRMSSE` is the official metric used in the M5 competition.
 
-We forecasted 3 quantiles for the next 28 days.
 
 Detailed results per dataset are shown below.
 
@@ -94,7 +93,7 @@ Excluding time spent in the console and just accounting for processing and compu
 
 ### Cost 
 
-Amazon included a cost calculator that is quite accurate. The estimated cost was 1,404 USD. 
+Amazon included a cost calculator that is quite accurate. The estimated cost was 803.53     USD. 
 
 In comparison, we paid 1.2 USD of EC2 associated costs. (This could have been further reduced by using spot instances.)
 
@@ -105,12 +104,11 @@ Below, you can find the detailed results.
 | Model | Time (hours) | Cost (USD) |
 |:-------|-------------:|-----:|
 | StatsForecast | 0.26 |  1.2    |
-| AmazonForecast | 4.1 | 1,404.05 |
-
+| AmazonForecast | 4.1 | 803.53 |
 
 ## Conclusions
 
-In conclusion: for this setting, in terms of speed, costs, simplicity and interpretability, AutoML is far behind the simple statistical ensemble. In terms of accuracy, they seem to be rather close.
+In conclusion: for this setting, in terms of speed, costs, simplicity and accuracy, AutoML is far behind simple statistical methods. In terms of accuracy, they seem to be rather close.
 
 This conclusion might or not hold in other datasets, however, given the a priori uncertainty of the benefits and the certainty of cost, statistical methods should be considered the first option in daily forecasting practice.
 
@@ -122,6 +120,8 @@ Choose your models wisely.
 It would be extremely expensive and borderline irresponsible to favor AutoML in an organization before establishing solid baselines.
 
 Simpler is sometimes better. Not everything that glows is gold.
+
+Go and try other great open-source libraries like GluonTS, Darts and Sktime.
 
 ## Reproducibility
 You can fully reproduce the experiment by following [this step-by-step notebook](https://nixtla.github.io/statsforecast/examples/aws/statsforecast.html).
