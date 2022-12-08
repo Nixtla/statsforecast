@@ -1,7 +1,7 @@
 ## Amazon's AutoML vs open source statistical methods
 >TL;DR: We paid USD $800 USD and spend 4 hours in the AWS Forecast console so you don't have to. 
 
-In this reproducible experiment, we compare [Amazon Forecast](https://aws.amazon.com/forecast/) and [StatsForecast](https://github.com/Nixtla/statsforecast) a python open-source library. For this experiment, given the prominent use of AWS Forecast in demand forecasting, we used the 30,490 series of daily sales at Walmart from the [M5 competition](https://mofc.unic.ac.cy/m5-competition/). We conclude that Amazon Forecast is 60% less accurate and 669 times more expensive than running an open-source alternative in a simple cloud server. 
+In this reproducible experiment, we compare [Amazon Forecast](https://aws.amazon.com/forecast/) and [StatsForecast](https://github.com/Nixtla/statsforecast) a python open-source library. For this experiment, given the prominent use of AWS Forecast in demand forecasting, we used the 30,490 series of daily sales at Walmart from the [M5 competition](https://mofc.unic.ac.cy/m5-competition/). We conclude that, for this setting,  Amazon Forecast is 60% less accurate and 669 times more expensive than running an open-source alternative in a simple cloud server. 
 
 We also provide a step-by-step guide to reproduce the results.
 
