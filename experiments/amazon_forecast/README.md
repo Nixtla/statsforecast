@@ -53,7 +53,7 @@ Where the `RMSSE` is defined by,
 The `wRMSSE` is the official metric used in the M5 competition.
 
 We ran the Amazon forecast according to the the instructions and forecasted 3 quantiles for the next 28 days.
-We spined of a `c5d.24xlarge` EC2 instance and run StatsForecast with just 4 models: `AutoETS`, `DynamicOptimizedTheta` and `SeasonalNaive`. Finally, the `AutoETS` and `DynamicOptimizedTheta` models were ensembled using the median. 
+We spined of a `c5d.24xlarge` EC2 instance and run StatsForecast with just 2 models: `AutoETS`, and `DynamicOptimizedTheta`. Finally, the `AutoETS` and `DynamicOptimizedTheta` models were ensembled using the median. 
 
 Detailed results per dataset are shown below.
 
@@ -63,11 +63,11 @@ Detailed results per dataset are shown below.
 
 The table shows the performance of `StatsForecast` and `AmazonForecast` on the M5 dataset using the official evaluation metric.
 
-<img width="652" alt="image" src="https://user-images.githubusercontent.com/10517170/206319955-5c1e9a05-811e-4113-84f0-30df6ed86a19.png">
+<img width="637" alt="image" src="https://user-images.githubusercontent.com/10517170/206330119-48be0a7c-9ff6-412e-a52b-59a181c2a9d9.png">
 
 The following table shows the performance across all levels of the hierarchy:
 
-<img width="652" alt="image" src="https://user-images.githubusercontent.com/10517170/206324561-2d4af50b-ca92-44df-ad80-fa970c960c43.png">
+<img width="637" alt="image" src="https://user-images.githubusercontent.com/10517170/206330159-1497b625-fc70-4b91-af96-cf52240cc9e6.png">
 
 ### Time
 
