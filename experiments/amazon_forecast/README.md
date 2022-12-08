@@ -67,7 +67,7 @@ The table shows the performance of `StatsForecast` and `AmazonForecast` on the M
 
 The following table shows the performance across all levels of the hierarchy:
 
-<img width="623" alt="image" src="https://user-images.githubusercontent.com/10517170/206248740-d84455b4-451e-4bc8-b9ae-6b7d9010bb1d.png">
+<img width="652" alt="image" src="https://user-images.githubusercontent.com/10517170/206324561-2d4af50b-ca92-44df-ad80-fa970c960c43.png">
 
 ### Time
 
