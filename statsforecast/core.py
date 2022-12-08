@@ -18,7 +18,6 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from plotly_resampler import FigureResampler
 from tqdm.autonotebook import tqdm
 
 # %% ../nbs/core.ipynb 6
@@ -1055,6 +1054,13 @@ class _StatsForecast:
                 subplot_titles=[str(uid) for uid in unique_ids],
             )
             if engine == "plotly-resampler":
+                try:
+                    from plotly_resampler import FigureResampler
+                except ImportError:
+                    raise ImportError(
+                        "plotly-resampler is not installed. "
+                        "Please install it with `pip install plotly-resampler`"
+                    )
                 resampler_kwargs = {} if resampler_kwargs is None else resampler_kwargs
                 show_dash_kwargs = resampler_kwargs.pop("show_dash", {})
                 fig = FigureResampler(fig, **resampler_kwargs)
