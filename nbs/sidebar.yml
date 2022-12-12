@@ -37,12 +37,7 @@ website:
         - distributed.fugue.ipynb
       - section: examples/experiments.qmd
         contents:
-        - section: examples/aws/index.qmd
-          contents:
-          - examples/aws/data.ipynb
-          - examples/aws/statsforecast.ipynb
-          - examples/aws/amazonforecast.qmd
-          - examples/aws/evaluation.ipynb
+        - examples/aws/statsforecast.ipynb
         - examples/AutoArima_vs_Prophet.ipynb
         - examples/Prophet_spark_m5.ipynb
         - examples/ETS_ray_m5.ipynb
