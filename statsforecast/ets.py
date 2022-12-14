@@ -1149,7 +1149,7 @@ def ets_f(
         )
         fred = model["fit"]
         nstate = len(init_state)
-        np_ = model["n_params"]
+        np_ = model["n_params"] - 1
         np_ = np_ + 1
         ny = len(y)
         aic = lik + 2 * np_
@@ -1599,6 +1599,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     else:
         # Classes 4 and 5 models
+        np.random.seed(1)
         compute_intervals = False
         nsim = 5000
         y_path = np.zeros([nsim, h])
