@@ -573,3 +573,19 @@ def auto_theta(
         model["decomposition_type"] = decomposition_type
         model["seas_forecast"] = dict(seas_forecast)
     return model
+
+# %% ../nbs/theta.ipynb 39
+def forward_theta(fitted_model, y):
+    m = fitted_model["m"]
+    model = fitted_model["modeltype"]
+    initial_smoothed = fitted_model["par"]["initial_smoothed"]
+    alpha = fitted_model["par"]["alpha"]
+    theta = fitted_model["par"]["theta"]
+    return auto_theta(
+        y=y,
+        m=m,
+        model=model,
+        initial_smoothed=initial_smoothed,
+        alpha=alpha,
+        theta=theta,
+    )
