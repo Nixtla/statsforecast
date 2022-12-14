@@ -528,7 +528,7 @@ class AutoETS(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted AutoTheta to a new time series.
+        """Apply fitted Exponential Smoothing model to a new time series.
 
         **Parameters:**<br>
         `y`: numpy array of shape (n,), clean time series.<br>
