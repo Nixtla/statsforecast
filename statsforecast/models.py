@@ -3274,7 +3274,7 @@ class Theta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 298
+# %% ../nbs/models.ipynb 299
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -3300,7 +3300,7 @@ class OptimizedTheta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 309
+# %% ../nbs/models.ipynb 311
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -3326,7 +3326,7 @@ class DynamicTheta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 320
+# %% ../nbs/models.ipynb 323
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
