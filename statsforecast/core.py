@@ -245,6 +245,7 @@ class GroupedArray:
         input_size=None,
         fitted=False,
         level=tuple(),
+        refit=True,
         verbose=False,
     ):
         # output of size: (ts, window, h)
@@ -303,18 +304,9 @@ class GroupedArray:
                     kwargs = {}
                     if has_level:
                         kwargs["level"] = level
-                    try:
-                        res_i = model.forecast(
-                            h=h,
-                            y=y_train,
-                            X=X_train,
-                            X_future=X_future,
-                            fitted=fitted,
-                            **kwargs,
-                        )
-                    except Exception as error:
-                        if fallback_model is not None:
-                            res_i = fallback_model.forecast(
+                    if refit:
+                        try:
+                            res_i = model.forecast(
                                 h=h,
                                 y=y_train,
                                 X=X_train,
@@ -322,8 +314,47 @@ class GroupedArray:
                                 fitted=fitted,
                                 **kwargs,
                             )
-                        else:
-                            raise error
+                        except Exception as error:
+                            if fallback_model is not None:
+                                res_i = fallback_model.forecast(
+                                    h=h,
+                                    y=y_train,
+                                    X=X_train,
+                                    X_future=X_future,
+                                    fitted=fitted,
+                                    **kwargs,
+                                )
+                            else:
+                                raise error
+                    else:
+                        if i_window == 0:
+                            # for the first window we have to fit each model
+                            model = model.fit(y=y_train, X=X_train)
+                            if fallback_model is not None:
+                                fallback_model = fallback_model.fit(
+                                    y=y_train, X=X_train
+                                )
+                        try:
+                            res_i = model.forward(
+                                h=h,
+                                y=y_train,
+                                X=X_train,
+                                X_future=X_future,
+                                fitted=fitted,
+                                **kwargs,
+                            )
+                        except Exception as error:
+                            if fallback_model is not None:
+                                res_i = fallback_model.forward(
+                                    h=h,
+                                    y=y_train,
+                                    X=X_train,
+                                    X_future=X_future,
+                                    fitted=fitted,
+                                    **kwargs,
+                                )
+                            else:
+                                raise error
                     cols_m = [
                         key
                         for key in res_i.keys()
@@ -368,7 +399,7 @@ class GroupedArray:
             if x.size
         ]
 
-# %% ../nbs/core.ipynb 19
+# %% ../nbs/core.ipynb 22
 def _grouped_array_from_df(df, sort_df):
     df = df.set_index("ds", append=True)
     if not df.index.is_monotonic_increasing and sort_df:
@@ -382,7 +413,7 @@ def _grouped_array_from_df(df, sort_df):
     indptr = np.append(0, cum_sizes).astype(np.int32)
     return GroupedArray(data, indptr), indices, dates, df.index
 
-# %% ../nbs/core.ipynb 21
+# %% ../nbs/core.ipynb 24
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -421,7 +452,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/core.ipynb 25
+# %% ../nbs/core.ipynb 28
 def _get_n_jobs(n_groups, n_jobs, ray_address):
     if ray_address is not None:
         logger.info("Using ray address," "using available resources insted of `n_jobs`")
@@ -443,7 +474,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 28
+# %% ../nbs/core.ipynb 31
 def _parse_ds_type(df):
     if not pd.api.types.is_datetime64_any_dtype(df["ds"]) and not issubclass(
         df["ds"].dtype.type, np.integer
@@ -460,7 +491,7 @@ def _parse_ds_type(df):
             raise Exception(msg) from e
     return df
 
-# %% ../nbs/core.ipynb 29
+# %% ../nbs/core.ipynb 32
 class _StatsForecast:
     def __init__(
         self,
@@ -719,6 +750,7 @@ class _StatsForecast:
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
+        refit: bool = True,
         sort_df: bool = True,
     ):
         """Temporal Cross-Validation with core.StatsForecast.
@@ -739,6 +771,7 @@ class _StatsForecast:
         `input_size`: Optional[int] = None, input size for each window, if not none rolled windows.<br>
         `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
+        `refit`: bool, wether or not refit the model for each window.<br>
         `sort_df`: bool, if True, sort `df` by `unique_id` and `ds`.
 
         **Returns:**<br>
@@ -768,6 +801,7 @@ class _StatsForecast:
                 fitted=fitted,
                 level=level,
                 verbose=self.verbose,
+                refit=refit,
             )
         else:
             res_fcsts = self._cross_validation_parallel(
@@ -777,6 +811,7 @@ class _StatsForecast:
                 input_size=input_size,
                 fitted=fitted,
                 level=level,
+                refit=refit,
             )
 
         if fitted:
@@ -950,7 +985,7 @@ class _StatsForecast:
         return result
 
     def _cross_validation_parallel(
-        self, h, test_size, step_size, input_size, fitted, level
+        self, h, test_size, step_size, input_size, fitted, level, refit
     ):
         # create elements for each core
         gas = self.ga.split(self.n_jobs)
@@ -971,6 +1006,7 @@ class _StatsForecast:
                         input_size,
                         fitted,
                         level,
+                        refit,
                     ),
                 )
                 futures.append(future)
@@ -1313,7 +1349,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 30
+# %% ../nbs/core.ipynb 33
 class _DistributedStatsForecast:
     def __init__(
         self,
@@ -1420,7 +1456,7 @@ class _DistributedStatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 31
+# %% ../nbs/core.ipynb 34
 class StatsForecast(_StatsForecast):
     """core.StatsForecast.
 
