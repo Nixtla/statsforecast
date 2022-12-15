@@ -10,8 +10,11 @@ format:
     toc: true
 
 website:
-  twitter-card: true
-  open-graph: true
+  twitter-card: 
+    image: "https://farm6.staticflickr.com/5510/14338202952_93595258ff_z.jpg"
+    site: "@Nixtlainc"
+  open-graph:
+    image: "https://github.com/Nixtla/styles/blob/2abf51612584169874c90cd7c4d347e3917eaf73/images/Banner%20Github.png"
   google-analytics: "G-NXJNCVR18L"
   repo-actions: [issue]
   favicon: favicon_png.png
@@ -25,11 +28,11 @@ website:
       - text: "NixtlaVerse"
         menu:
           - text: "MLForecast 🤖"
-            href: https://github.com/nixtla/statsforecast/issues/new/choose
+            href: https://github.com/nixtla/mlforecast
           - text: "NeuralForecast 🧠"
-            href: https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A
+            href: https://github.com/nixtla/neuralforecast
           - text: "HierarchicalForecast 👑"
-            href: https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A
+            href: "https://github.com/nixtla/hierachicalforecast"
           
       - text: "Help"
         menu:
@@ -49,6 +52,6 @@ website:
   sidebar:
     style: floating
   body-footer: |
-    Give us a ⭐ on [Github](https://github.com/nixtla/stats)
+    Give us a ⭐ on [Github](https://github.com/nixtla/statsforecast)
 
 metadata-files: [nbdev.yml, sidebar.yml]

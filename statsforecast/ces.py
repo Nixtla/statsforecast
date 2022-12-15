@@ -518,6 +518,9 @@ def cesmodel(
     mse = amse[0]
     amse = np.mean(amse)
 
+    fitted = y - e
+    sigma2 = np.sum(e**2) / (ny - np_ - 1)
+
     return dict(
         loglik=-0.5 * lik,
         aic=aic,
@@ -526,12 +529,14 @@ def cesmodel(
         mse=mse,
         amse=amse,
         fit=fred,
+        fitted=fitted,
         residuals=e,
         m=m,
         states=states,
         par=par,
         n=len(y),
         seasontype=seasontype,
+        sigma2=sigma2,
     )
 
 # %% ../nbs/ces.ipynb 29
@@ -555,6 +560,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 def forecast_ces(obj, h):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
+    out["fitted"] = obj["fitted"]
     return out
 
 # %% ../nbs/ces.ipynb 32

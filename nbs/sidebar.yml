@@ -1,9 +1,7 @@
 website:
   reader-mode: false
   sidebar:
-    style: "floating"
     collapse-level: 1
-    background: none
     contents:
       - index.ipynb
       - text: "--"
@@ -24,6 +22,7 @@ website:
         - examples/CrossValidation.ipynb
         - examples/MultipleSeasonalities.ipynb
         - examples/ElectricityLoadForecasting.ipynb
+        - examples/ElectricityPeakForecasting.ipynb
         - examples/IntermittentData.ipynb
         - examples/UncertaintyIntervals.ipynb
         - examples/Exogenous.ipynb
@@ -37,6 +36,7 @@ website:
         - distributed.fugue.ipynb
       - section: examples/experiments.qmd
         contents:
+        - examples/aws/statsforecast.ipynb
         - examples/AutoArima_vs_Prophet.ipynb
         - examples/Prophet_spark_m5.ipynb
         - examples/ETS_ray_m5.ipynb
