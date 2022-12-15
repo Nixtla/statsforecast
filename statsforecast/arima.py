@@ -867,9 +867,7 @@ def arima(
     # parscale definition, think about it, scipy doesn't use it
     if method == "CSS":
         if no_optim:
-            res = OptimResult(
-                True, 0, np.array([]), arma_css_op(np.array([]), x), np.array([])
-            )
+            res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
         else:
             res = minimize(
                 arma_css_op,
@@ -896,9 +894,7 @@ def arima(
     else:
         if method == "CSS-ML":
             if no_optim:
-                res = OptimResult(
-                    True, 0, np.array([]), arma_css_op(np.array([]), x), np.array([])
-                )
+                res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
             else:
                 res = minimize(
                     arma_css_op,
@@ -1311,7 +1307,7 @@ def search_arima(
 
 # %% ../nbs/arima.ipynb 50
 def arima2(x, model, xreg, method):
-    m = model["arma"][4]
+    m = model["arma"][4]  # 5
     use_drift = "drift" in model["coef"].keys()
     use_intercept = "intercept" in model["coef"].keys()
     use_xreg = model["xreg"] is not None
@@ -1335,11 +1331,13 @@ def arima2(x, model, xreg, method):
         if xreg.shape[1] != model["xreg"].shape[1]:
             raise Exception("Number of regressors does not match fitted model")
 
-    seas_arma = [model["arma"][i] for i in [2, 3, 5]]
-    order = tuple(model["arma"][i] for i in [0, 5, 1])
+    seas_arma = [model["arma"][i] for i in [2, 3, 6]]  # 3, 4, 7
+    order = tuple(model["arma"][i] for i in [0, 5, 1])  # 1, 6, 2
     coefs = np.array(list(model["coef"].values()))
     if model["arma"][4] > 1 and np.sum(np.abs(seas_arma) > 0):  # seasonal model
-        seasonal = dict(order=tuple(model["arma"][i] for i in [2, 6, 3]), period=m)
+        seasonal = dict(
+            order=tuple(model["arma"][i] for i in [2, 6, 3]), period=m  # 3, 7, 4
+        )
         refit = Arima(
             x=x,
             order=order,
@@ -2284,7 +2282,11 @@ def auto_arima_f(
 
     return bestfit
 
-# %% ../nbs/arima.ipynb 88
+# %% ../nbs/arima.ipynb 82
+def forward_arima(fitted_model, y, xreg=None, method="CSS-ML"):
+    return Arima(x=y, model=fitted_model, xreg=xreg, method=method)
+
+# %% ../nbs/arima.ipynb 91
 def print_statsforecast_ARIMA(model, digits=3, se=True):
     print(arima_string(model, padding=False))
     if model["lambda"] is not None:
@@ -2314,7 +2316,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if not np.isnan(model["aic"]):
         print(f'AIC={round(model["aic"], 2)}')
 
-# %% ../nbs/arima.ipynb 90
+# %% ../nbs/arima.ipynb 93
 class ARIMASummary:
     """ARIMA Summary."""
 
@@ -2327,7 +2329,7 @@ class ARIMASummary:
     def summary(self):
         return print_statsforecast_ARIMA(self.model)
 
-# %% ../nbs/arima.ipynb 91
+# %% ../nbs/arima.ipynb 94
 class AutoARIMA:
     """An AutoARIMA estimator.
 
