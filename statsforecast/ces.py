@@ -462,7 +462,13 @@ def cesmodel(
     if seasontype == "N":
         m = 1
     # initial parameters
-    par = initparamces(alpha_0, alpha_1, beta_1, beta_0, seasontype)
+    par = initparamces(
+        alpha_0=alpha_0,
+        alpha_1=alpha_1,
+        beta_1=beta_1,
+        beta_0=beta_0,
+        seasontype=seasontype,
+    )
     optimize_params = {
         key.replace("optimize_", ""): val for key, val in par.items() if "optim" in key
     }
@@ -627,3 +633,21 @@ def auto_ces(
     if np.isinf(best_ic):
         raise Exception("no model able to be fitted")
     return model
+
+# %% ../nbs/ces.ipynb 34
+def forward_ces(fitted_model, y):
+    m = fitted_model["m"]
+    model = fitted_model["seasontype"]
+    alpha_0 = fitted_model["par"]["alpha_0"]
+    alpha_1 = fitted_model["par"]["alpha_1"]
+    beta_0 = fitted_model["par"]["beta_0"]
+    beta_1 = fitted_model["par"]["beta_1"]
+    return auto_ces(
+        y=y,
+        m=m,
+        model=model,
+        alpha_0=alpha_0,
+        alpha_1=alpha_1,
+        beta_0=beta_0,
+        beta_1=beta_1,
+    )

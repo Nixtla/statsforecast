@@ -10,7 +10,7 @@ import random
 import re
 from itertools import product
 from os import cpu_count
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Dict
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
@@ -1003,6 +1003,7 @@ class _StatsForecast:
         max_insample_length: Optional[int] = None,
         plot_anomalies: Optional[bool] = False,
         engine: str = "plotly",
+        resampler_kwargs: Optional[Dict] = None,
     ):
         """Plot forecasts and insample values.
 
@@ -1015,7 +1016,8 @@ class _StatsForecast:
         `level`: List[float], List of prediction intervals to plot if paseed.<br>
         `max_insample_length`: int, max number of train/insample observations to be plotted.<br>
         `plot_anomalies`: bool, Plot anomalies for each prediction interval.<br>
-        `engine`: str, library used to plot. 'plotly' or 'matplotlib'.<br>
+        `engine`: str, library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.<br>
+        `resampler_kwargs`: dict, kwargs to be passed to plotly-resampler constructor. kwargs for plotly-resampler `.show_dash` method can be passed as sub-dictionary under the "show_dash" key.<br>
         """
         if level is not None and not isinstance(level, list):
             raise Exception(
@@ -1040,7 +1042,7 @@ class _StatsForecast:
         else:
             unique_ids = unique_ids[:8]
 
-        if engine == "plotly":
+        if engine == "plotly" or engine == "plotly-resampler":
             n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
             fig = make_subplots(
                 rows=n_rows,
@@ -1051,6 +1053,17 @@ class _StatsForecast:
                 y_title="Target [y]",
                 subplot_titles=[str(uid) for uid in unique_ids],
             )
+            if engine == "plotly-resampler":
+                try:
+                    from plotly_resampler import FigureResampler
+                except ImportError:
+                    raise ImportError(
+                        "plotly-resampler is not installed. "
+                        "Please install it with `pip install plotly-resampler`"
+                    )
+                resampler_kwargs = {} if resampler_kwargs is None else resampler_kwargs
+                show_dash_kwargs = resampler_kwargs.pop("show_dash", {})
+                fig = FigureResampler(fig, **resampler_kwargs)
             showed_legends: set = set()
 
             def plotly(
@@ -1196,7 +1209,11 @@ class _StatsForecast:
             fig.update_layout(template="plotly_white", font=dict(size=10))
             fig.update_annotations(font_size=10)
             fig.update_layout(autosize=True, height=150 * n_rows)
-            fig.show()
+            if engine == "plotly-resampler":
+                # Start the Dash app for the plotly-resampler plot
+                fig.show_dash(**show_dash_kwargs)
+            else:
+                fig.show()
 
         elif engine == "matplotlib":
             if len(unique_ids) == 1:
