@@ -16,3 +16,4 @@ dependencies:
   - pip:
     - nbdev
     - tqdm
+    - plotly-resampler
