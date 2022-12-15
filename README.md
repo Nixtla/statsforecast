@@ -172,6 +172,18 @@ Suited for series with very few non-zero observations
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md).
 
+## Citing
+
+```bibtex
+@misc{garza2022statsforecast,
+    author={Federico Garza, Max Mergenthaler Canseco, Cristian Challú, Kin G. Olivares},
+    title = {{StatsForecast}: Lightning fast forecasting with statistical and econometric models},
+    year={2022},
+    howpublished={{PyCon} Salt Lake City, Utah, US 2022},
+    url={https://github.com/Nixtla/statsforecast}
+}
+```
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
