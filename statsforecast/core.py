@@ -1401,6 +1401,7 @@ class _DistributedStatsForecast:
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
+        refit: bool = True,
         sort_df: bool = True,
     ):
         return self.backend.cross_validation(
@@ -1414,6 +1415,7 @@ class _DistributedStatsForecast:
             test_size=test_size,
             input_size=input_size,
             level=level,
+            refit=refit,
             fitted=fitted,
         )
 
