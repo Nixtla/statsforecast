@@ -3372,7 +3372,47 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/models.ipynb 292
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        """Apply fitted MSTL model to a new time series.
+
+        **Parameters:**<br>
+        `y`: numpy array of shape (n,), clean time series.<br>
+        `h`: int, forecast horizon.<br>
+        `X`: array-like of shape (t, n_x) optional insample exogenous (default=None).<br>
+        `X_future`: array-like of shape (h, n_x) optional exogenous (default=None).<br>
+        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        `fitted`: bool, wether or not returns insample predictions.<br>
+
+        **Returns:**<br>
+        `forecasts`: dictionary, with entries 'mean' for point predictions and
+            'level_*' for probabilistic predictions.<br>
+        """
+        if not hasattr(self.trend_forecaster, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        model_ = mstl(x=y, period=self.season_length)
+        x_sa = model_[["trend", "remainder"]].sum(axis=1).values
+        kwargs = {"y": x_sa, "h": h, "X": X, "X_future": X_future, "fitted": fitted}
+        if "level" in signature(self.trend_forecaster.forward).parameters:
+            kwargs["level"] = level
+        res = self.trend_forecaster.forward(**kwargs)
+        # reseasonalize results
+        seas_h = _predict_mstl_seas(model_, h=h, season_length=self.season_length)
+        seas_insample = model_.filter(regex="seasonal*").sum(axis=1).values
+        res = {
+            key: val + (seas_insample if "fitted" in key else seas_h)
+            for key, val in res.items()
+        }
+        return res
+
+# %% ../nbs/models.ipynb 293
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -3398,7 +3438,7 @@ class Theta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 304
+# %% ../nbs/models.ipynb 305
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -3424,7 +3464,7 @@ class OptimizedTheta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 316
+# %% ../nbs/models.ipynb 317
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -3450,7 +3490,7 @@ class DynamicTheta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 328
+# %% ../nbs/models.ipynb 329
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
