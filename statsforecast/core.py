@@ -10,7 +10,7 @@ import random
 import re
 from itertools import product
 from os import cpu_count
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Dict
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
@@ -245,6 +245,7 @@ class GroupedArray:
         input_size=None,
         fitted=False,
         level=tuple(),
+        refit=True,
         verbose=False,
     ):
         # output of size: (ts, window, h)
@@ -303,18 +304,9 @@ class GroupedArray:
                     kwargs = {}
                     if has_level:
                         kwargs["level"] = level
-                    try:
-                        res_i = model.forecast(
-                            h=h,
-                            y=y_train,
-                            X=X_train,
-                            X_future=X_future,
-                            fitted=fitted,
-                            **kwargs,
-                        )
-                    except Exception as error:
-                        if fallback_model is not None:
-                            res_i = fallback_model.forecast(
+                    if refit:
+                        try:
+                            res_i = model.forecast(
                                 h=h,
                                 y=y_train,
                                 X=X_train,
@@ -322,8 +314,47 @@ class GroupedArray:
                                 fitted=fitted,
                                 **kwargs,
                             )
-                        else:
-                            raise error
+                        except Exception as error:
+                            if fallback_model is not None:
+                                res_i = fallback_model.forecast(
+                                    h=h,
+                                    y=y_train,
+                                    X=X_train,
+                                    X_future=X_future,
+                                    fitted=fitted,
+                                    **kwargs,
+                                )
+                            else:
+                                raise error
+                    else:
+                        if i_window == 0:
+                            # for the first window we have to fit each model
+                            model = model.fit(y=y_train, X=X_train)
+                            if fallback_model is not None:
+                                fallback_model = fallback_model.fit(
+                                    y=y_train, X=X_train
+                                )
+                        try:
+                            res_i = model.forward(
+                                h=h,
+                                y=y_train,
+                                X=X_train,
+                                X_future=X_future,
+                                fitted=fitted,
+                                **kwargs,
+                            )
+                        except Exception as error:
+                            if fallback_model is not None:
+                                res_i = fallback_model.forward(
+                                    h=h,
+                                    y=y_train,
+                                    X=X_train,
+                                    X_future=X_future,
+                                    fitted=fitted,
+                                    **kwargs,
+                                )
+                            else:
+                                raise error
                     cols_m = [
                         key
                         for key in res_i.keys()
@@ -368,7 +399,7 @@ class GroupedArray:
             if x.size
         ]
 
-# %% ../nbs/core.ipynb 19
+# %% ../nbs/core.ipynb 22
 def _grouped_array_from_df(df, sort_df):
     df = df.set_index("ds", append=True)
     if not df.index.is_monotonic_increasing and sort_df:
@@ -382,7 +413,7 @@ def _grouped_array_from_df(df, sort_df):
     indptr = np.append(0, cum_sizes).astype(np.int32)
     return GroupedArray(data, indptr), indices, dates, df.index
 
-# %% ../nbs/core.ipynb 21
+# %% ../nbs/core.ipynb 24
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -421,7 +452,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/core.ipynb 25
+# %% ../nbs/core.ipynb 28
 def _get_n_jobs(n_groups, n_jobs, ray_address):
     if ray_address is not None:
         logger.info("Using ray address," "using available resources insted of `n_jobs`")
@@ -443,7 +474,7 @@ def _get_n_jobs(n_groups, n_jobs, ray_address):
             actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 28
+# %% ../nbs/core.ipynb 31
 def _parse_ds_type(df):
     if not pd.api.types.is_datetime64_any_dtype(df["ds"]) and not issubclass(
         df["ds"].dtype.type, np.integer
@@ -460,7 +491,7 @@ def _parse_ds_type(df):
             raise Exception(msg) from e
     return df
 
-# %% ../nbs/core.ipynb 29
+# %% ../nbs/core.ipynb 32
 class _StatsForecast:
     def __init__(
         self,
@@ -719,6 +750,7 @@ class _StatsForecast:
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
+        refit: bool = True,
         sort_df: bool = True,
     ):
         """Temporal Cross-Validation with core.StatsForecast.
@@ -739,6 +771,7 @@ class _StatsForecast:
         `input_size`: Optional[int] = None, input size for each window, if not none rolled windows.<br>
         `level`: float list 0-100, confidence levels for prediction intervals.<br>
         `fitted`: bool, wether or not returns insample predictions.<br>
+        `refit`: bool, wether or not refit the model for each window.<br>
         `sort_df`: bool, if True, sort `df` by `unique_id` and `ds`.
 
         **Returns:**<br>
@@ -768,6 +801,7 @@ class _StatsForecast:
                 fitted=fitted,
                 level=level,
                 verbose=self.verbose,
+                refit=refit,
             )
         else:
             res_fcsts = self._cross_validation_parallel(
@@ -777,6 +811,7 @@ class _StatsForecast:
                 input_size=input_size,
                 fitted=fitted,
                 level=level,
+                refit=refit,
             )
 
         if fitted:
@@ -950,7 +985,7 @@ class _StatsForecast:
         return result
 
     def _cross_validation_parallel(
-        self, h, test_size, step_size, input_size, fitted, level
+        self, h, test_size, step_size, input_size, fitted, level, refit
     ):
         # create elements for each core
         gas = self.ga.split(self.n_jobs)
@@ -971,6 +1006,7 @@ class _StatsForecast:
                         input_size,
                         fitted,
                         level,
+                        refit,
                     ),
                 )
                 futures.append(future)
@@ -1001,7 +1037,9 @@ class _StatsForecast:
         models: Optional[List[str]] = None,
         level: Optional[List[float]] = None,
         max_insample_length: Optional[int] = None,
+        plot_anomalies: Optional[bool] = False,
         engine: str = "plotly",
+        resampler_kwargs: Optional[Dict] = None,
     ):
         """Plot forecasts and insample values.
 
@@ -1013,7 +1051,9 @@ class _StatsForecast:
         `models`: List[str], List of models to plot.<br>
         `level`: List[float], List of prediction intervals to plot if paseed.<br>
         `max_insample_length`: int, max number of train/insample observations to be plotted.<br>
-        `engine`: str, library used to plot. 'plotly' or 'matplotlib'.<br>
+        `plot_anomalies`: bool, Plot anomalies for each prediction interval.<br>
+        `engine`: str, library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.<br>
+        `resampler_kwargs`: dict, kwargs to be passed to plotly-resampler constructor. kwargs for plotly-resampler `.show_dash` method can be passed as sub-dictionary under the "show_dash" key.<br>
         """
         if level is not None and not isinstance(level, list):
             raise Exception(
@@ -1038,8 +1078,7 @@ class _StatsForecast:
         else:
             unique_ids = unique_ids[:8]
 
-        if engine == "plotly":
-
+        if engine == "plotly" or engine == "plotly-resampler":
             n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
             fig = make_subplots(
                 rows=n_rows,
@@ -1050,108 +1089,168 @@ class _StatsForecast:
                 y_title="Target [y]",
                 subplot_titles=[str(uid) for uid in unique_ids],
             )
+            if engine == "plotly-resampler":
+                try:
+                    from plotly_resampler import FigureResampler
+                except ImportError:
+                    raise ImportError(
+                        "plotly-resampler is not installed. "
+                        "Please install it with `pip install plotly-resampler`"
+                    )
+                resampler_kwargs = {} if resampler_kwargs is None else resampler_kwargs
+                show_dash_kwargs = resampler_kwargs.pop("show_dash", {})
+                fig = FigureResampler(fig, **resampler_kwargs)
+            showed_legends: set = set()
 
-            for uid, (idx, idy) in zip(
-                unique_ids, product(range(1, n_rows + 1), range(1, 2 + 1))
+            def plotly(
+                df,
+                fig,
+                n_rows,
+                unique_ids,
+                models,
+                plot_anomalies,
+                max_insample_length,
+                showed_legends,
             ):
-                train_uid = df.query("unique_id == @uid")
-                train_uid = _parse_ds_type(train_uid)
-                ds = train_uid["ds"]
-                y = train_uid["y"]
-                if max_insample_length is not None:
-                    ds = ds[-max_insample_length:]
-                    y = y[-max_insample_length:]
-                fig.add_trace(
-                    go.Scatter(
-                        x=ds,
-                        y=y,
-                        mode="lines",
-                        name="y",
-                        legendgroup="y",
-                        line=dict(color="#1f77b4", width=1),
-                        showlegend=(idx == 1 and idy == 1),
-                    ),
-                    row=idx,
-                    col=idy,
-                )
-                if forecasts_df is not None:
-                    if models is None:
-                        exclude_str = ["lo", "hi", "unique_id", "ds"]
-                        models = [
-                            c
-                            for c in forecasts_df.columns
-                            if all(item not in c for item in exclude_str)
-                        ]
-                    if "y" not in models:
-                        models = ["y"] + models
-                    test_uid = forecasts_df.query("unique_id == @uid")
-                    test_uid = _parse_ds_type(test_uid)
-                    first_ds_fcst = test_uid["ds"].min()
+                if models is None:
+                    exclude_str = ["lo", "hi", "unique_id", "ds"]
+                    models = [
+                        c
+                        for c in df.columns
+                        if all(item not in c for item in exclude_str)
+                    ]
+                if "y" not in models:
+                    models = ["y"] + models
+                for uid, (idx, idy) in zip(
+                    unique_ids, product(range(1, n_rows + 1), range(1, 2 + 1))
+                ):
+                    df_uid = df.query("unique_id == @uid")
+                    if max_insample_length:
+                        df_uid = df_uid.iloc[-max_insample_length:]
+                    plot_anomalies = "y" in df_uid and plot_anomalies
+                    df_uid = _parse_ds_type(df_uid)
                     colors = plt.cm.get_cmap("tab20b", len(models))
                     colors = ["#1f77b4"] + [
                         cm.to_hex(colors(i)) for i in range(len(models))
                     ]
                     for col, color in zip(models, colors):
-                        if col in test_uid:
+                        if col in df_uid:
+                            model = df_uid[col]
                             fig.add_trace(
                                 go.Scatter(
-                                    x=test_uid["ds"],
-                                    y=test_uid[col],
+                                    x=df_uid["ds"],
+                                    y=model,
                                     mode="lines",
                                     name=col,
                                     legendgroup=col,
                                     line=dict(color=color, width=1),
-                                    showlegend=(idx == 1 and idy == 1),
+                                    showlegend=(
+                                        idx == 1
+                                        and idy == 1
+                                        and col not in showed_legends
+                                    ),
                                 ),
                                 row=idx,
                                 col=idy,
                             )
-                        model_has_level = any(f"{col}-lo" in c for c in test_uid)
+                            showed_legends.add(col)
+                        model_has_level = any(f"{col}-lo" in c for c in df_uid)
                         if level is not None and model_has_level:
                             level_ = level
                         elif model_has_level:
-                            level_col = test_uid.filter(like=f"{col}-lo").columns[0]
+                            level_col = df_uid.filter(like=f"{col}-lo").columns[0]
                             level_col = re.findall(
                                 "[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+", level_col
                             )[0]
                             level_ = [level_col]
                         else:
                             level_ = []
-                        ds_test = test_uid["ds"].to_list()
+                        ds = df_uid["ds"]
                         for lv in level_:
-                            lo = test_uid[f"{col}-lo-{lv}"].to_list()
-                            hi = test_uid[f"{col}-hi-{lv}"].to_list()
+                            lo = df_uid[f"{col}-lo-{lv}"]
+                            hi = df_uid[f"{col}-hi-{lv}"]
+                            plot_name = f"{col}_level_{lv}"
                             fig.add_trace(
                                 go.Scatter(
-                                    x=ds_test + ds_test[::-1],
-                                    y=hi + lo[::-1],
+                                    x=np.concatenate([ds, ds[::-1]]),
+                                    y=np.concatenate([hi, lo[::-1]]),
                                     fill="toself",
                                     mode="lines",
                                     fillcolor=color,
-                                    opacity=-float(lv) / 50 + 2,
-                                    name=f"{col}_level_{lv}",
-                                    legendgroup=f"{col}_level_{lv}",
+                                    opacity=-float(lv) / 100 + 1,
+                                    name=plot_name,
+                                    legendgroup=plot_name,
                                     line=dict(color=color, width=1),
-                                    showlegend=(idx == 1 and idy == 1),
+                                    showlegend=(
+                                        idx == 1
+                                        and idy == 1
+                                        and plot_name not in showed_legends
+                                    ),
                                 ),
                                 row=idx,
                                 col=idy,
                             )
-            # fig.update_layout(
-            #    legend=dict(
-            #        x=0,
-            #
-            # y=1,
-            #        font=dict(size=8)
-            #    )
-            # )
+                            showed_legends.add(plot_name)
+                            if col != "y" and plot_anomalies:
+                                anomalies = (df_uid["y"] < lo) | (df_uid["y"] > hi)
+                                plot_name = f"{col}_anomalies_level_{lv}"
+                                fig.add_trace(
+                                    go.Scatter(
+                                        x=ds[anomalies],
+                                        y=df_uid["y"][anomalies],
+                                        fillcolor=color,
+                                        mode="markers",
+                                        opacity=float(lv) / 100,
+                                        name=plot_name,
+                                        legendgroup=plot_name,
+                                        line=dict(color=color, width=0.7),
+                                        marker=dict(
+                                            size=4, line=dict(color="red", width=0.5)
+                                        ),
+                                        showlegend=(
+                                            idx == 1
+                                            and idy == 1
+                                            and plot_name not in showed_legends
+                                        ),
+                                    ),
+                                    row=idx,
+                                    col=idy,
+                                )
+                                showed_legends.add(plot_name)
+                return fig
+
+            fig = plotly(
+                df=df,
+                fig=fig,
+                n_rows=n_rows,
+                unique_ids=unique_ids,
+                models=models,
+                plot_anomalies=plot_anomalies,
+                max_insample_length=max_insample_length,
+                showed_legends=showed_legends,
+            )
+            if forecasts_df is not None:
+                fig = plotly(
+                    df=forecasts_df,
+                    fig=fig,
+                    n_rows=n_rows,
+                    unique_ids=unique_ids,
+                    models=models,
+                    plot_anomalies=plot_anomalies,
+                    max_insample_length=None,
+                    showed_legends=showed_legends,
+                )
             fig.update_xaxes(matches=None, showticklabels=True, visible=True)
             fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
             fig.update_layout(template="plotly_white", font=dict(size=10))
             fig.update_annotations(font_size=10)
             fig.update_layout(autosize=True, height=150 * n_rows)
-            fig.show()
-            return
+            if engine == "plotly-resampler":
+                # Start the Dash app for the plotly-resampler plot
+                fig.show_dash(**show_dash_kwargs)
+            else:
+                fig.show()
+
         elif engine == "matplotlib":
             if len(unique_ids) == 1:
                 fig, axes = plt.subplots(figsize=(24, 3.5))
@@ -1166,11 +1265,10 @@ class _StatsForecast:
             for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
                 train_uid = df.query("unique_id == @uid")
                 train_uid = _parse_ds_type(train_uid)
+                if max_insample_length is not None:
+                    train_uid = train_uid.iloc[-max_insample_length:]
                 ds = train_uid["ds"]
                 y = train_uid["y"]
-                if max_insample_length is not None:
-                    ds = ds[-max_insample_length:]
-                    y = y[-max_insample_length:]
                 axes[idx, idy].plot(ds, y, label="y")
                 if forecasts_df is not None:
                     if models is None:
@@ -1183,6 +1281,7 @@ class _StatsForecast:
                     if "y" not in models:
                         models = ["y"] + models
                     test_uid = forecasts_df.query("unique_id == @uid")
+                    plot_anomalies = "y" in test_uid and plot_anomalies
                     test_uid = _parse_ds_type(test_uid)
                     first_ds_fcst = test_uid["ds"].min()
                     axes[idx, idy].axvline(
@@ -1210,14 +1309,29 @@ class _StatsForecast:
                         else:
                             level_ = []
                         for lv in level_:
+                            ds_test = test_uid["ds"]
+                            lo = test_uid[f"{col}-lo-{lv}"]
+                            hi = test_uid[f"{col}-hi-{lv}"]
                             axes[idx, idy].fill_between(
-                                test_uid["ds"],
-                                test_uid[f"{col}-lo-{lv}"],
-                                test_uid[f"{col}-hi-{lv}"],
-                                alpha=-float(lv) / 50 + 2,
+                                ds_test,
+                                lo,
+                                hi,
+                                alpha=-float(lv) / 100 + 1,
                                 color=color,
                                 label=f"{col}_level_{lv}",
                             )
+                            if col != "y" and plot_anomalies:
+                                anomalies = (test_uid["y"] < lo) | (test_uid["y"] > hi)
+                                axes[idx, idy].scatter(
+                                    x=ds_test[anomalies],
+                                    y=test_uid["y"][anomalies],
+                                    color=color,
+                                    s=30,
+                                    alpha=float(lv) / 100,
+                                    label=f"{col}_anomalies_level_{lv}",
+                                    linewidths=0.5,
+                                    edgecolors="red",
+                                )
 
                 axes[idx, idy].set_title(f"{uid}")
                 axes[idx, idy].set_xlabel("Datestamp [ds]")
@@ -1229,14 +1343,13 @@ class _StatsForecast:
                 axes[idx, idy].grid()
             fig.subplots_adjust(hspace=0.5)
             plt.show()
-            return
         else:
             raise Exception(f"Unkwon plot engine {engine}")
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 30
+# %% ../nbs/core.ipynb 33
 class _DistributedStatsForecast:
     def __init__(
         self,
@@ -1288,6 +1401,7 @@ class _DistributedStatsForecast:
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
+        refit: bool = True,
         sort_df: bool = True,
     ):
         return self.backend.cross_validation(
@@ -1301,6 +1415,7 @@ class _DistributedStatsForecast:
             test_size=test_size,
             input_size=input_size,
             level=level,
+            refit=refit,
             fitted=fitted,
         )
 
@@ -1343,7 +1458,7 @@ class _DistributedStatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 31
+# %% ../nbs/core.ipynb 34
 class StatsForecast(_StatsForecast):
     """core.StatsForecast.
 

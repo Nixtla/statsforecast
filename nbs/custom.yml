@@ -1,4 +1,5 @@
 website:
+  logo: https://github.com/Nixtla/styles/blob/b9ea432cfa2dae20fc84d8634cae6db902f9ca3f/images/Nixtla_Blanco.png
   reader-mode: false
   navbar:
     collapse-below: lg
