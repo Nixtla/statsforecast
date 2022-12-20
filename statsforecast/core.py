@@ -515,19 +515,34 @@ class _StatsForecast:
         model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
         Scikit-learn interface store the fitted models.
 
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `models`: List[typing.Any], list of instantiated objects models.StatsForecast.<br>
-        `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-        `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
-        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
-        `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
-        `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
-
-        **Notes:**<br>
-        The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
+        The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
         See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
+        models : List[typing.Any]
+            List of instantiated objects models.StatsForecast.
+        freq : str,
+            Frequency of the data.
+            See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+        n_jobs : int
+            Number of jobs used in the parallel processing, use -1 for all cores.
+        ray_address: str
+            Ray address for distributed processing.
+        sort_df : bool
+            If True, sort `df` by [`unique_id`,`ds`].
+        fallback_model : Any
+            Model to be used if a model fails.
+            Only works with the `forecast` and `cross_validation` methods.
+        verbose : bool
+            Prints TQDM progress bar when `n_jobs=1`.
+        backend : Any
+            Backend used to distributed processing.
+            Only methods `forecast` add `cross_validation` are currently supported.
         """
+
         # TODO @fede: needed for residuals, think about it later
         self.models = models
         self.freq = pd.tseries.frequencies.to_offset(freq)
@@ -554,12 +569,17 @@ class _StatsForecast:
         Fit `models` to a large set of time series from DataFrame `df`.
         and store fitted models for later inspection.
 
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
+        sort_df : bool
+            If True, sort `df` by [`unique_id`,`ds`].
 
-        **Returns:**<br>
-        `self`: Returns with stored `StatsForecast` fitted `models`.
+        Returns
+        -------
+        self : StatsForecast
+            Returns with stored `StatsForecast` fitted `models`.
         """
         self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
@@ -609,14 +629,20 @@ class _StatsForecast:
 
         Use stored fitted `models` to predict large set of time series from DataFrame `df`.
 
-        **Parameters:**<br>
-        `h`: int, forecast horizon.<br>
-        `X_df`: pandas.DataFrame, with [`unique_id`, `ds`] columns and `df`'s future exogenous.<br>
-        `level`: float list 0-100, confidence levels for prediction intervals.<br>
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X_df : pandas.DataFrame
+            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
+        level : List[float]
+            Confidence levels between 0 and 100 for prediction intervals.
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with `models` columns for point predictions and probabilistic
+            predictions for all fitted `models`.
         """
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -643,16 +669,24 @@ class _StatsForecast:
 
         In contrast to `StatsForecast.forecast` this method stores partial models outputs.
 
-        **Parameters:**<br>
-        `h`: int, forecast horizon.<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.
-        `X_df`: pandas.DataFrame, with [`unique_id`, `ds`] columns and `df`'s future exogenous.<br>
-        `level`: float list 0-100, confidence levels for prediction intervals.<br>
-        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous variables.
+        X_df : pandas.DataFrame
+            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
+        level : List[float]
+            Confidence levels between 0 and 100 for prediction intervals.
+        sort_df : bool
+            If True, sort `df` by [`unique_id`,`ds`].
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with `models` columns for point predictions and probabilistic
+            predictions for all fitted `models`.
         """
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
@@ -683,17 +717,26 @@ class _StatsForecast:
         It is analogous to Scikit-Learn `fit_predict` without storing information.
         It requires the forecast horizon `h` in advance.
 
-        **Parameters:**<br>
-        `h`: int, forecast horizon.<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `X_df`: pandas.DataFrame, with [`unique_id`, `ds`] columns and `df`'s future exogenous.<br>
-        `level`: float list 0-100, confidence levels for prediction intervals.<br>
-        `fitted`: bool, wether or not returns insample predictions.<br>
-        `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
+        X_df : pandas.DataFrame
+            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
+        level : List[float]
+            Confidence levels between 0 and 100 for prediction intervals.
+        fitted : bool
+            Wether or not return insample predictions.
+        sort_df : bool
+            If True, sort `df` by [`unique_id`,`ds`].
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with `models` columns for point predictions and probabilistic
+            predictions for all fitted `models`.
         """
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
@@ -725,12 +768,15 @@ class _StatsForecast:
         to the `StatsForecast.forecast` method and then use the
         `StatsForecast.forecast_fitted_values` method.
 
-        **Parameters:**<br>
-        Check `StatsForecast.forecast` parameters, use `fitted=True`.<br>
+        Parameters
+        ----------
+        self: StatsForecast
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with insample `models` columns for point predictions and probabilistic
+            predictions for all fitted `models`.
         """
         if not hasattr(self, "fcst_fitted_values_"):
             raise Exception("Please run `forecast` mehtod using `fitted=True`")
@@ -762,21 +808,34 @@ class _StatsForecast:
         high computational costs. Temporal cross-validation provides better model's
         generalization measurements by increasing the test's length and diversity.
 
-        **Parameters:**<br>
-        `h`: int, forecast horizon.<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `n_windows`: int, number of windows used for cross validation.<br>
-        `step_size`: int = 1, step size between each window.<br>
-        `test_size`: Optional[int] = None, length of test size. If passed, set `n_windows=None`.<br>
-        `input_size`: Optional[int] = None, input size for each window, if not none rolled windows.<br>
-        `level`: float list 0-100, confidence levels for prediction intervals.<br>
-        `fitted`: bool, wether or not returns insample predictions.<br>
-        `refit`: bool, wether or not refit the model for each window.<br>
-        `sort_df`: bool, if True, sort `df` by `unique_id` and `ds`.
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
+        n_windows : int
+            Number of windows used for cross validation.
+        step_size : int = 1
+            Step size between each window.<br>
+        test_size : Optional[int] = None
+            Length of test size. If passed, set `n_windows=None`.
+        input_size : Optional[int] = None
+            Input size for each window, if not none rolled windows.
+        level : List[float]
+            Confidence levels between 0 and 100 for prediction intervals.
+        fitted : bool
+            Wether or not returns insample predictions.
+        refit : bool
+            Wether or not refit the model for each window.
+        sort_df : bool
+            If True, sort `df` by `unique_id` and `ds`.
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with insample `models` columns for point predictions and probabilistic
+            predictions for all fitted `models`.
         """
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
@@ -840,12 +899,15 @@ class _StatsForecast:
         to the `StatsForecast.cross_validation` method and then use the
         `StatsForecast.cross_validation_fitted_values` method.
 
-        **Parameters:**<br>
-        Check `StatsForecast.cross_validation` parameters, use `fitted=True`.<br>
+        Parameters
+        ----------
+        self: StatsForecast
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with insample `models` columns for point predictions
-        and probabilistic predictions for all fitted `models`.<br>
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with insample `models` columns for point predictions
+            and probabilistic predictions for all fitted `models`.
         """
         if not hasattr(self, "cv_fitted_values_"):
             raise Exception("Please run `cross_validation` mehtod using `fitted=True`")
@@ -1043,17 +1105,30 @@ class _StatsForecast:
     ):
         """Plot forecasts and insample values.
 
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`].<br>
-        `forecasts_df`: pandas.DataFrame, with columns [`unique_id`, `ds`] and models.<br>
-        `unique_ids`: List[str], Time Series to plot.<br>
-        `plot_random`: bool, Select time series to plot randomly.<br>
-        `models`: List[str], List of models to plot.<br>
-        `level`: List[float], List of prediction intervals to plot if paseed.<br>
-        `max_insample_length`: int, max number of train/insample observations to be plotted.<br>
-        `plot_anomalies`: bool, Plot anomalies for each prediction interval.<br>
-        `engine`: str, library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.<br>
-        `resampler_kwargs`: dict, kwargs to be passed to plotly-resampler constructor. kwargs for plotly-resampler `.show_dash` method can be passed as sub-dictionary under the "show_dash" key.<br>
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`].
+        forecasts_df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`] and models.
+        unique_ids : List[str]
+            Time Series to plot.
+        plot_random : bool
+            Select time series to plot randomly.
+        models : List[str]
+            List of models to plot.
+        level : List[float]
+            List of prediction intervals to plot if paseed.
+        max_insample_length : int
+            Max number of train/insample observations to be plotted.
+        plot_anomalies : bool
+            Plot anomalies for each prediction interval.
+        engine : str
+            Library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.
+        resampler_kwargs : dict
+            Kwargs to be passed to plotly-resampler constructor. kwargs for
+            plotly-resampler `.show_dash` method can be
+            passed as sub-dictionary under the "show_dash" key.
         """
         if level is not None and not isinstance(level, list):
             raise Exception(
@@ -1471,19 +1546,32 @@ class StatsForecast(_StatsForecast):
     model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
     Scikit-learn interface store the fitted models.
 
-    **Parameters:**<br>
-    `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-    `models`: List[typing.Any], list of instantiated objects models.StatsForecast.<br>
-    `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-    `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
-    `sort_df`: bool, if True, sort `df` by [`unique_id`,`ds`].<br>
-    `fallback_model`: Any, Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods.<br>
-    `verbose`: bool, Prints TQDM progress bar when `n_jobs=1`.<br>
-    `backend`: Any, backend used to distributed processing. Only methods `forecast` add `cross_validation` are currently supported.<br>
-
-    **Notes:**<br>
-    The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.<br>
+    The `core.StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
     See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
+    models : List[typing.Any]
+        List of instantiated objects models.StatsForecast.
+    freq : str,
+        Frequency of the data.
+        See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+    n_jobs : int
+        Number of jobs used in the parallel processing, use -1 for all cores.
+    ray_address : str
+        Ray address for distributed processing.
+    sort_df : bool
+        If True, sort `df` by [`unique_id`,`ds`].
+    fallback_model : Any
+        Model to be used if a model fails.
+        Only works with the `forecast` and `cross_validation` methods.
+    verbose : bool
+        Prints TQDM progress bar when `n_jobs=1`.
+    backend : Any
+        Backend used to distributed processing.
+        Only methods `forecast` add `cross_validation` are currently supported.
     """
 
     def __new__(
