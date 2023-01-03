@@ -34,7 +34,7 @@ from statsforecast.utils import generate_series
 	]
 )
 def test_ray_n_jobs(test_input, expected):
-	ray.init(ignore_reinit_error=True)
+	ray.init(ignore_reinit_error=True, include_dashboard=False)
 	assert _get_n_jobs(*eval(test_input)) == expected
 	ray.shutdown()
 
@@ -57,7 +57,7 @@ def test_ray_flow():
 		TSB(alpha_d=0.1, alpha_p=0.3),
 		WindowAverage(window_size=4)
 	]
-    ray_context = ray.init(ignore_reinit_error=True)
+    ray_context = ray.init(ignore_reinit_error=True, include_dashboard=False)
     fcst = StatsForecast(
         df=series,
         models=models,
