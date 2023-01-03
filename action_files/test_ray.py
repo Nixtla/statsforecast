@@ -23,22 +23,29 @@ from statsforecast.models import (
 )
 from statsforecast.utils import generate_series
 
+
+@pytest.fixture(scope="module")
+def ray_fix():
+    ray_context = ray.init(num_cpus=2, include_dashboard=False)
+    yield ray_context
+    ray.shutdown()
+
 @pytest.mark.parametrize(
-	'test_input, expected', 
+'test_input, expected', 
 	[
-		("(10, -1, 'auto')", cpu_count()), 
-		("(10, None, 'auto')", cpu_count()),
+		("(10, -1, 'auto')", 2), 
+		("(10, None, 'auto')", 2),
 		("(1, -1, 'auto')", 1),
 		("(1, None, 'auto')", 1),
 		("(2, 10, 'auto')", 2),
 	]
 )
-def test_ray_n_jobs(test_input, expected):
-	ray.init(ignore_reinit_error=True)
+def test_ray_n_jobs(test_input, expected, ray_fix):
+	assert ray.is_initialized()
 	assert _get_n_jobs(*eval(test_input)) == expected
-	ray.shutdown()
 
-def test_ray_flow():
+def test_ray_flow(ray_fix):
+    assert ray.is_initialized()
     n_series = 20
     horizon = 7
     series = generate_series(20)
@@ -57,15 +64,13 @@ def test_ray_flow():
 		TSB(alpha_d=0.1, alpha_p=0.3),
 		WindowAverage(window_size=4)
 	]
-    ray_context = ray.init(ignore_reinit_error=True)
     fcst = StatsForecast(
         df=series,
         models=models,
         freq='D',
         n_jobs=-1,
-        ray_address=ray_context.address_info['address']
+        ray_address=ray_fix.address_info['address']
     )
     forecast = fcst.forecast(7)
-    ray.shutdown()
     assert forecast.shape == (n_series * horizon, len(models) + 1)
 
