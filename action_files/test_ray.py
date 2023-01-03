@@ -26,8 +26,8 @@ from statsforecast.utils import generate_series
 @pytest.mark.parametrize(
 	'test_input, expected', 
 	[
-		("(10, -1, 'auto')", cpu_count()), 
-		("(10, None, 'auto')", cpu_count()),
+		("(10, -1, 'auto')", 2), 
+		("(10, None, 'auto')", 2),
 		("(1, -1, 'auto')", 1),
 		("(1, None, 'auto')", 1),
 		("(2, 10, 'auto')", 2),
