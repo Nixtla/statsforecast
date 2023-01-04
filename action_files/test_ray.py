@@ -6,6 +6,7 @@ from statsforecast.core import StatsForecast, _get_n_jobs
 from statsforecast.models import ( 
     ADIDA,
     AutoARIMA,
+    ARIMA,
     CrostonClassic,
     CrostonOptimized,
     CrostonSBA,
@@ -52,6 +53,7 @@ def test_ray_flow(ray_fix):
     series['ds'] = series['ds'].astype(str)
     models = [
 		ADIDA(), AutoARIMA(season_length=7), 
+        ARIMA(season_length=7, order=(0, 1, 2)),
 		CrostonClassic(), CrostonOptimized(),
 		CrostonSBA(), ETS(season_length=7),
 		HistoricAverage(), 
