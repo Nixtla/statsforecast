@@ -6,7 +6,6 @@ __all__ = ['NONE', 'ADD', 'MULT', 'DAMPED', 'TOL', 'HUGEN', 'NA', 'smalno', 'NOG
 # %% ../nbs/ets.ipynb 1
 import math
 import os
-import warnings
 from collections import namedtuple
 from typing import Tuple
 
