@@ -61,7 +61,6 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
-
   test-ray:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -116,3 +115,26 @@ jobs:
 
       - name: Run ray
         run: pytest action_files
+
+  test-m3-performance:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+
+      - name: Set up environment
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          extra-specs: python=3.10
+          cache-env: true
+
+      - name: Install library and extra deps
+        run: pip install ".[dev]" fire
+
+      - name: Run M3 experiment
+        run: |
+          python -m src.experiment
+          python -m src.evaluation --test
+        working-directory: ./experiments/m3

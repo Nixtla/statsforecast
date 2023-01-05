@@ -6,7 +6,6 @@ __all__ = ['NONE', 'ADD', 'MULT', 'DAMPED', 'TOL', 'HUGEN', 'NA', 'smalno', 'NOG
 # %% ../nbs/ets.ipynb 1
 import math
 import os
-import warnings
 from collections import namedtuple
 from typing import Tuple
 
@@ -34,13 +33,11 @@ CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
 @njit(nogil=NOGIL, cache=CACHE)
 def etscalc(y, n, x, m, error, trend, season, alpha, beta, gamma, phi, e, amse, nmse):
     oldb = 0.0
-    olds = np.zeros(24)
-    s = np.zeros(24)
+    olds = np.zeros(max(24, m))
+    s = np.zeros(max(24, m))
     f = np.zeros(30)
     denom = np.zeros(30)
-    if m > 24 and season > NONE:
-        return
-    elif m < 1:
+    if m < 1:
         m = 1
     if nmse > 30:
         nmse = 30
@@ -93,8 +90,15 @@ def etscalc(y, n, x, m, error, trend, season, alpha, beta, gamma, phi, e, amse, 
             for j in range(m):
                 x[nstates * (i + 1) + (trend > NONE) + j + 1] = s[j]
         lik = lik + e[i] * e[i]
-        lik2 += math.log(math.fabs(f[0]))
-    lik = n * math.log(lik)
+        val = math.fabs(f[0])
+        if val > 0.0:
+            lik2 += math.log(val)
+        else:
+            lik2 += math.log(val + 1e-8)
+    if lik > 0.0:
+        lik = n * math.log(lik)
+    else:
+        lik = n * math.log(lik + 1e-8)
     if error == MULT:
         lik += 2 * lik2
     return lik
@@ -244,7 +248,7 @@ def etsforecast(x, m, trend, season, phi, h, f):
     # compute forecasts
     forecast(l, b, s, m, trend, season, phi, f, h)
 
-# %% ../nbs/ets.ipynb 14
+# %% ../nbs/ets.ipynb 13
 @njit(nogil=NOGIL, cache=CACHE)
 def initparam(
     alpha: float,
@@ -289,7 +293,7 @@ def initparam(
             phi = upper[3] - 1e-3
     return {"alpha": alpha, "beta": beta, "gamma": gamma, "phi": phi}
 
-# %% ../nbs/ets.ipynb 16
+# %% ../nbs/ets.ipynb 15
 def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     if np.isnan(phi):
         phi = 1
@@ -326,7 +330,7 @@ def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     # passed all tests
     return True
 
-# %% ../nbs/ets.ipynb 17
+# %% ../nbs/ets.ipynb 16
 def check_param(
     alpha: float,
     beta: float,
@@ -355,7 +359,7 @@ def check_param(
             return False
     return True
 
-# %% ../nbs/ets.ipynb 18
+# %% ../nbs/ets.ipynb 17
 @njit(nogil=NOGIL, cache=CACHE)
 def sinpi(x):
     return np.sin(np.pi * x)
@@ -365,7 +369,7 @@ def sinpi(x):
 def cospi(x):
     return np.cos(np.pi * x)
 
-# %% ../nbs/ets.ipynb 19
+# %% ../nbs/ets.ipynb 18
 @njit(nogil=NOGIL, cache=CACHE)
 def fourier(x, period, K, h=None):
     if h is None:
@@ -396,7 +400,7 @@ def fourier(x, period, K, h=None):
     X = X[:, ~np.isnan(X.sum(axis=0))]
     return X
 
-# %% ../nbs/ets.ipynb 21
+# %% ../nbs/ets.ipynb 20
 def initstate(y, m, trendtype, seasontype):
     n = len(y)
     if seasontype != "N":
@@ -474,12 +478,12 @@ def initstate(y, m, trendtype, seasontype):
                 b0 = max(y_sa[1] / div, 1e-3)
     return np.concatenate([[l0, b0], init_seas])
 
-# %% ../nbs/ets.ipynb 25
+# %% ../nbs/ets.ipynb 24
 @njit(nogil=NOGIL, cache=CACHE)
 def switch(x: str):
     return {"N": 0, "A": 1, "M": 2}[x]
 
-# %% ../nbs/ets.ipynb 27
+# %% ../nbs/ets.ipynb 26
 @njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_C(
     y: np.ndarray,
@@ -529,7 +533,7 @@ def pegelsresid_C(
             lik = np.nan
     return amse, e, x, lik
 
-# %% ../nbs/ets.ipynb 28
+# %% ../nbs/ets.ipynb 27
 results = namedtuple("results", "x fn nit simplex")
 
 
@@ -664,7 +668,7 @@ def nelder_mead(
             f_simplex[i] = fn(simplex[i], *args)
     return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
 
-# %% ../nbs/ets.ipynb 29
+# %% ../nbs/ets.ipynb 28
 @njit(nogil=NOGIL, cache=CACHE)
 def ets_target_fn(
     par,
@@ -771,7 +775,7 @@ def ets_target_fn(
         objval = mean
     return objval
 
-# %% ../nbs/ets.ipynb 30
+# %% ../nbs/ets.ipynb 29
 def optimize_ets_target_fn(
     x0,
     par,
@@ -880,7 +884,7 @@ def optimize_ets_target_fn(
     )
     return res
 
-# %% ../nbs/ets.ipynb 31
+# %% ../nbs/ets.ipynb 30
 def etsmodel(
     y: np.ndarray,
     m: int,
@@ -1053,12 +1057,12 @@ def etsmodel(
         n_params=np_,
     )
 
-# %% ../nbs/ets.ipynb 33
+# %% ../nbs/ets.ipynb 32
 @njit(nogil=NOGIL, cache=CACHE)
 def is_constant(x):
     return np.all(x[0] == x)
 
-# %% ../nbs/ets.ipynb 35
+# %% ../nbs/ets.ipynb 34
 def ets_f(
     y,
     m,
@@ -1118,7 +1122,74 @@ def ets_f(
             bounds=bounds,
             maxit=maxit,
         )
-    # refit model not implement yet
+
+    if isinstance(model, dict):
+        m = model["m"]
+        errortype, trendtype, seasontype = model["components"][:3]
+        damped = model["components"][3] != "N"
+        alpha, beta, gamma, phi = model["par"][:4]
+        init_state = model["par"][4:]
+        # Recompute errors from pegelsresid.C
+        amse, e, states, lik = pegelsresid_C(
+            y=y,
+            m=m,
+            init_state=init_state,
+            errortype=errortype,
+            trendtype=trendtype,
+            seasontype=seasontype,
+            damped=damped,
+            alpha=alpha,
+            beta=beta,
+            gamma=gamma,
+            phi=phi,
+            nmse=nmse,
+        )
+        fred = model["fit"]
+        nstate = len(init_state)
+        np_ = model["n_params"] - 1
+        np_ = np_ + 1
+        ny = len(y)
+        aic = lik + 2 * np_
+        bic = lik + np.log(ny) * np_
+        if ny - np_ - 1 != 0.0:
+            aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
+        else:
+            aicc = np.inf
+
+        mse = amse[0]
+        amse = np.mean(amse)
+
+        fit_par = np.concatenate([[alpha, beta, gamma, phi], init_state])
+        if errortype == "A":
+            fits = y - e
+        else:
+            # protect e == -1
+            aux_e = np.copy(e)
+            aux_e[aux_e == -1.0] = -1 + 1e-3
+            fits = y / (1 + aux_e)
+        sq_e = e**2
+
+        sigma2 = sq_e[~np.isinf(sq_e)].sum() / (ny - np_ - 1)
+
+        return dict(
+            loglik=-0.5 * lik,
+            aic=aic,
+            bic=bic,
+            aicc=aicc,
+            mse=mse,
+            amse=amse,
+            fit=fred,
+            residuals=e,
+            components=f"{errortype}{trendtype}{seasontype}{'D' if damped else 'N'}",
+            m=m,
+            nstate=nstate,
+            fitted=fits,
+            states=states,
+            par=fit_par,
+            sigma2=sigma2,
+            n_params=np_,
+        )
+
     errortype, trendtype, seasontype = model
     if errortype not in ["M", "A", "Z"]:
         raise ValueError("Invalid error type")
@@ -1132,16 +1203,6 @@ def ets_f(
         if seasontype == "A" or seasontype == "M":
             raise ValueError("Nonseasonal data")
         else:
-            # model[3] = 'N'
-            seasontype = "N"
-    if m > 24:
-        if seasontype in ["A", "M"]:
-            raise ValueError("Frequency too high")
-        elif seasontype == "Z":
-            warnings.warn(
-                "I can't handle data with frequency greater than 24. "
-                "Seasonality will be ignored."
-            )
             # model[3] = 'N'
             seasontype = "N"
     if restrict:
@@ -1240,7 +1301,7 @@ def ets_f(
     model["method"] = f"ETS({best_e},{best_t}{'d' if best_d else ''},{best_s})"
     return model
 
-# %% ../nbs/ets.ipynb 36
+# %% ../nbs/ets.ipynb 35
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     states = obj["states"][-1, :]
@@ -1250,8 +1311,8 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     etsforecast(x=states, m=m, trend=ttype, season=stype, phi=phi, h=h, f=forecast)
     return forecast
 
-# %% ../nbs/ets.ipynb 37
-@njit(nogil=NOGIL, cache=CACHE)
+# %% ../nbs/ets.ipynb 36
+# @njit(nogil=NOGIL, cache=CACHE)
 def _compute_sigmah(pf, h, sigma, cvals):
 
     theta = np.full(h, np.nan)
@@ -1270,7 +1331,7 @@ def _compute_sigmah(pf, h, sigma, cvals):
 
     return sigmah
 
-# %% ../nbs/ets.ipynb 38
+# %% ../nbs/ets.ipynb 37
 def _class3models(
     h,
     sigma,
@@ -1373,7 +1434,7 @@ def _class3models(
 
     return var
 
-# %% ../nbs/ets.ipynb 39
+# %% ../nbs/ets.ipynb 38
 def _compute_pred_intervals(model, forecasts, h, level):
     sigma = model["sigma2"]
     season_length = model["m"]
@@ -1525,6 +1586,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     else:
         # Classes 4 and 5 models
+        np.random.seed(1)
         compute_intervals = False
         nsim = 5000
         y_path = np.zeros([nsim, h])
@@ -1569,7 +1631,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     return pi
 
-# %% ../nbs/ets.ipynb 40
+# %% ../nbs/ets.ipynb 39
 def forecast_ets(obj, h, level=None):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
@@ -1579,3 +1641,7 @@ def forecast_ets(obj, h, level=None):
         pi = _compute_pred_intervals(model=obj, forecasts=out, level=level, h=h)
         out = {**out, **pi}
     return out
+
+# %% ../nbs/ets.ipynb 45
+def forward_ets(fitted_model, y):
+    return ets_f(y=y, m=fitted_model["m"], model=fitted_model)

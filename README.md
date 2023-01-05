@@ -1,6 +1,6 @@
 # Nixtla &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Statistical%20Forecasting%20Algorithms%20by%20Nixtla%20&url=https://github.com/Nixtla/statsforecast&via=nixtlainc&hashtags=StatisticalModels,TimeSeries,Forecasting) &nbsp;[![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-21-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-22-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 <div align="center">
@@ -172,6 +172,18 @@ Suited for series with very few non-zero observations
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md).
 
+## Citing
+
+```bibtex
+@misc{garza2022statsforecast,
+    author={Federico Garza, Max Mergenthaler Canseco, Cristian Challú, Kin G. Olivares},
+    title = {{StatsForecast}: Lightning fast forecasting with statistical and econometric models},
+    year={2022},
+    howpublished={{PyCon} Salt Lake City, Utah, US 2022},
+    url={https://github.com/Nixtla/statsforecast}
+}
+```
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
@@ -207,6 +219,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center"><a href="https://github.com/jdegene"><img src="https://avatars.githubusercontent.com/u/17744939?v=4?s=100" width="100px;" alt="JD"/><br /><sub><b>JD</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/issues?q=author%3Ajdegene" title="Bug reports">🐛</a></td>
       <td align="center"><a href="https://github.com/jattenberg"><img src="https://avatars.githubusercontent.com/u/924185?v=4?s=100" width="100px;" alt="josh attenberg"/><br /><sub><b>josh attenberg</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=jattenberg" title="Code">💻</a></td>
       <td align="center"><a href="https://github.com/JeroenPeterBos"><img src="https://avatars.githubusercontent.com/u/15342738?v=4?s=100" width="100px;" alt="JeroenPeterBos"/><br /><sub><b>JeroenPeterBos</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=JeroenPeterBos" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center"><a href="https://github.com/jvdd"><img src="https://avatars.githubusercontent.com/u/18898740?v=4?s=100" width="100px;" alt="Jeroen Van Der Donckt"/><br /><sub><b>Jeroen Van Der Donckt</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=jvdd" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
