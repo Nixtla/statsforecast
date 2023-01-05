@@ -1205,9 +1205,8 @@ class ARIMA(_TS):
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the ARIMA model.
-
-        Fit a ARIMA to a time series (numpy array) `y`
+        """
+        Fit the model to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
 
         Parameters
@@ -1220,7 +1219,7 @@ class ARIMA(_TS):
         Returns
         -------
         self :
-            ARIMA fitted model.
+            Fitted model.
         """
         with np.errstate(invalid="ignore"):
             self.model_ = Arima(
@@ -1244,7 +1243,7 @@ class ARIMA(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted ARIMA.
+        """Predict with fitted model.
 
         Parameters
         ----------
@@ -1272,7 +1271,7 @@ class ARIMA(_TS):
         }
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
-        """Access fitted ARIMA insample predictions.
+        """Access fitted insample predictions.
 
         Parameters
         ----------
@@ -1300,7 +1299,7 @@ class ARIMA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient ARIMA predictions.
+        """Memory efficient predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -1366,7 +1365,7 @@ class ARIMA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted ARIMA model to a new time series.
+        """Apply fitted model to a new time series.
 
         Parameters
         ----------
