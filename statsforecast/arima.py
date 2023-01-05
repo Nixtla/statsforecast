@@ -592,6 +592,30 @@ def diff(x, lag, differences):
     return y[~nan_mask]
 
 # %% ../nbs/arima.ipynb 29
+def fixed_params_from_dict(
+    fixed_dict: dict, order: tuple, seasonal: dict, intercept: bool, n_ex: int
+):
+    """Transforms dict params to list."""
+    ar_dict = {f"ar{i+1}": np.nan for i in range(order[0])}
+    ma_dict = {f"ma{i+1}": np.nan for i in range(order[2])}
+    sar_dict = {f"sar{i+1}": np.nan for i in range(seasonal["order"][0])}
+    sma_dict = {f"sma{i+1}": np.nan for i in range(seasonal["order"][2])}
+    intercept_dict = {"intercept": np.nan} if intercept else dict()
+    ex_dict = {f"ex_{i+1}": np.nan for i in range(n_ex)}
+    full_dict = {
+        **ar_dict,
+        **ma_dict,
+        **sar_dict,
+        **sma_dict,
+        **intercept_dict,
+        **ex_dict,
+    }
+    full_dict.update(
+        (k, fixed_dict[k]) for k in full_dict.keys() & fixed_dict.keys()
+    )  # prevent adding non-existing keys
+    return list(full_dict.values())
+
+# %% ../nbs/arima.ipynb 31
 def arima(
     x: np.ndarray,
     order=(0, 0, 0),
@@ -779,9 +803,17 @@ def arima(
 
     if fixed is None:
         fixed = np.full(narma + ncxreg, np.nan)
-    else:
-        if len(fixed) != narma + ncxreg:
-            raise Exception("wrong length for `fixed`")
+    elif isinstance(fixed, dict):
+        add_intercept = "intercept" in nmxreg
+        fixed = fixed_params_from_dict(
+            fixed,
+            order=order,
+            seasonal=seasonal,
+            intercept=add_intercept,
+            n_ex=max(ncxreg - int(add_intercept), 0),
+        )
+    if len(fixed) != narma + ncxreg:
+        raise Exception("wrong length for `fixed`")
     mask = np.isnan(fixed)
 
     no_optim = not mask.any()
@@ -1026,7 +1058,7 @@ def arima(
     }
     return ans
 
-# %% ../nbs/arima.ipynb 36
+# %% ../nbs/arima.ipynb 39
 @njit
 def kalman_forecast(n, Z, a, P, T, V, h):
     p = len(a)
@@ -1068,13 +1100,13 @@ def kalman_forecast(n, Z, a, P, T, V, h):
 
     return forecasts, se
 
-# %% ../nbs/arima.ipynb 39
+# %% ../nbs/arima.ipynb 42
 def checkarima(obj):
     if obj["var_coef"] is None:
         return False
     return any(np.isnan(np.sqrt(np.diag(obj["var_coef"]))))
 
-# %% ../nbs/arima.ipynb 40
+# %% ../nbs/arima.ipynb 43
 def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
 
     myNCOL = lambda x: x.shape[1] if x is not None else 0
@@ -1133,7 +1165,7 @@ def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
 
     return pred
 
-# %% ../nbs/arima.ipynb 44
+# %% ../nbs/arima.ipynb 47
 def convert_coef_name(name, inverse=False):
     if not inverse:
         if "ex" in name:
@@ -1155,13 +1187,13 @@ def convert_coef_name(name, inverse=False):
         else:
             return name
 
-# %% ../nbs/arima.ipynb 45
+# %% ../nbs/arima.ipynb 48
 def change_drift_name(model_coef, inverse=False):
     return {
         convert_coef_name(name, inverse): value for name, value in model_coef.items()
     }
 
-# %% ../nbs/arima.ipynb 46
+# %% ../nbs/arima.ipynb 49
 def myarima(
     x,
     order=(0, 0, 0),
@@ -1257,7 +1289,7 @@ def myarima(
         raise e
         return {"ic": math.inf}
 
-# %% ../nbs/arima.ipynb 49
+# %% ../nbs/arima.ipynb 52
 def search_arima(
     x,
     d=0,
@@ -1305,7 +1337,7 @@ def search_arima(
         raise NotImplementedError("parallel=True")
     return best_fit
 
-# %% ../nbs/arima.ipynb 51
+# %% ../nbs/arima.ipynb 54
 def arima2(x, model, xreg, method):
     m = model["arma"][4]  # 5
     use_drift = "drift" in model["coef"].keys()
@@ -1372,7 +1404,7 @@ def arima2(x, model, xreg, method):
         refit["coef"] = change_drift_name(refit["coef"])
     return refit
 
-# %% ../nbs/arima.ipynb 52
+# %% ../nbs/arima.ipynb 55
 def Arima(
     x,
     order=(0, 0, 0),
@@ -1461,7 +1493,7 @@ def Arima(
         tmp["sigma2"] = np.sum(tmp["residuals"] ** 2) / (nstar - npar + 1)
     return tmp
 
-# %% ../nbs/arima.ipynb 60
+# %% ../nbs/arima.ipynb 63
 def arima_string(model, padding=False):
     order = tuple(model["arma"][i] for i in [0, 5, 1, 2, 6, 3, 4])
     m = order[6]
@@ -1491,11 +1523,11 @@ def arima_string(model, padding=False):
 
     return result
 
-# %% ../nbs/arima.ipynb 63
+# %% ../nbs/arima.ipynb 66
 def is_constant(x):
     return np.all(x[0] == x)
 
-# %% ../nbs/arima.ipynb 64
+# %% ../nbs/arima.ipynb 67
 def forecast_arima(
     model,
     h=None,
@@ -1590,7 +1622,7 @@ def forecast_arima(
 
     return ans
 
-# %% ../nbs/arima.ipynb 70
+# %% ../nbs/arima.ipynb 73
 def fitted_arima(model, h=1):
     """Returns h-step forecasts for the data used in fitting the model."""
     if h == 1:
@@ -1606,7 +1638,7 @@ def fitted_arima(model, h=1):
     else:
         raise NotImplementedError("h > 1")
 
-# %% ../nbs/arima.ipynb 75
+# %% ../nbs/arima.ipynb 78
 def seas_heuristic(x, period):
     # nperiods = period > 1
     season = math.nan
@@ -1618,7 +1650,7 @@ def seas_heuristic(x, period):
         season = max(0, min(1, 1 - vare / np.var(remainder + seasonal, ddof=1)))
     return season
 
-# %% ../nbs/arima.ipynb 77
+# %% ../nbs/arima.ipynb 80
 def nsdiffs(x, test="seas", alpha=0.05, period=1, max_D=1, **kwargs):
     D = 0
     if alpha < 0.01:
@@ -1681,7 +1713,7 @@ def nsdiffs(x, test="seas", alpha=0.05, period=1, max_D=1, **kwargs):
             dodiff = False
     return D
 
-# %% ../nbs/arima.ipynb 79
+# %% ../nbs/arima.ipynb 82
 def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
     x = x[~np.isnan(x)]
     d = 0
@@ -1726,13 +1758,13 @@ def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
             return d - 1
     return d
 
-# %% ../nbs/arima.ipynb 81
+# %% ../nbs/arima.ipynb 84
 def newmodel(p, d, q, P, D, Q, constant, results):
     curr = np.array([p, d, q, P, D, Q, constant])
     in_results = (curr == results[:, :7]).all(1).any()
     return not in_results
 
-# %% ../nbs/arima.ipynb 83
+# %% ../nbs/arima.ipynb 86
 def auto_arima_f(
     x,
     d=None,
@@ -2282,11 +2314,11 @@ def auto_arima_f(
 
     return bestfit
 
-# %% ../nbs/arima.ipynb 84
+# %% ../nbs/arima.ipynb 87
 def forward_arima(fitted_model, y, xreg=None, method="CSS-ML"):
     return Arima(x=y, model=fitted_model, xreg=xreg, method=method)
 
-# %% ../nbs/arima.ipynb 93
+# %% ../nbs/arima.ipynb 96
 def print_statsforecast_ARIMA(model, digits=3, se=True):
     print(arima_string(model, padding=False))
     if model["lambda"] is not None:
@@ -2316,7 +2348,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if not np.isnan(model["aic"]):
         print(f'AIC={round(model["aic"], 2)}')
 
-# %% ../nbs/arima.ipynb 95
+# %% ../nbs/arima.ipynb 98
 class ARIMASummary:
     """ARIMA Summary."""
 
@@ -2329,7 +2361,7 @@ class ARIMASummary:
     def summary(self):
         return print_statsforecast_ARIMA(self.model)
 
-# %% ../nbs/arima.ipynb 96
+# %% ../nbs/arima.ipynb 99
 class AutoARIMA:
     """An AutoARIMA estimator.
 
