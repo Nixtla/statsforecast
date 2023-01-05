@@ -1,0 +1,27 @@
+name: ets_intervals
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.7
+  - pip==20.3.3
+  - numpy==1.21.4
+  - prophet
+  - numba
+  - r-base==3.6.3
+  - r-urca
+  - r-tidyverse
+  - r-future
+  - r-future.apply
+  - r-forecast
+  - r-furrr
+  - tabulate
+  - scikit-learn
+  - pmdarima
+  - fire
+  - pip:
+    - sktime
+    - neuralforecast
+    - statsforecast
+    - jupyterlab
