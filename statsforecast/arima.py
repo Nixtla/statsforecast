@@ -1455,6 +1455,11 @@ def Arima(
                 xreg = np.concatenate([drift, xreg], axis=1)
             else:
                 xreg = drift
+            if "fixed" in kwargs:
+                if isinstance(kwargs["fixed"], dict):
+                    if "drift" not in kwargs["fixed"]:
+                        kwargs["fixed"]["drift"] = np.nan
+                    kwargs["fixed"] = change_drift_name(kwargs["fixed"], inverse=True)
         if xreg is None:
             tmp = arima(
                 x,
