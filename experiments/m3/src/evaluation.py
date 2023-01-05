@@ -1,6 +1,6 @@
-
 from itertools import product
 
+import fire
 import numpy as np
 import pandas as pd
 from datasetsforecast.losses import mape, smape
@@ -27,9 +27,11 @@ def evaluate(lib: str, dataset: str, group: str):
 
     return evals
 
-
-if __name__ == '__main__':
-    groups = ['Monthly', 'Yearly', 'Other', 'Quarterly']
+def main(test: bool = False):
+    if test:
+        groups = ['Other']
+    else:
+        groups = ['Monthly', 'Yearly', 'Other', 'Quarterly']
     lib = ['StatisticalEnsemble']
     datasets = ['M3']
     evaluation = [evaluate(lib, dataset, group) for lib, group in product(lib, groups) for dataset in datasets]
@@ -42,6 +44,16 @@ if __name__ == '__main__':
     evaluation = evaluation.set_index(['dataset', 'metric', 'model']).unstack().round(3)
     evaluation = evaluation.droplevel(0, 1).reset_index()
     evaluation.to_csv('data/evaluation.csv')
-    print(evaluation.query('metric=="smape"').T)
+    smape = evaluation.query('metric=="smape"').T
+    print(smape)
     print(evaluation.query('metric=="time"').T)
     print(evaluation)
+    if test:
+        np.testing.assert_almost_equal(
+            np.array([4.173]),
+            smape.loc[lib[0]].values
+        )
+
+
+if __name__ == '__main__':
+    fire.Fire(main)
