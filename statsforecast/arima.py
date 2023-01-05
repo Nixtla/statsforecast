@@ -1253,7 +1253,7 @@ def myarima(
             fit["ic"] = fit[ic]
         else:
             fit["ic"] = fit["aic"] = fit["bic"] = fit["aicc"] = math.inf
-        fit["sigma2"] = np.sum(fit["residuals"] ** 2) / (nstar - npar + 1)
+        fit["sigma2"] = np.nansum(fit["residuals"] ** 2) / (nstar - npar + 1)
         minroot = 2
         if order[0] + seas_order[0] > 0:
             testvec = fit["model"]["phi"]
@@ -1495,7 +1495,7 @@ def Arima(
     tmp["lambda"] = blambda
     tmp["x"] = origx
     if model is None:
-        tmp["sigma2"] = np.sum(tmp["residuals"] ** 2) / (nstar - npar + 1)
+        tmp["sigma2"] = np.nansum(tmp["residuals"] ** 2) / (nstar - npar + 1)
     return tmp
 
 # %% ../nbs/arima.ipynb 63
