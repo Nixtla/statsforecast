@@ -6,7 +6,6 @@ __all__ = ['NONE', 'ADD', 'MULT', 'DAMPED', 'TOL', 'HUGEN', 'NA', 'smalno', 'NOG
 # %% ../nbs/ets.ipynb 1
 import math
 import os
-import warnings
 from collections import namedtuple
 from typing import Tuple
 
@@ -34,13 +33,11 @@ CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
 @njit(nogil=NOGIL, cache=CACHE)
 def etscalc(y, n, x, m, error, trend, season, alpha, beta, gamma, phi, e, amse, nmse):
     oldb = 0.0
-    olds = np.zeros(24)
-    s = np.zeros(24)
+    olds = np.zeros(max(24, m))
+    s = np.zeros(max(24, m))
     f = np.zeros(30)
     denom = np.zeros(30)
-    if m > 24 and season > NONE:
-        return
-    elif m < 1:
+    if m < 1:
         m = 1
     if nmse > 30:
         nmse = 30
@@ -1206,16 +1203,6 @@ def ets_f(
         if seasontype == "A" or seasontype == "M":
             raise ValueError("Nonseasonal data")
         else:
-            # model[3] = 'N'
-            seasontype = "N"
-    if m > 24:
-        if seasontype in ["A", "M"]:
-            raise ValueError("Frequency too high")
-        elif seasontype == "Z":
-            warnings.warn(
-                "I can't handle data with frequency greater than 24. "
-                "Seasonality will be ignored."
-            )
             # model[3] = 'N'
             seasontype = "N"
     if restrict:
