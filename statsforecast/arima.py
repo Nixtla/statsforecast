@@ -1627,7 +1627,7 @@ def forecast_arima(
 
     return ans
 
-# %% ../nbs/arima.ipynb 73
+# %% ../nbs/arima.ipynb 74
 def fitted_arima(model, h=1):
     """Returns h-step forecasts for the data used in fitting the model."""
     if h == 1:
@@ -1643,7 +1643,7 @@ def fitted_arima(model, h=1):
     else:
         raise NotImplementedError("h > 1")
 
-# %% ../nbs/arima.ipynb 78
+# %% ../nbs/arima.ipynb 79
 def seas_heuristic(x, period):
     # nperiods = period > 1
     season = math.nan
@@ -1655,7 +1655,7 @@ def seas_heuristic(x, period):
         season = max(0, min(1, 1 - vare / np.var(remainder + seasonal, ddof=1)))
     return season
 
-# %% ../nbs/arima.ipynb 80
+# %% ../nbs/arima.ipynb 81
 def nsdiffs(x, test="seas", alpha=0.05, period=1, max_D=1, **kwargs):
     D = 0
     if alpha < 0.01:
@@ -1718,7 +1718,7 @@ def nsdiffs(x, test="seas", alpha=0.05, period=1, max_D=1, **kwargs):
             dodiff = False
     return D
 
-# %% ../nbs/arima.ipynb 82
+# %% ../nbs/arima.ipynb 83
 def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
     x = x[~np.isnan(x)]
     d = 0
@@ -1763,13 +1763,13 @@ def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
             return d - 1
     return d
 
-# %% ../nbs/arima.ipynb 84
+# %% ../nbs/arima.ipynb 85
 def newmodel(p, d, q, P, D, Q, constant, results):
     curr = np.array([p, d, q, P, D, Q, constant])
     in_results = (curr == results[:, :7]).all(1).any()
     return not in_results
 
-# %% ../nbs/arima.ipynb 86
+# %% ../nbs/arima.ipynb 87
 def auto_arima_f(
     x,
     d=None,
@@ -2319,11 +2319,11 @@ def auto_arima_f(
 
     return bestfit
 
-# %% ../nbs/arima.ipynb 87
+# %% ../nbs/arima.ipynb 88
 def forward_arima(fitted_model, y, xreg=None, method="CSS-ML"):
     return Arima(x=y, model=fitted_model, xreg=xreg, method=method)
 
-# %% ../nbs/arima.ipynb 96
+# %% ../nbs/arima.ipynb 97
 def print_statsforecast_ARIMA(model, digits=3, se=True):
     print(arima_string(model, padding=False))
     if model["lambda"] is not None:
@@ -2353,7 +2353,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if not np.isnan(model["aic"]):
         print(f'AIC={round(model["aic"], 2)}')
 
-# %% ../nbs/arima.ipynb 98
+# %% ../nbs/arima.ipynb 99
 class ARIMASummary:
     """ARIMA Summary."""
 
@@ -2366,7 +2366,7 @@ class ARIMASummary:
     def summary(self):
         return print_statsforecast_ARIMA(self.model)
 
-# %% ../nbs/arima.ipynb 99
+# %% ../nbs/arima.ipynb 100
 class AutoARIMA:
     """An AutoARIMA estimator.
 
