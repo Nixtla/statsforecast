@@ -38,7 +38,7 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
     forecasts['StatisticalEnsemble'] = forecasts.set_index(['unique_id', 'ds']).median(axis=1).values
     forecasts.to_csv(f'data/StatisticalEnsemble-forecasts-{dataset}-{group}.csv', index=False)
 
-    time_df = pd.DataFrame({'time': [end - start], 'model': ['UnivariateCombination']})
+    time_df = pd.DataFrame({'time': [end - start], 'model': ['StatisticalEnsemble']})
     time_df.to_csv(f'data/StatisticalEnsemble-time-{dataset}-{group}.csv', index=False)
 
 
