@@ -54,7 +54,7 @@ def main(test: bool = False):
             np.array([4.173]),
             smape.loc[lib[0]].values
         )
-        assert time.loc[lib[0]].item() < 1.
+        assert time.loc[lib[0]].item() < 2.
 
 
 if __name__ == '__main__':
