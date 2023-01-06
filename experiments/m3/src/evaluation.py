@@ -46,13 +46,15 @@ def main(test: bool = False):
     evaluation.to_csv('data/evaluation.csv')
     smape = evaluation.query('metric=="smape"').T
     print(smape)
-    print(evaluation.query('metric=="time"').T)
+    time = evaluation.query('metric=="time"').T
+    print(time)
     print(evaluation)
     if test:
         np.testing.assert_almost_equal(
             np.array([4.173]),
             smape.loc[lib[0]].values
         )
+        assert time.loc[lib[0]].item() < 1.
 
 
 if __name__ == '__main__':
