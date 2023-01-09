@@ -42,4 +42,4 @@ website:
         - examples/ETS_ray_m5.ipynb
       - section: Community
         contents:
-          - Contributing
+          - examples/Contributing.ipynb
