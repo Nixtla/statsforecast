@@ -204,6 +204,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Roymprog",
+      "name": "Roymprog",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4035367?v=4",
+      "profile": "https://github.com/Roymprog",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
