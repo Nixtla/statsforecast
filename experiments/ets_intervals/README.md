@@ -30,26 +30,26 @@ Both StatsForecast and R can automatically select the best ETS model for a given
 
 ## Results 
 
-| dataset   | metric                 |     ets_r |   ets_statsforecast |   ets_statsmodels |
-|:----------|:-----------------------|----------:|--------------------:|------------------:|
-| Hourly    | Winkler-score (mean)   | 162580    |           163823    |       5.40095e+12 |
-| Hourly    | Winkler-score (median) |   4304.54 |             4398.64 |    4411.2         |
-| Hourly    | time                   |    219.4  |              159.67 |     761.04        |
-| Daily     | Winkler-score (mean)   |  71494.9  |            71321.9  |  137536           |
-| Daily     | Winkler-score (median) |  60436    |            60374.7  |   58964.2         |
-| Daily     | time                   |    114.08 |              211.63 |     145.82        |
-| Weekly    | Winkler-score (mean)   |  54841.8  |            54899.7  |   54301.9         |
-| Weekly    | Winkler-score (median) |  32359.7  |            31305.2  |   31154.2         |
-| Weekly    | time                   |      4.18 |               25.55 |       8.53        |
-| Monthly   | Winkler-score (mean)   |  39853.4  |            40626    |       5.0763e+16  |
-| Monthly   | Winkler-score (median) |  25767.7  |            26686.4  |   26508.3         |
-| Monthly   | time                   |   8320.72 |             3708.56 |   18464.3         |
-| Quarterly | Winkler-score (mean)   |  51232    |            51772.9  |       1.45623e+20 |
-| Quarterly | Winkler-score (median) |  37028.8  |            37986.2  |   37275.2         |
-| Quarterly | time                   |    706.95 |              601.32 |    2549.96        |
-| Yearly    | Winkler-score (mean)   |  48929.8  |            49102.2  |       1.241e+07   |
-| Yearly    | Winkler-score (median) |  32903.8  |            33339.2  |   34232.6         |
-| Yearly    | time                   |    315.47 |               50.8  |     395.92        |
+| dataset   | metric                      |   ets_r |   ets_statsforecast |   ets_statsmodels |
+|:----------|:----------------------------|--------:|--------------------:|------------------:|
+| Daily     | Winkler-score (with mean)   | 1754    |             1580.63 |   69321.7         |
+| Daily     | Winkler-score (with median) |  632.69 |              636.48 |     695.96        |
+| Daily     | time                        |  114.08 |              211.63 |     145.82        |
+| Hourly    | Winkler-score (with mean)   | 4616.11 |             5893.55 |       5.40095e+12 |
+| Hourly    | Winkler-score (with median) |  231.3  |              344.47 |     238.61        |
+| Hourly    | time                        |  219.4  |              159.67 |     761.04        |
+| Monthly   | Winkler-score (with mean)   | 4063.74 |             3993.32 |       5.0763e+16  |
+| Monthly   | Winkler-score (with median) | 1773.16 |             1739.38 |    1840.05        |
+| Monthly   | time                        | 8320.72 |             3708.56 |   18464.3         |
+| Quarterly | Winkler-score (with mean)   | 3718.22 |             3683.87 |       1.45623e+20 |
+| Quarterly | Winkler-score (with median) | 1732.94 |             1712.99 |    1788.29        |
+| Quarterly | time                        |  706.95 |              601.32 |    2549.96        |
+| Weekly    | Winkler-score (with mean)   | 2112.91 |             2104.58 |    2917.29        |
+| Weekly    | Winkler-score (with median) | 1165.56 |             1157.86 |    1410.7         |
+| Weekly    | time                        |    4.18 |               25.55 |       8.53        |
+| Yearly    | Winkler-score (with mean)   | 6073.66 |             5519.2  |       1.23671e+07 |
+| Yearly    | Winkler-score (with median) | 2762.89 |             2529.52 |    2914.6         |
+| Yearly    | time                        |  315.47 |               58.19 |     395.92        |
 
 *Note*: Time is measured in seconds
 
