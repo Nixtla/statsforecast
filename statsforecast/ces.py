@@ -239,7 +239,7 @@ def cesforecast(states, n, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
     )
     return new_states
 
-# %% ../nbs/ces.ipynb 20
+# %% ../nbs/ces.ipynb 21
 @njit(nogil=NOGIL, cache=CACHE)
 def initparamces(
     alpha_0: float, alpha_1: float, beta_0: float, beta_1: float, seasontype: str
@@ -290,12 +290,12 @@ def initparamces(
         "optimize_beta_1": optimize_beta_1,
     }
 
-# %% ../nbs/ces.ipynb 22
+# %% ../nbs/ces.ipynb 23
 @njit(nogil=NOGIL, cache=CACHE)
 def switch_ces(x: str):
     return {"N": 0, "S": 1, "P": 2, "F": 3}[x]
 
-# %% ../nbs/ces.ipynb 24
+# %% ../nbs/ces.ipynb 25
 @njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_ces(
     y: np.ndarray,
@@ -332,7 +332,7 @@ def pegelsresid_ces(
             lik = np.nan
     return amse, e, states, lik
 
-# %% ../nbs/ces.ipynb 25
+# %% ../nbs/ces.ipynb 26
 @njit(nogil=NOGIL, cache=CACHE)
 def ces_target_fn(
     optimal_param,
@@ -402,7 +402,7 @@ def ces_target_fn(
         lik = -np.inf
     return lik
 
-# %% ../nbs/ces.ipynb 26
+# %% ../nbs/ces.ipynb 27
 def optimize_ces_target_fn(
     init_par, optimize_params, y, m, init_states, n_components, seasontype, nmse
 ):
@@ -448,7 +448,7 @@ def optimize_ces_target_fn(
     )
     return res
 
-# %% ../nbs/ces.ipynb 27
+# %% ../nbs/ces.ipynb 28
 def cesmodel(
     y: np.ndarray,
     m: int,
@@ -545,7 +545,7 @@ def cesmodel(
         sigma2=sigma2,
     )
 
-# %% ../nbs/ces.ipynb 29
+# %% ../nbs/ces.ipynb 30
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     m = obj["m"]
@@ -562,14 +562,51 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     )
     return forecast
 
-# %% ../nbs/ces.ipynb 30
-def forecast_ces(obj, h):
+# %% ../nbs/ces.ipynb 31
+def _simulate_pred_intervals(model, h, level):
+
+    np.random.seed(1)
+    nsim = 5000
+    y_path = np.zeros([nsim, h])
+
+    for k in range(nsim):
+        # e = np.random.normal(0, np.sqrt(model['sigma2']), h)
+        e = np.random.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
+        states = model["states"]
+        fcsts = np.zeros(h, dtype=np.float32)
+        cesforecast(
+            states=states + e,
+            n=model["n"],
+            m=model["m"],
+            season=switch_ces(model["seasontype"]),
+            h=h,
+            f=fcsts,
+            **model["par"],
+        )
+        y_path[
+            k,
+        ] = fcsts
+
+    lower = np.quantile(y_path, 0.5 - np.array(level) / 200, axis=0)
+    upper = np.quantile(y_path, 0.5 + np.array(level) / 200, axis=0)
+    pi = {
+        **{f"lo-{lv}": lower[i] for i, lv in enumerate(level)},
+        **{f"hi-{lv}": upper[i] for i, lv in enumerate(level)},
+    }
+
+    return pi
+
+# %% ../nbs/ces.ipynb 34
+def forecast_ces(obj, h, level=None):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
     out["fitted"] = obj["fitted"]
+    if level is not None:
+        pi = _simulate_pred_intervals(model=obj, h=h, level=level)
+        out = {**out, **pi}
     return out
 
-# %% ../nbs/ces.ipynb 32
+# %% ../nbs/ces.ipynb 36
 def auto_ces(
     y,
     m,
@@ -634,7 +671,7 @@ def auto_ces(
         raise Exception("no model able to be fitted")
     return model
 
-# %% ../nbs/ces.ipynb 34
+# %% ../nbs/ces.ipynb 38
 def forward_ces(fitted_model, y):
     m = fitted_model["m"]
     model = fitted_model["seasontype"]
