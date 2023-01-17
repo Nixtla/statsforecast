@@ -15,6 +15,7 @@ def evaluate_ws(lib: str, group: str):
     # Load forecast 
     try:
         forecast = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ets_intervals/data/{lib}-forecasts-M4-{group}-pred-int.csv') 
+        forecast = forecast.sort_values('unique_id')
         lowerb = forecast.loc[:, forecast.columns.str.contains('lowerb')].values.reshape(-1, len(levels)) 
         upperb = forecast.loc[:, forecast.columns.str.contains('upperb')].values.reshape(-1, len(levels))
     except:
@@ -23,6 +24,7 @@ def evaluate_ws(lib: str, group: str):
     # Load actual data 
     try: 
         test_set = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ets_intervals/data/m4/datasets/{group}-test.csv') 
+        test_set = test_set.sort_values('V1')
         test = test_set.drop(test_set.columns[[0]], axis = 1)
         test = test.values.reshape(-1, horizon) 
     except: 
