@@ -563,13 +563,49 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     return forecast
 
 # %% ../nbs/ces.ipynb 30
-def forecast_ces(obj, h):
+def _simulate_pred_intervals(model, h, level):
+
+    np.random.seed(1)
+    nsim = 5000
+    y_path = np.zeros([nsim, h])
+
+    for k in range(nsim):
+        e = np.random.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
+        states = model["states"]
+        fcsts = np.zeros(h, dtype=np.float32)
+        cesforecast(
+            states=states + e,
+            n=model["n"],
+            m=model["m"],
+            season=switch_ces(model["seasontype"]),
+            h=h,
+            f=fcsts,
+            **model["par"],
+        )
+        y_path[
+            k,
+        ] = fcsts
+
+    lower = np.quantile(y_path, 0.5 - np.array(level) / 200, axis=0)
+    upper = np.quantile(y_path, 0.5 + np.array(level) / 200, axis=0)
+    pi = {
+        **{f"lo-{lv}": lower[i] for i, lv in enumerate(level)},
+        **{f"hi-{lv}": upper[i] for i, lv in enumerate(level)},
+    }
+
+    return pi
+
+# %% ../nbs/ces.ipynb 31
+def forecast_ces(obj, h, level=None):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
     out["fitted"] = obj["fitted"]
+    if level is not None:
+        pi = _simulate_pred_intervals(model=obj, h=h, level=level)
+        out = {**out, **pi}
     return out
 
-# %% ../nbs/ces.ipynb 32
+# %% ../nbs/ces.ipynb 33
 def auto_ces(
     y,
     m,
@@ -634,7 +670,7 @@ def auto_ces(
         raise Exception("no model able to be fitted")
     return model
 
-# %% ../nbs/ces.ipynb 34
+# %% ../nbs/ces.ipynb 35
 def forward_ces(fitted_model, y):
     m = fitted_model["m"]
     model = fitted_model["seasontype"]
