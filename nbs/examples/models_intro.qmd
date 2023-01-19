@@ -10,7 +10,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`AutoARIMA`](../models.html#autoarima)|✅|✅|✅|✅|✅|
 |[`AutoETS`](../models.html#autoets)|✅|✅|✅|✅|✅|
-|[`AutoCES`](../models.html#autoces)|✅||✅|||
+|[`AutoCES`](../models.html#autoces)|✅|✅|✅|✅||
 |[`AutoTheta`](../models.html#autotheta)|✅|✅|✅|✅|✅|
 
 ## Theta Family

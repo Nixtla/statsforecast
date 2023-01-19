@@ -111,7 +111,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[AutoARIMA](https://nixtla.github.io/statsforecast/models.html#autoarima)|✅|✅|✅|✅|✅|
 |[AutoETS](https://nixtla.github.io/statsforecast/models.html#autoets)|✅|✅|✅|✅|✅|
-|[AutoCES](https://nixtla.github.io/statsforecast/models.html#autoces)|✅||✅|||
+|[AutoCES](https://nixtla.github.io/statsforecast/models.html#autoces)|✅|✅|✅|✅|✅|
 |[AutoTheta](https://nixtla.github.io/statsforecast/models.html#autotheta)|✅|✅|✅|✅|✅|
 
 ### Theta Family
