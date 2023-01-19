@@ -114,6 +114,14 @@ Automatic forecasting tools search for the best parameters and select the best p
 |[AutoCES](https://nixtla.github.io/statsforecast/models.html#autoces)|✅|✅|✅|✅|✅|
 |[AutoTheta](https://nixtla.github.io/statsforecast/models.html#autotheta)|✅|✅|✅|✅|✅|
 
+## ARIMA Family
+These models exploit the existing autocorrelations in the time series.
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[ARIMA](https://nixtla.github.io/statsforecast/models.html#arima)|✅|✅|✅|✅|✅|
+|[AutoRegressive](https://nixtla.github.io/statsforecast/models.html#autoregressive)|✅|✅|✅|✅|✅|
+
 ### Theta Family
 Fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
 

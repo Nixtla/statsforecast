@@ -12,11 +12,16 @@ Automatic forecasting tools search for the best parameters and select the best p
 |[`AutoETS`](../models.html#autoets)|✅|✅|✅|✅|✅|
 |[`AutoCES`](../models.html#autoces)|✅|✅|✅|✅||
 |[`AutoTheta`](../models.html#autotheta)|✅|✅|✅|✅|✅|
+: {tbl-colwidths="[75,25]"}
 
 ## ARIMA Family
+These models exploit the existing autocorrelations in the time series.
 
-
-
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[`ARIMA`](../models.html#arima)|✅|✅|✅|✅|✅|
+|[`AutoRegressive`](../models.html#autoregressive)|✅|✅|✅|✅|✅|
+: {tbl-colwidths="[75,25]"}
 
 ## Theta Family
 Fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
@@ -27,6 +32,7 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 |[`OptimizedTheta`](../models.html#optimizedtheta)|✅|✅|✅|✅|✅|
 |[`DynamicTheta`](../models.html#dynamictheta)|✅|✅|✅|✅|✅|
 |[`DynamicOptimizedTheta`](../models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
+: {tbl-colwidths="[75,25]"}
 
 
 ## Multiple Seasonalities
@@ -35,6 +41,7 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`MSTL`](../models.html#mstl)|✅|✅|✅|✅|✅|
+: {tbl-colwidths="[75,25]"}
 
 ## Baseline Models
 Classical models for establishing baseline.
@@ -47,6 +54,7 @@ Classical models for establishing baseline.
 |[`SeasonalNaive`](../models.html#seasonalnaive)|✅|✅|✅|✅|✅|
 |[`WindowAverage`](../models.html#windowaverage)|✅|||||
 |[`SeasonalWindowAverage`](../models.html#seasonalwindowaverage)|✅|||||
+: {tbl-colwidths="[75,25]"}
 
 ## Exponential Smoothing
 Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with clear trend and/or seasonality. Use the `SimpleExponential` family for data with no clear trend or seasonality.
@@ -59,6 +67,7 @@ Uses a weighted average of all past observations where the weights decrease expo
 |[`SeasonalExponentialSmoothingOptimized`](../models.html#seasonalexponentialsmoothingoptimized)|✅|||||
 |[`Holt`](../models.html#holt)|✅|✅|✅|✅|✅|
 |[`HoltWinters`](../models.html#holtwinters)|✅|✅|✅|✅|✅|
+: {tbl-colwidths="[75,25]"}
 
 
 ## Sparse of Inttermitent
@@ -72,5 +81,6 @@ Suited for series with very few non-zero observations
 |[`CrostonSBA`](../models.html#crostonsba)|✅|||||
 |[`IMAPA`](../models.html#imapa)|✅|||||
 |[`TSB`](../models.html#tsb)|✅|||||
+: {tbl-colwidths="[75,25]"}
 
 
