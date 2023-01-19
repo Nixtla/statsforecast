@@ -13,8 +13,13 @@ Automatic forecasting tools search for the best parameters and select the best p
 |[`AutoCES`](../models.html#autoces)|✅|✅|✅|✅||
 |[`AutoTheta`](../models.html#autotheta)|✅|✅|✅|✅|✅|
 
+## ARIMA Family
+
+
+
+
 ## Theta Family
-fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
+Fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
@@ -44,7 +49,7 @@ Classical models for establishing baseline.
 |[`SeasonalWindowAverage`](../models.html#seasonalwindowaverage)|✅|||||
 
 ## Exponential Smoothing
-Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with no clear trend or seasonality.
+Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with clear trend and/or seasonality. Use the `SimpleExponential` family for data with no clear trend or seasonality.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
@@ -54,9 +59,6 @@ Uses a weighted average of all past observations where the weights decrease expo
 |[`SeasonalExponentialSmoothingOptimized`](../models.html#seasonalexponentialsmoothingoptimized)|✅|||||
 |[`Holt`](../models.html#holt)|✅|✅|✅|✅|✅|
 |[`HoltWinters`](../models.html#holtwinters)|✅|✅|✅|✅|✅|
-
-
-
 
 
 ## Sparse of Inttermitent

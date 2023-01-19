@@ -115,7 +115,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |[AutoTheta](https://nixtla.github.io/statsforecast/models.html#autotheta)|✅|✅|✅|✅|✅|
 
 ### Theta Family
-fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
+Fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
