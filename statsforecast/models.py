@@ -910,6 +910,7 @@ class AutoCES(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Apply fitted Complex Exponential Smoothing to a new time series.
@@ -924,6 +925,8 @@ class AutoCES(_TS):
             Optional insample exogenous of shape (t, n_x).
         X_future : array-like
             Optional exogenpus of shape (h, n_x).
+        level: List[float]
+            Confidence levels (0-100) for prediction intervals.
         fitted : bool
             Whether or not returns insample predictions.
 
@@ -935,11 +938,22 @@ class AutoCES(_TS):
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
         mod = forward_ces(self.model_, y=y)
-        fcst = forecast_ces(mod, h)
+        fcst = forecast_ces(mod, h, level=level)
         keys = ["mean"]
         if fitted:
             keys.append("fitted")
         res = {key: fcst[key] for key in keys}
+        if level is not None:
+            level = sorted(level)
+            res = {
+                **res,
+                **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
+                **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
+            }
+            if fitted:
+                # add prediction intervals for fitted values
+                se = _calculate_sigma(y - mod["fitted"], len(y))
+                res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
 # %% ../nbs/models.ipynb 58
