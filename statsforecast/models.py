@@ -29,6 +29,14 @@ from .ces import auto_ces, forecast_ces, forward_ces
 from .ets import ets_f, forecast_ets, forward_ets
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
+from statsforecast.garch import (
+    generate_garch_data,
+    garch_sigma2,
+    garch_cons,
+    garch_loglik,
+    garch_model,
+    garch_forecast,
+)
 from statsforecast.utils import (
     _seasonal_naive,
     _repeat_val_seas,
