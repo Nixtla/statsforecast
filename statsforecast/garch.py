@@ -14,9 +14,6 @@ from numba import njit
 from scipy.optimize import minimize
 from scipy.stats import norm
 
-# For comparison
-from arch import arch_model
-
 # %% ../nbs/garch.ipynb 4
 NOGIL = os.environ.get("NUMBA_RELEASE_GIL", "False").lower() in ["true"]
 CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
@@ -27,36 +24,45 @@ def generate_garch_data(n, w, alpha, beta):
 
     np.random.seed(1)
 
-    if np.any((w < 0) | (alpha < 0) | (beta < 0)):
-        raise ValueError("Coefficients must be nonnegative")
-
-    if np.sum(alpha) + np.sum(beta) >= 1:
-        raise ValueError(
-            "Sum of coefficients of lagged versions of the series and lagged versions of the volatility must be less than 1"
-        )
+    y = np.zeros(n)
+    sigma2 = np.zeros(n)
 
     p = len(alpha)
     q = len(beta)
 
-    y = np.zeros(n)
-    sigma2 = np.zeros(n)
+    w_vals = w < 0
+    alpha_vals = np.any(alpha < 0)
+    beta_vals = np.any(beta < 0)
+
+    if np.any(np.array([w_vals, alpha_vals, beta_vals])):
+        raise ValueError("Coefficients must be nonnegative")
+
+    if np.sum(alpha) + np.sum(beta) >= 1:
+        raise ValueError(
+            "Sum of coefficients of lagged versions of the series and lagged versions of volatility must be less than 1"
+        )
 
     # initialization
-    sigma2[0:q] = 1
+    if q != 0:
+        sigma2[0:q] = 1
+
     for k in range(p):
         y[k] = np.random.normal(loc=0, scale=1)
 
     for k in range(max(p, q), n):
         psum = np.flip(alpha) * (y[k - p : k] ** 2)
         psum = np.nansum(psum)
-        qsum = np.flip(beta) * (sigma2[k - q : k])
-        qsum = np.nansum(qsum)
-        sigma2[k] = w + psum + qsum
+        if q != 0:
+            qsum = np.flip(beta) * (sigma2[k - q : k])
+            qsum = np.nansum(qsum)
+            sigma2[k] = w + psum + qsum
+        else:
+            sigma2[k] = w + psum
         y[k] = np.random.normal(loc=0, scale=np.sqrt(sigma2[k]))
 
     return y
 
-# %% ../nbs/garch.ipynb 12
+# %% ../nbs/garch.ipynb 11
 @njit(nogil=NOGIL, cache=CACHE)
 def garch_sigma2(x0, x, p, q):
 
@@ -65,37 +71,45 @@ def garch_sigma2(x0, x, p, q):
     beta = x0[(p + 1) :]
 
     sigma2 = np.full((len(x),), np.nan)
-    # sigma2[0] = np.var(x) # sigma2 can be initialized with the unconditional variance
+    sigma2[0] = np.var(x)  # sigma2 can be initialized with the unconditional variance
 
     for k in range(max(p, q), len(x)):
         psum = np.flip(alpha) * (x[k - p : k] ** 2)
         psum = np.nansum(psum)
-        qsum = np.flip(beta) * (sigma2[k - q : k])
-        qsum = np.nansum(qsum)
-        sigma2[k] = w + psum + qsum
+        if q != 0:
+            qsum = np.flip(beta) * (sigma2[k - q : k])
+            qsum = np.nansum(qsum)
+            sigma2[k] = w + psum + qsum
+        else:
+            sigma2[k] = w + psum
 
     return sigma2
 
-# %% ../nbs/garch.ipynb 14
+# %% ../nbs/garch.ipynb 13
 @njit(nogil=NOGIL, cache=CACHE)
 def garch_cons(x0):
     # Constraints for GARCH model
     # alpha+beta < 1
     return 1 - (x0[1:].sum())
 
-# %% ../nbs/garch.ipynb 16
+# %% ../nbs/garch.ipynb 15
+@njit(nogil=NOGIL, cache=CACHE)
 def garch_loglik(x0, x, p, q):
 
     sigma2 = garch_sigma2(x0, x, p, q)
     z = x - np.nanmean(x)
     loglik = 0
 
-    for k in range(max(p, q), len(x)):
-        loglik = loglik + norm.logpdf(z[k], 0, np.sqrt(sigma2[k]))
+    for k in range(max(p, q), len(z)):
+        if sigma2[k] == 0:
+            sigma2[k] = 1e-10
+        loglik = loglik - 0.5 * (
+            np.log(2 * np.pi) + np.log(sigma2[k]) + (z[k] ** 2) / sigma2[k]
+        )
 
     return -loglik
 
-# %% ../nbs/garch.ipynb 18
+# %% ../nbs/garch.ipynb 17
 def garch_model(x, p, q):
 
     np.random.seed(1)
@@ -126,7 +140,7 @@ def garch_model(x, p, q):
 
     return res
 
-# %% ../nbs/garch.ipynb 22
+# %% ../nbs/garch.ipynb 21
 def garch_forecast(mod, h):
 
     np.random.seed(1)
@@ -142,15 +156,20 @@ def garch_forecast(mod, h):
     sigma2_vals = np.full((h + q,), np.nan)
 
     y_vals[0:p] = mod["y_vals"]
-    sigma2_vals[0:q] = mod["sigma2_vals"]
+
+    if q != 0:
+        sigma2_vals[0:q] = mod["sigma2_vals"]
 
     for k in range(0, h):
         error = np.random.normal(loc=0, scale=1)
         psum = np.flip(alpha) * (y_vals[k : p + k] ** 2)
         psum = np.nansum(psum)
-        qsum = np.flip(beta) * (sigma2_vals[k : q + k])
-        qsum = np.nansum(qsum)
-        sigma2hat = w + psum + qsum
+        if q != 0:
+            qsum = np.flip(beta) * (sigma2_vals[k : q + k])
+            qsum = np.nansum(qsum)
+            sigma2hat = w + psum + qsum
+        else:
+            sigma2hat = w + psum
         yhat = error * np.sqrt(sigma2hat)
         y_vals[p + k] = yhat
         sigma2_vals[q + k] = sigma2hat
