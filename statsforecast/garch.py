@@ -4,15 +4,10 @@
 __all__ = ['NOGIL', 'CACHE']
 
 # %% ../nbs/garch.ipynb 3
-import math
 import os
-import random
-
 import numpy as np
-import matplotlib.pyplot as plt
 from numba import njit
 from scipy.optimize import minimize
-from scipy.stats import norm
 
 # %% ../nbs/garch.ipynb 4
 NOGIL = os.environ.get("NUMBA_RELEASE_GIL", "False").lower() in ["true"]
