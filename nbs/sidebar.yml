@@ -26,6 +26,7 @@ website:
         - examples/IntermittentData.ipynb
         - examples/UncertaintyIntervals.ipynb
         - examples/Exogenous.ipynb
+        - examples/StatisticalNeuralMethods.ipynb
         - adapters.prophet.ipynb
         - examples/migrating_R.qmd
       - examples/models_intro.qmd
