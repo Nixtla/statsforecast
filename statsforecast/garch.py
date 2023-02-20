@@ -6,6 +6,7 @@ __all__ = ['NOGIL', 'CACHE']
 # %% ../nbs/garch.ipynb 3
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 from numba import njit
 from scipy.optimize import minimize
 
