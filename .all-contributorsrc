@@ -213,6 +213,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "nelsoncardenas",
+      "name": "Nelson Cárdenas Bolaño",
+      "avatar_url": "https://avatars.githubusercontent.com/u/18086414?v=4",
+      "profile": "https://github.com/nelsoncardenas",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
