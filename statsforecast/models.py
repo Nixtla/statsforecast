@@ -6,7 +6,7 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'Theta', 'OptimizedTheta', 'DynamicTheta',
-           'DynamicOptimizedTheta']
+           'DynamicOptimizedTheta', 'GARCH', 'ARCH']
 
 # %% ../nbs/models.ipynb 5
 import warnings
@@ -29,6 +29,7 @@ from .ces import auto_ces, forecast_ces, forward_ces
 from .ets import ets_f, forecast_ets, forward_ets
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
+from .garch import garch_model, garch_forecast
 from statsforecast.utils import (
     _seasonal_naive,
     _repeat_val_seas,
@@ -2469,7 +2470,7 @@ class Naive(_TS):
     def __init__(self, alias: str = "Naive"):
         """Naive model.
 
-        A random walk model, defined as $\hat{y}_{t+1} = y_t$ $\forall t$
+        A random walk model, defined as $\hat{y}_{t+1} = y_t$ for all $t$
 
         **References:**<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
@@ -4483,3 +4484,208 @@ class DynamicOptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
         )
+
+# %% ../nbs/models.ipynb 369
+class GARCH(_TS):
+    """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
+
+    A method to forecast time series that exhibit non-constant volatility over time.
+    The GARCH model assumes that at time $t$, $y_t$ is given by:
+
+    $$ y_t = \epsilon_t \sigma_t$$
+
+    with
+
+    $$ \sigma_t^2 = w0 + \sum_{i=1}^p \alpha_i y_{t-i}^2 + \sum_{j=1}^q \beta_j \sigma_{t-j}^2$$.
+
+    Here {$\epsilon_t$} is a sequence of iid random variables with zero mean and unit variance.
+    The coefficients $w$, $\alpha_i$, $i=1,...,p$, and $\beta_j$, $j=1,...,q$ must be nonnegative and
+    $\sum_{k=1}^{max(p,q)} \alpha_k + \beta_k < 1$.
+
+    The ARCH model is a particular case of the GARCH model when $q=0$.
+
+    **References:**<br>
+    [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
+
+    [Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. Journal of econometrics, 31(3), 307-327.](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=7da8bfa5295375c1141d797e80065a599153c19d)
+
+    [James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
+
+    Parameters
+    ----------
+    p : int
+        Number of lagged versions of the series.
+    q: int
+        Number of lagged versions of the volatility.
+    alias : str
+        Custom name of the model.
+    """
+
+    def __init__(self, p: int = 1, q: int = 1, alias: str = "GARCH"):
+        self.p = p
+        self.q = q
+        if q != 0:
+            self.alias = alias + "(" + str(p) + "," + str(q) + ")"
+        else:
+            self.alias = alias + "(" + str(p) + ")"
+
+    def __repr__(self):
+        return self.alias
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
+        """Fit GARCH model.
+
+        Fit GARCH model to a time series (numpy array) `y`.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+
+        Returns
+        -------
+        self :
+            GARCH model.
+        """
+
+        self.model_ = garch_model(y, p=self.p, q=self.q)
+        self.model_["actual_residuals"] = y - self.model_["fitted"]
+        return self
+
+    def predict(
+        self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
+    ):
+        """Predict with fitted GARCH model.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        fcst = garch_forecast(self.model_, h)
+        res = {"mean": fcst["mean"], "sigma2": fcst["sigma2"]}
+        if level is not None:
+            level = sorted(level)
+            quantiles = _quantiles(level)
+            lo = res["mean"].reshape(-1, 1) - quantiles * res["sigma2"].reshape(-1, 1)
+            hi = res["mean"].reshape(-1, 1) + quantiles * res["sigma2"].reshape(-1, 1)
+            lo = lo[:, ::-1]
+            lo = {f"lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
+            hi = {f"hi-{l}": hi[:, i] for i, l in enumerate(level)}
+            res = {**res, **lo, **hi}
+        return res
+
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+        """Access fitted GARCH model predictions.
+
+        Parameters
+        ----------
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            residuals = self.model_["actual_residuals"]
+            se = _calculate_sigma(residuals, len(residuals) - 1)
+            res = _add_fitted_pi(res=res, se=se, level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        """Memory Efficient GARCH model.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (n, ).
+        h : int
+            Forecast horizon.
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not returns insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        mod = garch_model(y, p=self.p, q=self.q)
+        fcst = garch_forecast(mod, h)
+        keys = ["mean", "sigma2"]
+        if fitted:
+            keys.append("fitted")
+        res = {key: fcst[key] for key in keys}
+        if level is not None:
+            level = sorted(level)
+            quantiles = _quantiles(level)
+            lo = res["mean"].reshape(-1, 1) - quantiles * res["sigma2"].reshape(-1, 1)
+            hi = res["mean"].reshape(-1, 1) + quantiles * res["sigma2"].reshape(-1, 1)
+            lo = lo[:, ::-1]
+            lo = {f"lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
+            hi = {f"hi-{l}": hi[:, i] for i, l in enumerate(level)}
+            res = {**res, **lo, **hi}
+            if fitted:
+                se = _calculate_sigma(y - mod["fitted"], len(y) - 1)
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        return res
+
+# %% ../nbs/models.ipynb 381
+class ARCH(GARCH):
+    """Autoregressive Conditional Heteroskedasticity (ARCH) model.
+
+    A particular case of the GARCH(p,q) model where $q=0$.
+    It assumes that at time $t$, $y_t$ is given by:
+
+    $$ y_t = \epsilon_t \sigma_t$$
+
+    with
+
+    $$ \sigma_t^2 = w0 + \sum_{i=1}^p \alpha_i y_{t-i}^2$$.
+
+    Here {$\epsilon_t$} is a sequence of iid random variables with zero mean and unit variance.
+    The coefficients $w$ and $\alpha_i$, $i=1,...,p$ must be nonnegative and $\sum_{k=1}^p \alpha_k < 1$.
+
+    **References:**<br>
+    [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
+
+    [James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
+
+     Parameters
+    ----------
+    p : int
+        Number of lagged versions of the series.
+    alias : str
+        Custom name of the model.
+    """
+
+    def __init__(self, p: int = 1, alias: str = "ARCH"):
+        self.p = p
+        self.alias = alias
+        super().__init__(p, q=0, alias=alias)
+
+    def __repr__(self):
+        return self.alias
