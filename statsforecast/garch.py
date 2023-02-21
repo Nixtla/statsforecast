@@ -6,11 +6,10 @@ __all__ = ['NOGIL', 'CACHE']
 # %% ../nbs/garch.ipynb 3
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 from numba import njit
 from scipy.optimize import minimize
 
-# %% ../nbs/garch.ipynb 5
+# %% ../nbs/garch.ipynb 4
 NOGIL = os.environ.get("NUMBA_RELEASE_GIL", "False").lower() in ["true"]
 CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
 
