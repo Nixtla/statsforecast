@@ -34,13 +34,21 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 |[`DynamicOptimizedTheta`](../models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
 : {tbl-colwidths="[75,25]"}
 
-
 ## Multiple Seasonalities
 Suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`MSTL`](../models.html#mstl)|✅|✅|✅|✅|✅|
+: {tbl-colwidths="[75,25]"}
+
+## GARCH and ARCH Models
+Suited for modeling time series that exhibit non-constant volatility over time. The ARCH model is a particular case of GARCH. 
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[`GARCH`](../models.html#garch)|✅|✅|✅|✅|✅|
+|[`ARCH`](../models.html#arch)|✅|✅|✅|✅|✅|
 : {tbl-colwidths="[75,25]"}
 
 ## Baseline Models
@@ -69,8 +77,7 @@ Uses a weighted average of all past observations where the weights decrease expo
 |[`HoltWinters`](../models.html#holtwinters)|✅|✅|✅|✅|✅|
 : {tbl-colwidths="[75,25]"}
 
-
-## Sparse of Inttermitent
+## Sparse or Intermittent 
 Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |

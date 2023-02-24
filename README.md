@@ -132,13 +132,21 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 |[DynamicTheta](https://nixtla.github.io/statsforecast/models.html#dynamictheta)|✅|✅|✅|✅|✅|
 |[DynamicOptimizedTheta](https://nixtla.github.io/statsforecast/models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
 
-
 ### Multiple Seasonalities
 Suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[MSTL](https://nixtla.github.io/statsforecast/models.html#mstl)|✅|✅|✅|✅|✅|
+
+### GARCH and ARCH Models 
+Suited for modeling time series that exhibit non-constant volatility over time. The ARCH model is a particular case of GARCH. 
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[GARCH](https://nixtla.github.io/statsforecast/models.html#garch)|✅|✅|✅|✅|✅|
+|[ARCH](https://nixtla.github.io/statsforecast/models.html#arch)|✅|✅|✅|✅|✅|
+
 
 ### Baseline Models
 Classical models for establishing baseline.
@@ -165,7 +173,7 @@ Uses a weighted average of all past observations where the weights decrease expo
 |[HoltWinters](https://nixtla.github.io/statsforecast/models.html#holtwinters)|✅|✅|✅|✅|✅|
 
 
-### Sparse or Inttermitent
+### Sparse or Intermittent 
 Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |

@@ -25,6 +25,7 @@ website:
         - examples/ElectricityPeakForecasting.ipynb
         - examples/IntermittentData.ipynb
         - examples/UncertaintyIntervals.ipynb
+        - examples/GARCH_tutorial.ipynb 
         - examples/Exogenous.ipynb
         - examples/StatisticalNeuralMethods.ipynb
         - adapters.prophet.ipynb
