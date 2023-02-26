@@ -1314,7 +1314,6 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 # %% ../nbs/ets.ipynb 36
 # @njit(nogil=NOGIL, cache=CACHE)
 def _compute_sigmah(pf, h, sigma, cvals):
-
     theta = np.full(h, np.nan)
     theta[0] = pf[0] ** 2
 
@@ -1346,7 +1345,6 @@ def _class3models(
     gamma,
     phi,
 ):
-
     if damped == "N":
         damped_val = False
     else:
@@ -1615,9 +1613,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
                 yhat,
                 e,
             )
-            y_path[
-                k,
-            ] = yhat
+            y_path[k,] = yhat
 
         lower = np.quantile(y_path, 0.5 - np.array(level) / 200, axis=0)
         upper = np.quantile(y_path, 0.5 + np.array(level) / 200, axis=0)

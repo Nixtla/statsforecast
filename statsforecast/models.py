@@ -2246,7 +2246,6 @@ class Holt(AutoETS):
     def __init__(
         self, season_length: int = 1, error_type: str = "A", alias: str = "Holt"
     ):
-
         self.season_length = season_length
         self.error_type = error_type
         self.alias = alias
@@ -2421,7 +2420,6 @@ class HistoricAverage(_TS):
         level: Optional[Tuple[int]] = None,
         fitted: bool = False,
     ):
-
         """Memory Efficient HistoricAverage predictions.
 
         This method avoids memory burden due from object storage.
@@ -4167,7 +4165,6 @@ class MSTL(_TS):
         trend_forecaster=AutoETS(model="ZZN"),
         alias: str = "MSTL",
     ):
-
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
             if trend_forecaster.model[2] != "N":

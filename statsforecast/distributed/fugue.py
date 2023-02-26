@@ -8,20 +8,11 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-
-try:
-    from fugue import transform
-    from fugue.collections.yielded import Yielded
-    from fugue.constants import FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT
-    from fugue.dataframe import DataFrame
-    from fugue.workflow import FugueWorkflow
-except ModuleNotFoundError as e:
-    msg = (
-        f"{e}. To use fugue you have to install it." "Please run `pip install fugue`. "
-    )
-    raise ModuleNotFoundError(msg) from e
-from ..core import _StatsForecast
-from .core import ParallelBackend
+from fugue import transform, DataFrame
+from fugue.collections.yielded import Yielded
+from fugue.constants import FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT
+from fugue import DataFrame, FugueWorkflow, ExecutionEngine
+from ..core import _StatsForecast, ParallelBackend, make_backend
 from triad import Schema
 
 # %% ../../nbs/distributed.fugue.ipynb 5
@@ -233,3 +224,8 @@ class FugueBackend(ParallelBackend):
         if mode == "cv":
             cols = [("cutoff", "datetime"), ("y", np.float32)] + cols
         return Schema(cols)
+
+
+@make_backend.candidate(lambda obj, *args, **kwargs: isinstance(obj, ExecutionEngine))
+def _make_fugue_backend(obj: ExecutionEngine, *args, **kwargs) -> ParallelBackend:
+    return FugueBackend(obj, **kwargs)

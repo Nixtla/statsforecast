@@ -6,8 +6,7 @@ __all__ = ['MultiprocessBackend']
 # %% ../../nbs/distributed.multiprocess.ipynb 4
 from typing import Any
 
-from ..core import _StatsForecast
-from .core import ParallelBackend
+from ..core import _StatsForecast, ParallelBackend
 
 # %% ../../nbs/distributed.multiprocess.ipynb 5
 # This parent class holds common `forecast` and `cross_validation` methods
