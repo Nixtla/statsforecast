@@ -8,10 +8,9 @@ from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
-from fugue import transform, DataFrame
+from fugue import transform, DataFrame, FugueWorkflow, ExecutionEngine
 from fugue.collections.yielded import Yielded
 from fugue.constants import FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT
-from fugue import DataFrame, FugueWorkflow, ExecutionEngine
 from ..core import _StatsForecast, ParallelBackend, make_backend
 from triad import Schema
 
