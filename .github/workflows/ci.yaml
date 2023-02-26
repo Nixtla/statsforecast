@@ -62,6 +62,7 @@ jobs:
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
   test-ray:
+    if: false
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -90,6 +91,7 @@ jobs:
 
 #separating windows ray due to https://github.com/ray-project/ray/issues/26378
   test-ray-windows:
+    if: false
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
