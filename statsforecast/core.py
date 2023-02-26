@@ -1487,7 +1487,7 @@ class StatsForecast(_StatsForecast):
                 h=h, df=df, X_df=X_df, level=level, fitted=fitted, sort_df=sort_df
             )
         assert df is not None
-        with fa.engine_context(infer_by=[_df]) as e:
+        with fa.engine_context(infer_by=[df]) as e:
             backend = make_backend(e)
             return backend.forecast(
                 df=df,
@@ -1527,7 +1527,7 @@ class StatsForecast(_StatsForecast):
                 sort_df=sort_df,
             )
         assert df is not None
-        with fa.engine_context(infer_by=[_df]) as e:
+        with fa.engine_context(infer_by=[df]) as e:
             backend = make_backend(e)
             return backend.cross_validation(
                 df=df,
