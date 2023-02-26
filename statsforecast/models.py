@@ -4486,18 +4486,20 @@ class DynamicOptimizedTheta(AutoTheta):
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
-    A method to forecast time series that exhibit non-constant volatility over time.
+    A method for modeling time series that exhibit non-constant volatility over time.
     The GARCH model assumes that at time $t$, $y_t$ is given by:
 
-    $$ y_t = \epsilon_t \sigma_t$$
+    $$ y_t = v_t \sigma_t$$
 
     with
 
-    $$ \sigma_t^2 = w0 + \sum_{i=1}^p \alpha_i y_{t-i}^2 + \sum_{j=1}^q \beta_j \sigma_{t-j}^2$$.
+    $$ \sigma_t^2 = w + \sum_{i=1}^p a_i y_{t-i}^2 + \sum_{j=1}^q b_j \sigma_{t-j}^2$$.
 
-    Here {$\epsilon_t$} is a sequence of iid random variables with zero mean and unit variance.
-    The coefficients $w$, $\alpha_i$, $i=1,...,p$, and $\beta_j$, $j=1,...,q$ must be nonnegative and
-    $\sum_{k=1}^{max(p,q)} \alpha_k + \beta_k < 1$.
+    Here {$v_t$} is a sequence of iid random variables with zero mean and unit variance.
+    The coefficients $w$, $a_i$, $i=1,...,p$, and $b_j$, $j=1,...,q$ must satisfy the following conditions:
+
+    1. $w > 0$ and $a_i, b_j \geq 0$ for all $i$ and $j$.
+    2. $\sum_{k=1}^{max(p,q)} a_k + b_k < 1$. Here it is assumed that $a_i=0$ for $i>p$ and $b_j=0$ for $j>q$.
 
     The ARCH model is a particular case of the GARCH model when $q=0$.
 
@@ -4661,10 +4663,10 @@ class ARCH(GARCH):
 
     with
 
-    $$ \sigma_t^2 = w0 + \sum_{i=1}^p \alpha_i y_{t-i}^2$$.
+    $$ \sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
 
     Here {$\epsilon_t$} is a sequence of iid random variables with zero mean and unit variance.
-    The coefficients $w$ and $\alpha_i$, $i=1,...,p$ must be nonnegative and $\sum_{k=1}^p \alpha_k < 1$.
+    The coefficients $w$ and $a_i$, $i=1,...,p$ must be nonnegative and $\sum_{k=1}^p a_k < 1$.
 
     **References:**<br>
     [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
