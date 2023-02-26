@@ -1486,11 +1486,11 @@ class StatsForecast(_StatsForecast):
             return super().forecast(
                 h=h, df=df, X_df=X_df, level=level, fitted=fitted, sort_df=sort_df
             )
-        _df = df if df is not None else self.df
+        assert df is not None
         with fa.engine_context(infer_by=[_df]) as e:
             backend = make_backend(e)
             return backend.forecast(
-                df=_df,
+                df=df,
                 models=self.models,
                 freq=self.freq,
                 fallback_model=self.fallback_model,
@@ -1503,7 +1503,7 @@ class StatsForecast(_StatsForecast):
     def cross_validation(
         self,
         h: int,
-        df: Optional[pd.DataFrame] = None,
+        df: Any = None,
         n_windows: int = 1,
         step_size: int = 1,
         test_size: Optional[int] = None,
@@ -1526,11 +1526,11 @@ class StatsForecast(_StatsForecast):
                 refit=refit,
                 sort_df=sort_df,
             )
-        _df = df if df is not None else self.df
+        assert df is not None
         with fa.engine_context(infer_by=[_df]) as e:
             backend = make_backend(e)
             return backend.cross_validation(
-                df=self.df if self.df is not None else df,
+                df=df,
                 models=self.models,
                 freq=self.freq,
                 fallback_model=self.fallback_model,
