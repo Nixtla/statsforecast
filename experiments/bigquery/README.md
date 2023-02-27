@@ -92,4 +92,6 @@ Go and try other great open-source libraries like GluonTS, Darts and Sktime.
 
 ## Reproducibility
 
-You can fully reproduce the experiment by following [this step-by-step notebook](https://nixtla.github.io/statsforecast/examples/aws/statsforecast.html).
+You can fully reproduce the experiment by following [this step-by-step notebooks]:
+- [Citibike Trips](./src/statsforecast-fugue-citibikes-trips.ipynb)
+- [Liquor sales](./src/statsforecast-fugue-liquor-sales.ipynb)
