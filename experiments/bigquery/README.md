@@ -1,0 +1,95 @@
+## Google's BigQuery vs open source statistical methods
+>TL;DR: We paid USD $xx USD and spend xx hours in the Google's BigQuery console so you don't have to. 
+
+In this reproducible experiment, we compare [BigQuery's forecasting solution](https://cloud.google.com/bigquery-ml/docs/arima-speed-up-tutorial) and [StatsForecast](https://github.com/Nixtla/statsforecast) and [fugue](https://github.com/fugue-project/fugue) a python open-source libraries. For this experiment, we followed the same experiment used by Google to showcase their forecasting capabilities:
+
+> For all steps but the last one, you will use the new_york.citibike_trips data. This data contains information about Citi Bike trips in New York City. This dataset only contains a few hundred time series. It is used to illustrate various strategies to accelerate model training. For the last step, you will use iowa_liquor_sales.sales data to forecast more than 1 million time series.
+
+We conclude that, for this setting, BigQuery is xx% less accurate and xxx times more expensive than running an open-source alternative in a simple cloud server. 
+
+### Google's BigQuery
+
+BigQuery inclues an AutoML time-series forecasting service. 
+
+> The BigQuery ML time series modeling pipeline includes multiple modules. The ARIMA model is the most computationally expensive, which is why the model is named ARIMA_PLUS. The modeling pipeline for the BigQuery ML time series includes the following functionalities: Infer the data frequency of the time series. Handle irregular time intervals. Handle duplicated timestamps by taking the mean value. Interpolate missing data using local linear interpolation. Detect and clean spike and dip outliers. Detect and adjust abrupt step (level) changes. Detect and adjust holiday effect. Detect multiple seasonal patterns within a single time series via Seasonal and Trend decomposition using Loess (STL), and extrapolate seasonality via double exponential smoothing (ETS). Detect and model the trend using the ARIMA model and the auto.ARIMA algorithm for automatic hyperparameter tuning. In auto.ARIMA, dozens of candidate models are trained and evaluated in parallel. The best model comes with the lowest Akaike information criterion (AIC).
+
+With BigQuery ML, you can easily create and execute machine learning models in BigQuery using Google SQL queries. This tool also comes with an automated forecasting feature that can produce forecasts effortlessly. Moreover, BigQuery uses statistical models like AutoARIMA to model trends and seasonality, ensuring accurate forecasting.
+
+### Fugue 
+
+Fugue is a unified interface for distributed computing that lets users execute Python, Pandas, and SQL code on Spark, Dask, and Ray with minimal rewrites. They also have a [BigQuery integration](https://fugue-tutorials.readthedocs.io/tutorials/integrations/warehouses/bigquery.html?highlight=bigquery#the-bigquery-client).  
+
+### StatsForecast
+
+StatsForecast is an open-source python library from Nixtla. The library offers a collection of widely used univariate time series forecasting models, including automatic ARIMA, ETS, CES, and Theta modeling optimized for high performance using numba. It also includes a large battery of benchmarking models.
+
+For this experiment, we used a [infrastructure] trained five simple statistical models: `MSTL`, `AutoETS`, `AutoCES`, `Naive`, and `SeasonalNaive`.
+
+### Main Results
+
+Google's BigQuery: 
+
+* achieved 24.13 in error for the `new_york.citibike_trips` dataset (measured in Mean Absoluto Error), 
+* took 14 minutes to run the `new_york.citibike_trips` dataset (approximately 400 time series)
+* took 1 hour 16 minutes to run the `iowa_liquor_sales.sales` dataset (over a million time series)
+* and cost xx USD 
+
+Statsforecast trained on a [infrastructe]:
+* achieved 20.96 in error (MAE), 
+* took 2 minutes to run the `new_york.citibike_trips` dataset (approximately 400 time series)
+* took 8 minutes to run the `iowa_liquor_sales.sales` dataset (over a million time series)
+* and cost only xx USD. 
+
+For this data set, we show therefore that: 
+
+* BigQuery is 13% less accurate and xxx times more expensive than running an open-source alternative in a simple cloud server. 
+* Complex methods and pipelines are outperformed by classical methods in terms of speed, accuracy and cost. 
+
+Although using StatsForecast requires some basic knowledge of Python and cloud computing, the results are simply better for this datasets.
+
+## Experiment
+
+### Citibike Trips (~400 time series)
+
+The experiment consists of forecasting 7 days forward for approximately 400 time series. The largest bike share program in the USA is Citi Bike, spanning over Manhattan, Brooklyn, Queens, and Jersey City, with 10,000 bikes and 600 stations. This dataset encompasses Citi Bike trips from September 2013 when the program first launched and is regularly updated on a daily basis.
+
+### Evaluation Metrics
+
+The evaluation metrics are the Mean Absolute Error (MAE) and the Root Mean Squared Error (RMSE) defined as follows,
+
+[image]
+
+### Results
+
+[image]
+
+###  Liquor Sales (~1 million time series)
+
+According to the [bigquery's page](https://console.cloud.google.com/marketplace/details/iowa-department-of-commerce/iowa-liquor-sales?filter=category:machine-learning&id=18f0a495-8e20-4124-a349-0c4c167b60ab&project=fuguedatabricks):
+
+> This dataset contains every wholesale purchase of liquor in the State of Iowa by retailers for sale to individuals since January 1, 2012. The State of Iowa controls the wholesale distribution of liquor intended for retail sale, which means this dataset offers a complete view of retail liquor sales in the entire state. The dataset contains every wholesale order of liquor by all grocery stores, liquor stores, convenience stores, etc., with details about the store and location, the exact liquor brand and size, and the number of bottles ordered.
+
+### Results
+
+[image]
+
+## Conclusions
+
+In conclusion: for this setting, in terms of speed, costs, simplicity and accuracy, AutoML is far behind simple statistical methods. In terms of accuracy, they seem to be rather close.
+
+This conclusion might or not hold in other datasets, however, given the a priori uncertainty of the benefits and the certainty of cost, statistical methods should be considered the first option in daily forecasting practice.
+
+Although this experiment does not focus on comparing machine learning and deep learning vs statistical methods, it supports our [previous conclusions](https://github.com/Nixtla/statsforecast/tree/main/experiments/m3) on the current validity of simpler methods for many forecasting tasks.
+
+## Unsolicited Advice
+Choose your models wisely.
+
+It would be extremely expensive and borderline irresponsible to favor AutoML in an organization before establishing solid baselines.
+
+Simpler is sometimes better. Not everything that glows is gold.
+
+Go and try other great open-source libraries like GluonTS, Darts and Sktime.
+
+## Reproducibility
+
+You can fully reproduce the experiment by following [this step-by-step notebook](https://nixtla.github.io/statsforecast/examples/aws/statsforecast.html).
