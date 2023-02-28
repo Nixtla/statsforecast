@@ -1,7 +1,10 @@
-## Google's BigQuery vs open source statistical methods
->TL;DR: We spent hours in the Google's BigQuery console so you don't have to. 
+## Scalable Forecasting with Millions of Time-Series: Comparing Google's BigQuery with Open-Source Tools
+>TL;DR: In this reproducible experiment, we compare BigQuery ML's forecasting solution with two open-source tools, StatsForecast and Fugue. The experiment concludes that BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive than running an open-source alternative in a simple cloud cluster.
 
-In this reproducible experiment, we compare [BigQuery's forecasting solution](https://cloud.google.com/bigquery-ml/docs/arima-speed-up-tutorial) and [StatsForecast](https://github.com/Nixtla/statsforecast) and [fugue](https://github.com/fugue-project/fugue) a python open-source libraries. For this experiment, we followed the same experiment used by Google to showcase their forecasting capabilities:
+
+In this reproducible experiment, we compare [BigQuery's forecasting solution](https://cloud.google.com/bigquery-ml/docs/arima-speed-up-tutorial) with two open source tools: [StatsForecast](https://github.com/Nixtla/statsforecast) and [fugue](https://github.com/fugue-project/fugue). 
+
+For this experiment, we followed [this experiment](https://cloud.google.com/bigquery-ml/docs/arima-speed-up-tutorial) used by Google to showcase their forecasting capabilities:
 
 > For all steps but the last one, you will use the new_york.citibike_trips data. This data contains information about Citi Bike trips in New York City. This dataset only contains a few hundred time series. It is used to illustrate various strategies to accelerate model training. For the last step, you will use iowa_liquor_sales.sales data to forecast more than 1 million time series.
 
@@ -17,7 +20,7 @@ With BigQuery ML, you can easily create and execute machine learning models in B
 
 ### Fugue 
 
-Fugue is a unified interface for distributed computing that lets users execute Python, Pandas, and SQL code on Spark, Dask, and Ray with minimal rewrites. The librarie also has a [BigQuery integration](https://fugue-tutorials.readthedocs.io/tutorials/integrations/warehouses/bigquery.html?highlight=bigquery#the-bigquery-client).  
+Fugue is a unified interface for distributed computing that lets users execute Python, Pandas, and SQL code on Spark, Dask, and Ray with minimal rewrites. The librarie also has a native [BigQuery integration](https://fugue-tutorials.readthedocs.io/tutorials/integrations/warehouses/bigquery.html?highlight=bigquery#the-bigquery-client).  
 
 ### StatsForecast
 
@@ -27,25 +30,26 @@ For this experiment, we used a [infrastructure] trained five simple statistical 
 
 ### Main Results
 
-Google's BigQuery: 
+Google's BigQuery:
 
-* achieved 24.13 (Mean Absolute Error, MAE) in error for the `new_york.citibike_trips` dataset 
-* took 7.5 minutes to run the `new_york.citibike_trips` dataset (approximately 400 time series)
-* took 1 hour 16 minutes to run the `iowa_liquor_sales.sales` dataset (over a million time series)
-* and cost 41.96 USD 
+* Achieved 24.13 (Mean Absolute Error, MAE) in error for the new_york.citibike_trips dataset.
+* Took 7.5 minutes to run the new_york.citibike_trips dataset (approximately 400 time series).
+* Took 1 hour 16 minutes to run the iowa_liquor_sales.sales dataset (over a million time series).
+* Cost 41.96 USD.
 
-StatsForecast and fugue trained on a databricks cluster of 16 e2-standard-32 virtual machines (GCP):
-* achieved 20.96 (Mean Absolute Error, MAE) in error for the `new_york.citibike_trips` dataset
-* took 2 minutes to run the `new_york.citibike_trips` dataset (approximately 400 time series)
-* took 9 minutes to run the `iowa_liquor_sales.sales` dataset (over a million time series)
-* and cost only 4.02 USD. 
+StatsForecast and Fugue trained on a databricks cluster of 16 e2-standard-32 virtual machines (GCP):
 
-For this data set, we show therefore that: 
+* Achieved 20.96 (Mean Absolute Error, MAE) in error for the new_york.citibike_trips dataset.
+* Took 2 minutes to run the new_york.citibike_trips dataset (approximately 400 time series).
+* Took 9 minutes to run the iowa_liquor_sales.sales dataset (over a million time series).
+* Cost only 4.02 USD.
 
-* BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive than running an open-source alternative in a simple cloud cluster. 
-* Complex methods and pipelines are outperformed by classical methods in terms of speed, accuracy and cost. 
+Therefore, we show that for this dataset:
 
-Although using StatsForecast requires some basic knowledge of Python and cloud computing, the results are simply better for this datasets.
+BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive than running an open-source alternative in a simple cloud cluster.
+Classical methods outperform complex methods and pipelines in terms of speed, accuracy, and cost.
+
+Although using StatsForecast requires some basic knowledge of Python and cloud computing, the results are simply better.
 
 ## Experiment
 
@@ -75,16 +79,12 @@ According to the [bigquery's page](https://console.cloud.google.com/marketplace/
 
 ## Conclusions
 
-In conclusion: for this setting, in terms of speed, costs, simplicity and accuracy, AutoML is far behind simple statistical methods. In terms of accuracy, they seem to be rather close.
-
-This conclusion might or not hold in other datasets, however, given the a priori uncertainty of the benefits and the certainty of cost, statistical methods should be considered the first option in daily forecasting practice.
-
-Although this experiment does not focus on comparing machine learning and deep learning vs statistical methods, it supports our [previous conclusions](https://github.com/Nixtla/statsforecast/tree/main/experiments/m3) on the current validity of simpler methods for many forecasting tasks.
+In conclusion, for the specific setting of this experiment, open source solutions outperformed Google's AutoML in terms of speed, costs,  simplicity, and accuracy. It should be noted, however, that this conclusion may not necessarily hold true for other datasets. Nonetheless, considering the uncertainty of the benefits and the certainty of cost ans time, AutoML methods should be taken with a grain of salt.
 
 ## Unsolicited Advice
 Choose your models wisely.
 
-It would be extremely expensive and borderline irresponsible to favor AutoML in an organization before establishing solid baselines.
+It would be extremely expensive and irresponsible to favor AutoML in an organization before establishing solid baselines.
 
 Simpler is sometimes better. Not everything that glows is gold.
 
