@@ -1,5 +1,5 @@
 ## Scalable Forecasting with Millions of Time-Series: Comparing Google's BigQuery with Open-Source Tools
->TL;DR: In this reproducible experiment, we compare BigQuery ML's forecasting solution with two open-source tools, StatsForecast and Fugue. The experiment concludes that BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive than running an open-source alternative in a simple cloud cluster.
+>TL;DR: In this reproducible experiment, we compare BigQuery ML's forecasting solution with two open-source tools, StatsForecast and Fugue. The experiment concludes that **BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive** than running an open-source alternative in a simple cloud cluster.
 
 
 In this reproducible experiment, we compare [BigQuery's forecasting solution](https://cloud.google.com/bigquery-ml/docs/arima-speed-up-tutorial) with two open source tools: [StatsForecast](https://github.com/Nixtla/statsforecast) and [fugue](https://github.com/fugue-project/fugue). 
@@ -8,7 +8,7 @@ For this experiment, we followed [this experiment](https://cloud.google.com/bigq
 
 > For all steps but the last one, you will use the new_york.citibike_trips data. This data contains information about Citi Bike trips in New York City. This dataset only contains a few hundred time series. It is used to illustrate various strategies to accelerate model training. For the last step, you will use iowa_liquor_sales.sales data to forecast more than 1 million time series.
 
-We conclude that, for this setting, BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive than running an open-source alternative in a simple cloud cluster.
+We conclude that, for this setting, **BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive** than running an open-source alternative in a simple cloud cluster.
 
 ### Google's BigQuery
 
