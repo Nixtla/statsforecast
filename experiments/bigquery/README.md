@@ -79,7 +79,7 @@ According to the [bigquery's page](https://console.cloud.google.com/marketplace/
 
 ## Conclusions
 
-In conclusion, for the specific setting of this experiment, open source solutions outperformed Google's AutoML in terms of speed, costs,  simplicity, and accuracy. It should be noted, however, that this conclusion may not necessarily hold true for other datasets. Nonetheless, considering the uncertainty of the benefits and the certainty of cost ans time, AutoML methods should be taken with a grain of salt.
+In conclusion, for the specific setting of this experiment, open source solutions outperformed Google's AutoML in terms of speed, costs,  simplicity, and accuracy. It should be noted, however, that this conclusion may not necessarily hold true for other datasets. Nonetheless, considering the uncertainty of the benefits and the certainty of cost and time, AutoML methods should be taken with a grain of salt.
 
 ## Unsolicited Advice
 Choose your models wisely.
