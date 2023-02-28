@@ -1,11 +1,11 @@
 ## Google's BigQuery vs open source statistical methods
->TL;DR: We paid USD $xx USD and spend xx hours in the Google's BigQuery console so you don't have to. 
+>TL;DR: We spent hours in the Google's BigQuery console so you don't have to. 
 
 In this reproducible experiment, we compare [BigQuery's forecasting solution](https://cloud.google.com/bigquery-ml/docs/arima-speed-up-tutorial) and [StatsForecast](https://github.com/Nixtla/statsforecast) and [fugue](https://github.com/fugue-project/fugue) a python open-source libraries. For this experiment, we followed the same experiment used by Google to showcase their forecasting capabilities:
 
 > For all steps but the last one, you will use the new_york.citibike_trips data. This data contains information about Citi Bike trips in New York City. This dataset only contains a few hundred time series. It is used to illustrate various strategies to accelerate model training. For the last step, you will use iowa_liquor_sales.sales data to forecast more than 1 million time series.
 
-We conclude that, for this setting, BigQuery is xx% less accurate and xxx times more expensive than running an open-source alternative in a simple cloud server. 
+We conclude that, for this setting, BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive than running an open-source alternative in a simple cloud cluster.
 
 ### Google's BigQuery
 
@@ -17,7 +17,7 @@ With BigQuery ML, you can easily create and execute machine learning models in B
 
 ### Fugue 
 
-Fugue is a unified interface for distributed computing that lets users execute Python, Pandas, and SQL code on Spark, Dask, and Ray with minimal rewrites. They also have a [BigQuery integration](https://fugue-tutorials.readthedocs.io/tutorials/integrations/warehouses/bigquery.html?highlight=bigquery#the-bigquery-client).  
+Fugue is a unified interface for distributed computing that lets users execute Python, Pandas, and SQL code on Spark, Dask, and Ray with minimal rewrites. The librarie also has a [BigQuery integration](https://fugue-tutorials.readthedocs.io/tutorials/integrations/warehouses/bigquery.html?highlight=bigquery#the-bigquery-client).  
 
 ### StatsForecast
 
@@ -29,20 +29,20 @@ For this experiment, we used a [infrastructure] trained five simple statistical 
 
 Google's BigQuery: 
 
-* achieved 24.13 in error for the `new_york.citibike_trips` dataset (measured in Mean Absoluto Error), 
-* took 14 minutes to run the `new_york.citibike_trips` dataset (approximately 400 time series)
+* achieved 24.13 (Mean Absolute Error, MAE) in error for the `new_york.citibike_trips` dataset 
+* took 7.5 minutes to run the `new_york.citibike_trips` dataset (approximately 400 time series)
 * took 1 hour 16 minutes to run the `iowa_liquor_sales.sales` dataset (over a million time series)
-* and cost xx USD 
+* and cost 41.96 USD 
 
-Statsforecast trained on a [infrastructe]:
-* achieved 20.96 in error (MAE), 
+StatsForecast and fugue trained on a databricks cluster of 16 e2-standard-32 virtual machines (GCP):
+* achieved 20.96 (Mean Absolute Error, MAE) in error for the `new_york.citibike_trips` dataset
 * took 2 minutes to run the `new_york.citibike_trips` dataset (approximately 400 time series)
-* took 8 minutes to run the `iowa_liquor_sales.sales` dataset (over a million time series)
-* and cost only xx USD. 
+* took 9 minutes to run the `iowa_liquor_sales.sales` dataset (over a million time series)
+* and cost only 4.02 USD. 
 
 For this data set, we show therefore that: 
 
-* BigQuery is 13% less accurate and xxx times more expensive than running an open-source alternative in a simple cloud server. 
+* BigQuery is 13% less accurate, 8 times slower, and 10 times more expensive than running an open-source alternative in a simple cloud cluster. 
 * Complex methods and pipelines are outperformed by classical methods in terms of speed, accuracy and cost. 
 
 Although using StatsForecast requires some basic knowledge of Python and cloud computing, the results are simply better for this datasets.
@@ -57,11 +57,11 @@ The experiment consists of forecasting 7 days forward for approximately 400 time
 
 The evaluation metrics are the Mean Absolute Error (MAE) and the Root Mean Squared Error (RMSE) defined as follows,
 
-[image]
+<img width="246" alt="image" src="https://user-images.githubusercontent.com/10517170/221758064-95101dbf-5d6e-4678-bbe8-e53d4f5a949f.png">
 
 ### Results
 
-[image]
+<img width="614" alt="image" src="https://user-images.githubusercontent.com/10517170/221756548-877c712e-95cd-48ae-96c6-e6648b6ce6a0.png">
 
 ###  Liquor Sales (~1 million time series)
 
@@ -71,7 +71,7 @@ According to the [bigquery's page](https://console.cloud.google.com/marketplace/
 
 ### Results
 
-[image]
+<img width="507" alt="image" src="https://user-images.githubusercontent.com/10517170/221756599-fcdcfa7d-d1c3-405c-abd5-72f5457664c9.png">
 
 ## Conclusions
 
