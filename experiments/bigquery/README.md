@@ -26,7 +26,7 @@ Fugue is a unified interface for distributed computing that lets users execute P
 
 StatsForecast is an open-source python library from Nixtla. The library offers a collection of widely used univariate time series forecasting models, including automatic ARIMA, ETS, CES, and Theta modeling optimized for high performance using numba. It also includes a large battery of benchmarking models.
 
-For this experiment, we used a [infrastructure] trained five simple statistical models: `MSTL`, `AutoETS`, `AutoCES`, `Naive`, and `SeasonalNaive`.
+For this experiment, we used a databricks cluster of 16 e2-standard-32 virtual machines (GCP) to train five simple statistical models: `MSTL`, `AutoETS`, `AutoCES`, `Naive`, and `SeasonalNaive`.
 
 ### Main Results
 
