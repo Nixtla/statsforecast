@@ -1,0 +1,7 @@
+FROM continuumio/miniconda3:latest
+
+COPY . setup/
+
+RUN conda env create -f setup/environment.yml
+RUN echo "conda activate statsforecast" >> ~/.bashrc
+ENV PATH /opt/conda/envs/myenv/bin:$PATH
