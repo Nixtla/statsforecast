@@ -4164,6 +4164,7 @@ class MSTL(_TS):
         season_length: Union[int, List[int]],
         trend_forecaster=AutoETS(model="ZZN"),
         alias: str = "MSTL",
+        blambda: Optional[float] = None,
     ):
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
@@ -4182,6 +4183,7 @@ class MSTL(_TS):
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
         self.alias = alias
+        self.blambda = blambda
 
     def __repr__(self):
         return self.alias
@@ -4207,7 +4209,7 @@ class MSTL(_TS):
         self :
             MSTL fitted model.
         """
-        self.model_ = mstl(x=y, period=self.season_length)
+        self.model_ = mstl(x=y, period=self.season_length, blambda=self.blambda)
         x_sa = self.model_[["trend", "remainder"]].sum(axis=1).values
         self.trend_forecaster = self.trend_forecaster.fit(y=x_sa, X=X)
         return self
@@ -4299,7 +4301,7 @@ class MSTL(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        model_ = mstl(x=y, period=self.season_length)
+        model_ = mstl(x=y, period=self.season_length, blambda=self.blambda)
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
         kwargs = {"y": x_sa, "h": h, "X": X, "X_future": X_future, "fitted": fitted}
         if "level" in signature(self.trend_forecaster.forecast).parameters:
@@ -4347,7 +4349,7 @@ class MSTL(_TS):
         """
         if not hasattr(self.trend_forecaster, "model_"):
             raise Exception("You have to use the `fit` method first")
-        model_ = mstl(x=y, period=self.season_length)
+        model_ = mstl(x=y, period=self.season_length, blambda=self.blambda)
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
         kwargs = {"y": x_sa, "h": h, "X": X, "X_future": X_future, "fitted": fitted}
         if "level" in signature(self.trend_forecaster.forward).parameters:
