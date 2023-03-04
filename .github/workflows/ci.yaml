@@ -62,7 +62,6 @@ jobs:
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
   test-distributed:
-     if: false
      runs-on: ${{ matrix.os }}
      strategy:
        fail-fast: false
