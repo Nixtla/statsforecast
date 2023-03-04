@@ -12,7 +12,7 @@ build: # Command to build Docker file [optional]
 run: build # Run jupyter notebook using Docker image
 	@docker run --name statsforecast --rm -d --network host -v $(CURR_DIR):/workdir/ statsforecast $(START_COMMAND)
 
-.buildless: # Run jupyter notebook using Docker image without building the image
+buildless: # Run jupyter notebook using Docker image without building the image
 	@docker run --name statsforecast --rm -d --network host -v $(CURR_DIR):/workdir/ statsforecast $(START_COMMAND)
 
 address: # Show the ipaddress and port of Jupyter Notebook 
