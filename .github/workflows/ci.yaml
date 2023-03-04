@@ -61,34 +61,32 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
-# TODO: remove test-ray since fugue becomes the unified engine
-#   test-ray:
-#     if: false
-#     runs-on: ${{ matrix.os }}
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         os: [ubuntu-latest, macos-latest]
-#         python-version: [3.7, 3.8, 3.9, '3.10']
-#     steps:
-#       - name: Clone repo
-#         uses: actions/checkout@v2
+  test-distributed:
+     runs-on: ${{ matrix.os }}
+     strategy:
+       fail-fast: false
+       matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7, 3.8, 3.9, '3.10']
+     steps:
+       - name: Clone repo
+         uses: actions/checkout@v2
 
-#       - name: Set up environment
-#         uses: mamba-org/provision-with-micromamba@main
-#         with:
-#           extra-specs: python=${{ matrix.python-version }}
-#           cache-env: true
+       - name: Set up environment
+         uses: mamba-org/provision-with-micromamba@main
+         with:
+           extra-specs: python=${{ matrix.python-version }}
+           cache-env: true
 
-#       - name: Install library with ray
-#         run: pip install ".[ray]" pytest
+       - name: Install library with ray and dask
+         run: pip install ".[ray,dask]" pytest
 
-#       - name: Windows redis
-#         if: ${{ matrix.os == 'windows-latest' }}
-#         run: pip install redis #https://github.com/ray-project/ray/pull/23991, remove later
+       - name: Windows redis
+         if: ${{ matrix.os == 'windows-latest' }}
+         run: pip install redis #https://github.com/ray-project/ray/pull/23991, remove later
 
-#       - name: Run ray
-#         run: pytest action_files
+       - name: Run tests
+         run: pytest action_files
 
 # #separating windows ray due to https://github.com/ray-project/ray/issues/26378
 #   test-ray-windows:
