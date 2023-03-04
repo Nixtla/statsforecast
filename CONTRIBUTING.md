@@ -27,14 +27,14 @@ Bug fixes and features are added through pull requests (PRs).
 
 ### Local setup for working on a PR
 
-#### Anaconda Setup
-
-##### 1. Clone the repository
+#### Clone the repository
 * HTTPS: `git clone https://github.com/Nixtla/statsforecast.git`
 * SSH: `git clone git@github.com:Nixtla/statsforecast.git`
 * GitHub CLI: `gh repo clone Nixtla/statsforecast`
 
-##### 2. Set up a conda environment
+#### Anaconda Setup
+
+##### 1. Set up a conda environment
 The repo comes with an `environment.yml` file in `dev` directory, which contains the libraries needed to run all the tests. In order to set up the environment you must have `conda` installed, we recommend [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 
 Once you have `conda` go to the top level directory of the repository and run:
@@ -42,10 +42,10 @@ Once you have `conda` go to the top level directory of the repository and run:
 conda env create -f dev/environment.yml
 ```
 
-##### 3. Install the library
+##### 2. Install the library
 Once you have your environment setup, activate it using `conda activate statsforecast` and then install the library in editable mode using `pip install -e ".[dev]"`
 
-##### 4. Install git hooks
+##### 3. Install git hooks
 Before doing any changes to the code, please install the git hooks that run automatic scripts during each commit and merge to strip the notebooks of superfluous metadata (and avoid merge conflicts).
 ```
 nbdev_install_hooks
