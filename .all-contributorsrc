@@ -222,6 +222,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "kschmaus",
+      "name": "Kyle Schmaus",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6586847?v=4",
+      "profile": "https://github.com/kschmaus",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
