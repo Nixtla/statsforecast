@@ -62,15 +62,11 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
-      - name: Install library with ray and dask
-        run: pip install ".[dev]" pytest
-
-      - name: Windows redis
-        if: ${{ matrix.os == 'windows-latest' }}
-        run: pip install redis #https://github.com/ray-project/ray/pull/23991, remove later
-
-      - name: Run integration tests
-        run: pytest action_files
+      - name: Run integrattion tests
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          pip install ".[dev]" pytest
+          pytest action_files
 
   test-m3-performance:
     runs-on: ubuntu-latest
