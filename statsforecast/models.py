@@ -4209,7 +4209,7 @@ class MSTL(_TS):
         """
         self.model_ = mstl(x=y, period=self.season_length)
         x_sa = self.model_[["trend", "remainder"]].sum(axis=1).values
-        self.trend_forecaster = self.trend_forecaster.fit(y=x_sa, X=X)
+        self.trend_forecaster = self.trend_forecaster.new().fit(y=x_sa, X=X)
         return self
 
     def predict(
