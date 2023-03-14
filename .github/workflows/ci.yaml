@@ -62,7 +62,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
-  test-distributed:
+  test-integration:
      runs-on: ${{ matrix.os }}
      strategy:
        fail-fast: false
