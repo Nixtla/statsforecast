@@ -81,7 +81,7 @@ jobs:
            cache-env: true
 
        - name: Install library with ray and dask
-         run: pip install ".[ray,dask]" pytest
+         run: pip install ".[dev]" pytest
 
        - name: Windows redis
          if: ${{ matrix.os == 'windows-latest' }}
