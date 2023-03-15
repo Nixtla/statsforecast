@@ -564,7 +564,6 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 
 # %% ../nbs/ces.ipynb 30
 def _simulate_pred_intervals(model, h, level):
-
     np.random.seed(1)
     nsim = 5000
     y_path = np.zeros([nsim, h])
@@ -582,9 +581,7 @@ def _simulate_pred_intervals(model, h, level):
             f=fcsts,
             **model["par"],
         )
-        y_path[
-            k,
-        ] = fcsts
+        y_path[k,] = fcsts
 
     lower = np.quantile(y_path, 0.5 - np.array(level) / 200, axis=0)
     upper = np.quantile(y_path, 0.5 + np.array(level) / 200, axis=0)

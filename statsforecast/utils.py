@@ -289,6 +289,7 @@ def _naive(
 # %% ../nbs/utils.ipynb 17
 # Functions used for calculating prediction intervals
 def _quantiles(level):
+    level = np.asarray(level)
     z = norm.ppf(0.5 + level / 200)
     return z
 

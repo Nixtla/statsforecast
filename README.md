@@ -1,6 +1,6 @@
 # Nixtla &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Statistical%20Forecasting%20Algorithms%20by%20Nixtla%20&url=https://github.com/Nixtla/statsforecast&via=nixtlainc&hashtags=StatisticalModels,TimeSeries,Forecasting) &nbsp;[![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-23-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-26-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 <div align="center">
@@ -132,13 +132,21 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 |[DynamicTheta](https://nixtla.github.io/statsforecast/models.html#dynamictheta)|✅|✅|✅|✅|✅|
 |[DynamicOptimizedTheta](https://nixtla.github.io/statsforecast/models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
 
-
 ### Multiple Seasonalities
 Suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[MSTL](https://nixtla.github.io/statsforecast/models.html#mstl)|✅|✅|✅|✅|✅|
+
+### GARCH and ARCH Models 
+Suited for modeling time series that exhibit non-constant volatility over time. The ARCH model is a particular case of GARCH. 
+
+|Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+|:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[GARCH](https://nixtla.github.io/statsforecast/models.html#garch)|✅|✅|✅|✅|✅|
+|[ARCH](https://nixtla.github.io/statsforecast/models.html#arch)|✅|✅|✅|✅|✅|
+
 
 ### Baseline Models
 Classical models for establishing baseline.
@@ -165,7 +173,7 @@ Uses a weighted average of all past observations where the weights decrease expo
 |[HoltWinters](https://nixtla.github.io/statsforecast/models.html#holtwinters)|✅|✅|✅|✅|✅|
 
 
-### Sparse or Inttermitent
+### Sparse or Intermittent 
 Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
@@ -231,6 +239,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jvdd"><img src="https://avatars.githubusercontent.com/u/18898740?v=4?s=100" width="100px;" alt="Jeroen Van Der Donckt"/><br /><sub><b>Jeroen Van Der Donckt</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=jvdd" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Roymprog"><img src="https://avatars.githubusercontent.com/u/4035367?v=4?s=100" width="100px;" alt="Roymprog"/><br /><sub><b>Roymprog</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=Roymprog" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/nelsoncardenas"><img src="https://avatars.githubusercontent.com/u/18086414?v=4?s=100" width="100px;" alt="Nelson Cárdenas Bolaño"/><br /><sub><b>Nelson Cárdenas Bolaño</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=nelsoncardenas" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/kschmaus"><img src="https://avatars.githubusercontent.com/u/6586847?v=4?s=100" width="100px;" alt="Kyle Schmaus"/><br /><sub><b>Kyle Schmaus</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=kschmaus" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/akmal-soliev/"><img src="https://avatars.githubusercontent.com/u/24494206?v=4?s=100" width="100px;" alt="Akmal Soliev"/><br /><sub><b>Akmal Soliev</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=akmalsoliev" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

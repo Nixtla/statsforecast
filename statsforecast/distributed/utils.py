@@ -6,7 +6,7 @@ __all__ = ['forecast', 'cross_validation']
 # %% ../../nbs/distributed.utils.ipynb 4
 from typing import Optional
 
-from .core import ParallelBackend
+from ..core import ParallelBackend
 
 # %% ../../nbs/distributed.utils.ipynb 5
 def forecast(

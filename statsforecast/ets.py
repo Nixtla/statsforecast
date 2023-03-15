@@ -1075,8 +1075,8 @@ def ets_f(
     additive_only=None,
     blambda=None,
     biasadj=None,
-    lower=np.array([0.0001, 0.0001, 0.0001, 0.8]),
-    upper=np.array([0.9999, 0.9999, 0.9999, 0.98]),
+    lower=None,
+    upper=None,
     opt_crit="lik",
     nmse=3,
     bounds="both",
@@ -1100,6 +1100,10 @@ def ets_f(
         raise NotImplementedError("`blambda` not None")
     if nmse < 1 or nmse > 30:
         raise ValueError("nmse out of range")
+    if lower is None:
+        lower = np.array([0.0001, 0.0001, 0.0001, 0.8])
+    if upper is None:
+        upper = np.array([0.9999, 0.9999, 0.9999, 0.98])
     if any(upper < lower):
         raise ValueError("Lower limits must be less than upper limits")
     # check if y is contant
@@ -1314,7 +1318,6 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 # %% ../nbs/ets.ipynb 36
 # @njit(nogil=NOGIL, cache=CACHE)
 def _compute_sigmah(pf, h, sigma, cvals):
-
     theta = np.full(h, np.nan)
     theta[0] = pf[0] ** 2
 
@@ -1346,7 +1349,6 @@ def _class3models(
     gamma,
     phi,
 ):
-
     if damped == "N":
         damped_val = False
     else:
@@ -1615,9 +1617,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
                 yhat,
                 e,
             )
-            y_path[
-                k,
-            ] = yhat
+            y_path[k,] = yhat
 
         lower = np.quantile(y_path, 0.5 - np.array(level) / 200, axis=0)
         upper = np.quantile(y_path, 0.5 + np.array(level) / 200, axis=0)
