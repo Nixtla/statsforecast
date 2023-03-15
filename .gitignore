@@ -19,3 +19,4 @@ sidebar.yml
 .gitattributes
 .gitconfig
 nbs/.last_checked
+.venv

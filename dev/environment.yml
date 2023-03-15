@@ -18,3 +18,4 @@ dependencies:
     - nbdev
     - tqdm
     - plotly-resampler
+    - polars
