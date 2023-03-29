@@ -47,6 +47,7 @@ jobs:
       - name: Set up environment
         uses: mamba-org/provision-with-micromamba@main
         with:
+          environment-file: dev/environment.yml
           extra-specs: python=${{ matrix.python-version }}
           cache-env: true
 
@@ -61,7 +62,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
-  test-distributed:
+  test-integration:
      runs-on: ${{ matrix.os }}
      strategy:
        fail-fast: false
@@ -75,11 +76,12 @@ jobs:
        - name: Set up environment
          uses: mamba-org/provision-with-micromamba@main
          with:
+           environment-file: dev/environment.yml
            extra-specs: python=${{ matrix.python-version }}
            cache-env: true
 
        - name: Install library with ray and dask
-         run: pip install ".[ray,dask]" pytest
+         run: pip install ".[dev]" pytest
 
        - name: Windows redis
          if: ${{ matrix.os == 'windows-latest' }}
@@ -128,6 +130,7 @@ jobs:
       - name: Set up environment
         uses: mamba-org/provision-with-micromamba@main
         with:
+          environment-file: dev/environment.yml
           extra-specs: python=3.10
           cache-env: true
 

@@ -1075,8 +1075,8 @@ def ets_f(
     additive_only=None,
     blambda=None,
     biasadj=None,
-    lower=np.array([0.0001, 0.0001, 0.0001, 0.8]),
-    upper=np.array([0.9999, 0.9999, 0.9999, 0.98]),
+    lower=None,
+    upper=None,
     opt_crit="lik",
     nmse=3,
     bounds="both",
@@ -1100,6 +1100,10 @@ def ets_f(
         raise NotImplementedError("`blambda` not None")
     if nmse < 1 or nmse > 30:
         raise ValueError("nmse out of range")
+    if lower is None:
+        lower = np.array([0.0001, 0.0001, 0.0001, 0.8])
+    if upper is None:
+        upper = np.array([0.9999, 0.9999, 0.9999, 0.98])
     if any(upper < lower):
         raise ValueError("Lower limits must be less than upper limits")
     # check if y is contant
