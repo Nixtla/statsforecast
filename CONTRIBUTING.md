@@ -32,6 +32,18 @@ Bug fixes and features are added through pull requests (PRs).
 * SSH: `git clone git@github.com:Nixtla/statsforecast.git`
 * GitHub CLI: `gh repo clone Nixtla/statsforecast`
 
+#### Install git hooks
+Before doing any changes to the code, please install the git hooks that run automatic scripts during each commit and merge to strip the notebooks of superfluous metadata (and avoid merge conflicts).
+
+Installation instructions can be found here:
+[https://nbdev.fast.ai/getting_started.html#install](https://nbdev.fast.ai/getting_started.html#install)
+
+Once installed via pip or conda run the following command in CLI:
+
+```
+nbdev_install_hooks
+```
+
 #### Anaconda Setup
 
 ##### 1. Set up a conda environment
@@ -44,12 +56,6 @@ conda env create -f dev/environment.yml
 
 ##### 2. Install the library
 Once you have your environment setup, activate it using `conda activate statsforecast` and then install the library in editable mode using `pip install -e ".[dev]"`
-
-##### 3. Install git hooks
-Before doing any changes to the code, please install the git hooks that run automatic scripts during each commit and merge to strip the notebooks of superfluous metadata (and avoid merge conflicts).
-```
-nbdev_install_hooks
-```
 
 #### Docker setup
 
