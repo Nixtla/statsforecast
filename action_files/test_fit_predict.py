@@ -1,7 +1,7 @@
 import pandas as pd
 
-from neuralforecast.utils import AirPassengersPanel
 from statsforecast import StatsForecast
+from statsforecast.utils import AirPassengersDF as df
 from statsforecast.models import (
     AutoARIMA, AutoETS, AutoCES, AutoTheta,
     MSTL, GARCH, ARCH, HistoricAverage,
@@ -12,8 +12,14 @@ from statsforecast.models import (
     TSB
 )
 
+def get_data():
+    df2 = df.copy(deep=True)
+    df2['unique_id'] = 'AirPassengers2'
+    df2['y'] *= 2
+    return pd.concat([df, df2])
 
 def test_fit_predict_parallel():
+    AirPassengersPanel = get_data()
     models = [
         AutoARIMA(),
         AutoETS(),
@@ -43,6 +49,7 @@ def test_fit_predict_parallel():
 
 
 def test_fit_predict_sequential():
+    AirPassengersPanel = get_data()
     models = [
         AutoARIMA(),
         AutoETS(),
