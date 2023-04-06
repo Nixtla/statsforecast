@@ -16,7 +16,8 @@ dependencies:
   - tabulate
   - plotly
   - pip:
-    - nbdev
-    - tqdm
-    - plotly-resampler
     - fugue[dask,ray]
+    - nbdev
+    - plotly-resampler
+    - supersmoother
+    - tqdm

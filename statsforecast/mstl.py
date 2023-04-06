@@ -63,7 +63,7 @@ def mstl(
     deseas[np.isnan(origx)] = np.nan
     remainder = deseas - trend
     output = {"data": origx, "trend": trend}
-    if msts is not None:
+    if msts is not None and msts[0] > 1:
         if len(msts) == 1:
             output["seasonal"] = seas[0]
         else:
