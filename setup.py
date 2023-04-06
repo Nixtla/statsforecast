@@ -31,6 +31,7 @@ lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dev_requirements = (cfg.get('dev_requirements') or '').split()
 dask_requirements = cfg.get('dask_requirements', '').split()
 ray_requirements = cfg.get('ray_requirements', '').split()
+spark_requirements = cfg.get('spark_requirements', '').split()
 
 setuptools.setup(
     name = 'statsforecast',
@@ -44,7 +45,7 @@ setuptools.setup(
     packages = setuptools.find_packages(),
     include_package_data = True,
     install_requires = requirements,
-    extras_require={'dev': dev_requirements, 'dask': dask_requirements, 'ray': ray_requirements,},
+    extras_require={'dev': dev_requirements, 'dask': dask_requirements, 'ray': ray_requirements, 'spark': spark_requirements,},
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
     long_description = open('README.md', encoding='utf8').read(),

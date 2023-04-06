@@ -8,6 +8,7 @@ dependencies:
   - numba>=0.55.0
   - numpy>=1.21.6
   - pandas>=1.3.5
+  - pyspark
   - pip
   - prophet
   - scipy>=1.7.3
@@ -18,3 +19,4 @@ dependencies:
     - nbdev
     - tqdm
     - plotly-resampler
+    - fugue[dask,ray]
