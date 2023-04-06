@@ -1258,7 +1258,7 @@ def ets_f(
                     if ttype == "N" and dtype:
                         continue
                     if restrict:
-                        if etype == "A" and (ttype == "M" and stype == "M"):
+                        if etype == "A" and (ttype == "M" or stype == "M"):
                             continue
                         if etype == "M" and ttype == "M" and stype == "A":
                             continue
