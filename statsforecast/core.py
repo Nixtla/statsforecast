@@ -1142,7 +1142,7 @@ class _StatsForecast:
         else:
             unique_ids = unique_ids[:8]
 
-        if engine == "plotly" or engine == "plotly-resampler":
+        if engine in ["plotly", "plotly-resampler"]:
             n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
             fig = make_subplots(
                 rows=n_rows,
@@ -1309,11 +1309,6 @@ class _StatsForecast:
             fig.update_layout(template="plotly_white", font=dict(size=10))
             fig.update_annotations(font_size=10)
             fig.update_layout(autosize=True, height=150 * n_rows)
-            if engine == "plotly-resampler":
-                # Start the Dash app for the plotly-resampler plot
-                fig.show_dash(**show_dash_kwargs)
-            else:
-                fig.show()
 
         elif engine == "matplotlib":
             if len(unique_ids) == 1:
@@ -1406,9 +1401,10 @@ class _StatsForecast:
                 )
                 axes[idx, idy].grid()
             fig.subplots_adjust(hspace=0.5)
-            plt.show()
+            plt.close(fig)
         else:
             raise Exception(f"Unkwon plot engine {engine}")
+        return fig
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
