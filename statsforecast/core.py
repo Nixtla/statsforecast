@@ -1115,9 +1115,10 @@ class _StatsForecast:
         engine : str (default='plotly')
             Library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.
         resampler_kwargs : dict
-            Kwargs to be passed to plotly-resampler constructor. kwargs for
-            plotly-resampler `.show_dash` method can be
-            passed as sub-dictionary under the "show_dash" key.
+            Kwargs to be passed to plotly-resampler constructor.
+            For further custumization ("show_dash") call the method,
+            store the plotting object and add the extra arguments to
+            its `show_dash` method.
         """
         if level is not None and not isinstance(level, list):
             raise Exception(
@@ -1162,7 +1163,6 @@ class _StatsForecast:
                         "Please install it with `pip install plotly-resampler`"
                     )
                 resampler_kwargs = {} if resampler_kwargs is None else resampler_kwargs
-                show_dash_kwargs = resampler_kwargs.pop("show_dash", {})
                 fig = FigureResampler(fig, **resampler_kwargs)
             showed_legends: set = set()
 
