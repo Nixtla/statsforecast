@@ -4121,7 +4121,7 @@ class TSB(_TS):
         out = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         return out
 
-# %% ../nbs/models.ipynb 307
+# %% ../nbs/models.ipynb 308
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -4138,7 +4138,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/models.ipynb 308
+# %% ../nbs/models.ipynb 309
 class MSTL(_TS):
     """MSTL model.
 
@@ -4153,8 +4153,11 @@ class MSTL(_TS):
     ----------
     season_length : Union[int, List[int]
         Number of observations per unit of time. For multiple seasonalities use a list.
-    trend_forecaster : model
+    trend_forecaster : model, default=AutoETS(model='ZZN')
         StatsForecast model used to forecast the trend component.
+    stl_kwargs : dict
+        Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.STL.html#statsmodels.tsa.seasonal.STL).
+        The `period` and `seasonal` arguments are reserved.
     alias : str
         Custom name of the model.
     """
@@ -4163,6 +4166,7 @@ class MSTL(_TS):
         self,
         season_length: Union[int, List[int]],
         trend_forecaster=AutoETS(model="ZZN"),
+        stl_kwargs: Optional[Dict] = None,
         alias: str = "MSTL",
     ):
         # check ETS model doesnt have seasonality
@@ -4182,6 +4186,7 @@ class MSTL(_TS):
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
         self.alias = alias
+        self.stl_kwargs = dict() if stl_kwargs is None else stl_kwargs
 
     def __repr__(self):
         return self.alias
@@ -4207,9 +4212,13 @@ class MSTL(_TS):
         self :
             MSTL fitted model.
         """
-        self.model_ = mstl(x=y, period=self.season_length)
+        self.model_ = mstl(
+            x=y,
+            period=self.season_length,
+            stl_kwargs=self.stl_kwargs,
+        )
         x_sa = self.model_[["trend", "remainder"]].sum(axis=1).values
-        self.trend_forecaster = self.trend_forecaster.fit(y=x_sa, X=X)
+        self.trend_forecaster = self.trend_forecaster.new().fit(y=x_sa, X=X)
         return self
 
     def predict(
@@ -4299,7 +4308,11 @@ class MSTL(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        model_ = mstl(x=y, period=self.season_length)
+        model_ = mstl(
+            x=y,
+            period=self.season_length,
+            stl_kwargs=self.stl_kwargs,
+        )
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
         kwargs = {"y": x_sa, "h": h, "X": X, "X_future": X_future, "fitted": fitted}
         if "level" in signature(self.trend_forecaster.forecast).parameters:
@@ -4347,7 +4360,11 @@ class MSTL(_TS):
         """
         if not hasattr(self.trend_forecaster, "model_"):
             raise Exception("You have to use the `fit` method first")
-        model_ = mstl(x=y, period=self.season_length)
+        model_ = mstl(
+            x=y,
+            period=self.season_length,
+            stl_kwargs=self.stl_kwargs,
+        )
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
         kwargs = {"y": x_sa, "h": h, "X": X, "X_future": X_future, "fitted": fitted}
         if "level" in signature(self.trend_forecaster.forward).parameters:
@@ -4362,7 +4379,7 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/models.ipynb 321
+# %% ../nbs/models.ipynb 322
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -4392,7 +4409,7 @@ class Theta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 333
+# %% ../nbs/models.ipynb 334
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -4422,7 +4439,7 @@ class OptimizedTheta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 345
+# %% ../nbs/models.ipynb 346
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -4452,7 +4469,7 @@ class DynamicTheta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 357
+# %% ../nbs/models.ipynb 358
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -4482,7 +4499,7 @@ class DynamicOptimizedTheta(AutoTheta):
             alias=alias,
         )
 
-# %% ../nbs/models.ipynb 369
+# %% ../nbs/models.ipynb 370
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -4652,7 +4669,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/models.ipynb 381
+# %% ../nbs/models.ipynb 382
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 

@@ -27,27 +27,51 @@ Bug fixes and features are added through pull requests (PRs).
 
 ### Local setup for working on a PR
 
-#### 1. Clone the repository
+#### Clone the repository
 * HTTPS: `git clone https://github.com/Nixtla/statsforecast.git`
 * SSH: `git clone git@github.com:Nixtla/statsforecast.git`
 * GitHub CLI: `gh repo clone Nixtla/statsforecast`
 
-#### 2. Set up a conda environment
-The repo comes with an `environment.yml` file which contains the libraries needed to run all the tests. In order to set up the environment you must have `conda` installed, we recommend [miniconda](https://docs.conda.io/en/latest/miniconda.html).
-
-Once you have `conda` go to the top level directory of the repository and run:
-```
-conda env create -f environment.yml
-```
-
-#### 3. Install the library
-Once you have your environment setup, activate it using `conda activate statsforecast` and then install the library in editable mode using `pip install -e ".[dev]"`
-
-#### 4. Install git hooks
+#### Install git hooks
 Before doing any changes to the code, please install the git hooks that run automatic scripts during each commit and merge to strip the notebooks of superfluous metadata (and avoid merge conflicts).
+
+Installation instructions can be found here:
+[https://nbdev.fast.ai/getting_started.html#install](https://nbdev.fast.ai/getting_started.html#install)
+
+Once installed via pip or conda run the following command in CLI:
+
 ```
 nbdev_install_hooks
 ```
+
+#### Anaconda Setup
+
+##### 1. Set up a conda environment
+The repo comes with an `environment.yml` file in `dev` directory, which contains the libraries needed to run all the tests. In order to set up the environment you must have `conda` installed, we recommend [miniconda](https://docs.conda.io/en/latest/miniconda.html).
+
+Once you have `conda` go to the top level directory of the repository and run:
+```
+conda env create -f dev/environment.yml
+```
+
+##### 2. Install the library
+Once you have your environment setup, activate it using `conda activate statsforecast` and then install the library in editable mode using `pip install -e ".[dev]"`
+
+#### Docker setup
+
+A Docker alternative is provided in the `dev` directory.
+
+**Side Notes:** 
+* It is not recommended to install the `environment.yml` file via Docker as it requires additional RAM for setup.
+* `requirements.txt` was created as an alternative to environment.yml for installation purposes; it is not recommended to use it as setup file as in some cases installation of `prophet` library fails (tested fails: MacOS).
+
+In the project's root directory it is possible to find `Makefile` that serves as command center. It offers several commands:
+* `build`: Command to build Docker file [optional]
+* `run`: Run jupyter notebook using Docker image [build dependent]
+* `buildless`: Run jupyter notebook using Docker image without building the image
+* `address`: Show the ipaddress and port of Jupyter Notebook 
+* `stop`: Stops statsforecast container
+* `remove`: Deletes statsforecast Docker image
 
 ### Preview Changes
 You can preview changes in your local browser before pushing by using the `nbdev_preview`. This command also installs Quarto if not available. 

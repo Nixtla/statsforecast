@@ -8,12 +8,12 @@ from datasetsforecast.losses import mape, smape
 from src.data import get_data
 
 
-def evaluate(lib: str, dataset: str, group: str):
+def evaluate(lib: str, model: str, dataset: str, group: str):
     y_test, horizon, freq, seasonality = get_data('data/', dataset, group, False)
     y_test = y_test['y'].values.reshape(-1, horizon)
 
     forecast = pd.read_csv(f'data/{lib}-forecasts-{dataset}-{group}.csv')
-    y_hat = forecast[lib].values.reshape(-1, horizon)
+    y_hat = forecast[model].values.reshape(-1, horizon)
 
     evals = {}
     for metric in (mape, smape):
@@ -23,6 +23,7 @@ def evaluate(lib: str, dataset: str, group: str):
 
     evals = pd.DataFrame(evals, index=[f'{dataset}_{group}']).rename_axis('dataset').reset_index()
     times = pd.read_csv(f'data/{lib}-time-{dataset}-{group}.csv')
+    times['model'] = model
     evals = pd.concat([evals, times], axis=1)
 
     return evals
@@ -33,8 +34,9 @@ def main(test: bool = False):
     else:
         groups = ['Monthly', 'Yearly', 'Other', 'Quarterly']
     lib = ['StatisticalEnsemble']
+    models = ['StatisticalEnsemble', 'AutoARIMA', 'CES', 'AutoETS', 'DynamicOptimizedTheta']
     datasets = ['M3']
-    evaluation = [evaluate(lib, dataset, group) for lib, group in product(lib, groups) for dataset in datasets]
+    evaluation = [evaluate(lib, model, dataset, group) for lib, model, group in product(lib, models, groups) for dataset in datasets]
     evaluation = [eval_ for eval_ in evaluation if eval_ is not None]
     evaluation = pd.concat(evaluation)
     evaluation = evaluation[['dataset', 'model', 'mape', 'smape', 'time']]
@@ -45,14 +47,22 @@ def main(test: bool = False):
     evaluation = evaluation.droplevel(0, 1).reset_index()
     evaluation.to_csv('data/evaluation.csv')
     smape = evaluation.query('metric=="smape"').T
-    print(smape)
     time = evaluation.query('metric=="time"').T
-    print(time)
-    print(evaluation)
     if test:
-        np.testing.assert_almost_equal(
-            np.array([4.173]),
-            smape.loc[lib[0]].values
+        expected_results = {
+            'AutoARIMA': 4.87, 
+            'CES': 4.85, 
+            'AutoETS': 4.35, 
+            'DynamicOptimizedTheta': 4.54,
+            'StatisticalEnsemble': 4.173
+        }
+        expected_results = pd.Series(expected_results)
+        pd.testing.assert_series_equal(
+            smape.loc[expected_results.index].iloc[:, 0].astype(float),
+            expected_results,
+            check_names=False,
+            rtol=1e-2,
+            check_exact=False,
         )
         assert time.loc[lib[0]].item() < 2.
 

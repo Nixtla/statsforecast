@@ -121,7 +121,7 @@ class FugueBackend(ParallelBackend):
                 **self._transform_kwargs,
             )
         else:
-            schema = "unique_id:long,ds:long," + str(self._get_output_schema(models))
+            schema = "unique_id:str,ds:str," + str(self._get_output_schema(models))
             return _cotransform(
                 df,
                 X_df,
