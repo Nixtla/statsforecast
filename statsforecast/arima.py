@@ -2651,7 +2651,7 @@ class AutoARIMA:
             lo = forecast["lower"].add_prefix("lo_")
             hi = forecast["upper"].add_prefix("hi_")
 
-            return pd.concat([lo, mean, hi], 1)
+            return pd.concat([lo, mean, hi], axis=1)
 
         return mean
 

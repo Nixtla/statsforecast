@@ -19,3 +19,4 @@ dependencies:
     - tqdm
     - plotly-resampler
     - polars
+    - supersmoother
