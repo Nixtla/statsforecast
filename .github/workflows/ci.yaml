@@ -62,7 +62,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: nbdev_test --skip_file_re '(distributed|ets).*.ipynb' --pause 1.0
 
-      - name: Run integrattion tests
+      - name: Run integration tests
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           pip install ".[dev]" pytest
