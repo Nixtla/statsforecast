@@ -1248,8 +1248,12 @@ def myarima(
             fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
         if not math.isnan(fit["aic"]):
             fit["bic"] = fit["aic"] + npar * (math.log(nstar) - 2)
-            fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
-            fit["ic"] = fit[ic]
+            if nstar - npar - 1 != 0:
+                fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
+                fit["ic"] = fit[ic]
+            else:
+                fit["aicc"] = math.inf
+                fit["ic"] = fit[ic]
         else:
             fit["ic"] = fit["aic"] = fit["bic"] = fit["aicc"] = math.inf
         fit["sigma2"] = np.nansum(fit["residuals"] ** 2) / (nstar - npar + 1)
@@ -1849,8 +1853,8 @@ def auto_arima_f(
         m = 1
     else:
         m = round(m)
-    max_p = min(max_p, series_len // 3)
-    max_q = min(max_q, series_len // 3)
+    max_p = int(min(max_p, series_len // 3))
+    max_q = int(min(max_q, series_len // 3))
     max_P = min(max_P, math.floor(series_len / 3 / m))
     max_Q = min(max_Q, math.floor(series_len / 3 / m))
     if series_len <= 3:
@@ -2274,15 +2278,15 @@ def auto_arima_f(
                 p += 1
                 q += 1
                 continue
-        if (allowdrift or allowmean) and newmodel(
-            p, d, q, P, D, Q, not constant, results[:k]
-        ):
-            k, bestfit, improved = try_params(
-                p, d, q, P, D, Q, not constant, k, bestfit
-            )
-            if improved:
-                constant = not constant
-                continue
+        # if (allowdrift or allowmean) and newmodel(
+        #     p, d, q, P, D, Q, not constant, results[:k]
+        # ):
+        #     k, bestfit, improved = try_params(
+        #         p, d, q, P, D, Q, not constant, k, bestfit
+        #     )
+        #     if improved:
+        #         constant = not constant
+        #         continue
     if k >= nmodels:
         warnings.warn(
             f"Stepwise search was stopped early due to reaching the model number limit: nmodels={nmodels}"
@@ -2694,3 +2698,4 @@ class AutoARIMA:
 
     def summary(self):
         return self.model_.summary()
+
