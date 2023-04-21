@@ -547,6 +547,11 @@ class _StatsForecast:
             self._validate_df(df)
             if df.index.name != "unique_id":
                 df = df.set_index("unique_id")
+            if isinstance(df.index, pd.CategoricalIndex):
+                # If `unique_id` is categorical and some levels are not present
+                # in `df`, then `.count_values()` in `unique_id` does not
+                # produce expected output, so drop these unused levels.
+                df.index = df.index.remove_unused_categories()
             df = _parse_ds_type(df)
             self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(
                 df, sort_df
