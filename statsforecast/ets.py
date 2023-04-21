@@ -72,7 +72,11 @@ def etscalc(y, n, x, m, error, trend, season, alpha, beta, gamma, phi, e, amse, 
         if error == ADD:
             e[i] = y[i] - f[0]
         else:
-            e[i] = (y[i] - f[0]) / f[0]
+            if math.fabs(f[0]) < TOL:
+                f_0 = f[0] + TOL
+            else:
+                f_0 = f[0]
+            e[i] = (y[i] - f[0]) / f_0
         for j in range(nmse):
             if (i + j) < n:
                 denom[j] += 1.0
