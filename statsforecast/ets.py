@@ -235,10 +235,8 @@ def etssimulate(x, m, error, trend, season, alpha, beta, gamma, phi, h, y, e):
 # %% ../nbs/ets.ipynb 10
 @njit(nogil=NOGIL, cache=CACHE)
 def etsforecast(x, m, trend, season, phi, h, f):
-    s = np.zeros(24)
-    if m > 24 and season > NONE:
-        return
-    elif m < 1:
+    s = np.zeros(m)
+    if m < 1:
         m = 1
     # Copy initial state components
     l = x[0]
