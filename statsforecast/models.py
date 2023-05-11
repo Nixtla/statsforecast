@@ -108,9 +108,9 @@ class _TS:
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        n_windows = self.prediction_intervals.n_windows
-        step_size = self.prediction_intervals.h
-        h = self.prediction_intervals.h
+        n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
+        step_size = self.prediction_intervals.h  # type: ignore[attr-defined]
+        h = self.prediction_intervals.h  # type: ignore[attr-defined]
         test_size = h + step_size * (n_windows - 1)
         steps = list(range(-test_size, -h + 1, step_size))
         cs = np.full((n_windows, h), np.nan, dtype=np.float32)
@@ -122,7 +122,7 @@ class _TS:
             X_future = (
                 y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
             )
-            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_future)
+            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_future)  # type: ignore[attr-defined]
             cs[i_window] = np.abs(fcst_window["mean"] - y_test)
         return cs
 
