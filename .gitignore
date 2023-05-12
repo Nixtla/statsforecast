@@ -20,3 +20,4 @@ sidebar.yml
 .gitconfig
 nbs/.last_checked
 .venv
+.idea
