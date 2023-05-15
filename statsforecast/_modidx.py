@@ -601,4 +601,5 @@ d = { 'settings': { 'branch': 'main',
                                      'statsforecast.utils._quantiles': ('utils.html#_quantiles', 'statsforecast/utils.py'),
                                      'statsforecast.utils._repeat_val': ('utils.html#_repeat_val', 'statsforecast/utils.py'),
                                      'statsforecast.utils._repeat_val_seas': ('utils.html#_repeat_val_seas', 'statsforecast/utils.py'),
-                                     'statsforecast.utils._seasonal_naive': ('utils.html#_seasonal_naive', 'statsforecast/utils.py')}}}
+                                     'statsforecast.utils._seasonal_naive': ('utils.html#_seasonal_naive', 'statsforecast/utils.py'),
+                                     'statsforecast.utils.generate_series': ('utils.html#generate_series', 'statsforecast/utils.py')}}}
