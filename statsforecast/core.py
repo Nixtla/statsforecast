@@ -454,6 +454,7 @@ class DataFrameProcessing:
         self.non_value_columns: Union[tuple, list] = ["unique_id", "ds"]
         self.datetime_column_name: str = "ds"
         self.dt_dtype = np.dtype("datetime64")
+        self.__call__()
 
     def __call__(self):
         """Sequential execution of the code"""
@@ -509,6 +510,18 @@ class DataFrameProcessing:
         self.dates = self.dates[cum_sizes - 1]
         self.indptr = np.append(0, cum_sizes).astype(np.int32)
 
+        # Index that will be used by pandas, not polars
+        self.index = pd.MultiIndex.from_arrays(
+            [
+                self.np_df["unique_id"],
+                self.np_df["ds"],
+            ],
+            names=["unique_id", "ds"],
+        )
+
+    def grouped_array(self):
+        return GroupedArray(self.value_array, self.indptr)
+
     def _to_np_and_engine(self):
         """
         This function will be utilised to convert DataFrame to dictionary.
@@ -529,6 +542,8 @@ class DataFrameProcessing:
             self.engine_dataframe = pl.DataFrame
             if self.validate:
                 self._validate_dataframe(self.dataframe)
+            elif self.validate == False:
+                self._partial_val_df(self.dataframe)
 
             # datetime check
             dt_arr = self.dataframe["ds"].to_numpy()
@@ -553,12 +568,24 @@ class DataFrameProcessing:
         elif isinstance(self.dataframe, pd.DataFrame):
             self.engine_dataframe = pd.DataFrame
             # Ensure that all required columns are present in the DataFrame:
+            # Full validation
             if self.validate and self.dataframe.index.name == "unique_id":
                 reset_df = self.dataframe.reset_index()
                 self._validate_dataframe(reset_df)
                 del reset_df
-            elif self.dataframe.index.name != "unique_id":
+
+            elif self.validate and self.dataframe.index.name != "unique_id":
                 self._validate_dataframe(self.dataframe)
+                self.dataframe = self.dataframe.set_index("unique_id")
+
+            # Partial validation
+            elif self.validate == False and self.dataframe.index.name == "unique_id":
+                reset_df = self.dataframe.reset_index()
+                self._partial_val_df(reset_df)
+                del reset_df
+
+            elif self.validate == False and self.dataframe.index.name != "unique_id":
+                self._partial_val_df(self.dataframe)
                 self.dataframe = self.dataframe.set_index("unique_id")
 
             # Datetime check
@@ -574,6 +601,10 @@ class DataFrameProcessing:
             np_df = self.dataframe.to_records(index=True)
 
             return np_df
+
+        ####################
+        # Not Supported DF #
+        ####################
         else:
             raise ValueError(f"{type(self.dataframe)} is not supported")
 
@@ -601,6 +632,29 @@ class DataFrameProcessing:
                 )
             )
 
+    def _partial_val_df(self, dataframe: Union[pd.DataFrame, pl.DataFrame]):
+        """
+        Will ensure that all DataFrame columns match the required columns.
+
+        This code requires a pandas DataFrame with the following structure:
+
+        Columns:
+        - `unique_id` Union[str, int, categorical]: an identifier for the series
+        - `ds` Union[datestamp, int]: column should be either an integer indexing time or a
+            datestamp ideally like YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.
+
+        Raise:
+            KeyError: DataFrame is missing `unique_id` and/or `ds` columns.
+        """
+        required_columns = ["unique_id", "ds"]
+        matches = all(rc in dataframe.columns for rc in required_columns)
+        if not matches:
+            raise KeyError(
+                "The DataFrame doesn't contain {} columns".format(
+                    ", ".join(required_columns)
+                )
+            )
+
     def _check_datetime(self, arr: np.array) -> np.array:
         dt_check = pd.api.types.is_datetime64_any_dtype(arr)
         int_float_check = arr.dtype.kind in ["i", "f"]
@@ -617,43 +671,7 @@ class DataFrameProcessing:
                 raise Exception(msg) from e
         return arr
 
-# %% ../nbs/core.ipynb 23
-def _grouped_array_from_df(df, sort_df, validate: Optional[bool] = True):
-    df_processing = DataFrameProcessing(
-        dataframe=df, sort_dataframe=sort_df, validate=validate
-    )
-    df_processing()
-
-    indices = df_processing.indices
-    data = df_processing.value_array
-
-    indptr = df_processing.indptr
-
-    engine = df_processing.engine_dataframe
-    dates = df_processing.dates
-
-    og_dates = df_processing.np_df["ds"]
-    og_unique_id = df_processing.np_df["unique_id"]
-    processed_unique_id = df_processing.unique_id
-    index = pd.MultiIndex.from_arrays(
-        [
-            og_unique_id,
-            og_dates,
-        ],
-        names=["unique_id", "ds"],
-    )
-
-    return (
-        GroupedArray(data, indptr),
-        indices,
-        dates,
-        index,
-        og_dates,
-        processed_unique_id,
-        engine,
-    )
-
-# %% ../nbs/core.ipynb 26
+# %% ../nbs/core.ipynb 25
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -692,7 +710,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/core.ipynb 30
+# %% ../nbs/core.ipynb 29
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
         actual_n_jobs = cpu_count()
@@ -700,11 +718,12 @@ def _get_n_jobs(n_groups, n_jobs):
         actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 33
+# %% ../nbs/core.ipynb 32
 def _parse_ds_type(df):
-    if not pd.api.types.is_datetime64_any_dtype(df["ds"]) and not issubclass(
-        df["ds"].dtype.type, int
-    ):
+    dt_col = df["ds"]
+    dt_check = pd.api.types.is_datetime64_any_dtype(dt_col)
+    int_float_check = dt_col.dtype.kind in ["i", "f"]
+    if not dt_check and not int_float_check:
         df = df.copy()
         try:
             df["ds"] = pd.to_datetime(df["ds"])
@@ -717,7 +736,7 @@ def _parse_ds_type(df):
             raise Exception(msg) from e
     return df
 
-# %% ../nbs/core.ipynb 34
+# %% ../nbs/core.ipynb 33
 class _StatsForecast:
     def __init__(
         self,
@@ -774,15 +793,14 @@ class _StatsForecast:
 
     def _prepare_fit(self, df, sort_df):
         if df is not None:
-            (
-                self.ga,
-                self.uids,
-                self.last_dates,
-                self.ds,
-                self.og_dates,
-                self.og_unique_id,
-                self.engine,
-            ) = _grouped_array_from_df(df, sort_df)
+            df_process = DataFrameProcessing(df, sort_df)
+            self.ga = df_process.grouped_array()
+            self.uids = df_process.indices
+            self.last_dates = df_process.dates
+            self.ds = df_process.index
+            self.og_dates = df_process.np_df["ds"]
+            self.og_unique_id = df_process.np_df["unique_id"]
+            self.engine = df_process.engine_dataframe
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs)
             self.sort_df = sort_df
 
@@ -790,7 +808,7 @@ class _StatsForecast:
         for model in self.models:
             if hasattr(model, "prediction_intervals"):
                 setattr(model, "prediction_intervals", prediction_intervals)
-                
+
     def fit(
         self,
         df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
@@ -861,9 +879,9 @@ class _StatsForecast:
                 raise ValueError(
                     f"Expected X to have shape {expected_shape}, but got {X.shape}"
                 )
-            X, _, _, _, _, _, _ = _grouped_array_from_df(
-                X, sort_df=self.sort_df, validate=False
-            )
+            X = DataFrameProcessing(
+                X, sort_dataframe=self.sort_df, validate=False
+            ).grouped_array()
         if level is None:
             level = tuple()
         return X, level
@@ -1410,8 +1428,9 @@ class _StatsForecast:
             )
 
         if unique_ids is None:
-            df_process = DataFrameProcessing(dataframe=df, sort_dataframe=True)
-            df_process()
+            df_process = DataFrameProcessing(
+                dataframe=df, sort_dataframe=True, validate=False
+            )
             unique_ids = df_process.indices
             uid_dtype = unique_ids.dtype
 
@@ -1706,7 +1725,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 35
+# %% ../nbs/core.ipynb 34
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
@@ -1727,7 +1746,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/core.ipynb 36
+# %% ../nbs/core.ipynb 35
 class StatsForecast(_StatsForecast):
     """Train statistical models.
 
