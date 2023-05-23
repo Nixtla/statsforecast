@@ -12,6 +12,7 @@ from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 
+import fugue.api as fa
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import numpy as np
@@ -20,10 +21,10 @@ import polars as pl
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from tqdm.autonotebook import tqdm
-
 from triad import conditional_dispatcher
-import fugue.api as fa
 from fugue.execution.factory import try_get_context_execution_engine
+
+from .utils import ConformalIntervals
 
 # %% ../nbs/core.ipynb 6
 if __name__ == "__main__":
@@ -760,9 +761,6 @@ class _StatsForecast:
             Only works with the `forecast` and `cross_validation` methods.
         verbose : bool (default=True)
             Prints TQDM progress bar when `n_jobs=1`.
-        backend : Any, optional (default=None)
-            Backend used to distributed processing.
-            Only methods `forecast` add `cross_validation` are currently supported.
         """
 
         # TODO @fede: needed for residuals, think about it later
@@ -788,10 +786,16 @@ class _StatsForecast:
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs)
             self.sort_df = sort_df
 
+    def _set_prediction_intervals(self, prediction_intervals):
+        for model in self.models:
+            if hasattr(model, "prediction_intervals"):
+                setattr(model, "prediction_intervals", prediction_intervals)
+                
     def fit(
         self,
         df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         sort_df: bool = True,
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         """Fit statistical models.
 
@@ -806,12 +810,15 @@ class _StatsForecast:
             using `df`.
         sort_df : bool (default=True)
             If True, sort `df` by [`unique_id`,`ds`].
+        prediction_intervals : ConformalIntervals, optional (default=None)
+            Configuration to calibrate prediction intervals (Conformal Prediction).
 
         Returns
         -------
         self : StatsForecast
             Returns with stored `StatsForecast` fitted `models`.
         """
+        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
             self.fitted_ = self.ga.fit(models=self.models)
@@ -902,6 +909,7 @@ class _StatsForecast:
         X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         level: Optional[List[int]] = None,
         sort_df: bool = True,
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         """Fit and Predict with statistical models.
 
@@ -925,6 +933,8 @@ class _StatsForecast:
             Confidence levels between 0 and 100 for prediction intervals.
         sort_df : bool (default=True)
             If True, sort `df` by [`unique_id`,`ds`].
+        prediction_intervals : ConformalIntervals, optional (default=None)
+            Configuration to calibrate prediction intervals (Conformal Prediction).
 
         Returns
         -------
@@ -932,6 +942,7 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -954,6 +965,7 @@ class _StatsForecast:
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         """Memory Efficient predictions.
 
@@ -977,6 +989,8 @@ class _StatsForecast:
             Wether or not return insample predictions.
         sort_df : bool (default=True)
             If True, sort `df` by [`unique_id`,`ds`].
+        prediction_intervals : ConformalIntervals, optional (default=None)
+            Configuration to calibrate prediction intervals (Conformal Prediction).
 
         Returns
         -------
@@ -984,6 +998,7 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -1048,6 +1063,7 @@ class _StatsForecast:
         fitted: bool = False,
         refit: bool = True,
         sort_df: bool = True,
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         """Temporal Cross-Validation.
 
@@ -1082,6 +1098,8 @@ class _StatsForecast:
             Wether or not refit the model for each window.
         sort_df : bool (default=True)
             If True, sort `df` by `unique_id` and `ds`.
+        prediction_intervals : ConformalIntervals, optional (default=None)
+            Configuration to calibrate prediction intervals (Conformal Prediction).
 
         Returns
         -------
@@ -1099,6 +1117,7 @@ class _StatsForecast:
             raise Exception("you must define `n_windows` or `test_size`")
         else:
             raise Exception("you must define `n_windows` or `test_size` but not both")
+        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         _, level = self._parse_X_level(h=h, X=None, level=level)
         if self.n_jobs == 1:
@@ -1742,9 +1761,6 @@ class StatsForecast(_StatsForecast):
         Only works with the `forecast` and `cross_validation` methods.
     verbose : bool (default=True)
         Prints TQDM progress bar when `n_jobs=1`.
-    backend : Any, optional (default=None)
-        Backend used to distributed processing.
-        Only methods `forecast` add `cross_validation` are currently supported.
     """
 
     def forecast(
@@ -1755,10 +1771,17 @@ class StatsForecast(_StatsForecast):
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         if self._is_native(df=df):
             return super().forecast(
-                h=h, df=df, X_df=X_df, level=level, fitted=fitted, sort_df=sort_df
+                h=h,
+                df=df,
+                X_df=X_df,
+                level=level,
+                fitted=fitted,
+                sort_df=sort_df,
+                prediction_intervals=prediction_intervals,
             )
         assert df is not None
         with fa.engine_context(infer_by=[df]) as e:
@@ -1772,6 +1795,7 @@ class StatsForecast(_StatsForecast):
                 X_df=X_df,
                 level=level,
                 fitted=fitted,
+                prediction_intervals=prediction_intervals,
             )
 
     def cross_validation(
@@ -1786,6 +1810,7 @@ class StatsForecast(_StatsForecast):
         fitted: bool = False,
         refit: bool = True,
         sort_df: bool = True,
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         if self._is_native(df=df):
             return super().cross_validation(
@@ -1799,6 +1824,7 @@ class StatsForecast(_StatsForecast):
                 fitted=fitted,
                 refit=refit,
                 sort_df=sort_df,
+                prediction_intervals=prediction_intervals,
             )
         assert df is not None
         with fa.engine_context(infer_by=[df]) as e:
@@ -1816,6 +1842,7 @@ class StatsForecast(_StatsForecast):
                 level=level,
                 refit=refit,
                 fitted=fitted,
+                prediction_intervals=prediction_intervals,
             )
 
     def _is_native(self, df) -> bool:

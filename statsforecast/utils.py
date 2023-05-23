@@ -346,3 +346,24 @@ def _calculate_sigma(residuals, n):
     sigma = sigma / n
     sigma = np.sqrt(sigma)
     return sigma
+
+# %% ../nbs/utils.ipynb 18
+class ConformalIntervals:
+    """Class for storing conformal intervals metadata information."""
+
+    def __init__(
+        self,
+        n_windows: int = 2,
+        h: int = 1,
+        method: str = "conformal_distribution",
+    ):
+        if n_windows < 2:
+            raise ValueError(
+                "You need at least two windows to compute conformal intervals"
+            )
+        allowed_methods = ["conformal_distribution"]
+        if method not in allowed_methods:
+            raise ValueError(f"method must be one of {allowed_methods}")
+        self.n_windows = n_windows
+        self.h = h
+        self.method = method
