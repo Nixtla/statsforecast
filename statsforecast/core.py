@@ -655,7 +655,7 @@ class DataFrameProcessing:
                 )
             )
 
-    def _check_datetime(self, arr: np.array) -> np.array:
+    def _check_datetime(self, arr: np.ndarray) -> Union[pd.DatetimeIndex, np.ndarray]:
         dt_check = pd.api.types.is_datetime64_any_dtype(arr)
         int_float_check = arr.dtype.kind in ["i", "f"]
         if not dt_check and not int_float_check:
@@ -857,7 +857,8 @@ class _StatsForecast:
             dates = np.tile(last_date_f(self.last_dates[0]), len(self.ga))
         else:
             dates = np.hstack([last_date_f(last_date) for last_date in self.last_dates])
-        unique_id = np.repeat(self.uids, h).to_numpy()
+        u_id_ser: Union[pd.Series, pl.Series] = np.repeat(self.uids, h)
+        unique_id: np.ndarray = u_id_ser.to_numpy()
         if self.engine == pd.DataFrame:
             idx = pd.Index(unique_id, name="unique_id")
             df = self.engine({"ds": dates}, index=idx)
@@ -1428,11 +1429,11 @@ class _StatsForecast:
             )
 
         if unique_ids is None:
-            df_process = DataFrameProcessing(
+            df_pt = DataFrameProcessing(
                 dataframe=df, sort_dataframe=True, validate=False
             )
-            unique_ids = df_process.indices
-            uid_dtype = unique_ids.dtype
+            uids_arr: pd.Index = df_pt.indices
+            uid_dtype = uids_arr.dtype
 
             if df.index.name != "unique_id":
                 df["unique_id"] = df["unique_id"].astype(uid_dtype)
@@ -1446,14 +1447,17 @@ class _StatsForecast:
 
                 if forecasts_df.index.name == "unique_id":
                     forecasts_df.index = forecasts_df.index.astype(uid_dtype)
-                    unique_ids = np.intersect1d(unique_ids, forecasts_df.index.unique())
+                    unique_ids = np.intersect1d(uids_arr, forecasts_df.index.unique())
                 else:
                     forecasts_df["unique_id"] = forecasts_df["unique_id"].astype(
                         uid_dtype
                     )
                     unique_ids = np.intersect1d(
-                        unique_ids, forecasts_df["unique_id"].unique()
+                        uids_arr, forecasts_df["unique_id"].unique()
                     )
+            else:
+                unique_ids = uids_arr
+
         if plot_random:
             unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
         else:

@@ -108,6 +108,9 @@ def generate_series(
             df = df.with_columns(pl.col(col).cast(str).cast(pl.Categorical))
         return df
 
+    else:
+        raise ValueError(f"{engine} is not available.")
+
 # %% ../nbs/utils.ipynb 10
 AirPassengers = np.array(
     [
