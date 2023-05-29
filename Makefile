@@ -1,4 +1,4 @@
-# include dev/.help.mk 
+include dev/.help.mk 
 
 SHELL := /bin/bash 
 CURR_DIR := $(CURDIR)

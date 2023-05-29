@@ -19,5 +19,6 @@ dependencies:
     - fugue[dask,ray]
     - nbdev
     - plotly-resampler
+    - polars
     - supersmoother
     - tqdm
