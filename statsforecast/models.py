@@ -1094,7 +1094,10 @@ class AutoTheta(_TS):
         Controlling Theta Model. By default searchs the best model.
     alias : str
         Custom name of the model.
-
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
     def __init__(
@@ -1103,11 +1106,13 @@ class AutoTheta(_TS):
         decomposition_type: str = "multiplicative",
         model: Optional[str] = None,
         alias: str = "AutoTheta",
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
+        self.prediction_intervals = prediction_intervals
 
     def __repr__(self):
         return self.alias
@@ -1141,6 +1146,8 @@ class AutoTheta(_TS):
             decomposition_type=self.decomposition_type,
         )
         self.model_["fitted"] = y - self.model_["residuals"]
+        if self.prediction_intervals is not None:
+            self._cs = self._conformity_scores(y=y, X=X)
         return self
 
     def predict(
@@ -1166,6 +1173,8 @@ class AutoTheta(_TS):
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         fcst = forecast_theta(self.model_, h=h, level=level)
+        if self.prediction_intervals is not None and level is not None:
+            fcst = self._conformal_method(fcst=fcst, cs=self._cs, level=level)
         return fcst
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
@@ -1229,6 +1238,8 @@ class AutoTheta(_TS):
             decomposition_type=self.decomposition_type,
         )
         res = forecast_theta(mod, h, level=level)
+        if self.prediction_intervals is not None and level is not None:
+            res = self._conformal_method(fcst=res, cs=self._cs, level=level)
         if fitted:
             res["fitted"] = y - mod["residuals"]
         if level is not None and fitted:
@@ -1272,6 +1283,8 @@ class AutoTheta(_TS):
             raise Exception("You have to use the `fit` method first")
         mod = forward_theta(self.model_, y=y)
         res = forecast_theta(mod, h, level=level)
+        if self.prediction_intervals is not None and level is not None:
+            res = self._conformal_method(fcst=res, cs=self._cs, level=level)
         if fitted:
             res["fitted"] = y - mod["residuals"]
         if level is not None and fitted:
@@ -1280,7 +1293,7 @@ class AutoTheta(_TS):
             res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/models.ipynb 79
+# %% ../nbs/models.ipynb 82
 class ARIMA(_TS):
     """ARIMA model.
 
@@ -1582,7 +1595,7 @@ class ARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/models.ipynb 94
+# %% ../nbs/models.ipynb 97
 class AutoRegressive(ARIMA):
     """Simple Autoregressive model.
 
@@ -1657,7 +1670,7 @@ class AutoRegressive(ARIMA):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/models.ipynb 109
+# %% ../nbs/models.ipynb 112
 @njit
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
@@ -1743,7 +1756,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
         sums[i] = array[start : start + chunk_size].sum()
     return sums
 
-# %% ../nbs/models.ipynb 110
+# %% ../nbs/models.ipynb 113
 @njit
 def _ses(
     y: np.ndarray,  # time series
@@ -1758,7 +1771,7 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 111
+# %% ../nbs/models.ipynb 114
 class SimpleExponentialSmoothing(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -1889,7 +1902,7 @@ class SimpleExponentialSmoothing(_TS):
         out = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         return out
 
-# %% ../nbs/models.ipynb 121
+# %% ../nbs/models.ipynb 124
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1902,7 +1915,7 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 122
+# %% ../nbs/models.ipynb 125
 class SimpleExponentialSmoothingOptimized(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -2029,7 +2042,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         out = _ses_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 132
+# %% ../nbs/models.ipynb 135
 @njit
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
@@ -2054,7 +2067,7 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 133
+# %% ../nbs/models.ipynb 136
 class SeasonalExponentialSmoothing(_TS):
     """SeasonalExponentialSmoothing model.
 
@@ -2202,7 +2215,7 @@ class SeasonalExponentialSmoothing(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 146
+# %% ../nbs/models.ipynb 149
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2225,7 +2238,7 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 147
+# %% ../nbs/models.ipynb 150
 class SeasonalExponentialSmoothingOptimized(_TS):
     def __init__(self, season_length: int, alias: str = "SeasESOpt"):
         """SeasonalExponentialSmoothingOptimized model.
@@ -2369,7 +2382,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 158
+# %% ../nbs/models.ipynb 161
 class Holt(AutoETS):
     """Holt's method.
 
@@ -2401,7 +2414,7 @@ class Holt(AutoETS):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/models.ipynb 170
+# %% ../nbs/models.ipynb 173
 class HoltWinters(AutoETS):
     """Holt-Winters' method.
 
@@ -2436,7 +2449,7 @@ class HoltWinters(AutoETS):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/models.ipynb 183
+# %% ../nbs/models.ipynb 186
 @njit
 def _historic_average(
     y: np.ndarray,  # time series
@@ -2452,7 +2465,7 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 184
+# %% ../nbs/models.ipynb 187
 class HistoricAverage(_TS):
     def __init__(self, alias: str = "HistoricAverage"):
         """HistoricAverage model.
@@ -2609,7 +2622,7 @@ class HistoricAverage(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 195
+# %% ../nbs/models.ipynb 198
 class Naive(_TS):
     def __init__(self, alias: str = "Naive"):
         """Naive model.
@@ -2763,7 +2776,7 @@ class Naive(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 208
+# %% ../nbs/models.ipynb 211
 @njit
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -2783,7 +2796,7 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/models.ipynb 209
+# %% ../nbs/models.ipynb 212
 class RandomWalkWithDrift(_TS):
     def __init__(self, alias: str = "RWD"):
         """RandomWalkWithDrift model.
@@ -2940,7 +2953,7 @@ class RandomWalkWithDrift(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 222
+# %% ../nbs/models.ipynb 225
 class SeasonalNaive(_TS):
     def __init__(self, season_length: int, alias: str = "SeasonalNaive"):
         self.season_length = season_length
@@ -3108,7 +3121,7 @@ class SeasonalNaive(_TS):
 
         return res
 
-# %% ../nbs/models.ipynb 235
+# %% ../nbs/models.ipynb 238
 @njit
 def _window_average(
     y: np.ndarray,  # time series
@@ -3124,7 +3137,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 236
+# %% ../nbs/models.ipynb 239
 class WindowAverage(_TS):
     def __init__(self, window_size: int, alias: str = "WindowAverage"):
         """WindowAverage model.
@@ -3249,7 +3262,7 @@ class WindowAverage(_TS):
         out = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         return out
 
-# %% ../nbs/models.ipynb 246
+# %% ../nbs/models.ipynb 249
 @njit
 def _seasonal_window_average(
     y: np.ndarray,
@@ -3270,7 +3283,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/models.ipynb 247
+# %% ../nbs/models.ipynb 250
 class SeasonalWindowAverage(_TS):
     def __init__(self, season_length: int, window_size: int, alias: str = "SeasWA"):
         """SeasonalWindowAverage model.
@@ -3410,7 +3423,7 @@ class SeasonalWindowAverage(_TS):
         )
         return out
 
-# %% ../nbs/models.ipynb 258
+# %% ../nbs/models.ipynb 261
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3431,7 +3444,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 259
+# %% ../nbs/models.ipynb 262
 class ADIDA(_TS):
     def __init__(self, alias: str = "ADIDA"):
         """ADIDA model.
@@ -3552,7 +3565,7 @@ class ADIDA(_TS):
         out = _adida(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 270
+# %% ../nbs/models.ipynb 273
 @njit
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -3574,7 +3587,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 271
+# %% ../nbs/models.ipynb 274
 class CrostonClassic(_TS):
     def __init__(self, alias: str = "CrostonClassic"):
         """CrostonClassic model.
@@ -3694,7 +3707,7 @@ class CrostonClassic(_TS):
         out = _croston_classic(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 281
+# %% ../nbs/models.ipynb 284
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3715,7 +3728,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 282
+# %% ../nbs/models.ipynb 285
 class CrostonOptimized(_TS):
     def __init__(self, alias: str = "CrostonOptimized"):
         """CrostonOptimized model.
@@ -3836,7 +3849,7 @@ class CrostonOptimized(_TS):
         out = _croston_optimized(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 292
+# %% ../nbs/models.ipynb 295
 @njit
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -3849,7 +3862,7 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/models.ipynb 293
+# %% ../nbs/models.ipynb 296
 class CrostonSBA(_TS):
     def __init__(self, alias: str = "CrostonSBA"):
         """CrostonSBA model.
@@ -3970,7 +3983,7 @@ class CrostonSBA(_TS):
         out = _croston_sba(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 303
+# %% ../nbs/models.ipynb 306
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3994,7 +4007,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 304
+# %% ../nbs/models.ipynb 307
 class IMAPA(_TS):
     def __init__(self, alias: str = "IMAPA"):
         """IMAPA model.
@@ -4111,7 +4124,7 @@ class IMAPA(_TS):
         out = _imapa(y=y, h=h, fitted=fitted)
         return out
 
-# %% ../nbs/models.ipynb 314
+# %% ../nbs/models.ipynb 317
 @njit
 def _tsb(
     y: np.ndarray,  # time series
@@ -4132,7 +4145,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/models.ipynb 315
+# %% ../nbs/models.ipynb 318
 class TSB(_TS):
     def __init__(self, alpha_d: float, alpha_p: float, alias: str = "TSB"):
         """TSB model.
@@ -4267,7 +4280,7 @@ class TSB(_TS):
         out = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         return out
 
-# %% ../nbs/models.ipynb 326
+# %% ../nbs/models.ipynb 329
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -4284,7 +4297,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/models.ipynb 327
+# %% ../nbs/models.ipynb 330
 class MSTL(_TS):
     """MSTL model.
 
@@ -4525,7 +4538,7 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/models.ipynb 340
+# %% ../nbs/models.ipynb 343
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -4540,6 +4553,10 @@ class Theta(AutoTheta):
         Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
     alias : str
         Custom name of the model.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
     def __init__(
@@ -4547,15 +4564,17 @@ class Theta(AutoTheta):
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
         alias: str = "Theta",
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         super().__init__(
             season_length=season_length,
             model="STM",
             decomposition_type=decomposition_type,
             alias=alias,
+            prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/models.ipynb 352
+# %% ../nbs/models.ipynb 356
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -4570,6 +4589,10 @@ class OptimizedTheta(AutoTheta):
         Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
     alias : str
         Custom name of the model. Default `OptimizedTheta`.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
     def __init__(
@@ -4577,15 +4600,17 @@ class OptimizedTheta(AutoTheta):
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
         alias: str = "OptimizedTheta",
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         super().__init__(
             season_length=season_length,
             model="OTM",
             decomposition_type=decomposition_type,
             alias=alias,
+            prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/models.ipynb 364
+# %% ../nbs/models.ipynb 369
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -4600,6 +4625,10 @@ class DynamicTheta(AutoTheta):
         Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
     alias : str
         Custom name of the model.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
     def __init__(
@@ -4607,15 +4636,17 @@ class DynamicTheta(AutoTheta):
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
         alias: str = "DynamicTheta",
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         super().__init__(
             season_length=season_length,
             model="DSTM",
             decomposition_type=decomposition_type,
             alias=alias,
+            prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/models.ipynb 376
+# %% ../nbs/models.ipynb 382
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -4630,6 +4661,10 @@ class DynamicOptimizedTheta(AutoTheta):
         Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
     alias : str
         Custom name of the model.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
     def __init__(
@@ -4637,15 +4672,17 @@ class DynamicOptimizedTheta(AutoTheta):
         season_length: int = 1,
         decomposition_type: str = "multiplicative",
         alias: str = "DynamicOptimizedTheta",
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         super().__init__(
             season_length=season_length,
             model="DOTM",
             decomposition_type=decomposition_type,
             alias=alias,
+            prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/models.ipynb 388
+# %% ../nbs/models.ipynb 396
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -4815,7 +4852,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/models.ipynb 400
+# %% ../nbs/models.ipynb 408
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
