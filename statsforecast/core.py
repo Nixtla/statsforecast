@@ -11,6 +11,7 @@ import re
 from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
+import pkg_resources
 
 import fugue.api as fa
 import matplotlib.pyplot as plt
@@ -560,7 +561,28 @@ class DataFrameProcessing:
             if not is_monotonic_increasing and self.sort_dataframe:
                 self.dataframe = self.dataframe.sort(self.non_value_columns)
 
-            return self.dataframe.to_numpy(structured=True)
+            # resources: https://github.com/pola-rs/polars/blob/4fca1ae51864f74e0367d8bc91b4a2db00e54174/py-polars/polars/dataframe/frame.py#L1975
+            # resources: https://numpy.org/doc/stable/user/basics.rec.html
+            # resources: https://numpy.org/doc/stable/reference/generated/numpy.core.records.fromarrays.html
+            # NOTE: Structured array is not available in polars under the version 0.17.12
+            pl_version = pkg_resources.get_distribution("polars").version
+            min_pl_v = pkg_resources.parse_version("0.17.12")
+            if pkg_resources.parse_version(pl_version) >= min_pl_v:
+                return self.dataframe.to_numpy(structured=True)
+            else:
+                arrays = []
+                for column, column_dtype in self.dataframe.schema.items():
+                    ser = self.dataframe[column]
+                    arr = ser.to_numpy()
+                    arrays.append(
+                        arr.astype(str, copy=False)
+                        if str(column_dtype) == "Utf8" and not ser.has_validity()
+                        else arr
+                    )
+                arr_dtypes = list(
+                    zip(self.dataframe.columns, (a.dtype for a in arrays))
+                )
+                return np.rec.fromarrays(arrays, dtype=np.dtype(arr_dtypes))
 
         ####################
         # Pandas DataFrame #
