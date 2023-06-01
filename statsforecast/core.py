@@ -485,6 +485,8 @@ class DataFrameProcessing:
 
         # Processing unique_id
         self.unique_id = self.np_df["unique_id"]
+        if self.unique_id.dtype.kind == "O":
+            self.unique_id.astype(str)
 
         # If values are already int or float then they won't be converted
         if self.unique_id.dtype.kind not in ["i", "f"]:
@@ -881,6 +883,12 @@ class _StatsForecast:
             dates = np.hstack([last_date_f(last_date) for last_date in self.last_dates])
         u_id_ser: Union[pd.Series, pl.Series] = np.repeat(self.uids, h)
         unique_id: np.ndarray = u_id_ser.to_numpy()
+
+        # In older versions to_numpy converts string values into object,
+        # creating bytes error, this fixes it
+        if unique_id.dtype.kind == "O":
+            unique_id = unique_id.astype(str)
+
         if self.engine == pd.DataFrame:
             idx = pd.Index(unique_id, name="unique_id")
             df = self.engine({"ds": dates}, index=idx)
@@ -1456,6 +1464,7 @@ class _StatsForecast:
             )
             uids_arr: pd.Index = df_pt.indices
             uid_dtype = uids_arr.dtype
+            print(uid_dtype)
 
             if df.index.name != "unique_id":
                 df["unique_id"] = df["unique_id"].astype(uid_dtype)
