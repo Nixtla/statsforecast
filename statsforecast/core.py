@@ -1464,7 +1464,6 @@ class _StatsForecast:
             )
             uids_arr: pd.Index = df_pt.indices
             uid_dtype = uids_arr.dtype
-            print(uid_dtype)
 
             if df.index.name != "unique_id":
                 df["unique_id"] = df["unique_id"].astype(uid_dtype)
