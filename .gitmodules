@@ -1,0 +1,3 @@
+[submodule ".github/ISSUE_TEMPLATE"]
+	path = .github/ISSUE_TEMPLATE
+	url = https://github.com/Nixtla/nixtlaverse-issue-template
