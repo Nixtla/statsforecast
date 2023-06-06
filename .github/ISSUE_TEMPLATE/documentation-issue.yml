@@ -1,0 +1,26 @@
+name: Documentation
+title: "[<Library component: Models|Core|etc...>] "
+description: Report an issue with the library documentation
+labels: [documentation]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for helping us improve the library documentation!
+
+  - type: textarea
+    attributes:
+      label: Description
+      description: |
+        Tell us about the change you'd like to see. For example, "I'd like to
+        see more examples of how to use `cross_validation`."
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Link
+      description: |
+        If the problem is related to an existing section, please add a link to
+        the section. 
+    validations:
+      required: false
