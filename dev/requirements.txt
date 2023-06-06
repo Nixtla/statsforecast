@@ -13,4 +13,5 @@ plotly
 nbdev
 tqdm
 plotly-resampler
+polars
 supersmoother

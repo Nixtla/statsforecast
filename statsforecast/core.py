@@ -11,12 +11,14 @@ import re
 from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
+import pkg_resources
 
 import fugue.api as fa
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import numpy as np
 import pandas as pd
+import polars as pl
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from tqdm.autonotebook import tqdm
@@ -405,20 +407,295 @@ class GroupedArray:
         ]
 
 # %% ../nbs/core.ipynb 22
-def _grouped_array_from_df(df, sort_df):
-    df = df.set_index("ds", append=True)
-    if not df.index.is_monotonic_increasing and sort_df:
-        df = df.sort_index()
-    data = df.values.astype(np.float32)
-    indices_sizes = df.index.get_level_values("unique_id").value_counts(sort=False)
-    indices = indices_sizes.index
-    sizes = indices_sizes.values
-    cum_sizes = sizes.cumsum()
-    dates = df.index.get_level_values("ds")[cum_sizes - 1]
-    indptr = np.append(0, cum_sizes).astype(np.int32)
-    return GroupedArray(data, indptr), indices, dates, df.index
+class DataFrameProcessing:
+    """
+    A utility to process Pandas or Polars dataframes for time series forecasting.
 
-# %% ../nbs/core.ipynb 24
+    This class ensures the dataframe is properly structured, with required columns
+    ('unique_id', 'ds', 'y'), and the 'ds' column is of datetime type. It also
+    provides options for sorting the dataframe based on a unique identifier and a
+    timestamp, and separates the data into different arrays for easy access during
+    forecasting operations.
+
+    Attributes:
+    ----------
+    dataframe : pd.DataFrame or pl.DataFrame
+        A pandas or polars dataframe to be processed.
+    sort_dataframe : bool
+        A boolean indicating whether the dataframe should be sorted.
+
+    Methods:
+    -------
+    __call__():
+        Processes the dataframe by ensuring the columns are in the correct format,
+        sorts the dataframe if required, and separates the data into different
+        arrays for future operations.
+    _to_np_and_engine():
+        Converts the dataframe to a numpy structured array and identifies the
+        dataframe engine (pandas or polars).
+    _validate_dataframe(dataframe: Union[pd.DataFrame, pl.DataFrame]):
+        Checks if the required columns ('unique_id', 'ds', 'y') are present in the
+        dataframe.
+    _check_datetime(arr: np.array) -> np.array:
+        Validates that the 'ds' column is of datetime type, and if not, attempts to
+        convert it to datetime.
+    """
+
+    def __init__(
+        self,
+        dataframe: Union[pd.DataFrame, pl.DataFrame],
+        sort_dataframe: bool,
+        validate: Optional[bool] = True,
+    ):
+        self.dataframe = dataframe
+        self.sort_dataframe = sort_dataframe
+        self.validate = validate
+
+        # Columns declaration
+        self.non_value_columns: Union[tuple, list] = ["unique_id", "ds"]
+        self.datetime_column_name: str = "ds"
+        self.dt_dtype = np.dtype("datetime64")
+        self.__call__()
+
+    def __call__(self):
+        """Sequential execution of the code"""
+        # Declaring values that will be utilized
+        self.np_df = self._to_np_and_engine()
+        self.dataframe_columns = self.np_df.dtype.names
+
+        # Processing value columns
+        value_columns = [
+            column
+            for column in self.dataframe_columns
+            if column not in self.non_value_columns
+        ]
+        self.value_array = self.np_df[value_columns]
+        if self.value_array.ndim == 1 and len(value_columns) > 1:
+            self.value_array = np.stack(
+                [
+                    self.value_array[name].astype(float)
+                    for name in self.value_array.dtype.names
+                ],
+                axis=1,
+            )
+        if self.value_array.ndim == 1 and len(value_columns) == 1:
+            self.value_array = (
+                self.value_array[value_columns].astype(float).reshape(-1, 1)
+            )
+
+        # Processing unique_id
+        self.unique_id = self.np_df["unique_id"]
+        if self.unique_id.dtype.kind == "O":
+            self.unique_id.astype(str)
+
+        # If values are already int or float then they won't be converted
+        if self.unique_id.dtype.kind not in ["i", "f"]:
+            # If all values in the numpy array are numerical then proceed with conversion
+            if np.char.isnumeric(self.unique_id.astype(str)).all():
+                # If number are whole then they will be converted to `int`, else `float`
+                # This is pure aesthetics addition.
+                self.unique_id = self.unique_id.astype(float)
+                if np.isclose(self.unique_id, np.round(self.unique_id)).all():
+                    self.unique_id = self.unique_id.astype(int)
+        # NOTE: When sorting with Numpy, character values may be prioritized over numerical values if the data
+        # type is set to 'object'. For instance, the value '10' would come before '3' because it contains '1' and '0'
+        # at the beginning. One solution to this problem is to convert the data to 'float' if it is numerical.
+        unique_id_count = pd.Series(self.unique_id).value_counts(sort=False)
+        self.indices, sizes = unique_id_count.index, unique_id_count.values
+        cum_sizes = np.cumsum(sizes)
+
+        # Processing datestamp
+        self.dates = self.np_df[self.datetime_column_name]
+        if self.engine_dataframe == pd.DataFrame:
+            self.dates = self.dataframe.index.get_level_values(
+                self.datetime_column_name
+            )
+        self.dates = self.dates[cum_sizes - 1]
+        self.indptr = np.append(0, cum_sizes).astype(np.int32)
+
+        # Index that will be used by pandas, not polars
+        self.index = pd.MultiIndex.from_arrays(
+            [
+                self.np_df["unique_id"],
+                self.np_df["ds"],
+            ],
+            names=["unique_id", "ds"],
+        )
+
+    def grouped_array(self):
+        return GroupedArray(self.value_array, self.indptr)
+
+    def _to_np_and_engine(self):
+        """
+        This function will be utilised to convert DataFrame to dictionary.
+
+        Returns:
+            tuple[pd.DataFrame or pl.DataFrame, dict]: the engine that will be used to construct
+                the output DataFrame and dictionary of DataFrame values
+
+        Raises:
+            ValueError: If DataFrame engine is not supported and/or accounted for.
+        """
+
+        ####################
+        # Polars DataFrame #
+        ####################
+        if isinstance(self.dataframe, pl.DataFrame):
+            # Ensure that all required columns are present in the DataFrame:
+            self.engine_dataframe = pl.DataFrame
+            if self.validate:
+                self._validate_dataframe(self.dataframe)
+            elif self.validate == False:
+                self._partial_val_df(self.dataframe)
+
+            # datetime check
+            dt_arr = self.dataframe["ds"].to_numpy()
+            processed_dt_arr = self._check_datetime(dt_arr)
+            self.dataframe = self.dataframe.with_columns(
+                pl.from_numpy(processed_dt_arr, schema=["ds"])
+            )
+
+            sample_index_df = self.dataframe[self.non_value_columns]
+            sorted_index_df = sample_index_df.sort(self.non_value_columns)
+            is_monotonic_increasing = sample_index_df.frame_equal(sorted_index_df)
+
+            # Sorting will be performed if sort is set to true and values are unsorted
+            if not is_monotonic_increasing and self.sort_dataframe:
+                self.dataframe = self.dataframe.sort(self.non_value_columns)
+
+            # resources: https://github.com/pola-rs/polars/blob/4fca1ae51864f74e0367d8bc91b4a2db00e54174/py-polars/polars/dataframe/frame.py#L1975
+            # resources: https://numpy.org/doc/stable/user/basics.rec.html
+            # resources: https://numpy.org/doc/stable/reference/generated/numpy.core.records.fromarrays.html
+            # NOTE: Structured array is not available in polars under the version 0.17.12
+            pl_version = pkg_resources.get_distribution("polars").version
+            min_pl_v = pkg_resources.parse_version("0.17.12")
+            if pkg_resources.parse_version(pl_version) >= min_pl_v:
+                return self.dataframe.to_numpy(structured=True)
+            else:
+                arrays = []
+                for column, column_dtype in self.dataframe.schema.items():
+                    ser = self.dataframe[column]
+                    arr = ser.to_numpy()
+                    arrays.append(
+                        arr.astype(str, copy=False)
+                        if str(column_dtype) == "Utf8" and not ser.has_validity()
+                        else arr
+                    )
+                arr_dtypes = list(
+                    zip(self.dataframe.columns, (a.dtype for a in arrays))
+                )
+                return np.rec.fromarrays(arrays, dtype=np.dtype(arr_dtypes))
+
+        ####################
+        # Pandas DataFrame #
+        ####################
+        elif isinstance(self.dataframe, pd.DataFrame):
+            self.engine_dataframe = pd.DataFrame
+            # Ensure that all required columns are present in the DataFrame:
+            # Full validation
+            if self.validate and self.dataframe.index.name == "unique_id":
+                reset_df = self.dataframe.reset_index()
+                self._validate_dataframe(reset_df)
+                del reset_df
+
+            elif self.validate and self.dataframe.index.name != "unique_id":
+                self._validate_dataframe(self.dataframe)
+                self.dataframe = self.dataframe.set_index("unique_id")
+
+            # Partial validation
+            elif self.validate == False and self.dataframe.index.name == "unique_id":
+                reset_df = self.dataframe.reset_index()
+                self._partial_val_df(reset_df)
+                del reset_df
+
+            elif self.validate == False and self.dataframe.index.name != "unique_id":
+                self._partial_val_df(self.dataframe)
+                self.dataframe = self.dataframe.set_index("unique_id")
+
+            # Datetime check
+            dt_arr = self.dataframe["ds"].values
+            self.dataframe["ds"] = self._check_datetime(dt_arr)
+
+            self.dataframe = self.dataframe.set_index("ds", append=True)
+
+            # Sorting will be performed if sort is set to true and values are unsorted
+            if not self.dataframe.index.is_monotonic_increasing and self.sort_dataframe:
+                self.dataframe = self.dataframe.sort_values(self.non_value_columns)
+
+            np_df = self.dataframe.to_records(index=True)
+
+            return np_df
+
+        ####################
+        # Not Supported DF #
+        ####################
+        else:
+            raise ValueError(f"{type(self.dataframe)} is not supported")
+
+    def _validate_dataframe(self, dataframe: Union[pd.DataFrame, pl.DataFrame]):
+        """
+        Will ensure that all DataFrame columns match the required columns.
+
+        This code requires a pandas DataFrame with the following structure:
+
+        Columns:
+        - `unique_id` Union[str, int, categorical]: an identifier for the series
+        - `ds` Union[datestamp, int]: column should be either an integer indexing time or a
+            datestamp ideally like YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.
+        - `y` Union[float, int]: represents the measurement we wish to forecast.
+
+        Raise:
+            KeyError: DataFrame is missing `unique_id`, `ds`, `y` columns.
+        """
+        required_columns = ["unique_id", "ds", "y"]
+        matches = all(rc in dataframe.columns for rc in required_columns)
+        if not matches:
+            raise KeyError(
+                "The DataFrame doesn't contain {} columns".format(
+                    ", ".join(required_columns)
+                )
+            )
+
+    def _partial_val_df(self, dataframe: Union[pd.DataFrame, pl.DataFrame]):
+        """
+        Will ensure that all DataFrame columns match the required columns.
+
+        This code requires a pandas DataFrame with the following structure:
+
+        Columns:
+        - `unique_id` Union[str, int, categorical]: an identifier for the series
+        - `ds` Union[datestamp, int]: column should be either an integer indexing time or a
+            datestamp ideally like YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.
+
+        Raise:
+            KeyError: DataFrame is missing `unique_id` and/or `ds` columns.
+        """
+        required_columns = ["unique_id", "ds"]
+        matches = all(rc in dataframe.columns for rc in required_columns)
+        if not matches:
+            raise KeyError(
+                "The DataFrame doesn't contain {} columns".format(
+                    ", ".join(required_columns)
+                )
+            )
+
+    def _check_datetime(self, arr: np.ndarray) -> Union[pd.DatetimeIndex, np.ndarray]:
+        dt_check = pd.api.types.is_datetime64_any_dtype(arr)
+        int_float_check = arr.dtype.kind in ["i", "f"]
+        if not dt_check and not int_float_check:
+            self._ds_is_dt = True
+            try:
+                return pd.to_datetime(arr)
+            except Exception as e:
+                msg = (
+                    "Failed to parse `ds` column as datetime. "
+                    "Please use `pd.to_datetime` outside to fix the error. "
+                    f"{e}"
+                )
+                raise Exception(msg) from e
+        return arr
+
+# %% ../nbs/core.ipynb 25
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -457,7 +734,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/core.ipynb 28
+# %% ../nbs/core.ipynb 29
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
         actual_n_jobs = cpu_count()
@@ -465,11 +742,12 @@ def _get_n_jobs(n_groups, n_jobs):
         actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/core.ipynb 31
+# %% ../nbs/core.ipynb 32
 def _parse_ds_type(df):
-    if not pd.api.types.is_datetime64_any_dtype(df["ds"]) and not issubclass(
-        df["ds"].dtype.type, np.integer
-    ):
+    dt_col = df["ds"]
+    dt_check = pd.api.types.is_datetime64_any_dtype(dt_col)
+    int_float_check = dt_col.dtype.kind in ["i", "f"]
+    if not dt_check and not int_float_check:
         df = df.copy()
         try:
             df["ds"] = pd.to_datetime(df["ds"])
@@ -482,14 +760,14 @@ def _parse_ds_type(df):
             raise Exception(msg) from e
     return df
 
-# %% ../nbs/core.ipynb 32
+# %% ../nbs/core.ipynb 33
 class _StatsForecast:
     def __init__(
         self,
         models: List[Any],
         freq: str,
         n_jobs: int = 1,
-        df: Optional[pd.DataFrame] = None,
+        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         sort_df: bool = True,
         fallback_model: Optional[Any] = None,
         verbose: bool = False,
@@ -517,7 +795,7 @@ class _StatsForecast:
             See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
         n_jobs : int (default=1)
             Number of jobs used in the parallel processing, use -1 for all cores.
-        df : pandas.DataFrame, optional (default=None)
+        df : pandas.DataFrame or pl.DataFrame, optional (default=None)
             DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
         sort_df : bool (default=True)
             If True, sort `df` by [`unique_id`,`ds`].
@@ -533,27 +811,20 @@ class _StatsForecast:
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.fallback_model = fallback_model
-        self.verbose = verbose and self.n_jobs == 1
+        self.verbose = verbose
+        self.n_jobs == 1
         self._prepare_fit(df=df, sort_df=sort_df)
-
-    def _validate_df(self, df):
-        if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"{type(df)} is not allowed")
 
     def _prepare_fit(self, df, sort_df):
         if df is not None:
-            self._validate_df(df)
-            if df.index.name != "unique_id":
-                df = df.set_index("unique_id")
-            if isinstance(df.index, pd.CategoricalIndex):
-                # If `unique_id` is categorical and some levels are not present
-                # in `df`, then `.count_values()` in `unique_id` does not
-                # produce expected output, so drop these unused levels.
-                df.index = df.index.remove_unused_categories()
-            df = _parse_ds_type(df)
-            self.ga, self.uids, self.last_dates, self.ds = _grouped_array_from_df(
-                df, sort_df
-            )
+            df_process = DataFrameProcessing(df, sort_df)
+            self.ga = df_process.grouped_array()
+            self.uids = df_process.indices
+            self.last_dates = df_process.dates
+            self.ds = df_process.index
+            self.og_dates = df_process.np_df["ds"]
+            self.og_unique_id = df_process.np_df["unique_id"]
+            self.engine = df_process.engine_dataframe
             self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs)
             self.sort_df = sort_df
 
@@ -564,7 +835,7 @@ class _StatsForecast:
 
     def fit(
         self,
-        df: Optional[pd.DataFrame] = None,
+        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -575,7 +846,7 @@ class _StatsForecast:
 
         Parameters
         ----------
-        df : pandas.DataFrame, optional (default=None)
+        df : pandas.DataFrame or polars.DataFrame, optional (default=None)
             DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
             If None, the `StatsForecast` class should have been instantiated
             using `df`.
@@ -610,20 +881,38 @@ class _StatsForecast:
             dates = np.tile(last_date_f(self.last_dates[0]), len(self.ga))
         else:
             dates = np.hstack([last_date_f(last_date) for last_date in self.last_dates])
-        idx = pd.Index(np.repeat(self.uids, h), name="unique_id")
-        df = pd.DataFrame({"ds": dates}, index=idx)
+        u_id_ser: Union[pd.Series, pl.Series] = np.repeat(self.uids, h)
+        unique_id: np.ndarray = u_id_ser.to_numpy()
+
+        # In older versions to_numpy converts string values into object,
+        # creating bytes error, this fixes it
+        if unique_id.dtype.kind == "O":
+            unique_id = unique_id.astype(str)
+
+        if self.engine == pd.DataFrame:
+            idx = pd.Index(unique_id, name="unique_id")
+            df = self.engine({"ds": dates}, index=idx)
+        elif self.engine == pl.DataFrame:
+            df = self.engine({"unique_id": unique_id, "ds": dates})
         return df
 
     def _parse_X_level(self, h, X, level):
         if X is not None:
-            if X.index.name != "unique_id":
-                X = X.set_index("unique_id")
-            expected_shape = (h * len(self.ga), self.ga.data.shape[1])
+            expected_shape_rows = h * len(self.ga)
+            ga_shape = self.ga.data.shape[1]
+            # Polars doesn't have index, hence, extra "column"
+            expected_shape_cols = (
+                ga_shape if not isinstance(X, pl.DataFrame) else ga_shape + 1
+            )
+            expected_shape = (expected_shape_rows, expected_shape_cols)
+
             if X.shape != expected_shape:
                 raise ValueError(
                     f"Expected X to have shape {expected_shape}, but got {X.shape}"
                 )
-            X, _, _, _ = _grouped_array_from_df(X, sort_df=self.sort_df)
+            X = DataFrameProcessing(
+                X, sort_dataframe=self.sort_df, validate=False
+            ).grouped_array()
         if level is None:
             level = tuple()
         return X, level
@@ -631,7 +920,7 @@ class _StatsForecast:
     def predict(
         self,
         h: int,
-        X_df: Optional[pd.DataFrame] = None,
+        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         level: Optional[List[int]] = None,
     ):
         """Predict statistical models.
@@ -642,14 +931,14 @@ class _StatsForecast:
         ----------
         h : int
             Forecast horizon.
-        X_df : pandas.DataFrame, optional (default=None)
+        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
             DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
         level : List[float], optional (default=None)
             Confidence levels between 0 and 100 for prediction intervals.
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame
+        fcsts_df : pandas.DataFrame | polars.DataFrame
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
@@ -665,8 +954,8 @@ class _StatsForecast:
     def fit_predict(
         self,
         h: int,
-        df: Optional[pd.DataFrame] = None,
-        X_df: Optional[pd.DataFrame] = None,
+        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         level: Optional[List[int]] = None,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
@@ -683,11 +972,11 @@ class _StatsForecast:
         ----------
         h : int
             Forecast horizon.
-        df : pandas.DataFrame, optional (default=None)
+        df : pandas.DataFrame | polars.DataFrame, optional (default=None)
             DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous variables.
             If None, the `StatsForecast` class should have been instantiated
             using `df`.
-        X_df : pandas.DataFrame, optional (default=None)
+        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
             DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
         level : List[float], optional (default=None)
             Confidence levels between 0 and 100 for prediction intervals.
@@ -698,7 +987,7 @@ class _StatsForecast:
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame
+        fcsts_df : pandas.DataFrame | polars.DataFrame
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
@@ -720,8 +1009,8 @@ class _StatsForecast:
     def forecast(
         self,
         h: int,
-        df: Optional[pd.DataFrame] = None,
-        X_df: Optional[pd.DataFrame] = None,
+        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
@@ -737,11 +1026,11 @@ class _StatsForecast:
         ----------
         h : int
             Forecast horizon.
-        df : pandas.DataFrame, optional (default=None)
+        df : pandas.DataFrame | polars.DataFrame, optional (default=None)
             DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
             If None, the `StatsForecast` class should have been instantiated
             using `df`.
-        X_df : pandas.DataFrame, optional (default=None)
+        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
             DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
         level : List[float], optional (default=None)
             Confidence levels between 0 and 100 for prediction intervals.
@@ -754,7 +1043,7 @@ class _StatsForecast:
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame
+        fcsts_df : pandas.DataFrame | polars.DataFrame
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
@@ -795,22 +1084,26 @@ class _StatsForecast:
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame
+        fcsts_df : pandas.DataFrame | polars.DataFrame
             DataFrame with insample `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
         if not hasattr(self, "fcst_fitted_values_"):
             raise Exception("Please run `forecast` mehtod using `fitted=True`")
         cols = self.fcst_fitted_values_["cols"]
-        df = pd.DataFrame(
-            self.fcst_fitted_values_["values"], columns=cols, index=self.ds
-        ).reset_index(level=1)
+        if self.engine == pd.DataFrame:
+            df = self.engine(
+                self.fcst_fitted_values_["values"], columns=cols, index=self.ds
+            ).reset_index(level=1)
+        elif self.engine == pl.DataFrame:
+            df = self.engine({"unique_id": self.og_unique_id, "ds": self.og_dates})
+            df[cols] = self.fcst_fitted_values_["values"]
         return df
 
     def cross_validation(
         self,
         h: int,
-        df: Optional[pd.DataFrame] = None,
+        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         n_windows: int = 1,
         step_size: int = 1,
         test_size: Optional[int] = None,
@@ -834,7 +1127,7 @@ class _StatsForecast:
         ----------
         h : int
             Forecast horizon.
-        df : pandas.DataFrame, optional (default=None)
+        df : pandas.DataFrame | polars.DataFrame, optional (default=None)
             DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
             If None, the `StatsForecast` class should have been instantiated
             using `df`.
@@ -916,6 +1209,8 @@ class _StatsForecast:
         idx = pd.Index(np.repeat(self.uids, h * n_windows), name="unique_id")
         fcsts_df.index = idx
         fcsts_df[cols] = fcsts
+        if self.engine == pl.DataFrame:
+            fcsts_df = pl.from_pandas(fcsts_df, include_index=True)
         return fcsts_df
 
     def cross_validation_fitted_values(self):
@@ -932,7 +1227,7 @@ class _StatsForecast:
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame
+        fcsts_df : pandas.DataFrame | polars.DataFrame
             DataFrame with insample `models` columns for point predictions
             and probabilistic predictions for all fitted `models`.
         """
@@ -949,6 +1244,9 @@ class _StatsForecast:
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
         df = df.iloc[idxs].reset_index(level=1)
         df["cutoff"] = df["ds"].where(df["cutoff"]).bfill()
+
+        if self.engine == pl.DataFrame:
+            df = pl.from_pandas(df, include_index=True)
         return df
 
     def _get_pool(self):
@@ -1108,8 +1406,8 @@ class _StatsForecast:
 
     @staticmethod
     def plot(
-        df: pd.DataFrame,
-        forecasts_df: Optional[pd.DataFrame] = None,
+        df: Union[pd.DataFrame, pl.DataFrame],
+        forecasts_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         unique_ids: Union[Optional[List[str]], np.ndarray] = None,
         plot_random: bool = True,
         models: Optional[List[str]] = None,
@@ -1148,6 +1446,12 @@ class _StatsForecast:
             store the plotting object and add the extra arguments to
             its `show_dash` method.
         """
+
+        if isinstance(df, pl.DataFrame):
+            df = df.to_pandas()
+        if isinstance(forecasts_df, pl.DataFrame):
+            forecasts_df = forecasts_df.to_pandas()
+
         if level is not None and not isinstance(level, list):
             raise Exception(
                 "Please use a list for the `level` argument "
@@ -1155,17 +1459,35 @@ class _StatsForecast:
             )
 
         if unique_ids is None:
-            if df.index.name == "unique_id":
-                unique_ids = df.index.unique()
+            df_pt = DataFrameProcessing(
+                dataframe=df, sort_dataframe=True, validate=False
+            )
+            uids_arr: pd.Index = df_pt.indices
+            uid_dtype = uids_arr.dtype
+
+            if df.index.name != "unique_id":
+                df["unique_id"] = df["unique_id"].astype(uid_dtype)
+                df = df.set_index("unique_id")
             else:
-                unique_ids = df["unique_id"].unique()
+                df.index = df.index.astype(uid_dtype)
+
             if forecasts_df is not None:
+                if isinstance(forecasts_df, pl.DataFrame):
+                    forecasts_df = forecasts_df.to_pandas()
+
                 if forecasts_df.index.name == "unique_id":
-                    unique_ids = np.intersect1d(unique_ids, forecasts_df.index.unique())
+                    forecasts_df.index = forecasts_df.index.astype(uid_dtype)
+                    unique_ids = np.intersect1d(uids_arr, forecasts_df.index.unique())
                 else:
-                    unique_ids = np.intersect1d(
-                        unique_ids, forecasts_df["unique_id"].unique()
+                    forecasts_df["unique_id"] = forecasts_df["unique_id"].astype(
+                        uid_dtype
                     )
+                    unique_ids = np.intersect1d(
+                        uids_arr, forecasts_df["unique_id"].unique()
+                    )
+            else:
+                unique_ids = uids_arr
+
         if plot_random:
             unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
         else:
@@ -1437,7 +1759,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/core.ipynb 33
+# %% ../nbs/core.ipynb 34
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
@@ -1458,7 +1780,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/core.ipynb 34
+# %% ../nbs/core.ipynb 35
 class StatsForecast(_StatsForecast):
     """Train statistical models.
 
@@ -1483,7 +1805,7 @@ class StatsForecast(_StatsForecast):
         See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
     n_jobs : int (default=1)
         Number of jobs used in the parallel processing, use -1 for all cores.
-    df : pandas.DataFrame, optional (default=None)
+    df : pandas.DataFrame | pl.DataFrame, optional (default=None)
         DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
     sort_df : bool (default=True)
         If True, sort `df` by [`unique_id`,`ds`].
@@ -1498,7 +1820,7 @@ class StatsForecast(_StatsForecast):
         self,
         h: int,
         df: Any = None,
-        X_df: Optional[pd.DataFrame] = None,
+        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
@@ -1578,4 +1900,6 @@ class StatsForecast(_StatsForecast):
 
     def _is_native(self, df) -> bool:
         engine = try_get_context_execution_engine()
-        return engine is None and (df is None or isinstance(df, pd.DataFrame))
+        return engine is None and (
+            df is None or isinstance(df, pd.DataFrame) or isinstance(df, pl.DataFrame)
+        )

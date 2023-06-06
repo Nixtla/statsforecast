@@ -5,10 +5,11 @@ __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 # %% ../nbs/utils.ipynb 3
 import random
-from itertools import chain
+from typing import Union
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from scipy.stats import norm
 from numba import njit
 
@@ -20,12 +21,13 @@ def generate_series(
     max_length: int = 500,
     n_static_features: int = 0,
     equal_ends: bool = False,
+    engine: str = "pandas",
     seed: int = 0,
-) -> pd.DataFrame:
+) -> Union[pd.DataFrame, pl.DataFrame]:
     """Generate Synthetic Panel Series.
 
     Generates `n_series` of frequency `freq` of different lengths in the interval [`min_length`, `max_length`].
-    If `n_static_features > 0`, then each serie gets static features with random values.
+    If `n_static_features > 0`, then each series gets static features with random values.
     If `equal_ends == True` then all series end at the same date.
 
     **Parameters:**<br>
@@ -35,10 +37,20 @@ def generate_series(
     `n_static_features`: int, default=0, number of static exogenous variables for synthetic panel's series.<br>
     `equal_ends`: bool, if True, series finish in the same date stamp `ds`.<br>
     `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+    `engine`: str, engine to be used in DataFrame construction; NOTE: index does not exist in polars DataFrame
 
     **Returns:**<br>
-    `freq`: pandas.DataFrame, synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
+    `freq`: pandas.DataFrame | polars.DataFrame, synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
     """
+
+    available_engines = ["pandas", "polars"]
+    if engine.lower() not in available_engines:
+        raise ValueError(
+            """{} is not a correct engine; available options: {}""".format(
+                engine, ", ".join(available_engines)
+            )
+        )
+
     seasonalities = {"D": 7, "M": 12}
     season = seasonalities[freq]
 
@@ -46,33 +58,58 @@ def generate_series(
     series_lengths = rng.randint(min_length, max_length + 1, n_series)
     total_length = series_lengths.sum()
 
-    dates = pd.date_range("2000-01-01", periods=max_length, freq=freq).values
-    uids = [np.repeat(i, serie_length) for i, serie_length in enumerate(series_lengths)]
-    if equal_ends:
-        ds = [dates[-serie_length:] for serie_length in series_lengths]
-    else:
-        ds = [dates[:serie_length] for serie_length in series_lengths]
-    y = np.arange(total_length) % season + rng.rand(total_length) * 0.5
-    series = pd.DataFrame(
-        {
-            "unique_id": chain.from_iterable(uids),
-            "ds": chain.from_iterable(ds),
-            "y": y,
-        }
+    vals_dict: dict = {}
+
+    # Unique id generator
+    vals_dict["unique_id"] = np.concatenate(
+        [np.repeat(i, serie_length) for i, serie_length in enumerate(series_lengths)]
     )
+
+    vals_dict["y"] = np.arange(total_length) % season + rng.rand(total_length) * 0.5
+
+    # Generating X number of dates that will be concatenated over to create
+    # continues repetition for each unique_id, 'ds' column will be the final
+    # result.
+    dates = pd.date_range("2000-01-01", periods=max_length, freq=freq).values
+
+    if equal_ends:
+        vals_dict["ds"] = np.concatenate(
+            [dates[-serie_length:] for serie_length in series_lengths],
+        )
+
+    else:
+        vals_dict["ds"] = np.concatenate(
+            [dates[:serie_length] for serie_length in series_lengths],
+        )
+
     for i in range(n_static_features):
         random.seed(seed)
         static_values = [
             [random.randint(0, 100)] * serie_length for serie_length in series_lengths
         ]
-        series[f"static_{i}"] = np.hstack(static_values)
-        series[f"static_{i}"] = series[f"static_{i}"].astype("category")
+        vals_dict[f"static_{i}"] = np.hstack(static_values)
         if i == 0:
-            series["y"] = series["y"] * (1 + series[f"static_{i}"].cat.codes)
-    series["unique_id"] = series["unique_id"].astype("category")
-    series["unique_id"] = series["unique_id"].cat.as_ordered()
-    series = series.set_index("unique_id")
-    return series
+            vals_dict["y"] = vals_dict["y"] * (1 + vals_dict[f"static_{i}"])
+
+    cat_cols = [col for col in vals_dict.keys() if "static" in col]
+    cat_cols.append("unique_id")
+
+    if engine.lower() == "pandas":
+        df = pd.DataFrame(vals_dict)
+        df[cat_cols] = df[cat_cols].astype("category")
+        df["unique_id"] = df["unique_id"].cat.as_ordered()
+        df = df.set_index("unique_id")
+        return df
+
+    elif engine.lower() == "polars":
+        df = pl.DataFrame(vals_dict)
+        df = df.with_columns(pl.col("unique_id").sort())
+        for col in cat_cols:
+            df = df.with_columns(pl.col(col).cast(str).cast(pl.Categorical))
+        return df
+
+    else:
+        raise ValueError(f"{engine} is not available.")
 
 # %% ../nbs/utils.ipynb 10
 AirPassengers = np.array(
