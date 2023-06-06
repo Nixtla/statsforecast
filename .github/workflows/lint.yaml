@@ -19,7 +19,7 @@ jobs:
           python-version: 3.8
 
       - name: Install linters
-        run: pip install mypy flake8
+        run: pip install mypy types-setuptools flake8
 
       - name: mypy
         run: mypy statsforecast/
