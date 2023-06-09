@@ -166,10 +166,6 @@ p {
   margin-bottom: 1.25rem;
 }
 
-.navbar-dark {
-  
-}
-
 /* menu */
 .sidebar-menu-container > ul > li:first-child > .sidebar-item-container > a > span {
   font-weight: 600 !important;
