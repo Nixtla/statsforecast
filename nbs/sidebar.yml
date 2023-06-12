@@ -10,6 +10,7 @@ website:
         - examples/Installation.ipynb
         - examples/Getting_Started_short.ipynb
         - examples/Getting_Started_complete.ipynb
+        - examples/Getting_Started_complete_polars.ipynb
       - section: "Tutorials"
         contents:
         - examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
