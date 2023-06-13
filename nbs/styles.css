@@ -98,6 +98,10 @@ a > code {
   background-color: transparent !important;
 }
 
+a > code:hover {
+  color: var(--primary) !important;
+}
+
 .navbar {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
