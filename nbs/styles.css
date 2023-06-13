@@ -22,9 +22,6 @@
 
 .cell-output > .sourceCode {
   border: none;
-}
-
-.cell-output > .sourceCode {
   background: none;
   margin-top: 0;
 }
@@ -83,6 +80,7 @@ header {
 
 #quarto-sidebar {
   top: 62px !important;
+  z-index: 100;
 }
 
 .content a {
@@ -98,6 +96,10 @@ header {
 
 a > code {
   background-color: transparent !important;
+}
+
+a > code:hover {
+  color: var(--primary) !important;
 }
 
 .navbar {
@@ -148,9 +150,12 @@ a > code {
   width: 100%;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  color: rgb(17, 24,39);
+  margin-top: 3rem;
+}
 
 h1.title {
-  color: rgb(17, 24,39);
   font-weight: 800;
   font-size: 1.875rem;
   line-height: 2.25rem;
@@ -173,10 +178,18 @@ p {
   color: var(--secondary);
 }
 
+div.sidebar-item-container {
+  color: #323232;
+}
+
 .sidebar-divider.hi {
   color: rgb(0,0,0, 0.2);
   margin-top: 0.5rem;
   margin-bottom: 1rem;
+}
+
+#quarto-margin-sidebar {
+  top: 63px !important;
 }
 
 .menu-text {
@@ -245,6 +258,27 @@ code:not(.sourceCode) {
 div.sourceCode {
   background: none;
   border: 0;
+  overflow-x: hidden;
+}
+
+.cell-output {
+  margin-top: 1rem;
+}
+
+.cell-output pre {
+  border-radius: 0.375rem;
+}
+
+.cell-output > div {
+  overflow-x: scroll;
+}
+
+.code-copy-button {
+  margin: 0.5rem;
+}
+
+pre.sourceCode {
+  padding: 0;
 }
 
 code {
@@ -255,9 +289,12 @@ code {
   font-size: 0.875rem !important;
   font-weight: 600 !important;
   padding: 1rem !important;
+  overflow-x: scroll !important;
 }
 
-.cell-output div {
+
+
+.cell-output > div {
   border: 1px solid rgba(100, 116, 139, 0.2) !important;
   border-radius: 1rem;
   margin-bottom: 3rem;
@@ -286,6 +323,11 @@ thead tr:first-child th:first-child {
 
 thead tr:first-child th:last-child {
   border-radius: 0 1rem 0 0;
+}
+
+th {
+  padding: 0.5rem 1rem !important;
+  white-space: nowrap;
 }
 
 tbody {
@@ -324,4 +366,41 @@ td:first-child, td:last-child {
 
 .dropdown-menu li:hover {
   background-color: #e9ecef;
+}
+
+.js-plotly-plot .plotly {
+  border: none !important;
+}
+
+.svg-container {
+  border: none !important;
+}
+
+.svg-container > svg {
+  border-radius: 2rem;
+}
+
+.plotly-graph-div {
+  border-radius: 5rem;
+}
+
+@media (max-width: 991.98px) {
+  #quarto-sidebar-glass.show {
+    z-index: 10001;
+  }
+
+  #quarto-sidebar {
+    top: 0 !important;
+    z-index: 10002 !important;
+  }
+
+  #quarto-sidebar .sidebar-menu-container {
+    min-width: unset;
+    width: calc(100% - 32px);
+  }
+
+  #quarto-sidebar.show {
+    max-width: calc(100vw - 32px);
+    width: 320px !important;
+  }
 }
