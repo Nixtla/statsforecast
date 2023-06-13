@@ -6,42 +6,12 @@ website:
       - index.ipynb
       - text: "--"
       - section: "Getting Started"
-        contents:
-        - examples/Installation.ipynb
-        - examples/Getting_Started_short.ipynb
-        - examples/Getting_Started_complete.ipynb
+        contents: docs/getting-started/*
       - section: "Tutorials"
-        contents:
-        - examples/Getting_Started_with_Auto_Arima_and_ETS.ipynb
-        - examples/AnomalyDetection.ipynb
-        - section: "Forecast at scale"
-          contents:
-          - examples/scale/dask.qmd
-          - examples/scale/ray.qmd
-          - examples/scale/spark.qmd
-        - examples/CrossValidation.ipynb
-        - examples/MultipleSeasonalities.ipynb
-        - examples/ElectricityLoadForecasting.ipynb
-        - examples/ElectricityPeakForecasting.ipynb
-        - examples/IntermittentData.ipynb
-        - examples/UncertaintyIntervals.ipynb
-        - examples/GARCH_tutorial.ipynb 
-        - examples/Exogenous.ipynb
-        - examples/StatisticalNeuralMethods.ipynb
-        - adapters.prophet.ipynb
-        - examples/migrating_R.qmd
-      - examples/models_intro.qmd
+        contents: docs/tutorials/*
       - section: "API Reference"
-        contents:
-        - core.ipynb
-        - models.ipynb
-        - distributed.fugue.ipynb
-      - section: examples/experiments.qmd
-        contents:
-        - examples/aws/statsforecast.ipynb
-        - examples/AutoArima_vs_Prophet.ipynb
-        - examples/Prophet_spark_m5.ipynb
-        - examples/ETS_ray_m5.ipynb
-      - section: Community
-        contents:
-          - examples/Contributing.ipynb
+        contents: src/core/*
+      - section: "How to Guides"
+        contents: docs/how-to-guides/*
+      - section: "Contributing"
+        contents: docs/contribute/*
