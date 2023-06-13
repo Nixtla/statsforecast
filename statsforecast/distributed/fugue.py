@@ -227,5 +227,4 @@ class FugueBackend(ParallelBackend):
 
 @make_backend.candidate(lambda obj, *args, **kwargs: isinstance(obj, ExecutionEngine))
 def _make_fugue_backend(obj: ExecutionEngine, *args, **kwargs) -> ParallelBackend:
-    print("make fugue")
     return FugueBackend(obj, **kwargs)
