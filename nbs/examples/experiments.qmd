@@ -1,6 +1,0 @@
-# Experiments
-
-## 🚧 We are working on this site.
-This site is currently in development. If you are particularly interested in this section, please open a GitHub Issue, and we will prioritize it. 
-
-Meanwhile, please check this set of self-contained [experiments and benchmarks]("https://github.com/Nixtla/statsforecast/tree/main/experiments") with other popular libraries in Python and R.
