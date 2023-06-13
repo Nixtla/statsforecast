@@ -11,8 +11,6 @@ website:
         contents: docs/tutorials/*
       - section: "How to Guides"
         contents: docs/how-to-guides/*
-        - section: "Forecast at Scale"
-        - contents: docs/how-to-guides/distributed/*
       - section: "API Reference"
         contents: src/core/*
       - section: "Contributing"
