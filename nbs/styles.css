@@ -333,7 +333,7 @@ thead tr:first-child th:last-child {
 
 th, td {
   padding: 0.5rem 1rem !important;
-  white-space: nowrap;
+  white-space: nowrap !important;
 }
 
 td a, td a code {
