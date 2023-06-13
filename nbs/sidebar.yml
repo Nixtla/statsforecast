@@ -9,9 +9,9 @@ website:
         contents: docs/getting-started/*
       - section: "Tutorials"
         contents: docs/tutorials/*
-      - section: "API Reference"
-        contents: src/core/*
       - section: "How to Guides"
         contents: docs/how-to-guides/*
+      - section: "API Reference"
+        contents: src/core/*
       - section: "Contributing"
         contents: docs/contribute/*
