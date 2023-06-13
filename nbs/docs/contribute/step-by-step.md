@@ -55,6 +55,8 @@ Then, you can create a new environment using `conda create -n nixtla-env python=
 
 You can also use mamba for creating the environment (mamba is faster than Conda) using `mamba create -n nixtla-env python=3.10`. 
 
+You can replace `nixtla-env` for something more meaningful to you. Eg. `statsforecast-env` or `mlforecast-env`. You can always check the list of environments in your system using `conda env list`.
+
 Activate your new environment with `conda activate nixtla-env`. 
 
 ## Install required libraries for development
@@ -64,6 +66,8 @@ The `environment.yml` file contains all the dependencies required for the projec
 ```
 mamba env update -f environment.yml
 ```
+
+Sometimes (e.g. StatsForecast) the `enviorment.yml` is sometimes inside a folder called `dev`. In that case, you should run `mamba env update -f dev/environment.yml`.
 
 ## Start editable mode
 
