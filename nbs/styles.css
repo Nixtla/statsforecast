@@ -26,6 +26,10 @@
   margin-top: 0;
 }
 
+.cell-output > div {
+  display: inline-block;
+}
+
 div.description {
   padding-left: 2px;
   padding-top: 5px;
@@ -304,8 +308,10 @@ code {
 table, .table {
   border-radius: 1rem;
   font-size: 0.875rem;
-  padding: 1rem;
   margin-bottom: 0;
+  max-width: 100%;
+  overflow-x: scroll;
+  display: block;
 }
 
 thead {
@@ -325,9 +331,13 @@ thead tr:first-child th:last-child {
   border-radius: 0 1rem 0 0;
 }
 
-th {
+th, td {
   padding: 0.5rem 1rem !important;
-  white-space: nowrap;
+  white-space: nowrap !important;
+}
+
+td a, td a code {
+  white-space: nowrap !important;
 }
 
 tbody {
