@@ -1,18 +1,18 @@
 name: Documentation
-title: "[<StatsForecast component: Models|Core|etc...>] "
-description: Report an issue with the StatsForecast documentation
-labels: [docs]
+title: "[<Library component: Models|Core|etc...>] "
+description: Report an issue with the library documentation
+labels: [documentation]
 body:
   - type: markdown
     attributes:
-      value: Thank you for helping us improve the StatsForecast documentation!
+      value: Thank you for helping us improve the library documentation!
 
   - type: textarea
     attributes:
       label: Description
       description: |
         Tell us about the change you'd like to see. For example, "I'd like to
-        see more examples of how to use `StatsForecast.cross_validation`."
+        see more examples of how to use `cross_validation`."
     validations:
       required: true
 
@@ -21,6 +21,6 @@ body:
       label: Link
       description: |
         If the problem is related to an existing section, please add a link to
-        the section. For example, https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast. 
+        the section. 
     validations:
       required: false

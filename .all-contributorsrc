@@ -249,6 +249,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "kvnkho",
+      "name": "Kevin Kho",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32503212?v=4",
+      "profile": "https://www.linkedin.com/in/kvnkho/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -257,5 +266,6 @@
   "repoType": "github",
   "repoHost": "https://github.com",
   "skipCi": true,
-  "commitConvention": "angular"
+  "commitConvention": "angular",
+  "commitType": "docs"
 }
