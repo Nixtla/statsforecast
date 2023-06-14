@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting the problem!
+        Thank you for reporting the problem..
         Please make sure what you are reporting is a bug with reproducible steps. To ask questions
         or share ideas, please post on our [Slack community](https://join.slack.com/t/nixtlacommunity/shared_invite/zt-1h77esh5y-iL1m8N0F7qV1HmH~0KYeAQ) instead.
 
