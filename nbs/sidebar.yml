@@ -9,7 +9,7 @@ website:
         contents: docs/getting-started/*
       - section: "Tutorials"
         contents: docs/tutorials/*
-      - section: "How to Guides"
+      - section: "How-To Guides"
         contents: docs/how-to-guides/*
       - section: "API Reference"
         contents: src/core/*
