@@ -551,9 +551,10 @@ class DataFrameProcessing:
             # datetime check
             dt_arr = self.dataframe["ds"].to_numpy()
             processed_dt_arr = self._check_datetime(dt_arr)
-            self.dataframe = self.dataframe.with_columns(
-                pl.from_numpy(processed_dt_arr, schema=["ds"])
-            )
+            if (dt_arr != processed_dt_arr).all():
+                self.dataframe = self.dataframe.with_columns(
+                    pl.from_numpy(processed_dt_arr.to_numpy(), schema=["ds"])
+                )
 
             sample_index_df = self.dataframe[self.non_value_columns]
             sorted_index_df = sample_index_df.sort(self.non_value_columns)
