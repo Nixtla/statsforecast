@@ -551,7 +551,7 @@ class DataFrameProcessing:
             # datetime check
             dt_arr = self.dataframe["ds"].to_numpy()
             processed_dt_arr = self._check_datetime(dt_arr)
-            if (dt_arr != processed_dt_arr).all():
+            if type(dt_arr) != type(processed_dt_arr):
                 self.dataframe = self.dataframe.with_columns(
                     pl.from_numpy(processed_dt_arr.to_numpy(), schema=["ds"])
                 )
