@@ -6,7 +6,7 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'Theta', 'OptimizedTheta', 'DynamicTheta',
-           'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'NaNModel']
+           'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'ConstantModel', 'ZeroModel', 'NaNModel']
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
@@ -4890,17 +4890,20 @@ class ARCH(GARCH):
         return self.alias
 
 # %% ../nbs/src/core/models.ipynb 418
-class NaNModel(_TS):
-    def __init__(self, alias: str = "NaNModel"):
-        """NaN Model.
+class ConstantModel(_TS):
+    def __init__(self, constant: float, alias: str = "ConstantModel"):
+        """Constant Model.
 
-        Returns NaN values.
+        Returns Constant values.
 
         Parameters
         ----------
+        constant: float
+            Custom value to return as forecast.
         alias: str
             Custom name of the model.
         """
+        self.constant = constant
         self.alias = alias
 
     def __repr__(self):
@@ -4911,9 +4914,9 @@ class NaNModel(_TS):
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the NaN model.
+        """Fit the Constant model.
 
-        Fit an Naive to a time series (numpy.array) `y`.
+        Fit an Constant Model to a time series (numpy.array) `y`.
 
         Parameters
         ----------
@@ -4925,7 +4928,7 @@ class NaNModel(_TS):
         Returns
         -------
         self:
-            NaN fitted model.
+            Constant fitted model.
         """
         self.n_y = len(y)
         return self
@@ -4936,7 +4939,7 @@ class NaNModel(_TS):
         X: Optional[np.ndarray] = None,  # exogenous regressors
         level: Optional[Tuple[int]] = None,  # confidence level
     ):
-        """Predict with fitted NaNModel.
+        """Predict with fitted ConstantModel.
 
         Parameters
         ----------
@@ -4952,7 +4955,7 @@ class NaNModel(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = np.full(h, np.nan, dtype=np.float32)
+        mean = np.full(h, self.constant, dtype=np.float32)
         res = {"mean": mean}
 
         if level is not None:
@@ -4963,7 +4966,7 @@ class NaNModel(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
-        """Access fitted Naive insample predictions.
+        """Access fitted Constant Model insample predictions.
 
         Parameters
         ----------
@@ -4975,7 +4978,7 @@ class NaNModel(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        fitted = np.full(self.n_y, np.nan, dtype=np.float32)
+        fitted = np.full(self.n_y, self.constant, dtype=np.float32)
         res = {"fitted": fitted}
         if level is not None:
             for lv in sorted(level):
@@ -4993,7 +4996,7 @@ class NaNModel(_TS):
         level: Optional[Tuple[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient NaN Model predictions.
+        """Memory Efficient Constant Model predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -5019,11 +5022,11 @@ class NaNModel(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = np.full(h, np.nan, dtype=np.float32)
+        mean = np.full(h, self.constant, dtype=np.float32)
         res = {"mean": mean}
 
         if fitted:
-            fitted_vals = np.full(self.n_y, np.nan, dtype=np.float32)
+            fitted_vals = np.full(self.n_y, self.constant, dtype=np.float32)
             res["fitted"] = fitted_vals
 
         if level is not None:
@@ -5034,3 +5037,31 @@ class NaNModel(_TS):
                     res[f"fitted-lo-{lv}"] = fitted_vals
                     res[f"fitted-hi-{lv}"] = fitted_vals
         return res
+
+# %% ../nbs/src/core/models.ipynb 429
+class ZeroModel(ConstantModel):
+    def __init__(self, alias: str = "ZeroModel"):
+        """Returns Zero forecasts.
+
+        Returns Zero values.
+
+        Parameters
+        ----------
+        alias: str
+            Custom name of the model.
+        """
+        super().__init__(constant=0, alias=alias)
+
+# %% ../nbs/src/core/models.ipynb 440
+class NaNModel(ConstantModel):
+    def __init__(self, alias: str = "NaNModel"):
+        """NaN Model.
+
+        Returns NaN values.
+
+        Parameters
+        ----------
+        alias: str
+            Custom name of the model.
+        """
+        super().__init__(constant=np.nan, alias=alias)
