@@ -78,7 +78,7 @@ class GroupedArray:
 
     def _get_cols(self, models, attr, h, X, level=tuple()):
         n_models = len(models)
-        cuts = np.full(n_models + 1, fill_value=np.nan, dtype=np.int32)
+        cuts = np.full(n_models + 1, fill_value=0, dtype=np.int32)
         has_level_models = np.full(n_models, fill_value=False, dtype=bool)
         cuts[0] = 0
         for i_model, model in enumerate(models):
