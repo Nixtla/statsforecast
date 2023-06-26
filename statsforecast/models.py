@@ -6,7 +6,7 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'Theta', 'OptimizedTheta', 'DynamicTheta',
-           'DynamicOptimizedTheta', 'GARCH', 'ARCH']
+           'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'ConstantModel', 'ZeroModel', 'NaNModel']
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
@@ -4888,3 +4888,180 @@ class ARCH(GARCH):
 
     def __repr__(self):
         return self.alias
+
+# %% ../nbs/src/core/models.ipynb 418
+class ConstantModel(_TS):
+    def __init__(self, constant: float, alias: str = "ConstantModel"):
+        """Constant Model.
+
+        Returns Constant values.
+
+        Parameters
+        ----------
+        constant: float
+            Custom value to return as forecast.
+        alias: str
+            Custom name of the model.
+        """
+        self.constant = constant
+        self.alias = alias
+
+    def __repr__(self):
+        return self.alias
+
+    def fit(
+        self,
+        y: np.ndarray,
+        X: Optional[np.ndarray] = None,
+    ):
+        """Fit the Constant model.
+
+        Fit an Constant Model to a time series (numpy.array) `y`.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like
+            Optional exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self:
+            Constant fitted model.
+        """
+        self.n_y = len(y)
+        return self
+
+    def predict(
+        self,
+        h: int,  # forecasting horizon
+        X: Optional[np.ndarray] = None,  # exogenous regressors
+        level: Optional[Tuple[int]] = None,  # confidence level
+    ):
+        """Predict with fitted ConstantModel.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like
+            Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        mean = np.full(h, self.constant, dtype=np.float32)
+        res = {"mean": mean}
+
+        if level is not None:
+            for lv in sorted(level):
+                res[f"lo-{lv}"] = mean
+                res[f"hi-{lv}"] = mean
+
+        return res
+
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+        """Access fitted Constant Model insample predictions.
+
+        Parameters
+        ----------
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        fitted = np.full(self.n_y, self.constant, dtype=np.float32)
+        res = {"fitted": fitted}
+        if level is not None:
+            for lv in sorted(level):
+                res[f"fitted-lo-{lv}"] = fitted
+                res[f"fitted-hi-{lv}"] = fitted
+
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[Tuple[int]] = None,
+        fitted: bool = False,
+    ):
+        """Memory Efficient Constant Model predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (n,).
+        h: int
+            Forecast horizon.
+        X : array-like
+            Optional insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        mean = np.full(h, self.constant, dtype=np.float32)
+        res = {"mean": mean}
+
+        if fitted:
+            fitted_vals = np.full(self.n_y, self.constant, dtype=np.float32)
+            res["fitted"] = fitted_vals
+
+        if level is not None:
+            for lv in sorted(level):
+                res[f"lo-{lv}"] = mean
+                res[f"hi-{lv}"] = mean
+                if fitted:
+                    res[f"fitted-lo-{lv}"] = fitted_vals
+                    res[f"fitted-hi-{lv}"] = fitted_vals
+        return res
+
+# %% ../nbs/src/core/models.ipynb 429
+class ZeroModel(ConstantModel):
+    def __init__(self, alias: str = "ZeroModel"):
+        """Returns Zero forecasts.
+
+        Returns Zero values.
+
+        Parameters
+        ----------
+        alias: str
+            Custom name of the model.
+        """
+        super().__init__(constant=0, alias=alias)
+
+# %% ../nbs/src/core/models.ipynb 440
+class NaNModel(ConstantModel):
+    def __init__(self, alias: str = "NaNModel"):
+        """NaN Model.
+
+        Returns NaN values.
+
+        Parameters
+        ----------
+        alias: str
+            Custom name of the model.
+        """
+        super().__init__(constant=np.nan, alias=alias)
