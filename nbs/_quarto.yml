@@ -24,7 +24,7 @@ website:
     collapse-below: lg
     left:
       - text: "Get Started"
-        href: docs/getting-started/Getting_Started_short.ipynb
+        href: docs/getting-started/getting_started_short.html
       - text: "NixtlaVerse"
         menu:
           - text: "StatsForecast ⚡️"
