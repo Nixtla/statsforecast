@@ -4,6 +4,7 @@
 __all__ = ['FugueBackend']
 
 # %% ../../nbs/src/core/distributed.fugue.ipynb 4
+import inspect
 from typing import Any, Dict, List
 
 import numpy as np
@@ -49,16 +50,16 @@ class FugueBackend(ParallelBackend):
     [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
 
     This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
-    computation on Spark and Dask without any rewrites.
+    computation on Spark, Dask and Ray without any rewrites.
 
     **Parameters:**<br>
-    `engine`: fugue.ExecutionEngine, a selection between spark and dask.<br>
+    `engine`: fugue.ExecutionEngine, a selection between Spark, Dask, and Ray.<br>
     `conf`: fugue.Config, engine configuration.<br>
     `**transform_kwargs`: additional kwargs for Fugue's transform method.<br>
 
     **Notes:**<br>
-    A short introduction to Fugue, with examples on how to scale pandas code to scale pandas
-    based code to Spark or Dask is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
+    A short introduction to Fugue, with examples on how to scale pandas code to Spark, Dask or Ray
+     is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
     """
 
     def __init__(self, engine: Any = None, conf: Any = None, **transform_kwargs: Any):
@@ -85,7 +86,7 @@ class FugueBackend(ParallelBackend):
 
         **Parameters:**<br>
         `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
+        `freq`: str, frequency of the data, [pandas available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
         `models`: List[typing.Any], list of instantiated objects `StatsForecast.models`.<br>
         `fallback_model`: Any, Model to be used if a model fails.<br>
         `X_df`: pandas.DataFrame, with [unique_id, ds] columns and df’s future exogenous.
@@ -97,13 +98,14 @@ class FugueBackend(ParallelBackend):
 
         **References:**<br>
         For more information check the
-        [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/introduction.html#fugue-transform)
+        [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html)
         tutorial.<br>
         The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
         method documentation.<br>
-        Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/models.html).
+        Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
         """
-        schema = "*-y+" + str(self._get_output_schema(models))
+        level = kwargs.get("level", [])
+        schema = "*-y+" + str(self._get_output_schema(models, level))
         if X_df is None:
             return transform(
                 df,
@@ -121,7 +123,9 @@ class FugueBackend(ParallelBackend):
                 **self._transform_kwargs,
             )
         else:
-            schema = "unique_id:str,ds:str," + str(self._get_output_schema(models))
+            schema = "unique_id:str,ds:str," + str(
+                self._get_output_schema(models, level)
+            )
             return _cotransform(
                 df,
                 X_df,
@@ -173,7 +177,8 @@ class FugueBackend(ParallelBackend):
         method documentation.<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
         """
-        schema = "*-y+" + str(self._get_output_schema(models, mode="cv"))
+        level = kwargs.get("level", [])
+        schema = "*-y+" + str(self._get_output_schema(models, level, mode="cv"))
         return transform(
             df,
             self._cv,
@@ -217,9 +222,20 @@ class FugueBackend(ParallelBackend):
         )
         return model.cross_validation(**kwargs).reset_index()
 
-    def _get_output_schema(self, models, mode="forecast") -> Schema:
-        cols: List[Any]
-        cols = [(repr(model), np.float32) for model in models]
+    def _get_output_schema(self, models, level, mode="forecast") -> Schema:
+        cols: List[Any] = []
+        for model in models:
+            has_levels = (
+                "level" in inspect.signature(getattr(model, mode)).parameters
+                and len(level) > 0
+            )
+            if not has_levels:
+                cols.append((repr(model), np.float32))
+            else:
+                cols.extend(
+                    [(f"{repr(model)}-lo-{l}", np.float32) for l in reversed(level)]
+                )
+                cols.extend([(f"{repr(model)}-hi-{l}", np.float32) for l in level])
         if mode == "cv":
             cols = [("cutoff", "datetime"), ("y", np.float32)] + cols
         return Schema(cols)
