@@ -226,7 +226,7 @@ class FugueBackend(ParallelBackend):
         cols: List[Any] = []
         for model in models:
             has_levels = (
-                "level" in inspect.signature(getattr(model, mode)).parameters
+                "level" in inspect.signature(getattr(model, "forecast")).parameters
                 and len(level) > 0
             )
             if not has_levels:

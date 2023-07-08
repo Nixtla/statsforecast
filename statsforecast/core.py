@@ -898,6 +898,9 @@ class _StatsForecast:
 
     def _parse_X_level(self, h, X, level):
         if X is not None:
+            if isinstance(X, pd.DataFrame):
+                if X.index.name != "unique_id":
+                    X = X.set_index("unique_id")
             expected_shape_rows = h * len(self.ga)
             ga_shape = self.ga.data.shape[1]
             # Polars doesn't have index, hence, extra "column"
