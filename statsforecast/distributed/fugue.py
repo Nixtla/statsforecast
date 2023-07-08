@@ -222,16 +222,17 @@ class FugueBackend(ParallelBackend):
         )
         return model.cross_validation(**kwargs).reset_index()
 
-    def _get_output_schema(self, models, level, mode="forecast") -> Schema:
+    def _get_output_schema(self, models, level=None, mode="forecast") -> Schema:
         cols: List[Any] = []
+        if level is None:
+            level = []
         for model in models:
             has_levels = (
                 "level" in inspect.signature(getattr(model, "forecast")).parameters
                 and len(level) > 0
             )
-            if not has_levels:
-                cols.append((repr(model), np.float32))
-            else:
+            cols.append((repr(model), np.float32))
+            if has_levels:
                 cols.extend(
                     [(f"{repr(model)}-lo-{l}", np.float32) for l in reversed(level)]
                 )
