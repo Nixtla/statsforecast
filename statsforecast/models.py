@@ -6,7 +6,7 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'Theta', 'OptimizedTheta', 'DynamicTheta',
-           'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'TBATS']
+           'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'tbats_selection', 'TBATS']
 
 # %% ../nbs/models.ipynb 5
 import warnings
@@ -4897,7 +4897,47 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/models.ipynb 418
+# %% ../nbs/models.ipynb 417
+def tbats_selection(y, seasonal_periods, bc_lower_bound, bc_upper_bound):
+    combinations = []
+
+    for BC in [True, False]:  # Possible values for use_boxcox
+        for T in [
+            [True, True],
+            [True, False],
+            [False, False],
+        ]:  # Possible values for use_trend and use_damped_trend
+            for A in [True]:  # Possible values for use_arma_errors [True, False]
+                combinations.append((BC, T, A))
+
+    for k in range(len(combinations)):
+        use_boxcox = combinations[k][0]
+        use_trend = combinations[k][1][0]
+        use_damped_trend = combinations[k][1][1]
+        use_arma_errors = combinations[k][2]
+
+        mod = tbats_model(
+            y,
+            seasonal_periods,
+            use_boxcox,
+            bc_lower_bound,
+            bc_upper_bound,
+            use_trend,
+            use_damped_trend,
+            use_arma_errors,
+        )
+
+        if k == 0:
+            res = mod
+            res["combination"] = combinations[k]
+        else:
+            if mod["avg_e"] < res["avg_e"]:
+                res = mod
+                res["combination"] = combinations[k]
+
+    return res
+
+# %% ../nbs/models.ipynb 419
 class TBATS(_TS):
     """Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
 
@@ -4933,21 +4973,21 @@ class TBATS(_TS):
     def __init__(
         self,
         seasonal_periods: Union[int, List[int]],
-        use_boxcox: bool = True,
+        # use_boxcox: bool = True,
         bc_lower_bound: Optional[int] = 0,
         bc_uppper_bound: Optional[int] = 1,
-        use_trend: bool = True,
-        use_damped_trend: bool = True,
-        use_arma_errors: bool = True,
+        # use_trend: bool = True,
+        # use_damped_trend: bool = True,
+        # use_arma_errors: bool = True,
         alias: str = "TBATS",
     ):
         self.seasonal_periods = (seasonal_periods,)
-        self.use_boxcox = use_boxcox
+        # self.use_boxcox = use_boxcox
         self.bc_lower_bound = bc_lower_bound
         self.bc_upper_bound = bc_uppper_bound
-        self.use_trend = use_trend
-        self.use_damped_trend = use_damped_trend
-        self.use_arma_errors = use_arma_errors
+        # self.use_trend = use_trend
+        # self.use_damped_trend = use_damped_trend
+        # self.use_arma_errors = use_arma_errors
         self.alias = alias
 
     def __repr__(self):
@@ -5073,16 +5113,17 @@ class TBATS(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mod = tbats_model(
+        mod = tbats_selection(
             y,
             seasonal_periods=self.seasonal_periods,
-            use_boxcox=self.use_boxcox,
+            # use_boxcox=self.use_boxcox,
             bc_lower_bound=self.bc_lower_bound,
-            bc_upper_bound=self.bc_upper_bound,
-            use_trend=self.use_trend,
-            use_damped_trend=self.use_damped_trend,
-            use_arma_errors=self.use_arma_errors,
+            bc_upper_bound=self.bc_upper_bound
+            # use_trend=self.use_trend,
+            # use_damped_trend=self.use_damped_trend,
+            # use_arma_errors=self.use_arma_errors
         )
+        use_boxcox = mod["combination"][0]
         fcst = tbats_forecast(mod, h)
         res = {"mean": fcst["mean"]}
         if fitted:
@@ -5096,7 +5137,7 @@ class TBATS(_TS):
                 se = _calculate_sigma(mod["errors"], mod["errors"].shape[1])
                 fitted_pred_int = _add_fitted_pi(res, se, level)
                 res = {**res, **fitted_pred_int}
-        if self.use_boxcox:
+        if use_boxcox:
             res_trans = {
                 k: InverseBoxCox(v, self.seasonal_periods, mod["BoxCox_lambda"])
                 for k, v in res.items()
