@@ -12,8 +12,9 @@ categories:
   - title: 'Dependencies'
     label: 'dependencies'
   - title: 'Enhancement'
-    label: 'enhancement'
+    label: 'enhancement?'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+commitish: main
 template: |
   ## Changes
   $CHANGES
