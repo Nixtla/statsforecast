@@ -13,7 +13,7 @@ from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 import pkg_resources
 
-import fugue.api as fa
+from fugue.execution.factory import make_execution_engine
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import numpy as np
@@ -899,6 +899,9 @@ class _StatsForecast:
 
     def _parse_X_level(self, h, X, level):
         if X is not None:
+            if isinstance(X, pd.DataFrame):
+                if X.index.name != "unique_id":
+                    X = X.set_index("unique_id")
             expected_shape_rows = h * len(self.ga)
             ga_shape = self.ga.data.shape[1]
             # Polars doesn't have index, hence, extra "column"
@@ -1838,19 +1841,19 @@ class StatsForecast(_StatsForecast):
                 prediction_intervals=prediction_intervals,
             )
         assert df is not None
-        with fa.engine_context(infer_by=[df]) as e:
-            backend = make_backend(e)
-            return backend.forecast(
-                df=df,
-                models=self.models,
-                freq=self.freq,
-                fallback_model=self.fallback_model,
-                h=h,
-                X_df=X_df,
-                level=level,
-                fitted=fitted,
-                prediction_intervals=prediction_intervals,
-            )
+        engine = make_execution_engine(infer_by=[df])
+        backend = make_backend(engine)
+        return backend.forecast(
+            df=df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            X_df=X_df,
+            level=level,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+        )
 
     def cross_validation(
         self,
@@ -1881,23 +1884,23 @@ class StatsForecast(_StatsForecast):
                 prediction_intervals=prediction_intervals,
             )
         assert df is not None
-        with fa.engine_context(infer_by=[df]) as e:
-            backend = make_backend(e)
-            return backend.cross_validation(
-                df=df,
-                models=self.models,
-                freq=self.freq,
-                fallback_model=self.fallback_model,
-                h=h,
-                n_windows=n_windows,
-                step_size=step_size,
-                test_size=test_size,
-                input_size=input_size,
-                level=level,
-                refit=refit,
-                fitted=fitted,
-                prediction_intervals=prediction_intervals,
-            )
+        engine = make_execution_engine(infer_by=[df])
+        backend = make_backend(engine)
+        return backend.cross_validation(
+            df=df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            n_windows=n_windows,
+            step_size=step_size,
+            test_size=test_size,
+            input_size=input_size,
+            level=level,
+            refit=refit,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+        )
 
     def _is_native(self, df) -> bool:
         engine = try_get_context_execution_engine()
