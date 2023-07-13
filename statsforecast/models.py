@@ -2956,8 +2956,6 @@ class RandomWalkWithDrift(_TS):
 # %% ../nbs/src/core/models.ipynb 225
 class SeasonalNaive(_TS):
     def __init__(self, season_length: int, alias: str = "SeasonalNaive"):
-        self.season_length = season_length
-        self.alias = alias
         """Seasonal naive model.
 
         A method similar to the naive, but uses the last known observation of the same period (e.g. the same month of the previous year) in order to capture seasonal variations. 
@@ -2967,11 +2965,13 @@ class SeasonalNaive(_TS):
 
         Parameters
         ----------
-        season_length : int 
+        season_length : int
             Number of observations per unit of time. Ex: 24 Hourly data.
-        alias : str 
+        alias : str
             Custom name of the model.
         """
+        self.season_length = season_length
+        self.alias = alias
 
     def __repr__(self):
         return self.alias
