@@ -1,10 +1,10 @@
-# include dev/.help.mk 
+include dev/.help.mk 
 
 SHELL := /bin/bash 
 CURR_DIR := $(CURDIR)
 
-START_COMMAND := jupyter notebook --allow-root
-JUPYTER_LIST := jupyter notebook list
+START_COMMAND := jupyter-lab --allow-root
+JUPYTER_LIST := jupyter-lab list
 
 build: # Command to build Docker file [optional]
 	@docker build -t statsforecast -f dev/Dockerfile .

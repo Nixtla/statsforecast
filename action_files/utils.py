@@ -41,7 +41,19 @@ def pipeline(series, n_series, horizon):
         models=models,
         freq='D',
     )
-    forecast = fa.as_pandas(sf.forecast(df=series, h=horizon, level=[80, 90]))
+    forecast = fa.as_pandas(sf.forecast(df=series, h=horizon))
     print(forecast)
     assert forecast.shape == (n_series * horizon, len(models) + 2)
 
+def pipeline_with_level(series, n_series, horizon):
+    models = [
+		AutoARIMA(season_length=7), 
+	]
+    sf = StatsForecast(
+        models=models,
+        freq='D',
+    )
+    forecast = fa.as_pandas(sf.forecast(df=series, h=horizon, level=[80, 90]))
+    print(forecast.columns)
+    expected = ["unique_id","ds","AutoARIMA","AutoARIMA-lo-90","AutoARIMA-hi-90", "AutoARIMA-lo-80","AutoARIMA-hi-80"]
+    assert forecast.shape == (n_series * horizon, len(expected))

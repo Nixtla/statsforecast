@@ -1,7 +1,7 @@
 name: Bug report
-title: "[<StatsForecast component: Model|Core|etc...>] "
-description: Problems and issues with code of StatsForecast
-labels: [bug, triage]
+title: "[<Library component: Model|Core|etc...>] "
+description: Problems and issues with code of the library
+labels: [bug]
 body:
   - type: markdown
     attributes:
@@ -26,7 +26,7 @@ body:
   - type: textarea
     attributes:
       label: Versions / Dependencies
-      description: Please specify the versions of StatsForecast, Python, OS, and other libraries that are used.
+      description: Please specify the versions of the library, Python, OS, and other libraries that are used.
       placeholder: >
         Please specify the versions of dependencies.
     validations:
@@ -52,7 +52,7 @@ body:
     attributes:
       label: Issue Severity
       description: |
-        How does this issue affect your experience as a StatsForecast user?
+        How does this issue affect your experience as user?
       multiple: false
       options:
           - "Low: It annoys or frustrates me."
