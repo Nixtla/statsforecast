@@ -247,6 +247,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/andrewgross"><img src="https://avatars.githubusercontent.com/u/370118?v=4?s=100" width="100px;" alt="Andrew Gross"/><br /><sub><b>Andrew Gross</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=andrewgross" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/taniishkaaa"><img src="https://avatars.githubusercontent.com/u/109246904?v=4?s=100" width="100px;" alt="taniishkaaa"/><br /><sub><b>taniishkaaa</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=taniishkaaa" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
