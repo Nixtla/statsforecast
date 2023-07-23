@@ -2626,9 +2626,10 @@ class HistoricAverage(_TS):
 class Naive(_TS):
     def __init__(self, alias: str = "Naive"):
         """Naive model.
-
-        A random walk model, defined as $\hat{y}_{t+1} = y_t$ for all $t$
-
+        
+        All forecasts have the value of the last observation:  
+        $\hat{y}_{t+1} = y_t$ for all $t$
+         
         **References:**<br>
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
