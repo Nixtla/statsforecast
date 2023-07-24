@@ -7,6 +7,7 @@ docs/_site
 build
 dist
 .vscode
+.idea
 *.gif
 *.csv
 */data/*
