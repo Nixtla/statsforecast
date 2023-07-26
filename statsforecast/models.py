@@ -1987,6 +1987,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         alias: str = "SESOpt",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+        self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
@@ -2820,6 +2821,7 @@ class Naive(_TS):
             intervals.
         """
         self.alias = alias
+        self.prediction_intervals = prediction_intervals
 
     def __repr__(self):
         return self.alias
@@ -4076,8 +4078,7 @@ class CrostonClassic(_TS):
             res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         else:
             raise Exception(
-                "You have to instantiate the class with `prediction_intervals`"
-                "to calculate them"
+                "You have to instantiate the class with `prediction_intervals` to calculate them"
             )
         return res
 
@@ -4104,7 +4105,11 @@ def _croston_optimized(
 
 # %% ../nbs/src/core/models.ipynb 297
 class CrostonOptimized(_TS):
-    def __init__(self, alias: str = "CrostonOptimized"):
+    def __init__(
+        self,
+        alias: str = "CrostonOptimized",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
         """CrostonOptimized model.
 
         A method to forecast time series that exhibit intermittent demand.
@@ -4123,8 +4128,14 @@ class CrostonOptimized(_TS):
         ----------
         alias : str
             Custom name of the model.
+        prediction_intervals : Optional[ConformalIntervals]
+            Information to compute conformal prediction intervals.
+            By default, the model will compute the native prediction
+            intervals.
         """
         self.alias = alias
+        self.prediction_intervals = prediction_intervals
+        self.only_conformal_intervals = True
 
     def __repr__(self):
         return self.alias
@@ -4150,12 +4161,14 @@ class CrostonOptimized(_TS):
         """
         mod = _croston_optimized(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
+        self._store_cs(y=y, X=X)
         return self
 
     def predict(
         self,
         h: int,
         X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted CrostonOptimized.
 
@@ -4163,6 +4176,10 @@ class CrostonOptimized(_TS):
         ----------
         h : int
             Forecast horizon.
+        X : array-like
+            Optional insample exogenous of shape (t, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
 
         Returns
         -------
@@ -4171,6 +4188,13 @@ class CrostonOptimized(_TS):
         """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
     def predict_in_sample(self):
@@ -4194,6 +4218,7 @@ class CrostonOptimized(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient CrostonOptimized predictions.
@@ -4220,10 +4245,18 @@ class CrostonOptimized(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        out = _croston_optimized(y=y, h=h, fitted=fitted)
-        return out
+        res = _croston_optimized(y=y, h=h, fitted=fitted)
+        res = dict(res)
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
 
-# %% ../nbs/src/core/models.ipynb 307
+# %% ../nbs/src/core/models.ipynb 308
 @njit
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -4236,9 +4269,13 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/src/core/models.ipynb 308
+# %% ../nbs/src/core/models.ipynb 309
 class CrostonSBA(_TS):
-    def __init__(self, alias: str = "CrostonSBA"):
+    def __init__(
+        self,
+        alias: str = "CrostonSBA",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
         """CrostonSBA model.
 
         A method to forecast time series that exhibit intermittent demand.
@@ -4257,8 +4294,14 @@ class CrostonSBA(_TS):
         ----------
         alias : str
             Custom name of the model.
+        prediction_intervals : Optional[ConformalIntervals]
+            Information to compute conformal prediction intervals.
+            By default, the model will compute the native prediction
+            intervals.
         """
         self.alias = alias
+        self.prediction_intervals = prediction_intervals
+        self.only_conformal_intervals = True
 
     def __repr__(self):
         return self.alias
@@ -4284,12 +4327,14 @@ class CrostonSBA(_TS):
         """
         mod = _croston_sba(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
+        self._store_cs(y=y, X=X)
         return self
 
     def predict(
         self,
         h: int,
         X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted CrostonSBA.
 
@@ -4297,6 +4342,10 @@ class CrostonSBA(_TS):
         ----------
         h : int
             Forecast horizon.
+        X : array-like
+            Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
 
         Returns
         -------
@@ -4305,6 +4354,15 @@ class CrostonSBA(_TS):
         """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception(
+                "You have to instantiate the class with `prediction_intervals` to calculate them"
+            )
         return res
 
     def predict_in_sample(self):
@@ -4328,6 +4386,7 @@ class CrostonSBA(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient CrostonSBA predictions.
@@ -4346,6 +4405,8 @@ class CrostonSBA(_TS):
             Optional insample exogenous of shape (t, n_x).
         X_future : array-like
             Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
         fitted : bool
             Whether or not to return insample predictions.
 
@@ -4354,10 +4415,20 @@ class CrostonSBA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        out = _croston_sba(y=y, h=h, fitted=fitted)
-        return out
+        res = _croston_sba(y=y, h=h, fitted=fitted)
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        else:
+            raise Exception(
+                "You have to instantiate the class with `prediction_intervals`"
+                "to calculate them"
+            )
+        return res
 
-# %% ../nbs/src/core/models.ipynb 318
+# %% ../nbs/src/core/models.ipynb 320
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4381,9 +4452,13 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 319
+# %% ../nbs/src/core/models.ipynb 321
 class IMAPA(_TS):
-    def __init__(self, alias: str = "IMAPA"):
+    def __init__(
+        self,
+        alias: str = "IMAPA",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
         """IMAPA model.
 
         Intermittent Multiple Aggregation Prediction Algorithm: Similar to ADIDA, but instead of
@@ -4398,8 +4473,14 @@ class IMAPA(_TS):
         ----------
         alias : str
             Custom name of the model.
+        prediction_intervals : Optional[ConformalIntervals]
+            Information to compute conformal prediction intervals.
+            By default, the model will compute the native prediction
+            intervals.
         """
         self.alias = alias
+        self.prediction_intervals = prediction_intervals
+        self.only_conformal_intervals = True
 
     def __repr__(self):
         return self.alias
@@ -4425,12 +4506,14 @@ class IMAPA(_TS):
         """
         mod = _imapa(y=y, h=1, fitted=False)
         self.model_ = dict(mod)
+        self._store_cs(y=y, X=X)
         return self
 
     def predict(
         self,
         h: int,
         X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted IMAPA.
 
@@ -4443,9 +4526,23 @@ class IMAPA(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        X : array-like
+            Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
         """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception(
+                "You have to instantiate the class with `prediction_intervals`"
+                "to calculate them"
+            )
         return res
 
     def predict_in_sample(self):
@@ -4469,6 +4566,7 @@ class IMAPA(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient IMAPA predictions.
@@ -4487,6 +4585,8 @@ class IMAPA(_TS):
             Optional insample exogenous of shape (t, n_x).
         X_future : array-like
             Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
         fitted : bool
             Whether or not to return insample predictions.
 
@@ -4495,10 +4595,20 @@ class IMAPA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        out = _imapa(y=y, h=h, fitted=fitted)
-        return out
+        res = _imapa(y=y, h=h, fitted=fitted)
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        else:
+            raise Exception(
+                "You have to instantiate the class with `prediction_intervals`"
+                "to calculate them"
+            )
+        return res
 
-# %% ../nbs/src/core/models.ipynb 329
+# %% ../nbs/src/core/models.ipynb 332
 @njit
 def _tsb(
     y: np.ndarray,  # time series
@@ -4519,9 +4629,15 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 330
+# %% ../nbs/src/core/models.ipynb 333
 class TSB(_TS):
-    def __init__(self, alpha_d: float, alpha_p: float, alias: str = "TSB"):
+    def __init__(
+        self,
+        alpha_d: float,
+        alpha_p: float,
+        alias: str = "TSB",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
         """TSB model.
 
         Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
@@ -4552,10 +4668,16 @@ class TSB(_TS):
             Smoothing parameter for probability.
         alias : str
             Custom name of the model.
+        prediction_intervals : Optional[ConformalIntervals]
+            Information to compute conformal prediction intervals.
+            By default, the model will compute the native prediction
+            intervals.
         """
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
         self.alias = alias
+        self.prediction_intervals = prediction_intervals
+        self.only_conformal_intervals = True
 
     def __repr__(self):
         return self.alias
@@ -4581,12 +4703,14 @@ class TSB(_TS):
         """
         mod = _tsb(y=y, h=1, fitted=False, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         self.model_ = dict(mod)
+        self._store_cs(y=y, X=X)
         return self
 
     def predict(
         self,
         h: int,
         X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted TSB.
 
@@ -4594,6 +4718,8 @@ class TSB(_TS):
         ----------
         h : int
             Forecast horizon.
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
 
         Returns
         -------
@@ -4602,6 +4728,13 @@ class TSB(_TS):
         """
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
     def predict_in_sample(self):
@@ -4625,6 +4758,7 @@ class TSB(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient TSB predictions.
@@ -4651,10 +4785,18 @@ class TSB(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        out = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
-        return out
+        res = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
+        res = dict(res)
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
 
-# %% ../nbs/src/core/models.ipynb 341
+# %% ../nbs/src/core/models.ipynb 345
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -4671,7 +4813,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/src/core/models.ipynb 342
+# %% ../nbs/src/core/models.ipynb 346
 class MSTL(_TS):
     """MSTL model.
 
@@ -4693,6 +4835,10 @@ class MSTL(_TS):
         The `period` and `seasonal` arguments are reserved.
     alias : str
         Custom name of the model.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
     def __init__(
@@ -4701,6 +4847,7 @@ class MSTL(_TS):
         trend_forecaster=AutoETS(model="ZZN"),
         stl_kwargs: Optional[Dict] = None,
         alias: str = "MSTL",
+        prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
@@ -4719,6 +4866,8 @@ class MSTL(_TS):
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
         self.alias = alias
+        self.prediction_intervals = prediction_intervals
+        self.only_conformal_intervals = True
         self.stl_kwargs = dict() if stl_kwargs is None else stl_kwargs
 
     def __repr__(self):
@@ -4752,6 +4901,7 @@ class MSTL(_TS):
         )
         x_sa = self.model_[["trend", "remainder"]].sum(axis=1).values
         self.trend_forecaster = self.trend_forecaster.new().fit(y=x_sa, X=X)
+        self._store_cs(y=y, X=X)
         return self
 
     def predict(
@@ -4782,6 +4932,15 @@ class MSTL(_TS):
         res = self.trend_forecaster.predict(**kwargs)
         seas = _predict_mstl_seas(self.model_, h=h, season_length=self.season_length)
         res = {key: val + seas for key, val in res.items()}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception(
+                "You have to instantiate the class with `prediction_intervals` to calculate them"
+            )
         return res
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
@@ -4858,6 +5017,15 @@ class MSTL(_TS):
             key: val + (seas_insample if "fitted" in key else seas_h)
             for key, val in res.items()
         }
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None and level:
+            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        else:
+            raise Exception(
+                "You have to instantiate the class with `prediction_intervals` to calculate them"
+            )
         return res
 
     def forward(
@@ -4910,9 +5078,11 @@ class MSTL(_TS):
             key: val + (seas_insample if "fitted" in key else seas_h)
             for key, val in res.items()
         }
+        if self.prediction_intervals is not None:
+            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 355
+# %% ../nbs/src/core/models.ipynb 359
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -4948,7 +5118,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 368
+# %% ../nbs/src/core/models.ipynb 372
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -4984,7 +5154,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 381
+# %% ../nbs/src/core/models.ipynb 385
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -5020,7 +5190,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 394
+# %% ../nbs/src/core/models.ipynb 398
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -5056,7 +5226,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 408
+# %% ../nbs/src/core/models.ipynb 412
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5092,15 +5262,26 @@ class GARCH(_TS):
         Number of lagged versions of the volatility.
     alias : str
         Custom name of the model.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
-    def __init__(self, p: int = 1, q: int = 1, alias: str = "GARCH"):
+    def __init__(
+        self,
+        p: int = 1,
+        q: int = 1,
+        alias: str = "GARCH",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
         self.p = p
         self.q = q
         if q != 0:
             self.alias = alias + "(" + str(p) + "," + str(q) + ")"
         else:
             self.alias = alias + "(" + str(p) + ")"
+        self.prediction_intervals = prediction_intervals
 
     def __repr__(self):
         return self.alias
@@ -5120,9 +5301,9 @@ class GARCH(_TS):
         self :
             GARCH model.
         """
-
         self.model_ = garch_model(y, p=self.p, q=self.q)
         self.model_["actual_residuals"] = y - self.model_["fitted"]
+        self._store_cs(y, X)
         return self
 
     def predict(
@@ -5134,6 +5315,8 @@ class GARCH(_TS):
         ----------
         h : int
             Forecast horizon.
+        X : array-like
+            Optional exogenous of shape (h, n_x).
         level : List[float]
             Confidence levels (0-100) for prediction intervals.
 
@@ -5144,8 +5327,12 @@ class GARCH(_TS):
         """
         fcst = garch_forecast(self.model_, h)
         res = {"mean": fcst["mean"], "sigma2": fcst["sigma2"]}
-        if level is not None:
-            level = sorted(level)
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
             quantiles = _quantiles(level)
             lo = res["mean"].reshape(-1, 1) - quantiles * res["sigma2"].reshape(-1, 1)
             hi = res["mean"].reshape(-1, 1) + quantiles * res["sigma2"].reshape(-1, 1)
@@ -5214,19 +5401,26 @@ class GARCH(_TS):
         res = {key: fcst[key] for key in keys}
         if level is not None:
             level = sorted(level)
-            quantiles = _quantiles(level)
-            lo = res["mean"].reshape(-1, 1) - quantiles * res["sigma2"].reshape(-1, 1)
-            hi = res["mean"].reshape(-1, 1) + quantiles * res["sigma2"].reshape(-1, 1)
-            lo = lo[:, ::-1]
-            lo = {f"lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
-            hi = {f"hi-{l}": hi[:, i] for i, l in enumerate(level)}
-            res = {**res, **lo, **hi}
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                quantiles = _quantiles(level)
+                lo = res["mean"].reshape(-1, 1) - quantiles * res["sigma2"].reshape(
+                    -1, 1
+                )
+                hi = res["mean"].reshape(-1, 1) + quantiles * res["sigma2"].reshape(
+                    -1, 1
+                )
+                lo = lo[:, ::-1]
+                lo = {f"lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
+                hi = {f"hi-{l}": hi[:, i] for i, l in enumerate(level)}
+                res = {**res, **lo, **hi}
             if fitted:
                 se = _calculate_sigma(y - mod["fitted"], len(y) - 1)
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 420
+# %% ../nbs/src/core/models.ipynb 425
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5253,9 +5447,18 @@ class ARCH(GARCH):
         Number of lagged versions of the series.
     alias : str
         Custom name of the model.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
     """
 
-    def __init__(self, p: int = 1, alias: str = "ARCH"):
+    def __init__(
+        self,
+        p: int = 1,
+        alias: str = "ARCH",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
         self.p = p
         self.alias = alias
         super().__init__(p, q=0, alias=alias)
@@ -5263,7 +5466,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 430
+# %% ../nbs/src/core/models.ipynb 436
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -5412,7 +5615,7 @@ class ConstantModel(_TS):
                     res[f"fitted-hi-{lv}"] = fitted_vals
         return res
 
-# %% ../nbs/src/core/models.ipynb 441
+# %% ../nbs/src/core/models.ipynb 447
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -5426,7 +5629,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 452
+# %% ../nbs/src/core/models.ipynb 458
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.
