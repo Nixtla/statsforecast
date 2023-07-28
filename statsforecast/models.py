@@ -3650,7 +3650,7 @@ class SeasonalWindowAverage(_TS):
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
-            raise Exception("You must pass `prediction_intervals` to " "compute them.")
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
     def predict_in_sample(self):
@@ -3674,6 +3674,7 @@ class SeasonalWindowAverage(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient SeasonalWindowAverage predictions.
@@ -4075,7 +4076,7 @@ class CrostonClassic(_TS):
             return res
         level = sorted(level)
         if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            res = self._add_conformal_intervals(fcst=dict(res), y=y, X=X, level=level)
         else:
             raise Exception(
                 "You have to instantiate the class with `prediction_intervals` to calculate them"
@@ -4420,7 +4421,7 @@ class CrostonSBA(_TS):
             return res
         level = sorted(level)
         if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            res = self._add_conformal_intervals(fcst=dict(res), y=y, X=X, level=level)
         else:
             raise Exception(
                 "You have to instantiate the class with `prediction_intervals`"
@@ -4865,9 +4866,13 @@ class MSTL(_TS):
                 )
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
-        self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.alias = alias
+
+        if self.trend_forecaster.prediction_intervals is None and (
+            self.prediction_intervals is not None
+        ):
+            self.trend_forecaster.prediction_intervals = prediction_intervals
         self.stl_kwargs = dict() if stl_kwargs is None else stl_kwargs
 
     def __repr__(self):
@@ -4918,7 +4923,7 @@ class MSTL(_TS):
             Forecast horizon.
         X : array-like
             Optional exogenous of shape (h, n_x).
-        level : List[floar]
+        level : List[float]
             Confidence levels (0-100) for prediction intervals.
 
         Returns
@@ -4935,11 +4940,11 @@ class MSTL(_TS):
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None:
+        if self.trend_forecaster.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
             raise Exception(
-                "You have to instantiate the class with `prediction_intervals` to calculate them"
+                "You have to instantiate either the trend forecaster class or MSTL class with `prediction_intervals` to calculate them"
             )
         return res
 
@@ -5020,11 +5025,11 @@ class MSTL(_TS):
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None and level:
+        if self.trend_forecaster.prediction_intervals is not None:
             res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         else:
             raise Exception(
-                "You have to instantiate the class with `prediction_intervals` to calculate them"
+                "You have to instantiate either the trend forecaster class or MSTL class with `prediction_intervals` to calculate them"
             )
         return res
 
@@ -5078,11 +5083,13 @@ class MSTL(_TS):
             key: val + (seas_insample if "fitted" in key else seas_h)
             for key, val in res.items()
         }
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        if level is not None:
+            level = sorted(level)
+            if self.trend_forecaster.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 359
+# %% ../nbs/src/core/models.ipynb 361
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -5118,7 +5125,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 372
+# %% ../nbs/src/core/models.ipynb 374
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -5154,7 +5161,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 385
+# %% ../nbs/src/core/models.ipynb 387
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -5190,7 +5197,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 398
+# %% ../nbs/src/core/models.ipynb 400
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -5226,7 +5233,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 412
+# %% ../nbs/src/core/models.ipynb 414
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5420,7 +5427,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 425
+# %% ../nbs/src/core/models.ipynb 427
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5466,7 +5473,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 436
+# %% ../nbs/src/core/models.ipynb 438
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -5615,7 +5622,7 @@ class ConstantModel(_TS):
                     res[f"fitted-hi-{lv}"] = fitted_vals
         return res
 
-# %% ../nbs/src/core/models.ipynb 447
+# %% ../nbs/src/core/models.ipynb 449
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -5629,7 +5636,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 458
+# %% ../nbs/src/core/models.ipynb 460
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.
