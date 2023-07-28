@@ -818,7 +818,9 @@ class _StatsForecast:
         self._prepare_fit(df=df, sort_df=sort_df)
 
     def _validate_model_names(self):
-        names = [model.alias for model in self.models]
+        # Some test models don't have alias
+        names = [getattr(model, "alias", lambda: None) for model in self.models]
+        names = [x for x in names if x is not None]
         if len(names) != len(set(names)):
             raise ValueError(
                 "Model names must be unique. You can use `alias` to set a unique name for each model."
