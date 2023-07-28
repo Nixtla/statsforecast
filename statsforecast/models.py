@@ -402,7 +402,7 @@ class AutoARIMA(_TS):
             }
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted AutoArima insample predictions.
 
         Parameters
@@ -498,7 +498,7 @@ class AutoARIMA(_TS):
         if fitted:
             res["fitted"] = fitted_arima(mod)
         if level is not None:
-            level = sorted(level)
+            level: List = sorted(level)
             if self.prediction_intervals is not None:
                 res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
             else:
@@ -688,7 +688,7 @@ class AutoETS(_TS):
             }
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted Exponential Smoothing insample predictions.
 
         Parameters
@@ -957,7 +957,7 @@ class AutoCES(_TS):
             }
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted Exponential Smoothing insample predictions.
 
         Parameters
@@ -1169,7 +1169,7 @@ class AutoTheta(_TS):
         self,
         h: int,
         X: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted AutoTheta.
 
@@ -1192,7 +1192,7 @@ class AutoTheta(_TS):
             fcst = self._add_predict_conformal_intervals(fcst, level)
         return fcst
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted AutoTheta insample predictions.
 
         Parameters
@@ -1464,7 +1464,7 @@ class ARIMA(_TS):
             }
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted insample predictions.
 
         Parameters
@@ -2684,7 +2684,7 @@ class HistoricAverage(_TS):
         self,
         h: int,
         X: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted HistoricAverage.
 
@@ -2707,7 +2707,7 @@ class HistoricAverage(_TS):
 
         if level is None:
             return res
-        level = sorted(level)
+        level: List = sorted(level)
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
@@ -2718,7 +2718,7 @@ class HistoricAverage(_TS):
 
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted HistoricAverage insample predictions.
 
         Parameters
@@ -2744,7 +2744,7 @@ class HistoricAverage(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient HistoricAverage predictions.
@@ -2860,7 +2860,7 @@ class Naive(_TS):
         self,
         h: int,  # forecasting horizon
         X: Optional[np.ndarray] = None,  # exogenous regressors
-        level: Optional[Tuple[int]] = None,  # confidence level
+        level: Optional[List[int]] = None,  # confidence level
     ):
         """Predict with fitted Naive.
 
@@ -2883,7 +2883,7 @@ class Naive(_TS):
 
         if level is None:
             return res
-        level = sorted(level)
+        level: List = sorted(level)
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
@@ -2894,7 +2894,7 @@ class Naive(_TS):
             res = {**res, **pred_int}
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted Naive insample predictions.
 
         Parameters
@@ -2918,7 +2918,7 @@ class Naive(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient Naive predictions.
@@ -3053,7 +3053,7 @@ class RandomWalkWithDrift(_TS):
         return self
 
     def predict(
-        self, h: int, X: Optional[np.ndarray] = None, level: Optional[Tuple[int]] = None
+        self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
     ):
         """Predict with fitted RandomWalkWithDrift.
 
@@ -3088,7 +3088,7 @@ class RandomWalkWithDrift(_TS):
             res = {**res, **pred_int}
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted RandomWalkWithDrift insample predictions.
 
         Parameters
@@ -3112,7 +3112,7 @@ class RandomWalkWithDrift(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient RandomWalkWithDrift predictions.
@@ -3236,7 +3236,7 @@ class SeasonalNaive(_TS):
         self,
         h: int,
         X: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted Naive.
 
@@ -3271,7 +3271,7 @@ class SeasonalNaive(_TS):
             res = {**res, **pred_int}
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted SeasonalNaive insample predictions.
 
         Parameters
@@ -3295,7 +3295,7 @@ class SeasonalNaive(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient SeasonalNaive predictions.
@@ -3436,7 +3436,7 @@ class WindowAverage(_TS):
         self,
         h: int,
         X: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted WindowAverage.
 
@@ -4913,7 +4913,7 @@ class MSTL(_TS):
         self,
         h: int,
         X: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
     ):
         """Predict with fitted MSTL.
 
@@ -4948,7 +4948,7 @@ class MSTL(_TS):
             )
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted MSTL insample predictions.
 
         Parameters
@@ -5349,7 +5349,7 @@ class GARCH(_TS):
             res = {**res, **lo, **hi}
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted GARCH model predictions.
 
         Parameters
@@ -5521,7 +5521,7 @@ class ConstantModel(_TS):
         self,
         h: int,  # forecasting horizon
         X: Optional[np.ndarray] = None,  # exogenous regressors
-        level: Optional[Tuple[int]] = None,  # confidence level
+        level: Optional[List[int]] = None,  # confidence level
     ):
         """Predict with fitted ConstantModel.
 
@@ -5549,7 +5549,7 @@ class ConstantModel(_TS):
 
         return res
 
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted Constant Model insample predictions.
 
         Parameters
@@ -5577,7 +5577,7 @@ class ConstantModel(_TS):
         h: int,
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
-        level: Optional[Tuple[int]] = None,
+        level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
         """Memory Efficient Constant Model predictions.
