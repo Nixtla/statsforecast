@@ -498,7 +498,7 @@ class AutoARIMA(_TS):
         if fitted:
             res["fitted"] = fitted_arima(mod)
         if level is not None:
-            level: List = sorted(level)
+            level = sorted(level)
             if self.prediction_intervals is not None:
                 res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
             else:
@@ -2707,7 +2707,7 @@ class HistoricAverage(_TS):
 
         if level is None:
             return res
-        level: List = sorted(level)
+        level = sorted(level)
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
@@ -2883,7 +2883,7 @@ class Naive(_TS):
 
         if level is None:
             return res
-        level: List = sorted(level)
+        level = sorted(level)
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
