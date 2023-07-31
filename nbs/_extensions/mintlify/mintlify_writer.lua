@@ -97,7 +97,6 @@ function Writer(doc, opts)
     raw_html = true,
     all_symbols_escapable = true,
     backtick_code_blocks = true,
-    fenced_code_blocks = true,
     space_in_atx_header = true,
     intraword_underscores = true,
     lists_without_preceding_blankline = true,
