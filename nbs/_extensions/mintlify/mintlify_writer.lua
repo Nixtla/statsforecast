@@ -3,6 +3,18 @@ local codeBlock = require('mintlify_utils').codeBlock
 
 local reactPreamble = pandoc.List()
 
+function capitalizeFirstLetter(str)
+  return (str:gsub("^%l", string.upper))
+end
+
+function castToMintlifyCallout(str)
+  if str == "caution" or str == "danger" then
+    return "Warning"
+  else
+    return capitalizeFirstLetter(str)
+  end
+end
+
 local function addPreamble(preamble)
   if not reactPreamble:includes(preamble) then
     reactPreamble:insert(preamble)
@@ -65,18 +77,19 @@ function Writer(doc, opts)
     end,
 
     Callout = function(node)
-      local admonition = pandoc.List()
-      admonition:insert(pandoc.RawBlock("markdown", "\n:::" .. node.type))
+      local admonition = pandoc.Div({})
+      local mintlifyCallout = castToMintlifyCallout(node.type)
+      admonition.content:insert(jsx("<" .. mintlifyCallout .. ">"))
       if node.title then
-        admonition:insert(pandoc.Header(2, node.title))
+        admonition.content:insert(pandoc.Header(2, node.title))
       end
       local content = node.content
       if type(content) == "table" then
-        admonition:extend(content)
+        admonition.content:extend(content)
       else
-        admonition:insert(content)
+        admonition.content:insert(content)
       end
-      admonition:insert(pandoc.RawBlock("markdown", ":::\n"))
+      admonition.content:insert(jsx("</" .. mintlifyCallout .. ">"))
       return admonition
     end
   }
