@@ -1,16 +1,12 @@
 project:
-  type: website
+  type: mintlify
 
 format:
-  html:
-    theme: cosmo
-    fontsize: 1em
-    linestretch: 1.7
-    css: styles.css
-    toc: true
+  mintlify-md:
+    code-fold: true
 
 website:
-  twitter-card: 
+  twitter-card:
     image: "https://farm6.staticflickr.com/5510/14338202952_93595258ff_z.jpg"
     site: "@Nixtlainc"
   open-graph:
@@ -35,7 +31,7 @@ website:
             href: https://github.com/nixtla/neuralforecast
           - text: "HierarchicalForecast 👑"
             href: https://github.com/nixtla/hierarchicalforecast
-          
+
       - text: "Help"
         menu:
           - text: "Report an Issue"

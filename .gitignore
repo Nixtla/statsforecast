@@ -21,3 +21,5 @@ sidebar.yml
 nbs/.last_checked
 .venv
 .idea
+
+/.luarc.json
