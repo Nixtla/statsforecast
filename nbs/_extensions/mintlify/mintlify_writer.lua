@@ -1,4 +1,3 @@
-
 local codeBlock = require('mintlify_utils').codeBlock
 
 
@@ -21,13 +20,13 @@ local function tabset(node, filter)
   if group then
     groupId = ([[ groupId="%s"]]):format(group)
   end
-  
+
   -- create tabs
   local tabs = pandoc.Div({})
   tabs.content:insert(jsx("<Tabs" .. groupId .. ">"))
-  
+
   -- iterate through content
-  for i=1,#node.tabs do 
+  for i = 1, #node.tabs do
     local content = node.tabs[i].content
     local title = node.tabs[i].title
 
@@ -51,7 +50,7 @@ local function tabset(node, filter)
   return tabs
 end
 
-function Writer(doc, opts)  
+function Writer(doc, opts)
   local filter
   filter = {
     CodeBlock = codeBlock,
@@ -81,7 +80,7 @@ function Writer(doc, opts)
       return admonition
     end
   }
-  
+
   doc = quarto._quarto.ast.walk(doc, filter)
 
   -- insert react preamble if we have it
@@ -95,7 +94,6 @@ function Writer(doc, opts)
     pipe_tables = true,
     footnotes = true,
     tex_math_dollars = true,
-    header_attributes = true,
     raw_html = true,
     all_symbols_escapable = true,
     backtick_code_blocks = true,
