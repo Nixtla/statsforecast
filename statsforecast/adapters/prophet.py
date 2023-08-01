@@ -120,8 +120,6 @@ class AutoARIMAProphet(Prophet):
         allowmean=False,
         blambda=None,
         biasadj=False,
-        parallel=False,
-        num_cores=2,
         period=1,
     ):
         Prophet.__init__(
@@ -174,8 +172,6 @@ class AutoARIMAProphet(Prophet):
             allowmean=allowmean,
             blambda=blambda,
             biasadj=biasadj,
-            parallel=parallel,
-            num_cores=num_cores,
             period=period,
         )
 
