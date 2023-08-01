@@ -5,6 +5,10 @@ format:
   mintlify-md:
     code-fold: true
 
+default:
+  body-footer: |
+    Give us a ⭐ on [Github](https://github.com/nixtla/statsforecast)
+
 website:
   twitter-card:
     image: "https://farm6.staticflickr.com/5510/14338202952_93595258ff_z.jpg"
@@ -52,4 +56,4 @@ website:
   body-footer: |
     Give us a ⭐ on [Github](https://github.com/nixtla/statsforecast)
 
-metadata-files: [nbdev.yml, sidebar.yml, mint.json],
+metadata-files: [nbdev.yml, sidebar.yml, mint.json]
