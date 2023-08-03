@@ -793,7 +793,7 @@ class _StatsForecast:
             List of instantiated objects models.StatsForecast.
         freq : str
             Frequency of the data.
-            See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+            See [pandas' available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
         n_jobs : int (default=1)
             Number of jobs used in the parallel processing, use -1 for all cores.
         df : pandas.DataFrame or pl.DataFrame, optional (default=None)
@@ -809,12 +809,22 @@ class _StatsForecast:
 
         # TODO @fede: needed for residuals, think about it later
         self.models = models
+        self._validate_model_names()
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.fallback_model = fallback_model
         self.verbose = verbose
         self.n_jobs == 1
         self._prepare_fit(df=df, sort_df=sort_df)
+
+    def _validate_model_names(self):
+        # Some test models don't have alias
+        names = [getattr(model, "alias", lambda: None) for model in self.models]
+        names = [x for x in names if x is not None]
+        if len(names) != len(set(names)):
+            raise ValueError(
+                "Model names must be unique. You can use `alias` to set a unique name for each model."
+            )
 
     def _prepare_fit(self, df, sort_df):
         if df is not None:
