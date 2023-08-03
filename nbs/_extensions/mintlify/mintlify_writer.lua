@@ -81,7 +81,7 @@ function Writer(doc, opts)
       local mintlifyCallout = castToMintlifyCallout(node.type)
       admonition.content:insert(jsx("<" .. mintlifyCallout .. ">"))
       if node.title then
-        admonition.content:insert(pandoc.Header(2, node.title))
+        admonition.content:insert(pandoc.Header(3, node.title))
       end
       local content = node.content
       if type(content) == "table" then
