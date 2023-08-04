@@ -9,4 +9,4 @@ default:
   body-footer: |
     Give us a ⭐ on [Github](https://github.com/nixtla/statsforecast)
 
-metadata-files: [mint.json]
+metadata-files: [nbdev.yml, sidebar.yml, mint.json]
