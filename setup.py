@@ -32,6 +32,8 @@ dev_requirements = (cfg.get('dev_requirements') or '').split()
 dask_requirements = cfg.get('dask_requirements', '').split()
 ray_requirements = cfg.get('ray_requirements', '').split()
 spark_requirements = cfg.get('spark_requirements', '').split()
+plotly_requirements = cfg.get('plotly_requirements', '').split()
+polars_requirements = cfg.get('polars_requirements', '').split()
 
 setuptools.setup(
     name = 'statsforecast',
@@ -42,10 +44,15 @@ setuptools.setup(
         'Natural Language :: ' + cfg['language'].title(),
     ] + ['Programming Language :: Python :: '+o for o in py_versions[py_versions.index(min_python):]] + (['License :: ' + lic[1] ] if lic[1] else []),
     url = cfg['git_url'],
-    packages = setuptools.find_packages(),
+    packages = setuptools.find_packages(exclude=("action_files","nbs")),
     include_package_data = True,
     install_requires = requirements,
-    extras_require={'dev': dev_requirements, 'dask': dask_requirements, 'ray': ray_requirements, 'spark': spark_requirements,},
+    extras_require={'dev': dev_requirements, 
+                    'dask': dask_requirements, 
+                    'ray': ray_requirements, 
+                    'spark': spark_requirements,
+                    'plotly': plotly_requirements,
+                    },
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
     long_description = open('README.md', encoding='utf8').read(),
