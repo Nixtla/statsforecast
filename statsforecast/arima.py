@@ -1315,10 +1315,10 @@ def search_arima(
     # max_K = allow_drift or allow_mean
 
     best_ic = np.inf
-    for i in range(max_p):
-        for j in range(max_q):
-            for I in range(max_P):
-                for J in range(max_Q):
+    for i in range(max_p + 1):
+        for j in range(max_q + 1):
+            for I in range(max_P + 1):
+                for J in range(max_Q + 1):
                     if i + j + I + J > max_order:
                         continue
                     fit = myarima(
