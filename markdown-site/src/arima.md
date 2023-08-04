@@ -1951,8 +1951,6 @@ def search_arima(
     offset=None,
     allow_drift=True,
     allow_mean=True,
-    parallel=False,
-    num_cores=2,
     period=1,
     **kwargs
 ):
@@ -1961,24 +1959,21 @@ def search_arima(
     allow_mean = allow_mean and (d + D) == 0
     #max_K = allow_drift or allow_mean
     
-    if not parallel:
-        best_ic = np.inf
-        for i in range(max_p):
-            for j in range(max_q):
-                for I in range(max_P):
-                    for J in range(max_Q):
-                        if i + j + I + J > max_order:
-                            continue
-                        fit = myarima(
-                            x,
-                            order=(i, d, j),
-                            seasonal={'order': (I, D, J), 'period': m},
-                        )
-                        if fit['ic'] < best_ic:
-                            best_ic = fit['ic']
-                            best_fit = fit
-    else:
-        raise NotImplementedError('parallel=True')
+    best_ic = np.inf
+    for i in range(max_p):
+        for j in range(max_q):
+            for I in range(max_P):
+                for J in range(max_Q):
+                    if i + j + I + J > max_order:
+                        continue
+                    fit = myarima(
+                        x,
+                        order=(i, d, j),
+                        seasonal={'order': (I, D, J), 'period': m},
+                    )
+                    if fit['ic'] < best_ic:
+                        best_ic = fit['ic']
+                        best_fit = fit
     return best_fit
 ```
 
@@ -2907,18 +2902,10 @@ def auto_arima_f(
     allowmean=True,
     blambda=None,
     biasadj=False,
-    parallel=False,
-    num_cores=2,
     period=1,
 ):
     if approximation is None:
         approximation = len(x) > 150 or period > 12
-    if stepwise and parallel:
-        warnings.warn("Parallel computer is only implemented when stepwise=FALSE, the model will be fit in serial.")
-        parallel = False
-    if trace and parallel:
-        warnings.warn("Tracing model searching in parallel is not supported.")
-        trace = False
     if x.ndim > 1:
         raise ValueError("auto_arima can only handle univariate time series")
     if test_kwargs is None:
@@ -3115,8 +3102,6 @@ def auto_arima_f(
             offset=offset,
             allowdrift=allowdrift,
             allowmean=allowmean,
-            parallel=parallel,
-            num_cores=num_cores,
             period=m,
         )
         bestfit['lambda'] = blambda
@@ -3675,15 +3660,6 @@ class AutoARIMA:
         a regular back transformation will result in median forecasts. 
         If biasadj is True, an adjustment will be made to produce
         mean forecasts and fitted values.
-    parallel: bool (default False)
-        If True and stepwise = False, then the specification search 
-        is done in parallel. 
-        This can give a significant speedup on multicore machines.
-    num_cores: int (default 2)
-        Allows the user to specify the amount of parallel processes to be used 
-        if parallel = True and stepwise = False. 
-        If None, then the number of logical cores is 
-        automatically detected and all available cores are used.
     period: int (default 1)
         Number of observations per unit of time.
         For example 24 for Hourly data.
@@ -3729,8 +3705,6 @@ class AutoARIMA:
         allowmean: bool = True,
         blambda: Optional[float] = None,
         biasadj: bool = False,
-        parallel: bool = False,
-        num_cores: int = 2,
         period: int = 1
     ):
         self.d=d
@@ -3763,8 +3737,6 @@ class AutoARIMA:
         self.allowmean=allowmean
         self.blambda=blambda
         self.biasadj=biasadj
-        self.parallel=parallel
-        self.num_cores=num_cores
         self.period=period
         
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
@@ -3813,8 +3785,6 @@ class AutoARIMA:
             allowmean=self.allowmean,
             blambda=self.blambda,
             biasadj=self.biasadj,
-            parallel=self.parallel,
-            num_cores=self.num_cores,
             period=self.period
         )
         self.model_ = ARIMASummary(model_)

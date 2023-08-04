@@ -1,5 +1,5 @@
 ---
-title: Probabilistic forecasting
+title: Probabilistic Forecasting
 ---
 
 export const quartoRawHtml =
@@ -122,15 +122,32 @@ e.exports=function(t){return null!=t&&(n(t)||function(t){return"function"==typeo
 <p>5 rows × 47 columns</p>
 </div>`];
 
+::: {.cell 0=‘h’ 1=‘i’ 2=‘d’ 3=‘e’}
+
+<details>
+<summary>Code</summary>
+
+``` python
+import warnings
+warnings.simplefilter('ignore')
+
+import logging
+logging.getLogger('statsforecast').setLevel(logging.ERROR)
+```
+
+</details>
+
+:::
+
 > In this example, we’ll implement prediction intervals
 
 :::warning
 
-## Prerequesites
+## Prerequisites
 
 This tutorial assumes basic familiarity with StatsForecast. For a
 minimal example visit the [Quick
-Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
+Start](../getting-started/1_Getting_Started_short.ipynb)
 
 :::
 
@@ -199,7 +216,7 @@ You can use Colab to run this Notebook interactively
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html)
+StatsForecast](../getting-started/0_Installation.ipynb)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -323,7 +340,7 @@ StatsForecast.plot(train, test, plot_random = False)
 
 <div dangerouslySetInnerHTML={{ __html: quartoRawHtml[4] }} />
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-7-output-3.png)
+![](UncertaintyIntervals_files/figure-markdown_strict/cell-8-output-3.png)
 
 ## Train models {#train-models}
 
@@ -461,7 +478,7 @@ sf.plot(train, test, plot_random = False, models=['AutoETS'], level=levels)
 
 </details>
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-12-output-1.png)
+![](UncertaintyIntervals_files/figure-markdown_strict/cell-13-output-1.png)
 
 ### Historic Average {#historic-average}
 
@@ -474,7 +491,7 @@ sf.plot(train, test, plot_random = False, models=['HistoricAverage'], level=leve
 
 </details>
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-13-output-1.png)
+![](UncertaintyIntervals_files/figure-markdown_strict/cell-14-output-1.png)
 
 ### Naive {#naive}
 
@@ -487,7 +504,7 @@ sf.plot(train, test, plot_random = False, models=['Naive'], level=levels)
 
 </details>
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-14-output-1.png)
+![](UncertaintyIntervals_files/figure-markdown_strict/cell-15-output-1.png)
 
 ### Random Walk with Drift {#random-walk-with-drift}
 
@@ -500,7 +517,7 @@ sf.plot(train, test, plot_random = False, models=['RWD'], level=levels)
 
 </details>
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-15-output-1.png)
+![](UncertaintyIntervals_files/figure-markdown_strict/cell-16-output-1.png)
 
 ### Seasonal Naive {#seasonal-naive}
 
@@ -513,7 +530,7 @@ sf.plot(train, test, plot_random = False, models=['SeasonalNaive'], level=levels
 
 </details>
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-16-output-1.png)
+![](UncertaintyIntervals_files/figure-markdown_strict/cell-17-output-1.png)
 
 From these plots, we can conclude that the uncertainty around each
 forecast varies according to the model that is being used. For the same

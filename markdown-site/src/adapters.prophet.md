@@ -165,8 +165,6 @@ class AutoARIMAProphet(Prophet):
                  allowmean=False,
                  blambda=None,
                  biasadj=False,
-                 parallel=False,
-                 num_cores=2,
                  period=1):
         Prophet.__init__(self,
                          growth,
@@ -215,8 +213,6 @@ class AutoARIMAProphet(Prophet):
                                allowmean=allowmean,
                                blambda=blambda,
                                biasadj=biasadj,
-                               parallel=parallel,
-                               num_cores=num_cores,
                                period=period)
     
     def fit(self, df, disable_seasonal_features=True, **kwargs):

@@ -8,21 +8,21 @@ Automatic forecasting tools search for the best parameters and select
 the best possible model for a series of time series. These tools are
 useful for large collections of univariate time series.
 
-| Model                                   | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                                  | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`AutoARIMA`](../models.html#autoarima) |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`AutoETS`](../models.html#autoets)     |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`AutoCES`](../models.html#autoces)     |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`AutoTheta`](../models.html#autotheta) |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`AutoARIMA`](./models.html#autoarima) |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`AutoETS`](./models.html#autoets)     |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`AutoCES`](./models.html#autoces)     |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`AutoTheta`](./models.html#autotheta) |       ✅       |           ✅           |           ✅           |             ✅              |
 
 ## ARIMA Family {#arima-family}
 
 These models exploit the existing autocorrelations in the time series.
 
-| Model                                             | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                                            | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`ARIMA`](../models.html#arima)                   |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`AutoRegressive`](../models.html#autoregressive) |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`ARIMA`](./models.html#arima)                   |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`AutoRegressive`](./models.html#autoregressive) |       ✅       |           ✅           |           ✅           |             ✅              |
 
 ## Theta Family {#theta-family}
 
@@ -30,44 +30,44 @@ Fit two theta lines to a deseasonalized time series, using different
 techniques to obtain and combine the two theta lines to produce the
 final forecasts.
 
-| Model                                                           | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                                                          | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`Theta`](../models.html#theta)                                 |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`OptimizedTheta`](../models.html#optimizedtheta)               |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`DynamicTheta`](../models.html#dynamictheta)                   |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`DynamicOptimizedTheta`](../models.html#dynamicoptimizedtheta) |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`Theta`](./models.html#theta)                                 |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`OptimizedTheta`](./models.html#optimizedtheta)               |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`DynamicTheta`](./models.html#dynamictheta)                   |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`DynamicOptimizedTheta`](./models.html#dynamicoptimizedtheta) |       ✅       |           ✅           |           ✅           |             ✅              |
 
 ## Multiple Seasonalities {#multiple-seasonalities}
 
 Suited for signals with more than one clear seasonality. Useful for
 low-frequency data like electricity and logs.
 
-| Model                         | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                        | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`MSTL`](../models.html#mstl) |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`MSTL`](./models.html#mstl) |       ✅       |           ✅           |           ✅           |             ✅              |
 
 ## GARCH and ARCH Models {#garch-and-arch-models}
 
 Suited for modeling time series that exhibit non-constant volatility
 over time. The ARCH model is a particular case of GARCH.
 
-| Model                           | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                          | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`GARCH`](../models.html#garch) |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`ARCH`](../models.html#arch)   |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`GARCH`](./models.html#garch) |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`ARCH`](./models.html#arch)   |       ✅       |           ✅           |           ✅           |             ✅              |
 
 ## Baseline Models {#baseline-models}
 
 Classical models for establishing baseline.
 
-| Model                                                           | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                                                          | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`HistoricAverage`](../models.html#historicaverage)             |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`Naive`](../models.html#naive)                                 |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`RandomWalkWithDrift`](../models.html#randomwalkwithdrift)     |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`SeasonalNaive`](../models.html#seasonalnaive)                 |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`WindowAverage`](../models.html#windowaverage)                 |       ✅       |                        |                        |                             |
-| [`SeasonalWindowAverage`](../models.html#seasonalwindowaverage) |       ✅       |                        |                        |                             |
+| [`HistoricAverage`](./models.html#historicaverage)             |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`Naive`](./models.html#naive)                                 |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`RandomWalkWithDrift`](./models.html#randomwalkwithdrift)     |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`SeasonalNaive`](./models.html#seasonalnaive)                 |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`WindowAverage`](./models.html#windowaverage)                 |       ✅       |                        |                        |                             |
+| [`SeasonalWindowAverage`](./models.html#seasonalwindowaverage) |       ✅       |                        |                        |                             |
 
 ## Exponential Smoothing {#exponential-smoothing}
 
@@ -76,25 +76,25 @@ decrease exponentially into the past. Suitable for data with clear trend
 and/or seasonality. Use the `SimpleExponential` family for data with no
 clear trend or seasonality.
 
-| Model                                                                                           | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                                                                                          | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`SimpleExponentialSmoothing`](../models.html#simpleexponentialsmoothing)                       |       ✅       |                        |                        |                             |
-| [`SimpleExponentialSmoothingOptimized`](../models.html#simpleexponentialsmoothingoptimized)     |       ✅       |                        |                        |                             |
-| [`SeasonalExponentialSmoothing`](../models.html#seasonalexponentialsmoothing)                   |       ✅       |                        |                        |                             |
-| [`SeasonalExponentialSmoothingOptimized`](../models.html#seasonalexponentialsmoothingoptimized) |       ✅       |                        |                        |                             |
-| [`Holt`](../models.html#holt)                                                                   |       ✅       |           ✅           |           ✅           |             ✅              |
-| [`HoltWinters`](../models.html#holtwinters)                                                     |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`SimpleExponentialSmoothing`](./models.html#simpleexponentialsmoothing)                       |       ✅       |                        |                        |                             |
+| [`SimpleExponentialSmoothingOptimized`](./models.html#simpleexponentialsmoothingoptimized)     |       ✅       |                        |                        |                             |
+| [`SeasonalExponentialSmoothing`](./models.html#seasonalexponentialsmoothing)                   |       ✅       |                        |                        |                             |
+| [`SeasonalExponentialSmoothingOptimized`](./models.html#seasonalexponentialsmoothingoptimized) |       ✅       |                        |                        |                             |
+| [`Holt`](./models.html#holt)                                                                   |       ✅       |           ✅           |           ✅           |             ✅              |
+| [`HoltWinters`](./models.html#holtwinters)                                                     |       ✅       |           ✅           |           ✅           |             ✅              |
 
 ## Sparse or Intermittent {#sparse-or-intermittent}
 
 Suited for series with very few non-zero observations
 
-| Model                                                 | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
+| Model                                                | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:-----------------------------|:---------:|:---------:|:---------:|:---------:|
-| [`ADIDA`](../models.html#adida)                       |       ✅       |                        |                        |                             |
-| [`CrostonClassic`](../models.html#crostonclassic)     |       ✅       |                        |                        |                             |
-| [`CrostonOptimized`](../models.html#crostonoptimized) |       ✅       |                        |                        |                             |
-| [`CrostonSBA`](../models.html#crostonsba)             |       ✅       |                        |                        |                             |
-| [`IMAPA`](../models.html#imapa)                       |       ✅       |                        |                        |                             |
-| [`TSB`](../models.html#tsb)                           |       ✅       |                        |                        |                             |
+| [`ADIDA`](./models.html#adida)                       |       ✅       |                        |                        |                             |
+| [`CrostonClassic`](./models.html#crostonclassic)     |       ✅       |                        |                        |                             |
+| [`CrostonOptimized`](./models.html#crostonoptimized) |       ✅       |                        |                        |                             |
+| [`CrostonSBA`](./models.html#crostonsba)             |       ✅       |                        |                        |                             |
+| [`IMAPA`](./models.html#imapa)                       |       ✅       |                        |                        |                             |
+| [`TSB`](./models.html#tsb)                           |       ✅       |                        |                        |                             |
 

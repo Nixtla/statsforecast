@@ -90,7 +90,7 @@ save the fittted models
 
 ``` python
 # Generate forecasts for the specified horizon using the sf object
-Y_hat_df = sf.forecast(df=Y_df, horizon=horizon) # forecast data
+Y_hat_df = sf.forecast(df=Y_df, h=horizon) # forecast data
 
 # Display the first few rows of the forecast DataFrame
 Y_hat_df.head() # preview of forecasted data
