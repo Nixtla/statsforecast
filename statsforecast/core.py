@@ -841,7 +841,8 @@ class _StatsForecast:
 
     def _set_prediction_intervals(self, prediction_intervals):
         for model in self.models:
-            if hasattr(model, "prediction_intervals"):
+            interval = getattr(model, "prediction_intervals", None)
+            if interval is None:
                 setattr(model, "prediction_intervals", prediction_intervals)
 
     def fit(
