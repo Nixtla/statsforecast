@@ -8,6 +8,7 @@ import inspect
 import logging
 import random
 import re
+import reprlib
 from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
@@ -1181,6 +1182,14 @@ class _StatsForecast:
             raise Exception("you must define `n_windows` or `test_size` but not both")
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
+        series_sizes = np.diff(self.ga.indptr)
+        short_series = series_sizes <= test_size
+        if short_series.any():
+            short_ids = self.uids[short_series].tolist()
+            raise ValueError(
+                f"The following series are too short for the cross validation settings: {reprlib.repr(short_ids)}\n"
+                "Please remove these series or change the settings, e.g. reducing the horizon or the number of windows."
+            )
         _, level = self._parse_X_level(h=h, X=None, level=level)
         if self.n_jobs == 1:
             res_fcsts = self.ga.cross_validation(
