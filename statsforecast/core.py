@@ -19,8 +19,6 @@ import matplotlib.colors as cm
 import numpy as np
 import pandas as pd
 import polars as pl
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
 from fugue.execution.factory import try_get_context_execution_engine
@@ -1429,7 +1427,7 @@ class _StatsForecast:
         level: Optional[List[float]] = None,
         max_insample_length: Optional[int] = None,
         plot_anomalies: bool = False,
-        engine: str = "plotly",
+        engine: str = "matplotlib",
         resampler_kwargs: Optional[Dict] = None,
     ):
         """Plot forecasts and insample values.
@@ -1453,7 +1451,7 @@ class _StatsForecast:
             Max number of train/insample observations to be plotted.
         plot_anomalies : bool (default=False)
             Plot anomalies for each prediction interval.
-        engine : str (default='plotly')
+        engine : str (default='matplotlib')
             Library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.
         resampler_kwargs : dict
             Kwargs to be passed to plotly-resampler constructor.
@@ -1509,6 +1507,15 @@ class _StatsForecast:
             unique_ids = unique_ids[:8]
 
         if engine in ["plotly", "plotly-resampler"]:
+            try:
+                import plotly.graph_objects as go
+                from plotly.subplots import make_subplots
+            except ImportError:
+                raise ImportError(
+                    "plotly is not installed. "
+                    "Please install it with `pip install statsforecast[plotly]`"
+                )
+
             n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
             fig = make_subplots(
                 rows=n_rows,
@@ -1768,7 +1775,7 @@ class _StatsForecast:
             fig.subplots_adjust(hspace=0.5)
             plt.close(fig)
         else:
-            raise Exception(f"Unkwon plot engine {engine}")
+            raise Exception(f"Unkwown plot engine {engine}")
         return fig
 
     def __repr__(self):
