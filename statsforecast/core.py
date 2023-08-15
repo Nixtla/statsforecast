@@ -13,7 +13,7 @@ from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 import pkg_resources
 
-import fugue.api as fa
+from fugue.execution.factory import make_execution_engine
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import numpy as np
@@ -78,7 +78,7 @@ class GroupedArray:
 
     def _get_cols(self, models, attr, h, X, level=tuple()):
         n_models = len(models)
-        cuts = np.full(n_models + 1, fill_value=np.nan, dtype=np.int32)
+        cuts = np.full(n_models + 1, fill_value=0, dtype=np.int32)
         has_level_models = np.full(n_models, fill_value=False, dtype=bool)
         cuts[0] = 0
         for i_model, model in enumerate(models):
@@ -551,9 +551,10 @@ class DataFrameProcessing:
             # datetime check
             dt_arr = self.dataframe["ds"].to_numpy()
             processed_dt_arr = self._check_datetime(dt_arr)
-            self.dataframe = self.dataframe.with_columns(
-                pl.from_numpy(processed_dt_arr, schema=["ds"])
-            )
+            if type(dt_arr) != type(processed_dt_arr):
+                self.dataframe = self.dataframe.with_columns(
+                    pl.from_numpy(processed_dt_arr.to_numpy(), schema=["ds"])
+                )
 
             sample_index_df = self.dataframe[self.non_value_columns]
             sorted_index_df = sample_index_df.sort(self.non_value_columns)
@@ -792,7 +793,7 @@ class _StatsForecast:
             List of instantiated objects models.StatsForecast.
         freq : str
             Frequency of the data.
-            See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+            See [pandas' available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
         n_jobs : int (default=1)
             Number of jobs used in the parallel processing, use -1 for all cores.
         df : pandas.DataFrame or pl.DataFrame, optional (default=None)
@@ -808,12 +809,22 @@ class _StatsForecast:
 
         # TODO @fede: needed for residuals, think about it later
         self.models = models
+        self._validate_model_names()
         self.freq = pd.tseries.frequencies.to_offset(freq)
         self.n_jobs = n_jobs
         self.fallback_model = fallback_model
         self.verbose = verbose
         self.n_jobs == 1
         self._prepare_fit(df=df, sort_df=sort_df)
+
+    def _validate_model_names(self):
+        # Some test models don't have alias
+        names = [getattr(model, "alias", lambda: None) for model in self.models]
+        names = [x for x in names if x is not None]
+        if len(names) != len(set(names)):
+            raise ValueError(
+                "Model names must be unique. You can use `alias` to set a unique name for each model."
+            )
 
     def _prepare_fit(self, df, sort_df):
         if df is not None:
@@ -830,7 +841,8 @@ class _StatsForecast:
 
     def _set_prediction_intervals(self, prediction_intervals):
         for model in self.models:
-            if hasattr(model, "prediction_intervals"):
+            interval = getattr(model, "prediction_intervals", None)
+            if interval is None:
                 setattr(model, "prediction_intervals", prediction_intervals)
 
     def fit(
@@ -898,6 +910,9 @@ class _StatsForecast:
 
     def _parse_X_level(self, h, X, level):
         if X is not None:
+            if isinstance(X, pd.DataFrame):
+                if X.index.name != "unique_id":
+                    X = X.set_index("unique_id")
             expected_shape_rows = h * len(self.ga)
             ga_shape = self.ga.data.shape[1]
             # Polars doesn't have index, hence, extra "column"
@@ -1837,19 +1852,19 @@ class StatsForecast(_StatsForecast):
                 prediction_intervals=prediction_intervals,
             )
         assert df is not None
-        with fa.engine_context(infer_by=[df]) as e:
-            backend = make_backend(e)
-            return backend.forecast(
-                df=df,
-                models=self.models,
-                freq=self.freq,
-                fallback_model=self.fallback_model,
-                h=h,
-                X_df=X_df,
-                level=level,
-                fitted=fitted,
-                prediction_intervals=prediction_intervals,
-            )
+        engine = make_execution_engine(infer_by=[df])
+        backend = make_backend(engine)
+        return backend.forecast(
+            df=df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            X_df=X_df,
+            level=level,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+        )
 
     def cross_validation(
         self,
@@ -1880,23 +1895,23 @@ class StatsForecast(_StatsForecast):
                 prediction_intervals=prediction_intervals,
             )
         assert df is not None
-        with fa.engine_context(infer_by=[df]) as e:
-            backend = make_backend(e)
-            return backend.cross_validation(
-                df=df,
-                models=self.models,
-                freq=self.freq,
-                fallback_model=self.fallback_model,
-                h=h,
-                n_windows=n_windows,
-                step_size=step_size,
-                test_size=test_size,
-                input_size=input_size,
-                level=level,
-                refit=refit,
-                fitted=fitted,
-                prediction_intervals=prediction_intervals,
-            )
+        engine = make_execution_engine(infer_by=[df])
+        backend = make_backend(engine)
+        return backend.cross_validation(
+            df=df,
+            models=self.models,
+            freq=self.freq,
+            fallback_model=self.fallback_model,
+            h=h,
+            n_windows=n_windows,
+            step_size=step_size,
+            test_size=test_size,
+            input_size=input_size,
+            level=level,
+            refit=refit,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+        )
 
     def _is_native(self, df) -> bool:
         engine = try_get_context_execution_engine()
