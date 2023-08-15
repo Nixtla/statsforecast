@@ -1693,33 +1693,6 @@ class _StatsForecast:
                 if n_cols == 1:
                     axes = np.array([axes])
 
-            def plotly(
-                df,
-                fig,
-                n_rows,
-                unique_ids,
-                models,
-                plot_anomalies,
-                max_insample_length,
-                showed_legends,
-            ):
-                if models is None:
-                    exclude_str = ["lo", "hi", "unique_id", "ds"]
-                    models = [
-                        c
-                        for c in df.columns
-                        if all(item not in c for item in exclude_str)
-                    ]
-                if "y" not in models:
-                    models = ["y"] + models
-                for uid, (idx, idy) in zip(
-                    unique_ids, product(range(1, n_rows + 1), range(1, 2 + 1))
-                ):
-                    df_uid = df.query("unique_id == @uid")
-                    if max_insample_length:
-                        df_uid = df_uid.iloc[-max_insample_length:]
-                    plot_anomalies = "y" in df_uid and plot_anomalies
-
             for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
                 train_uid = df.query("unique_id == @uid")
                 train_uid = _parse_ds_type(train_uid)
