@@ -35,7 +35,7 @@ jobs:
           ./action_files/clean_nbs
           echo "Check that strip out was unnecessary"
           git status -s # display the status to see which nbs need cleaning up
-          if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks"; false; fi
+          if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks and running ./action_files/clean_nbs before committing"; false; fi
 
   run-tests:
     runs-on: ${{ matrix.os }}
