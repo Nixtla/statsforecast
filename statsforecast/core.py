@@ -956,6 +956,18 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+
+        if (
+            any(
+                getattr(m, "prediction_intervals", None) is not None
+                for m in self.models
+            )
+            and level is None
+        ):
+            warnings.warn(
+                "Prediction intervals are set but `level` was not provided. "
+                "Predictions won't have intervals."
+            )
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
@@ -1006,7 +1018,9 @@ class _StatsForecast:
             predictions for all fitted `models`.
         """
         if prediction_intervals is not None and level is None:
-            raise ValueError('You must specify `level` when using prediction_intervals')
+            raise ValueError(
+                "You must specify `level` when using `prediction_intervals`"
+            )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
@@ -1183,7 +1197,9 @@ class _StatsForecast:
         else:
             raise Exception("you must define `n_windows` or `test_size` but not both")
         if prediction_intervals is not None and level is None:
-            raise ValueError('You must specify `level` when using prediction_intervals')
+            raise ValueError(
+                "You must specify `level` when using `prediction_intervals`"
+            )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         series_sizes = np.diff(self.ga.indptr)
@@ -1862,7 +1878,9 @@ class StatsForecast(_StatsForecast):
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         if prediction_intervals is not None and level is None:
-            raise ValueError('You must specify `level` when using prediction_intervals')
+            raise ValueError(
+                "You must specify `level` when using `prediction_intervals`"
+            )
         if self._is_native(df=df):
             return super().forecast(
                 h=h,
