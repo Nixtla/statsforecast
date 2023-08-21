@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['StatsForecast']
 
-# %% ../nbs/src/core/core.ipynb 4
+# %% ../nbs/src/core/core.ipynb 5
 import inspect
 import logging
 import random
