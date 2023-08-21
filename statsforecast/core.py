@@ -960,14 +960,15 @@ class _StatsForecast:
 
         if (
             any(
-                getattr(m, "prediction_intervals", None) is not None
-                for m in self.models
+                getattr(model, "prediction_intervals", None) is not None
+                for model in self.models
             )
             and level is None
         ):
             warnings.warn(
                 "Prediction intervals are set but `level` was not provided. "
-                "Predictions won't have intervals."
+                "Predictions won't have intervals.",
+                UserWarning,
             )
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
