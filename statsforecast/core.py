@@ -1597,7 +1597,12 @@ class _StatsForecast:
                         df_uid = df_uid.iloc[-max_insample_length:]
                     plot_anomalies = "y" in df_uid and plot_anomalies
                     df_uid = _parse_ds_type(df_uid)
-                    colors = mpl.colormaps["tab20b"].resampled(len(models))
+                    if pkg_resources.parse_version(
+                        mpl.__version__
+                    ) < pkg_resources.parse_version("3.6"):
+                        colors = plt.cm.get_cmap("tab20b", len(models))
+                    else:
+                        colors = mpl.colormaps["tab20b"].resampled(len(models))
                     colors = ["#1f77b4"] + [
                         cm.to_hex(colors(i)) for i in range(len(models))
                     ]
@@ -1753,7 +1758,13 @@ class _StatsForecast:
                         label="First ds Forecast",
                         linestyle="--",
                     )
-                    colors = mpl.colormaps["tab20b"].resampled(len(models))
+
+                    if pkg_resources.parse_version(
+                        mpl.__version__
+                    ) < pkg_resources.parse_version("3.6"):
+                        colors = plt.cm.get_cmap("tab20b", len(models))
+                    else:
+                        colors = mpl.colormaps["tab20b"].resampled(len(models))
                     colors = ["blue"] + [colors(i) for i in range(len(models))]
                     for col, color in zip(models, colors):
                         if col in test_uid:
