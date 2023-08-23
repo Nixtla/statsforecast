@@ -16,6 +16,7 @@ from typing import Any, List, Optional, Union, Dict
 import pkg_resources
 
 from fugue.execution.factory import make_execution_engine
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import numpy as np
@@ -615,6 +616,7 @@ class DataFrameProcessing:
 
             # Datetime check
             dt_arr = self.dataframe["ds"].values
+            self.dataframe = self.dataframe.copy(deep=False)
             self.dataframe["ds"] = self._check_datetime(dt_arr)
 
             self.dataframe = self.dataframe.set_index("ds", append=True)
@@ -1595,7 +1597,12 @@ class _StatsForecast:
                         df_uid = df_uid.iloc[-max_insample_length:]
                     plot_anomalies = "y" in df_uid and plot_anomalies
                     df_uid = _parse_ds_type(df_uid)
-                    colors = plt.cm.get_cmap("tab20b", len(models))
+                    if pkg_resources.parse_version(
+                        mpl.__version__
+                    ) < pkg_resources.parse_version("3.6"):
+                        colors = plt.cm.get_cmap("tab20b", len(models))
+                    else:
+                        colors = mpl.colormaps["tab20b"].resampled(len(models))
                     colors = ["#1f77b4"] + [
                         cm.to_hex(colors(i)) for i in range(len(models))
                     ]
@@ -1751,7 +1758,13 @@ class _StatsForecast:
                         label="First ds Forecast",
                         linestyle="--",
                     )
-                    colors = plt.cm.get_cmap("tab20b", len(models))
+
+                    if pkg_resources.parse_version(
+                        mpl.__version__
+                    ) < pkg_resources.parse_version("3.6"):
+                        colors = plt.cm.get_cmap("tab20b", len(models))
+                    else:
+                        colors = mpl.colormaps["tab20b"].resampled(len(models))
                     colors = ["blue"] + [colors(i) for i in range(len(models))]
                     for col, color in zip(models, colors):
                         if col in test_uid:
