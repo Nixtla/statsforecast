@@ -4937,7 +4937,7 @@ class MSTL(_TS):
         res = self.trend_forecaster.predict(**kwargs)
         seas = _predict_mstl_seas(self.model_, h=h, season_length=self.season_length)
         res = {key: val + seas for key, val in res.items()}
-        if level is None:
+        if level is None or f'lo-{level[0]}' in res:
             return res
         level = sorted(level)
         if self.trend_forecaster.prediction_intervals is not None:
@@ -5022,7 +5022,7 @@ class MSTL(_TS):
             key: val + (seas_insample if "fitted" in key else seas_h)
             for key, val in res.items()
         }
-        if level is None:
+        if level is None or f'lo-{level[0]}' in res:
             return res
         level = sorted(level)
         if self.trend_forecaster.prediction_intervals is not None:
