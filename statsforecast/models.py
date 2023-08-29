@@ -10,7 +10,6 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
-from inspect import signature
 from math import trunc
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
