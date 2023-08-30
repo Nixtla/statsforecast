@@ -595,31 +595,44 @@ class DataFrameProcessing:
             self.engine_dataframe = pd.DataFrame
             # Ensure that all required columns are present in the DataFrame:
             # Full validation
-            if self.validate and self.dataframe.index.name == "unique_id":
+            if self.validate and any(
+                req_col in self.dataframe.index.names
+                for req_col in self.non_value_columns
+            ):
                 reset_df = self.dataframe.reset_index()
                 self._validate_dataframe(reset_df)
                 del reset_df
 
-            elif self.validate and self.dataframe.index.name != "unique_id":
+            elif self.validate and not any(
+                req_col in self.dataframe.index.names
+                for req_col in self.non_value_columns
+            ):
                 self._validate_dataframe(self.dataframe)
                 self.dataframe = self.dataframe.set_index("unique_id")
 
             # Partial validation
-            elif self.validate == False and self.dataframe.index.name == "unique_id":
+            elif self.validate == False and any(
+                req_col in self.dataframe.index.names
+                for req_col in self.non_value_columns
+            ):
                 reset_df = self.dataframe.reset_index()
                 self._partial_val_df(reset_df)
                 del reset_df
 
-            elif self.validate == False and self.dataframe.index.name != "unique_id":
+            elif self.validate == False and not any(
+                req_col in self.dataframe.index.names
+                for req_col in self.non_value_columns
+            ):
                 self._partial_val_df(self.dataframe)
                 self.dataframe = self.dataframe.set_index("unique_id")
 
             # Datetime check
+            self.dataframe = self.dataframe.reset_index()
             dt_arr = self.dataframe["ds"].values
             self.dataframe = self.dataframe.copy(deep=False)
             self.dataframe["ds"] = self._check_datetime(dt_arr)
 
-            self.dataframe = self.dataframe.set_index("ds", append=True)
+            self.dataframe = self.dataframe.set_index(self.non_value_columns)
 
             # Sorting will be performed if sort is set to true and values are unsorted
             if not self.dataframe.index.is_monotonic_increasing and self.sort_dataframe:
@@ -1510,26 +1523,20 @@ class _StatsForecast:
             uids_arr: pd.Index = df_pt.indices
             uid_dtype = uids_arr.dtype
 
-            if df.index.name != "unique_id":
-                df["unique_id"] = df["unique_id"].astype(uid_dtype)
-                df = df.set_index("unique_id")
-            else:
-                df.index = df.index.astype(uid_dtype)
+            df = df.reset_index()
+            df["unique_id"] = df["unique_id"].astype(uid_dtype)
+            df = df.set_index("unique_id")
 
             if forecasts_df is not None:
                 if isinstance(forecasts_df, pl.DataFrame):
                     forecasts_df = forecasts_df.to_pandas()
 
-                if forecasts_df.index.name == "unique_id":
-                    forecasts_df.index = forecasts_df.index.astype(uid_dtype)
-                    unique_ids = np.intersect1d(uids_arr, forecasts_df.index.unique())
-                else:
-                    forecasts_df["unique_id"] = forecasts_df["unique_id"].astype(
-                        uid_dtype
-                    )
-                    unique_ids = np.intersect1d(
-                        uids_arr, forecasts_df["unique_id"].unique()
-                    )
+                forecasts_df = forecasts_df.reset_index()
+                forecasts_df["unique_id"] = forecasts_df["unique_id"].astype(uid_dtype)
+                unique_ids = np.intersect1d(
+                    uids_arr, forecasts_df["unique_id"].unique()
+                )
+                forecasts_df = forecasts_df.set_index("unique_id")
             else:
                 unique_ids = uids_arr
 
