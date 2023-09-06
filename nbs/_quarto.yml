@@ -5,4 +5,4 @@ format:
   mintlify-md:
     code-fold: true
 
-metadata-files: [nbdev.yml, sidebar.yml]
+metadata-files: [nbdev.yml]
