@@ -1,7 +1,7 @@
 [
   {
     "group": "",
-    "pages": ["introduction"]
+    "pages": ["index.html"]
   },
   {
     "group": "Getting Started",
@@ -54,12 +54,12 @@
   {
     "group": "Contributing",
     "pages": [
-      "statsforecast/contribute/contribute",
-      "statsforecast/contribute/docs",
-      "statsforecast/contribute/issue-labels",
-      "statsforecast/contribute/issues",
-      "statsforecast/contribute/step-by-step",
-      "statsforecast/contribute/techstack"
+      "contribute/contribute",
+      "contribute/docs",
+      "contribute/issue-labels",
+      "contribute/issues",
+      "contribute/step-by-step",
+      "contribute/techstack"
     ]
   }
 ]
