@@ -9,12 +9,14 @@ import logging
 import random
 import re
 import reprlib
+import warnings
 from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 import pkg_resources
 
 from fugue.execution.factory import make_execution_engine
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as cm
 import numpy as np
@@ -614,6 +616,7 @@ class DataFrameProcessing:
 
             # Datetime check
             dt_arr = self.dataframe["ds"].values
+            self.dataframe = self.dataframe.copy(deep=False)
             self.dataframe["ds"] = self._check_datetime(dt_arr)
 
             self.dataframe = self.dataframe.set_index("ds", append=True)
@@ -956,6 +959,18 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+
+        if (
+            any(
+                getattr(m, "prediction_intervals", None) is not None
+                for m in self.models
+            )
+            and level is None
+        ):
+            warnings.warn(
+                "Prediction intervals are set but `level` was not provided. "
+                "Predictions won't have intervals."
+            )
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
@@ -1005,6 +1020,10 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        if prediction_intervals is not None and level is None:
+            raise ValueError(
+                "You must specify `level` when using `prediction_intervals`"
+            )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
@@ -1180,6 +1199,10 @@ class _StatsForecast:
             raise Exception("you must define `n_windows` or `test_size`")
         else:
             raise Exception("you must define `n_windows` or `test_size` but not both")
+        if prediction_intervals is not None and level is None:
+            raise ValueError(
+                "You must specify `level` when using `prediction_intervals`"
+            )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         series_sizes = np.diff(self.ga.indptr)
@@ -1574,7 +1597,12 @@ class _StatsForecast:
                         df_uid = df_uid.iloc[-max_insample_length:]
                     plot_anomalies = "y" in df_uid and plot_anomalies
                     df_uid = _parse_ds_type(df_uid)
-                    colors = plt.cm.get_cmap("tab20b", len(models))
+                    if pkg_resources.parse_version(
+                        mpl.__version__
+                    ) < pkg_resources.parse_version("3.6"):
+                        colors = plt.cm.get_cmap("tab20b", len(models))
+                    else:
+                        colors = mpl.colormaps["tab20b"].resampled(len(models))
                     colors = ["#1f77b4"] + [
                         cm.to_hex(colors(i)) for i in range(len(models))
                     ]
@@ -1730,7 +1758,13 @@ class _StatsForecast:
                         label="First ds Forecast",
                         linestyle="--",
                     )
-                    colors = plt.cm.get_cmap("tab20b", len(models))
+
+                    if pkg_resources.parse_version(
+                        mpl.__version__
+                    ) < pkg_resources.parse_version("3.6"):
+                        colors = plt.cm.get_cmap("tab20b", len(models))
+                    else:
+                        colors = mpl.colormaps["tab20b"].resampled(len(models))
                     colors = ["blue"] + [colors(i) for i in range(len(models))]
                     for col, color in zip(models, colors):
                         if col in test_uid:
@@ -1857,6 +1891,10 @@ class StatsForecast(_StatsForecast):
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+        if prediction_intervals is not None and level is None:
+            raise ValueError(
+                "You must specify `level` when using `prediction_intervals`"
+            )
         if self._is_native(df=df):
             return super().forecast(
                 h=h,

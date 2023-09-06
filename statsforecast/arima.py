@@ -1813,7 +1813,7 @@ def auto_arima_f(
     nonmissing_idxs = np.where(~missing)[0]
     firstnonmiss = nonmissing_idxs.min()
     lastnonmiss = nonmissing_idxs.max()
-    series_len = np.sum(~missing[firstnonmiss:lastnonmiss])
+    series_len = int(np.sum(~missing[firstnonmiss:lastnonmiss]))
     x = x[firstnonmiss:]
     if xreg is not None:
         if xreg.dtype not in (np.float32, np.float64):
@@ -2301,11 +2301,11 @@ def auto_arima_f(
 
     return bestfit
 
-# %% ../nbs/src/arima.ipynb 88
+# %% ../nbs/src/arima.ipynb 89
 def forward_arima(fitted_model, y, xreg=None, method="CSS-ML"):
     return Arima(x=y, model=fitted_model, xreg=xreg, method=method)
 
-# %% ../nbs/src/arima.ipynb 97
+# %% ../nbs/src/arima.ipynb 98
 def print_statsforecast_ARIMA(model, digits=3, se=True):
     print(arima_string(model, padding=False))
     if model["lambda"] is not None:
@@ -2335,7 +2335,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if not np.isnan(model["aic"]):
         print(f'AIC={round(model["aic"], 2)}')
 
-# %% ../nbs/src/arima.ipynb 99
+# %% ../nbs/src/arima.ipynb 100
 class ARIMASummary:
     """ARIMA Summary."""
 
@@ -2348,7 +2348,7 @@ class ARIMASummary:
     def summary(self):
         return print_statsforecast_ARIMA(self.model)
 
-# %% ../nbs/src/arima.ipynb 100
+# %% ../nbs/src/arima.ipynb 101
 class AutoARIMA:
     """An AutoARIMA estimator.
 
