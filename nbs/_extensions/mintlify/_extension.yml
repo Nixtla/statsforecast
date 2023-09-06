@@ -1,0 +1,33 @@
+title: Mintlify
+author: Mintlify, Inc
+organization: Mintlify
+contributes:  
+  project:
+    project:
+      type: default
+      detect:
+        - ["mint.json"]
+      render:
+        - "**/*.qmd"
+        - "**/*.ipynb"
+    format: mintlify-md    
+  formats:
+    md:
+      # Although we use a custom writer, we still need the variants here the lua filters to render correctly.
+      # Ideally, we would forward the variants to the custom writer.
+      variant: gfm+pipe_tables+tex_math_dollars+raw_html+all_symbols_escapable+backtick_code_blocks+space_in_atx_header+intraword_underscores+lists_without_preceding_blankline+shortcut_reference_links
+      writer: mintlify_writer.lua
+      # reader: mintlify_reader.lua
+      output-ext: mdx
+      inline-includes: true
+      preserve-yaml: true
+      wrap: none
+      fig-format: retina
+      fig-width: 8
+      fig-height: 5
+      html-math-method: webtex
+      # shortcodes:
+      #   - plotly.lua
+      filters:
+        - mintlify.lua
+        # - plotly.lua
