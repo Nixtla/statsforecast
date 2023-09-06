@@ -1,0 +1,48 @@
+name: "build-docs"
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          cache: "pip"
+          cache-dependency-path: settings.ini
+      - name: Install Dependencies
+        shell: bash
+        run: |
+          set -ux
+          python -m pip install --upgrade pip
+          if [ $USE_PRE ]; then
+            pip install -Uq git+https://github.com/fastai/ghapi.git
+            pip install -Uq git+https://github.com/fastai/fastcore.git
+            pip install -Uq git+https://github.com/fastai/execnb.git
+            pip install -Uq git+https://github.com/fastai/nbdev.git
+            wget -q $(curl https://latest.fast.ai/pre/quarto-dev/quarto-cli/linux-amd64.deb)
+            sudo dpkg -i quarto*.deb
+          else
+            pip install -Uq nbdev
+          fi
+          if [ $TORCH_CPU ]; then
+            test -f setup.py && pip install -e ".[dev]" --extra-index-url https://download.pytorch.org/whl/cpu
+          else
+            test -f setup.py && pip install -e ".[dev]"
+          fi
+          nbdev_docs
+      - name: Copy over navigation.json
+        run: |
+          cp nbs/navigation.json _docs/navigation.json
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.STATSFORECAST_PUSH_TOKEN }}
+          publish_branch: docs
+          publish_dir: ./_docs
+          # The following lines assign commit authorship to the official GH-Actions bot for deploys to `docs` branch.
+          # You can swap them out with your own user credentials.
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
