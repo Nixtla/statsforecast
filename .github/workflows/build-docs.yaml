@@ -17,21 +17,8 @@ jobs:
         run: |
           set -ux
           python -m pip install --upgrade pip
-          if [ $USE_PRE ]; then
-            pip install -Uq git+https://github.com/fastai/ghapi.git
-            pip install -Uq git+https://github.com/fastai/fastcore.git
-            pip install -Uq git+https://github.com/fastai/execnb.git
-            pip install -Uq git+https://github.com/fastai/nbdev.git
-            wget -q $(curl https://latest.fast.ai/pre/quarto-dev/quarto-cli/linux-amd64.deb)
-            sudo dpkg -i quarto*.deb
-          else
-            pip install -Uq nbdev
-          fi
-          if [ $TORCH_CPU ]; then
-            test -f setup.py && pip install -e ".[dev]" --extra-index-url https://download.pytorch.org/whl/cpu
-          else
-            test -f setup.py && pip install -e ".[dev]"
-          fi
+          pip install -Uq nbdev
+          test -f setup.py && pip install -e ".[dev]"
           nbdev_docs
       - name: Copy over navigation.json
         run: |
