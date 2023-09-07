@@ -1,7 +1,7 @@
 name: "build-docs"
 on:
   push:
-    branches: ["mintlify"]
+    branches: ["main"]
   workflow_dispatch:
 jobs:
   build-docs:
