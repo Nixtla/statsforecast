@@ -23,7 +23,7 @@ jobs:
       - name: Copy over navigation.json
         run: |
           cp nbs/navigation.json _docs/navigation.json
-      - name: Deploy to GitHub Pages
+      - name: Deploy to Mintlify Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
           publish_branch: docs
