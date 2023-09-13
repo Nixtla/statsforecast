@@ -11,6 +11,7 @@ dependencies:
   - pyspark>=3.3
   - pip
   - prophet
+  - pyarrow
   - scipy>=1.7.3
   - statsmodels>=0.13.2
   - tabulate
@@ -20,6 +21,5 @@ dependencies:
     - nbdev
     - plotly-resampler
     - polars
-    - pyarrow
     - supersmoother
     - tqdm
