@@ -17,7 +17,6 @@ dependencies:
   - tabulate
   - plotly
   - pip:
-    - ray
     - fugue[dask,ray]
     - nbdev
     - plotly-resampler
