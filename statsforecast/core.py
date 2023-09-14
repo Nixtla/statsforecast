@@ -6,11 +6,8 @@ __all__ = ['StatsForecast']
 # %% ../nbs/src/core/core.ipynb 5
 import inspect
 import logging
-import random
-import re
 import reprlib
 import warnings
-from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 import pkg_resources

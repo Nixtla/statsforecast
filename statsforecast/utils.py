@@ -4,9 +4,6 @@
 __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 # %% ../nbs/src/utils.ipynb 3
-import random
-from typing import Union
-
 import numpy as np
 import pandas as pd
 from numba import njit
