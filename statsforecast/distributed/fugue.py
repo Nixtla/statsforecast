@@ -123,26 +123,19 @@ class FugueBackend(ParallelBackend):
                 engine_conf=self._conf,
                 **self._transform_kwargs,
             )
-        else:
-            schema = "unique_id:str,ds:str," + str(
-                self._get_output_schema(models, level)
-            )
-            return _cotransform(
-                df,
-                X_df,
-                self._forecast_series_X,
-                params=dict(
-                    models=models,
-                    freq=freq,
-                    kwargs=kwargs,
-                    fallback_model=fallback_model,
-                ),
-                schema=schema,
-                partition={"by": "unique_id"},
-                engine=self._engine,
-                engine_conf=self._conf,
-                **self._transform_kwargs,
-            )
+        return _cotransform(
+            df,
+            X_df,
+            self._forecast_series_X,
+            params=dict(
+                models=models, freq=freq, kwargs=kwargs, fallback_model=fallback_model
+            ),
+            schema=schema,
+            partition={"by": "unique_id"},
+            engine=self._engine,
+            engine_conf=self._conf,
+            **self._transform_kwargs,
+        )
 
     def cross_validation(
         self,
