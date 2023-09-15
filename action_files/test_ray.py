@@ -10,7 +10,7 @@ def n_series():
 
 @pytest.fixture()
 def sample_data(n_series):
-    series = generate_series(n_series).reset_index()
+    series = generate_series(n_series, n_static_features=2).reset_index()
     series['unique_id'] = series['unique_id'].astype(str)
     series = ray.data.from_pandas(series).repartition(2)
     return series

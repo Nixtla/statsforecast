@@ -7,6 +7,7 @@ __all__ = ['FugueBackend']
 import inspect
 from typing import Any, Dict, List
 
+import fugue.api as fa
 import numpy as np
 import pandas as pd
 from fugue import transform, DataFrame, FugueWorkflow, ExecutionEngine
@@ -105,7 +106,7 @@ class FugueBackend(ParallelBackend):
         Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
         """
         level = kwargs.get("level", [])
-        schema = "*-y+" + str(self._get_output_schema(models, level))
+        schema = self._get_output_schema(df, models, level)
         if X_df is None:
             return transform(
                 df,
@@ -178,7 +179,7 @@ class FugueBackend(ParallelBackend):
         [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
         """
         level = kwargs.get("level", [])
-        schema = "*-y+" + str(self._get_output_schema(models, level, mode="cv"))
+        schema = self._get_output_schema(df, models, level, mode="cv")
         return transform(
             df,
             self._cv,
@@ -222,7 +223,12 @@ class FugueBackend(ParallelBackend):
         )
         return model.cross_validation(**kwargs).reset_index()
 
-    def _get_output_schema(self, models, level=None, mode="forecast") -> Schema:
+    def _get_output_schema(self, df, models, level=None, mode="forecast") -> Schema:
+        keep_schema = {
+            field.name: field.type
+            for field in fa.get_schema(df).fields
+            if field.name in ("unique_id", "ds")
+        }
         cols: List[Any] = []
         if level is None:
             level = []
@@ -238,8 +244,8 @@ class FugueBackend(ParallelBackend):
                 )
                 cols.extend([(f"{repr(model)}-hi-{l}", np.float32) for l in level])
         if mode == "cv":
-            cols = [("cutoff", "datetime"), ("y", np.float32)] + cols
-        return Schema(cols)
+            cols = [("cutoff", keep_schema["ds"]), ("y", np.float32)] + cols
+        return Schema(keep_schema) + Schema(cols)
 
 
 @make_backend.candidate(lambda obj, *args, **kwargs: isinstance(obj, ExecutionEngine))

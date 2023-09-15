@@ -11,7 +11,7 @@ def n_series():
 @pytest.fixture()
 def sample_data(n_series):
     n_series = 2
-    series = generate_series(n_series).reset_index()
+    series = generate_series(n_series, n_static_features=2).reset_index()
     series['unique_id'] = series['unique_id'].astype(str)
     spark = SparkSession.builder.getOrCreate()
     series = spark.createDataFrame(series).repartition(2, 'unique_id')
