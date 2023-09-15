@@ -16,7 +16,7 @@ def horizon():
 @pytest.fixture()
 def local_data(n_series, horizon):
     n_static = 2
-    series = generate_series(n_series, n_static_features=n_static).reset_index()
+    series = generate_series(n_series, n_static_features=n_static)
     static_features = []
     for i in range(n_static):
         name = f'static_{i}'
