@@ -16,6 +16,7 @@ dependencies:
   - statsmodels>=0.13.2
   - tabulate
   - plotly
+  - utilsforecast>=0.0.5
   - pip:
     - fugue[dask,ray]
     - nbdev
@@ -23,4 +24,3 @@ dependencies:
     - polars
     - supersmoother
     - tqdm
-    - utilsforecast>=0.0.5
