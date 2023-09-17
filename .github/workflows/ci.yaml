@@ -37,37 +37,54 @@ jobs:
           git status -s # display the status to see which nbs need cleaning up
           if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks and running ./action_files/clean_nbs before committing"; false; fi
 
+  run-local-tests:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v3
+
+      - name: Set up environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          environment-file: dev/local_environment.yml
+          create-args: python=${{ matrix.python-version }}
+          cache-environment: true
+
+      - name: Install pip requirements
+        run: pip install ./
+
+      - name: Run local tests
+        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0
+
   run-tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.7, 3.8, 3.9, '3.10']
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
     steps:
       - name: Clone repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up environment
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: dev/environment.yml
-          extra-specs: python=${{ matrix.python-version }}
-          cache-env: true
+          create-args: python=${{ matrix.python-version }}
+          cache-environment: true
 
       - name: Install pip requirements
         run: pip install ./ 
 
-      - name: Run tests on windows
-        if: ${{ matrix.os == 'windows-latest' }} #until nbdev fix
-        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0
-      
       - name: Run tests 
-        if: ${{ matrix.os != 'windows-latest' }}
         run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
 
       - name: Run integration tests
-        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           pip install ".[dev]" pytest
           pytest action_files      
@@ -78,14 +95,14 @@ jobs:
       fail-fast: false
     steps:
       - name: Clone repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up environment
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: dev/environment.yml
-          extra-specs: python=3.10
-          cache-env: true
+          create-args: python=3.10
+          cache-environment: true
 
       - name: Install library and extra deps
         run: pip install ".[dev]" fire
