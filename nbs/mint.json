@@ -1,0 +1,67 @@
+{
+  "navigation": [
+    {
+      "group": "",
+      "pages": ["index.html"]
+    },
+    {
+      "group": "Getting Started",
+      "pages": [
+        "getting-started/installation.html",
+        "getting-started/getting_started_short.html",
+        "getting-started/getting_started_complete.html"
+      ]
+    },
+    {
+      "group": "Tutorials",
+      "pages": [
+        "tutorials/anomalydetection.html",
+        "tutorials/conformalprediction.html",
+        "tutorials/crossvalidation.html",
+        "tutorials/electricityloadforecasting.html",
+        "tutorials/electricitypeakforecasting.html",
+        "tutorials/garch_tutorial.html",
+        "tutorials/intermittentdata.html",
+        "tutorials/multipleseasonalities.html",
+        "tutorials/statisticalneuralmethods.html",
+        "tutorials/uncertaintyintervals.html"
+      ]
+    },
+    {
+      "group": "How to Guides",
+      "pages": [
+        "how-to-guides/automatic_forecasting.html",
+        "how-to-guides/amazonstatsforecast.html",
+        "how-to-guides/autoarima_vs_prophet.html",
+        "how-to-guides/dask.html",
+        "how-to-guides/ets_ray_m5.html",
+        "how-to-guides/exogenous.html",
+        "how-to-guides/getting_started_complete_polars.html",
+        "how-to-guides/migrating_r",
+        "how-to-guides/prophet_spark_m5.html",
+        "how-to-guides/ray.html",
+        "how-to-guides/spark.html"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "src/core/core.html",
+        "src/core/distributed.fugue.html",
+        "src/core/models_intro",
+        "src/core/models.html"
+      ]
+    },
+    {
+      "group": "Contributing",
+      "pages": [
+        "contribute/contribute",
+        "contribute/docs",
+        "contribute/issue-labels",
+        "contribute/issues",
+        "contribute/step-by-step",
+        "contribute/techstack"
+      ]
+    }
+  ]
+}

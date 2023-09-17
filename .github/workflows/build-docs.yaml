@@ -20,9 +20,9 @@ jobs:
           pip install -Uq nbdev
           test -f setup.py && pip install -e ".[dev]"
           nbdev_docs
-      - name: Copy over navigation.json
+      - name: Copy over mint.json
         run: |
-          cp nbs/navigation.json _docs/navigation.json
+          cp nbs/mint.json _docs/mint.json
       - name: Deploy to Mintlify Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
