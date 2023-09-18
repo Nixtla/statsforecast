@@ -8,7 +8,6 @@ dependencies:
   - numba>=0.55.0
   - numpy>=1.21.6
   - pandas>=1.3.5
-  - pyspark>=3.3
   - pip
   - prophet
   - pyarrow
@@ -17,7 +16,6 @@ dependencies:
   - tabulate
   - plotly
   - pip:
-    - fugue[dask,ray]
     - nbdev
     - plotly-resampler
     - polars
