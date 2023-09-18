@@ -1487,21 +1487,21 @@ class _StatsForecast:
         """
         from utilsforecast.plotting import plot_series
 
-        if df.index.name == "unique_id":
+        if isinstance(df, pd.DataFrame) and df.index.name == "unique_id":
             warnings.warn(
                 "Passing unique_id as the index is deprecated. "
                 "Please provide it as a column instead.",
                 category=DeprecationWarning,
             )
             df = df.reset_index()
-        if pd.api.types.is_object_dtype(df["ds"]):
+        if isinstance(df, pd.DataFrame) and pd.api.types.is_object_dtype(df["ds"]):
             warnings.warn(
                 "Passing an object column as 'ds' is deprecated and will raise an error in a future version. "
                 "Please convert it to datetime or integer.",
                 category=DeprecationWarning,
             )
             df = _parse_ds_type(df)
-        if forecasts_df is not None:
+        if isinstance(forecasts_df, pd.DataFrame):
             if forecasts_df.index.name == "unique_id":
                 warnings.warn(
                     "Passing unique_id as the index is deprecated. "
