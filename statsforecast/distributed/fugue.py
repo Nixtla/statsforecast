@@ -217,11 +217,7 @@ class FugueBackend(ParallelBackend):
         return model.cross_validation(**kwargs).reset_index()
 
     def _get_output_schema(self, df, models, level=None, mode="forecast") -> Schema:
-        keep_schema = {
-            field.name: field.type
-            for field in fa.get_schema(df).fields
-            if field.name in ("unique_id", "ds")
-        }
+        keep_schema = fa.get_schema(df).extract(["unique_id", "ds"])
         cols: List[Any] = []
         if level is None:
             level = []
@@ -237,7 +233,7 @@ class FugueBackend(ParallelBackend):
                 )
                 cols.extend([(f"{repr(model)}-hi-{l}", np.float32) for l in level])
         if mode == "cv":
-            cols = [("cutoff", keep_schema["ds"]), ("y", np.float32)] + cols
+            cols = [("cutoff", keep_schema["ds"].type), ("y", np.float32)] + cols
         return Schema(keep_schema) + Schema(cols)
 
 
