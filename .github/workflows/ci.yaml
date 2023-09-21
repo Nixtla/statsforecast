@@ -87,6 +87,7 @@ jobs:
 
       - name: Run integration tests
         run: |
+          echo "CACHE: $NIXTLA_NUMBA_CACHE"
           pip install ".[dev]" pytest
           pytest action_files      
 
