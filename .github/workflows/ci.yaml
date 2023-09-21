@@ -86,14 +86,12 @@ jobs:
         run: pip install ./ 
 
       - name: Run tests 
-        run: |
-          echo "CACHE: $NIXTLA_NUMBA_CACHE"
-          nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
 
       - name: Run integration tests
         run: |
           pip install ".[dev]" pytest
-          pytest action_files      
+          pytest --durations=0 action_files
 
   test-m3-performance:
     runs-on: ubuntu-latest
