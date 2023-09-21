@@ -1,4 +1,28 @@
 {
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Nixtla",
+  "logo": {
+    "light": "/logo/light.png",
+    "dark": "/logo/dark.png"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0E0E0E",
+    "light": "#FAFAFA",
+    "dark": "#0E0E0E",
+    "anchors": {
+      "from": "#2AD0CA",
+      "to": "#0E00F8"
+    }
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/Nixtla/nixtla"
+  },
+  "topAnchor": {
+    "name": "StatsForecast",
+    "icon": "bolt"
+  },
   "navigation": [
     {
       "group": "",
