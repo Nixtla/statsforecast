@@ -14,6 +14,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NIXTLA_NUMBA_CACHE: '1'
+
 jobs:
   nb-sync:
     runs-on: ubuntu-latest
@@ -83,11 +86,12 @@ jobs:
         run: pip install ./ 
 
       - name: Run tests 
-        run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
+        run: |
+          echo "CACHE: $NIXTLA_NUMBA_CACHE"
+          nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
 
       - name: Run integration tests
         run: |
-          echo "CACHE: $NIXTLA_NUMBA_CACHE"
           pip install ".[dev]" pytest
           pytest action_files      
 
