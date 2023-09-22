@@ -4,14 +4,30 @@
 __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 # %% ../nbs/src/utils.ipynb 3
+import os
+import warnings
+
 import numpy as np
 import pandas as pd
 from numba import njit
 from scipy.stats import norm
+
 from utilsforecast.compat import DataFrame
 from utilsforecast.data import generate_series as utils_generate_series
 
-# %% ../nbs/src/utils.ipynb 6
+# %% ../nbs/src/utils.ipynb 4
+# Global variables
+NOGIL = bool(os.getenv("NIXTLA_NUMBA_RELEASE_GIL", ""))
+LEGACY_CACHE = bool(os.getenv("NUMBA_CACHE", ""))
+if LEGACY_CACHE:
+    warnings.warn(
+        "The NUMBA_CACHE environment variable has been renamed to NIXTLA_NUMBA_CACHE. "
+        "Please set that one instead.",
+        DeprecationWarning,
+    )
+CACHE = bool(os.getenv("NIXTLA_NUMBA_CACHE", "")) or LEGACY_CACHE
+
+# %% ../nbs/src/utils.ipynb 7
 def generate_series(
     n_series: int,
     freq: str = "D",
@@ -51,7 +67,7 @@ def generate_series(
         seed=seed,
     )
 
-# %% ../nbs/src/utils.ipynb 10
+# %% ../nbs/src/utils.ipynb 11
 AirPassengers = np.array(
     [
         112.0,
@@ -201,7 +217,7 @@ AirPassengers = np.array(
     ]
 )
 
-# %% ../nbs/src/utils.ipynb 11
+# %% ../nbs/src/utils.ipynb 12
 AirPassengersDF = pd.DataFrame(
     {
         "unique_id": np.ones(len(AirPassengers)),
@@ -210,8 +226,8 @@ AirPassengersDF = pd.DataFrame(
     }
 )
 
-# %% ../nbs/src/utils.ipynb 15
-@njit
+# %% ../nbs/src/utils.ipynb 16
+@njit(nogil=NOGIL, cache=CACHE)
 def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
     out = np.empty(h, np.float32)
     for i in range(h):
@@ -219,7 +235,7 @@ def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
     return out
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_naive(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -245,12 +261,12 @@ def _seasonal_naive(
     return fcst
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _repeat_val(val: float, h: int):
     return np.full(h, val, np.float32)
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _naive(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -263,7 +279,7 @@ def _naive(
         return {"mean": mean, "fitted": fitted_vals}
     return {"mean": mean}
 
-# %% ../nbs/src/utils.ipynb 17
+# %% ../nbs/src/utils.ipynb 18
 # Functions used for calculating prediction intervals
 def _quantiles(level):
     level = np.asarray(level)
@@ -290,7 +306,7 @@ def _calculate_sigma(residuals, n):
     sigma = np.sqrt(sigma)
     return sigma
 
-# %% ../nbs/src/utils.ipynb 18
+# %% ../nbs/src/utils.ipynb 19
 class ConformalIntervals:
     """Class for storing conformal intervals metadata information."""
 

@@ -30,14 +30,16 @@ from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
 from statsforecast.utils import (
-    _seasonal_naive,
-    _repeat_val_seas,
-    _naive,
-    _repeat_val,
-    _quantiles,
     _calculate_sigma,
     _calculate_intervals,
+    _naive,
+    _quantiles,
+    _repeat_val,
+    _repeat_val_seas,
+    _seasonal_naive,
+    CACHE,
     ConformalIntervals,
+    NOGIL,
 )
 
 # %% ../nbs/src/core/models.ipynb 8
@@ -1683,7 +1685,7 @@ class AutoRegressive(ARIMA):
         return self.alias
 
 # %% ../nbs/src/core/models.ipynb 110
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
 
@@ -1712,20 +1714,20 @@ def _ses_mse(alpha: float, x: np.ndarray) -> float:
     return mse
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     """One step ahead forecast with simple exponential smoothing."""
     forecast, _, fitted = _ses_fcst_mse(x, alpha)
     return forecast, fitted
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _demand(x: np.ndarray) -> np.ndarray:
     """Extract the positive elements of a vector."""
     return x[x > 0]
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _intervals(x: np.ndarray) -> np.ndarray:
     """Compute the intervals between non zero elements of a vector."""
     y = []
@@ -1741,7 +1743,7 @@ def _intervals(x: np.ndarray) -> np.ndarray:
     return np.array(y)
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _probability(x: np.ndarray) -> np.ndarray:
     """Compute the element probabilities of being non zero."""
     return (x != 0).astype(np.int32)
@@ -1758,7 +1760,7 @@ def _optimized_ses_forecast(
     return forecast, fitted
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     """Splits an array into chunks and returns the sum of each chunk."""
     n = array.size
@@ -1769,7 +1771,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     return sums
 
 # %% ../nbs/src/core/models.ipynb 111
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2116,7 +2118,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 135
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2603,7 +2605,7 @@ class HoltWinters(AutoETS):
         return self.alias
 
 # %% ../nbs/src/core/models.ipynb 190
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _historic_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2968,7 +2970,7 @@ class Naive(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 217
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3354,7 +3356,7 @@ class SeasonalNaive(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 246
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _window_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3528,7 +3530,7 @@ class WindowAverage(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 258
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_window_average(
     y: np.ndarray,
     h: int,
@@ -3906,7 +3908,7 @@ class ADIDA(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 284
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _croston_classic(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4259,7 +4261,7 @@ class CrostonOptimized(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 308
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _croston_sba(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4611,7 +4613,7 @@ class IMAPA(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 332
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _tsb(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon

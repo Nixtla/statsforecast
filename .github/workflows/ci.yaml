@@ -14,6 +14,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NIXTLA_NUMBA_CACHE: '1'
+
 jobs:
   nb-sync:
     runs-on: ubuntu-latest
@@ -88,7 +91,7 @@ jobs:
       - name: Run integration tests
         run: |
           pip install ".[dev]" pytest
-          pytest action_files      
+          pytest --durations=0 action_files
 
   test-m3-performance:
     runs-on: ubuntu-latest
