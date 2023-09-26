@@ -121,7 +121,8 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/16029092?v=4",
       "profile": "https://github.com/shagn",
       "contributions": [
-        "bug"
+        "bug",
+        "doc"
       ]
     },
     {
@@ -249,6 +250,51 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "kvnkho",
+      "name": "Kevin Kho",
+      "avatar_url": "https://avatars.githubusercontent.com/u/32503212?v=4",
+      "profile": "https://www.linkedin.com/in/kvnkho/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "yibenhuang",
+      "name": "Yiben Huang",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62163340?v=4",
+      "profile": "https://github.com/yibenhuang",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "andrewgross",
+      "name": "Andrew Gross",
+      "avatar_url": "https://avatars.githubusercontent.com/u/370118?v=4",
+      "profile": "https://github.com/andrewgross",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "taniishkaaa",
+      "name": "taniishkaaa",
+      "avatar_url": "https://avatars.githubusercontent.com/u/109246904?v=4",
+      "profile": "https://github.com/taniishkaaa",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "manuel-calzolari",
+      "name": "Manuel Calzolari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2764902?v=4",
+      "profile": "https://manuel.calzolari.name",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
@@ -257,5 +303,6 @@
   "repoType": "github",
   "repoHost": "https://github.com",
   "skipCi": true,
-  "commitConvention": "angular"
+  "commitConvention": "angular",
+  "commitType": "docs"
 }
