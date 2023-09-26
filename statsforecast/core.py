@@ -10,15 +10,18 @@ import reprlib
 import warnings
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
-import pkg_resources
 
-from fugue.execution.factory import make_execution_engine
 import numpy as np
 import pandas as pd
-import polars as pl
+from fugue.execution.factory import (
+    make_execution_engine,
+    try_get_context_execution_engine,
+)
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
-from fugue.execution.factory import try_get_context_execution_engine
+from utilsforecast.compat import DataFrame, pl_DataFrame
+from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
+from utilsforecast.processing import DataFrameProcessor
 
 from .utils import ConformalIntervals
 
@@ -31,29 +34,7 @@ if __name__ == "__main__":
 logger = logging.getLogger(__name__)
 
 # %% ../nbs/src/core/core.ipynb 9
-class GroupedArray:
-    def __init__(self, data, indptr):
-        self.data = data
-        self.indptr = indptr
-        self.n_groups = self.indptr.size - 1
-
-    def __getitem__(self, idx):
-        if isinstance(idx, int):
-            return self.data[self.indptr[idx] : self.indptr[idx + 1]]
-        elif isinstance(idx, slice):
-            idx = slice(idx.start, idx.stop + 1, idx.step)
-            new_indptr = self.indptr[idx].copy()
-            new_data = self.data[new_indptr[0] : new_indptr[-1]].copy()
-            new_indptr -= new_indptr[0]
-            return GroupedArray(new_data, new_indptr)
-        raise ValueError(f"idx must be either int or slice, got {type(idx)}")
-
-    def __len__(self):
-        return self.n_groups
-
-    def __repr__(self):
-        return f"GroupedArray(n_data={self.data.size:,}, n_groups={self.n_groups:,})"
-
+class GroupedArray(BaseGroupedArray):
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
             return False
@@ -389,310 +370,19 @@ class GroupedArray:
 
     def split(self, n_chunks):
         return [
-            self[x[0] : x[-1] + 1]
-            for x in np.array_split(range(self.n_groups), n_chunks)
-            if x.size
+            self.take(idxs)
+            for idxs in np.array_split(range(self.n_groups), n_chunks)
+            if idxs.size
         ]
 
     def split_fm(self, fm, n_chunks):
         return [
-            fm[x[0] : x[-1] + 1]
-            for x in np.array_split(range(self.n_groups), n_chunks)
-            if x.size
+            fm[idxs]
+            for idxs in np.array_split(range(self.n_groups), n_chunks)
+            if idxs.size
         ]
 
 # %% ../nbs/src/core/core.ipynb 22
-class DataFrameProcessing:
-    """
-    A utility to process Pandas or Polars dataframes for time series forecasting.
-
-    This class ensures the dataframe is properly structured, with required columns
-    ('unique_id', 'ds', 'y'), and the 'ds' column is of datetime type. It also
-    provides options for sorting the dataframe based on a unique identifier and a
-    timestamp, and separates the data into different arrays for easy access during
-    forecasting operations.
-
-    Attributes:
-    ----------
-    dataframe : pd.DataFrame or pl.DataFrame
-        A pandas or polars dataframe to be processed.
-    sort_dataframe : bool
-        A boolean indicating whether the dataframe should be sorted.
-
-    Methods:
-    -------
-    __call__():
-        Processes the dataframe by ensuring the columns are in the correct format,
-        sorts the dataframe if required, and separates the data into different
-        arrays for future operations.
-    _to_np_and_engine():
-        Converts the dataframe to a numpy structured array and identifies the
-        dataframe engine (pandas or polars).
-    _validate_dataframe(dataframe: Union[pd.DataFrame, pl.DataFrame]):
-        Checks if the required columns ('unique_id', 'ds', 'y') are present in the
-        dataframe.
-    _check_datetime(arr: np.array) -> np.array:
-        Validates that the 'ds' column is of datetime type, and if not, attempts to
-        convert it to datetime.
-    """
-
-    def __init__(
-        self,
-        dataframe: Union[pd.DataFrame, pl.DataFrame],
-        sort_dataframe: bool,
-        validate: Optional[bool] = True,
-    ):
-        self.dataframe = dataframe
-        self.sort_dataframe = sort_dataframe
-        self.validate = validate
-
-        # Columns declaration
-        self.non_value_columns: Union[tuple, list] = ["unique_id", "ds"]
-        self.datetime_column_name: str = "ds"
-        self.dt_dtype = np.dtype("datetime64")
-        self.__call__()
-
-    def __call__(self):
-        """Sequential execution of the code"""
-        # Declaring values that will be utilized
-        self.np_df = self._to_np_and_engine()
-        self.dataframe_columns = self.np_df.dtype.names
-
-        # Processing value columns
-        value_columns = [
-            column
-            for column in self.dataframe_columns
-            if column not in self.non_value_columns
-        ]
-        self.value_array = self.np_df[value_columns]
-        if self.value_array.ndim == 1 and len(value_columns) > 1:
-            self.value_array = np.stack(
-                [
-                    self.value_array[name].astype(float)
-                    for name in self.value_array.dtype.names
-                ],
-                axis=1,
-            )
-        if self.value_array.ndim == 1 and len(value_columns) == 1:
-            self.value_array = (
-                self.value_array[value_columns].astype(float).reshape(-1, 1)
-            )
-
-        # Processing unique_id
-        self.unique_id = self.np_df["unique_id"]
-        if self.unique_id.dtype.kind == "O":
-            self.unique_id.astype(str)
-
-        # If values are already int or float then they won't be converted
-        if self.unique_id.dtype.kind not in ["i", "f"]:
-            # If all values in the numpy array are numerical then proceed with conversion
-            if np.char.isnumeric(self.unique_id.astype(str)).all():
-                # If number are whole then they will be converted to `int`, else `float`
-                # This is pure aesthetics addition.
-                self.unique_id = self.unique_id.astype(float)
-                if np.isclose(self.unique_id, np.round(self.unique_id)).all():
-                    self.unique_id = self.unique_id.astype(int)
-        # NOTE: When sorting with Numpy, character values may be prioritized over numerical values if the data
-        # type is set to 'object'. For instance, the value '10' would come before '3' because it contains '1' and '0'
-        # at the beginning. One solution to this problem is to convert the data to 'float' if it is numerical.
-        unique_id_count = pd.Series(self.unique_id).value_counts(sort=False)
-        self.indices, sizes = unique_id_count.index, unique_id_count.values
-        cum_sizes = np.cumsum(sizes)
-
-        # Processing datestamp
-        self.dates = self.np_df[self.datetime_column_name]
-        if self.engine_dataframe == pd.DataFrame:
-            self.dates = self.dataframe.index.get_level_values(
-                self.datetime_column_name
-            )
-        self.dates = self.dates[cum_sizes - 1]
-        self.indptr = np.append(0, cum_sizes).astype(np.int32)
-
-        # Index that will be used by pandas, not polars
-        self.index = pd.MultiIndex.from_arrays(
-            [
-                self.np_df["unique_id"],
-                self.np_df["ds"],
-            ],
-            names=["unique_id", "ds"],
-        )
-
-    def grouped_array(self):
-        return GroupedArray(self.value_array, self.indptr)
-
-    def _to_np_and_engine(self):
-        """
-        This function will be utilised to convert DataFrame to dictionary.
-
-        Returns:
-            tuple[pd.DataFrame or pl.DataFrame, dict]: the engine that will be used to construct
-                the output DataFrame and dictionary of DataFrame values
-
-        Raises:
-            ValueError: If DataFrame engine is not supported and/or accounted for.
-        """
-
-        ####################
-        # Polars DataFrame #
-        ####################
-        if isinstance(self.dataframe, pl.DataFrame):
-            # Ensure that all required columns are present in the DataFrame:
-            self.engine_dataframe = pl.DataFrame
-            if self.validate:
-                self._validate_dataframe(self.dataframe)
-            elif self.validate == False:
-                self._partial_val_df(self.dataframe)
-
-            # datetime check
-            dt_arr = self.dataframe["ds"].to_numpy()
-            processed_dt_arr = self._check_datetime(dt_arr)
-            if type(dt_arr) != type(processed_dt_arr):
-                self.dataframe = self.dataframe.with_columns(
-                    pl.from_numpy(processed_dt_arr.to_numpy(), schema=["ds"])
-                )
-
-            sample_index_df = self.dataframe[self.non_value_columns]
-            sorted_index_df = sample_index_df.sort(self.non_value_columns)
-            is_monotonic_increasing = sample_index_df.frame_equal(sorted_index_df)
-
-            # Sorting will be performed if sort is set to true and values are unsorted
-            if not is_monotonic_increasing and self.sort_dataframe:
-                self.dataframe = self.dataframe.sort(self.non_value_columns)
-
-            # resources: https://github.com/pola-rs/polars/blob/4fca1ae51864f74e0367d8bc91b4a2db00e54174/py-polars/polars/dataframe/frame.py#L1975
-            # resources: https://numpy.org/doc/stable/user/basics.rec.html
-            # resources: https://numpy.org/doc/stable/reference/generated/numpy.core.records.fromarrays.html
-            # NOTE: Structured array is not available in polars under the version 0.17.12
-            pl_version = pkg_resources.get_distribution("polars").version
-            min_pl_v = pkg_resources.parse_version("0.17.12")
-            if pkg_resources.parse_version(pl_version) >= min_pl_v:
-                return self.dataframe.to_numpy(structured=True)
-            else:
-                arrays = []
-                for column, column_dtype in self.dataframe.schema.items():
-                    ser = self.dataframe[column]
-                    arr = ser.to_numpy()
-                    arrays.append(
-                        arr.astype(str, copy=False)
-                        if str(column_dtype) == "Utf8" and not ser.has_validity()
-                        else arr
-                    )
-                arr_dtypes = list(
-                    zip(self.dataframe.columns, (a.dtype for a in arrays))
-                )
-                return np.rec.fromarrays(arrays, dtype=np.dtype(arr_dtypes))
-
-        ####################
-        # Pandas DataFrame #
-        ####################
-        elif isinstance(self.dataframe, pd.DataFrame):
-            self.engine_dataframe = pd.DataFrame
-            # Ensure that all required columns are present in the DataFrame:
-            # Full validation
-            if self.validate and self.dataframe.index.name == "unique_id":
-                reset_df = self.dataframe.reset_index()
-                self._validate_dataframe(reset_df)
-                del reset_df
-
-            elif self.validate and self.dataframe.index.name != "unique_id":
-                self._validate_dataframe(self.dataframe)
-                self.dataframe = self.dataframe.set_index("unique_id")
-
-            # Partial validation
-            elif self.validate == False and self.dataframe.index.name == "unique_id":
-                reset_df = self.dataframe.reset_index()
-                self._partial_val_df(reset_df)
-                del reset_df
-
-            elif self.validate == False and self.dataframe.index.name != "unique_id":
-                self._partial_val_df(self.dataframe)
-                self.dataframe = self.dataframe.set_index("unique_id")
-
-            # Datetime check
-            dt_arr = self.dataframe["ds"].values
-            self.dataframe = self.dataframe.copy(deep=False)
-            self.dataframe["ds"] = self._check_datetime(dt_arr)
-
-            self.dataframe = self.dataframe.set_index("ds", append=True)
-
-            # Sorting will be performed if sort is set to true and values are unsorted
-            if not self.dataframe.index.is_monotonic_increasing and self.sort_dataframe:
-                self.dataframe = self.dataframe.sort_values(self.non_value_columns)
-
-            np_df = self.dataframe.to_records(index=True)
-
-            return np_df
-
-        ####################
-        # Not Supported DF #
-        ####################
-        else:
-            raise ValueError(f"{type(self.dataframe)} is not supported")
-
-    def _validate_dataframe(self, dataframe: Union[pd.DataFrame, pl.DataFrame]):
-        """
-        Will ensure that all DataFrame columns match the required columns.
-
-        This code requires a pandas DataFrame with the following structure:
-
-        Columns:
-        - `unique_id` Union[str, int, categorical]: an identifier for the series
-        - `ds` Union[datestamp, int]: column should be either an integer indexing time or a
-            datestamp ideally like YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.
-        - `y` Union[float, int]: represents the measurement we wish to forecast.
-
-        Raise:
-            KeyError: DataFrame is missing `unique_id`, `ds`, `y` columns.
-        """
-        required_columns = ["unique_id", "ds", "y"]
-        matches = all(rc in dataframe.columns for rc in required_columns)
-        if not matches:
-            raise KeyError(
-                "The DataFrame doesn't contain {} columns".format(
-                    ", ".join(required_columns)
-                )
-            )
-
-    def _partial_val_df(self, dataframe: Union[pd.DataFrame, pl.DataFrame]):
-        """
-        Will ensure that all DataFrame columns match the required columns.
-
-        This code requires a pandas DataFrame with the following structure:
-
-        Columns:
-        - `unique_id` Union[str, int, categorical]: an identifier for the series
-        - `ds` Union[datestamp, int]: column should be either an integer indexing time or a
-            datestamp ideally like YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.
-
-        Raise:
-            KeyError: DataFrame is missing `unique_id` and/or `ds` columns.
-        """
-        required_columns = ["unique_id", "ds"]
-        matches = all(rc in dataframe.columns for rc in required_columns)
-        if not matches:
-            raise KeyError(
-                "The DataFrame doesn't contain {} columns".format(
-                    ", ".join(required_columns)
-                )
-            )
-
-    def _check_datetime(self, arr: np.ndarray) -> Union[pd.DatetimeIndex, np.ndarray]:
-        dt_check = pd.api.types.is_datetime64_any_dtype(arr)
-        int_float_check = arr.dtype.kind in ["i", "f"]
-        if not dt_check and not int_float_check:
-            self._ds_is_dt = True
-            try:
-                return pd.to_datetime(arr)
-            except Exception as e:
-                msg = (
-                    "Failed to parse `ds` column as datetime. "
-                    "Please use `pd.to_datetime` outside to fix the error. "
-                    f"{e}"
-                )
-                raise Exception(msg) from e
-        return arr
-
-# %% ../nbs/src/core/core.ipynb 25
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -731,7 +421,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/src/core/core.ipynb 29
+# %% ../nbs/src/core/core.ipynb 26
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
         actual_n_jobs = cpu_count()
@@ -739,7 +429,7 @@ def _get_n_jobs(n_groups, n_jobs):
         actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/src/core/core.ipynb 32
+# %% ../nbs/src/core/core.ipynb 29
 def _parse_ds_type(df):
     dt_col = df["ds"]
     dt_check = pd.api.types.is_datetime64_any_dtype(dt_col)
@@ -757,14 +447,14 @@ def _parse_ds_type(df):
             raise Exception(msg) from e
     return df
 
-# %% ../nbs/src/core/core.ipynb 33
+# %% ../nbs/src/core/core.ipynb 30
 class _StatsForecast:
     def __init__(
         self,
         models: List[Any],
         freq: str,
         n_jobs: int = 1,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
         sort_df: bool = True,
         fallback_model: Optional[Any] = None,
         verbose: bool = False,
@@ -811,7 +501,20 @@ class _StatsForecast:
         self.fallback_model = fallback_model
         self.verbose = verbose
         self.n_jobs == 1
-        self._prepare_fit(df=df, sort_df=sort_df)
+        if df is not None:
+            warnings.warn(
+                "The `df` argument of the StatsForecast constructor is deprecated "
+                "and will be removed in a future version. "
+                "Please pass `df` to the fit/forecast methods instead.",
+                category=DeprecationWarning,
+            )
+            self._prepare_fit(df=df)
+        if not sort_df:
+            warnings.warn(
+                "The `sort_df` argument is deprecated and will be removed in a future version. "
+                "You can set it to its default value (True) to supress this warning",
+                category=DeprecationWarning,
+            )
 
     def _validate_model_names(self):
         # Some test models don't have alias
@@ -822,18 +525,38 @@ class _StatsForecast:
                 "Model names must be unique. You can use `alias` to set a unique name for each model."
             )
 
-    def _prepare_fit(self, df, sort_df):
-        if df is not None:
-            df_process = DataFrameProcessing(df, sort_df)
-            self.ga = df_process.grouped_array()
-            self.uids = df_process.indices
-            self.last_dates = df_process.dates
-            self.ds = df_process.index
-            self.og_dates = df_process.np_df["ds"]
-            self.og_unique_id = df_process.np_df["unique_id"]
-            self.engine = df_process.engine_dataframe
-            self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs)
-            self.sort_df = sort_df
+    def _prepare_fit(self, df: DataFrame, save_original: bool = False) -> None:
+        if isinstance(df, pd.DataFrame):
+            if df.index.name == "unique_id":
+                warnings.warn(
+                    "Passing unique_id as the index is deprecated. "
+                    "Please provide it as a column instead.",
+                    category=DeprecationWarning,
+                )
+                df = df.reset_index()
+            if pd.api.types.is_object_dtype(df["ds"]):
+                warnings.warn(
+                    "Passing an object column as 'ds' is deprecated and will raise an error in a future version. "
+                    "Please convert it to datetime or integer.",
+                    category=DeprecationWarning,
+                )
+                df = _parse_ds_type(df)
+        processor = DataFrameProcessor("unique_id", "ds", "y")
+        uids, times, data, indptr, sort_idxs = processor.process(df)
+        self.uids = pd.Index(uids)
+        self.last_dates = pd.Index(times)
+        self.ga = GroupedArray(data, indptr)
+        if save_original:
+            self.og_unique_id = df["unique_id"]
+            self.og_dates = df["ds"].to_numpy()
+            if sort_idxs is not None:
+                if isinstance(self.og_unique_id, pd.Series):
+                    self.og_unique_id = self.og_unique_id.iloc[sort_idxs]
+                else:
+                    self.og_unique_id = self.og_unique_id.take(sort_idxs)
+                self.og_dates = self.og_dates[sort_idxs]
+        self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs)
+        self.df_constructor = type(df)
 
     def _set_prediction_intervals(self, prediction_intervals):
         for model in self.models:
@@ -843,7 +566,7 @@ class _StatsForecast:
 
     def fit(
         self,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -868,15 +591,29 @@ class _StatsForecast:
         self : StatsForecast
             Returns with stored `StatsForecast` fitted `models`.
         """
+        if df is None:
+            warnings.warn(
+                "The `df` argument of the StatsForecast constructor is deprecated "
+                "and will be removed in a future version. "
+                "Please pass `df` to the fit/forecast methods instead.",
+                category=DeprecationWarning,
+            )
+        else:
+            self._prepare_fit(df)
+        if not sort_df:
+            warnings.warn(
+                "The `sort_df` argument is deprecated and will be removed in a future version. "
+                "You can set it to its default value (True) to supress this warning",
+                category=DeprecationWarning,
+            )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
             self.fitted_ = self.ga.fit(models=self.models)
         else:
             self.fitted_ = self._fit_parallel()
         return self
 
-    def _make_future_df(self, h: int):
+    def _make_future_df(self, h: int, id_as_index: bool):
         if issubclass(self.last_dates.dtype.type, np.integer):
             last_date_f = lambda x: np.arange(
                 x + 1, x + 1 + h, dtype=self.last_dates.dtype
@@ -889,50 +626,42 @@ class _StatsForecast:
             dates = np.tile(last_date_f(self.last_dates[0]), len(self.ga))
         else:
             dates = np.hstack([last_date_f(last_date) for last_date in self.last_dates])
-        u_id_ser: Union[pd.Series, pl.Series] = np.repeat(self.uids, h)
-        unique_id: np.ndarray = u_id_ser.to_numpy()
 
-        # In older versions to_numpy converts string values into object,
-        # creating bytes error, this fixes it
-        if unique_id.dtype.kind == "O":
-            unique_id = unique_id.astype(str)
-
-        if self.engine == pd.DataFrame:
-            idx = pd.Index(unique_id, name="unique_id")
-            df = self.engine({"ds": dates}, index=idx)
-        elif self.engine == pl.DataFrame:
-            df = self.engine({"unique_id": unique_id, "ds": dates})
+        uids = np.repeat(self.uids, h)
+        df = self.df_constructor({"unique_id": uids, "ds": dates})
+        if isinstance(df, pd.DataFrame) and id_as_index:
+            warnings.warn(
+                "Having the unique_id as the index is deprecated. "
+                "Please use `id_as_index=False` to have it returned as a column.",
+                category=DeprecationWarning,
+            )
+            df = df.set_index("unique_id")
         return df
 
-    def _parse_X_level(self, h, X, level):
-        if X is not None:
-            if isinstance(X, pd.DataFrame):
-                if X.index.name != "unique_id":
-                    X = X.set_index("unique_id")
-            expected_shape_rows = h * len(self.ga)
-            ga_shape = self.ga.data.shape[1]
-            # Polars doesn't have index, hence, extra "column"
-            expected_shape_cols = (
-                ga_shape if not isinstance(X, pl.DataFrame) else ga_shape + 1
-            )
-            expected_shape = (expected_shape_rows, expected_shape_cols)
-
-            if X.shape != expected_shape:
-                raise ValueError(
-                    f"Expected X to have shape {expected_shape}, but got {X.shape}"
-                )
-            X = DataFrameProcessing(
-                X, sort_dataframe=self.sort_df, validate=False
-            ).grouped_array()
+    def _parse_X_level(
+        self, h: int, X: Optional[DataFrame], level: Optional[List[int]]
+    ):
         if level is None:
             level = tuple()
-        return X, level
+        if X is None:
+            return X, level
+        expected_shape = (h * len(self.ga), self.ga.data.shape[1] + 1)
+        if X.shape != expected_shape:
+            raise ValueError(
+                f"Expected X to have shape {expected_shape}, but got {X.shape}"
+            )
+        # check if this is necessary
+        first_col = [c for c in X.columns if c not in ("unique_id", "ds")][0]
+        processor = DataFrameProcessor("unique_id", "ds", first_col)
+        _, _, data, indptr, _ = processor.process(X)
+        return GroupedArray(data, indptr), level
 
     def predict(
         self,
         h: int,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
+        id_as_index: bool = True,
     ):
         """Predict statistical models.
 
@@ -946,6 +675,8 @@ class _StatsForecast:
             DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
         level : List[float], optional (default=None)
             Confidence levels between 0 and 100 for prediction intervals.
+        id_as_index : bool (default=True)
+            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -970,19 +701,20 @@ class _StatsForecast:
             fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
         else:
             fcsts, cols = self._predict_parallel(h=h, X=X, level=level)
-        fcsts_df = self._make_future_df(h=h)
+        fcsts_df = self._make_future_df(h=h, id_as_index=id_as_index)
         fcsts_df[cols] = fcsts
         return fcsts_df
 
     def fit_predict(
         self,
         h: int,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-    ):
+        id_as_index: bool = True,
+    ) -> DataFrame:
         """Fit and Predict with statistical models.
 
         This method avoids memory burden due from object storage.
@@ -1007,6 +739,8 @@ class _StatsForecast:
             If True, sort `df` by [`unique_id`,`ds`].
         prediction_intervals : ConformalIntervals, optional (default=None)
             Configuration to calibrate prediction intervals (Conformal Prediction).
+        id_as_index : bool (default=True)
+            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -1014,12 +748,26 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        if df is None:
+            warnings.warn(
+                "The `df` argument of the StatsForecast constructor is deprecated "
+                "and will be removed in a future version. "
+                "Please pass `df` to the fit/forecast methods instead.",
+                category=DeprecationWarning,
+            )
+        else:
+            self._prepare_fit(df)
+        if not sort_df:
+            warnings.warn(
+                "The `sort_df` argument is deprecated and will be removed in a future version. "
+                "You can set it to its default value (True) to supress this warning",
+                category=DeprecationWarning,
+            )
         if prediction_intervals is not None and level is None:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             self.fitted_, fcsts, cols = self.ga.fit_predict(
@@ -1029,20 +777,21 @@ class _StatsForecast:
             self.fitted_, fcsts, cols = self._fit_predict_parallel(
                 h=h, X=X, level=level
             )
-        fcsts_df = self._make_future_df(h=h)
+        fcsts_df = self._make_future_df(h=h, id_as_index=id_as_index)
         fcsts_df[cols] = fcsts
         return fcsts_df
 
     def forecast(
         self,
         h: int,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-    ):
+        id_as_index: bool = True,
+    ) -> DataFrame:
         """Memory Efficient predictions.
 
         This method avoids memory burden due from object storage.
@@ -1067,6 +816,8 @@ class _StatsForecast:
             If True, sort `df` by [`unique_id`,`ds`].
         prediction_intervals : ConformalIntervals, optional (default=None)
             Configuration to calibrate prediction intervals (Conformal Prediction).
+        id_as_index : bool (default=True)
+            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -1074,8 +825,22 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        if df is None:
+            warnings.warn(
+                "The `df` argument of the StatsForecast constructor is deprecated "
+                "and will be removed in a future version. "
+                "Please pass `df` to the fit/forecast methods instead.",
+                category=DeprecationWarning,
+            )
+        else:
+            self._prepare_fit(df, save_original=fitted)
+        if not sort_df:
+            warnings.warn(
+                "The `sort_df` argument is deprecated and will be removed in a future version. "
+                "You can set it to its default value (True) to supress this warning",
+                category=DeprecationWarning,
+            )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             res_fcsts = self.ga.forecast(
@@ -1093,11 +858,11 @@ class _StatsForecast:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
         fcsts = res_fcsts["forecasts"]
         cols = res_fcsts["cols"]
-        fcsts_df = self._make_future_df(h=h)
+        fcsts_df = self._make_future_df(h=h, id_as_index=id_as_index)
         fcsts_df[cols] = fcsts
         return fcsts_df
 
-    def forecast_fitted_values(self):
+    def forecast_fitted_values(self, id_as_index: bool = True):
         """Access insample predictions.
 
         After executing `StatsForecast.forecast`, you can access the insample
@@ -1107,7 +872,9 @@ class _StatsForecast:
 
         Parameters
         ----------
-        self : StatsForecast
+        id_as_index : bool (default=True)
+            Return the id as the dataframe index (only for pandas DataFrame).
+
 
         Returns
         -------
@@ -1116,21 +883,23 @@ class _StatsForecast:
             predictions for all fitted `models`.
         """
         if not hasattr(self, "fcst_fitted_values_"):
-            raise Exception("Please run `forecast` mehtod using `fitted=True`")
+            raise Exception("Please run `forecast` method using `fitted=True`")
         cols = self.fcst_fitted_values_["cols"]
-        if self.engine == pd.DataFrame:
-            df = self.engine(
-                self.fcst_fitted_values_["values"], columns=cols, index=self.ds
-            ).reset_index(level=1)
-        elif self.engine == pl.DataFrame:
-            df = self.engine({"unique_id": self.og_unique_id, "ds": self.og_dates})
-            df[cols] = self.fcst_fitted_values_["values"]
+        df = self.df_constructor({"unique_id": self.og_unique_id, "ds": self.og_dates})
+        df[cols] = self.fcst_fitted_values_["values"]
+        if isinstance(df, pd.DataFrame) and id_as_index:
+            warnings.warn(
+                "Having the unique_id as the index is deprecated. "
+                "Please use `id_as_index=False` to have it returned as a column.",
+                category=DeprecationWarning,
+            )
+            df = df.set_index("unique_id")
         return df
 
     def cross_validation(
         self,
         h: int,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
         n_windows: int = 1,
         step_size: int = 1,
         test_size: Optional[int] = None,
@@ -1140,6 +909,7 @@ class _StatsForecast:
         refit: bool = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
+        id_as_index: bool = True,
     ):
         """Temporal Cross-Validation.
 
@@ -1176,6 +946,8 @@ class _StatsForecast:
             If True, sort `df` by `unique_id` and `ds`.
         prediction_intervals : ConformalIntervals, optional (default=None)
             Configuration to calibrate prediction intervals (Conformal Prediction).
+        id_as_index : bool (default=True)
+            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -1183,6 +955,21 @@ class _StatsForecast:
             DataFrame with insample `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        if df is None:
+            warnings.warn(
+                "The `df` argument of the StatsForecast constructor is deprecated "
+                "and will be removed in a future version. "
+                "Please pass `df` to the fit/forecast methods instead.",
+                category=DeprecationWarning,
+            )
+        else:
+            self._prepare_fit(df, save_original=fitted)
+        if not sort_df:
+            warnings.warn(
+                "The `sort_df` argument is deprecated and will be removed in a future version. "
+                "You can set it to its default value (True) to supress this warning",
+                category=DeprecationWarning,
+            )
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
         elif n_windows is None:
@@ -1198,7 +985,6 @@ class _StatsForecast:
                 "You must specify `level` when using `prediction_intervals`"
             )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         series_sizes = np.diff(self.ga.indptr)
         short_series = series_sizes <= test_size
         if short_series.any():
@@ -1245,14 +1031,22 @@ class _StatsForecast:
             test_size=test_size,
             step_size=step_size,
         )
-        idx = pd.Index(np.repeat(self.uids, h * n_windows), name="unique_id")
-        fcsts_df.index = idx
-        fcsts_df[cols] = fcsts
-        if self.engine == pl.DataFrame:
-            fcsts_df = pl.from_pandas(fcsts_df, include_index=True)
+        fcsts_df.insert(0, "unique_id", np.repeat(self.uids, h * n_windows))
+        fcsts_df[cols] = res_fcsts["forecasts"]
+        if self.df_constructor is pd.DataFrame and id_as_index:
+            warnings.warn(
+                "Having the unique_id as the index is deprecated. "
+                "Please use `id_as_index=False` to have it returned as a column.",
+                category=DeprecationWarning,
+            )
+            fcsts_df = fcsts_df.set_index("unique_id")
+        elif self.df_constructor is pl_DataFrame:
+            import polars as pl
+
+            fcsts_df = pl.from_pandas(fcsts_df)
         return fcsts_df
 
-    def cross_validation_fitted_values(self):
+    def cross_validation_fitted_values(self, id_as_index: bool = True):
         """Access insample cross validated predictions.
 
         After executing `StatsForecast.cross_validation`, you can access the insample
@@ -1262,7 +1056,8 @@ class _StatsForecast:
 
         Parameters
         ----------
-        self : StatsForecast
+        id_as_index : bool (default=True)
+            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -1272,8 +1067,9 @@ class _StatsForecast:
         """
         if not hasattr(self, "cv_fitted_values_"):
             raise Exception("Please run `cross_validation` mehtod using `fitted=True`")
+        ds = pd.MultiIndex.from_arrays([self.og_unique_id, self.og_dates])
         index = pd.MultiIndex.from_tuples(
-            np.tile(self.ds, self.n_cv_), names=["unique_id", "ds"]
+            np.tile(ds, self.n_cv_), names=["unique_id", "ds"]
         )
         df = pd.DataFrame(index=index)
         df["cutoff"] = self.cv_fitted_values_["last_idxs"].flatten(order="F")
@@ -1281,11 +1077,20 @@ class _StatsForecast:
             self.cv_fitted_values_["values"], (-1, len(self.models) + 1), order="F"
         )
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
-        df = df.iloc[idxs].reset_index(level=1)
+        df = df.iloc[idxs].reset_index()
+        if self.df_constructor is pd.DataFrame and id_as_index:
+            warnings.warn(
+                "Having the unique_id as the index is deprecated. "
+                "Please use `id_as_index=False` to have it returned as a column.",
+                category=DeprecationWarning,
+            )
+            df = df.set_index("unique_id")
         df["cutoff"] = df["ds"].where(df["cutoff"]).bfill()
 
-        if self.engine == pl.DataFrame:
-            df = pl.from_pandas(df, include_index=True)
+        if self.df_constructor is pl_DataFrame:
+            import polars as pl
+
+            fcsts_df = pl.from_pandas(fcsts_df)
         return df
 
     def _get_pool(self):
@@ -1445,8 +1250,8 @@ class _StatsForecast:
 
     @staticmethod
     def plot(
-        df: Union[pd.DataFrame, pl.DataFrame],
-        forecasts_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: DataFrame,
+        forecasts_df: Optional[DataFrame] = None,
         unique_ids: Union[Optional[List[str]], np.ndarray] = None,
         plot_random: bool = True,
         models: Optional[List[str]] = None,
@@ -1533,7 +1338,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/src/core/core.ipynb 34
+# %% ../nbs/src/core/core.ipynb 31
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
@@ -1554,7 +1359,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/src/core/core.ipynb 35
+# %% ../nbs/src/core/core.ipynb 32
 class StatsForecast(_StatsForecast):
     """Train statistical models.
 
@@ -1594,11 +1399,12 @@ class StatsForecast(_StatsForecast):
         self,
         h: int,
         df: Any = None,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
+        id_as_index: bool = True,
     ):
         if prediction_intervals is not None and level is None:
             raise ValueError(
@@ -1613,6 +1419,7 @@ class StatsForecast(_StatsForecast):
                 fitted=fitted,
                 sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
+                id_as_index=id_as_index,
             )
         assert df is not None
         engine = make_execution_engine(infer_by=[df])
@@ -1642,6 +1449,7 @@ class StatsForecast(_StatsForecast):
         refit: bool = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
+        id_as_index: bool = True,
     ):
         if self._is_native(df=df):
             return super().cross_validation(
@@ -1656,6 +1464,7 @@ class StatsForecast(_StatsForecast):
                 refit=refit,
                 sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
+                id_as_index=id_as_index,
             )
         assert df is not None
         engine = make_execution_engine(infer_by=[df])

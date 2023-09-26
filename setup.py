@@ -33,6 +33,7 @@ dask_requirements = cfg.get('dask_requirements', '').split()
 ray_requirements = cfg.get('ray_requirements', '').split()
 spark_requirements = cfg.get('spark_requirements', '').split()
 plotly_requirements = cfg.get('plotly_requirements', '').split()
+polars_requirements = cfg.get('polars_requirements', '').split()
 
 setuptools.setup(
     name = 'statsforecast',
@@ -52,6 +53,7 @@ setuptools.setup(
         'ray': ray_requirements,
         'spark': spark_requirements,
         'plotly': plotly_requirements,
+        'polars': polars_requirements,
     },
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
