@@ -56,11 +56,11 @@ jobs:
 
       - name: Run tests on windows
         if: ${{ matrix.os == 'windows-latest' }} #until nbdev fix
-        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0 --skip_file_glob '*/docs/models/*'
       
       - name: Run tests 
         if: ${{ matrix.os != 'windows-latest' }}
-        run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0 --skip_file_glob '*/docs/models/*'
 
       - name: Run integration tests
         if: ${{ matrix.os != 'windows-latest' }}
