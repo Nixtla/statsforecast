@@ -24,15 +24,17 @@ website:
     collapse-below: lg
     left:
       - text: "Get Started"
-        href: examples/Getting_Started_short.ipynb
+        href: docs/getting-started/getting_started_short.html
       - text: "NixtlaVerse"
         menu:
+          - text: "StatsForecast ⚡️"
+            href: https://github.com/nixtla/statsforecast
           - text: "MLForecast 🤖"
             href: https://github.com/nixtla/mlforecast
           - text: "NeuralForecast 🧠"
             href: https://github.com/nixtla/neuralforecast
           - text: "HierarchicalForecast 👑"
-            href: "https://github.com/nixtla/hierarchicalforecast"
+            href: https://github.com/nixtla/hierarchicalforecast
           
       - text: "Help"
         menu:
