@@ -61,7 +61,7 @@ jobs:
         run: pip install ./
 
       - name: Run local tests
-        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(models|distributed|ets|guide).*.ipynb' --pause 1.0
 
   run-tests:
     runs-on: ${{ matrix.os }}
