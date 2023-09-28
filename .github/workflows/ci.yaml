@@ -61,7 +61,7 @@ jobs:
         run: pip install ./
 
       - name: Run local tests
-        run: nbdev_test --skip_file_re '(models|distributed|ets|guide).*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0
 
   run-tests:
     runs-on: ${{ matrix.os }}
@@ -87,11 +87,11 @@ jobs:
 
       - name: Run tests on windows
         if: ${{ matrix.os == 'windows-latest' }} #until nbdev fix
-        run: nbdev_test --skip_file_re '(models|distributed|ets|guide).*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0
       
       - name: Run tests 
         if: ${{ matrix.os != 'windows-latest' }}
-        run: nbdev_test --skip_file_re '(distributed|guide).*.ipynb' --pause 1.0
+        run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
 
       - name: Run integration tests
         run: |
