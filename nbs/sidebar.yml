@@ -11,6 +11,8 @@ website:
         contents: docs/tutorials/*
       - section: "How-To Guides"
         contents: docs/how-to-guides/*
+      - section: "Model References"
+        contents: docs/models/*
       - section: "API Reference"
         contents: src/core/*
       - section: "Contributing"
