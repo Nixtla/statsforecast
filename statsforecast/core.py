@@ -448,6 +448,15 @@ def _parse_ds_type(df):
     return df
 
 # %% ../nbs/src/core/core.ipynb 30
+def _warn_df_constructor():
+    warnings.warn(
+        "The `df` argument of the StatsForecast constructor is deprecated "
+        "and will be removed in a future version. "
+        "Please pass `df` to the fit/forecast methods instead.",
+        category=DeprecationWarning,
+    )
+
+# %% ../nbs/src/core/core.ipynb 31
 class _StatsForecast:
     def __init__(
         self,
@@ -502,19 +511,8 @@ class _StatsForecast:
         self.verbose = verbose
         self.n_jobs == 1
         if df is not None:
-            warnings.warn(
-                "The `df` argument of the StatsForecast constructor is deprecated "
-                "and will be removed in a future version. "
-                "Please pass `df` to the fit/forecast methods instead.",
-                category=DeprecationWarning,
-            )
-            self._prepare_fit(df=df)
-        if not sort_df:
-            warnings.warn(
-                "The `sort_df` argument is deprecated and will be removed in a future version. "
-                "You can set it to its default value (True) to supress this warning",
-                category=DeprecationWarning,
-            )
+            _warn_df_constructor()
+            self._prepare_fit(df=df, sort_df=sort_df)
 
     def _validate_model_names(self):
         # Some test models don't have alias
@@ -525,7 +523,12 @@ class _StatsForecast:
                 "Model names must be unique. You can use `alias` to set a unique name for each model."
             )
 
-    def _prepare_fit(self, df: DataFrame, save_original: bool = False) -> None:
+    def _prepare_fit(
+        self, df: Optional[DataFrame], sort_df: bool = True, save_original: bool = False
+    ) -> None:
+        if df is None:
+            _warn_df_constructor()
+            return
         if isinstance(df, pd.DataFrame):
             if df.index.name == "unique_id":
                 warnings.warn(
@@ -541,6 +544,12 @@ class _StatsForecast:
                     category=DeprecationWarning,
                 )
                 df = _parse_ds_type(df)
+        if not sort_df:
+            warnings.warn(
+                "The `sort_df` argument is deprecated and will be removed in a future version. "
+                "You can leave it to its default value (True) to supress this warning",
+                category=DeprecationWarning,
+            )
         processor = DataFrameProcessor("unique_id", "ds", "y")
         uids, times, data, indptr, sort_idxs = processor.process(df)
         self.uids = pd.Index(uids)
@@ -591,21 +600,7 @@ class _StatsForecast:
         self : StatsForecast
             Returns with stored `StatsForecast` fitted `models`.
         """
-        if df is None:
-            warnings.warn(
-                "The `df` argument of the StatsForecast constructor is deprecated "
-                "and will be removed in a future version. "
-                "Please pass `df` to the fit/forecast methods instead.",
-                category=DeprecationWarning,
-            )
-        else:
-            self._prepare_fit(df)
-        if not sort_df:
-            warnings.warn(
-                "The `sort_df` argument is deprecated and will be removed in a future version. "
-                "You can set it to its default value (True) to supress this warning",
-                category=DeprecationWarning,
-            )
+        self._prepare_fit(df=df, sort_df=sort_df)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         if self.n_jobs == 1:
             self.fitted_ = self.ga.fit(models=self.models)
@@ -748,21 +743,7 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
-        if df is None:
-            warnings.warn(
-                "The `df` argument of the StatsForecast constructor is deprecated "
-                "and will be removed in a future version. "
-                "Please pass `df` to the fit/forecast methods instead.",
-                category=DeprecationWarning,
-            )
-        else:
-            self._prepare_fit(df)
-        if not sort_df:
-            warnings.warn(
-                "The `sort_df` argument is deprecated and will be removed in a future version. "
-                "You can set it to its default value (True) to supress this warning",
-                category=DeprecationWarning,
-            )
+        self._prepare_fit(df=df, sort_df=sort_df)
         if prediction_intervals is not None and level is None:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
@@ -825,21 +806,7 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
-        if df is None:
-            warnings.warn(
-                "The `df` argument of the StatsForecast constructor is deprecated "
-                "and will be removed in a future version. "
-                "Please pass `df` to the fit/forecast methods instead.",
-                category=DeprecationWarning,
-            )
-        else:
-            self._prepare_fit(df, save_original=fitted)
-        if not sort_df:
-            warnings.warn(
-                "The `sort_df` argument is deprecated and will be removed in a future version. "
-                "You can set it to its default value (True) to supress this warning",
-                category=DeprecationWarning,
-            )
+        self._prepare_fit(df=df, sort_df=sort_df, save_original=fitted)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -955,21 +922,7 @@ class _StatsForecast:
             DataFrame with insample `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
-        if df is None:
-            warnings.warn(
-                "The `df` argument of the StatsForecast constructor is deprecated "
-                "and will be removed in a future version. "
-                "Please pass `df` to the fit/forecast methods instead.",
-                category=DeprecationWarning,
-            )
-        else:
-            self._prepare_fit(df, save_original=fitted)
-        if not sort_df:
-            warnings.warn(
-                "The `sort_df` argument is deprecated and will be removed in a future version. "
-                "You can set it to its default value (True) to supress this warning",
-                category=DeprecationWarning,
-            )
+        self._prepare_fit(df=df, sort_df=sort_df, save_original=fitted)
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
         elif n_windows is None:
@@ -1338,7 +1291,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/src/core/core.ipynb 31
+# %% ../nbs/src/core/core.ipynb 32
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
@@ -1359,7 +1312,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/src/core/core.ipynb 32
+# %% ../nbs/src/core/core.ipynb 33
 class StatsForecast(_StatsForecast):
     """Train statistical models.
 
@@ -1488,5 +1441,5 @@ class StatsForecast(_StatsForecast):
     def _is_native(self, df) -> bool:
         engine = try_get_context_execution_engine()
         return engine is None and (
-            df is None or isinstance(df, pd.DataFrame) or isinstance(df, pl.DataFrame)
+            df is None or isinstance(df, pd.DataFrame) or isinstance(df, pl_DataFrame)
         )
