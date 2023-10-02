@@ -9,7 +9,7 @@ import logging
 import reprlib
 import warnings
 from os import cpu_count
-from typing import Any, List, Optional, Union, Dict
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -368,11 +368,17 @@ class GroupedArray(BaseGroupedArray):
             }
         return result
 
+    def _take_from_ranges(self, ranges):
+        items = [self.data[r] for r in ranges]
+        sizes = np.array([item.shape[0] for item in items])
+        data = np.vstack(items)
+        indptr = np.append(0, sizes.cumsum())
+        return GroupedArray(data, indptr)
+
     def split(self, n_chunks):
+        n_chunks = min(n_chunks, self.n_groups)
         return [
-            self.take(idxs)
-            for idxs in np.array_split(range(self.n_groups), n_chunks)
-            if idxs.size
+            self.take(idxs) for idxs in np.array_split(range(self.n_groups), n_chunks)
         ]
 
     def split_fm(self, fm, n_chunks):
@@ -637,7 +643,7 @@ class _StatsForecast:
         self, h: int, X: Optional[DataFrame], level: Optional[List[int]]
     ):
         if level is None:
-            level = tuple()
+            level = []
         if X is None:
             return X, level
         expected_shape = (h * len(self.ga), self.ga.data.shape[1] + 1)
@@ -877,7 +883,7 @@ class _StatsForecast:
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_as_index: bool = True,
-    ):
+    ) -> DataFrame:
         """Temporal Cross-Validation.
 
         Efficiently fits a list of `StatsForecast`
@@ -977,7 +983,7 @@ class _StatsForecast:
 
         fcsts = res_fcsts["forecasts"]
         cols = res_fcsts["cols"]
-        fcsts_df = _cv_dates(
+        fcsts_df: DataFrame = _cv_dates(
             last_dates=self.last_dates,
             freq=self.freq,
             h=h,
@@ -999,7 +1005,7 @@ class _StatsForecast:
             fcsts_df = pl.from_pandas(fcsts_df)
         return fcsts_df
 
-    def cross_validation_fitted_values(self, id_as_index: bool = True):
+    def cross_validation_fitted_values(self, id_as_index: bool = True) -> DataFrame:
         """Access insample cross validated predictions.
 
         After executing `StatsForecast.cross_validation`, you can access the insample
@@ -1043,7 +1049,7 @@ class _StatsForecast:
         if self.df_constructor is pl_DataFrame:
             import polars as pl
 
-            fcsts_df = pl.from_pandas(fcsts_df)
+            df = pl.from_pandas(df)
         return df
 
     def _get_pool(self):

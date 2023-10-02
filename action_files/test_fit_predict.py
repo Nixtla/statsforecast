@@ -15,7 +15,7 @@ from statsforecast.models import (
 
 def get_data():
     df2 = df.copy(deep=True)
-    df2['unique_id'] = 'AirPassengers2'
+    df2['unique_id'] = 2.0
     df2['y'] *= 2
     return pd.concat([df, df2])
 
