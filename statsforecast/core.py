@@ -19,7 +19,7 @@ from fugue.execution.factory import (
 )
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
-from utilsforecast.compat import DataFrame, pl_DataFrame
+from utilsforecast.compat import DataFrame, pl_DataFrame, pl_col
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
 from utilsforecast.processing import DataFrameProcessor
 
@@ -557,9 +557,7 @@ class _StatsForecast:
                 category=DeprecationWarning,
             )
         processor = DataFrameProcessor("unique_id", "ds", "y")
-        uids, times, data, indptr, sort_idxs = processor.process(df)
-        self.uids = pd.Index(uids)
-        self.last_dates = pd.Index(times)
+        self.uids, self.last_dates, data, indptr, sort_idxs = processor.process(df)
         self.ga = GroupedArray(data, indptr)
         if save_original:
             self.og_unique_id = df["unique_id"]
@@ -629,6 +627,8 @@ class _StatsForecast:
             dates = np.hstack([last_date_f(last_date) for last_date in self.last_dates])
 
         uids = np.repeat(self.uids, h)
+        if self.df_constructor is pl_DataFrame and uids.dtype.kind == "O":
+            uids = uids.astype(str)
         df = self.df_constructor({"unique_id": uids, "ds": dates})
         if isinstance(df, pd.DataFrame) and id_as_index:
             warnings.warn(
@@ -637,6 +637,8 @@ class _StatsForecast:
                 category=DeprecationWarning,
             )
             df = df.set_index("unique_id")
+        elif isinstance(df, pl_DataFrame):
+            df = df.with_columns(pl_col("unique_id").cast(self.uids.dtype))
         return df
 
     def _parse_X_level(
@@ -991,7 +993,7 @@ class _StatsForecast:
             step_size=step_size,
         )
         fcsts_df.insert(0, "unique_id", np.repeat(self.uids, h * n_windows))
-        fcsts_df[cols] = res_fcsts["forecasts"]
+        fcsts_df[cols] = fcsts
         if self.df_constructor is pd.DataFrame and id_as_index:
             warnings.warn(
                 "Having the unique_id as the index is deprecated. "
