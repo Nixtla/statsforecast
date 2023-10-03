@@ -612,7 +612,7 @@ class _StatsForecast:
             self.fitted_ = self._fit_parallel()
         return self
 
-    def _make_future_df(self, h: int, id_as_index: bool):
+    def _make_future_df(self, h: int):
         if issubclass(self.last_dates.dtype.type, np.integer):
             last_date_f = lambda x: np.arange(
                 x + 1, x + 1 + h, dtype=self.last_dates.dtype
@@ -630,12 +630,7 @@ class _StatsForecast:
         if self.df_constructor is pl_DataFrame and uids.dtype.kind == "O":
             uids = uids.astype(str)
         df = self.df_constructor({"unique_id": uids, "ds": dates})
-        if isinstance(df, pd.DataFrame) and id_as_index:
-            warnings.warn(
-                "Having the unique_id as the index is deprecated. "
-                "Please use `id_as_index=False` to have it returned as a column.",
-                category=DeprecationWarning,
-            )
+        if isinstance(df, pd.DataFrame):
             df = df.set_index("unique_id")
         elif isinstance(df, pl_DataFrame):
             df = df.with_columns(pl_col("unique_id").cast(self.uids.dtype))
@@ -664,7 +659,6 @@ class _StatsForecast:
         h: int,
         X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
-        id_as_index: bool = True,
     ):
         """Predict statistical models.
 
@@ -678,8 +672,6 @@ class _StatsForecast:
             DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
         level : List[float], optional (default=None)
             Confidence levels between 0 and 100 for prediction intervals.
-        id_as_index : bool (default=True)
-            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -704,7 +696,7 @@ class _StatsForecast:
             fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
         else:
             fcsts, cols = self._predict_parallel(h=h, X=X, level=level)
-        fcsts_df = self._make_future_df(h=h, id_as_index=id_as_index)
+        fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
         return fcsts_df
 
@@ -716,7 +708,6 @@ class _StatsForecast:
         level: Optional[List[int]] = None,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-        id_as_index: bool = True,
     ) -> DataFrame:
         """Fit and Predict with statistical models.
 
@@ -742,8 +733,6 @@ class _StatsForecast:
             If True, sort `df` by [`unique_id`,`ds`].
         prediction_intervals : ConformalIntervals, optional (default=None)
             Configuration to calibrate prediction intervals (Conformal Prediction).
-        id_as_index : bool (default=True)
-            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -766,7 +755,7 @@ class _StatsForecast:
             self.fitted_, fcsts, cols = self._fit_predict_parallel(
                 h=h, X=X, level=level
             )
-        fcsts_df = self._make_future_df(h=h, id_as_index=id_as_index)
+        fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
         return fcsts_df
 
@@ -779,7 +768,6 @@ class _StatsForecast:
         fitted: bool = False,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-        id_as_index: bool = True,
     ) -> DataFrame:
         """Memory Efficient predictions.
 
@@ -805,8 +793,6 @@ class _StatsForecast:
             If True, sort `df` by [`unique_id`,`ds`].
         prediction_intervals : ConformalIntervals, optional (default=None)
             Configuration to calibrate prediction intervals (Conformal Prediction).
-        id_as_index : bool (default=True)
-            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -833,23 +819,17 @@ class _StatsForecast:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
         fcsts = res_fcsts["forecasts"]
         cols = res_fcsts["cols"]
-        fcsts_df = self._make_future_df(h=h, id_as_index=id_as_index)
+        fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
         return fcsts_df
 
-    def forecast_fitted_values(self, id_as_index: bool = True):
+    def forecast_fitted_values(self):
         """Access insample predictions.
 
         After executing `StatsForecast.forecast`, you can access the insample
         prediction values for each model. To get them, you need to pass `fitted=True`
         to the `StatsForecast.forecast` method and then use the
         `StatsForecast.forecast_fitted_values` method.
-
-        Parameters
-        ----------
-        id_as_index : bool (default=True)
-            Return the id as the dataframe index (only for pandas DataFrame).
-
 
         Returns
         -------
@@ -862,12 +842,7 @@ class _StatsForecast:
         cols = self.fcst_fitted_values_["cols"]
         df = self.df_constructor({"unique_id": self.og_unique_id, "ds": self.og_dates})
         df[cols] = self.fcst_fitted_values_["values"]
-        if isinstance(df, pd.DataFrame) and id_as_index:
-            warnings.warn(
-                "Having the unique_id as the index is deprecated. "
-                "Please use `id_as_index=False` to have it returned as a column.",
-                category=DeprecationWarning,
-            )
+        if isinstance(df, pd.DataFrame):
             df = df.set_index("unique_id")
         return df
 
@@ -884,7 +859,6 @@ class _StatsForecast:
         refit: bool = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-        id_as_index: bool = True,
     ) -> DataFrame:
         """Temporal Cross-Validation.
 
@@ -921,8 +895,6 @@ class _StatsForecast:
             If True, sort `df` by `unique_id` and `ds`.
         prediction_intervals : ConformalIntervals, optional (default=None)
             Configuration to calibrate prediction intervals (Conformal Prediction).
-        id_as_index : bool (default=True)
-            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -992,14 +964,9 @@ class _StatsForecast:
             test_size=test_size,
             step_size=step_size,
         )
-        fcsts_df.insert(0, "unique_id", np.repeat(self.uids, h * n_windows))
+        fcsts_df.insert(0, "unique_id", pd.Index(np.repeat(self.uids, h * n_windows)))
         fcsts_df[cols] = fcsts
-        if self.df_constructor is pd.DataFrame and id_as_index:
-            warnings.warn(
-                "Having the unique_id as the index is deprecated. "
-                "Please use `id_as_index=False` to have it returned as a column.",
-                category=DeprecationWarning,
-            )
+        if self.df_constructor is pd.DataFrame:
             fcsts_df = fcsts_df.set_index("unique_id")
         elif self.df_constructor is pl_DataFrame:
             import polars as pl
@@ -1007,18 +974,13 @@ class _StatsForecast:
             fcsts_df = pl.from_pandas(fcsts_df)
         return fcsts_df
 
-    def cross_validation_fitted_values(self, id_as_index: bool = True) -> DataFrame:
+    def cross_validation_fitted_values(self) -> DataFrame:
         """Access insample cross validated predictions.
 
         After executing `StatsForecast.cross_validation`, you can access the insample
         prediction values for each model and window. To get them, you need to pass `fitted=True`
         to the `StatsForecast.cross_validation` method and then use the
         `StatsForecast.cross_validation_fitted_values` method.
-
-        Parameters
-        ----------
-        id_as_index : bool (default=True)
-            Return the id as the dataframe index (only for pandas DataFrame).
 
         Returns
         -------
@@ -1039,12 +1001,7 @@ class _StatsForecast:
         )
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
         df = df.iloc[idxs].reset_index()
-        if self.df_constructor is pd.DataFrame and id_as_index:
-            warnings.warn(
-                "Having the unique_id as the index is deprecated. "
-                "Please use `id_as_index=False` to have it returned as a column.",
-                category=DeprecationWarning,
-            )
+        if self.df_constructor is pd.DataFrame:
             df = df.set_index("unique_id")
         df["cutoff"] = df["ds"].where(df["cutoff"]).bfill()
 
@@ -1365,7 +1322,6 @@ class StatsForecast(_StatsForecast):
         fitted: bool = False,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-        id_as_index: bool = True,
     ):
         if prediction_intervals is not None and level is None:
             raise ValueError(
@@ -1380,7 +1336,6 @@ class StatsForecast(_StatsForecast):
                 fitted=fitted,
                 sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
-                id_as_index=id_as_index,
             )
         assert df is not None
         engine = make_execution_engine(infer_by=[df])
@@ -1410,7 +1365,6 @@ class StatsForecast(_StatsForecast):
         refit: bool = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-        id_as_index: bool = True,
     ):
         if self._is_native(df=df):
             return super().cross_validation(
@@ -1425,7 +1379,6 @@ class StatsForecast(_StatsForecast):
                 refit=refit,
                 sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
-                id_as_index=id_as_index,
             )
         assert df is not None
         engine = make_execution_engine(infer_by=[df])
