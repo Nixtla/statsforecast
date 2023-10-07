@@ -6,19 +6,13 @@ __all__ = ['StatsForecast']
 # %% ../nbs/src/core/core.ipynb 5
 import inspect
 import logging
-import random
-import re
 import reprlib
 import warnings
-from itertools import product
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 import pkg_resources
 
 from fugue.execution.factory import make_execution_engine
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.colors as cm
 import numpy as np
 import pandas as pd
 import polars as pl
@@ -1491,335 +1485,50 @@ class _StatsForecast:
             store the plotting object and add the extra arguments to
             its `show_dash` method.
         """
+        from utilsforecast.plotting import plot_series
 
-        if isinstance(df, pl.DataFrame):
-            df = df.to_pandas()
-        if isinstance(forecasts_df, pl.DataFrame):
-            forecasts_df = forecasts_df.to_pandas()
-
-        if level is not None and not isinstance(level, list):
-            raise Exception(
-                "Please use a list for the `level` argument "
-                "If you only have one level, use `level=[your_level]`"
+        if isinstance(df, pd.DataFrame) and df.index.name == "unique_id":
+            warnings.warn(
+                "Passing unique_id as the index is deprecated. "
+                "Please provide it as a column instead.",
+                category=DeprecationWarning,
             )
-
-        if unique_ids is None:
-            df_pt = DataFrameProcessing(
-                dataframe=df, sort_dataframe=True, validate=False
+            df = df.reset_index()
+        if isinstance(df, pd.DataFrame) and pd.api.types.is_object_dtype(df["ds"]):
+            warnings.warn(
+                "Passing an object column as 'ds' is deprecated and will raise an error in a future version. "
+                "Please convert it to datetime or integer.",
+                category=DeprecationWarning,
             )
-            uids_arr: pd.Index = df_pt.indices
-            uid_dtype = uids_arr.dtype
-
-            if df.index.name != "unique_id":
-                df["unique_id"] = df["unique_id"].astype(uid_dtype)
-                df = df.set_index("unique_id")
-            else:
-                df.index = df.index.astype(uid_dtype)
-
-            if forecasts_df is not None:
-                if isinstance(forecasts_df, pl.DataFrame):
-                    forecasts_df = forecasts_df.to_pandas()
-
-                if forecasts_df.index.name == "unique_id":
-                    forecasts_df.index = forecasts_df.index.astype(uid_dtype)
-                    unique_ids = np.intersect1d(uids_arr, forecasts_df.index.unique())
-                else:
-                    forecasts_df["unique_id"] = forecasts_df["unique_id"].astype(
-                        uid_dtype
-                    )
-                    unique_ids = np.intersect1d(
-                        uids_arr, forecasts_df["unique_id"].unique()
-                    )
-            else:
-                unique_ids = uids_arr
-
-        if plot_random:
-            unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
-        else:
-            unique_ids = unique_ids[:8]
-
-        if engine in ["plotly", "plotly-resampler"]:
-            try:
-                import plotly.graph_objects as go
-                from plotly.subplots import make_subplots
-            except ImportError:
-                raise ImportError(
-                    "plotly is not installed. "
-                    "Please install it with `pip install statsforecast[plotly]`"
+            df = _parse_ds_type(df)
+        if isinstance(forecasts_df, pd.DataFrame):
+            if forecasts_df.index.name == "unique_id":
+                warnings.warn(
+                    "Passing unique_id as the index is deprecated. "
+                    "Please provide it as a column instead.",
+                    category=DeprecationWarning,
                 )
-
-            n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
-            fig = make_subplots(
-                rows=n_rows,
-                cols=2 if len(unique_ids) >= 2 else 1,
-                vertical_spacing=0.1,
-                horizontal_spacing=0.07,
-                x_title="Datestamp [ds]",
-                y_title="Target [y]",
-                subplot_titles=[str(uid) for uid in unique_ids],
-            )
-            if engine == "plotly-resampler":
-                try:
-                    from plotly_resampler import FigureResampler
-                except ImportError:
-                    raise ImportError(
-                        "plotly-resampler is not installed. "
-                        "Please install it with `pip install plotly-resampler`"
-                    )
-                resampler_kwargs = {} if resampler_kwargs is None else resampler_kwargs
-                fig = FigureResampler(fig, **resampler_kwargs)
-            showed_legends: set = set()
-
-            def plotly(
-                df,
-                fig,
-                n_rows,
-                unique_ids,
-                models,
-                plot_anomalies,
-                max_insample_length,
-                showed_legends,
-            ):
-                if models is None:
-                    exclude_str = ["lo", "hi", "unique_id", "ds"]
-                    models = [
-                        c
-                        for c in df.columns
-                        if all(item not in c for item in exclude_str)
-                    ]
-                if "y" not in models:
-                    models = ["y"] + models
-                for uid, (idx, idy) in zip(
-                    unique_ids, product(range(1, n_rows + 1), range(1, 2 + 1))
-                ):
-                    df_uid = df.query("unique_id == @uid")
-                    if max_insample_length:
-                        df_uid = df_uid.iloc[-max_insample_length:]
-                    plot_anomalies = "y" in df_uid and plot_anomalies
-                    df_uid = _parse_ds_type(df_uid)
-                    if pkg_resources.parse_version(
-                        mpl.__version__
-                    ) < pkg_resources.parse_version("3.6"):
-                        colors = plt.cm.get_cmap("tab20b", len(models))
-                    else:
-                        colors = mpl.colormaps["tab20b"].resampled(len(models))
-                    colors = ["#1f77b4"] + [
-                        cm.to_hex(colors(i)) for i in range(len(models))
-                    ]
-                    for col, color in zip(models, colors):
-                        if col in df_uid:
-                            model = df_uid[col]
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=df_uid["ds"],
-                                    y=model,
-                                    mode="lines",
-                                    name=col,
-                                    legendgroup=col,
-                                    line=dict(color=color, width=1),
-                                    showlegend=(
-                                        idx == 1
-                                        and idy == 1
-                                        and col not in showed_legends
-                                    ),
-                                ),
-                                row=idx,
-                                col=idy,
-                            )
-                            showed_legends.add(col)
-                        model_has_level = any(f"{col}-lo" in c for c in df_uid)
-                        if level is not None and model_has_level:
-                            level_ = level
-                        elif model_has_level:
-                            level_col = df_uid.filter(like=f"{col}-lo").columns[0]
-                            level_col = re.findall(
-                                "[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+", level_col
-                            )[0]
-                            level_ = [level_col]
-                        else:
-                            level_ = []
-                        ds = df_uid["ds"]
-                        for lv in level_:
-                            lo = df_uid[f"{col}-lo-{lv}"]
-                            hi = df_uid[f"{col}-hi-{lv}"]
-                            plot_name = f"{col}_level_{lv}"
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=np.concatenate([ds, ds[::-1]]),
-                                    y=np.concatenate([hi, lo[::-1]]),
-                                    fill="toself",
-                                    mode="lines",
-                                    fillcolor=color,
-                                    opacity=-float(lv) / 100 + 1,
-                                    name=plot_name,
-                                    legendgroup=plot_name,
-                                    line=dict(color=color, width=1),
-                                    showlegend=(
-                                        idx == 1
-                                        and idy == 1
-                                        and plot_name not in showed_legends
-                                    ),
-                                ),
-                                row=idx,
-                                col=idy,
-                            )
-                            showed_legends.add(plot_name)
-                            if col != "y" and plot_anomalies:
-                                anomalies = (df_uid["y"] < lo) | (df_uid["y"] > hi)
-                                plot_name = f"{col}_anomalies_level_{lv}"
-                                fig.add_trace(
-                                    go.Scatter(
-                                        x=ds[anomalies],
-                                        y=df_uid["y"][anomalies],
-                                        fillcolor=color,
-                                        mode="markers",
-                                        opacity=float(lv) / 100,
-                                        name=plot_name,
-                                        legendgroup=plot_name,
-                                        line=dict(color=color, width=0.7),
-                                        marker=dict(
-                                            size=4, line=dict(color="red", width=0.5)
-                                        ),
-                                        showlegend=(
-                                            idx == 1
-                                            and idy == 1
-                                            and plot_name not in showed_legends
-                                        ),
-                                    ),
-                                    row=idx,
-                                    col=idy,
-                                )
-                                showed_legends.add(plot_name)
-                return fig
-
-            fig = plotly(
-                df=df,
-                fig=fig,
-                n_rows=n_rows,
-                unique_ids=unique_ids,
-                models=models,
-                plot_anomalies=plot_anomalies,
-                max_insample_length=max_insample_length,
-                showed_legends=showed_legends,
-            )
-            if forecasts_df is not None:
-                fig = plotly(
-                    df=forecasts_df,
-                    fig=fig,
-                    n_rows=n_rows,
-                    unique_ids=unique_ids,
-                    models=models,
-                    plot_anomalies=plot_anomalies,
-                    max_insample_length=None,
-                    showed_legends=showed_legends,
+                forecasts_df = forecasts_df.reset_index()
+            if pd.api.types.is_object_dtype(forecasts_df["ds"]):
+                warnings.warn(
+                    "Passing an object column as 'ds' is deprecated and will raise an error in a future version. "
+                    "Please convert it to datetime or integer.",
+                    category=DeprecationWarning,
                 )
-            fig.update_xaxes(matches=None, showticklabels=True, visible=True)
-            fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
-            fig.update_layout(template="plotly_white", font=dict(size=10))
-            fig.update_annotations(font_size=10)
-            fig.update_layout(autosize=True, height=150 * n_rows)
-
-        elif engine == "matplotlib":
-            if len(unique_ids) == 1:
-                fig, axes = plt.subplots(figsize=(24, 3.5))
-                axes = np.array([[axes]])
-                n_cols = 1
-            else:
-                n_cols = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
-                fig, axes = plt.subplots(n_cols, 2, figsize=(24, 3.5 * n_cols))
-                if n_cols == 1:
-                    axes = np.array([axes])
-
-            for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
-                train_uid = df.query("unique_id == @uid")
-                train_uid = _parse_ds_type(train_uid)
-                if max_insample_length is not None:
-                    train_uid = train_uid.iloc[-max_insample_length:]
-                ds = train_uid["ds"]
-                y = train_uid["y"]
-                axes[idx, idy].plot(ds, y, label="y")
-                if forecasts_df is not None:
-                    if models is None:
-                        exclude_str = ["lo", "hi", "unique_id", "ds"]
-                        models = [
-                            c
-                            for c in forecasts_df.columns
-                            if all(item not in c for item in exclude_str)
-                        ]
-                    if "y" not in models:
-                        models = ["y"] + models
-                    test_uid = forecasts_df.query("unique_id == @uid")
-                    plot_anomalies = "y" in test_uid and plot_anomalies
-                    test_uid = _parse_ds_type(test_uid)
-                    first_ds_fcst = test_uid["ds"].min()
-                    axes[idx, idy].axvline(
-                        x=first_ds_fcst,
-                        color="black",
-                        label="First ds Forecast",
-                        linestyle="--",
-                    )
-
-                    if pkg_resources.parse_version(
-                        mpl.__version__
-                    ) < pkg_resources.parse_version("3.6"):
-                        colors = plt.cm.get_cmap("tab20b", len(models))
-                    else:
-                        colors = mpl.colormaps["tab20b"].resampled(len(models))
-                    colors = ["blue"] + [colors(i) for i in range(len(models))]
-                    for col, color in zip(models, colors):
-                        if col in test_uid:
-                            axes[idx, idy].plot(
-                                test_uid["ds"], test_uid[col], label=col, color=color
-                            )
-                        model_has_level = any(f"{col}-lo" in c for c in test_uid)
-                        if level is not None and model_has_level:
-                            level_ = level
-                        elif model_has_level:
-                            level_col = test_uid.filter(like=f"{col}-lo").columns[0]
-                            level_col = re.findall(
-                                "[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+", level_col
-                            )[0]
-                            level_ = [level_col]
-                        else:
-                            level_ = []
-                        for lv in level_:
-                            ds_test = test_uid["ds"]
-                            lo = test_uid[f"{col}-lo-{lv}"]
-                            hi = test_uid[f"{col}-hi-{lv}"]
-                            axes[idx, idy].fill_between(
-                                ds_test,
-                                lo,
-                                hi,
-                                alpha=-float(lv) / 100 + 1,
-                                color=color,
-                                label=f"{col}_level_{lv}",
-                            )
-                            if col != "y" and plot_anomalies:
-                                anomalies = (test_uid["y"] < lo) | (test_uid["y"] > hi)
-                                axes[idx, idy].scatter(
-                                    x=ds_test[anomalies],
-                                    y=test_uid["y"][anomalies],
-                                    color=color,
-                                    s=30,
-                                    alpha=float(lv) / 100,
-                                    label=f"{col}_anomalies_level_{lv}",
-                                    linewidths=0.5,
-                                    edgecolors="red",
-                                )
-
-                axes[idx, idy].set_title(f"{uid}")
-                axes[idx, idy].set_xlabel("Datestamp [ds]")
-                axes[idx, idy].set_ylabel("Target [y]")
-                axes[idx, idy].legend(loc="upper left")
-                axes[idx, idy].xaxis.set_major_locator(
-                    plt.MaxNLocator(min(len(df) // 30, 10))
-                )
-                axes[idx, idy].grid()
-            fig.subplots_adjust(hspace=0.5)
-            plt.close(fig)
-        else:
-            raise Exception(f"Unkwown plot engine {engine}")
-        return fig
+                forecasts_df = _parse_ds_type(forecasts_df)
+        return plot_series(
+            df=df,
+            forecasts_df=forecasts_df,
+            ids=unique_ids,
+            plot_random=plot_random,
+            models=models,
+            level=level,
+            max_insample_length=max_insample_length,
+            plot_anomalies=plot_anomalies,
+            engine=engine,
+            resampler_kwargs=resampler_kwargs,
+            palette="tab20b",
+        )
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"

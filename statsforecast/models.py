@@ -10,7 +10,6 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
-from inspect import signature
 from math import trunc
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
@@ -31,14 +30,16 @@ from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
 from statsforecast.utils import (
-    _seasonal_naive,
-    _repeat_val_seas,
-    _naive,
-    _repeat_val,
-    _quantiles,
     _calculate_sigma,
     _calculate_intervals,
+    _naive,
+    _quantiles,
+    _repeat_val,
+    _repeat_val_seas,
+    _seasonal_naive,
+    CACHE,
     ConformalIntervals,
+    NOGIL,
 )
 
 # %% ../nbs/src/core/models.ipynb 8
@@ -1684,7 +1685,7 @@ class AutoRegressive(ARIMA):
         return self.alias
 
 # %% ../nbs/src/core/models.ipynb 110
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
 
@@ -1713,20 +1714,20 @@ def _ses_mse(alpha: float, x: np.ndarray) -> float:
     return mse
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     """One step ahead forecast with simple exponential smoothing."""
     forecast, _, fitted = _ses_fcst_mse(x, alpha)
     return forecast, fitted
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _demand(x: np.ndarray) -> np.ndarray:
     """Extract the positive elements of a vector."""
     return x[x > 0]
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _intervals(x: np.ndarray) -> np.ndarray:
     """Compute the intervals between non zero elements of a vector."""
     y = []
@@ -1742,7 +1743,7 @@ def _intervals(x: np.ndarray) -> np.ndarray:
     return np.array(y)
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _probability(x: np.ndarray) -> np.ndarray:
     """Compute the element probabilities of being non zero."""
     return (x != 0).astype(np.int32)
@@ -1759,7 +1760,7 @@ def _optimized_ses_forecast(
     return forecast, fitted
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     """Splits an array into chunks and returns the sum of each chunk."""
     n = array.size
@@ -1770,7 +1771,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     return sums
 
 # %% ../nbs/src/core/models.ipynb 111
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2117,7 +2118,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 135
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2604,7 +2605,7 @@ class HoltWinters(AutoETS):
         return self.alias
 
 # %% ../nbs/src/core/models.ipynb 190
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _historic_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2969,7 +2970,7 @@ class Naive(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 217
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3261,6 +3262,7 @@ class SeasonalNaive(_TS):
 
         if level is None:
             return res
+        level = sorted(level)
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
@@ -3286,6 +3288,7 @@ class SeasonalNaive(_TS):
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
+            level = sorted(level)
             res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
@@ -3353,7 +3356,7 @@ class SeasonalNaive(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 246
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _window_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3527,7 +3530,7 @@ class WindowAverage(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 258
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_window_average(
     y: np.ndarray,
     h: int,
@@ -3905,7 +3908,7 @@ class ADIDA(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 284
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _croston_classic(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4258,7 +4261,7 @@ class CrostonOptimized(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 308
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _croston_sba(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4610,7 +4613,7 @@ class IMAPA(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 332
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _tsb(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4906,7 +4909,7 @@ class MSTL(_TS):
         )
         x_sa = self.model_[["trend", "remainder"]].sum(axis=1).values
         self.trend_forecaster = self.trend_forecaster.new().fit(y=x_sa, X=X)
-        self._store_cs(y=y, X=X)
+        self._store_cs(y=x_sa, X=X)
         return self
 
     def predict(
@@ -4932,16 +4935,16 @@ class MSTL(_TS):
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         kwargs: Dict[str, Any] = {"h": h, "X": X}
-        if "level" in signature(self.trend_forecaster.predict).parameters:
+        if self.trend_forecaster.prediction_intervals is None:
             kwargs["level"] = level
         res = self.trend_forecaster.predict(**kwargs)
         seas = _predict_mstl_seas(self.model_, h=h, season_length=self.season_length)
         res = {key: val + seas for key, val in res.items()}
-        if level is None:
+        if level is None or self.trend_forecaster.prediction_intervals is None:
             return res
         level = sorted(level)
         if self.trend_forecaster.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+            res = self.trend_forecaster._add_predict_conformal_intervals(res, level)
         else:
             raise Exception(
                 "You have to instantiate either the trend forecaster class or MSTL class with `prediction_intervals` to calculate them"
@@ -4961,11 +4964,7 @@ class MSTL(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        kwargs = {}
-        if "level" in signature(self.trend_forecaster.predict_in_sample).parameters:
-            kwargs["level"] = level
-
-        res = self.trend_forecaster.predict_in_sample(**kwargs)
+        res = self.trend_forecaster.predict_in_sample(level=level)
         seas = self.model_.filter(regex="seasonal*").sum(axis=1).values
         res = {key: val + seas for key, val in res.items()}
         return res
@@ -5012,9 +5011,19 @@ class MSTL(_TS):
         )
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
         kwargs = {"y": x_sa, "h": h, "X": X, "X_future": X_future, "fitted": fitted}
-        if "level" in signature(self.trend_forecaster.forecast).parameters:
+        if fitted or self.trend_forecaster.prediction_intervals is None:
             kwargs["level"] = level
         res = self.trend_forecaster.forecast(**kwargs)
+        if level is not None:
+            level = sorted(level)
+            if self.trend_forecaster.prediction_intervals is not None:
+                res = self.trend_forecaster._add_conformal_intervals(
+                    fcst=res, y=x_sa, X=X, level=level
+                )
+            elif f"lo-{level[0]}" not in res:
+                raise Exception(
+                    "You have to instantiate either the trend forecaster class or MSTL class with `prediction_intervals` to calculate them"
+                )
         # reseasonalize results
         seas_h = _predict_mstl_seas(model_, h=h, season_length=self.season_length)
         seas_insample = model_.filter(regex="seasonal*").sum(axis=1).values
@@ -5022,15 +5031,6 @@ class MSTL(_TS):
             key: val + (seas_insample if "fitted" in key else seas_h)
             for key, val in res.items()
         }
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.trend_forecaster.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception(
-                "You have to instantiate either the trend forecaster class or MSTL class with `prediction_intervals` to calculate them"
-            )
         return res
 
     def forward(
@@ -5073,9 +5073,15 @@ class MSTL(_TS):
         )
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
         kwargs = {"y": x_sa, "h": h, "X": X, "X_future": X_future, "fitted": fitted}
-        if "level" in signature(self.trend_forecaster.forward).parameters:
+        if fitted or self.trend_forecaster.prediction_intervals is None:
             kwargs["level"] = level
         res = self.trend_forecaster.forward(**kwargs)
+        if level is not None:
+            level = sorted(level)
+            if self.trend_forecaster.prediction_intervals is not None:
+                res = self.trend_forecaster._add_conformal_intervals(
+                    fcst=res, y=x_sa, X=X, level=level
+                )
         # reseasonalize results
         seas_h = _predict_mstl_seas(model_, h=h, season_length=self.season_length)
         seas_insample = model_.filter(regex="seasonal*").sum(axis=1).values
@@ -5083,13 +5089,9 @@ class MSTL(_TS):
             key: val + (seas_insample if "fitted" in key else seas_h)
             for key, val in res.items()
         }
-        if level is not None:
-            level = sorted(level)
-            if self.trend_forecaster.prediction_intervals is not None:
-                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 361
+# %% ../nbs/src/core/models.ipynb 362
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -5125,7 +5127,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 374
+# %% ../nbs/src/core/models.ipynb 375
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -5161,7 +5163,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 387
+# %% ../nbs/src/core/models.ipynb 388
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -5197,7 +5199,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 400
+# %% ../nbs/src/core/models.ipynb 401
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -5233,7 +5235,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 414
+# %% ../nbs/src/core/models.ipynb 415
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5427,7 +5429,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 427
+# %% ../nbs/src/core/models.ipynb 428
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5473,7 +5475,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 438
+# %% ../nbs/src/core/models.ipynb 439
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -5622,7 +5624,7 @@ class ConstantModel(_TS):
                     res[f"fitted-hi-{lv}"] = fitted_vals
         return res
 
-# %% ../nbs/src/core/models.ipynb 449
+# %% ../nbs/src/core/models.ipynb 450
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -5636,7 +5638,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 460
+# %% ../nbs/src/core/models.ipynb 461
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.
