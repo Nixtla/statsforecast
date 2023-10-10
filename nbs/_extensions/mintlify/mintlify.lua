@@ -33,12 +33,31 @@ function Header(el)
   return el
 end
 
+Block = function(node) 
+  if node.text ~= nil and string.find(node.text, "<CustomCode") then      
+    quarto.utils.dump("Plotly in global")
+    return pandoc.RawBlock("plotly", node.text)      
+  end
+  return node    
+end
+
+-- local scriptCount = 0
+-- local printItem = 1
+
 -- transform 'mdx' into passthrough content, transform 'html'
 -- into raw commamark to pass through via dangerouslySetInnerHTML
-function RawBlock(el)
+function RawBlock(el)  
+  -- quarto.log.output(el.format)
+  -- scriptCount = scriptCount + 1  
   if el.format == 'mdx' then
+    -- quarto.log.output('---A---') 
     return pandoc.CodeBlock(el.text, pandoc.Attr("", {"mdx-code-block"}))
   elseif el.format == 'html' then
+    -- quarto.utils.dump(el.text)
+    -- quarto.log.output('---B---') 
+    -- if printItem == scriptCount then    
+    --   quarto.utils.dump(el) 
+    -- end
     -- track the raw html vars (we'll insert them at the top later on as
     -- mdx requires all exports be declared together)
     local html = string.gsub(el.text, "\n+", "\n")
@@ -50,4 +69,3 @@ function RawBlock(el)
     return pandoc.RawBlock("html", html)
   end
 end
-

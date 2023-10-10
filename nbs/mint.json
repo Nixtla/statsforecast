@@ -1,0 +1,91 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Nixtla",
+  "logo": {
+    "light": "/logo/light.png",
+    "dark": "/logo/dark.png"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0E0E0E",
+    "light": "#FAFAFA",
+    "dark": "#0E0E0E",
+    "anchors": {
+      "from": "#2AD0CA",
+      "to": "#0E00F8"
+    }
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/Nixtla/nixtla"
+  },
+  "topAnchor": {
+    "name": "StatsForecast",
+    "icon": "bolt"
+  },
+  "navigation": [
+    {
+      "group": "",
+      "pages": ["index.html"]
+    },
+    {
+      "group": "Getting Started",
+      "pages": [
+        "docs/getting-started/installation.html",
+        "docs/getting-started/getting_started_short.html",
+        "docs/getting-started/getting_started_complete.html"
+      ]
+    },
+    {
+      "group": "Tutorials",
+      "pages": [
+        "docs/tutorials/anomalydetection.html",
+        "docs/tutorials/conformalprediction.html",
+        "docs/tutorials/crossvalidation.html",
+        "docs/tutorials/electricityloadforecasting.html",
+        "docs/tutorials/electricitypeakforecasting.html",
+        "docs/tutorials/garch_tutorial.html",
+        "docs/tutorials/intermittentdata.html",
+        "docs/tutorials/multipleseasonalities.html",
+        "docs/tutorials/statisticalneuralmethods.html",
+        "docs/tutorials/uncertaintyintervals.html"
+      ]
+    },
+    {
+      "group": "How to Guides",
+      "pages": [
+        "docs/how-to-guides/automatic_forecasting.html",
+        "docs/how-to-guides/amazonstatsforecast.html",
+        "docs/how-to-guides/autoarima_vs_prophet.html",
+        "docs/how-to-guides/dask.html",
+        "docs/how-to-guides/ets_ray_m5.html",
+        "docs/how-to-guides/exogenous.html",
+        "docs/how-to-guides/getting_started_complete_polars.html",
+        "docs/how-to-guides/migrating_R",
+        "docs/how-to-guides/prophet_spark_m5.html",
+        "docs/how-to-guides/ray.html",
+        "docs/how-to-guides/spark.html"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "src/core/core.html",
+        "src/core/distributed.fugue.html",
+        "src/core/models_intro",
+        "src/core/models.html"
+      ]
+    },
+    {
+      "group": "Contributing",
+      "pages": [
+        "docs/contribute/contribute",
+        "docs/contribute/docs",
+        "docs/contribute/issue-labels",
+        "docs/contribute/issues",
+        "docs/contribute/step-by-step",
+        "docs/contribute/techstack"
+      ]
+    }
+  ]
+}

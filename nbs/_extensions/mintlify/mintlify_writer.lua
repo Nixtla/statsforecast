@@ -1,6 +1,5 @@
 local codeBlock = require('mintlify_utils').codeBlock
 
-
 local reactPreamble = pandoc.List()
 
 function capitalizeFirstLetter(str)
@@ -76,12 +75,23 @@ function Writer(doc, opts)
       return tabset(node, filter)
     end,
 
+    RawBlock = function (rawBlock)
+      -- We just "pass-through" raw blocks of type "confluence"
+      if(rawBlock.format == 'plotly') then
+        quarto.utils.dump("Plotly in filter")
+        return pandoc.RawBlock('html', rawBlock.text)
+      end
+
+      -- Raw blocks inclding arbirtary HTML like JavaScript are not supported in CSF
+      return ""
+    end,
+
     Callout = function(node)
       local admonition = pandoc.Div({})
       local mintlifyCallout = castToMintlifyCallout(node.type)
       admonition.content:insert(jsx("<" .. mintlifyCallout .. ">"))
       if node.title then
-        admonition.content:insert(pandoc.Header(3, node.title))
+        admonition.content:insert(pandoc.Header(3, node.title))                
       end
       local content = node.content
       if type(content) == "table" then

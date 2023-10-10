@@ -5,8 +5,4 @@ format:
   mintlify-md:
     code-fold: true
 
-default:
-  body-footer: |
-    Give us a ⭐ on [Github](https://github.com/nixtla/statsforecast)
-
-metadata-files: [nbdev.yml, sidebar.yml, mint.json]
+metadata-files: [nbdev.yml]
