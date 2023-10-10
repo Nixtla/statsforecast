@@ -62,9 +62,40 @@
         "docs/how-to-guides/exogenous.html",
         "docs/how-to-guides/getting_started_complete_polars.html",
         "docs/how-to-guides/migrating_R",
+        "docs/how-to-guides/numba_cache.html",
         "docs/how-to-guides/prophet_spark_m5.html",
         "docs/how-to-guides/ray.html",
         "docs/how-to-guides/spark.html"
+      ]
+    },
+    {
+      "group": "Model References",
+      "pages": [
+        "docs/models/adida.html",
+        "docs/models/arch.html",
+        "docs/models/arima.html",
+        "docs/models/autoarima.html",
+        "docs/models/autoces.html",
+        "docs/models/autoets.html",
+        "docs/models/autoregressive.html",
+        "docs/models/autotheta.html",
+        "docs/models/crostonclassic.html",
+        "docs/models/crostonoptimized.html",
+        "docs/models/crostonsba.html",
+        "docs/models/dynamicoptimizedtheta.html",
+        "docs/models/dynamicstandardtheta.html",
+        "docs/models/garch.html",
+        "docs/models/holt.html",
+        "docs/models/holtwinters.html",
+        "docs/models/imapa.html",
+        "docs/models/multipleseasonaltrend.html",
+        "docs/models/optimizedtheta.html",
+        "docs/models/seasonalexponentialsmoothing.html",
+        "docs/models/seasonalexponentialsmoothingoptimized.html",
+        "docs/models/simpleexponentialoptimized.html",
+        "docs/models/simpleexponentialsmoothing.html",
+        "docs/models/standardtheta.html",
+        "docs/models/tsb.html"
       ]
     },
     {
