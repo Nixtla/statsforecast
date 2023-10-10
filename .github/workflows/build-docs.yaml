@@ -20,9 +20,15 @@ jobs:
           pip install -Uq nbdev
           test -f setup.py && pip install -e ".[dev]"
           nbdev_docs
-      - name: Copy over mint.json
+      - name: Apply final formats
+        shell: bash
+        run: bash final-formatting.bash
+      - name: Copy over necessary assets
         run: |
           cp nbs/mint.json _docs/mint.json
+          cp nbs/imgs/logo/dark.png _docs/imgs/logo/dark.png
+          cp nbs/imgs/logo/light.png _docs/imgs/logo/light.png
+          cp nbs/favicon.svg _docs/favicon.svg
       - name: Deploy to Mintlify Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
