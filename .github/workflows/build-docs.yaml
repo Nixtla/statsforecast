@@ -24,6 +24,7 @@ jobs:
         shell: bash
         run: bash final-formatting.bash
       - name: Copy over necessary assets
+        uses: actions/checkout@v3
         run: |
           cp nbs/mint.json _docs/mint.json
           cp nbs/imgs/logo/dark.png _docs/dark.png
