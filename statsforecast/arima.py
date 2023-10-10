@@ -19,12 +19,13 @@ from scipy.optimize import minimize
 from scipy.stats import norm
 
 from .mstl import mstl
+from .utils import CACHE, NOGIL
 
 # %% ../nbs/src/arima.ipynb 5
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
 # %% ../nbs/src/arima.ipynb 6
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def partrans(p, raw, new):
     if p > 100:
         raise ValueError("can only transform 100 pars in arima0")
@@ -39,7 +40,7 @@ def partrans(p, raw, new):
         new[:j] = work[:j]
 
 # %% ../nbs/src/arima.ipynb 7
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_gradtrans(x, arma):
     eps = 1e-3
     mp, mq, msp = arma[:3]
@@ -71,7 +72,7 @@ def arima_gradtrans(x, arma):
     return y
 
 # %% ../nbs/src/arima.ipynb 9
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_undopars(x, arma):
     mp, mq, msp = arma[:3]
     res = x.copy()
@@ -83,7 +84,7 @@ def arima_undopars(x, arma):
     return res
 
 # %% ../nbs/src/arima.ipynb 11
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def tsconv(a, b):
     na = len(a)
     nb = len(b)
@@ -98,7 +99,7 @@ def tsconv(a, b):
     return ab
 
 # %% ../nbs/src/arima.ipynb 13
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def inclu2(np_, xnext, xrow, ynext, d, rbar, thetab):
     for i in range(np_):
         xrow[i] = xnext[i]
@@ -127,7 +128,7 @@ def inclu2(np_, xnext, xrow, ynext, d, rbar, thetab):
             ithisr = ithisr + np_ - i - 1
 
 # %% ../nbs/src/arima.ipynb 14
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def invpartrans(p, phi, new):
     if p > 100:
         raise ValueError("can only transform 100 pars in arima0")
@@ -145,7 +146,7 @@ def invpartrans(p, phi, new):
         new[j] = math.atanh(new[j])
 
 # %% ../nbs/src/arima.ipynb 15
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def ARIMA_invtrans(x, arma):
     mp, mq, msp = arma[:3]
     y = x.copy()
@@ -157,7 +158,7 @@ def ARIMA_invtrans(x, arma):
     return y
 
 # %% ../nbs/src/arima.ipynb 17
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def getQ0(phi, theta):
     p = len(phi)
     q = len(theta)
@@ -287,7 +288,7 @@ def getQ0(phi, theta):
     return res
 
 # %% ../nbs/src/arima.ipynb 19
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_transpar(params_in, arma, trans):
     # TODO check trans=True results
     mp, mq, msp, msq, ns = arma[:5]
@@ -326,7 +327,7 @@ def arima_transpar(params_in, arma, trans):
     return phi, theta
 
 # %% ../nbs/src/arima.ipynb 22
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_css(y, arma, phi, theta, ncond):
     n = len(y)
     p = len(phi)
@@ -370,7 +371,7 @@ def arima_css(y, arma, phi, theta, ncond):
     return res, resid
 
 # %% ../nbs/src/arima.ipynb 24
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps):
     # check nas phi
     # check nas theta
@@ -423,7 +424,7 @@ def make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(np.float64).eps):
     return dict(zip(keys, res))
 
 # %% ../nbs/src/arima.ipynb 26
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
     n = len(y)
     rd = len(a)
@@ -560,7 +561,7 @@ def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
     return ssq, sumlog, nu, rsResid
 
 # %% ../nbs/src/arima.ipynb 28
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def diff1d(x, lag, differences):
     y = x.copy()
     for _ in range(differences):
@@ -572,7 +573,7 @@ def diff1d(x, lag, differences):
     return y
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def diff2d(x, lag, differences):
     y = np.empty_like(x)
     for j in range(x.shape[1]):
@@ -1059,7 +1060,7 @@ def arima(
     return ans
 
 # %% ../nbs/src/arima.ipynb 39
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def kalman_forecast(n, Z, a, P, T, V, h):
     p = len(a)
 
