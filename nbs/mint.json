@@ -2,8 +2,8 @@
   "$schema": "https://mintlify.com/schema.json",
   "name": "Nixtla",
   "logo": {
-    "light": "/logo/light.png",
-    "dark": "/logo/dark.png"
+    "light": "/light.png",
+    "dark": "/dark.png"
   },
   "favicon": "/favicon.svg",
   "colors": {

@@ -26,8 +26,8 @@ jobs:
       - name: Copy over necessary assets
         run: |
           cp nbs/mint.json _docs/mint.json
-          cp nbs/imgs/logo/dark.png _docs/imgs/logo/dark.png
-          cp nbs/imgs/logo/light.png _docs/imgs/logo/light.png
+          cp nbs/imgs/logo/dark.png _docs/dark.png
+          cp nbs/imgs/logo/light.png _docs/light.png 
           cp nbs/favicon.svg _docs/favicon.svg
       - name: Deploy to Mintlify Docs
         uses: peaceiris/actions-gh-pages@v3
