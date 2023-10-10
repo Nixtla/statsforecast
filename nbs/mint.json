@@ -103,8 +103,8 @@
       "pages": [
         "src/core/core.html",
         "src/core/distributed.fugue.html",
-        "src/core/models_intro",
-        "src/core/models.html"
+        "src/core/models.html",
+        "src/core/models_intro"
       ]
     },
     {
