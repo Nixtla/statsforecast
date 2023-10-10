@@ -22,7 +22,7 @@ jobs:
           nbdev_docs
       - name: Apply final formats
         shell: bash
-        run: bash final-formatting.bash
+        run: bash ./action_files/final-formatting.bash
       - name: Copy over necessary assets
         run: |
           cp nbs/mint.json _docs/mint.json
