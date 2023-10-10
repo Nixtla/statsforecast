@@ -29,6 +29,7 @@ jobs:
           cp nbs/imgs/logo/dark.png _docs/dark.png
           cp nbs/imgs/logo/light.png _docs/light.png 
           cp nbs/favicon.svg _docs/favicon.svg
+          rm _docs/index.html
       - name: Deploy to Mintlify Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
