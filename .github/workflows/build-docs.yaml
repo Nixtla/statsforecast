@@ -37,13 +37,12 @@ jobs:
           cp _proc/docs/contribute/step-by-step.md _docs/docs/contribute/step-by-step.mdx
           cp _proc/docs/contribute/techstack.md _docs/docs/contribute/techstack.mdx
           rm -f _docs/index.html
-          mkdir mintlify
-          cp -r ./_docs ./mintlify
       - name: Deploy to Mintlify Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: docs
-          publish_dir: ./mintlify
+          publish_dir: ./_docs
           # The following lines assign commit authorship to the official GH-Actions bot for deploys to `docs` branch.
           # You can swap them out with your own user credentials.
           user_name: github-actions[bot]
