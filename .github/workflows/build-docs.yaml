@@ -36,7 +36,6 @@ jobs:
           cp _proc/docs/contribute/issues.md _docs/docs/contribute/issues.mdx
           cp _proc/docs/contribute/step-by-step.md _docs/docs/contribute/step-by-step.mdx
           cp _proc/docs/contribute/techstack.md _docs/docs/contribute/techstack.mdx
-          rm -f _docs/index.html
       - name: Deploy to Mintlify Docs
         uses: peaceiris/actions-gh-pages@v3
         with:
