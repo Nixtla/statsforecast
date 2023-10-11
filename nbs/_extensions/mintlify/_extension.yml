@@ -8,6 +8,7 @@ contributes:
       detect:
         - ["mint.json"]
       render:
+        - "**/*.md"
         - "**/*.qmd"
         - "**/*.ipynb"
     format: mintlify-md
@@ -26,8 +27,5 @@ contributes:
       fig-width: 8
       fig-height: 5
       html-math-method: webtex
-      # shortcodes:
-      #   - plotly.lua
       filters:
         - mintlify.lua
-        # - plotly.lua
