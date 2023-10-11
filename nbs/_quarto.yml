@@ -1,8 +1,59 @@
 project:
-  type: mintlify
+  type: website
 
 format:
-  mintlify-md:
-    code-fold: true
+  html:
+    theme: cosmo
+    fontsize: 1em
+    linestretch: 1.7
+    css: styles.css
+    toc: true
 
-metadata-files: [nbdev.yml]
+website:
+  twitter-card:
+    image: "https://farm6.staticflickr.com/5510/14338202952_93595258ff_z.jpg"
+    site: "@Nixtlainc"
+  open-graph:
+    image: "https://github.com/Nixtla/styles/blob/2abf51612584169874c90cd7c4d347e3917eaf73/images/Banner%20Github.png"
+  google-analytics: "G-NXJNCVR18L"
+  repo-actions: [issue]
+  favicon: favicon_png.png
+  navbar:
+    background: primary
+    search: true
+    collapse-below: lg
+    left:
+      - text: "Get Started"
+        href: docs/getting-started/getting_started_short.html
+      - text: "NixtlaVerse"
+        menu:
+          - text: "StatsForecast ⚡️"
+            href: https://github.com/nixtla/statsforecast
+          - text: "MLForecast 🤖"
+            href: https://github.com/nixtla/mlforecast
+          - text: "NeuralForecast 🧠"
+            href: https://github.com/nixtla/neuralforecast
+          - text: "HierarchicalForecast 👑"
+            href: https://github.com/nixtla/hierarchicalforecast
+
+      - text: "Help"
+        menu:
+          - text: "Report an Issue"
+            icon: bug
+            href: https://github.com/nixtla/statsforecast/issues/new/choose
+          - text: "Join our Slack"
+            icon: chat-right-text
+            href: https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A
+    right:
+      - icon: github
+        href: "https://github.com/nixtla/statsforecast"
+      - icon: twitter
+        href: https://twitter.com/nixtlainc
+        aria-label: Nixtla Twitter
+
+  sidebar:
+    style: floating
+  body-footer: |
+    Give us a ⭐ on [Github](https://github.com/nixtla/statsforecast)
+
+metadata-files: [nbdev.yml, sidebar.yml]
