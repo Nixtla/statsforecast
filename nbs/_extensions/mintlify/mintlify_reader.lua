@@ -1,8 +1,0 @@
--- function Reader(input)
---     return pandoc.Pandoc(input:map(        
---         function (s) 
---             -- print(s)
---             return pandoc.CodeBlock(s.text) 
---         end
---     ))
---   end

@@ -18,7 +18,6 @@ contributes:
       # Ideally, we would forward the variants to the custom writer.
       variant: gfm+pipe_tables+tex_math_dollars+raw_html+all_symbols_escapable+backtick_code_blocks+space_in_atx_header+intraword_underscores+lists_without_preceding_blankline+shortcut_reference_links
       writer: mintlify_writer.lua
-      # reader: mintlify_reader.lua
       output-ext: mdx
       inline-includes: true
       preserve-yaml: true
