@@ -4,10 +4,10 @@ echo "Running nbdev_docs..."
 nbdev_docs
 echo "nbdev_docs is done"
 
-echo "Running final-formatting.bash..."
-chmod +x final-formatting.bash
-./final-formatting.bash
-echo "final-formatting.bash is done"
+echo "Running docs-final-formatting.bash..."
+chmod +x docs-final-formatting.bash
+./action_files/docs-final-formatting.bash
+echo "docs-final-formatting.bash is done"
 
 echo "Moving necessary assets..."
 cp nbs/mint.json _docs/mint.json
