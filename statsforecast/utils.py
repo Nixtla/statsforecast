@@ -6,9 +6,6 @@ __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 # %% ../nbs/src/utils.ipynb 3
 import os
 import warnings
-import datetime as dt
-import pickle
-from glob import glob
 
 import numpy as np
 import pandas as pd
@@ -329,85 +326,3 @@ class ConformalIntervals:
         self.n_windows = n_windows
         self.h = h
         self.method = method
-
-# %% ../nbs/src/utils.ipynb 20
-def save_statsforecast(sf, path, file_name=None, prompt="N"):
-    # TODO: Add method information
-
-    fitted_models = sf.fitted_
-    datetime_record = dt.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-    models = np.array(fitted_models)
-    models_size = models.itemsize * models.size
-
-    ask = False
-    if prompt.upper != "Y":
-        ask = True
-
-    print("Model(s) size:")
-    if models_size < 2**10:
-        print(models_size, "Bytes")
-    if 2**10 < models_size < 2 * 20:
-        size = np.round(np.divide(models_size, 2**10), 2)
-        print(size, "Kilobytes")
-    if models_size >= 2**20:
-        size = np.round(np.divide(models_size, 2**20), 2)
-        print(size, "Megabytes")
-        if size >= 50:
-            print("!!! WARNING !!!")
-            print("The model size is over Megabyte threshold.")
-            print("Saving the model(s) will take long time.")
-
-            if ask:
-                prompt = input("Would you like to proceed? (y/n)")
-                if prompt.upper() not in ["Y", "N"]:
-                    print("Wrong input model(s) would not be saved")
-                    return
-                elif prompt.upper() == "N":
-                    return
-
-    print("Saving model(s)")
-
-    if not file_name:
-        path_file = os.path.join(path, f"FittedModels_{datetime_record}.pickle")
-    else:
-        path_file = os.path.join(path, file_name)
-
-    with open(path_file, "wb") as m_file:
-        pickle.dump(sf, m_file)
-    print("Model(s) saved")
-
-# %% ../nbs/src/utils.ipynb 21
-def load_statsforecast(path, file_name=None):
-    """
-    Automatically loads the model into ready StatsForecast.
-    Parameters
-    ----------
-    path: Union[str, Path]
-        Path to saved StatsForecast directory (folder).
-    file_name: Union[str, Path]
-        Path to saved Statsforecast (pickle file).
-    """
-    if not file_name:
-        sf_p = os.path.join(path, "*.pickle")
-        sf_f_p = glob(sf_p)
-        if len(sf_f_p) > 1:
-            raise ValueError(
-                f"""The path contains more than one *.pickle file in it.
-                Please remove non-required *.pickle file from the {path}
-                """
-            )
-        elif len(sf_f_p) == 1:
-            sf_f_p = sf_f_p[0]
-        else:
-            raise ValueError(
-                """
-                Not a single model(s) file found in the specified directory.
-                Ensure that the directory is right and/or add your `.pickle` file in
-                it.
-                """
-            )
-    else:
-        sf_f_p = os.path.join(path, file_name)
-
-    with open(sf_f_p, "rb") as f:
-        return pickle.load(f)
