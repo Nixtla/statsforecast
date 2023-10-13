@@ -72,7 +72,8 @@ class GroupedArray:
                     fm[i, i_model] = new_model.fit(y=y, X=X)
                 except Exception as error:
                     if fallback_model is not None:
-                        fm[i, i_model] = fallback_model.fit(y=y, X=X)
+                        new_fallback_model = fallback_model.new()
+                        fm[i, i_model] = new_fallback_model.fit(y=y, X=X)
                     else:
                         raise error
         return fm
