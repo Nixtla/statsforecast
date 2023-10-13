@@ -720,4 +720,8 @@ d = { 'settings': { 'branch': 'main',
                                      'statsforecast.utils._repeat_val': ('src/utils.html#_repeat_val', 'statsforecast/utils.py'),
                                      'statsforecast.utils._repeat_val_seas': ('src/utils.html#_repeat_val_seas', 'statsforecast/utils.py'),
                                      'statsforecast.utils._seasonal_naive': ('src/utils.html#_seasonal_naive', 'statsforecast/utils.py'),
-                                     'statsforecast.utils.generate_series': ('src/utils.html#generate_series', 'statsforecast/utils.py')}}}
+                                     'statsforecast.utils.generate_series': ('src/utils.html#generate_series', 'statsforecast/utils.py'),
+                                     'statsforecast.utils.load_statsforecast': ( 'src/utils.html#load_statsforecast',
+                                                                                 'statsforecast/utils.py'),
+                                     'statsforecast.utils.save_statsforecast': ( 'src/utils.html#save_statsforecast',
+                                                                                 'statsforecast/utils.py')}}}
