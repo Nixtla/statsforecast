@@ -9,6 +9,7 @@ dist
 .vscode
 .idea
 *.gif
+*.icloud
 *.csv
 */data/*
 *.parquet
