@@ -10,8 +10,10 @@ scipy>=1.7.3
 statsmodels>=0.13.2
 tabulate
 plotly
+ray<2.5.0
+fugue[dask,ray]
 nbdev
-tqdm
 plotly-resampler
 polars
 supersmoother
+tqdm
