@@ -16,10 +16,10 @@ dist
 tmp
 _docs/
 _proc/
-sidebar.yml
 .DS_Store
 .gitattributes
 .gitconfig
 nbs/.last_checked
 .venv
 .idea
+.luarc.json
