@@ -9,13 +9,13 @@ import logging
 import reprlib
 import warnings
 import os
+from pathlib import Path
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 import pkg_resources
 import pickle
 import datetime as dt
 import re
-import sys
 
 from fugue.execution.factory import make_execution_engine
 import numpy as np
@@ -66,14 +66,21 @@ class GroupedArray:
             self.indptr, other.indptr
         )
 
-    def fit(self, models):
+    def fit(self, models, fallback_model=None):
         fm = np.full((self.n_groups, len(models)), np.nan, dtype=object)
         for i, grp in enumerate(self):
             y = grp[:, 0] if grp.ndim == 2 else grp
             X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
             for i_model, model in enumerate(models):
-                new_model = model.new()
-                fm[i, i_model] = new_model.fit(y=y, X=X)
+                try:
+                    new_model = model.new()
+                    fm[i, i_model] = new_model.fit(y=y, X=X)
+                except Exception as error:
+                    if fallback_model is not None:
+                        new_fallback_model = fallback_model.new()
+                        fm[i, i_model] = new_fallback_model.fit(y=y, X=X)
+                    else:
+                        raise error
         return fm
 
     def _get_cols(self, models, attr, h, X, level=tuple()):
@@ -336,11 +343,15 @@ class GroupedArray:
                     else:
                         if i_window == 0:
                             # for the first window we have to fit each model
-                            model = model.fit(y=y_train, X=X_train)
-                            if fallback_model is not None:
-                                fallback_model = fallback_model.fit(
-                                    y=y_train, X=X_train
-                                )
+                            try:
+                                model = model.fit(y=y_train, X=X_train)
+                            except Exception as error:
+                                if fallback_model is not None:
+                                    fallback_model = fallback_model.fit(
+                                        y=y_train, X=X_train
+                                    )
+                                else:
+                                    raise error
                         try:
                             res_i = model.forward(
                                 h=h,
@@ -406,7 +417,7 @@ class GroupedArray:
             if x.size
         ]
 
-# %% ../nbs/src/core/core.ipynb 22
+# %% ../nbs/src/core/core.ipynb 23
 class DataFrameProcessing:
     """
     A utility to process Pandas or Polars dataframes for time series forecasting.
@@ -447,6 +458,7 @@ class DataFrameProcessing:
         sort_dataframe: bool,
         validate: Optional[bool] = True,
     ):
+
         self.dataframe = dataframe
         self.sort_dataframe = sort_dataframe
         self.validate = validate
@@ -697,7 +709,7 @@ class DataFrameProcessing:
                 raise Exception(msg) from e
         return arr
 
-# %% ../nbs/src/core/core.ipynb 25
+# %% ../nbs/src/core/core.ipynb 26
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -736,7 +748,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/src/core/core.ipynb 29
+# %% ../nbs/src/core/core.ipynb 30
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
         actual_n_jobs = cpu_count()
@@ -744,7 +756,7 @@ def _get_n_jobs(n_groups, n_jobs):
         actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/src/core/core.ipynb 32
+# %% ../nbs/src/core/core.ipynb 33
 def _parse_ds_type(df):
     dt_col = df["ds"]
     dt_check = pd.api.types.is_datetime64_any_dtype(dt_col)
@@ -762,7 +774,7 @@ def _parse_ds_type(df):
             raise Exception(msg) from e
     return df
 
-# %% ../nbs/src/core/core.ipynb 33
+# %% ../nbs/src/core/core.ipynb 34
 class _StatsForecast:
     def __init__(
         self,
@@ -876,7 +888,9 @@ class _StatsForecast:
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
-            self.fitted_ = self.ga.fit(models=self.models)
+            self.fitted_ = self.ga.fit(
+                models=self.models, fallback_model=self.fallback_model
+            )
         else:
             self.fitted_ = self._fit_parallel()
         return self
@@ -1305,7 +1319,9 @@ class _StatsForecast:
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga in gas:
-                future = executor.apply_async(ga.fit, (self.models,))
+                future = executor.apply_async(
+                    ga.fit, (self.models, self.fallback_model)
+                )
                 futures.append(future)
             fm = np.vstack([f.get() for f in futures])
         return fm
@@ -1537,31 +1553,31 @@ class _StatsForecast:
 
     def save(
         self,
-        path: Union[os.PathLike, str],
-        file_name: Union[os.PathLike, str, None] = None,
+        path: Union[Path, str],
+        file_name: Union[Path, str, None] = None,
         max_size: str = "50MB",
         trim: bool = True,
-        trim_attr: list = ["fcst_fitted_values_", "cv_fitted_values_"],
     ):
         """Function that will save StatsForecast class with certain settings to make it
         reproducible.
 
         Parameters
         ----------
-        path: Union[os.PathLike, str]
+        path: Union[Path, str]
             Path of the folder where the pickle should be saved to
-        file_name: Union[os.PathLike, str, None] = None
+        file_name: Union[Path, str, None] = None
             Name of the file, if None then datetime name will be given
         max_size: str = "50MB"
             StatsForecast class should not exceed this size, available byte naming:
             ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
         trim: bool = True
-            Trim any boiler attributes
-        trim_attr:list = None
-            Specify which attributes to trim
+            Delete any attributes not needed for inference
         """
 
         # Removing unnecessary attributes
+
+        # @jmoralez decide future implementation
+        trim_attr: list = ["fcst_fitted_values_", "cv_fitted_values_"]
         if trim:
             for attr in trim_attr:
                 # remove unnecessary attributes here
@@ -1591,7 +1607,7 @@ class _StatsForecast:
             key_ = match[2]
             cap_size = m_size * bytes_hmap[key_]
 
-        sf_size = sys.getsizeof(self)
+        sf_size = len(pickle.dumps(self))
 
         if sf_size >= cap_size:
             return
@@ -1623,7 +1639,7 @@ class _StatsForecast:
         print("Model(s) saved")
 
     @staticmethod
-    def load(path: Union[os.PathLike, str]):
+    def load(path: Union[Path, str]):
         """
         Automatically loads the model into ready StatsForecast.
 
@@ -1645,7 +1661,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/src/core/core.ipynb 34
+# %% ../nbs/src/core/core.ipynb 35
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
@@ -1666,7 +1682,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/src/core/core.ipynb 35
+# %% ../nbs/src/core/core.ipynb 36
 class StatsForecast(_StatsForecast):
     """Train statistical models.
 
