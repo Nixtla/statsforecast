@@ -15,35 +15,35 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
 7. [Start Coding](#start-coding)
 8. [Example with Screen-shots](#example-with-screen-shots)
 
-## Prerequisites
+## Prerequisites 
 
-- _GitHub_: You should already have a GitHub account and a basic understanding of its functionalities. Alternatively check [this guide](https://docs.github.com/en/get-started).
-- _Python_: Python should be installed on your system. Alternatively check [this guide](https://www.python.org/downloads/).
-- _conda_: You need to have conda installed, along with a good grasp of fundamental operations such as creating environments, and activating and deactivating them. Alternatively check [this guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html).
+- *GitHub*: You should already have a GitHub account and a basic understanding of its functionalities. Alternatively check [this guide](https://docs.github.com/en/get-started).
+- *Python*: Python should be installed on your system. Alternatively check [this guide](https://www.python.org/downloads/). 
+- *conda*: You need to have conda installed, along with a good grasp of fundamental operations such as creating environments, and activating and deactivating them.  Alternatively check [this guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). 
 
 ## Git `fork-and-pull` worklow
 
-**1. Fork the Project:**
+**1. Fork the Project:** 
 Start by forking the Nixtla repository to your own GitHub account. This creates a personal copy of the project where you can make changes without affecting the main repository.
 
 **2. Clone the Forked Repository**
-Clone the forked repository to your local machine using `git clone https://github.com/<your-username>/nixtla.git`. This allows you to work with the code directly on your system.
+Clone the forked repository to your local machine using `git clone https://github.com/<your-username>/nixtla.git`. This allows you to work with the code directly on your system. 
 
-**3. Create a Branch:**
+**3. Create a Branch:** 
 
 Branching in GitHub is a key strategy for effectively managing and isolating changes to your project. It allows you to segregate work on different features, fixes, and issues without interfering with the main, production-ready codebase.
 
-1. _Main Branch_: The default branch with production-ready code.
+1. *Main Branch*: The default branch with production-ready code.
 
-2. _Feature Branches_: For new features, create branches prefixed with 'feature/', like `git checkout -b feature/new-model`.
+2. *Feature Branches*: For new features, create branches prefixed with 'feature/', like `git checkout -b feature/new-model`.
 
-3. _Fix Branches_: For bug fixes, use 'fix/' prefix, like `git checkout -b fix/forecasting-bug`.
+3. *Fix Branches*: For bug fixes, use 'fix/' prefix, like `git checkout -b fix/forecasting-bug`.
 
-4. _Issue Branches_: For specific issues, use `git checkout -b issue/issue-number` or `git checkout -b issue/issue-description`.
+4. *Issue Branches*: For specific issues, use `git checkout -b issue/issue-number` or `git checkout -b issue/issue-description`.
 
 After testing, branches are merged back into the main branch via a pull request, and then typically deleted to maintain a clean repository. You can read more about github and branching [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
 
-## Set Up a Conda Environment
+##  Set Up a Conda Environment
 
 > If you want to use Docker or Codespaces, let us know opening an issue and we will set you up.
 
@@ -51,13 +51,13 @@ Next, you'll need to set up a [Conda](https://docs.conda.io/en/latest/) environm
 
 First, ensure you have Anaconda or Miniconda installed on your system. Alternatively checkout these guides: [Anaconda](https://www.anaconda.com/), [Miniconda](https://docs.conda.io/en/latest/miniconda.html), and [Mamba](https://mamba.readthedocs.io/en/latest/).
 
-Then, you can create a new environment using `conda create -n nixtla-env python=3.10`.
+Then, you can create a new environment using `conda create -n nixtla-env python=3.10`. 
 
-You can also use mamba for creating the environment (mamba is faster than Conda) using `mamba create -n nixtla-env python=3.10`.
+You can also use mamba for creating the environment (mamba is faster than Conda) using `mamba create -n nixtla-env python=3.10`. 
 
 You can replace `nixtla-env` for something more meaningful to you. Eg. `statsforecast-env` or `mlforecast-env`. You can always check the list of environments in your system using `conda env list`.
 
-Activate your new environment with `conda activate nixtla-env`.
+Activate your new environment with `conda activate nixtla-env`. 
 
 ## Install required libraries for development
 
@@ -71,7 +71,7 @@ Sometimes (e.g. StatsForecast) the `enviorment.yml` is sometimes inside a folder
 
 ## Start editable mode
 
-Install the library in editable mode using `pip install -e ".[dev]"`.
+Install the library in editable mode using `pip install -e ".[dev]"`. 
 
 This means the package is linked directly to the source code, allowing any changes made to the source code to be immediately reflected in your Python environment without the need to reinstall the package. This is useful for testing changes during package development.
 
@@ -101,8 +101,9 @@ Open a jupyter notebook using `jupyter lab` (or VS Code).
 
 2. **Commit Your Changes:** Add the changed files using `git add [your_modified_file_0.ipynb] [your_modified_file_1.ipynb]`, then commit these changes using `git commit -m "<type>: <Your descriptive commit message>"`. Please use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 
-3. **Push Your Changes:**
-   Push your changes to the remote repository on GitHub with `git push origin feature/your-feature-name`.
+
+3. **Push Your Changes:** 
+Push your changes to the remote repository on GitHub with `git push origin feature/your-feature-name`.
 
 4. **Open a Pull Request:** Open a pull request from your new branch on the Nixtla repository on GitHub. Provide a thorough description of your changes when creating the pull request.
 
@@ -117,7 +118,6 @@ You can find a detailed step by step buide with screen-shots below.
 ## Example with Screen-shots
 
 ### 1. Create a fork of the mlforecast repo
-
 The first thing you need to do is create a fork of the GitHub repository to your own account:
 
 <img width="700" alt="image" src="https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/af767f5b-66f1-4068-9dd2-917096285ae9" />
