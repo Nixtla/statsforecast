@@ -22,7 +22,6 @@ def url_replace(folder_arr):
     new_url = str(Path(*folder_arr).joinpath(curr_url))
     if not new_url.startswith('/'):
       new_url = '/' + new_url
-    print('![](' + str(new_url) + ')')
     return '![](' + str(new_url) + ')'
   return url_replace_helper
 
