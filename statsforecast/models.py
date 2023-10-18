@@ -2550,6 +2550,7 @@ class Holt(AutoETS):
         alias: str = "Holt",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+
         self.season_length = season_length
         self.error_type = error_type
         self.alias = alias
@@ -2748,6 +2749,7 @@ class HistoricAverage(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
+
         """Memory Efficient HistoricAverage predictions.
 
         This method avoids memory burden due from object storage.
@@ -2969,7 +2971,43 @@ class Naive(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 217
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        """Apply fitted model to an new/updated series.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (n,).
+        h: int
+            Forecast horizon.
+        X : array-like
+            Optional insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = self.forecast(
+            y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
+        )
+        return res
+
+# %% ../nbs/src/core/models.ipynb 218
 @njit(nogil=NOGIL, cache=CACHE)
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -2989,7 +3027,7 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 218
+# %% ../nbs/src/core/models.ipynb 219
 class RandomWalkWithDrift(_TS):
     def __init__(
         self,
@@ -3166,7 +3204,7 @@ class RandomWalkWithDrift(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 232
+# %% ../nbs/src/core/models.ipynb 233
 class SeasonalNaive(_TS):
     def __init__(
         self,
@@ -3355,7 +3393,7 @@ class SeasonalNaive(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 246
+# %% ../nbs/src/core/models.ipynb 247
 @njit(nogil=NOGIL, cache=CACHE)
 def _window_average(
     y: np.ndarray,  # time series
@@ -3371,7 +3409,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 247
+# %% ../nbs/src/core/models.ipynb 248
 class WindowAverage(_TS):
     def __init__(
         self,
@@ -3529,7 +3567,7 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 258
+# %% ../nbs/src/core/models.ipynb 259
 @njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_window_average(
     y: np.ndarray,
@@ -3550,7 +3588,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/src/core/models.ipynb 259
+# %% ../nbs/src/core/models.ipynb 260
 class SeasonalWindowAverage(_TS):
     def __init__(
         self,
@@ -3724,7 +3762,7 @@ class SeasonalWindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 271
+# %% ../nbs/src/core/models.ipynb 272
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3745,7 +3783,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 272
+# %% ../nbs/src/core/models.ipynb 273
 class ADIDA(_TS):
     def __init__(
         self,
@@ -3907,7 +3945,7 @@ class ADIDA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 284
+# %% ../nbs/src/core/models.ipynb 285
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -3929,7 +3967,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 285
+# %% ../nbs/src/core/models.ipynb 286
 class CrostonClassic(_TS):
     def __init__(
         self,
@@ -4086,7 +4124,7 @@ class CrostonClassic(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 296
+# %% ../nbs/src/core/models.ipynb 297
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4107,7 +4145,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 297
+# %% ../nbs/src/core/models.ipynb 298
 class CrostonOptimized(_TS):
     def __init__(
         self,
@@ -4260,7 +4298,7 @@ class CrostonOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 308
+# %% ../nbs/src/core/models.ipynb 309
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -4273,7 +4311,7 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/src/core/models.ipynb 309
+# %% ../nbs/src/core/models.ipynb 310
 class CrostonSBA(_TS):
     def __init__(
         self,
@@ -4432,7 +4470,7 @@ class CrostonSBA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 320
+# %% ../nbs/src/core/models.ipynb 321
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4456,7 +4494,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 321
+# %% ../nbs/src/core/models.ipynb 322
 class IMAPA(_TS):
     def __init__(
         self,
@@ -4612,7 +4650,7 @@ class IMAPA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 332
+# %% ../nbs/src/core/models.ipynb 333
 @njit(nogil=NOGIL, cache=CACHE)
 def _tsb(
     y: np.ndarray,  # time series
@@ -4633,7 +4671,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 333
+# %% ../nbs/src/core/models.ipynb 334
 class TSB(_TS):
     def __init__(
         self,
@@ -4800,7 +4838,7 @@ class TSB(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 345
+# %% ../nbs/src/core/models.ipynb 346
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -4817,7 +4855,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/src/core/models.ipynb 346
+# %% ../nbs/src/core/models.ipynb 347
 class MSTL(_TS):
     """MSTL model.
 
@@ -4853,6 +4891,7 @@ class MSTL(_TS):
         alias: str = "MSTL",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
             if trend_forecaster.model[2] != "N":
@@ -5091,7 +5130,7 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/src/core/models.ipynb 362
+# %% ../nbs/src/core/models.ipynb 363
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -5127,7 +5166,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 375
+# %% ../nbs/src/core/models.ipynb 376
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -5163,7 +5202,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 388
+# %% ../nbs/src/core/models.ipynb 389
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -5199,7 +5238,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 401
+# %% ../nbs/src/core/models.ipynb 402
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -5235,7 +5274,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 415
+# %% ../nbs/src/core/models.ipynb 416
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5429,7 +5468,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 428
+# %% ../nbs/src/core/models.ipynb 429
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5475,7 +5514,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 439
+# %% ../nbs/src/core/models.ipynb 440
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -5624,7 +5663,43 @@ class ConstantModel(_TS):
                     res[f"fitted-hi-{lv}"] = fitted_vals
         return res
 
-# %% ../nbs/src/core/models.ipynb 450
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        """Apply Constant model predictions to a new/updated time series.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (n, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Optional insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels for prediction intervals.
+        fitted : bool
+            Whether or not returns insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = self.forecast(
+            y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
+        )
+        return res
+
+# %% ../nbs/src/core/models.ipynb 453
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -5638,7 +5713,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 461
+# %% ../nbs/src/core/models.ipynb 466
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.
