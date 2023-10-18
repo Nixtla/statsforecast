@@ -1630,7 +1630,7 @@ class _StatsForecast:
 
         if not file_name:
             datetime_record = dt.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
-            path_file = os.path.join(path, f"FittedModels_{datetime_record}.pickle")
+            path_file = os.path.join(path, f"StatsForecast_{datetime_record}.pkl")
         else:
             path_file = os.path.join(path, file_name)
 
