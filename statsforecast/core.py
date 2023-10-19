@@ -1598,7 +1598,7 @@ class _StatsForecast:
                 raise OSError(errno.EFBIG, err_messg)
 
         converted_size, sf_byte = None, None
-        for key in reversed(bytes_hmap.keys()):
+        for key in reversed(list(bytes_hmap.keys())):
             x_byte = bytes_hmap[key]
             if sf_size >= x_byte:
                 converted_size = sf_size / x_byte
