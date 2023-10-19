@@ -1,0 +1,59 @@
+---
+description: Install StatsForecast with pip or conda
+output-file: installation.html
+title: Install
+
+---
+
+You can install the *released version* of
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+from the [Python package index](https://pypi.org) with:
+
+```python
+pip install statsforecast
+```
+
+or
+
+```python
+conda install -c conda-forge statsforecast
+```
+
+<Warning>
+
+We are constantly updating StatsForecast, so we suggest fixing the
+version to avoid issues. `pip install statsforecast=="1.0.0"`
+
+</Warning>
+
+<Tip>
+
+We recommend installing your libraries inside a python virtual or [conda
+environment](https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html).
+
+</Tip>
+
+#### User our env (optional)
+
+If you don’t have a Conda environment and need tools like Numba, Pandas,
+NumPy, Jupyter, StatsModels, and Nbdev you can use ours by following
+these steps:
+
+1.  Clone the StatsForecast repo:
+
+```bash
+$ git clone https://github.com/Nixtla/statsforecast.git && cd statsforecast
+```
+
+1.  Create the environment using the `environment.yml` file:
+
+```bash
+$ conda env create -f environment.yml
+```
+
+1.  Activate the environment:
+
+```bash
+$ conda activate statsforecast
+```
+

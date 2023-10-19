@@ -1,0 +1,1281 @@
+---
+description: Step-by-step guide on using the `AutoTheta Model` with `Statsforecast`.
+output-file: autotheta.html
+title: AutoTheta Model
+
+---
+
+## Table of Contents
+
+-   [Introduction](#introduction)
+-   [Theta Models](#model)
+-   [Loading libraries and data](#loading)
+-   [Explore data with the plot method](#plotting)
+-   [Split the data into training and testing](#splitting)
+-   [Implementation of AutoTheta with StatsForecast](#implementation)
+-   [Cross-validation](#cross_validate)
+-   [Model evaluation](#evaluate)
+-   [References](#references)
+
+## Introduction<a class="anchor" id="introduction"></a>
+
+The development of accurate, robust and reliable forecasting methods for
+univariate time series is very important when large numbers of time
+series are involved in the modelling and forecasting process. In
+industrial settings, it is very common to work with large lines of
+products; thus, efficient sales and operational planning (S&OP) depend
+heavily on accurate forecasting methods.
+
+The Theta method [(Assimakopoulos & Nikolopoulos, 2000, hereafter
+A&N)](https://www.sciencedirect.com/science/article/abs/pii/S0169207000000662)
+is applied to non-seasonal or deseasonalised time series, where the
+deseasonalisation is usually performed via the multiplicative classical
+decomposition. The method decomposes the original time series into two
+new lines through the so-called theta coefficients, denoted by
+${\theta}_1$ and ${\theta}_2$ for
+${\theta}_1, {\theta}_2 \in \mathbb{R}$, which are applied to the second
+difference of the data. The second differences are reduced when
+${\theta}<1$, resulting in a better approximation of the long-term
+behaviour of the series (Assimakopoulos, 1995). If ${\theta}$ is equal
+to zero, the new line is a straight line. When ${\theta}>1$ the local
+curvatures are increased, magnifying the short-term movements of the
+time series (A&N). The new lines produced are called theta lines,
+denoted here by $\text{Z}(\theta_1)$ and $\text{Z}(\theta_2)$. These
+lines have the same mean value and slope as the original data, but the
+local curvatures are either filtered out or enhanced, depending on the
+value of the $\theta$ coefficient.
+
+In other words, the decomposition process has the advantage of
+exploiting information in the data that usually cannot be captured and
+modelled completely through the extrapolation of the original time
+series. The theta lines can be regarded as new time series and are
+extrapolated separately using an appropriate forecasting method. Once
+the extrapolation of each theta line has been completed, recomposition
+takes place through a combination scheme in order to calculate the point
+forecasts of the original time series. Combining has long been
+considered as a useful practice in the forecasting literature (for
+example, [Clemen, 1989, Makridakis and Winkler, 1983, Petropoulos et
+al., 2014]()), and therefore its application to the Theta method is
+expected to result in more accurate and robust forecasts.
+
+The Theta method is quite versatile in terms of choosing the number of
+theta lines, the theta coefficients and the extrapolation methods, and
+combining these to obtain robust forecasts. However, A&N proposed a
+simplified version involving the use of only two theta lines with
+prefixed $\theta$ coefficients that are extrapolated over time using a
+linear regression (LR) model for the theta line with ${\theta}_1 =0$ and
+simple exponential smoothing (SES) for the theta line with
+${\theta}_2 =2$. The final forecasts are produced by combining the
+forecasts of the two theta lines with equal weights.
+
+The performance of the Theta method has also been confirmed by other
+empirical studies (for example Nikolopoulos et al., 2012, Petropoulos
+and Nikolopoulos, 2013). Moreover, Hyndman and Billah (2003), hereafter
+H&B, showed that the simple exponential smoothing with drift model
+(SES-d) is a statistical model for the simplified version of the Theta
+method. More recently, Thomakos and Nikolopoulos (2014) provided
+additional theoretical insights, while Thomakos and Nikolopoulos (2015)
+derived new theoretical formulations for the application of the method
+to multivariate time series, and investigated the conditions under which
+the bivariate Theta method is expected to forecast better than the
+univariate one. Despite these advances, we believe that the Theta method
+deserves more attention from the forecasting community, given its
+simplicity and superior forecasting performance.
+
+One key aspect of the Theta method is that, by definition, it is
+dynamic. One can choose different theta lines and combine the produced
+forecasts using either equal or unequal weights. However, AN limit this
+important property by fixing the theta coefficients to have predefined
+values.
+
+The contributions of this work are fourfold. First, we extend the A&N
+method by the optimal selection of the theta line that describes the
+short-term movements of the series best, maintaining the long-term
+component. The forecasts derived from the two theta lines are combined
+using appropriate weights, which ensures the recomposition of the
+original time series. Second, we provide theoretical and practical links
+between the newly proposed model, the original Theta method and the
+SES-d model. Third, we also perform a further extension of the model
+that allows the regression line (the long term component) to be revised
+at every time period.
+
+## Theta method <a class="anchor" id="model"></a>
+
+### The original Theta method
+
+Originally, AN proposed the theta line as the solution of the equation
+
+$$\nabla^2 \text{Z}_t (\theta) =\theta \nabla^2 Y_t, \ \ t=3, \cdots, n \tag 1$$
+
+where $Y_1, \cdots Y_n$ is the original time series (non-seasonal or
+deseasonalised) and $\nabla$ is the difference operator (i.e.,
+$\nabla X_t = X_t - X_{t-1}$). The initial values of $\text{Z}_1$ and
+$\text{Z}_2$ are obtained by minimising \$\_{t=1}^n \[Y_t -\_t()\]^2 \$.
+However, an analytical solution to compute the $\text{Z}(\theta)$ was
+obtained by H&B, which is given by
+
+$$\text{Z}_t(\theta)=\theta Y_t +(1-\theta)(A_n +B_n t) \ \ t=1, \cdots n \tag 2 $$
+
+where $\text{A}_n$ and $\text{B}_n$ are the minimum square coefficients
+of a simple linear regression over $Y_1, \cdots Y_n$ against
+$1, \cdots n \ $, given by
+
+$$\text{A}_n =\frac{1}{n} \sum_{t=1}^{n} Y_t -\frac{n+1}{2} \text{B}_n ; \ \ \text{B}_n= \frac{6}{n^2 -1} (\frac{2}{n} \sum_{t=1}^{n} tY_t -\frac{1+n}{n} \sum_{t=1}^{n} Y_t ) \tag 3$$
+
+From this point of view, the theta lines can be interpreted as functions
+of the linear regression model applied to the data directly. However,
+note that $\text{A}_n$ and $\text{B}_n$ are only functions of the
+original data, not parameters of the Theta method.
+
+Finally, the forecasts produced by the Theta method for $h$ steps ahead
+of are an ad-hoc combination (50%–50%) of the extrapolations of \$(0) \$
+and $\text{Z}(2)$ by the linear regression model and the simple
+exponential smoothing model respectively. We will refer to the above
+setup as the standard Theta method (STheta).
+
+The steps for building the STheta method of AN are as follows: 1.
+Deseasonalisation: The time series is tested for statistically
+significant seasonal behaviour. A time series is seasonal if
+$$|r_m|>q_{1-\alpha/2} \sqrt{\frac{1+2 \sum_{i=1}^{m-1} r_{i}^2}{n} } $$
+
+where $r_k$ denotes the lag $k$ autocorrelation function, $m$ is the
+number of the periods within a seasonal cycle (for example, 12 for
+monthly data), $n$ is the sample size, $q$ is the quantile function of
+the standard normal distribution, and $(1-\alpha)\%$ is the confidence
+level. A&N opted for a 90% confidence level. If the time series is
+identified as seasonal, then it is deseasonalised via the classical
+decomposition method, assuming the seasonal component to have a
+multiplicative relationship.
+
+1.  Decomposition: The seasonally adjusted time series is decomposed
+    into two theta lines, the linear regression line $\text{Z}(0)$ and
+    the theta line $\text{Z}(2)$.
+
+2.  Extrapolation: $\text{Z}(0)$ is extrapolated as a normal linear
+    regression line, while $\text{Z}(2)$ is extrapolated using SES.
+
+3.  Combination: The final forecast is a combination of the forecasts of
+    the two theta lines using equal weights.
+
+4.  Reseasonalisation: If the series was identified as seasonal in step
+    1, then the final forecasts are multiplied by the respective
+    seasonal indices.
+
+### Models for optimising the Theta method
+
+Assume that either the time series $Y_1, \cdots Y_n$ is non-seasonal or
+it has been seasonally adjusted using the multiplicative classical
+decomposition approach.
+
+Let $X_t$ be the linear combination of two theta lines,
+$$X_t=\omega \text{Z}_t (\theta_1) +(1-\omega) \text{Z}_t (\theta_2) \tag 4$$
+
+where $\omega \in [0,1]$ is the weight parameter. Assuming that
+$\theta_1 <1$ and $\theta_2 \geq 1$, the weight $\omega$ can be derived
+as
+$$\omega:=\omega(\theta_1, \theta_2)=\frac{\theta_2 -1}{\theta_2 -\theta_1} \tag 5$$
+
+It is straightforward to see from Eqs. (4), (5) that
+$X_t=Y_t, \ t=1, \cdots n$ i.e., the weights are calculated properly in
+such a way that Eq. (4) reproduces the original series. In Theorem 1 of
+[Appendix
+A](https://www.sciencedirect.com/science/article/pii/S0169207016300243#s000075)
+, we prove that the solution is unique and that the error from not
+choosing the optimal weights ($\omega$ and $1-\omega$) s proportional to
+the error of a linear regression model. As a consequence, the STheta
+method is given simply by setting $\theta_1=0$ and $\theta_2=2$ while
+from Eq. (5) we get $\omega=0.5$. Thus, Eqs. (4), (5) allow us to
+construct a generalisation of the Theta model that maintains the
+re-composition propriety of the original time series for any theta lines
+$\text{Z}_t (\theta_1)$ and $\text{Z}_t (\theta_2)$.
+
+In order to maintain the modelling of the long-term component and retain
+a fair comparison with the STheta method, in this work we fix
+$\theta_1=0$ and focus on the optimisation of the short-term component,
+$\theta_2=0$ with $\theta \geq 1$. Thus, $\theta$ is the only parameter
+that requires estimation so far. The theta decomposition is now given by
+
+$$Y_t=(1-\frac{1}{\theta}) (\text{A}_n+\text{B}_n t)+ \frac{1}{\theta} \text{Z}_t (\theta), \ t=1, \cdots , n $$
+
+The $h$ -step-ahead forecasts calculated at origin are given by
+
+$$\hat Y_{n+h|n} = (1-\frac{1}{\theta}) [\text{A}_n+\text{B}_n (n+h)]+ \frac{1}{\theta} \tilde {\text{Z}}_{n+h|n} (\theta) \tag 6$$
+
+where
+$\tilde {\text{Z}}_{n+h|n} (\theta)=\tilde {\text{Z}}_{n+1|n} (\theta)=\alpha \sum_{i=0}^{n-1}(1-\alpha)^i \text{Z}_{n-i}(\theta)+(1-\alpha)^n \ell_{0}^{*}$
+is the extrapolation of $\text{Z}_t(\theta)$ by an SES model with
+$\ell_{0}^{*} \in \mathbb{R}$ as the initial level parameter and
+$\alpha \in (0,1)$ as the smoothing parameter. Note that for $\theta=2$
+Eq. (6) corresponds to Step 4 of the STheta algorithm. After some
+algebra, we can write
+
+$$\tilde {\text{Z}}_{n+1|n} (\theta)=\theta \ell{n}+(1-\theta) \{ \text{A}_n [1-(1-\alpha)^n] + \text{B}_n [n+(1-\frac{1}{\alpha}) [1-(1-\alpha)^n] ]  \}   \tag 7$$
+
+where $\ell_{t}=\alpha Y_t +(1-\alpha) \ell_{t-1}$ for $t=1, \cdots, n$
+and $\ell_{0}=\ell_{0}^{*}/\theta$.
+
+In the light of Eqs. (6), (7), we suggest four stochastic approaches.
+These approaches differ due to the parameter $\theta$ which may be
+either fixed at two or optimised, and the coefficients $\text{A}_n$ and
+$\text{B}_n$, which can be either fixed or dynamic functions. To
+formulate the state space models, it is helpful to adopt $\mu_{t}$ as
+the one-step-ahead forecast at origin $t-1$ and $\varepsilon_{t}$ as the
+respective additive error, i.e., $\varepsilon_{t}=Y_t - \mu_{t}$ if
+$\mu_{t}= \hat Y_{t|t-1}$. We assume $\{ \varepsilon_{t} \}$ to be a
+Gaussian white noise process with mean zero and variance $\sigma^2$.
+
+### Optimised and standard Theta models
+
+Let $\text{A}_n$ and $\text{B}_n$ be fixed coefficients for all
+$t=1, \cdots, n$ so that Eqs. (6), (7) configure the state space model
+given by
+
+$$Y_t=\mu_{t}+\varepsilon_{t} \tag 8$$
+
+$$\mu_{t}=\ell_{t-1}+(1-\frac{1}{\theta}) \{(1-\alpha)^{t-1} \text{A}_n +[\frac{1-(1-\alpha)^t}{\alpha} \text{B}_n]  \tag 9   \}$$
+
+$$\ell_{t}=\alpha Y_t +(1-\alpha)\ell_{t-1} \tag{10} $$
+
+with parameters $\ell_{0} \in \mathbb{R}$, $\alpha \in (0,1)$ and
+$\theta \in [1,\infty)$ . The parameter $\theta$ is to be estimated
+along with $\alpha$ and $\ell_{0}$ We call this the optimised Theta
+model (OTM).
+
+The $h$-step-ahead forecast at origin $n$ is given by
+
+$$\hat Y_{n+h|n}=E[Y_{n+h}|Y_1,\cdots, Y_n]=\ell_{n}+(1-\frac{1}{\theta}) \{(1-\alpha)^n \text{A}_n +[(h-1) + \frac{1-(1-\alpha)^{n+1}}{\alpha}] \text{B}_n \}   $$
+
+which is equivalent to Eq. (6). The conditional variance
+\$\[Y\_{n+h}\|Y_1, , Y_n\]=\[1+(h-1)^2\]^2 \$ can be computed easily
+from the state space model. Thus, the $(1-\alpha)\%$ prediction interval
+for $Y_{n+h}$ is given by
+$$\hat Y_{n+h|n} \ \pm  \ q_{1-\alpha/2} \sqrt{[1+(h-1)\alpha^2 ]\sigma^2 } $$
+
+For $\theta=2$ OTM reproduces the forecasts of the STheta method;
+hereafter, we will refer to this particular case as the standard Theta
+model (STM). In Theorem 2 of [Appendix
+A](https://www.sciencedirect.com/science/article/pii/S0169207016300243#s000075),
+we show that OTM is mathematically equivalent to the SES-d model. As a
+corollary of Theorem 2, STM is mathematically equivalent to SES-d with
+$b=\frac{1}{2} \text{B}_n$. Therefore, for $\theta=2$ the corollary also
+re-confirms the H&B result on the relationship between STheta and the
+SES-d model.
+
+## Loading libraries and data <a class="anchor" id="loading"></a>
+
+<Tip>
+
+Statsforecast will be needed. To install, see
+[instructions](../getting-started/0_Installation.ipynb).
+
+</Tip>
+
+Next, we import plotting libraries and configure the plotting style.
+
+```python
+import pandas as pd
+
+import scipy.stats as stats
+```
+
+
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+plt.style.use('fivethirtyeight')
+plt.rcParams['lines.linewidth'] = 1.5
+dark_style = {
+    'figure.facecolor': '#212946',
+    'axes.facecolor': '#212946',
+    'savefig.facecolor':'#212946',
+    'axes.grid': True,
+    'axes.grid.which': 'both',
+    'axes.spines.left': False,
+    'axes.spines.right': False,
+    'axes.spines.top': False,
+    'axes.spines.bottom': False,
+    'grid.color': '#2A3459',
+    'grid.linewidth': '1',
+    'text.color': '0.9',
+    'axes.labelcolor': '0.9',
+    'xtick.color': '0.9',
+    'ytick.color': '0.9',
+    'font.size': 12 }
+plt.rcParams.update(dark_style)
+
+from pylab import rcParams
+rcParams['figure.figsize'] = (18,7)
+```
+
+### Read Data
+
+```python
+df = pd.read_csv("https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/candy_production.csv")
+df.head()
+```
+
+|     | observation_date | IPG3113N |
+|-----|------------------|----------|
+| 0   | 1972-01-01       | 85.6945  |
+| 1   | 1972-02-01       | 71.8200  |
+| 2   | 1972-03-01       | 66.0229  |
+| 3   | 1972-04-01       | 64.5645  |
+| 4   | 1972-05-01       | 65.0100  |
+
+The input to StatsForecast is always a data frame in long format with
+three columns: unique_id, ds and y:
+
+-   The `unique_id` (string, int or category) represents an identifier
+    for the series.
+
+-   The `ds` (datestamp) column should be of a format expected by
+    Pandas, ideally YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a
+    timestamp.
+
+-   The `y` (numeric) represents the measurement we wish to forecast.
+
+```python
+df["unique_id"]="1"
+df.columns=["ds", "y", "unique_id"]
+df.head()
+```
+
+|     | ds         | y       | unique_id |
+|-----|------------|---------|-----------|
+| 0   | 1972-01-01 | 85.6945 | 1         |
+| 1   | 1972-02-01 | 71.8200 | 1         |
+| 2   | 1972-03-01 | 66.0229 | 1         |
+| 3   | 1972-04-01 | 64.5645 | 1         |
+| 4   | 1972-05-01 | 65.0100 | 1         |
+
+```python
+print(df.dtypes)
+```
+
+``` text
+ds            object
+y            float64
+unique_id     object
+dtype: object
+```
+
+We can see that our time variable `(ds)` is in an object format, we need
+to convert to a date format
+
+```python
+df["ds"] = pd.to_datetime(df["ds"])
+```
+
+## Explore Data with the plot method <a class="anchor" id="plotting"></a>
+
+Plot some series using the plot method from the StatsForecast class.
+This method prints aa random series from the dataset and is useful for
+basic EDA.
+
+```python
+from statsforecast import StatsForecast
+
+StatsForecast.plot(df, engine="matplotlib")
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-8-output-1.png)
+
+### Autocorrelation plots
+
+```python
+fig, axs = plt.subplots(nrows=1, ncols=2)
+
+plot_acf(df["y"],  lags=60, ax=axs[0],color="fuchsia")
+axs[0].set_title("Autocorrelation");
+
+plot_pacf(df["y"],  lags=60, ax=axs[1],color="lime")
+axs[1].set_title('Partial Autocorrelation')
+
+plt.show();
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-9-output-1.png)
+
+## Split the data into training and testing<a class="anchor" id="splitting"></a>
+
+Let’s divide our data into sets 1. Data to train our
+[`AutoTheta`](https://Nixtla.github.io/statsforecast/src/core/models.html#autotheta)
+model 2. Data to test our model
+
+For the test data we will use the last 12 months to test and evaluate
+the performance of our model.
+
+```python
+train = df[df.ds<='2016-08-01'] 
+test = df[df.ds>'2016-08-01']
+```
+
+
+```python
+train.shape, test.shape
+```
+
+``` text
+((536, 3), (12, 3))
+```
+
+Now let’s plot the training data and the test data.
+
+```python
+sns.lineplot(train,x="ds", y="y", label="Train", linewidth=3, linestyle=":")
+sns.lineplot(test, x="ds", y="y", label="Test")
+plt.ylabel("Candy Production")
+plt.xlabel("Month")
+plt.show()
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-12-output-1.png)
+
+## Implementation of AutoTheta with StatsForecast <a class="anchor" id="implementation"></a>
+
+To also know more about the parameters of the functions of the
+`AutoTheta Model`, they are listed below. For more information, visit
+the
+[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#automatic-forecasting)
+
+``` text
+season_length : int
+    Number of observations per unit of time. Ex: 24 Hourly data.
+decomposition_type : str
+    Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
+model : str
+    Controlling Theta Model. By default searchs the best model.
+alias : str
+    Custom name of the model.
+```
+
+### Load libraries
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoTheta
+```
+
+### Instantiate Model
+
+Import and instantiate the models. Setting the argument is sometimes
+tricky. This article on [Seasonal
+periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
+master, Rob Hyndmann, can be useful.season_length.
+
+Automatically selects the best Theta (Standard Theta Model `(‘STM’)`,
+Optimized Theta Model `(‘OTM’)`, Dynamic Standard Theta Model
+`(‘DSTM’)`, Dynamic Optimized Theta Model `(‘DOTM’))` model using mse.
+
+```python
+season_length = 12 # Monthly data 
+horizon = len(test) # number of predictions
+
+# We call the model that we are going to use
+models = [AutoTheta(season_length=season_length,
+                     decomposition_type="additive",
+                     model="STM")]
+```
+
+We fit the models by instantiating a new StatsForecast object with the
+following parameters:
+
+models: a list of models. Select the models you want from models and
+import them.
+
+-   `freq:` a string indicating the frequency of the data. (See [panda’s
+    available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).)
+
+-   `n_jobs:` n_jobs: int, number of jobs used in the parallel
+    processing, use -1 for all cores.
+
+-   `fallback_model:` a model to be used if a model fails.
+
+Any settings are passed into the constructor. Then you call its fit
+method and pass in the historical data frame.
+
+```python
+sf = StatsForecast(df=train,
+                   models=models,
+                   freq='MS', 
+                   n_jobs=-1)
+```
+
+### Fit Model
+
+```python
+sf.fit()
+```
+
+``` text
+StatsForecast(models=[AutoTheta])
+```
+
+Let’s see the results of our Theta model. We can observe it with the
+following instruction:
+
+```python
+result=sf.fitted_[0,0].model_
+result
+```
+
+``` text
+{'mse': 100.64880011735451,
+ 'amse': array([19.1126859 , 31.8559999 , 38.50771628]),
+ 'fit': results(x=array([258.45065328,   0.7664297 ]), fn=100.57831804495909, nit=32, simplex=array([[250.37338839,   0.76970741],
+        [232.0391584 ,   0.76429422],
+        [258.45065328,   0.7664297 ]])),
+ 'residuals': array([ 2.10810474e+00, -1.13894116e+01, -9.49139749e+00, -9.82041058e+00,
+        -1.13263190e+01, -9.25797072e+00, -8.56619271e+00, -8.99232281e+00,
+        -1.98586635e+00,  3.14569304e+01,  1.98520670e+01,  2.04962612e+01,
+         4.98121093e+00, -1.08735318e+01, -1.12328034e+01, -8.08115311e+00,
+        -9.98197694e+00, -8.39937079e+00, -1.25789510e+01, -1.05952806e+01,
+         8.47229675e-01,  2.25644626e+01,  2.54401518e+01,  1.73989709e+01,
+         2.40287622e+00, -2.53475414e+00, -8.00590851e+00, -1.79241485e+01,
+        -6.36590415e+00, -5.76986711e+00, -2.26766747e+01, -8.95260757e+00,
+        -7.19719238e+00,  2.74032221e+01,  2.21368465e+01,  6.43171918e+00,
+        -3.51755110e+00, -1.31441914e+01, -6.13166000e+00,  1.51512233e+00,
+        -8.05776753e+00, -8.59603097e+00, -1.08617848e+01, -6.72940024e+00,
+        -6.24861877e+00,  2.85996831e+01,  2.98048000e+01,  1.90032272e+01,
+         5.07597932e+00, -9.59170287e+00, -1.64521040e+01, -7.52212480e+00,
+        -5.16540017e+00, -1.27924605e+01, -9.68434388e+00, -8.76758699e+00,
+        -8.27471729e-01,  3.08424000e+01,  2.47947373e+01,  2.35867234e+01,
+         3.75665137e+00, -4.47305376e+00, -1.48000353e+01, -1.08431533e+01,
+        -1.01249948e+01, -1.12379772e+01, -1.28624668e+01, -9.47780366e+00,
+        -2.17961621e-01,  2.49398623e+01,  1.66027796e+01,  2.62581226e+01,
+        -1.94878910e+00, -8.10877623e+00, -6.93183588e+00, -6.80707230e+00,
+        -1.17809900e+01, -1.05320691e+01, -1.59715820e+01, -9.07599954e+00,
+         6.11989624e-01,  2.24925204e+01,  2.57389548e+01,  2.38907624e+01,
+         4.99776573e+00, -1.07054647e+01, -7.24194335e+00, -1.17412089e+01,
+        -1.10031569e+01, -9.10138933e+00, -1.62277217e+01, -1.02585273e+01,
+        -2.79431182e+00,  1.96746062e+01,  2.40620697e+01,  2.00041945e+01,
+         8.38672864e-01, -3.01704956e-01, -1.10576385e+01, -1.76502427e+01,
+        -4.79852872e+00, -7.74057037e+00, -1.55628715e+01, -6.19663669e+00,
+        -4.85268042e+00,  2.17819362e+01,  2.48075797e+01,  2.16186239e+01,
+         9.21215945e+00, -1.71191246e+00, -1.38314202e+01, -9.44161648e+00,
+        -6.35863859e+00, -1.10470634e+01, -1.41408696e+01, -9.60040139e+00,
+        -4.80959573e+00,  3.41173932e+01,  2.02685750e+01,  1.65177476e+01,
+         1.45004512e+00, -6.65007227e-01, -1.11027908e+01, -1.82545880e+01,
+        -1.08637859e+01, -9.67573744e+00, -1.22946690e+01, -1.02064789e+01,
+        -2.94225752e+00,  3.21840486e+01,  2.21586037e+01,  2.09073985e+01,
+        -2.49861035e-01, -6.05605693e+00, -1.16741817e+01, -1.31096440e+01,
+        -1.07043792e+01, -1.25489002e+01, -9.16715967e+00, -7.70278796e+00,
+        -2.55656615e+00,  2.69936390e+01,  1.62042825e+01,  1.67614454e+01,
+         8.62186772e+00, -3.51518872e+00, -9.27420876e+00, -1.15442800e+01,
+        -9.96136035e+00, -1.17898547e+01, -1.13147631e+01, -7.10440289e+00,
+        -1.10170687e+00,  2.60646470e+01,  2.32687962e+01,  1.82272075e+01,
+         3.98792429e+00, -7.64233456e+00, -1.07945924e+01, -1.16024033e+01,
+        -1.10645356e+01, -1.33282252e+01, -1.15534869e+01, -6.76285862e+00,
+         3.93787288e+00,  2.37018466e+01,  2.07922165e+01,  2.37645525e+01,
+         7.00181250e-01, -1.59605643e+00, -1.62277551e+01, -1.51068272e+01,
+        -1.01377617e+01, -1.13639555e+01, -1.38275875e+01, -5.87092406e+00,
+         3.43469843e+00,  2.82932152e+01,  2.39510183e+01,  1.71053567e+01,
+         6.00991052e-01, -7.61227344e-01, -1.18686652e+01, -1.51989720e+01,
+        -1.23352889e+01, -1.09931328e+01, -1.34086750e+01, -4.52127936e+00,
+         2.09363456e+00,  3.13825833e+01,  2.43980039e+01,  1.89899596e+01,
+        -7.55701831e+00, -2.76896118e-01, -6.52574213e+00, -1.67167273e+01,
+        -1.17498904e+01, -7.68050375e+00, -5.60844064e+00, -2.79087748e+00,
+        -2.92096472e-01,  2.31896512e+01,  1.70158839e+01,  1.84177146e+01,
+        -3.39879932e-01,  1.31241678e+00, -9.65552310e+00, -1.30840504e+01,
+        -1.33540007e+01, -9.72077532e+00, -1.09022915e+01, -4.49636293e+00,
+        -6.88545386e-01,  1.88878505e+01,  2.15227108e+01,  2.32009713e+01,
+        -5.72605410e+00,  1.87746304e+00, -6.95944417e+00, -1.41944243e+01,
+        -1.25398538e+01, -8.09461371e+00, -5.46316779e+00, -4.73324801e+00,
+         1.12162623e+00,  1.61183549e+01,  2.63470348e+01,  2.28827932e+01,
+        -6.75326627e+00,  4.34024335e+00, -6.61711421e+00, -1.64533692e+01,
+        -1.44473755e+01, -4.85575266e+00, -1.14659676e+01, -1.83411691e+00,
+        -3.17491990e+00,  1.22586080e+01,  2.19162170e+01,  1.62630875e+01,
+        -1.99943217e+00,  2.59143066e-03, -8.89995746e+00, -1.10976710e+01,
+        -1.43864442e+01, -9.48222086e+00, -1.06785679e+01, -7.24340992e+00,
+         2.15093059e+00,  1.53607646e+01,  2.06126872e+01,  1.96076193e+01,
+         3.03104513e+00, -8.52381714e-02, -8.52357291e+00, -1.33461539e+01,
+        -1.37600223e+01, -6.08840914e+00, -8.32367614e+00, -3.02117355e+00,
+         4.08613501e-01,  1.63346128e+01,  1.76259441e+01,  1.75724074e+01,
+         1.52688580e+00, -2.23616547e+00, -3.82137115e+00, -1.61943645e+01,
+        -1.55739800e+01, -6.10489281e+00, -6.56542552e+00, -3.79160289e+00,
+         1.79366877e+00,  1.37690217e+01,  1.71703998e+01,  2.12968995e+01,
+         2.55881699e+00, -5.89333546e+00, -5.43867789e+00, -9.34441587e+00,
+        -1.23296390e+01, -7.43701646e+00, -9.59827596e+00, -6.98198281e+00,
+        -7.94913086e-01,  1.30601029e+01,  2.03392159e+01,  2.52824428e+01,
+        -3.95418141e+00,  2.43162639e+00, -3.09610920e+00, -1.49779650e+01,
+        -1.07287620e+01, -8.40149865e+00, -1.18887461e+01, -1.74756743e+00,
+         2.17909199e+00,  1.20038424e+01,  2.42508105e+01,  2.34572744e+01,
+        -5.17568502e+00, -1.96581848e-01, -4.18458181e+00, -1.55119014e+01,
+        -1.38833806e+01, -8.29522400e+00, -1.30003229e+01, -1.67000232e-01,
+         9.35163928e-01,  1.47273988e+01,  2.29308492e+01,  2.17103709e+01,
+         3.68218624e+00,  2.64748987e-01, -7.34442764e+00, -1.25122409e+01,
+        -1.14503466e+01, -8.19533607e+00, -1.15456959e+01, -2.81694144e+00,
+        -1.50157905e+00,  1.14252476e+01,  2.08253666e+01,  1.93274968e+01,
+         7.94221350e-01, -5.10391223e-01, -8.74258215e+00, -9.01560883e+00,
+        -1.00192385e+01, -1.10908755e+01, -1.09129047e+01, -6.64424323e+00,
+        -1.50482360e+00,  1.46897903e+01,  1.73829646e+01,  2.23508538e+01,
+         8.64908630e+00,  6.22671094e-01, -6.68012804e+00, -5.70808134e+00,
+        -1.80391994e+01, -7.97570029e+00, -1.19962951e+01, -5.55858845e+00,
+         2.35415415e+00,  1.17526341e+01,  1.54009299e+01,  2.21564078e+01,
+         3.90927294e+00,  2.21699393e+00, -3.80724429e+00, -1.09345637e+01,
+        -1.37938445e+01, -1.00726067e+01, -1.19963695e+01, -5.40000947e+00,
+        -1.51911075e+00,  1.69895894e+00,  1.74367915e+01,  2.04883209e+01,
+         7.55305128e+00,  7.29570557e-01, -5.09536064e+00, -1.29493288e+01,
+        -1.53454354e+01, -2.46711146e+00, -1.01903530e+01, -4.03697109e+00,
+        -3.08084248e+00,  3.86928003e+00,  1.92764138e+01,  1.55958083e+01,
+         7.35560975e+00,  1.85905807e+00, -5.61642383e-01, -1.23394878e+01,
+        -9.90369395e+00, -7.50968535e+00, -1.83651427e+01, -2.77916462e+00,
+        -1.07805579e+00,  8.15877069e+00,  2.33477145e+01,  1.69720399e+01,
+         6.19355475e+00,  4.92033569e+00, -1.36452248e+01, -1.10382213e+01,
+        -4.45625718e+00, -1.37976279e+01, -1.12070256e+01, -1.28293835e+00,
+         1.02619080e-01,  1.16373460e+01,  1.73964054e+01,  1.64050950e+01,
+         1.32632343e+01,  4.44789636e+00, -1.66636731e+01, -1.04932464e+01,
+        -7.27536875e+00, -1.52095873e+01, -8.33331642e+00, -6.12562858e+00,
+        -6.19892773e-01,  1.73375832e+01,  1.71076149e+01,  2.30092407e+01,
+        -1.39793491e+00,  1.20108252e+00, -1.01506302e+01, -9.35708666e+00,
+        -1.72524976e+01, -1.33257495e+01, -1.11436034e+01, -1.07822300e+00,
+         2.29722831e+00,  1.15489407e+01,  1.72661569e+01,  2.11762694e+01,
+         9.51783992e+00, -1.02191544e+00, -5.14895468e+00, -2.05301462e+01,
+        -1.56429874e+01, -1.60412132e+01, -1.50915598e+01, -2.94815391e+00,
+         4.61947153e+00,  6.94204539e+00,  1.79378224e+01,  2.19333492e+01,
+         8.01926611e+00, -3.09873730e+00, -6.33384070e+00, -1.29667977e+01,
+        -1.54450147e+01, -1.27736740e+01, -1.46733540e+01, -8.76926667e+00,
+         8.56843032e+00,  1.28259081e+01,  1.86473179e+01,  5.73666716e+00,
+         4.33460410e+00,  2.08833633e+00, -3.96959197e+00, -1.29223836e+01,
+        -1.19550430e+01, -1.27279222e+01, -8.02537455e+00, -3.92330203e+00,
+         7.09140653e+00,  2.42153186e+01,  1.28924490e+01,  1.79712039e+01,
+         2.89523345e+00,  1.30474561e+00, -7.77941964e+00, -1.04361436e+01,
+        -1.14357282e+01, -1.23868253e+01, -3.73409886e+00,  6.47317969e-01,
+         5.14176714e+00,  1.16621419e+01,  8.00349658e+00,  1.83900836e+01,
+         3.46846826e+00,  2.29413411e+00, -4.06962429e+00, -8.55164816e+00,
+        -1.76399687e+01, -1.50423464e+01, -1.13765493e+01, -9.17973348e+00,
+        -4.22253840e+00,  2.19090146e+01,  1.90170613e+01,  1.80606320e+01,
+         4.08981908e+00,  2.02346575e+00, -5.45474178e+00, -1.38725735e+01,
+        -1.50622767e+01, -1.15367785e+01, -7.55445662e+00, -1.77510786e+00,
+         9.46336210e+00,  4.88813442e+00,  1.61490921e+01,  1.93212523e+01,
+         1.03075606e+01, -6.46757556e-01, -5.79533411e-01, -1.35917688e+01,
+        -1.62148895e+01, -1.29823914e+01, -1.02149059e+01, -3.24210991e+00,
+         3.05411548e-01,  1.19385124e+01,  2.08979522e+01,  2.19927488e+01,
+         1.32364111e+00,  1.68626682e+00, -3.52030260e+00, -1.50337393e+01,
+        -1.75865889e+01, -1.23980830e+01, -1.19670278e+01, -1.59575155e+00,
+         4.32015198e+00,  1.39461341e+01,  2.63901700e+01,  2.11431702e+01,
+         1.19960846e+00,  1.22769642e+00, -3.12850968e+00, -1.23388318e+01,
+        -1.66429415e+01, -9.08277175e+00, -7.92637109e+00,  2.43702710e+00,
+        -3.53211257e+00,  1.00606809e+01,  1.39608449e+01,  1.44689445e+01,
+         6.50770870e+00,  3.13941359e+00, -4.89894849e-01, -1.05833253e+01,
+        -1.34863092e+01, -1.20763816e+01, -1.00738931e+01, -9.39207509e+00]),
+ 'm': 12,
+ 'states': array([[7.33548965e+01, 8.30544205e+01, 8.40569077e+01, 6.14692122e-02,
+         8.35863953e+01],
+        [7.31818390e+01, 7.80917587e+01, 8.40569077e+01, 6.14692122e-02,
+         8.32094116e+01],
+        [7.38093872e+01, 7.67280502e+01, 8.40569077e+01, 6.14692122e-02,
+         7.55142975e+01],
+        ...,
+        [1.12984993e+02, 1.00517860e+02, 8.40569077e+01, 6.14692122e-02,
+         1.14480782e+02],
+        [1.14049675e+02, 1.00543762e+02, 8.40569077e+01, 6.14692122e-02,
+         1.13025093e+02],
+        [1.10946037e+02, 1.00561401e+02, 8.40569077e+01, 6.14692122e-02,
+         1.14089775e+02]], dtype=float32),
+ 'par': {'initial_smoothed': 41.527209666340006,
+  'alpha': 0.7664297044277077,
+  'theta': 2.0},
+ 'n': 536,
+ 'modeltype': 'STM',
+ 'mean_y': 100.56138830499272,
+ 'decompose': True,
+ 'decomposition_type': 'additive',
+ 'seas_forecast': {'mean': array([  0.08977811,  18.09442   ,  20.248487  ,  19.430647  ,
+           2.6400807 ,  -1.3090991 ,  -7.977731  , -12.3264065 ,
+         -12.027774  , -10.136967  , -11.4229355 ,  -5.3025    ],
+        dtype=float32)},
+ 'fitted': array([ 83.58639526,  83.20941162,  75.51429749,  74.38491058,
+         76.33631897,  76.90467072,  77.60909271,  79.82932281,
+         77.03206635,  75.4719696 ,  85.744133  ,  85.47103882,
+         86.31848907,  88.1435318 ,  80.84380341,  78.37975311,
+         81.66417694,  83.26287079,  84.62535095,  83.77008057,
+         79.74427032,  80.35553741,  83.81224823,  87.82202911,
+         86.29562378,  86.14455414,  85.23590851,  85.24504852,
+         80.98550415,  85.35566711,  88.73347473,  80.13900757,
+         77.37219238,  71.81797791,  78.98325348,  80.46128082,
+         70.5292511 ,  65.84059143,  56.80056   ,  58.24617767,
+         68.88546753,  71.95893097,  73.17068481,  73.63150024,
+         72.56861877,  67.74141693,  75.82369995,  83.17867279,
+         82.88182068,  84.77950287,  78.46220398,  71.9979248 ,
+         75.71080017,  81.00106049,  78.99654388,  80.35978699,
+         77.73477173,  77.0625    ,  86.86366272,  90.37877655,
+         93.59484863,  94.48135376,  92.08713531,  86.88905334,
+         88.05659485,  89.54567719,  88.73256683,  87.66000366,
+         84.49066162,  84.28553772,  89.56282043,  86.79937744,
+         92.0628891 ,  88.57657623,  83.39583588,  84.2281723 ,
+         88.48908997,  88.70896912,  88.43688202,  84.98139954,
+         82.12001038,  82.55097961,  85.95254517,  90.19133759,
+         93.64043427,  95.47816467,  88.30724335,  88.90190887,
+         89.38115692,  90.19718933,  91.0216217 ,  87.36982727,
+         83.60211182,  81.4223938 ,  82.66423035,  85.61780548,
+         86.08812714,  84.73820496,  85.54103851,  83.21124268,
+         79.16162872,  84.73307037,  86.6004715 ,  83.45823669,
+         82.80368042,  79.04636383,  81.90332031,  85.42827606,
+         87.13594055,  92.20371246,  91.92572021,  87.47001648,
+         89.71173859,  94.08746338,  93.42066956,  91.36830139,
+         88.10499573,  84.38070679,  96.69192505,  96.73805237,
+         94.53625488,  93.65490723,  94.17929077,  91.814888  ,
+         87.30208588,  88.22493744,  88.60916901,  87.97177887,
+         84.24395752,  81.95085144,  92.78029633,  94.27500153,
+         95.43756104,  93.25335693,  89.64588165,  86.84354401,
+         86.27397919,  87.31900024,  85.50115967,  87.26078796,
+         85.45186615,  83.45436096,  90.30571747,  87.23685455,
+         85.22183228,  89.83718872,  88.17710876,  87.21417999,
+         87.84436035,  89.45885468,  88.22276306,  88.33640289,
+         86.98610687,  86.10365295,  92.24300385,  94.58859253,
+         93.69697571,  94.76073456,  89.93749237,  87.80930328,
+         88.39493561,  89.16392517,  86.74878693,  86.67945862,
+         85.59092712,  88.57095337,  92.89938354,  93.34684753,
+         96.69921875,  95.24315643,  95.05395508,  88.7616272 ,
+         86.66136169,  88.14065552,  87.23098755,  85.41872406,
+         85.01380157,  87.60818481,  95.45558167,  98.32404327,
+         96.57260895,  95.04052734,  95.49116516,  92.53977203,
+         90.36888885,  90.1639328 ,  89.53847504,  88.04727936,
+         88.67676544,  90.24331665, 100.45849609, 103.66954041,
+        103.36251831,  95.57789612,  96.39974213,  97.54332733,
+         94.20919037,  94.45290375,  96.36634064, 100.85347748,
+        102.80919647, 102.54724884, 106.48311615, 104.0362854 ,
+        103.29067993, 101.03748322, 103.0774231 , 101.82225037,
+        101.27230072, 100.28657532, 100.6362915 , 101.06606293,
+        101.71464539, 101.14884949, 101.78768921, 102.79502869,
+        105.7154541 ,  99.33413696, 101.80714417, 102.61832428,
+        101.21735382, 100.85561371, 102.45166779, 107.05014801,
+        107.51717377, 108.33874512, 106.85496521, 111.55980682,
+        114.23636627, 107.06775665, 111.42831421, 112.5018692 ,
+        109.3695755 , 107.54585266, 111.62426758, 111.62201691,
+        114.3110199 , 111.83959198, 107.39758301, 108.70651245,
+        106.30953217, 102.78440857, 103.82045746, 103.14437103,
+        104.11684418, 102.33982086, 102.87236786, 103.47360992,
+        102.01676941, 103.62723541, 101.56281281, 101.87268066,
+        102.03905487, 102.36943817, 103.33817291, 102.95055389,
+        102.19972229, 100.90280914, 104.03647614, 106.44257355,
+        108.2217865 , 108.49688721, 107.1788559 , 105.19959259,
+        103.8061142 , 102.98366547, 102.30387115, 105.52016449,
+        102.58638   ,  99.89919281, 103.02022552, 106.77390289,
+        107.96263123, 109.29927826, 106.01490021, 103.68650055,
+        105.14758301, 105.11603546, 101.63327789, 103.61001587,
+        105.92623901, 105.72561646, 107.82567596, 109.25488281,
+        107.99841309, 107.35109711, 103.52338409, 103.62365723,
+        108.13938141, 103.11607361, 106.0138092 , 109.78596497,
+        107.78446198, 108.81079865, 110.17164612, 109.84536743,
+        112.60070801, 114.23275757, 109.5954895 , 112.69372559,
+        115.81058502, 109.85108185, 110.73448181, 113.67240143,
+        111.2616806 , 109.870224  , 111.31252289, 110.13430023,
+        114.10103607, 114.77970123, 112.22985077, 114.31642914,
+        116.09441376, 116.92385101, 118.16082764, 118.67694092,
+        118.56524658, 119.03853607, 120.55739594, 120.49404144,
+        122.42977905, 121.24085236, 116.16013336, 116.63300323,
+        116.58467865, 115.20069122, 115.84358215, 115.28810883,
+        117.8563385 , 119.42647552, 118.72610474, 119.14774323,
+        118.1501236 , 116.95870972, 114.3800354 , 112.2145462 ,
+        114.4834137 , 119.11962891, 120.63092804, 121.65618134,
+        126.75939941, 122.18280029, 123.86999512, 123.46128845,
+        123.29574585, 125.06196594, 120.2321701 , 116.54759216,
+        118.66742706, 119.67090607, 122.40414429, 125.63126373,
+        126.72874451, 125.40590668, 125.48596954, 125.07720947,
+        125.03321075, 123.83084106, 111.29560852, 109.17137909,
+        110.01274872, 113.80892944, 115.40216064, 117.64202881,
+        117.19533539, 114.68331146, 120.592453  , 121.56787109,
+        122.56854248, 120.16921997, 109.29738617, 108.58309174,
+        105.67469025, 109.31954193, 111.77844238, 117.49308777,
+        117.51379395, 119.17248535, 121.21684265, 115.92686462,
+        117.89155579, 117.02722931, 109.44298553, 111.84906006,
+        109.99544525, 112.74966431, 117.55482483, 113.24182129,
+        114.25985718, 120.09362793, 117.31872559, 117.51493835,
+        120.62638092, 120.66695404, 115.74879456, 113.59360504,
+        111.3054657 , 119.47810364, 123.9211731 , 117.2947464 ,
+        118.73046875, 122.40358734, 118.54651642, 120.94522858,
+        120.34509277, 119.83191681, 119.28258514, 116.90605927,
+        119.67953491, 116.61541748, 118.57003021, 116.93538666,
+        119.24189758, 115.26824951, 112.85500336, 113.099823  ,
+        116.36817169, 118.09075928, 113.10484314, 110.84983063,
+        112.21846008, 117.52051544, 117.77135468, 119.97014618,
+        113.71328735, 110.9732132 , 106.47875977, 103.69775391,
+        105.53292847, 109.03535461, 100.51857758,  98.77835083,
+        100.72723389, 104.8807373 , 103.5398407 , 104.83049774,
+        104.37041473, 101.78207397,  99.79195404,  97.33146667,
+         94.70516968, 101.23419189,  97.22698212,  96.03053284,
+         85.5657959 ,  86.89526367,  89.52989197,  92.63258362,
+         92.20654297,  92.29302216,  90.33797455,  92.97270203,
+         94.06049347,  99.45748138, 104.17945099,  98.57229614,
+         97.48446655,  97.71075439,  99.74481964,  99.92754364,
+        101.4070282 , 101.89152527, 100.19789886, 106.12158203,
+        110.71243286, 114.61515808, 109.71600342, 100.36181641,
+         99.59503174, 100.26066589, 103.05302429, 106.07904816,
+        109.00286865, 104.7322464 , 101.0033493 , 101.06963348,
+         98.1287384 ,  94.85438538,  97.80873871,  96.89566803,
+         95.87638092,  97.01823425,  99.60314178, 101.56757355,
+        100.41327667,  98.1182785 ,  97.07615662, 100.07180786,
+        102.8060379 , 110.02096558,  99.93000793,  96.81884766,
+         96.76573944, 102.67305756, 103.21143341, 108.91236877,
+        107.97328949, 104.79489136, 102.64480591, 103.60140991,
+        105.21128845, 105.4072876 , 100.71994781, 101.24845123,
+        103.24285889, 102.26463318, 104.5911026 , 108.03813934,
+        105.99388885, 101.76418304, 100.0619278 ,  99.67565155,
+        102.54734802, 105.82036591, 102.67173004, 107.40962982,
+        108.75289154, 107.67960358, 109.65460968, 113.40193176,
+        113.42314148, 109.91667175, 110.75537109, 113.4659729 ,
+        119.42851257, 116.68331909, 110.55675507, 105.76845551,
+        101.9963913 , 104.99138641, 108.43159485, 114.20122528,
+        115.56790924, 114.48078156, 113.02509308, 114.08977509])}
+```
+
+Let us now visualize the residuals of our models.
+
+As we can see, the result obtained above has an output in a dictionary,
+to extract each element from the dictionary we are going to use the
+`.get()` function to extract the element and then we are going to save
+it in a `pd.DataFrame()`.
+
+```python
+residual=pd.DataFrame(result.get("residuals"), columns=["residual Model"])
+residual
+```
+
+|     | residual Model |
+|-----|----------------|
+| 0   | 2.108105       |
+| 1   | -11.389412     |
+| 2   | -9.491397      |
+| ... | ...            |
+| 533 | -12.076382     |
+| 534 | -10.073893     |
+| 535 | -9.392075      |
+
+```python
+fig, axs = plt.subplots(nrows=2, ncols=2)
+
+residual.plot(ax=axs[0,0])
+axs[0,0].set_title("Residuals");
+
+sns.distplot(residual, ax=axs[0,1]);
+axs[0,1].set_title("Density plot - Residual");
+
+stats.probplot(residual["residual Model"], dist="norm", plot=axs[1,0])
+axs[1,0].set_title('Plot Q-Q')
+
+plot_acf(residual,  lags=35, ax=axs[1,1],color="fuchsia")
+axs[1,1].set_title("Autocorrelation");
+
+plt.show();
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-19-output-1.png)
+
+### Forecast Method
+
+If you want to gain speed in productive settings where you have multiple
+series or models we recommend using the
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+method instead of `.fit` and `.predict`.
+
+The main difference is that the `.forecast` doest not store the fitted
+values and is highly scalable in distributed environments.
+
+The forecast method takes two arguments: forecasts next `h` (horizon)
+and `level`.
+
+-   `h (int):` represents the forecast h steps into the future. In this
+    case, 12 months ahead.
+
+-   `level (list of floats):` this optional parameter is used for
+    probabilistic forecasting. Set the level (or confidence percentile)
+    of your prediction interval. For example, `level=[90]` means that
+    the model expects the real value to be inside that interval 90% of
+    the times.
+
+The forecast object here is a new data frame that includes a column with
+the name of the model and the y hat values, as well as columns for the
+uncertainty intervals. Depending on your computer, this step should take
+around 1min. (If you want to speed things up to a couple of seconds,
+remove the AutoModels like
+[`ARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#arima)
+and
+[`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
+
+```python
+# Prediction
+Y_hat = sf.forecast(horizon, fitted=True)
+
+Y_hat
+```
+
+|           | ds         | AutoTheta  |
+|-----------|------------|------------|
+| unique_id |            |            |
+| 1         | 2016-09-01 | 111.075912 |
+| 1         | 2016-10-01 | 129.111282 |
+| 1         | 2016-11-01 | 131.296082 |
+| ...       | ...        | ...        |
+| 1         | 2017-06-01 | 101.125748 |
+| 1         | 2017-07-01 | 99.870514  |
+| 1         | 2017-08-01 | 106.021683 |
+
+```python
+values=sf.forecast_fitted_values()
+values.head()
+```
+
+|           | ds         | y         | AutoTheta |
+|-----------|------------|-----------|-----------|
+| unique_id |            |           |           |
+| 1         | 1972-01-01 | 85.694504 | 83.586395 |
+| 1         | 1972-02-01 | 71.820000 | 83.209412 |
+| 1         | 1972-03-01 | 66.022903 | 75.514297 |
+| 1         | 1972-04-01 | 64.564499 | 74.384911 |
+| 1         | 1972-05-01 | 65.010002 | 76.336319 |
+
+```python
+StatsForecast.plot(values)
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-22-output-1.png)
+
+Adding 95% confidence interval with the forecast method
+
+```python
+sf.forecast(h=horizon, level=[95])
+```
+
+|           | ds         | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
+|-----------|------------|------------|-----------------|-----------------|
+| unique_id |            |            |                 |                 |
+| 1         | 2016-09-01 | 111.075912 | 90.148819       | 135.999680      |
+| 1         | 2016-10-01 | 129.111282 | 94.811134       | 160.372803      |
+| 1         | 2016-11-01 | 131.296082 | 90.598457       | 168.251602      |
+| ...       | ...        | ...        | ...             | ...             |
+| 1         | 2017-06-01 | 101.125748 | 41.213715       | 159.133316      |
+| 1         | 2017-07-01 | 99.870514  | 35.173969       | 152.843002      |
+| 1         | 2017-08-01 | 106.021683 | 38.784256       | 166.021072      |
+
+```python
+Y_hat=Y_hat.reset_index()
+Y_hat
+```
+
+|     | unique_id | ds         | AutoTheta  |
+|-----|-----------|------------|------------|
+| 0   | 1         | 2016-09-01 | 111.075912 |
+| 1   | 1         | 2016-10-01 | 129.111282 |
+| 2   | 1         | 2016-11-01 | 131.296082 |
+| ... | ...       | ...        | ...        |
+| 9   | 1         | 2017-06-01 | 101.125748 |
+| 10  | 1         | 2017-07-01 | 99.870514  |
+| 11  | 1         | 2017-08-01 | 106.021683 |
+
+```python
+# Merge the forecasts with the true values
+test['unique_id'] = test['unique_id'].astype(int)
+Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
+Y_hat1
+```
+
+|     | ds         | y        | unique_id | AutoTheta  |
+|-----|------------|----------|-----------|------------|
+| 0   | 2016-09-01 | 109.3191 | 1         | 111.075912 |
+| 1   | 2016-10-01 | 119.0502 | 1         | 129.111282 |
+| 2   | 2016-11-01 | 116.8431 | 1         | 131.296082 |
+| ... | ...        | ...      | ...       | ...        |
+| 9   | 2017-06-01 | 104.2022 | 1         | 101.125748 |
+| 10  | 2017-07-01 | 102.5861 | 1         | 99.870514  |
+| 11  | 2017-08-01 | 114.0613 | 1         | 106.021683 |
+
+```python
+fig, ax = plt.subplots(1, 1)
+plot_df = pd.concat([train, Y_hat1]).set_index('ds')
+plot_df[['y', "AutoTheta"]].plot(ax=ax, linewidth=2)
+ax.set_title(' Forecast', fontsize=22)
+ax.set_ylabel('Year ', fontsize=20)
+ax.set_xlabel('Timestamp [t]', fontsize=20)
+ax.legend(prop={'size': 15})
+ax.grid(True)
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-26-output-1.png)
+
+### Predict method with confidence interval
+
+To generate forecasts use the predict method.
+
+The predict method takes two arguments: forecasts the next `h` (for
+horizon) and `level`.
+
+-   `h (int):` represents the forecast h steps into the future. In this
+    case, 12 months ahead.
+
+-   `level (list of floats):` this optional parameter is used for
+    probabilistic forecasting. Set the level (or confidence percentile)
+    of your prediction interval. For example, `level=[95]` means that
+    the model expects the real value to be inside that interval 95% of
+    the times.
+
+The forecast object here is a new data frame that includes a column with
+the name of the model and the y hat values, as well as columns for the
+uncertainty intervals.
+
+This step should take less than 1 second.
+
+```python
+sf.predict(h=horizon)
+```
+
+|           | ds         | AutoTheta  |
+|-----------|------------|------------|
+| unique_id |            |            |
+| 1         | 2016-09-01 | 111.075912 |
+| 1         | 2016-10-01 | 129.111282 |
+| 1         | 2016-11-01 | 131.296082 |
+| ...       | ...        | ...        |
+| 1         | 2017-06-01 | 101.125748 |
+| 1         | 2017-07-01 | 99.870514  |
+| 1         | 2017-08-01 | 106.021683 |
+
+```python
+forecast_df = sf.predict(h=horizon, level=[95]) 
+
+forecast_df
+```
+
+|           | ds         | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
+|-----------|------------|------------|-----------------|-----------------|
+| unique_id |            |            |                 |                 |
+| 1         | 2016-09-01 | 111.075912 | 90.148819       | 135.999680      |
+| 1         | 2016-10-01 | 129.111282 | 94.811134       | 160.372803      |
+| 1         | 2016-11-01 | 131.296082 | 90.598457       | 168.251602      |
+| ...       | ...        | ...        | ...             | ...             |
+| 1         | 2017-06-01 | 101.125748 | 41.213715       | 159.133316      |
+| 1         | 2017-07-01 | 99.870514  | 35.173969       | 152.843002      |
+| 1         | 2017-08-01 | 106.021683 | 38.784256       | 166.021072      |
+
+We can join the forecast result with the historical data using the
+pandas function `pd.concat()`, and then be able to use this result for
+graphing.
+
+```python
+pd.concat([df, forecast_df]).set_index('ds')
+```
+
+|            | y       | unique_id | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
+|------------|---------|-----------|------------|-----------------|-----------------|
+| ds         |         |           |            |                 |                 |
+| 1972-01-01 | 85.6945 | 1         | NaN        | NaN             | NaN             |
+| 1972-02-01 | 71.8200 | 1         | NaN        | NaN             | NaN             |
+| 1972-03-01 | 66.0229 | 1         | NaN        | NaN             | NaN             |
+| ...        | ...     | ...       | ...        | ...             | ...             |
+| 2017-06-01 | NaN     | NaN       | 101.125748 | 41.213715       | 159.133316      |
+| 2017-07-01 | NaN     | NaN       | 99.870514  | 35.173969       | 152.843002      |
+| 2017-08-01 | NaN     | NaN       | 106.021683 | 38.784256       | 166.021072      |
+
+Now let’s visualize the result of our forecast and the historical data
+of our time series, also let’s draw the confidence interval that we have
+obtained when making the prediction with 95% confidence.
+
+```python
+def plot_forecasts(y_hist, y_true, y_pred, models):
+    _, ax = plt.subplots(1, 1, figsize = (20, 7))
+    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
+    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
+    df_plot[['y'] + models].plot(ax=ax, linewidth=2)
+    colors = ['orange', 'black', 'green']
+    for model, color in zip(models, colors):
+        ax.fill_between(df_plot.index, 
+                        df_plot[f'{model}-lo-95'], 
+                        df_plot[f'{model}-hi-95'],
+                        alpha=.35,
+                        color=color,
+                        label=f'{model}-level-95')
+    ax.set_title('', fontsize=22)
+    ax.set_ylabel('', fontsize=20)
+    ax.set_xlabel('Timestamp [t]', fontsize=20)
+    ax.legend(prop={'size': 15})
+    ax.grid(True)
+```
+
+
+```python
+plot_forecasts(train, test, forecast_df, models=['AutoTheta'])
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-31-output-1.png)
+
+Let’s plot the same graph using the plot function that comes in
+`Statsforecast`, as shown below.
+
+```python
+sf.plot(df, forecast_df, level=[95])
+```
+
+![](/docs/models/AutoTheta_files/figure-markdown_strict/cell-32-output-1.png)
+
+## Cross-validation <a class="anchor" id="cross_validate"></a>
+
+In previous steps, we’ve taken our historical data to predict the
+future. However, to asses its accuracy we would also like to know how
+the model would have performed in the past. To assess the accuracy and
+robustness of your models on your data perform Cross-Validation.
+
+With time series data, Cross Validation is done by defining a sliding
+window across the historical data and predicting the period following
+it. This form of cross-validation allows us to arrive at a better
+estimation of our model’s predictive abilities across a wider range of
+temporal instances while also keeping the data in the training set
+contiguous as is required by our models.
+
+The following graph depicts such a Cross Validation Strategy:
+
+![](https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/ChainedWindows.gif)
+
+### Perform time series cross-validation
+
+Cross-validation of time series models is considered a best practice but
+most implementations are very slow. The statsforecast library implements
+cross-validation as a distributed operation, making the process less
+time-consuming to perform. If you have big datasets you can also perform
+Cross Validation in a distributed cluster using Ray, Dask or Spark.
+
+In this case, we want to evaluate the performance of each model for the
+last 5 months `(n_windows=5)`, forecasting every second months
+`(step_size=12)`. Depending on your computer, this step should take
+around 1 min.
+
+The cross_validation method from the StatsForecast class takes the
+following arguments.
+
+-   `df:` training data frame
+
+-   `h (int):` represents h steps into the future that are being
+    forecasted. In this case, 12 months ahead.
+
+-   `step_size (int):` step size between each window. In other words:
+    how often do you want to run the forecasting processes.
+
+-   `n_windows(int):` number of windows used for cross validation. In
+    other words: what number of forecasting processes in the past do you
+    want to evaluate.
+
+```python
+crossvalidation_df = sf.cross_validation(df=train,
+                                         h=horizon,
+                                         step_size=12,
+                                         n_windows=5)
+```
+
+The crossvaldation_df object is a new data frame that includes the
+following columns:
+
+-   `unique_id:` index. If you dont like working with index just run
+    crossvalidation_df.resetindex()
+-   `ds:` datestamp or temporal index
+-   `cutoff:` the last datestamp or temporal index for the n_windows.
+-   `y:` true value
+-   `"model":` columns with the model’s name and fitted value.
+
+```python
+crossvalidation_df
+```
+
+|           | ds         | cutoff     | y          | AutoTheta  |
+|-----------|------------|------------|------------|------------|
+| unique_id |            |            |            |            |
+| 1         | 2011-09-01 | 2011-08-01 | 93.906197  | 98.167465  |
+| 1         | 2011-10-01 | 2011-08-01 | 116.763397 | 116.969933 |
+| 1         | 2011-11-01 | 2011-08-01 | 116.825798 | 119.135147 |
+| ...       | ...        | ...        | ...        | ...        |
+| 1         | 2016-06-01 | 2015-08-01 | 102.404404 | 109.600456 |
+| 1         | 2016-07-01 | 2015-08-01 | 102.951202 | 108.260147 |
+| 1         | 2016-08-01 | 2015-08-01 | 104.697701 | 114.248260 |
+
+## Model Evaluation <a class="anchor" id="evaluate"></a>
+
+We can now compute the accuracy of the forecast using an appropiate
+accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
+do this, we first need to `install datasetsforecast`, a Python library
+developed **by Nixtla** that includes a function to compute the RMSE.
+
+```python
+!pip install datasetsforecast
+```
+
+
+```python
+from datasetsforecast.losses import rmse
+```
+
+The function to compute the RMSE takes two arguments:
+
+1.  The actual values.
+2.  The forecasts, in this case, AutoTheta.
+
+```python
+rmse = rmse(crossvalidation_df['y'], crossvalidation_df["AutoTheta"])
+print("RMSE using cross-validation: ", rmse)
+```
+
+``` text
+RMSE using cross-validation:  6.9269824
+```
+
+As you have noticed, we have used the cross validation results to
+perform the evaluation of our model.
+
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics
+`MAE, MAPE, MASE, RMSE, SMAPE` to evaluate the `accuracy`.
+
+```python
+from datasetsforecast.losses import (mae, mape, mase, rmse, smape)
+```
+
+
+```python
+def evaluate_performace(y_hist, y_true, y_pred, model):
+    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
+    evaluation = {}
+    evaluation[model] = {}
+    for metric in [mase, mae, mape, rmse, smape]:
+        metric_name = metric.__name__
+        if metric_name == 'mase':
+            evaluation[model][metric_name] = metric(y_true['y'].values, 
+                                                y_true[model].values, 
+                                                y_hist['y'].values, seasonality=12)
+        else:
+            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
+    return pd.DataFrame(evaluation).T
+```
+
+
+```python
+evaluate_performace(train, test, Y_hat, model="AutoTheta")
+```
+
+|           | mae      | mape     | mase     | rmse     | smape    |
+|-----------|----------|----------|----------|----------|----------|
+| AutoTheta | 6.281525 | 5.568355 | 1.212475 | 7.683672 | 5.479727 |
+
+## Acknowledgements
+
+We would like to thank [Naren
+Castellon](https://www.linkedin.com/in/naren-castellon-1541b8101/?originalSubdomain=pa)
+for writing this tutorial.
+
+## References <a class="anchor" id="references"></a>
+
+1.  [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios
+    Petropoulos, Anne B. Koehler (2016). “Models for optimising the
+    theta method and their relationship to state space models”.
+    International Journal of
+    Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
+2.  [Nixtla
+    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#autotheta).
+3.  [Pandas available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+4.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
+    principles and practice, Time series
+    cross-validation”.](https://otexts.com/fpp3/tscv.html).
+5.  [Seasonal periods- Rob J
+    Hyndman](https://robjhyndman.com/hyndsight/seasonal-periods/).
+

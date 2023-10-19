@@ -1,0 +1,150 @@
+---
+output-file: distributed.fugue.html
+title: FugueBackend
+
+---
+
+```python
+from statsforecast.core import StatsForecast
+from statsforecast.models import ( 
+    AutoARIMA,
+    AutoETS,
+)
+from statsforecast.utils import generate_series
+```
+
+
+```python
+n_series = 4
+horizon = 7
+
+series = generate_series(n_series)
+
+sf = StatsForecast(
+    models=[AutoETS(season_length=7)],
+    freq='D',
+)
+
+sf.cross_validation(df=series, h=horizon, step_size = 24,
+    n_windows = 2, level=[90]).head()
+```
+
+
+```python
+from pyspark.sql import SparkSession
+```
+
+
+```python
+spark = SparkSession.builder.getOrCreate()
+
+# Make unique_id a column
+series = series.reset_index()
+series['unique_id'] = series['unique_id'].astype(str)
+
+# Convert to Spark
+sdf = spark.createDataFrame(series)
+
+# Returns a Spark DataFrame
+sf.cross_validation(df=sdf, h=horizon, step_size = 24,
+    n_windows = 2, level=[90]).show()
+```
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L49"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### FugueBackend
+
+> ``` text
+>  FugueBackend (engine:Any=None, conf:Any=None, **transform_kwargs:Any)
+> ```
+
+FugueBackend for Distributed Computation. [Source
+code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
+
+This class uses [Fugue](https://github.com/fugue-project/fugue) backend
+capable of distributing computation on Spark, Dask and Ray without any
+rewrites.
+
+**Parameters:**<br/> `engine`: fugue.ExecutionEngine, a selection between
+Spark, Dask, and Ray.<br/> `conf`: fugue.Config, engine
+configuration.<br/> `**transform_kwargs`: additional kwargs for Fugue’s
+transform method.<br/>
+
+**Notes:**<br/> A short introduction to Fugue, with examples on how to
+scale pandas code to Spark, Dask or Ray is available
+[here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
+
+## Dask Distributed Predictions
+
+Here we provide an example for the distribution of the
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+predictions using `Fugue` to execute the code in a Dask cluster.
+
+To do it we instantiate the
+[`FugueBackend`](https://Nixtla.github.io/statsforecast/src/core/distributed.fugue.html#fuguebackend)
+class with a `DaskExecutionEngine`.
+
+```python
+import dask.dataframe as dd
+from dask.distributed import Client
+from fugue_dask import DaskExecutionEngine
+from statsforecast import StatsForecast
+from statsforecast.models import Naive
+from statsforecast.utils import generate_series
+```
+
+
+```python
+# Generate Synthetic Panel Data
+df = generate_series(10).reset_index()
+df['unique_id'] = df['unique_id'].astype(str)
+df = dd.from_pandas(df, npartitions=10)
+
+# Instantiate FugueBackend with DaskExecutionEngine
+dask_client = Client()
+engine = DaskExecutionEngine(dask_client=dask_client)
+```
+
+We have simply create the class to the usual
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+instantiation.
+
+```python
+sf = StatsForecast(models=[Naive()], freq='D')
+```
+
+### Distributed Forecast
+
+For extremely fast distributed predictions we use FugueBackend as
+backend that operates like the original
+[StatsForecast.forecast](https://nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+method.
+
+It receives as input a pandas.DataFrame with columns
+\[`unique_id`,`ds`,`y`\] and exogenous, where the `ds` (datestamp)
+column should be of a format expected by Pandas. The `y` column must be
+numeric, and represents the measurement we wish to forecast. And the
+`unique_id` uniquely identifies the series in the panel data.
+
+```python
+# Distributed predictions with FugueBackend.
+sf.forecast(df=df, h=12).compute()
+```
+
+### Distributed Cross-Validation
+
+For extremely fast distributed temporcal cross-validation we use
+[`cross_validation`](https://Nixtla.github.io/statsforecast/src/distributed.utils.html#cross_validation)
+method that operates like the original
+[StatsForecast.cross_validation](https://nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
+method.
+
+```python
+# Distributed cross-validation with FugueBackend.
+sf.cross_validation(df=df, h=12, n_windows=2).compute()
+```
+

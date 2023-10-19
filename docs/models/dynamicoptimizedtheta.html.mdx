@@ -1,0 +1,895 @@
+---
+description: Step-by-step guide on using the `DynamicOptimizedTheta Model` with `Statsforecast`.
+output-file: dynamicoptimizedtheta.html
+title: Dynamic Optimized Theta Model
+
+---
+
+## Table of Contents
+
+-   [Introduction](#introduction)
+-   [Dynamic Optimized Theta Model (DOTM)](#model)
+-   [Loading libraries and data](#loading)
+-   [Explore data with the plot method](#plotting)
+-   [Split the data into training and testing](#splitting)
+-   [Implementation of DynamicOptimizedTheta with
+    StatsForecast](#implementation)
+-   [Cross-validation](#cross_validate)
+-   [Model evaluation](#evaluate)
+-   [References](#references)
+
+## Introduction <a class="anchor" id="introduction"></a>
+
+The Dynamic Optimized Theta Model (DOTM) is a forecasting technique that
+is used to predict future values of a time series. It is a variant of
+the Theta method, which combines exponential smoothing and a linear
+trend to forecast future values.
+
+The DOTM extends the Theta method by introducing a dynamic optimization
+process that selects the optimal smoothing parameters for the
+exponential smoothing component and the optimal weights for the linear
+trend component based on the historical data. This optimization process
+is performed iteratively using a genetic algorithm that searches for the
+combination of parameters that minimizes the forecast error.
+
+The DOTM is designed to handle time series data that exhibit non-linear
+and non-stationary behavior over time. It is particularly useful for
+forecasting time series with complex patterns such as seasonality,
+trend, and cyclical fluctuations.
+
+The DOTM has several advantages over other forecasting methods. First,
+it is a simple and easy-to-implement method that does not require
+extensive statistical knowledge. Second, it is a highly adaptable method
+that can be customized to fit a wide range of time series data. Third,
+it is a robust method that can handle missing data, outliers, and other
+anomalies in the time series.
+
+Overall, the Dynamic Optimized Theta Model is a powerful forecasting
+technique that can be used to generate accurate and reliable predictions
+for a wide range of time series data.
+
+## Dynamic Optimized Theta Models (DOTM) <a class="anchor" id="model"></a>
+
+So far, we have set $A_n$ and $B_n$ as fixed coefficients for all $t$.
+We will now consider these coefficients as dynamic functions; i.e., for
+updating the state $t$ to $t+1$ we will only consider the prior
+information $Y_1, \cdots, Y_t$ when computing $A_t$ and $B_t$. Hence, We
+replace $A_n$ and $B_n$ in equations (3) and (4) of the notebook of the
+`optimized theta model` with $A_t$ and $B_t$. Then, after applying the
+new Eq. (4) to the new Eq. (3) and rewriting the result at time $t$ with
+$h=1$, we have
+
+$$\hat Y_{t+1|t}=\ell_{t}+(1-\frac{1}{\theta}) \{(1-\alpha)^t A_t +[\frac{1-(1-\alpha)^{t+1}}{\alpha}] B_t  \tag{1} \} $$
+
+Then, assuming additive one-step-ahead errors and rewriting Eqs. (3)
+(see AutoTheta Model), (1), we obtain
+
+$$Y_t=\mu_t +\varepsilon_t \tag{2} $$
+$$\mu_t=\ell_{t-1}+(1-\frac{1}{\theta}) [(1-\alpha)^{t-1} A_{t-1} +(\frac{1-(1-\alpha)^{t}}{\alpha} ) B_{t-1} \tag{3} ] $$
+$$\ell_{t}=\alpha Y_t+ (1-\alpha) \ell_{t-1} \tag {4} $$
+$$A_t=\bar Y_t - \frac{t+1}{2} B_t \tag {5}  $$
+$$B_t=\frac{1}{t+1} [(t-2) B_{t-1} +\frac{6}{t} (Y_t - \bar Y_{t-1}) ] \tag {6} $$
+$$\bar Y_t=\frac{1}{t} [(t-1) \bar Y_{t-1} + Y_t ] \tag {7} $$
+
+for $t=1, \cdots ,n$. Eqs. (2), (3), (4), (5), (6), (7) configure a
+state space model with parameters
+$\ell_{0} \in \mathbb{R}, \alpha \in (0,1)$, and
+$\theta \in [1,\infty )$. The initialisation of the states is performed
+assuming $A_0 =B_0=B_1=\bar Y_0 =0$. From here on, we will refer to this
+model as the dynamic optimised Theta model (DOTM).
+
+An important property of the DOTM is that when $\theta=1$, which implies
+that $Z_t(1)=Y_t$, the forecasting vector given by Eq. (3)(See OTM) will
+be equal to $$\hat Y_{t+h|t} = \tilde Z_{t+h|t} $$
+
+Thus, when $\theta=1$, the DOTM is the SES method. When $\theta>1$, DOTM
+(as SES-d) acts as a extension of SES, by adding a long-term component.
+
+The out-of-sample one-step-ahead forecasts produced by DOTM at origin
+are given by
+
+$$\hat Y_{n+1|n}=E[Y_{n+1|Y_1, \cdots, Y_n} ]=\ell_{n} +(1-\frac{1}{\theta}) \{(1-\alpha)^n A_n + [\frac{1-(1-\alpha)^{n+1}}{\alpha}] B_n  \}  \tag{8}$$
+
+for a horizon $h \geq 2$, the forecast
+$\hat Y_{n+2|n}, \cdots , \hat Y_{n+h|n}$ are computed recursively using
+Eqs. (3), (4), (5), (6), (7), (8) by replacing the non-observed values
+$Y_{n+1}, \cdots , Y_{n+h-1}$ with their expected values
+$\hat Y_{n+1|n}, \cdots , \hat Y_{n+h-1|n}$. The conditional variance
+$Var[Y_{n+h}|Y_{1}, \cdots, Y_n ]$ is hard to write analytically.
+However, the variance and prediction intervals for $Y_{n+h}$ can be
+estimated using the bootstrapping technique, where a (usually large)
+sample of possible values of $Y_{n+h}$ is simulated from the estimated
+model.
+
+Note that, in contrast to STheta, STM and OTM, the forecasts produced by
+DSTM and DOTM are not necessary linear. This is also a fundamental
+difference between DSTM/DOTM and SES-d: while the long-term trend () in
+SES-d is constant, this is not the case for DSTM/DOTM, for either the
+in-sample fit or the out-of-sample predictions.
+
+## Loading libraries and data <a class="anchor" id="loading"></a>
+
+<Tip>
+
+Statsforecast will be needed. To install, see
+[instructions](../getting-started/0_Installation.ipynb).
+
+</Tip>
+
+Next, we import plotting libraries and configure the plotting style.
+
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+plt.style.use('grayscale') # fivethirtyeight  grayscale  classic
+plt.rcParams['lines.linewidth'] = 1.5
+dark_style = {
+    'figure.facecolor': '#008080',  # #212946
+    'axes.facecolor': '#008080',
+    'savefig.facecolor': '#008080',
+    'axes.grid': True,
+    'axes.grid.which': 'both',
+    'axes.spines.left': False,
+    'axes.spines.right': False,
+    'axes.spines.top': False,
+    'axes.spines.bottom': False,
+    'grid.color': '#000000',  #2A3459
+    'grid.linewidth': '1',
+    'text.color': '0.9',
+    'axes.labelcolor': '0.9',
+    'xtick.color': '0.9',
+    'ytick.color': '0.9',
+    'font.size': 12 }
+plt.rcParams.update(dark_style)
+
+
+from pylab import rcParams
+rcParams['figure.figsize'] = (18,7)
+```
+
+### Read Data
+
+```python
+import pandas as pd
+
+df = pd.read_csv("https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/milk_production.csv", usecols=[1,2])
+df.head()
+```
+
+|     | month      | production |
+|-----|------------|------------|
+| 0   | 1962-01-01 | 589        |
+| 1   | 1962-02-01 | 561        |
+| 2   | 1962-03-01 | 640        |
+| 3   | 1962-04-01 | 656        |
+| 4   | 1962-05-01 | 727        |
+
+The input to StatsForecast is always a data frame in long format with
+three columns: unique_id, ds and y:
+
+-   The `unique_id` (string, int or category) represents an identifier
+    for the series.
+
+-   The `ds` (datestamp) column should be of a format expected by
+    Pandas, ideally YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a
+    timestamp.
+
+-   The `y` (numeric) represents the measurement we wish to forecast.
+
+```python
+df["unique_id"]="1"
+df.columns=["ds", "y", "unique_id"]
+df.head()
+```
+
+|     | ds         | y   | unique_id |
+|-----|------------|-----|-----------|
+| 0   | 1962-01-01 | 589 | 1         |
+| 1   | 1962-02-01 | 561 | 1         |
+| 2   | 1962-03-01 | 640 | 1         |
+| 3   | 1962-04-01 | 656 | 1         |
+| 4   | 1962-05-01 | 727 | 1         |
+
+```python
+print(df.dtypes)
+```
+
+``` text
+ds           object
+y             int64
+unique_id    object
+dtype: object
+```
+
+We can see that our time variable `(ds)` is in an object format, we need
+to convert to a date format
+
+```python
+df["ds"] = pd.to_datetime(df["ds"])
+```
+
+## Explore Data with the plot method <a class="anchor" id="plotting"></a>
+
+Plot some series using the plot method from the StatsForecast class.
+This method prints a random series from the dataset and is useful for
+basic EDA.
+
+```python
+from statsforecast import StatsForecast
+
+StatsForecast.plot(df, )
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-7-output-1.png)
+
+### Autocorrelation plots
+
+```python
+fig, axs = plt.subplots(nrows=1, ncols=2)
+
+plot_acf(df["y"],  lags=30, ax=axs[0],color="fuchsia")
+axs[0].set_title("Autocorrelation");
+
+plot_pacf(df["y"],  lags=30, ax=axs[1],color="lime")
+axs[1].set_title('Partial Autocorrelation')
+
+plt.show();
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-8-output-1.png)
+
+### Decomposition of the time series
+
+How to decompose a time series and why?
+
+In time series analysis to forecast new values, it is very important to
+know past data. More formally, we can say that it is very important to
+know the patterns that values follow over time. There can be many
+reasons that cause our forecast values to fall in the wrong direction.
+Basically, a time series consists of four components. The variation of
+those components causes the change in the pattern of the time series.
+These components are:
+
+-   **Level:** This is the primary value that averages over time.
+-   **Trend:** The trend is the value that causes increasing or
+    decreasing patterns in a time series.
+-   **Seasonality:** This is a cyclical event that occurs in a time
+    series for a short time and causes short-term increasing or
+    decreasing patterns in a time series.
+-   **Residual/Noise:** These are the random variations in the time
+    series.
+
+Combining these components over time leads to the formation of a time
+series. Most time series consist of level and noise/residual and trend
+or seasonality are optional values.
+
+If seasonality and trend are part of the time series, then there will be
+effects on the forecast value. As the pattern of the forecasted time
+series may be different from the previous time series.
+
+The combination of the components in time series can be of two types: \*
+Additive \* Multiplicative
+
+### Additive time series
+
+If the components of the time series are added to make the time series.
+Then the time series is called the additive time series. By
+visualization, we can say that the time series is additive if the
+increasing or decreasing pattern of the time series is similar
+throughout the series. The mathematical function of any additive time
+series can be represented by:
+$$y(t) = level + Trend + seasonality + noise$$
+
+### Multiplicative time series
+
+If the components of the time series are multiplicative together, then
+the time series is called a multiplicative time series. For
+visualization, if the time series is having exponential growth or
+decline with time, then the time series can be considered as the
+multiplicative time series. The mathematical function of the
+multiplicative time series can be represented as.
+
+$$y(t) = Level * Trend * seasonality * Noise$$
+
+### Additive
+
+```python
+from statsmodels.tsa.seasonal import seasonal_decompose 
+a = seasonal_decompose(df["y"], model = "additive", period=12)
+a.plot();
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-9-output-1.png)
+
+### Multiplicative
+
+```python
+from statsmodels.tsa.seasonal import seasonal_decompose 
+a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
+a.plot();
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-10-output-1.png)
+
+## Split the data into training and testing<a class="anchor" id="splitting"></a>
+
+Let’s divide our data into sets
+
+1.  Data to train our `Dynamic Optimized Theta Model(DOTM)`.
+2.  Data to test our model
+
+For the test data we will use the last 12 months to test and evaluate
+the performance of our model.
+
+```python
+train = df[df.ds<='1974-12-01'] 
+test = df[df.ds>'1974-12-01']
+```
+
+
+```python
+train.shape, test.shape
+```
+
+``` text
+((156, 3), (12, 3))
+```
+
+Now let’s plot the training data and the test data.
+
+```python
+sns.lineplot(train,x="ds", y="y", label="Train", linestyle="--")
+sns.lineplot(test, x="ds", y="y", label="Test")
+plt.title("Monthly Milk Production");
+plt.show()
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-13-output-1.png)
+
+## Implementation of DynamicOptimizedTheta with StatsForecast <a class="anchor" id="implementation"></a>
+
+To also know more about the parameters of the functions of the
+`DynamicOptimizedTheta Model`, they are listed below. For more
+information, visit the
+[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#dynamicoptimizedtheta).
+
+``` text
+season_length : int
+    Number of observations per unit of time. Ex: 24 Hourly data.
+decomposition_type : str
+    Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
+alias : str
+    Custom name of the model.
+prediction_intervals : Optional[ConformalIntervals]
+    Information to compute conformal prediction intervals.
+    By default, the model will compute the native prediction
+    intervals.
+```
+
+### Load libraries
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import DynamicOptimizedTheta
+```
+
+### Instantiating Model
+
+Import and instantiate the models. Setting the argument is sometimes
+tricky. This article on [Seasonal
+periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
+master, Rob Hyndmann, can be useful for `season_length`.
+
+```python
+season_length = 12 # Monthly data 
+horizon = len(test) # number of predictions
+
+# We call the model that we are going to use
+models = [DynamicOptimizedTheta(season_length=season_length, 
+                decomposition_type="additive")] # multiplicative   additive
+```
+
+We fit the models by instantiating a new StatsForecast object with the
+following parameters:
+
+models: a list of models. Select the models you want from models and
+import them.
+
+-   `freq:` a string indicating the frequency of the data. (See [pandas’
+    available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).)
+
+-   `n_jobs:` n_jobs: int, number of jobs used in the parallel
+    processing, use -1 for all cores.
+
+-   `fallback_model:` a model to be used if a model fails.
+
+Any settings are passed into the constructor. Then you call its fit
+method and pass in the historical data frame.
+
+```python
+sf = StatsForecast(df=train,
+                   models=models,
+                   freq='MS', 
+                   n_jobs=-1)
+```
+
+### Fit the Model
+
+```python
+sf.fit()
+```
+
+``` text
+StatsForecast(models=[DynamicOptimizedTheta])
+```
+
+Let’s see the results of our `Dynamic Optimized Theta Model`. We can
+observe it with the following instruction:
+
+```python
+result=sf.fitted_[0,0].model_
+print(result.keys())
+print(result['fit'])
+```
+
+``` text
+dict_keys(['mse', 'amse', 'fit', 'residuals', 'm', 'states', 'par', 'n', 'modeltype', 'mean_y', 'decompose', 'decomposition_type', 'seas_forecast', 'fitted'])
+results(x=array([250.83207246,   0.75624902,   4.67964777]), fn=10.697567725248804, nit=55, simplex=array([[237.42075735,   0.75306547,   4.46023813],
+       [250.83207246,   0.75624902,   4.67964777],
+       [257.164453  ,   0.75229688,   4.42377059],
+       [256.90854919,   0.75757957,   4.43171897]]))
+```
+
+Let us now visualize the residuals of our models.
+
+As we can see, the result obtained above has an output in a dictionary,
+to extract each element from the dictionary we are going to use the
+`.get()` function to extract the element and then we are going to save
+it in a `pd.DataFrame()`.
+
+```python
+residual=pd.DataFrame(result.get("residuals"), columns=["residual Model"])
+residual
+```
+
+|     | residual Model |
+|-----|----------------|
+| 0   | -18.247131     |
+| 1   | -88.625732     |
+| 2   | 2.864929       |
+| ... | ...            |
+| 153 | -59.747070     |
+| 154 | -91.901550     |
+| 155 | -43.503296     |
+
+```python
+import scipy.stats as stats
+
+fig, axs = plt.subplots(nrows=2, ncols=2)
+
+residual.plot(ax=axs[0,0])
+axs[0,0].set_title("Residuals");
+
+sns.distplot(residual, ax=axs[0,1]);
+axs[0,1].set_title("Density plot - Residual");
+
+stats.probplot(residual["residual Model"], dist="norm", plot=axs[1,0])
+axs[1,0].set_title('Plot Q-Q')
+
+plot_acf(residual,  lags=35, ax=axs[1,1],color="fuchsia")
+axs[1,1].set_title("Autocorrelation");
+
+plt.show();
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-20-output-1.png)
+
+### Forecast Method
+
+If you want to gain speed in productive settings where you have multiple
+series or models we recommend using the
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+method instead of `.fit` and `.predict`.
+
+The main difference is that the `.forecast` doest not store the fitted
+values and is highly scalable in distributed environments.
+
+The forecast method takes two arguments: forecasts next `h` (horizon)
+and `level`.
+
+-   `h (int):` represents the forecast h steps into the future. In this
+    case, 12 months ahead.
+
+-   `level (list of floats):` this optional parameter is used for
+    probabilistic forecasting. Set the level (or confidence percentile)
+    of your prediction interval. For example, `level=[90]` means that
+    the model expects the real value to be inside that interval 90% of
+    the times.
+
+The forecast object here is a new data frame that includes a column with
+the name of the model and the y hat values, as well as columns for the
+uncertainty intervals. Depending on your computer, this step should take
+around 1min.
+
+```python
+# Prediction
+Y_hat = sf.forecast(horizon, fitted=True)
+
+Y_hat
+```
+
+|           | ds         | DynamicOptimizedTheta |
+|-----------|------------|-----------------------|
+| unique_id |            |                       |
+| 1         | 1975-01-01 | 839.259705            |
+| 1         | 1975-02-01 | 801.399170            |
+| 1         | 1975-03-01 | 895.189148            |
+| ...       | ...        | ...                   |
+| 1         | 1975-10-01 | 821.271179            |
+| 1         | 1975-11-01 | 792.530396            |
+| 1         | 1975-12-01 | 829.854492            |
+
+```python
+values=sf.forecast_fitted_values()
+values.head()
+```
+
+|           | ds         | y     | DynamicOptimizedTheta |
+|-----------|------------|-------|-----------------------|
+| unique_id |            |       |                       |
+| 1         | 1962-01-01 | 589.0 | 607.247131            |
+| 1         | 1962-02-01 | 561.0 | 649.625732            |
+| 1         | 1962-03-01 | 640.0 | 637.135071            |
+| 1         | 1962-04-01 | 656.0 | 609.225830            |
+| 1         | 1962-05-01 | 727.0 | 604.995300            |
+
+```python
+StatsForecast.plot(values)
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-23-output-1.png)
+
+Adding 95% confidence interval with the forecast method
+
+```python
+sf.forecast(h=horizon, level=[95])
+```
+
+|           | ds         | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
+|-----------|------------|-----------------------|-----------------------------|-----------------------------|
+| unique_id |            |                       |                             |                             |
+| 1         | 1975-01-01 | 839.259705            | 741.963562                  | 955.137634                  |
+| 1         | 1975-02-01 | 801.399170            | 641.886230                  | 946.029053                  |
+| 1         | 1975-03-01 | 895.189148            | 707.210693                  | 1066.337036                 |
+| ...       | ...        | ...                   | ...                         | ...                         |
+| 1         | 1975-10-01 | 821.271179            | 546.113647                  | 1088.162476                 |
+| 1         | 1975-11-01 | 792.530396            | 494.657928                  | 1037.432007                 |
+| 1         | 1975-12-01 | 829.854492            | 519.697144                  | 1108.181885                 |
+
+```python
+Y_hat=Y_hat.reset_index()
+Y_hat
+```
+
+|     | unique_id | ds         | DynamicOptimizedTheta |
+|-----|-----------|------------|-----------------------|
+| 0   | 1         | 1975-01-01 | 839.259705            |
+| 1   | 1         | 1975-02-01 | 801.399170            |
+| 2   | 1         | 1975-03-01 | 895.189148            |
+| ... | ...       | ...        | ...                   |
+| 9   | 1         | 1975-10-01 | 821.271179            |
+| 10  | 1         | 1975-11-01 | 792.530396            |
+| 11  | 1         | 1975-12-01 | 829.854492            |
+
+```python
+# Merge the forecasts with the true values
+test['unique_id'] = test['unique_id'].astype(int)
+Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
+Y_hat1
+```
+
+|     | ds         | y   | unique_id | DynamicOptimizedTheta |
+|-----|------------|-----|-----------|-----------------------|
+| 0   | 1975-01-01 | 834 | 1         | 839.259705            |
+| 1   | 1975-02-01 | 782 | 1         | 801.399170            |
+| 2   | 1975-03-01 | 892 | 1         | 895.189148            |
+| ... | ...        | ... | ...       | ...                   |
+| 9   | 1975-10-01 | 827 | 1         | 821.271179            |
+| 10  | 1975-11-01 | 797 | 1         | 792.530396            |
+| 11  | 1975-12-01 | 843 | 1         | 829.854492            |
+
+```python
+fig, ax = plt.subplots(1, 1)
+plot_df = pd.concat([train, Y_hat1]).set_index('ds')
+plot_df[['y', "DynamicOptimizedTheta"]].plot(ax=ax, linewidth=2)
+ax.set_title(' Forecast', fontsize=22)
+ax.set_ylabel('Monthly Milk Production', fontsize=20)
+ax.set_xlabel('Timestamp [t]', fontsize=20)
+ax.legend(prop={'size': 15})
+ax.grid(True)
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-27-output-1.png)
+
+### Predict method with confidence interval
+
+To generate forecasts use the predict method.
+
+The predict method takes two arguments: forecasts the next `h` (for
+horizon) and `level`.
+
+-   `h (int):` represents the forecast h steps into the future. In this
+    case, 12 months ahead.
+
+-   `level (list of floats):` this optional parameter is used for
+    probabilistic forecasting. Set the level (or confidence percentile)
+    of your prediction interval. For example, `level=[95]` means that
+    the model expects the real value to be inside that interval 95% of
+    the times.
+
+The forecast object here is a new data frame that includes a column with
+the name of the model and the y hat values, as well as columns for the
+uncertainty intervals.
+
+This step should take less than 1 second.
+
+```python
+sf.predict(h=horizon)
+```
+
+|           | ds         | DynamicOptimizedTheta |
+|-----------|------------|-----------------------|
+| unique_id |            |                       |
+| 1         | 1975-01-01 | 839.259705            |
+| 1         | 1975-02-01 | 801.399170            |
+| 1         | 1975-03-01 | 895.189148            |
+| ...       | ...        | ...                   |
+| 1         | 1975-10-01 | 821.271179            |
+| 1         | 1975-11-01 | 792.530396            |
+| 1         | 1975-12-01 | 829.854492            |
+
+```python
+forecast_df = sf.predict(h=horizon, level=[80,95]) 
+forecast_df
+```
+
+|           | ds         | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-80 | DynamicOptimizedTheta-hi-80 | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
+|-----------|------------|-----------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|
+| unique_id |            |                       |                             |                             |                             |                             |
+| 1         | 1975-01-01 | 839.259705            | 766.150513                  | 928.015320                  | 741.963562                  | 955.137634                  |
+| 1         | 1975-02-01 | 801.399170            | 702.992554                  | 899.872864                  | 641.886230                  | 946.029053                  |
+| 1         | 1975-03-01 | 895.189148            | 760.141418                  | 1008.321960                 | 707.210693                  | 1066.337036                 |
+| ...       | ...        | ...                   | ...                         | ...                         | ...                         | ...                         |
+| 1         | 1975-10-01 | 821.271179            | 617.415344                  | 996.678284                  | 546.113647                  | 1088.162476                 |
+| 1         | 1975-11-01 | 792.530396            | 568.329102                  | 975.049255                  | 494.657928                  | 1037.432007                 |
+| 1         | 1975-12-01 | 829.854492            | 598.124878                  | 1035.452515                 | 519.697144                  | 1108.181885                 |
+
+We can join the forecast result with the historical data using the
+pandas function `pd.concat()`, and then be able to use this result for
+graphing.
+
+```python
+pd.concat([df, forecast_df]).set_index('ds')
+```
+
+|            | y     | unique_id | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-80 | DynamicOptimizedTheta-hi-80 | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
+|------------|-------|-----------|-----------------------|-----------------------------|-----------------------------|-----------------------------|-----------------------------|
+| ds         |       |           |                       |                             |                             |                             |                             |
+| 1962-01-01 | 589.0 | 1         | NaN                   | NaN                         | NaN                         | NaN                         | NaN                         |
+| 1962-02-01 | 561.0 | 1         | NaN                   | NaN                         | NaN                         | NaN                         | NaN                         |
+| 1962-03-01 | 640.0 | 1         | NaN                   | NaN                         | NaN                         | NaN                         | NaN                         |
+| ...        | ...   | ...       | ...                   | ...                         | ...                         | ...                         | ...                         |
+| 1975-10-01 | NaN   | NaN       | 821.271179            | 617.415344                  | 996.678284                  | 546.113647                  | 1088.162476                 |
+| 1975-11-01 | NaN   | NaN       | 792.530396            | 568.329102                  | 975.049255                  | 494.657928                  | 1037.432007                 |
+| 1975-12-01 | NaN   | NaN       | 829.854492            | 598.124878                  | 1035.452515                 | 519.697144                  | 1108.181885                 |
+
+Now let’s visualize the result of our forecast and the historical data
+of our time series, also let’s draw the confidence interval that we have
+obtained when making the prediction with 95% confidence.
+
+```python
+def plot_forecasts(y_hist, y_true, y_pred, models):
+    _, ax = plt.subplots(1, 1, figsize = (20, 7))
+    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
+    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
+    df_plot[['y'] + models].plot(ax=ax, linewidth=3 , )
+    colors = ['green', "lime"]
+    ax.fill_between(df_plot.index, 
+                df_plot['DynamicOptimizedTheta-lo-80'], 
+                df_plot['DynamicOptimizedTheta-hi-80'],
+                alpha=.20,
+                color='orange',
+                label='DynamicOptimizedTheta_level_80')
+    ax.fill_between(df_plot.index, 
+                df_plot['DynamicOptimizedTheta-lo-95'], 
+                df_plot['DynamicOptimizedTheta-hi-95'],
+                alpha=.3,
+                color='lime',
+                label='DynamicOptimizedTheta_level_95')
+    ax.set_title('', fontsize=22)
+    ax.set_ylabel("Montly Mil Production", fontsize=20)
+    ax.set_xlabel('Month-Days', fontsize=20)
+    ax.legend(prop={'size': 20})
+    ax.grid(True)
+    plt.show()
+```
+
+
+```python
+plot_forecasts(train, test, forecast_df, models=['DynamicOptimizedTheta'])
+```
+
+![](/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-32-output-1.png)
+
+## Cross-validation <a class="anchor" id="cross_validate"></a>
+
+In previous steps, we’ve taken our historical data to predict the
+future. However, to asses its accuracy we would also like to know how
+the model would have performed in the past. To assess the accuracy and
+robustness of your models on your data perform Cross-Validation.
+
+With time series data, Cross Validation is done by defining a sliding
+window across the historical data and predicting the period following
+it. This form of cross-validation allows us to arrive at a better
+estimation of our model’s predictive abilities across a wider range of
+temporal instances while also keeping the data in the training set
+contiguous as is required by our models.
+
+The following graph depicts such a Cross Validation Strategy:
+
+![](https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/ChainedWindows.gif)
+
+### Perform time series cross-validation
+
+Cross-validation of time series models is considered a best practice but
+most implementations are very slow. The statsforecast library implements
+cross-validation as a distributed operation, making the process less
+time-consuming to perform. If you have big datasets you can also perform
+Cross Validation in a distributed cluster using Ray, Dask or Spark.
+
+In this case, we want to evaluate the performance of each model for the
+last 5 months `(n_windows=5)`, forecasting every second months
+`(step_size=12)`. Depending on your computer, this step should take
+around 1 min.
+
+The cross_validation method from the StatsForecast class takes the
+following arguments.
+
+-   `df:` training data frame
+
+-   `h (int):` represents h steps into the future that are being
+    forecasted. In this case, 12 months ahead.
+
+-   `step_size (int):` step size between each window. In other words:
+    how often do you want to run the forecasting processes.
+
+-   `n_windows(int):` number of windows used for cross validation. In
+    other words: what number of forecasting processes in the past do you
+    want to evaluate.
+
+```python
+crossvalidation_df = sf.cross_validation(df=train,
+                                         h=horizon,
+                                         step_size=12,
+                                         n_windows=3)
+```
+
+The crossvaldation_df object is a new data frame that includes the
+following columns:
+
+-   `unique_id:` index. If you dont like working with index just run
+    crossvalidation_df.resetindex()
+-   `ds:` datestamp or temporal index
+-   `cutoff:` the last datestamp or temporal index for the n_windows.
+-   `y:` true value
+-   `"model":` columns with the model’s name and fitted value.
+
+```python
+crossvalidation_df
+```
+
+|           | ds         | cutoff     | y     | DynamicOptimizedTheta |
+|-----------|------------|------------|-------|-----------------------|
+| unique_id |            |            |       |                       |
+| 1         | 1972-01-01 | 1971-12-01 | 826.0 | 828.692017            |
+| 1         | 1972-02-01 | 1971-12-01 | 799.0 | 792.444092            |
+| 1         | 1972-03-01 | 1971-12-01 | 890.0 | 883.122620            |
+| ...       | ...        | ...        | ...   | ...                   |
+| 1         | 1974-10-01 | 1973-12-01 | 812.0 | 810.342834            |
+| 1         | 1974-11-01 | 1973-12-01 | 773.0 | 781.845703            |
+| 1         | 1974-12-01 | 1973-12-01 | 813.0 | 818.855103            |
+
+## Model Evaluation <a class="anchor" id="evaluate"></a>
+
+We can now compute the accuracy of the forecast using an appropiate
+accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
+do this, we first need to `install datasetsforecast`, a Python library
+developed **by Nixtla** that includes a function to compute the RMSE.
+
+```python
+!pip install datasetsforecast
+```
+
+
+```python
+from datasetsforecast.losses import rmse
+```
+
+The function to compute the RMSE takes two arguments:
+
+1.  The actual values.
+2.  The forecasts, in this case, `Dynamic Optimized Theta Model`.
+
+```python
+rmse = rmse(crossvalidation_df['y'], crossvalidation_df["DynamicOptimizedTheta"])
+print("RMSE using cross-validation: ", rmse)
+```
+
+``` text
+RMSE using cross-validation:  14.320624
+```
+
+As you have noticed, we have used the cross validation results to
+perform the evaluation of our model.
+
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics
+`MAE, MAPE, MASE, RMSE, SMAPE` to evaluate the `accuracy`.
+
+```python
+from datasetsforecast.losses import (mae, mape, mase, rmse, smape)
+```
+
+
+```python
+def evaluate_performace(y_hist, y_true, y_pred, model):
+    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
+    evaluation = {}
+    evaluation[model] = {}
+    for metric in [mase, mae, mape, rmse, smape]:
+        metric_name = metric.__name__
+        if metric_name == 'mase':
+            evaluation[model][metric_name] = metric(y_true['y'].values, 
+                                                y_true[model].values, 
+                                                y_hist['y'].values, seasonality=12)
+        else:
+            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
+    return pd.DataFrame(evaluation).T
+```
+
+
+```python
+evaluate_performace(train, test, Y_hat, model="DynamicOptimizedTheta")
+```
+
+|                       | mae      | mape     | mase     | rmse    | smape    |
+|-----------------------|----------|----------|----------|---------|----------|
+| DynamicOptimizedTheta | 6.861959 | 0.804529 | 0.308595 | 8.64746 | 0.801941 |
+
+## Acknowledgements
+
+We would like to thank [Naren
+Castellon](https://www.linkedin.com/in/naren-castellon-1541b8101/?originalSubdomain=pa)
+for writing this tutorial.
+
+## References <a class="anchor" id="references"></a>
+
+1.  Kostas I. Nikolopoulos, Dimitrios D. Thomakos. Forecasting with the
+    Theta Method-Theory and Applications. 2019 John Wiley & Sons Ltd.
+2.  [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios
+    Petropoulos, Anne B. Koehler (2016). “Models for optimising the
+    theta method and their relationship to state space models”.
+    International Journal of
+    Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
+3.  [Nixtla
+    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#autotheta).
+4.  [Pandas available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+5.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
+    principles and practice, Time series
+    cross-validation”.](https://otexts.com/fpp3/tscv.html).
+6.  [Seasonal periods- Rob J
+    Hyndman](https://robjhyndman.com/hyndsight/seasonal-periods/).
+

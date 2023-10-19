@@ -1,0 +1,30 @@
+---
+output-file: mstl.html
+title: MSTL model
+
+---
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/mstl.py#L14"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### mstl
+
+> ``` text
+>  mstl (x:numpy.ndarray, period:Union[int,List[int]],
+>        blambda:Optional[float]=None, iterate:int=1,
+>        s_window:Optional[numpy.ndarray]=None,
+>        stl_kwargs:Optional[Dict]={})
+> ```
+
+|            | **Type** | **Default** | **Details**          |
+|------------|----------|-------------|----------------------|
+| x          | ndarray  |             | time series          |
+| period     | Union    |             | season length        |
+| blambda    | Optional | None        | box-cox transform    |
+| iterate    | int      | 1           | number of iterations |
+| s_window   | Optional | None        | seasonal window      |
+| stl_kwargs | Optional | {}          |                      |
+

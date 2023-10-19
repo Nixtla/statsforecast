@@ -1,0 +1,122 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Nixtla",
+  "logo": {
+    "light": "/light.png",
+    "dark": "/dark.png"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0E0E0E",
+    "light": "#FAFAFA",
+    "dark": "#0E0E0E",
+    "anchors": {
+      "from": "#2AD0CA",
+      "to": "#0E00F8"
+    }
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/Nixtla/nixtla"
+  },
+  "topAnchor": {
+    "name": "StatsForecast",
+    "icon": "bolt"
+  },
+  "navigation": [
+    {
+      "group": "",
+      "pages": ["index.html"]
+    },
+    {
+      "group": "Getting Started",
+      "pages": [
+        "docs/getting-started/installation.html",
+        "docs/getting-started/getting_started_short.html",
+        "docs/getting-started/getting_started_complete.html"
+      ]
+    },
+    {
+      "group": "Tutorials",
+      "pages": [
+        "docs/tutorials/anomalydetection.html",
+        "docs/tutorials/conformalprediction.html",
+        "docs/tutorials/crossvalidation.html",
+        "docs/tutorials/electricityloadforecasting.html",
+        "docs/tutorials/electricitypeakforecasting.html",
+        "docs/tutorials/garch_tutorial.html",
+        "docs/tutorials/intermittentdata.html",
+        "docs/tutorials/multipleseasonalities.html",
+        "docs/tutorials/statisticalneuralmethods.html",
+        "docs/tutorials/uncertaintyintervals.html"
+      ]
+    },
+    {
+      "group": "How to Guides",
+      "pages": [
+        "docs/how-to-guides/automatic_forecasting.html",
+        "docs/how-to-guides/amazonstatsforecast.html",
+        "docs/how-to-guides/autoarima_vs_prophet.html",
+        "docs/how-to-guides/dask.html",
+        "docs/how-to-guides/ets_ray_m5.html",
+        "docs/how-to-guides/exogenous.html",
+        "docs/how-to-guides/getting_started_complete_polars.html",
+        "docs/how-to-guides/migrating_R",
+        "docs/how-to-guides/numba_cache.html",
+        "docs/how-to-guides/prophet_spark_m5.html",
+        "docs/how-to-guides/ray.html",
+        "docs/how-to-guides/spark.html"
+      ]
+    },
+    {
+      "group": "Model References",
+      "pages": [
+        "docs/models/adida.html",
+        "docs/models/arch.html",
+        "docs/models/arima.html",
+        "docs/models/autoarima.html",
+        "docs/models/autoces.html",
+        "docs/models/autoets.html",
+        "docs/models/autoregressive.html",
+        "docs/models/autotheta.html",
+        "docs/models/crostonclassic.html",
+        "docs/models/crostonoptimized.html",
+        "docs/models/crostonsba.html",
+        "docs/models/dynamicoptimizedtheta.html",
+        "docs/models/dynamicstandardtheta.html",
+        "docs/models/garch.html",
+        "docs/models/holt.html",
+        "docs/models/holtwinters.html",
+        "docs/models/imapa.html",
+        "docs/models/multipleseasonaltrend.html",
+        "docs/models/optimizedtheta.html",
+        "docs/models/seasonalexponentialsmoothing.html",
+        "docs/models/seasonalexponentialsmoothingoptimized.html",
+        "docs/models/simpleexponentialoptimized.html",
+        "docs/models/simpleexponentialsmoothing.html",
+        "docs/models/standardtheta.html",
+        "docs/models/tsb.html"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "src/core/core.html",
+        "src/core/distributed.fugue.html",
+        "src/core/models.html",
+        "src/core/models_intro"
+      ]
+    },
+    {
+      "group": "Contributing",
+      "pages": [
+        "docs/contribute/contribute",
+        "docs/contribute/docs",
+        "docs/contribute/issue-labels",
+        "docs/contribute/issues",
+        "docs/contribute/step-by-step",
+        "docs/contribute/techstack"
+      ]
+    }
+  ]
+}
