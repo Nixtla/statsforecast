@@ -23,7 +23,7 @@ jobs:
           python-version: '3.10'
           cache-dependency-path: dev/requirements.txt
       - name: Install Dependencies
-        run: pip install -r dev/requirements.txt .
+        run: pip install ".[dev]"
       - name: Build docs
         run: |
           mkdir nbs/_extensions
