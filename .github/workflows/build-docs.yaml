@@ -14,7 +14,7 @@ jobs:
         with:
           cache: "pip"
           cache-dependency-path: settings.ini
-          submodules: true
+          submodules: 'recursive'
       - name: Install Dependencies
         shell: bash
         run: |
