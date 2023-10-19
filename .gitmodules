@@ -1,0 +1,4 @@
+[submodule "docs-scripts"]
+	path = docs-scripts
+	url = git@github.com:Nixtla/docs.git
+	branch = scripts
