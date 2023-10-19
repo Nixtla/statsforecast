@@ -10,11 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       - uses: actions/setup-python@v4
         with:
           cache: "pip"
-          cache-dependency-path: settings.ini
-          submodules: 'recursive'
+          cache-dependency-path: dev/requirements.txt
       - name: Install Dependencies
         shell: bash
         run: |
