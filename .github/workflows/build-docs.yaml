@@ -8,7 +8,7 @@ on:
 
 defaults:
   run:
-    shell: bash -l {0}
+    shell: bash
 
 jobs:
   build-docs:
@@ -21,11 +21,13 @@ jobs:
         with:
           cache: "pip"
           python-version: '3.10'
-          cache-dependency-path: dev/requirements.txt
-      - name: Install Dependencies
-        run: pip install -e ".[dev]"
+          cache-dependency-path: settings.ini
       - name: Build docs
         run: |
+          set -ux
+          python -m pip install --upgrade pip
+          pip install -Uq nbdev
+          pip install -e ".[dev]"
           mkdir nbs/_extensions
           cp -r docs-scripts/mintlify/ nbs/_extensions/
           python docs-scripts/update-quarto.py
