@@ -2,6 +2,8 @@ name: "build-docs"
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   workflow_dispatch:
 jobs:
   build-docs:
@@ -12,24 +14,27 @@ jobs:
         with:
           cache: "pip"
           cache-dependency-path: settings.ini
+          submodules: true
       - name: Install Dependencies
         shell: bash
         run: |
           set -ux
           python -m pip install --upgrade pip
           pip install -Uq nbdev
-          test -f setup.py && pip install -e ".[dev]"
+          test -f setup.py && pip install ".[dev]"
+          mkdir nbs/_extensions
+          cp -r docs-scripts/mintlify/ nbs/_extensions/
+          python docs-scripts/update-quarto.py
           nbdev_docs
       - name: Apply final formats
         shell: bash
-        run: bash ./action_files/docs-final-formatting.bash
+        run: bash ./docs-scripts/docs-final-formatting.bash
       - name: Copy over necessary assets
         run: |
           cp nbs/mint.json _docs/mint.json
-          cp nbs/imgs/logo/dark.png _docs/dark.png
-          cp nbs/imgs/logo/light.png _docs/light.png 
-          cp nbs/favicon.svg _docs/favicon.svg
+          cp docs-scripts/imgs/* _docs/
       - name: Deploy to Mintlify Docs
+        if: github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
