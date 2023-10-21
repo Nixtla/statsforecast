@@ -5,16 +5,16 @@ __all__ = ['theta_target_fn', 'is_constant']
 
 # %% ../nbs/src/theta.ipynb 1
 import math
-import os
+from typing import Tuple
 
 import numpy as np
 from numba import njit
 from scipy.stats import norm
-
-from .ets import nelder_mead
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
-from .utils import _seasonal_naive, _repeat_val_seas
+
+from .ets import restrict_to_bounds, results
+from .utils import _seasonal_naive, _repeat_val_seas, CACHE, NOGIL
 
 # %% ../nbs/src/theta.ipynb 4
 # Global variables
@@ -26,8 +26,6 @@ TOL = 1.0e-10
 HUGEN = 1.0e10
 NA = -99999.0
 smalno = np.finfo(float).eps
-NOGIL = os.environ.get("NUMBA_RELEASE_GIL", "False").lower() in ["true"]
-CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
 
 # %% ../nbs/src/theta.ipynb 6
 @njit(nogil=NOGIL, cache=CACHE)
@@ -310,6 +308,122 @@ def theta_target_fn(
     return mse
 
 # %% ../nbs/src/theta.ipynb 22
+@njit(nogil=NOGIL, cache=CACHE)
+def nelder_mead_theta(
+    x0: np.ndarray,
+    args: Tuple = (),
+    lower: np.ndarray = np.empty(0),
+    upper: np.ndarray = np.empty(0),
+    init_step: float = 0.05,
+    zero_pert: float = 0.0001,
+    alpha: float = 1.0,
+    gamma: float = 2.0,
+    rho: float = 0.5,
+    sigma: float = 0.5,
+    max_iter: int = 2_000,
+    tol_std: float = 1e-10,
+    adaptive: bool = False,
+):
+    # We are trying to minimize the function fn(x, args)
+    # with initial point x0.
+    # Step 0:
+    # get x1, ..., x_{n+1}
+    # the original article suggested a simplex where an initial point is given as x0
+    # with the others generated with a fixed step along each dimension in turn.
+    bounds = len(lower) and len(upper)
+    if bounds:
+        x0 = restrict_to_bounds(x0, lower, upper)
+
+    n = x0.size
+    if adaptive:
+        gamma = 1.0 + 2.0 / n
+        rho = 0.75 - 1.0 / (2.0 * n)
+        sigma = 1.0 - 1.0 / n
+    simplex = np.full(
+        (n + 1, n), fill_value=np.nan, dtype=np.float64
+    )  # each row is x_j
+    simplex[:] = x0
+    # perturb simplex using `init_step`
+    diag = np.copy(np.diag(simplex))
+    diag[diag == 0.0] = zero_pert
+    diag[diag != 0.0] *= 1 + init_step
+    np.fill_diagonal(simplex, diag)
+    # restrict simplex to bounds if passed
+    if bounds:
+        for j in range(n + 1):
+            simplex[j] = restrict_to_bounds(simplex[j], lower, upper)
+    # array of the value of f
+    f_simplex = np.full(n + 1, fill_value=np.nan)
+    for j in range(n + 1):
+        f_simplex[j] = theta_target_fn(simplex[j], *args)
+    for it in range(max_iter):
+        # Step1: order of f_simplex
+        # print(simplex)
+        # print(f_simplex)
+        order_f = f_simplex.argsort()
+        best_idx = order_f[0]
+        worst_idx = order_f[-1]
+        second_worst_idx = order_f[-2]
+        # Check whether method should stop.
+        if np.std(f_simplex) < tol_std:
+            break
+        # calculate centroid except argmax f_simplex
+        x_o = simplex[np.delete(order_f, -1)].sum(axis=0) / n
+        # Step2: Reflection, Compute reflected point
+        x_r = x_o + alpha * (x_o - simplex[worst_idx])
+        # restrict x_r to bounds if passed
+        if bounds:
+            x_r = restrict_to_bounds(x_r, lower, upper)
+        f_r = theta_target_fn(x_r, *args)
+        if f_simplex[best_idx] <= f_r < f_simplex[second_worst_idx]:
+            simplex[worst_idx] = x_r
+            f_simplex[worst_idx] = f_r
+            continue
+        # Step3: Expansion, reflected point is the best point so far
+        if f_r < f_simplex[best_idx]:
+            x_e = x_o + gamma * (x_r - x_o)
+            # restrict x_e to bounds if passed
+            if bounds:
+                x_e = restrict_to_bounds(x_e, lower, upper)
+            f_e = theta_target_fn(x_e, *args)
+            if f_e < f_r:
+                simplex[worst_idx] = x_e
+                f_simplex[worst_idx] = f_e
+            else:
+                simplex[worst_idx] = x_r
+                f_simplex[worst_idx] = f_r
+            continue
+        # Step4: outside Contraction
+        if f_simplex[second_worst_idx] <= f_r < f_simplex[worst_idx]:
+            x_oc = x_o + rho * (x_r - x_o)
+            if bounds:
+                x_oc = restrict_to_bounds(x_oc, lower, upper)
+            f_oc = theta_target_fn(x_oc, *args)
+            if f_oc <= f_r:
+                simplex[worst_idx] = x_oc
+                f_simplex[worst_idx] = f_oc
+                continue
+        # step 5 inside contraction
+        else:
+            x_ic = x_o - rho * (x_r - x_o)
+            # restrict x_c to bounds if passed
+            if bounds:
+                x_ic = restrict_to_bounds(x_ic, lower, upper)
+            f_ic = theta_target_fn(x_ic, *args)
+            if f_ic < f_simplex[worst_idx]:
+                simplex[worst_idx] = x_ic
+                f_simplex[worst_idx] = f_ic
+                continue
+        # step 6: shrink
+        simplex[np.delete(order_f, 0)] = simplex[best_idx] + sigma * (
+            simplex[np.delete(order_f, 0)] - simplex[best_idx]
+        )
+        for i in np.delete(order_f, 0):
+            simplex[i] = restrict_to_bounds(simplex[i], lower, upper)
+            f_simplex[i] = theta_target_fn(simplex[i], *args)
+    return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
+
+# %% ../nbs/src/theta.ipynb 23
 def optimize_theta_target_fn(init_par, optimize_params, y, modeltype, nmse):
     x0 = [init_par[key] for key, val in optimize_params.items() if val]
     x0 = np.array(x0, dtype=np.float32)
@@ -324,8 +438,7 @@ def optimize_theta_target_fn(init_par, optimize_params, y, modeltype, nmse):
     opt_alpha = optimize_params["alpha"]
     opt_theta = optimize_params["theta"]
 
-    res = nelder_mead(
-        theta_target_fn,
+    res = nelder_mead_theta(
         x0,
         args=(
             init_level,
@@ -346,12 +459,12 @@ def optimize_theta_target_fn(init_par, optimize_params, y, modeltype, nmse):
     )
     return res
 
-# %% ../nbs/src/theta.ipynb 23
+# %% ../nbs/src/theta.ipynb 24
 @njit(nogil=NOGIL, cache=CACHE)
 def is_constant(x):
     return np.all(x[0] == x)
 
-# %% ../nbs/src/theta.ipynb 25
+# %% ../nbs/src/theta.ipynb 26
 def thetamodel(
     y: np.ndarray,
     m: int,
@@ -408,7 +521,7 @@ def thetamodel(
         mean_y=np.mean(y),
     )
 
-# %% ../nbs/src/theta.ipynb 27
+# %% ../nbs/src/theta.ipynb 28
 def compute_pi_samples(
     n, h, states, sigma, alpha, theta, mean_y, seed=0, n_samples=200
 ):
@@ -427,7 +540,7 @@ def compute_pi_samples(
         A = mean_y - B * (i + 2) / 2
     return samples
 
-# %% ../nbs/src/theta.ipynb 28
+# %% ../nbs/src/theta.ipynb 29
 def forecast_theta(obj, h, level=None):
     forecast = np.full(h, fill_value=np.nan)
     n = obj["n"]
@@ -474,7 +587,7 @@ def forecast_theta(obj, h, level=None):
                 res[key] = res[key] + seas_forecast
     return res
 
-# %% ../nbs/src/theta.ipynb 30
+# %% ../nbs/src/theta.ipynb 31
 def auto_theta(
     y,
     m,
@@ -574,7 +687,7 @@ def auto_theta(
         model["seas_forecast"] = dict(seas_forecast)
     return model
 
-# %% ../nbs/src/theta.ipynb 39
+# %% ../nbs/src/theta.ipynb 40
 def forward_theta(fitted_model, y):
     m = fitted_model["m"]
     model = fitted_model["modeltype"]

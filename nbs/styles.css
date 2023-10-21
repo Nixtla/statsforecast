@@ -11,7 +11,9 @@
   margin-bottom: 0;
 }
 
-.cell-output > pre, .cell-output > .sourceCode > pre, .cell-output-stdout > pre {
+.cell-output > pre,
+.cell-output > .sourceCode > pre,
+.cell-output-stdout > pre {
   margin-left: 0.8rem;
   margin-top: 0;
   background: none;
@@ -60,8 +62,8 @@ blockquote > pre {
 
 /* new */
 @font-face {
-  font-family: 'Inter';
-  src: url('./assets/Inter-VariableFont.ttf') format('ttf')
+  font-family: "Inter";
+  src: url("./assets/Inter-VariableFont.ttf") format("ttf");
 }
 
 :root {
@@ -69,9 +71,10 @@ blockquote > pre {
   --secondary: rgb(255, 112, 0);
 }
 
-html, body {
+html,
+body {
   color: #374151;
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
 }
 
 header {
@@ -110,20 +113,20 @@ a > code:hover {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px); /* For Safari support */
-  border-bottom: 1px solid rgba(17, 24,39, 0.05);
+  border-bottom: 1px solid rgba(17, 24, 39, 0.05);
 }
 
 .nav-link {
-  color:rgba(17, 24,39, 0.6) !important;
+  color: rgba(17, 24, 39, 0.6) !important;
   font-size: 0.875rem;
 }
 
 .nav-link.active {
-  color:rgb(17, 24,39) !important;
+  color: rgb(17, 24, 39) !important;
 }
 
 .aa-SubmitIcon {
-  fill: rgba(17, 24,39, 0.6) !important;
+  fill: rgba(17, 24, 39, 0.6) !important;
   height: 20px !important;
   margin-top: -2px;
 }
@@ -138,7 +141,7 @@ a > code:hover {
 }
 
 .navbar-brand {
-  background-image: url('./assets/logo.png');
+  background-image: url("./assets/logo.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -154,8 +157,13 @@ a > code:hover {
   width: 100%;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  color: rgb(17, 24,39);
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: rgb(17, 24, 39);
   margin-top: 3rem;
 }
 
@@ -167,7 +175,7 @@ h1.title {
 
 div.description {
   font-style: normal;
-  font-size: .875rem;
+  font-size: 0.875rem;
   line-height: 1.25rem;
 }
 
@@ -176,7 +184,12 @@ p {
 }
 
 /* menu */
-.sidebar-menu-container > ul > li:first-child > .sidebar-item-container > a > span {
+.sidebar-menu-container
+  > ul
+  > li:first-child
+  > .sidebar-item-container
+  > a
+  > span {
   font-weight: 600 !important;
   font-size: 0.875rem;
   color: var(--secondary);
@@ -187,7 +200,7 @@ div.sidebar-item-container {
 }
 
 .sidebar-divider.hi {
-  color: rgb(0,0,0, 0.2);
+  color: rgb(0, 0, 0, 0.2);
   margin-top: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -199,7 +212,6 @@ div.sidebar-item-container {
 .menu-text {
   font-weight: 400;
 }
-
 
 ul.sidebar-section {
   padding-left: 0;
@@ -236,12 +248,12 @@ ul.sidebar-section .sidebar-link {
 }
 
 .callout-tip {
-  background: rgba(63,182,24, 0.05);
-  border: 1px solid rgba(63,182,24, 0.25) !important;
+  background: rgba(63, 182, 24, 0.05);
+  border: 1px solid rgba(63, 182, 24, 0.25) !important;
 }
 
 .callout-note {
-  background: rgba(59 , 130, 246, 0.05);
+  background: rgba(59, 130, 246, 0.05);
   border: 1px solid rgba(59, 130, 246, 0.25) !important;
 }
 
@@ -296,8 +308,6 @@ code {
   overflow-x: scroll !important;
 }
 
-
-
 .cell-output > div {
   border: 1px solid rgba(100, 116, 139, 0.2) !important;
   border-radius: 1rem;
@@ -305,7 +315,8 @@ code {
   margin-top: 3rem;
 }
 
-table, .table {
+table,
+.table {
   border-radius: 1rem;
   font-size: 0.875rem;
   margin-bottom: 0;
@@ -331,12 +342,14 @@ thead tr:first-child th:last-child {
   border-radius: 0 1rem 0 0;
 }
 
-th, td {
+th,
+td {
   padding: 0.5rem 1rem !important;
   white-space: nowrap !important;
 }
 
-td a, td a code {
+td a,
+td a code {
   white-space: nowrap !important;
 }
 
@@ -349,7 +362,8 @@ tbody tr:last-child td:first-child {
   border-radius: 0 0 0 1rem;
 }
 
-tr.even, tr.odd {
+tr.even,
+tr.odd {
   line-height: 2rem;
 }
 
@@ -357,7 +371,8 @@ tr:hover {
   background-color: rgba(17, 24, 39, 0.05);
 }
 
-td:first-child, td:last-child {
+td:first-child,
+td:last-child {
   padding: 0.25rem 1rem !important;
 }
 
@@ -365,7 +380,7 @@ td:first-child, td:last-child {
   background: white;
   border: none;
   border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding-top: 0.5rem !important;
   padding-bottom: 0.25rem !important;
 }

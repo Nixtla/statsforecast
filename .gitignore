@@ -9,13 +9,13 @@ dist
 .vscode
 .idea
 *.gif
+*.icloud
 *.csv
 */data/*
 *.parquet
 tmp
 _docs/
 _proc/
-sidebar.yml
 .DS_Store
 .gitattributes
 .gitconfig
@@ -23,3 +23,4 @@ nbs/.last_checked
 .venv
 .idea
 mlruns/
+.luarc.json
