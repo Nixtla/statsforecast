@@ -8,9 +8,14 @@ import inspect
 import logging
 import reprlib
 import warnings
+import errno
+from pathlib import Path
 from os import cpu_count
 from typing import Any, List, Optional, Union, Dict
 import pkg_resources
+import pickle
+import datetime as dt
+import re
 
 from fugue.execution.factory import make_execution_engine
 import numpy as np
@@ -453,7 +458,6 @@ class DataFrameProcessing:
         sort_dataframe: bool,
         validate: Optional[bool] = True,
     ):
-
         self.dataframe = dataframe
         self.sort_dataframe = sort_dataframe
         self.validate = validate
@@ -1545,6 +1549,112 @@ class _StatsForecast:
             resampler_kwargs=resampler_kwargs,
             palette="tab20b",
         )
+
+    def save(
+        self,
+        path: Optional[Union[Path, str]] = None,
+        max_size: Optional[str] = None,
+        trim: bool = False,
+    ):
+        """Function that will save StatsForecast class with certain settings to make it
+        reproducible.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path, optional (default=None)
+            Path of the file to be saved. If `None` will create one in the current
+            directory using the current UTC timestamp.
+        max_size : str, optional (default = None)
+            StatsForecast object should not exceed this size.
+            Available byte naming: ['B', 'KB', 'MB', 'GB']
+        trim : bool (default = False)
+            Delete any attributes not needed for inference.
+        """
+        # Will be used to find the size of the fitted models
+        # Never expecting anything higher than GB (even that's a lot')
+        bytes_hmap = {
+            "B": 1,
+            "KB": 2**10,
+            "MB": 2**20,
+            "GB": 2**30,
+        }
+
+        # Removing unnecessary attributes
+        # @jmoralez decide future implementation
+        trim_attr: list = ["fcst_fitted_values_", "cv_fitted_values_"]
+        if trim:
+            for attr in trim_attr:
+                # remove unnecessary attributes here
+                self.__dict__.pop(attr, None)
+
+        sf_size = len(pickle.dumps(self))
+
+        if max_size is not None:
+            cap_size = self._get_cap_size(max_size, bytes_hmap)
+            if sf_size >= cap_size:
+                err_messg = "StatsForecast is larger than the specified max_size"
+                raise OSError(errno.EFBIG, err_messg)
+
+        converted_size, sf_byte = None, None
+        for key in reversed(list(bytes_hmap.keys())):
+            x_byte = bytes_hmap[key]
+            if sf_size >= x_byte:
+                converted_size = sf_size / x_byte
+                sf_byte = key
+                break
+
+        if converted_size is None or sf_byte is None:
+            err_messg = "Internal Error, this shouldn't happen, please open an issue"
+            raise RuntimeError(err_messg)
+
+        print(f"Saving StatsForecast object of size {converted_size:.2f}{sf_byte}.")
+
+        if path is None:
+            datetime_record = dt.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+            path = f"StatsForecast_{datetime_record}.pkl"
+
+        with open(path, "wb") as m_file:
+            pickle.dump(self, m_file)
+        print("StatsForecast object saved")
+
+    def _get_cap_size(self, max_size, bytes_hmap):
+        max_size = max_size.upper().replace(" ", "")
+        match = re.match(r"(\d+\.\d+|\d+)(\w+)", max_size)
+        if (
+            match is None
+            or len(match.groups()) < 2
+            or match[2] not in bytes_hmap.keys()
+        ):
+            parsing_error = (
+                "Couldn't parse `max_size`, it should be `None`",
+                " or a number followed by one of the following units: ['B', 'KB', 'MB', 'GB']",
+            )
+            raise ValueError(parsing_error)
+        else:
+            m_size = float(match[1])
+            key_ = match[2]
+            cap_size = m_size * bytes_hmap[key_]
+        return cap_size
+
+    @staticmethod
+    def load(path: Union[Path, str]):
+        """
+        Automatically loads the model into ready StatsForecast.
+
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Path to saved StatsForecast file.
+
+        Returns
+        -------
+        sf: StatsForecast
+            Previously saved StatsForecast
+        """
+        if not Path(path).exists():
+            raise ValueError("Specified path does not exist, check again and retry.")
+        with open(path, "rb") as f:
+            return pickle.load(f)
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
