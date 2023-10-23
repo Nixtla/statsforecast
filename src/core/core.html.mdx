@@ -33,7 +33,7 @@ def test_gp_df(df, sort_df):
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1574"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1684"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast
@@ -169,7 +169,7 @@ fcsts_df.groupby('unique_id').tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L856"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L860"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit
@@ -196,7 +196,7 @@ fitted models for later inspection.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L945"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L949"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## SatstForecast.predict
@@ -222,7 +222,7 @@ DataFrame `df`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L991"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L995"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit_predict
@@ -261,7 +261,7 @@ this method stores partial models outputs.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1050"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1054"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast
@@ -322,7 +322,7 @@ fcsts_df.groupby('unique_id').tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1114"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1118"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast_fitted_values
@@ -369,7 +369,7 @@ insample_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1144"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1148"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation
@@ -433,7 +433,7 @@ rolled_fcsts_df.head(4)
 ```
 
 ``` text
-Cross Validation Time Series 1:   0%|          | 0/2 [00:00<?, ?it/s]Cross Validation Time Series 1: 100%|##########| 2/2 [00:00<00:00, 7943.76it/s]
+Cross Validation Time Series 1:   0%|          | 0/2 [00:00<?, ?it/s]Cross Validation Time Series 1: 100%|##########| 2/2 [00:00<00:00, 7832.50it/s]
 ```
 
 |           | ds         | cutoff     | y     | Naive |
@@ -447,7 +447,7 @@ Cross Validation Time Series 1:   0%|          | 0/2 [00:00<?, ?it/s]Cross Valid
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1269"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1273"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation_fitted_values
@@ -495,7 +495,7 @@ insample_rolled_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1463"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1467"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.plot
@@ -528,6 +528,47 @@ Plot forecasts and insample values.
 | plot_anomalies      | bool     | False       | Plot anomalies for each prediction interval.                                                                                                                                                             |
 | engine              | str      | matplotlib  | Library used to plot. ‘plotly’, ‘plotly-resampler’ or ‘matplotlib’.                                                                                                                                      |
 | resampler_kwargs    | Optional | None        | Kwargs to be passed to plotly-resampler constructor. <br/>For further custumization (“show_dash”) call the method,<br/>store the plotting object and add the extra arguments to<br/>its `show_dash` method. |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1553"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.save
+
+> ``` text
+>  StatsForecast.save (path:Union[pathlib.Path,str,NoneType]=None,
+>                      max_size:Optional[str]=None, trim:bool=False)
+> ```
+
+Function that will save StatsForecast class with certain settings to
+make it reproducible.
+
+|          | **Type** | **Default** | **Details**                                                                                                           |
+|------|------------------|-------------------------|-------------------------|
+| path     | Union    | None        | Path of the file to be saved. If `None` will create one in the current <br/>directory using the current UTC timestamp. |
+| max_size | Optional | None        | StatsForecast object should not exceed this size.<br/>Available byte naming: \[‘B’, ‘KB’, ‘MB’, ‘GB’\]                 |
+| trim     | bool     | False       | Delete any attributes not needed for inference.                                                                       |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1640"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.load
+
+> ``` text
+>  StatsForecast.load (path:Union[pathlib.Path,str])
+> ```
+
+Automatically loads the model into ready StatsForecast.
+
+|             | **Type**              | **Details**                        |
+|-------------|-----------------------|------------------------------------|
+| path        | Union                 | Path to saved StatsForecast file.  |
+| **Returns** | **sf: StatsForecast** | **Previously saved StatsForecast** |
 
 # Misc
 
