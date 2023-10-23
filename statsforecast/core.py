@@ -1566,8 +1566,8 @@ class _StatsForecast:
             Path of the file to be saved. If `None` will create one in the current
             directory using the current UTC timestamp.
         max_size : str, optional (default = None)
-            StatsForecast class should not exceed this size, available byte naming:
-            ['B', 'KB', 'MB', 'GB']
+            StatsForecast object should not exceed this size.
+            Available byte naming: ['B', 'KB', 'MB', 'GB']
             If max_size is set, but not parsable then default 50MB will be set.
         trim: bool, (default = False)
             Delete any attributes not needed for inference.
