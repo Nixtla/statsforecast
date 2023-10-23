@@ -1,0 +1,52 @@
+name: "build-docs"
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - uses: actions/setup-python@v4
+        with:
+          cache: "pip"
+          python-version: '3.10'
+          cache-dependency-path: settings.ini
+      - name: Build docs
+        run: |
+          set -ux
+          python -m pip install --upgrade pip
+          pip install -Uq nbdev
+          pip install -e ".[dev]"
+          mkdir nbs/_extensions
+          cp -r docs-scripts/mintlify/ nbs/_extensions/
+          python docs-scripts/update-quarto.py
+          echo "procs = nbdev_plotly.plotly:PlotlyProc" >> settings.ini
+          nbdev_docs
+      - name: Apply final formats
+        run: bash ./docs-scripts/docs-final-formatting.bash
+      - name: Copy over necessary assets
+        run: |
+          cp nbs/mint.json _docs/mint.json
+          cp docs-scripts/imgs/* _docs/
+      - name: Deploy to Mintlify Docs
+        if: github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: docs
+          publish_dir: ./_docs
+          # The following lines assign commit authorship to the official GH-Actions bot for deploys to `docs` branch.
+          # You can swap them out with your own user credentials.
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
