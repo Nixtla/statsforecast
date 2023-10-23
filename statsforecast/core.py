@@ -1565,7 +1565,7 @@ class _StatsForecast:
         path : str or pathlib.Path, optional (default=None)
             Path of the file to be saved. If `None` will create one in the current
             directory using the current UTC timestamp.
-        max_size: str, (default = None)
+        max_size : str, optional (default = None)
             StatsForecast class should not exceed this size, available byte naming:
             ['B', 'KB', 'MB', 'GB']
             If max_size is set, but not parsable then default 50MB will be set.
