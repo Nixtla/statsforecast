@@ -1569,7 +1569,7 @@ class _StatsForecast:
             StatsForecast object should not exceed this size.
             Available byte naming: ['B', 'KB', 'MB', 'GB']
             If max_size is set, but not parsable then default 50MB will be set.
-        trim: bool, (default = False)
+        trim : bool (default = False)
             Delete any attributes not needed for inference.
         """
         # Will be used to find the size of the fitted models
