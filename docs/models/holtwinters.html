@@ -1,0 +1,3066 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Step-by-step guide on using the Holt Winters Model with Statsforecast.">
+
+<title>statsforecast - Holt Winters Model</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon_png.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-NXJNCVR18L"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-NXJNCVR18L', { 'anonymize_ip': true});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="statsforecast - Holt Winters Model">
+<meta property="og:description" content="Step-by-step guide on using the Holt Winters Model with Statsforecast.">
+<meta property="og:image" content="https://github.com/Nixtla/styles/blob/2abf51612584169874c90cd7c4d347e3917eaf73/images/Banner%20Github.png">
+<meta property="og:site-name" content="statsforecast">
+<meta name="twitter:title" content="statsforecast - Holt Winters Model">
+<meta name="twitter:description" content="Step-by-step guide on using the Holt Winters Model with Statsforecast.">
+<meta name="twitter:image" content="https://farm6.staticflickr.com/5510/14338202952_93595258ff_z.jpg">
+<meta name="twitter:site" content="@Nixtlainc">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">statsforecast</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="../../docs/getting-started/getting_started_short.html" rel="" target="" aria-current="page">
+ <span class="menu-text">Get Started</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-nixtlaverse" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">NixtlaVerse</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-nixtlaverse">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/statsforecast" rel="" target="">
+ <span class="dropdown-text">StatsForecast ⚡️</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/mlforecast" rel="" target="">
+ <span class="dropdown-text">MLForecast 🤖</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/neuralforecast" rel="" target="">
+ <span class="dropdown-text">NeuralForecast 🧠</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/hierarchicalforecast" rel="" target="">
+ <span class="dropdown-text">HierarchicalForecast 👑</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/statsforecast/issues/new/choose" rel="" target=""><i class="bi bi-bug" role="img">
+</i> 
+ <span class="dropdown-text">Report an Issue</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A" rel="" target=""><i class="bi bi-chat-right-text" role="img">
+</i> 
+ <span class="dropdown-text">Join our Slack</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/nixtla/statsforecast" rel="" target=""><i class="bi bi-github" role="img">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/nixtlainc" rel="" target=""><i class="bi bi-twitter" role="img" aria-label="Nixtla Twitter">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../docs/models/adida.html">Model References</a></li><li class="breadcrumb-item"><a href="../../docs/models/holtwinters.html">Holt Winters Model</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">StatsForecast ⚡️</span></a>
+  </div>
+</li>
+        <li class="px-0"><hr class="sidebar-divider hi "></li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="false">
+ <span class="menu-text">Getting Started</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/getting-started/installation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Install</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/getting-started/getting_started_short.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Quick Start</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/getting-started/getting_started_complete.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">End to End Walkthrough</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="false">
+ <span class="menu-text">Tutorials</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/anomalydetection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Anomaly Detection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/conformalprediction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conformal Prediction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/crossvalidation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cross validation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/electricityloadforecasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Electricity Load Forecast</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/electricitypeakforecasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Detect Demand Peaks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/garch_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Volatility forecasting (GARCH &amp; ARCH)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/intermittentdata.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Intermittent or Sparse Data</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/multipleseasonalities.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Multiple seasonalities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/statisticalneuralmethods.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Statistical, Machine Learning and Neural Forecasting methods</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/uncertaintyintervals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Probabilistic Forecasting</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">How-To Guides</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/automatic_forecasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Automatic Time Series Forecasting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/amazonstatsforecast.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Amazon Forecast vs StatsForecast</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/autoarima_vs_prophet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoARIMA Comparison (Prophet and pmdarima)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/dask.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dask</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/ets_ray_m5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Forecasting at Scale using ETS and ray (M5)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/exogenous.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Exogenous Regressors</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/getting_started_complete_polars.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">End to End Walkthrough with Polars</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/migrating_R.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Migrating from R</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/mlflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">MLFlow</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/numba_cache.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Numba caching</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/prophet_spark_m5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">StatsForecast ETS and Facebook Prophet on Spark (M5)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/ray.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ray</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/spark.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Spark</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text">Model References</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/adida.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ADIDA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/arch.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ARCH Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/arima.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ARIMA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoarima.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoARIMA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoCES Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoETS Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoregressive.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoRegressive Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autotheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoTheta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/crostonclassic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CrostonClassic Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/crostonoptimized.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CrostonOptimized Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/crostonsba.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CrostonSBA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/dynamicoptimizedtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamic Optimized Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/dynamicstandardtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamic Standard Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/garch.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GARCH Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/holt.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Holt Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/holtwinters.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Holt Winters Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/imapa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">IMAPA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/multipleseasonaltrend.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Multiple Seasonal Trend (MSTL)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/optimizedtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optimized Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/seasonalexponentialsmoothing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Seasonal Exponential Smoothing Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/seasonalexponentialsmoothingoptimized.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Seasonal Exponential Smoothing Optimized Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/simpleexponentialoptimized.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simple Exponential Smoothing Optimized Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/simpleexponentialsmoothing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simple Exponential Smoothing Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/standardtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Standard Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/tsb.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TSB Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">API Reference</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/core.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Core Methods</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/distributed.fugue.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">FugueBackend</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Models</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/models_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">StatsForecast’s Models</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">Contributing</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/contribute.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contribute to Nixtla</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/docs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Nixtla Documentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/issue-labels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Understanding Issue Labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/issues.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Submit an Issue 📢</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/step-by-step.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Step-by-step Contribution Guide</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/techstack.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contributing Code to Nixtla Development</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#table-of-contents" id="toc-table-of-contents" class="nav-link active" data-scroll-target="#table-of-contents">Table of Contents</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a><a class="anchor nav-link" id="introduction" data-scroll-target="undefined"></a></li>
+  <li><a href="#holt-winters-method" id="toc-holt-winters-method" class="nav-link" data-scroll-target="#holt-winters-method">Holt-Winters Method </a><a class="anchor nav-link" id="model" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#holt-winters-additive-method" id="toc-holt-winters-additive-method" class="nav-link" data-scroll-target="#holt-winters-additive-method">Holt-Winters’ additive method</a></li>
+  <li><a href="#holt-winters-multiplicative-method" id="toc-holt-winters-multiplicative-method" class="nav-link" data-scroll-target="#holt-winters-multiplicative-method">Holt-Winters’ multiplicative method</a></li>
+  <li><a href="#mathematical-models-in-the-ets-taxonomy" id="toc-mathematical-models-in-the-ets-taxonomy" class="nav-link" data-scroll-target="#mathematical-models-in-the-ets-taxonomy">Mathematical models in the ETS taxonomy</a></li>
+  <li><a href="#model-selection" id="toc-model-selection" class="nav-link" data-scroll-target="#model-selection">Model selection</a></li>
+  </ul></li>
+  <li><a href="#loading-libraries-and-data" id="toc-loading-libraries-and-data" class="nav-link" data-scroll-target="#loading-libraries-and-data">Loading libraries and data </a><a class="anchor nav-link" id="loading" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#read-data" id="toc-read-data" class="nav-link" data-scroll-target="#read-data">Read Data</a></li>
+  </ul></li>
+  <li><a href="#explore-data-with-the-plot-method" id="toc-explore-data-with-the-plot-method" class="nav-link" data-scroll-target="#explore-data-with-the-plot-method">Explore Data with the plot method </a><a class="anchor nav-link" id="plotting" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#the-augmented-dickey-fuller-test" id="toc-the-augmented-dickey-fuller-test" class="nav-link" data-scroll-target="#the-augmented-dickey-fuller-test">The Augmented Dickey-Fuller Test</a></li>
+  <li><a href="#autocorrelation-plots" id="toc-autocorrelation-plots" class="nav-link" data-scroll-target="#autocorrelation-plots">Autocorrelation plots</a></li>
+  <li><a href="#decomposition-of-the-time-series" id="toc-decomposition-of-the-time-series" class="nav-link" data-scroll-target="#decomposition-of-the-time-series">Decomposition of the time series</a></li>
+  <li><a href="#additive-time-series" id="toc-additive-time-series" class="nav-link" data-scroll-target="#additive-time-series">Additive time series</a></li>
+  <li><a href="#multiplicative-time-series" id="toc-multiplicative-time-series" class="nav-link" data-scroll-target="#multiplicative-time-series">Multiplicative time series</a></li>
+  <li><a href="#additive" id="toc-additive" class="nav-link" data-scroll-target="#additive">Additive</a></li>
+  <li><a href="#multiplicative" id="toc-multiplicative" class="nav-link" data-scroll-target="#multiplicative">Multiplicative</a></li>
+  </ul></li>
+  <li><a href="#split-the-data-into-training-and-testing" id="toc-split-the-data-into-training-and-testing" class="nav-link" data-scroll-target="#split-the-data-into-training-and-testing">Split the data into training and testing</a><a class="anchor nav-link" id="splitting" data-scroll-target="undefined"></a></li>
+  <li><a href="#implementation-of-holt-winters-method-with-statsforecast" id="toc-implementation-of-holt-winters-method-with-statsforecast" class="nav-link" data-scroll-target="#implementation-of-holt-winters-method-with-statsforecast">Implementation of Holt-Winters Method with StatsForecast </a><a class="anchor nav-link" id="implementation" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#load-libraries" id="toc-load-libraries" class="nav-link" data-scroll-target="#load-libraries">Load libraries</a></li>
+  <li><a href="#instantiating-model" id="toc-instantiating-model" class="nav-link" data-scroll-target="#instantiating-model">Instantiating Model</a></li>
+  <li><a href="#fit-the-model" id="toc-fit-the-model" class="nav-link" data-scroll-target="#fit-the-model">Fit the Model</a></li>
+  <li><a href="#forecast-method" id="toc-forecast-method" class="nav-link" data-scroll-target="#forecast-method">Forecast Method</a></li>
+  <li><a href="#predict-method-with-confidence-interval" id="toc-predict-method-with-confidence-interval" class="nav-link" data-scroll-target="#predict-method-with-confidence-interval">Predict method with confidence interval</a></li>
+  </ul></li>
+  <li><a href="#cross-validation" id="toc-cross-validation" class="nav-link" data-scroll-target="#cross-validation">Cross-validation </a><a class="anchor nav-link" id="cross_validate" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#perform-time-series-cross-validation" id="toc-perform-time-series-cross-validation" class="nav-link" data-scroll-target="#perform-time-series-cross-validation">Perform time series cross-validation</a></li>
+  </ul></li>
+  <li><a href="#model-evaluation" id="toc-model-evaluation" class="nav-link" data-scroll-target="#model-evaluation">Model Evaluation </a><a class="anchor nav-link" id="evaluate" data-scroll-target="undefined"></a></li>
+  <li><a href="#acknowledgements" id="toc-acknowledgements" class="nav-link" data-scroll-target="#acknowledgements">Acknowledgements</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References </a><a class="anchor nav-link" id="references" data-scroll-target="undefined"></a></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/Nixtla/statsforecast/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Holt Winters Model</h1>
+</div>
+
+<div>
+  <div class="description">
+    Step-by-step guide on using the <code>Holt Winters Model</code> with <code>Statsforecast</code>.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<section id="table-of-contents" class="level2">
+<h2 class="anchored" data-anchor-id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#model">Holt-Winters Model</a></li>
+<li><a href="#loading">Loading libraries and data</a></li>
+<li><a href="#plotting">Explore data with the plot method</a></li>
+<li><a href="#splitting">Split the data into training and testing</a></li>
+<li><a href="#implementation">Implementation of Holt-Winters with StatsForecast</a></li>
+<li><a href="#cross_validate">Cross-validation</a></li>
+<li><a href="#evaluate">Model evaluation</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction<a class="anchor" id="introduction"></a></h2>
+<p>The Holt-Winter model, also known as the triple exponential smoothing method, is a forecasting technique widely used in time series analysis. It was developed by Charles Holt and Peter Winters in 1960 as an improvement on Holt’s double exponential smoothing method.</p>
+<p>The Holt-Winter model is used to predict future values of a time series that exhibits a trend and seasonality. The model uses three smoothing parameters, one for estimating the trend, another for estimating the level or base level of the time series, and another for estimating seasonality. These parameters are called α, β and γ, respectively.</p>
+<p>The Holt-Winter model is an extension of Holt’s double exponential smoothing method, which uses only two smoothing parameters to estimate the trend and base level of the time series. The Holt-Winter model improves the accuracy of the forecasts by adding a third smoothing parameter for seasonality.</p>
+<p>One of the main advantages of the Holt-Winter model is that it is easy to implement and does not require a large amount of historical data to generate accurate predictions. Furthermore, the model is highly adaptable and can be customized to fit a wide variety of time series with seasonality.</p>
+<p>However, the Holt-Winter model has some limitations. For example, the model assumes that the time series is stationary and that seasonality is constant. If the time series is not stationary or has non-constant seasonality, the Holt-Winter model may not be the most appropriate.</p>
+<p>In general, the Holt-Winter model is a useful and widely used technique in time series analysis, especially when the series is expected to exhibit a constant trend and seasonality.</p>
+</section>
+<section id="holt-winters-method" class="level2">
+<h2 class="anchored" data-anchor-id="holt-winters-method">Holt-Winters Method <a class="anchor" id="model"></a></h2>
+<p>The Holt-Winters seasonal method comprises the forecast equation and three smoothing equations — one for the level <span class="math inline">\(\ell_{t}\)</span>, one for the trend <span class="math inline">\(b_t\)</span>, and one for the seasonal component <span class="math inline">\(s_t\)</span> , with corresponding smoothing parameters <span class="math inline">\(\alpha\)</span> , <span class="math inline">\(\beta^*\)</span> and $ $. We use <span class="math inline">\(m\)</span> to denote the period of the seasonality, i.e., the number of seasons in a year. For example, for quarterly data <span class="math inline">\(m=4\)</span>, and for monthly data <span class="math inline">\(m=12\)</span>.</p>
+<p>There are two variations to this method that differ in the nature of the seasonal component. The additive method is preferred when the seasonal variations are roughly constant through the series, while the multiplicative method is preferred when the seasonal variations are changing proportional to the level of the series. With the additive method, the seasonal component is expressed in absolute terms in the scale of the observed series, and in the level equation the series is seasonally adjusted by subtracting the seasonal component. Within each year, the seasonal component will add up to approximately zero. With the multiplicative method, the seasonal component is expressed in relative terms (percentages), and the series is seasonally adjusted by dividing through by the seasonal component. Within each year, the seasonal component will sum up to approximately <span class="math inline">\(m\)</span>.</p>
+<section id="holt-winters-additive-method" class="level3">
+<h3 class="anchored" data-anchor-id="holt-winters-additive-method">Holt-Winters’ additive method</h3>
+<p>Holt-Winters’ additive method is a time series forecasting technique that extends the Holt-Winters’ method by incorporating an additive seasonality component. It is suitable for time series data that exhibit a seasonal pattern that changes over time.</p>
+<p>The Holt-Winters’ additive method uses three smoothing parameters - alpha (α), beta (β), and gamma (γ) - to estimate the level, trend, and seasonal components of the time series. The alpha parameter controls the smoothing of the level component, the beta parameter controls the smoothing of the trend component, and the gamma parameter controls the smoothing of the additive seasonal component.</p>
+<p>The forecasting process involves three steps: first, the level, trend, and seasonal components are estimated using the smoothing parameters and the historical data; second, these components are used to forecast future values of the time series; and third, the forecasted values are adjusted for the seasonal component using an additive factor.</p>
+<p>One of the advantages of Holt-Winters’ additive method is that it can handle time series data with an additive seasonality component, which is common in many real-world applications. The method is also easy to implement and can be extended to handle time series data with changing seasonal patterns.</p>
+<p>However, the method has some limitations. It assumes that the seasonality pattern is additive, which may not be the case for all time series. Additionally, the method requires a sufficient amount of historical data to accurately estimate the smoothing parameters and the seasonal component.</p>
+<p>Overall, Holt-Winters’ additive method is a powerful and widely used forecasting technique that can be used to generate accurate predictions for time series data with an additive seasonality component. The method is easy to implement and can be extended to handle time series data with changing seasonal patterns.</p>
+<p>The component form for the additive method is:</p>
+<p><span class="math display">\[\begin{align*}
+  \hat{y}_{t+h|t} &amp;= \ell_{t} + hb_{t} + s_{t+h-m(k+1)} \\
+  \ell_{t} &amp;= \alpha(y_{t} - s_{t-m}) + (1 - \alpha)(\ell_{t-1} + b_{t-1})\\
+  b_{t} &amp;= \beta^*(\ell_{t} - \ell_{t-1}) + (1 - \beta^*)b_{t-1}\\
+  s_{t} &amp;= \gamma (y_{t}-\ell_{t-1}-b_{t-1}) + (1-\gamma)s_{t-m},
+\end{align*}\]</span></p>
+<p>where <span class="math inline">\(k\)</span> is the integer part of <span class="math inline">\((h-1)/m\)</span>, which ensures that the estimates of the seasonal indices used for forecasting come from the final year of the sample. The level equation shows a weighted average between the seasonally adjusted observation <span class="math inline">\((y_{t} - s_{t-m})\)</span> and the non-seasonal forecast <span class="math inline">\((\ell_{t-1}+b_{t-1})\)</span> for time <span class="math inline">\(t\)</span>. The trend equation is identical to Holt’s linear method. The seasonal equation shows a weighted average between the current seasonal index, <span class="math inline">\((y_{t}-\ell_{t-1}-b_{t-1})\)</span>, and the seasonal index of the same season last year (i.e., <span class="math inline">\(m\)</span> time periods ago).</p>
+<p>The equation for the seasonal component is often expressed as</p>
+<p><span class="math display">\[s_{t} = \gamma^* (y_{t}-\ell_{t})+ (1-\gamma^*)s_{t-m}.\]</span></p>
+<p>If we substitute <span class="math inline">\(\ell_{t}\)</span> from the smoothing equation for the level of the component form above, we get</p>
+<p><span class="math display">\[s_{t} = \gamma^*(1-\alpha) (y_{t}-\ell_{t-1}-b_{t-1})+ [1-\gamma^*(1-\alpha)]s_{t-m},\]</span></p>
+<p>which is identical to the smoothing equation for the seasonal component we specify here, with <span class="math inline">\(\gamma=\gamma^*(1-\alpha)\)</span>. The usual parameter restriction is <span class="math inline">\(0\le\gamma^*\le1\)</span>, which translates to <span class="math inline">\(0\le\gamma\le 1-\alpha\)</span>.</p>
+</section>
+<section id="holt-winters-multiplicative-method" class="level3">
+<h3 class="anchored" data-anchor-id="holt-winters-multiplicative-method">Holt-Winters’ multiplicative method</h3>
+<p>The Holt-Winters’ multiplicative method uses three smoothing parameters - alpha (α), beta (β), and gamma (γ) - to estimate the level, trend, and seasonal components of the time series. The alpha parameter controls the smoothing of the level component, the beta parameter controls the smoothing of the trend component, and the gamma parameter controls the smoothing of the multiplicative seasonal component.</p>
+<p>The forecasting process involves three steps: first, the level, trend, and seasonal components are estimated using the smoothing parameters and the historical data; second, these components are used to forecast future values of the time series; and third, the forecasted values are adjusted for the seasonal component using a multiplicative factor.</p>
+<p>One of the advantages of Holt-Winters’ multiplicative method is that it can handle time series data with a multiplicative seasonality component, which is common in many real-world applications. The method is also easy to implement and can be extended to handle time series data with changing seasonal patterns.</p>
+<p>However, the method has some limitations. It assumes that the seasonality pattern is multiplicative, which may not be the case for all time series. Additionally, the method requires a sufficient amount of historical data to accurately estimate the smoothing parameters and the seasonal component.</p>
+<p>Overall, Holt-Winters’ multiplicative method is a powerful and widely used forecasting technique that can be used to generate accurate predictions for time series data with a multiplicative seasonality component. The method is easy to implement and can be extended to handle time series data with changing seasonal patterns.</p>
+<p>In the multiplicative version, the seasonality averages to one. Use the multiplicative method if the seasonal variation increases with the level.</p>
+<p><span class="math display">\[\begin{align*}
+  \hat{y}_{t+h|t} &amp;= (\ell_{t} + hb_{t})s_{t+h-m(k+1)} \\
+  \ell_{t} &amp;= \alpha \frac{y_{t}}{s_{t-m}} + (1 - \alpha)(\ell_{t-1} + b_{t-1})\\
+  b_{t} &amp;= \beta^*(\ell_{t}-\ell_{t-1}) + (1 - \beta^*)b_{t-1}                \\
+  s_{t} &amp;= \gamma \frac{y_{t}}{(\ell_{t-1} + b_{t-1})} + (1 - \gamma)s_{t-m}.
+\end{align*}\]</span></p>
+</section>
+<section id="mathematical-models-in-the-ets-taxonomy" class="level3">
+<h3 class="anchored" data-anchor-id="mathematical-models-in-the-ets-taxonomy">Mathematical models in the ETS taxonomy</h3>
+<p>I hope that it becomes more apparent to the reader how the ETS framework is built upon the idea of time series decomposition. By introducing different components, defining their types, and adding the equations for their update, we can construct models that would work better in capturing the key features of the time series. But we should also consider the potential change in components over time. The “transition” or “state” equations are supposed to reflect this change: they explain how the level, trend or seasonal components evolve.</p>
+<p>As discussed in Section 2.2, given different types of components and their interactions, we end up with 30 models in the taxonomy. Tables 1 and 2 summarise mathematically all 30 ETS models shown graphically on Figures 1 and 2, presenting formulae for measurement and transition equations.</p>
+Table 1: Additive error ETS models | | Nonseasonal |Additive |Multiplicative| |—-|———–|———–|————–| |No trend|$
+<span class="math display">\[\begin{aligned} &amp;y_{t} = l_{t-1} + \epsilon_t \\  &amp;l_t = l_{t-1} + \alpha \epsilon_t  \end{aligned}\]</span>
+$ |<span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} + s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} + \alpha \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}\)</span> |<span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &amp;s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1}} \end{aligned}\)</span>| |Additive| <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} + b_{t-1} + \epsilon_t \\ &amp;l_t = l_{t-1} + b_{t-1} + \alpha \epsilon_t \\ &amp;b_t = b_{t-1} + \beta \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} + b_{t-1} + s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} + b_{t-1} + \alpha \epsilon_t \\ &amp;b_t = b_{t-1} + \beta \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + b_{t-1}) s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} + b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &amp;b_t = b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\ &amp;s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + b_{t-1}} \end{aligned}\)</span>| |Additive damped| <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} + \phi b_{t-1} + \epsilon_t \\ &amp;l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\ &amp;b_t = \phi b_{t-1} + \beta \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} + \phi b_{t-1} + s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\ &amp;b_t = \phi b_{t-1} + \beta \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} + \phi b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &amp;b_t = \phi b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\ &amp;s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + \phi b_{t-1}} \end{aligned}\)</span>| |Multiplicative| $
+<span class="math display">\[\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1} + \epsilon_t \\  &amp;l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\  &amp;b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}}  \end{aligned}\]</span>
+<p>$ | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1} + s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\ &amp;b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}} \\ &amp;s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1} s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &amp;b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\ &amp;s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}} \end{aligned}\)</span>| |Multiplicative damped| <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1}^\phi + \epsilon_t \\ &amp;l_t = l_{t-1} b_{t-1}^\phi + \alpha \epsilon_t \\ &amp;b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}} \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1}^\phi + s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} b_{t-1}^\phi + \alpha \epsilon_t \\ &amp;b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}} \\ &amp;s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1}^\phi s_{t-m} + \epsilon_t \\ &amp;l_t = l_{t-1} b_{t-1}^\phi + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &amp;b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\ &amp;s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}} \end{aligned}\)</span>|</p>
+<p>Table 2: Multiplicative error ETS models | |Nonseasonal |Additive |Multiplicative| |——|————-|———-|————–| |No trend| <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1}(1 + \epsilon_t) \\ &amp;l_t = l_{t-1}(1 + \alpha \epsilon_t) \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + s_{t-m})(1 + \epsilon_t) \\ &amp;l_t = l_{t-1} + \alpha \mu_{y,t} \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} s_{t-m}(1 + \epsilon_t) \\ &amp;l_t = l_{t-1}(1 + \alpha \epsilon_t) \\ &amp;s_t = s_{t-m}(1 + \gamma \epsilon_t) \end{aligned}\)</span>| |Additive| <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + b_{t-1})(1 + \epsilon_t) \\ &amp;l_t = (l_{t-1} + b_{t-1})(1 + \alpha \epsilon_t) \\ &amp;b_t = b_{t-1} + \beta \mu_{y,t} \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + b_{t-1} + s_{t-m})(1 + \epsilon_t) \\ &amp;l_t = l_{t-1} + b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\ &amp;b_t = b_{t-1} + \beta \mu_{y,t} \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + b_{t-1}) s_{t-m}(1 + \epsilon_t) \\ &amp;l_t = (l_{t-1} + b_{t-1})(1 + \alpha \epsilon_t) \\ &amp;b_t = b_{t-1} + \beta (l_{t-1} + b_{t-1}) \epsilon_t \\ &amp;s_t = s_{t-m} (1 + \gamma \epsilon_t) \end{aligned}\)</span>| |Additive damped| <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + \phi b_{t-1})(1 + \epsilon_t) \\ &amp;l_t = (l_{t-1} + \phi b_{t-1})(1 + \alpha \epsilon_t) \\ &amp;b_t = \phi b_{t-1} + \beta \mu_{y,t} \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + \phi b_{t-1} + s_{t-m})(1 + \epsilon_t) \\ &amp;l_t = l_{t-1} + \phi b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\ &amp;b_t = \phi b_{t-1} + \beta \mu_{y,t} \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m}(1 + \epsilon_t) \\ &amp;l_t = l_{t-1} + \phi b_{t-1} (1 + \alpha \epsilon_t) \\ &amp;b_t = \phi b_{t-1} + \beta (l_{t-1} + \phi b_{t-1}) \epsilon_t \\ &amp;s_t = s_{t-m}(1 + \gamma \epsilon_t) \end{aligned}\)</span>| |Multiplicative| <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1} (1 + \epsilon_t) \\ &amp;l_t = l_{t-1} b_{t-1} (1 + \alpha \epsilon_t) \\ &amp;b_t = b_{t-1} (1 + \beta \epsilon_t) \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} b_{t-1} + s_{t-m})(1 + \epsilon_t) \\ &amp;l_t = l_{t-1} b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\ &amp;b_t = b_{t-1} + \beta \frac{\mu_{y,t}}{l_{t-1}} \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t \end{aligned}\)</span>| <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1} s_{t-m} (1 + \epsilon_t) \\ &amp;l_t = l_{t-1} b_{t-1} (1 + \alpha \epsilon_t) \\ &amp;b_t = b_{t-1} (1 + \beta \epsilon_t) \\ &amp;s_t = s_{t-m} (1 + \gamma \epsilon_t) \end{aligned}\)</span>| |Multiplicative damped| <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1}^\phi (1 + \epsilon_t) \\ &amp;l_t = l_{t-1} b_{t-1}^\phi (1 + \alpha \epsilon_t) \\ &amp;b_t = b_{t-1}^\phi (1 + \beta \epsilon_t) \end{aligned}\)</span>| <span class="math inline">\(\begin{aligned} &amp;y_{t} = (l_{t-1} b_{t-1}^\phi + s_{t-m})(1 + \epsilon_t) \\ &amp;l_t = l_{t-1} b_{t-1}^\phi + \alpha \mu_{y,t} \epsilon_t \\ &amp;b_t = b_{t-1}^\phi + \beta \frac{\mu_{y,t}}{l_{t-1}} \epsilon_t \\ &amp;s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t \end{aligned}\)</span> | <span class="math inline">\(\begin{aligned} &amp;y_{t} = l_{t-1} b_{t-1}^\phi s_{t-m} (1 + \epsilon_t) \\ &amp;l_t = l_{t-1} b_{t-1}^\phi \left(1 + \alpha \epsilon_t\right) \\ &amp;b_t = b_{t-1}^\phi \left(1 + \beta \epsilon_t\right) \\ &amp;s_t = s_{t-m} \left(1 + \gamma \epsilon_t\right) \end{aligned}\)</span>|</p>
+<p>From a statistical point of view, formulae in Tables 1 and 2 correspond to the “true models”, they explain the models underlying potential data, but when it comes to their construction and estimation, the <span class="math inline">\(\epsilon_t\)</span> is substituted by the estimated <span class="math inline">\(e_t\)</span> (which is calculated differently depending on the error type), and time series components and smoothing parameters are also replaced by their estimates (e.g.&nbsp;<span class="math inline">\(\hat \alpha\)</span> instead of <span class="math inline">\(\alpha\)</span>). However, if the values of these models’ parameters were known, it would be possible to produce point forecasts and conditional h steps ahead expectations from these models.</p>
+</section>
+<section id="model-selection" class="level3">
+<h3 class="anchored" data-anchor-id="model-selection">Model selection</h3>
+<p>A great advantage of the <code>Holt Winters</code> statistical framework is that information criteria can be used for model selection. The <code>AIC, AIC_c</code> and <code>BIC</code>, can be used here to determine which of the <code>Holt Winters</code> models is most appropriate for a given time series.</p>
+<p>For <code>Holt Winters</code> models, Akaike’s Information Criterion (<code>AIC)</code> is defined as</p>
+<p><span class="math display">\[\text{AIC} = -2\log(L) + 2k,\]</span></p>
+<p>where <span class="math inline">\(L\)</span> is the likelihood of the model and <span class="math inline">\(k\)</span> is the total number of parameters and initial states that have been estimated (including the residual variance).</p>
+<p>The <code>AIC</code> corrected for small sample bias <code>(AIC_c)</code> is defined as</p>
+<p><span class="math display">\[AIC_c = AIC + \frac{2k(k+1)}{T-k-1}\]</span></p>
+<p>and the Bayesian Information Criterion <code>(BIC)</code> is</p>
+<p><span class="math display">\[\text{BIC} = \text{AIC} + k[\log(T)-2]\]</span></p>
+<p>Three of the combinations of (Error, Trend, Seasonal) can lead to numerical difficulties. Specifically, the models that can cause such instabilities are <code>ETS(A,N,M), ETS(A,A,M)</code>, and <code>ETS(A,Ad,M)</code>, due to division by values potentially close to zero in the state equations. We normally do not consider these particular combinations when selecting a model.</p>
+<p>Models with multiplicative errors are useful when the data are strictly positive, but are not numerically stable when the data contain zeros or negative values. Therefore, multiplicative error models will not be considered if the time series is not strictly positive. In that case, only the six fully additive models will be applied.</p>
+</section>
+</section>
+<section id="loading-libraries-and-data" class="level2">
+<h2 class="anchored" data-anchor-id="loading-libraries-and-data">Loading libraries and data <a class="anchor" id="loading"></a></h2>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Statsforecast will be needed. To install, see <a href="../../docs/getting-started/installation.html">instructions</a>.</p>
+</div>
+</div>
+<p>Next, we import plotting libraries and configure the plotting style.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.graphics.tsaplots <span class="im">import</span> plot_acf, plot_pacf</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'grayscale'</span>) <span class="co"># fivethirtyeight  grayscale  classic</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'lines.linewidth'</span>] <span class="op">=</span> <span class="fl">1.5</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>dark_style <span class="op">=</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">'figure.facecolor'</span>: <span class="st">'#008080'</span>,  <span class="co"># #212946</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.facecolor'</span>: <span class="st">'#008080'</span>,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'savefig.facecolor'</span>: <span class="st">'#008080'</span>,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.grid'</span>: <span class="va">True</span>,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.grid.which'</span>: <span class="st">'both'</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.left'</span>: <span class="va">False</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.right'</span>: <span class="va">False</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.top'</span>: <span class="va">False</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.bottom'</span>: <span class="va">False</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'grid.color'</span>: <span class="st">'#000000'</span>,  <span class="co">#2A3459</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'grid.linewidth'</span>: <span class="st">'1'</span>,</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'text.color'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.labelcolor'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'xtick.color'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ytick.color'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'font.size'</span>: <span class="dv">12</span> }</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update(dark_style)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pylab <span class="im">import</span> rcParams</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>rcParams[<span class="st">'figure.figsize'</span>] <span class="op">=</span> (<span class="dv">18</span>,<span class="dv">7</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="read-data" class="level3">
+<h3 class="anchored" data-anchor-id="read-data">Read Data</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span>pd.read_csv(<span class="st">"https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/ads.csv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Time</th>
+<th data-quarto-table-cell-role="th">Ads</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>2017-09-13T00:00:00</td>
+<td>80115</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13T01:00:00</td>
+<td>79885</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2017-09-13T02:00:00</td>
+<td>89325</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>2017-09-13T03:00:00</td>
+<td>101930</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2017-09-13T04:00:00</td>
+<td>121630</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>The input to StatsForecast is always a data frame in long format with three columns: unique_id, ds and y:</p>
+<ul>
+<li><p>The <code>unique_id</code> (string, int or category) represents an identifier for the series.</p></li>
+<li><p>The <code>ds</code> (datestamp) column should be of a format expected by Pandas, ideally YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.</p></li>
+<li><p>The <code>y</code> (numeric) represents the measurement we wish to forecast.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">"unique_id"</span>]<span class="op">=</span><span class="st">"1"</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>df.columns<span class="op">=</span>[<span class="st">"ds"</span>, <span class="st">"y"</span>, <span class="st">"unique_id"</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">y</th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>2017-09-13T00:00:00</td>
+<td>80115</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13T01:00:00</td>
+<td>79885</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2017-09-13T02:00:00</td>
+<td>89325</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>2017-09-13T03:00:00</td>
+<td>101930</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2017-09-13T04:00:00</td>
+<td>121630</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(df.dtypes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ds           object
+y             int64
+unique_id    object
+dtype: object</code></pre>
+</div>
+</div>
+<p>We can see that our time variable <code>(ds)</code> is in an object format, we need to convert to a date format</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">"ds"</span>] <span class="op">=</span> pd.to_datetime(df[<span class="st">"ds"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="explore-data-with-the-plot-method" class="level2">
+<h2 class="anchored" data-anchor-id="explore-data-with-the-plot-method">Explore Data with the plot method <a class="anchor" id="plotting"></a></h2>
+<p>Plot some series using the plot method from the StatsForecast class. This method prints a random series from the dataset and is useful for basic EDA.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsforecast <span class="im">import</span> StatsForecast</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>StatsForecast.plot(df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-7-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<section id="the-augmented-dickey-fuller-test" class="level3">
+<h3 class="anchored" data-anchor-id="the-augmented-dickey-fuller-test">The Augmented Dickey-Fuller Test</h3>
+<p>An Augmented Dickey-Fuller (ADF) test is a type of statistical test that determines whether a unit root is present in time series data. Unit roots can cause unpredictable results in time series analysis. A null hypothesis is formed in the unit root test to determine how strongly time series data is affected by a trend. By accepting the null hypothesis, we accept the evidence that the time series data is not stationary. By rejecting the null hypothesis or accepting the alternative hypothesis, we accept the evidence that the time series data is generated by a stationary process. This process is also known as stationary trend. The values of the ADF test statistic are negative. Lower ADF values indicate a stronger rejection of the null hypothesis.</p>
+<p>Augmented Dickey-Fuller Test is a common statistical test used to test whether a given time series is stationary or not. We can achieve this by defining the null and alternate hypothesis.</p>
+<ul>
+<li><p>Null Hypothesis: Time Series is non-stationary. It gives a time-dependent trend.</p></li>
+<li><p>Alternate Hypothesis: Time Series is stationary. In another term, the series doesn’t depend on time.</p></li>
+<li><p>ADF or t Statistic &lt; critical values: Reject the null hypothesis, time series is stationary.</p></li>
+<li><p>ADF or t Statistic &gt; critical values: Failed to reject the null hypothesis, time series is non-stationary.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.tsa.stattools <span class="im">import</span> adfuller</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Augmented_Dickey_Fuller_Test_func(series , column_name):</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span> (<span class="ss">f'Dickey-Fuller test results for columns: </span><span class="sc">{</span>column_name<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    dftest <span class="op">=</span> adfuller(series, autolag<span class="op">=</span><span class="st">'AIC'</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    dfoutput <span class="op">=</span> pd.Series(dftest[<span class="dv">0</span>:<span class="dv">4</span>], index<span class="op">=</span>[<span class="st">'Test Statistic'</span>,<span class="st">'p-value'</span>,<span class="st">'No Lags Used'</span>,<span class="st">'Number of observations used'</span>])</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> key,value <span class="kw">in</span> dftest[<span class="dv">4</span>].items():</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        dfoutput[<span class="st">'Critical Value (</span><span class="sc">%s</span><span class="st">)'</span><span class="op">%</span>key] <span class="op">=</span> value</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span> (dfoutput)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> dftest[<span class="dv">1</span>] <span class="op">&lt;=</span> <span class="fl">0.05</span>:</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"Conclusion:====&gt;"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"Reject the null hypothesis"</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"The data is stationary"</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"Conclusion:====&gt;"</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"The null hypothesis cannot be rejected"</span>)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="st">"The data is not stationary"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>Augmented_Dickey_Fuller_Test_func(df[<span class="st">"y"</span>],<span class="st">'Ads'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dickey-Fuller test results for columns: Ads
+Test Statistic         -7.089634e+00
+p-value                 4.444804e-10
+No Lags Used            9.000000e+00
+                            ...     
+Critical Value (1%)    -3.462499e+00
+Critical Value (5%)    -2.875675e+00
+Critical Value (10%)   -2.574304e+00
+Length: 7, dtype: float64
+Conclusion:====&gt;
+Reject the null hypothesis
+The data is stationary</code></pre>
+</div>
+</div>
+</section>
+<section id="autocorrelation-plots" class="level3">
+<h3 class="anchored" data-anchor-id="autocorrelation-plots">Autocorrelation plots</h3>
+<p><strong>Autocorrelation Function</strong></p>
+<p><strong>Definition 1.</strong> Let <span class="math inline">\(\{x_t;1 ≤ t ≤ n\}\)</span> be a time series sample of size n from <span class="math inline">\(\{X_t\}\)</span>. 1. <span class="math inline">\(\bar x = \sum_{t=1}^n \frac{x_t}{n}\)</span> is called the sample mean of <span class="math inline">\(\{X_t\}\)</span>. 2. <span class="math inline">\(c_k =\sum_{t=1}^{n−k} (x_{t+k}- \bar x)(x_t−\bar x)/n\)</span> is known as the sample autocovariance function of <span class="math inline">\(\{X_t\}\)</span>. 3. <span class="math inline">\(r_k = c_k /c_0\)</span> is said to be the sample autocorrelation function of <span class="math inline">\(\{X_t\}\)</span>.</p>
+<p>Note the following remarks about this definition:</p>
+<ul>
+<li><p>Like most literature, this guide uses ACF to denote the sample autocorrelation function as well as the autocorrelation function. What is denoted by ACF can easily be identified in context.</p></li>
+<li><p>Clearly c0 is the sample variance of <span class="math inline">\(\{X_t\}\)</span>. Besides, <span class="math inline">\(r_0 = c_0/c_0 = 1\)</span> and for any integer <span class="math inline">\(k, |r_k| ≤ 1\)</span>.</p></li>
+<li><p>When we compute the ACF of any sample series with a fixed length <span class="math inline">\(n\)</span>, we cannot put too much confidence in the values of <span class="math inline">\(r_k\)</span> for large k’s, since fewer pairs of <span class="math inline">\((x_{t +k }, x_t )\)</span> are available for calculating <span class="math inline">\(r_k\)</span> as <span class="math inline">\(k\)</span> is large. One rule of thumb is not to estimate <span class="math inline">\(r_k\)</span> for <span class="math inline">\(k &gt; n/3\)</span>, and another is <span class="math inline">\(n ≥ 50, k ≤ n/4\)</span>. In any case, it is always a good idea to be careful.</p></li>
+<li><p>We also compute the ACF of a nonstationary time series sample by Definition 1. In this case, however, the ACF or <span class="math inline">\(r_k\)</span> very slowly or hardly tapers off as <span class="math inline">\(k\)</span> increases.</p></li>
+<li><p>Plotting the ACF <span class="math inline">\((r_k)\)</span> against lag <span class="math inline">\(k\)</span> is easy but very helpful in analyzing time series sample. Such an ACF plot is known as a correlogram.</p></li>
+<li><p>If <span class="math inline">\(\{X_t\}\)</span> is stationary with <span class="math inline">\(E(X_t)=0\)</span> and <span class="math inline">\(\rho_k =0\)</span> for all <span class="math inline">\(k \neq 0\)</span>,thatis,itisa white noise series, then the sampling distribution of <span class="math inline">\(r_k\)</span> is asymptotically normal with the mean 0 and the variance of <span class="math inline">\(1/n\)</span>. Hence, there is about 95% chance that <span class="math inline">\(r_k\)</span> falls in the interval <span class="math inline">\([−1.96/√n, 1.96/√n]\)</span>.</p></li>
+</ul>
+<p>Now we can give a summary that (1) if the time series plot of a time series clearly shows a trend or/and seasonality, it is surely nonstationary; (2) if the ACF <span class="math inline">\(r_k\)</span> very slowly or hardly tapers off as lag <span class="math inline">\(k\)</span> increases, the time series should also be nonstationary.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(nrows<span class="op">=</span><span class="dv">1</span>, ncols<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>plot_acf(df[<span class="st">"y"</span>],  lags<span class="op">=</span><span class="dv">30</span>, ax<span class="op">=</span>axs[<span class="dv">0</span>],color<span class="op">=</span><span class="st">"fuchsia"</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>].set_title(<span class="st">"Autocorrelation"</span>)<span class="op">;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>plot_pacf(df[<span class="st">"y"</span>],  lags<span class="op">=</span><span class="dv">30</span>, ax<span class="op">=</span>axs[<span class="dv">1</span>],color<span class="op">=</span><span class="st">"lime"</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">1</span>].set_title(<span class="st">'Partial Autocorrelation'</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>plt.show()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-10-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="decomposition-of-the-time-series" class="level3">
+<h3 class="anchored" data-anchor-id="decomposition-of-the-time-series">Decomposition of the time series</h3>
+<p>How to decompose a time series and why?</p>
+<p>In time series analysis to forecast new values, it is very important to know past data. More formally, we can say that it is very important to know the patterns that values follow over time. There can be many reasons that cause our forecast values to fall in the wrong direction. Basically, a time series consists of four components. The variation of those components causes the change in the pattern of the time series. These components are:</p>
+<ul>
+<li><strong>Level:</strong> This is the primary value that averages over time.</li>
+<li><strong>Trend:</strong> The trend is the value that causes increasing or decreasing patterns in a time series.</li>
+<li><strong>Seasonality:</strong> This is a cyclical event that occurs in a time series for a short time and causes short-term increasing or decreasing patterns in a time series.</li>
+<li><strong>Residual/Noise:</strong> These are the random variations in the time series.</li>
+</ul>
+<p>Combining these components over time leads to the formation of a time series. Most time series consist of level and noise/residual and trend or seasonality are optional values.</p>
+<p>If seasonality and trend are part of the time series, then there will be effects on the forecast value. As the pattern of the forecasted time series may be different from the previous time series.</p>
+<p>The combination of the components in time series can be of two types: * Additive * Multiplicative</p>
+</section>
+<section id="additive-time-series" class="level3">
+<h3 class="anchored" data-anchor-id="additive-time-series">Additive time series</h3>
+<p>If the components of the time series are added to make the time series. Then the time series is called the additive time series. By visualization, we can say that the time series is additive if the increasing or decreasing pattern of the time series is similar throughout the series. The mathematical function of any additive time series can be represented by: <span class="math display">\[y(t) = level + Trend + seasonality + noise\]</span></p>
+</section>
+<section id="multiplicative-time-series" class="level3">
+<h3 class="anchored" data-anchor-id="multiplicative-time-series">Multiplicative time series</h3>
+<p>If the components of the time series are multiplicative together, then the time series is called a multiplicative time series. For visualization, if the time series is having exponential growth or decline with time, then the time series can be considered as the multiplicative time series. The mathematical function of the multiplicative time series can be represented as.</p>
+<p><span class="math display">\[y(t) = Level * Trend * seasonality * Noise\]</span></p>
+</section>
+<section id="additive" class="level3">
+<h3 class="anchored" data-anchor-id="additive">Additive</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.tsa.seasonal <span class="im">import</span> seasonal_decompose </span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> seasonal_decompose(df[<span class="st">"y"</span>], model <span class="op">=</span> <span class="st">"additive"</span>, period<span class="op">=</span><span class="dv">24</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>a.plot()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-11-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="multiplicative" class="level3">
+<h3 class="anchored" data-anchor-id="multiplicative">Multiplicative</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.tsa.seasonal <span class="im">import</span> seasonal_decompose </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> seasonal_decompose(df[<span class="st">"y"</span>], model <span class="op">=</span> <span class="st">"Multiplicative"</span>, period<span class="op">=</span><span class="dv">24</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>a.plot()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-12-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="split-the-data-into-training-and-testing" class="level2">
+<h2 class="anchored" data-anchor-id="split-the-data-into-training-and-testing">Split the data into training and testing<a class="anchor" id="splitting"></a></h2>
+<p>Let’s divide our data into sets</p>
+<ol type="1">
+<li>Data to train our <code>Holt Winters Model</code>.</li>
+<li>Data to test our model</li>
+</ol>
+<p>For the test data we will use the last 30 hours to test and evaluate the performance of our model.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> df[df.ds<span class="op">&lt;=</span><span class="st">'2017-09-20 17:00:00'</span>] </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>test <span class="op">=</span> df[df.ds<span class="op">&gt;</span><span class="st">'2017-09-20 17:00:00'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>train.shape, test.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>((186, 3), (30, 3))</code></pre>
+</div>
+</div>
+<p>Now let’s plot the training data and the test data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sns.lineplot(train,x<span class="op">=</span><span class="st">"ds"</span>, y<span class="op">=</span><span class="st">"y"</span>, label<span class="op">=</span><span class="st">"Train"</span>, linestyle<span class="op">=</span><span class="st">"--"</span>,linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>sns.lineplot(test, x<span class="op">=</span><span class="st">"ds"</span>, y<span class="op">=</span><span class="st">"y"</span>, label<span class="op">=</span><span class="st">"Test"</span>, linewidth<span class="op">=</span><span class="dv">2</span>, color<span class="op">=</span><span class="st">"yellow"</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Ads watched (hourly data)"</span>)<span class="op">;</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-15-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="implementation-of-holt-winters-method-with-statsforecast" class="level2">
+<h2 class="anchored" data-anchor-id="implementation-of-holt-winters-method-with-statsforecast">Implementation of Holt-Winters Method with StatsForecast <a class="anchor" id="implementation"></a></h2>
+<p>To also know more about the parameters of the functions of the <code>Holt-Winters Model</code>, they are listed below. For more information, visit the <a href="https://nixtla.github.io/statsforecast/src/core/models.html#holt-winters-method">documentation</a>.</p>
+<pre><code>season_length : int
+    Number of observations per unit of time. Ex: 12 Monthly data.
+error_type : str
+    The type of error of the ETS model. Can be additive (A) or multiplicative (M).
+alias : str
+    Custom name of the model.
+prediction_intervals : Optional[ConformalIntervals]
+    Information to compute conformal prediction intervals.
+    By default, the model will compute the native prediction
+    intervals.</code></pre>
+<section id="load-libraries" class="level3">
+<h3 class="anchored" data-anchor-id="load-libraries">Load libraries</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsforecast <span class="im">import</span> StatsForecast</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsforecast.models <span class="im">import</span> HoltWinters</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="instantiating-model" class="level3">
+<h3 class="anchored" data-anchor-id="instantiating-model">Instantiating Model</h3>
+<p>Import and instantiate the models. Setting the argument is sometimes tricky. This article on <a href="https://robjhyndman.com/hyndsight/seasonal-periods/">Seasonal periods</a> by the master, Rob Hyndmann, can be useful for <code>season_length</code>.</p>
+<p>In this case we are going to test two alternatives of the model, one additive and one multiplicative.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>season_length <span class="op">=</span> <span class="dv">24</span> <span class="co"># Hourly data </span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>horizon <span class="op">=</span> <span class="bu">len</span>(test) <span class="co"># number of predictions</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>models <span class="op">=</span> [HoltWinters(season_length<span class="op">=</span>season_length, error_type<span class="op">=</span><span class="st">"A"</span>, alias<span class="op">=</span><span class="st">"Add"</span>),</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>          HoltWinters(season_length<span class="op">=</span>season_length, error_type<span class="op">=</span><span class="st">"M"</span>, alias<span class="op">=</span><span class="st">"Multi"</span>)]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We fit the models by instantiating a new StatsForecast object with the following parameters:</p>
+<p>models: a list of models. Select the models you want from models and import them.</p>
+<ul>
+<li><p><code>freq:</code> a string indicating the frequency of the data. (See <a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases">panda’s available frequencies</a>.)</p></li>
+<li><p><code>n_jobs:</code> n_jobs: int, number of jobs used in the parallel processing, use -1 for all cores.</p></li>
+<li><p><code>fallback_model:</code> a model to be used if a model fails.</p></li>
+</ul>
+<p>Any settings are passed into the constructor. Then you call its fit method and pass in the historical data frame.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>sf <span class="op">=</span> StatsForecast(df<span class="op">=</span>df,</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                   models<span class="op">=</span>models,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>                   freq<span class="op">=</span><span class="st">'H'</span>, </span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>                   n_jobs<span class="op">=-</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="fit-the-model" class="level3">
+<h3 class="anchored" data-anchor-id="fit-the-model">Fit the Model</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>sf.fit()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>StatsForecast(models=[Add,Multi])</code></pre>
+</div>
+</div>
+<p>Let’s see the results of our <code>Holt Winters Model</code>. We can observe it with the following instruction:</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>result<span class="op">=</span>sf.fitted_[<span class="dv">0</span>,<span class="dv">0</span>].model_</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result.keys())</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">'fit'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>dict_keys(['loglik', 'aic', 'bic', 'aicc', 'mse', 'amse', 'fit', 'residuals', 'components', 'm', 'nstate', 'fitted', 'states', 'par', 'sigma2', 'n_params', 'method', 'actual_residuals'])
+results(x=array([ 2.44373452e-02,  1.38129692e-03,  3.10806480e-02,  8.90103969e-01,
+        1.24049460e+05, -8.68954810e+01, -3.89677433e+04, -2.62776804e+04,
+       -1.53306670e+04,  1.04556014e+04,  3.40799540e+04,  3.61115645e+04,
+        2.95135877e+04,  2.70191012e+04,  2.61439737e+04,  2.73344984e+04,
+        2.70239387e+04,  2.94934401e+04,  2.12740663e+04,  4.02181550e+03,
+       -7.08633837e+03, -1.29309441e+04, -1.23216723e+04, -9.32780505e+03,
+       -3.92528658e+03, -1.18781713e+03, -2.43122964e+04, -3.56913114e+04,
+       -4.32670579e+04]), fn=5078.452315148393, nit=1000, simplex=array([[ 2.40487996e-02,  1.40159178e-03,  2.98715521e-02,
+         8.89367428e-01,  1.23345215e+05, -8.56751447e+01,
+        -3.94103267e+04, -2.58132744e+04, -1.46476758e+04,
+         1.04203903e+04,  3.50465498e+04,  3.59654863e+04,
+         2.93863399e+04,  2.77527548e+04,  2.63918127e+04,
+         2.74059591e+04,  2.59885977e+04,  2.94583381e+04,
+         2.19996508e+04,  4.22020655e+03, -7.12092088e+03,
+        -1.29452569e+04, -1.21734962e+04, -9.28051739e+03,
+        -4.09832793e+03, -1.22159944e+03, -2.40047026e+04,
+        -3.59264081e+04, -4.37141281e+04],
+       [ 2.30584659e-02,  1.29870085e-03,  3.23295869e-02,
+         8.95699018e-01,  1.23226757e+05, -8.51134029e+01,
+        -3.94188347e+04, -2.66463805e+04, -1.46040706e+04,
+         1.00508287e+04,  3.48121192e+04,  3.66574880e+04,
+         2.95156329e+04,  2.75214239e+04,  2.61766232e+04,
+         2.70638403e+04,  2.59821671e+04,  2.92220715e+04,
+         2.15353216e+04,  4.11207780e+03, -7.26888692e+03,
+        -1.31025981e+04, -1.24323871e+04, -9.46450899e+03,
+        -3.87523173e+03, -1.29619824e+03, -2.48262400e+04,
+        -3.65297643e+04, -4.26697834e+04],
+       [ 2.38566990e-02,  1.38393698e-03,  2.86485845e-02,
+         8.91732054e-01,  1.22667885e+05, -8.63064081e+01,
+        -3.95610795e+04, -2.64459058e+04, -1.50401318e+04,
+         1.03748608e+04,  3.46772905e+04,  3.61258281e+04,
+         3.03028728e+04,  2.71476029e+04,  2.59766785e+04,
+         2.83781299e+04,  2.62171593e+04,  2.87088506e+04,
+         2.11399641e+04,  4.26251638e+03, -6.86374732e+03,
+        -1.30572982e+04, -1.25961133e+04, -9.28515605e+03,
+        -3.92065232e+03, -1.29918039e+03, -2.41322902e+04,
+        -3.62733255e+04, -4.35070867e+04],
+       [ 2.27798959e-02,  1.34604573e-03,  3.14497882e-02,
+         8.97672321e-01,  1.23457441e+05, -8.39505753e+01,
+        -3.84752143e+04, -2.70271535e+04, -1.51565030e+04,
+         1.01558921e+04,  3.56374371e+04,  3.57659522e+04,
+         2.92214649e+04,  2.64450530e+04,  2.59612798e+04,
+         2.79127971e+04,  2.65311803e+04,  2.95053263e+04,
+         2.20459941e+04,  4.27175853e+03, -7.11671275e+03,
+        -1.28483284e+04, -1.20024908e+04, -9.14008142e+03,
+        -3.94099609e+03, -1.27913818e+03, -2.43917933e+04,
+        -3.59036544e+04, -4.37145499e+04],
+       [ 2.29779847e-02,  1.35988450e-03,  3.20546039e-02,
+         8.97392076e-01,  1.23999353e+05, -8.57416139e+01,
+        -3.86796082e+04, -2.61112159e+04, -1.46410300e+04,
+         1.00447411e+04,  3.46746838e+04,  3.56015924e+04,
+         2.92653819e+04,  2.72512111e+04,  2.64957723e+04,
+         2.82119577e+04,  2.61112530e+04,  2.90487409e+04,
+         2.15387214e+04,  4.05550604e+03, -6.88742058e+03,
+        -1.28509450e+04, -1.21550165e+04, -9.26733160e+03,
+        -4.09280472e+03, -1.31561243e+03, -2.42237989e+04,
+        -3.58787629e+04, -4.36947890e+04],
+       [ 2.34931397e-02,  1.36066473e-03,  2.92309535e-02,
+         8.94631252e-01,  1.23220366e+05, -7.99821563e+01,
+        -3.97471338e+04, -2.62212988e+04, -1.54426040e+04,
+         1.01804753e+04,  3.45628830e+04,  3.61783359e+04,
+         2.83321227e+04,  2.75443313e+04,  2.65554748e+04,
+         2.85866656e+04,  2.65994443e+04,  2.99352483e+04,
+         2.12904274e+04,  4.19579939e+03, -7.04756866e+03,
+        -1.35378259e+04, -1.21517302e+04, -9.38313255e+03,
+        -3.93098135e+03, -1.23125948e+03, -2.43161758e+04,
+        -3.56808651e+04, -4.30934906e+04],
+       [ 2.34226303e-02,  1.36919062e-03,  3.05044515e-02,
+         8.93651006e-01,  1.22119669e+05, -8.45830782e+01,
+        -3.83859519e+04, -2.66545546e+04, -1.46663235e+04,
+         1.03044558e+04,  3.37863355e+04,  3.58787384e+04,
+         2.98614652e+04,  2.79521053e+04,  2.65483349e+04,
+         2.80130243e+04,  2.67030580e+04,  2.95716350e+04,
+         2.13867299e+04,  4.20532353e+03, -7.19231268e+03,
+        -1.29869745e+04, -1.22214265e+04, -9.35200831e+03,
+        -3.99601887e+03, -1.25191151e+03, -2.45210288e+04,
+        -3.55315031e+04, -4.33561528e+04],
+       [ 2.33686092e-02,  1.38777500e-03,  3.05842986e-02,
+         8.95765424e-01,  1.24435621e+05, -8.44258777e+01,
+        -3.95388846e+04, -2.70585507e+04, -1.42279741e+04,
+         1.04108267e+04,  3.41935238e+04,  3.61927880e+04,
+         2.96134192e+04,  2.72521230e+04,  2.63894944e+04,
+         2.73577833e+04,  2.63681631e+04,  2.89873337e+04,
+         2.13122122e+04,  4.27459659e+03, -7.10258507e+03,
+        -1.26644787e+04, -1.22537168e+04, -9.49233627e+03,
+        -4.01010478e+03, -1.23803020e+03, -2.39978907e+04,
+        -3.60888141e+04, -4.29553133e+04],
+       [ 2.34816233e-02,  1.37991019e-03,  3.06089532e-02,
+         8.94874645e-01,  1.23617905e+05, -8.40833189e+01,
+        -3.85116704e+04, -2.63905726e+04, -1.43692871e+04,
+         1.05551899e+04,  3.51276038e+04,  3.58524187e+04,
+         2.94603806e+04,  2.74703366e+04,  2.55213418e+04,
+         2.83361549e+04,  2.60687975e+04,  2.86600785e+04,
+         2.14422052e+04,  4.10932930e+03, -7.16315898e+03,
+        -1.34079834e+04, -1.23877734e+04, -9.20876927e+03,
+        -3.95489699e+03, -1.23349778e+03, -2.47612959e+04,
+        -3.48066942e+04, -4.33211841e+04],
+       [ 2.41575092e-02,  1.39907614e-03,  3.02357059e-02,
+         8.91102368e-01,  1.23794366e+05, -8.48796907e+01,
+        -3.90608848e+04, -2.64189926e+04, -1.45758290e+04,
+         9.86006031e+03,  3.44455393e+04,  3.62279168e+04,
+         2.93705791e+04,  2.75920864e+04,  2.50923293e+04,
+         2.84262381e+04,  2.67984741e+04,  2.89640135e+04,
+         2.16286886e+04,  4.29540433e+03, -7.25171917e+03,
+        -1.29078390e+04, -1.19948534e+04, -9.29963339e+03,
+        -3.99568567e+03, -1.24285574e+03, -2.43650156e+04,
+        -3.65231527e+04, -4.28366363e+04],
+       [ 2.36961761e-02,  1.38273987e-03,  3.10961396e-02,
+         8.93478329e-01,  1.22419456e+05, -8.54817124e+01,
+        -3.83003011e+04, -2.62799796e+04, -1.47684198e+04,
+         1.03088809e+04,  3.52182251e+04,  3.52679730e+04,
+         2.92136442e+04,  2.74002342e+04,  2.61909267e+04,
+         2.78569566e+04,  2.68610704e+04,  2.89820187e+04,
+         2.15006485e+04,  4.28929006e+03, -6.97610950e+03,
+        -1.28970410e+04, -1.24884156e+04, -9.67725756e+03,
+        -3.89959668e+03, -1.20865626e+03, -2.39696630e+04,
+        -3.60623458e+04, -4.25044368e+04],
+       [ 2.33721259e-02,  1.37576033e-03,  3.07287778e-02,
+         8.95381214e-01,  1.23361917e+05, -8.59292902e+01,
+        -3.97494538e+04, -2.59881823e+04, -1.42733538e+04,
+         1.01850859e+04,  3.48288372e+04,  3.50586273e+04,
+         2.97507897e+04,  2.71064540e+04,  2.67061201e+04,
+         2.78353166e+04,  2.65264771e+04,  2.98277569e+04,
+         2.14489843e+04,  4.23889638e+03, -7.08556474e+03,
+        -1.31498142e+04, -1.22079975e+04, -9.28165029e+03,
+        -3.89871487e+03, -1.25831398e+03, -2.48016766e+04,
+        -3.59037067e+04, -4.20714772e+04],
+       [ 2.26415137e-02,  1.34430820e-03,  3.23341885e-02,
+         8.99285053e-01,  1.22878310e+05, -8.53335700e+01,
+        -3.92562952e+04, -2.59721752e+04, -1.48816794e+04,
+         1.00898476e+04,  3.50587088e+04,  3.62440964e+04,
+         2.98438930e+04,  2.79605178e+04,  2.61637574e+04,
+         2.76187001e+04,  2.60357145e+04,  2.90427564e+04,
+         2.07810067e+04,  4.42036847e+03, -7.03406014e+03,
+        -1.26056030e+04, -1.19217451e+04, -8.98726114e+03,
+        -3.90645105e+03, -1.24678256e+03, -2.42136819e+04,
+        -3.58509789e+04, -4.43751915e+04],
+       [ 2.31801372e-02,  1.37749747e-03,  2.93541139e-02,
+         8.95770558e-01,  1.22858350e+05, -8.80052223e+01,
+        -3.86617013e+04, -2.59278016e+04, -1.47751488e+04,
+         1.03042927e+04,  3.41708552e+04,  3.56988813e+04,
+         2.91682837e+04,  2.67894217e+04,  2.58456196e+04,
+         2.70119460e+04,  2.68253248e+04,  2.93127849e+04,
+         2.12248716e+04,  4.22651962e+03, -7.12436510e+03,
+        -1.29474406e+04, -1.21520227e+04, -9.53356225e+03,
+        -3.96352288e+03, -1.27666223e+03, -2.44328890e+04,
+        -3.56137046e+04, -4.35671367e+04],
+       [ 2.30363008e-02,  1.34895700e-03,  3.31052656e-02,
+         8.96994359e-01,  1.23002355e+05, -8.50280976e+01,
+        -3.91939881e+04, -2.63829796e+04, -1.46326214e+04,
+         1.04634298e+04,  3.45295261e+04,  3.54928661e+04,
+         2.95432569e+04,  2.75345263e+04,  2.50916467e+04,
+         2.68369024e+04,  2.68635715e+04,  3.03912706e+04,
+         2.11714956e+04,  4.28329750e+03, -6.90261152e+03,
+        -1.30645780e+04, -1.22326849e+04, -9.08641469e+03,
+        -4.04851644e+03, -1.32494294e+03, -2.38092257e+04,
+        -3.57905204e+04, -4.35116477e+04],
+       [ 2.44373452e-02,  1.38129692e-03,  3.10806480e-02,
+         8.90103969e-01,  1.24049460e+05, -8.68954810e+01,
+        -3.89677433e+04, -2.62776804e+04, -1.53306670e+04,
+         1.04556014e+04,  3.40799540e+04,  3.61115645e+04,
+         2.95135877e+04,  2.70191012e+04,  2.61439737e+04,
+         2.73344984e+04,  2.70239387e+04,  2.94934401e+04,
+         2.12740663e+04,  4.02181550e+03, -7.08633837e+03,
+        -1.29309441e+04, -1.23216723e+04, -9.32780505e+03,
+        -3.92528658e+03, -1.18781713e+03, -2.43122964e+04,
+        -3.56913114e+04, -4.32670579e+04],
+       [ 2.34225937e-02,  1.37504026e-03,  3.20762187e-02,
+         8.94715930e-01,  1.22649715e+05, -8.51815678e+01,
+        -3.92349107e+04, -2.60372086e+04, -1.46713893e+04,
+         1.03940388e+04,  3.42200364e+04,  3.54151977e+04,
+         2.86168968e+04,  2.72219207e+04,  2.65021110e+04,
+         2.77555263e+04,  2.61144978e+04,  2.88679128e+04,
+         2.14504642e+04,  4.26955607e+03, -7.33178601e+03,
+        -1.28672736e+04, -1.23366734e+04, -9.27407389e+03,
+        -3.98684306e+03, -1.26689130e+03, -2.42014964e+04,
+        -3.60431164e+04, -4.35735281e+04],
+       [ 2.30245102e-02,  1.33633606e-03,  3.17433016e-02,
+         8.95865886e-01,  1.23029482e+05, -8.29602756e+01,
+        -3.96755895e+04, -2.63099175e+04, -1.48152395e+04,
+         1.05185870e+04,  3.52063359e+04,  3.52312467e+04,
+         2.99077028e+04,  2.71533181e+04,  2.66237164e+04,
+         2.78798999e+04,  2.74977313e+04,  2.80935898e+04,
+         2.09427481e+04,  4.09547938e+03, -7.09751151e+03,
+        -1.29766286e+04, -1.18250113e+04, -9.54750290e+03,
+        -3.97635927e+03, -1.32445291e+03, -2.43437156e+04,
+        -3.60393575e+04, -4.30058401e+04],
+       [ 2.35957957e-02,  1.31866210e-03,  3.04466963e-02,
+         8.94704385e-01,  1.23506905e+05, -8.81033940e+01,
+        -3.92910011e+04, -2.67861535e+04, -1.43723619e+04,
+         1.02596397e+04,  3.42680222e+04,  3.49198652e+04,
+         2.96607616e+04,  2.71335556e+04,  2.62749412e+04,
+         2.78456008e+04,  2.67384571e+04,  2.90090597e+04,
+         2.21391413e+04,  4.25656010e+03, -6.97489434e+03,
+        -1.31391614e+04, -1.21060497e+04, -9.02606877e+03,
+        -3.96765488e+03, -1.25601904e+03, -2.41311166e+04,
+        -3.64834934e+04, -4.39441979e+04],
+       [ 2.36751650e-02,  1.36543428e-03,  2.91691871e-02,
+         8.94846111e-01,  1.22793505e+05, -8.69820381e+01,
+        -3.90199341e+04, -2.60601993e+04, -1.47352545e+04,
+         1.01516410e+04,  3.51794657e+04,  3.57287886e+04,
+         2.98594202e+04,  2.80104436e+04,  2.60402555e+04,
+         2.73922257e+04,  2.62342050e+04,  2.91820141e+04,
+         2.17442081e+04,  4.06104487e+03, -7.27342325e+03,
+        -1.29440707e+04, -1.20623302e+04, -9.39257599e+03,
+        -4.11688432e+03, -1.22491978e+03, -2.42825476e+04,
+        -3.61681582e+04, -4.31967736e+04],
+       [ 2.36356407e-02,  1.40249143e-03,  3.11055579e-02,
+         8.94345588e-01,  1.22524471e+05, -8.18301894e+01,
+        -3.97067939e+04, -2.64168124e+04, -1.48209981e+04,
+         1.02443748e+04,  3.46517106e+04,  3.60741202e+04,
+         2.94602626e+04,  2.75042300e+04,  2.60176469e+04,
+         2.71780405e+04,  2.62591460e+04,  2.90272777e+04,
+         2.21503102e+04,  4.14004508e+03, -6.53769777e+03,
+        -1.28541437e+04, -1.20646212e+04, -9.61019431e+03,
+        -4.01591048e+03, -1.26480647e+03, -2.51893997e+04,
+        -3.57918334e+04, -4.39872769e+04],
+       [ 2.31857120e-02,  1.35188810e-03,  3.04128998e-02,
+         8.96437230e-01,  1.23431237e+05, -8.47006111e+01,
+        -3.99591747e+04, -2.66301164e+04, -1.49368574e+04,
+         1.04096179e+04,  3.42782255e+04,  3.52664081e+04,
+         2.93964291e+04,  2.71483335e+04,  2.55844710e+04,
+         2.85473780e+04,  2.62439803e+04,  2.95137214e+04,
+         2.16999982e+04,  4.21616087e+03, -7.13754628e+03,
+        -1.20070878e+04, -1.24988683e+04, -9.28901448e+03,
+        -3.95465776e+03, -1.31514929e+03, -2.43986957e+04,
+        -3.54573986e+04, -4.29463528e+04],
+       [ 2.37859054e-02,  1.39168374e-03,  3.09656129e-02,
+         8.93949631e-01,  1.22688446e+05, -8.27726967e+01,
+        -3.85019011e+04, -2.61638638e+04, -1.47580029e+04,
+         1.02622252e+04,  3.44676069e+04,  3.60705301e+04,
+         2.96185616e+04,  2.73176309e+04,  2.65596714e+04,
+         2.75277449e+04,  2.62402989e+04,  2.92453590e+04,
+         2.17648536e+04,  4.23176214e+03, -7.23546281e+03,
+        -1.29448992e+04, -1.21012800e+04, -9.30023489e+03,
+        -3.83220485e+03, -1.35293557e+03, -2.39553815e+04,
+        -3.50787839e+04, -4.32983892e+04],
+       [ 2.31755551e-02,  1.36972669e-03,  3.10073566e-02,
+         8.95714770e-01,  1.23159605e+05, -8.46149210e+01,
+        -3.94983330e+04, -2.62406849e+04, -1.47819273e+04,
+         1.01373745e+04,  3.46650362e+04,  3.63296076e+04,
+         2.87720185e+04,  2.77427498e+04,  2.67639279e+04,
+         2.72905992e+04,  2.74381779e+04,  2.87693629e+04,
+         2.18008833e+04,  4.23717627e+03, -7.10957534e+03,
+        -1.29620482e+04, -1.25000167e+04, -9.03037734e+03,
+        -3.96084115e+03, -1.27278527e+03, -2.43366281e+04,
+        -3.52451140e+04, -4.32780284e+04],
+       [ 2.36133672e-02,  1.35985554e-03,  3.11513958e-02,
+         8.94275972e-01,  1.23447227e+05, -7.88721079e+01,
+        -3.84923510e+04, -2.59996897e+04, -1.50010097e+04,
+         1.02508651e+04,  3.47205430e+04,  3.55858360e+04,
+         3.04894948e+04,  2.62117116e+04,  2.68062560e+04,
+         2.76499265e+04,  2.64629471e+04,  2.93271473e+04,
+         2.09505773e+04,  4.35292061e+03, -7.25190305e+03,
+        -1.28526873e+04, -1.24771698e+04, -8.93110886e+03,
+        -4.29429884e+03, -1.25765558e+03, -2.46098978e+04,
+        -3.55435309e+04, -4.37079615e+04],
+       [ 2.36439940e-02,  1.33889715e-03,  3.01748889e-02,
+         8.94229932e-01,  1.23290474e+05, -8.80150842e+01,
+        -3.88097928e+04, -2.63137034e+04, -1.44499856e+04,
+         1.03428185e+04,  3.49849551e+04,  3.63993785e+04,
+         2.87588452e+04,  2.74069044e+04,  2.61451007e+04,
+         2.81270537e+04,  2.64494936e+04,  2.92261510e+04,
+         2.06734305e+04,  4.38913406e+03, -6.90340334e+03,
+        -1.27939382e+04, -1.19989815e+04, -9.20233589e+03,
+        -4.06279150e+03, -1.35076768e+03, -2.50712735e+04,
+        -3.61164361e+04, -4.28106292e+04],
+       [ 2.38312121e-02,  1.35348442e-03,  3.11372755e-02,
+         8.92879959e-01,  1.23435424e+05, -8.75236266e+01,
+        -3.98877150e+04, -2.63840774e+04, -1.41741810e+04,
+         1.00040238e+04,  3.50671919e+04,  3.62991187e+04,
+         2.94645434e+04,  2.66796707e+04,  2.60886751e+04,
+         2.78872141e+04,  2.65673983e+04,  2.94202012e+04,
+         2.15059513e+04,  4.29327789e+03, -6.99260131e+03,
+        -1.29350082e+04, -1.21356464e+04, -9.63679687e+03,
+        -3.99062189e+03, -1.21073235e+03, -2.41469724e+04,
+        -3.49995291e+04, -4.46667304e+04],
+       [ 2.28820531e-02,  1.34709017e-03,  3.12930885e-02,
+         8.98042023e-01,  1.23363231e+05, -8.40520054e+01,
+        -3.88532804e+04, -2.57281498e+04, -1.43468660e+04,
+         1.04202224e+04,  3.44137444e+04,  3.67956433e+04,
+         2.94663774e+04,  2.69333507e+04,  2.59652714e+04,
+         2.82039633e+04,  2.67333645e+04,  2.91868638e+04,
+         2.16875935e+04,  4.18880730e+03, -7.00016622e+03,
+        -1.28357717e+04, -1.21595618e+04, -9.33735990e+03,
+        -3.90969568e+03, -1.27052486e+03, -2.42933318e+04,
+        -3.69259218e+04, -4.41040622e+04],
+       [ 2.38049951e-02,  1.39030825e-03,  3.06405290e-02,
+         8.92994409e-01,  1.24289098e+05, -8.40140819e+01,
+        -3.85337082e+04, -2.61684441e+04, -1.46993627e+04,
+         1.01634568e+04,  3.47937273e+04,  3.51012725e+04,
+         2.94226408e+04,  2.77672823e+04,  2.62946187e+04,
+         2.75564784e+04,  2.68482111e+04,  2.92367476e+04,
+         2.13296806e+04,  4.24587345e+03, -7.14882503e+03,
+        -1.30628882e+04, -1.22409211e+04, -9.52582674e+03,
+        -3.83384250e+03, -1.23631839e+03, -2.45485642e+04,
+        -3.59539920e+04, -4.45739752e+04],
+       [ 2.37778011e-02,  1.37778734e-03,  3.02599768e-02,
+         8.92655976e-01,  1.22304944e+05, -8.16288959e+01,
+        -3.89852188e+04, -2.65123655e+04, -1.43437856e+04,
+         1.02586834e+04,  3.55133375e+04,  3.57277510e+04,
+         2.93369637e+04,  2.69961210e+04,  2.64681386e+04,
+         2.77244225e+04,  2.68049260e+04,  2.95848184e+04,
+         2.10648643e+04,  4.03875969e+03, -7.09865270e+03,
+        -1.28342462e+04, -1.23781572e+04, -9.07575255e+03,
+        -4.05235581e+03, -1.28589801e+03, -2.43611569e+04,
+        -3.65053195e+04, -4.43511137e+04]]))</code></pre>
+</div>
+</div>
+<p>Let us now visualize the fitted values of our models.</p>
+<p>As we can see, the result obtained above has an output in a dictionary, to extract each element from the dictionary we are going to use the <code>.get()</code> function to extract the element and then we are going to save it in a <code>pd.DataFrame()</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>residual<span class="op">=</span>pd.DataFrame(result.get(<span class="st">"residuals"</span>), columns<span class="op">=</span>[<span class="st">"residual Model"</span>])</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>residual</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">residual Model</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>-2012.193015</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>-699.563899</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1246.127401</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">213</td>
+<td>1355.434583</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">214</td>
+<td>4926.937284</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">215</td>
+<td>2467.814647</td>
+</tr>
+</tbody>
+</table>
+
+<p>216 rows × 1 columns</p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.stats <span class="im">as</span> stats</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(nrows<span class="op">=</span><span class="dv">2</span>, ncols<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>residual.plot(ax<span class="op">=</span>axs[<span class="dv">0</span>,<span class="dv">0</span>])</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>,<span class="dv">0</span>].set_title(<span class="st">"Residuals"</span>)<span class="op">;</span></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>sns.distplot(residual, ax<span class="op">=</span>axs[<span class="dv">0</span>,<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>,<span class="dv">1</span>].set_title(<span class="st">"Density plot - Residual"</span>)<span class="op">;</span></span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>stats.probplot(residual[<span class="st">"residual Model"</span>], dist<span class="op">=</span><span class="st">"norm"</span>, plot<span class="op">=</span>axs[<span class="dv">1</span>,<span class="dv">0</span>])</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">1</span>,<span class="dv">0</span>].set_title(<span class="st">'Plot Q-Q'</span>)</span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-14"><a href="#cb27-14" aria-hidden="true" tabindex="-1"></a>plot_acf(residual,  lags<span class="op">=</span><span class="dv">35</span>, ax<span class="op">=</span>axs[<span class="dv">1</span>,<span class="dv">1</span>],color<span class="op">=</span><span class="st">"fuchsia"</span>)</span>
+<span id="cb27-15"><a href="#cb27-15" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">1</span>,<span class="dv">1</span>].set_title(<span class="st">"Autocorrelation"</span>)<span class="op">;</span></span>
+<span id="cb27-16"><a href="#cb27-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-17"><a href="#cb27-17" aria-hidden="true" tabindex="-1"></a>plt.show()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-22-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="forecast-method" class="level3">
+<h3 class="anchored" data-anchor-id="forecast-method">Forecast Method</h3>
+<p>If you want to gain speed in productive settings where you have multiple series or models we recommend using the <a href="https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast"><code>StatsForecast.forecast</code></a> method instead of <code>.fit</code> and <code>.predict</code>.</p>
+<p>The main difference is that the <code>.forecast</code> doest not store the fitted values and is highly scalable in distributed environments.</p>
+<p>The forecast method takes two arguments: forecasts next <code>h</code> (horizon) and <code>level</code>.</p>
+<ul>
+<li><p><code>h (int):</code> represents the forecast h steps into the future. In this case, 30 hours ahead.</p></li>
+<li><p><code>level (list of floats):</code> this optional parameter is used for probabilistic forecasting. Set the level (or confidence percentile) of your prediction interval. For example, <code>level=[90]</code> means that the model expects the real value to be inside that interval 90% of the times.</p></li>
+</ul>
+<p>The forecast object here is a new data frame that includes a column with the name of the model and the y hat values, as well as columns for the uncertainty intervals. Depending on your computer, this step should take around 1min.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>Y_hat <span class="op">=</span> sf.forecast(horizon, fitted<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>Y_hat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 00:00:00</td>
+<td>75020.843750</td>
+<td>75016.414062</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 01:00:00</td>
+<td>73714.437500</td>
+<td>74739.921875</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 02:00:00</td>
+<td>81196.570312</td>
+<td>80907.437500</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 03:00:00</td>
+<td>92962.234375</td>
+<td>92432.453125</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 04:00:00</td>
+<td>115738.320312</td>
+<td>112928.710938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 05:00:00</td>
+<td>113103.835938</td>
+<td>111366.179688</td>
+</tr>
+</tbody>
+</table>
+
+<p>30 rows × 3 columns</p>
+</div>
+</div>
+</div>
+<p>With the forecast method we can also extract the fitted values from the model and visualize it graphically, with the following instruction we can do it.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>values<span class="op">=</span>sf.forecast_fitted_values()</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>values.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">y</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13 00:00:00</td>
+<td>80115.0</td>
+<td>82127.195312</td>
+<td>77955.531250</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13 01:00:00</td>
+<td>79885.0</td>
+<td>80584.562500</td>
+<td>77934.929688</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13 02:00:00</td>
+<td>89325.0</td>
+<td>88078.875000</td>
+<td>84123.835938</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13 03:00:00</td>
+<td>101930.0</td>
+<td>99432.601562</td>
+<td>96152.687500</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13 04:00:00</td>
+<td>121630.0</td>
+<td>122571.562500</td>
+<td>117567.875000</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>StatsForecast.plot(values)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-25-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Adding 95% confidence interval with the forecast method</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>sf.forecast(h<span class="op">=</span>horizon, level<span class="op">=</span>[<span class="dv">95</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Add-lo-95</th>
+<th data-quarto-table-cell-role="th">Add-hi-95</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+<th data-quarto-table-cell-role="th">Multi-lo-95</th>
+<th data-quarto-table-cell-role="th">Multi-hi-95</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 00:00:00</td>
+<td>75020.843750</td>
+<td>56622.953125</td>
+<td>93418.734375</td>
+<td>75016.414062</td>
+<td>62760.343750</td>
+<td>87272.476562</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 01:00:00</td>
+<td>73714.437500</td>
+<td>55310.503906</td>
+<td>92118.367188</td>
+<td>74739.921875</td>
+<td>62483.855469</td>
+<td>86995.992188</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 02:00:00</td>
+<td>81196.570312</td>
+<td>62786.074219</td>
+<td>99607.062500</td>
+<td>80907.437500</td>
+<td>68651.367188</td>
+<td>93163.500000</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 03:00:00</td>
+<td>92962.234375</td>
+<td>74304.234375</td>
+<td>111620.242188</td>
+<td>92432.453125</td>
+<td>79563.328125</td>
+<td>105301.585938</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 04:00:00</td>
+<td>115738.320312</td>
+<td>97069.117188</td>
+<td>134407.531250</td>
+<td>112928.710938</td>
+<td>100059.578125</td>
+<td>125797.835938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 05:00:00</td>
+<td>113103.835938</td>
+<td>94423.414062</td>
+<td>131784.265625</td>
+<td>111366.179688</td>
+<td>98497.054688</td>
+<td>124235.304688</td>
+</tr>
+</tbody>
+</table>
+
+<p>30 rows × 7 columns</p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>Y_hat<span class="op">=</span>Y_hat.reset_index()</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>Y_hat</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1</td>
+<td>2017-09-22 00:00:00</td>
+<td>75020.843750</td>
+<td>75016.414062</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1</td>
+<td>2017-09-22 01:00:00</td>
+<td>73714.437500</td>
+<td>74739.921875</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1</td>
+<td>2017-09-22 02:00:00</td>
+<td>81196.570312</td>
+<td>80907.437500</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">27</td>
+<td>1</td>
+<td>2017-09-23 03:00:00</td>
+<td>92962.234375</td>
+<td>92432.453125</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">28</td>
+<td>1</td>
+<td>2017-09-23 04:00:00</td>
+<td>115738.320312</td>
+<td>112928.710938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">29</td>
+<td>1</td>
+<td>2017-09-23 05:00:00</td>
+<td>113103.835938</td>
+<td>111366.179688</td>
+</tr>
+</tbody>
+</table>
+
+<p>30 rows × 4 columns</p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>Y_hat1 <span class="op">=</span> pd.concat([df,Y_hat],  keys<span class="op">=</span>[<span class="st">'unique_id'</span>, <span class="st">'ds'</span>])</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>Y_hat1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">y</th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td rowspan="3" data-quarto-table-cell-role="th" data-valign="top">unique_id</td>
+<td data-quarto-table-cell-role="th">0</td>
+<td>2017-09-13 00:00:00</td>
+<td>80115.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-13 01:00:00</td>
+<td>79885.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2017-09-13 02:00:00</td>
+<td>89325.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td rowspan="3" data-quarto-table-cell-role="th" data-valign="top">ds</td>
+<td data-quarto-table-cell-role="th">27</td>
+<td>2017-09-23 03:00:00</td>
+<td>NaN</td>
+<td>1</td>
+<td>92962.234375</td>
+<td>92432.453125</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">28</td>
+<td>2017-09-23 04:00:00</td>
+<td>NaN</td>
+<td>1</td>
+<td>115738.320312</td>
+<td>112928.710938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">29</td>
+<td>2017-09-23 05:00:00</td>
+<td>NaN</td>
+<td>1</td>
+<td>113103.835938</td>
+<td>111366.179688</td>
+</tr>
+</tbody>
+</table>
+
+<p>246 rows × 5 columns</p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>plot_df <span class="op">=</span> pd.concat([train, Y_hat1]).set_index(<span class="st">'ds'</span>).tail(<span class="dv">300</span>)</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>plot_df[<span class="st">'y'</span>].plot(ax<span class="op">=</span>ax, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>plot_df[ <span class="st">"Add"</span>].plot(ax<span class="op">=</span>ax, linewidth<span class="op">=</span><span class="dv">2</span>, color<span class="op">=</span><span class="st">"yellow"</span>)</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>plot_df[ <span class="st">"Multi"</span>].plot(ax<span class="op">=</span>ax, linewidth<span class="op">=</span><span class="dv">2</span>, color<span class="op">=</span><span class="st">"red"</span>)</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">' Forecast'</span>, fontsize<span class="op">=</span><span class="dv">22</span>)</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">'Ads watched (hourly data)'</span>, fontsize<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Monthly [t]'</span>, fontsize<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a>ax.legend(prop<span class="op">=</span>{<span class="st">'size'</span>: <span class="dv">15</span>})</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-29-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="predict-method-with-confidence-interval" class="level3">
+<h3 class="anchored" data-anchor-id="predict-method-with-confidence-interval">Predict method with confidence interval</h3>
+<p>To generate forecasts use the predict method.</p>
+<p>The predict method takes two arguments: forecasts the next <code>h</code> (for horizon) and <code>level</code>.</p>
+<ul>
+<li><p><code>h (int):</code> represents the forecast h steps into the future. In this case, 30 hours ahead.</p></li>
+<li><p><code>level (list of floats):</code> this optional parameter is used for probabilistic forecasting. Set the level (or confidence percentile) of your prediction interval. For example, <code>level=[95]</code> means that the model expects the real value to be inside that interval 95% of the times.</p></li>
+</ul>
+<p>The forecast object here is a new data frame that includes a column with the name of the model and the y hat values, as well as columns for the uncertainty intervals.</p>
+<p>This step should take less than 1 second.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>sf.predict(h<span class="op">=</span>horizon)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 00:00:00</td>
+<td>75020.843750</td>
+<td>75016.414062</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 01:00:00</td>
+<td>73714.437500</td>
+<td>74739.921875</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 02:00:00</td>
+<td>81196.570312</td>
+<td>80907.437500</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 03:00:00</td>
+<td>92962.234375</td>
+<td>92432.453125</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 04:00:00</td>
+<td>115738.320312</td>
+<td>112928.710938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 05:00:00</td>
+<td>113103.835938</td>
+<td>111366.179688</td>
+</tr>
+</tbody>
+</table>
+
+<p>30 rows × 3 columns</p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>forecast_df <span class="op">=</span> sf.predict(h<span class="op">=</span>horizon, level<span class="op">=</span>[<span class="dv">80</span>,<span class="dv">95</span>]) </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>forecast_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Add-lo-95</th>
+<th data-quarto-table-cell-role="th">Add-lo-80</th>
+<th data-quarto-table-cell-role="th">Add-hi-80</th>
+<th data-quarto-table-cell-role="th">Add-hi-95</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+<th data-quarto-table-cell-role="th">Multi-lo-95</th>
+<th data-quarto-table-cell-role="th">Multi-lo-80</th>
+<th data-quarto-table-cell-role="th">Multi-hi-80</th>
+<th data-quarto-table-cell-role="th">Multi-hi-95</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 00:00:00</td>
+<td>75020.843750</td>
+<td>56622.953125</td>
+<td>62991.109375</td>
+<td>87050.578125</td>
+<td>93418.734375</td>
+<td>75016.414062</td>
+<td>62760.343750</td>
+<td>67002.601562</td>
+<td>83030.218750</td>
+<td>87272.476562</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 01:00:00</td>
+<td>73714.437500</td>
+<td>55310.503906</td>
+<td>61680.750000</td>
+<td>85748.117188</td>
+<td>92118.367188</td>
+<td>74739.921875</td>
+<td>62483.855469</td>
+<td>66726.109375</td>
+<td>82753.734375</td>
+<td>86995.992188</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-22 02:00:00</td>
+<td>81196.570312</td>
+<td>62786.074219</td>
+<td>69158.593750</td>
+<td>93234.546875</td>
+<td>99607.062500</td>
+<td>80907.437500</td>
+<td>68651.367188</td>
+<td>72893.625000</td>
+<td>88921.242188</td>
+<td>93163.500000</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 03:00:00</td>
+<td>92962.234375</td>
+<td>74304.234375</td>
+<td>80762.421875</td>
+<td>105162.054688</td>
+<td>111620.242188</td>
+<td>92432.453125</td>
+<td>79563.328125</td>
+<td>84017.789062</td>
+<td>100847.125000</td>
+<td>105301.585938</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 04:00:00</td>
+<td>115738.320312</td>
+<td>97069.117188</td>
+<td>103531.187500</td>
+<td>127945.460938</td>
+<td>134407.531250</td>
+<td>112928.710938</td>
+<td>100059.578125</td>
+<td>104514.039062</td>
+<td>121343.375000</td>
+<td>125797.835938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-23 05:00:00</td>
+<td>113103.835938</td>
+<td>94423.414062</td>
+<td>100889.359375</td>
+<td>125318.312500</td>
+<td>131784.265625</td>
+<td>111366.179688</td>
+<td>98497.054688</td>
+<td>102951.507812</td>
+<td>119780.851562</td>
+<td>124235.304688</td>
+</tr>
+</tbody>
+</table>
+
+<p>30 rows × 11 columns</p>
+</div>
+</div>
+</div>
+<p>We can join the forecast result with the historical data using the pandas function <code>pd.concat()</code>, and then be able to use this result for graphing.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>pd.concat([df, forecast_df]).set_index(<span class="st">'ds'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">y</th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Add-lo-95</th>
+<th data-quarto-table-cell-role="th">Add-lo-80</th>
+<th data-quarto-table-cell-role="th">Add-hi-80</th>
+<th data-quarto-table-cell-role="th">Add-hi-95</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+<th data-quarto-table-cell-role="th">Multi-lo-95</th>
+<th data-quarto-table-cell-role="th">Multi-lo-80</th>
+<th data-quarto-table-cell-role="th">Multi-hi-80</th>
+<th data-quarto-table-cell-role="th">Multi-hi-95</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-13 00:00:00</td>
+<td>80115.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2017-09-13 01:00:00</td>
+<td>79885.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-13 02:00:00</td>
+<td>89325.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-23 03:00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>92962.234375</td>
+<td>74304.234375</td>
+<td>80762.421875</td>
+<td>105162.054688</td>
+<td>111620.242188</td>
+<td>92432.453125</td>
+<td>79563.328125</td>
+<td>84017.789062</td>
+<td>100847.125000</td>
+<td>105301.585938</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2017-09-23 04:00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>115738.320312</td>
+<td>97069.117188</td>
+<td>103531.187500</td>
+<td>127945.460938</td>
+<td>134407.531250</td>
+<td>112928.710938</td>
+<td>100059.578125</td>
+<td>104514.039062</td>
+<td>121343.375000</td>
+<td>125797.835938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-23 05:00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>113103.835938</td>
+<td>94423.414062</td>
+<td>100889.359375</td>
+<td>125318.312500</td>
+<td>131784.265625</td>
+<td>111366.179688</td>
+<td>98497.054688</td>
+<td>102951.507812</td>
+<td>119780.851562</td>
+<td>124235.304688</td>
+</tr>
+</tbody>
+</table>
+
+<p>246 rows × 12 columns</p>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>df_plot<span class="op">=</span> pd.concat([df, forecast_df]).set_index(<span class="st">'ds'</span>)</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>df_plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">y</th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Add-lo-95</th>
+<th data-quarto-table-cell-role="th">Add-lo-80</th>
+<th data-quarto-table-cell-role="th">Add-hi-80</th>
+<th data-quarto-table-cell-role="th">Add-hi-95</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+<th data-quarto-table-cell-role="th">Multi-lo-95</th>
+<th data-quarto-table-cell-role="th">Multi-lo-80</th>
+<th data-quarto-table-cell-role="th">Multi-hi-80</th>
+<th data-quarto-table-cell-role="th">Multi-hi-95</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-13 00:00:00</td>
+<td>80115.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2017-09-13 01:00:00</td>
+<td>79885.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-13 02:00:00</td>
+<td>89325.0</td>
+<td>1</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>NaN</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-23 03:00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>92962.234375</td>
+<td>74304.234375</td>
+<td>80762.421875</td>
+<td>105162.054688</td>
+<td>111620.242188</td>
+<td>92432.453125</td>
+<td>79563.328125</td>
+<td>84017.789062</td>
+<td>100847.125000</td>
+<td>105301.585938</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">2017-09-23 04:00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>115738.320312</td>
+<td>97069.117188</td>
+<td>103531.187500</td>
+<td>127945.460938</td>
+<td>134407.531250</td>
+<td>112928.710938</td>
+<td>100059.578125</td>
+<td>104514.039062</td>
+<td>121343.375000</td>
+<td>125797.835938</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2017-09-23 05:00:00</td>
+<td>NaN</td>
+<td>NaN</td>
+<td>113103.835938</td>
+<td>94423.414062</td>
+<td>100889.359375</td>
+<td>125318.312500</td>
+<td>131784.265625</td>
+<td>111366.179688</td>
+<td>98497.054688</td>
+<td>102951.507812</td>
+<td>119780.851562</td>
+<td>124235.304688</td>
+</tr>
+</tbody>
+</table>
+
+<p>246 rows × 12 columns</p>
+</div>
+</div>
+</div>
+<p>Now let’s visualize the result of our forecast and the historical data of our time series, also let’s draw the confidence interval that we have obtained when making the prediction with 95% confidence.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_forecasts(y_hist, y_pred, models):</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    _, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>, figsize <span class="op">=</span> (<span class="dv">20</span>, <span class="dv">7</span>))</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    df_plot <span class="op">=</span> pd.concat([y_hist, y_pred]).set_index(<span class="st">'ds'</span>).tail(<span class="dv">12</span><span class="op">*</span><span class="dv">10</span>)</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    df_plot[[<span class="st">'y'</span>] <span class="op">+</span> models].plot(ax<span class="op">=</span>ax, linewidth<span class="op">=</span><span class="dv">3</span> , )</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    colors <span class="op">=</span> [<span class="st">'black'</span>, <span class="st">"lime"</span>]</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> model, color <span class="kw">in</span> <span class="bu">zip</span>(models, colors):</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>        ax.fill_between(df_plot.index, </span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>                        df_plot[<span class="ss">f'</span><span class="sc">{</span>model<span class="sc">}</span><span class="ss">-lo-95'</span>], </span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>                        df_plot[<span class="ss">f'</span><span class="sc">{</span>model<span class="sc">}</span><span class="ss">-hi-95'</span>],</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>                        alpha<span class="op">=</span><span class="fl">.35</span>,</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>                        color<span class="op">=</span>color,</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>                        label<span class="op">=</span><span class="ss">f'HoltWinter</span><span class="sc">{</span>model<span class="sc">}</span><span class="ss">-level-95'</span>)</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> model, color <span class="kw">in</span> <span class="bu">zip</span>(models, colors):</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>        ax.fill_between(df_plot.index, </span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>                        df_plot[<span class="ss">f'</span><span class="sc">{</span>model<span class="sc">}</span><span class="ss">-lo-80'</span>], </span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>                        df_plot[<span class="ss">f'</span><span class="sc">{</span>model<span class="sc">}</span><span class="ss">-hi-80'</span>],</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a>                        alpha<span class="op">=</span><span class="fl">.35</span>,</span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a>                        color<span class="op">=</span>color,</span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a>                        label<span class="op">=</span><span class="ss">f'HoltWinter</span><span class="sc">{</span>model<span class="sc">}</span><span class="ss">-level-80'</span>)</span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="st">''</span>, fontsize<span class="op">=</span><span class="dv">22</span>)</span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a>    ax.set_ylabel(<span class="st">"Ads watched (hourly data)"</span>, fontsize<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a>    ax.set_xlabel(<span class="st">'Hourly'</span>, fontsize<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a>    ax.legend(prop<span class="op">=</span>{<span class="st">'size'</span>: <span class="dv">20</span>})</span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a>    ax.grid(<span class="va">True</span>)</span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a>    plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>plot_forecasts(df, forecast_df, models<span class="op">=</span>[<span class="st">"Add"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-35-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>plot_forecasts(df, forecast_df, models<span class="op">=</span>[<span class="st">"Multi"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-36-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Let’s plot the same graph using the plot function that comes in <code>Statsforecast</code>, as shown below.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>sf.plot(df, forecast_df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="HoltWinters_files/figure-html/cell-37-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="cross-validation" class="level2">
+<h2 class="anchored" data-anchor-id="cross-validation">Cross-validation <a class="anchor" id="cross_validate"></a></h2>
+<p>In previous steps, we’ve taken our historical data to predict the future. However, to asses its accuracy we would also like to know how the model would have performed in the past. To assess the accuracy and robustness of your models on your data perform Cross-Validation.</p>
+<p>With time series data, Cross Validation is done by defining a sliding window across the historical data and predicting the period following it. This form of cross-validation allows us to arrive at a better estimation of our model’s predictive abilities across a wider range of temporal instances while also keeping the data in the training set contiguous as is required by our models.</p>
+<p>The following graph depicts such a Cross Validation Strategy:</p>
+<p><img src="https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/ChainedWindows.gif" class="img-fluid"></p>
+<section id="perform-time-series-cross-validation" class="level3">
+<h3 class="anchored" data-anchor-id="perform-time-series-cross-validation">Perform time series cross-validation</h3>
+<p>Cross-validation of time series models is considered a best practice but most implementations are very slow. The statsforecast library implements cross-validation as a distributed operation, making the process less time-consuming to perform. If you have big datasets you can also perform Cross Validation in a distributed cluster using Ray, Dask or Spark.</p>
+<p>In this case, we want to evaluate the performance of each model for the last 5 months <code>(n_windows=)</code>, forecasting every second months <code>(step_size=12)</code>. Depending on your computer, this step should take around 1 min.</p>
+<p>The cross_validation method from the StatsForecast class takes the following arguments.</p>
+<ul>
+<li><p><code>df:</code> training data frame</p></li>
+<li><p><code>h (int):</code> represents h steps into the future that are being forecasted. In this case, 12 months ahead.</p></li>
+<li><p><code>step_size (int):</code> step size between each window. In other words: how often do you want to run the forecasting processes.</p></li>
+<li><p><code>n_windows(int):</code> number of windows used for cross validation. In other words: what number of forecasting processes in the past do you want to evaluate.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>crossvalidation_df <span class="op">=</span> sf.cross_validation(df<span class="op">=</span>df,</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>                                         h<span class="op">=</span>horizon,</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>                                         step_size<span class="op">=</span><span class="dv">30</span>,</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>                                         n_windows<span class="op">=</span><span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The crossvaldation_df object is a new data frame that includes the following columns:</p>
+<ul>
+<li><code>unique_id:</code> index. If you dont like working with index just run <code>crossvalidation_df.resetindex()</code>.</li>
+<li><code>ds:</code> datestamp or temporal index</li>
+<li><code>cutoff:</code> the last datestamp or temporal index for the <code>n_windows</code>.</li>
+<li><code>y:</code> true value</li>
+<li><code>model:</code> columns with the model’s name and fitted value.</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>crossvalidation_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">cutoff</th>
+<th data-quarto-table-cell-role="th">y</th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-18 06:00:00</td>
+<td>2017-09-18 05:00:00</td>
+<td>99440.0</td>
+<td>134578.328125</td>
+<td>133820.109375</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-18 07:00:00</td>
+<td>2017-09-18 05:00:00</td>
+<td>97655.0</td>
+<td>133548.781250</td>
+<td>133734.000000</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-18 08:00:00</td>
+<td>2017-09-18 05:00:00</td>
+<td>97655.0</td>
+<td>134798.656250</td>
+<td>135216.046875</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-21 21:00:00</td>
+<td>2017-09-20 17:00:00</td>
+<td>103080.0</td>
+<td>103021.726562</td>
+<td>103086.851562</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-21 22:00:00</td>
+<td>2017-09-20 17:00:00</td>
+<td>95155.0</td>
+<td>89544.054688</td>
+<td>90028.406250</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2017-09-21 23:00:00</td>
+<td>2017-09-20 17:00:00</td>
+<td>80285.0</td>
+<td>78090.210938</td>
+<td>78823.953125</td>
+</tr>
+</tbody>
+</table>
+
+<p>90 rows × 5 columns</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="model-evaluation" class="level2">
+<h2 class="anchored" data-anchor-id="model-evaluation">Model Evaluation <a class="anchor" id="evaluate"></a></h2>
+<p>We can now compute the accuracy of the forecast using an appropiate accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To do this, we first need to <code>install datasetsforecast</code>, a Python library developed <strong>by Nixtla</strong> that includes a function to compute the RMSE.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="op">!</span>pip install datasetsforecast</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The function to compute the RMSE takes two arguments:</p>
+<ol type="1">
+<li>The actual values.</li>
+<li>The forecasts, in this case, <code>Holt Winters Model</code>.</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datasetsforecast.losses <span class="im">import</span> mse, mae, rmse</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluate_cross_validation(df, metric):</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>    models <span class="op">=</span> df.drop(columns<span class="op">=</span>[<span class="st">'ds'</span>, <span class="st">'cutoff'</span>, <span class="st">'y'</span>]).columns.tolist()</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>    evals <span class="op">=</span> []</span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> model <span class="kw">in</span> models:</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>        eval_ <span class="op">=</span> df.groupby([<span class="st">'unique_id'</span>, <span class="st">'cutoff'</span>]).<span class="bu">apply</span>(<span class="kw">lambda</span> x: metric(x[<span class="st">'y'</span>].values, x[model].values)).to_frame() <span class="co"># Calculate loss for every unique_id, model and cutoff.</span></span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>        eval_.columns <span class="op">=</span> [model]</span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>        evals.append(eval_)</span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>    evals <span class="op">=</span> pd.concat(evals, axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>    evals <span class="op">=</span> evals.groupby([<span class="st">'unique_id'</span>]).mean(numeric_only<span class="op">=</span><span class="va">True</span>) <span class="co"># Averages the error metrics for all cutoffs for every combination of model and unique_id</span></span>
+<span id="cb46-12"><a href="#cb46-12" aria-hidden="true" tabindex="-1"></a>    evals[<span class="st">'best_model'</span>] <span class="op">=</span> evals.idxmin(axis<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb46-13"><a href="#cb46-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> evals</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>evaluation_df <span class="op">=</span> evaluate_cross_validation(crossvalidation_df, rmse)</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>evaluation_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Add</th>
+<th data-quarto-table-cell-role="th">Multi</th>
+<th data-quarto-table-cell-role="th">best_model</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">1</td>
+<td>12742.019531</td>
+<td>13012.641602</td>
+<td>Add</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+</section>
+<section id="acknowledgements" class="level2">
+<h2 class="anchored" data-anchor-id="acknowledgements">Acknowledgements</h2>
+<p>We would like to thank <a href="https://www.linkedin.com/in/naren-castellon-1541b8101/?originalSubdomain=pa">Naren Castellon</a> for writing this tutorial.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References <a class="anchor" id="references"></a></h2>
+<ol type="1">
+<li>Changquan Huang • Alla Petukhina. Springer series (2022). Applied Time Series Analysis and Forecasting with Python.</li>
+<li>Ivan Svetunkov. <a href="https://openforecast.org/adam/">Forecasting and Analytics with the Augmented Dynamic Adaptive Model (ADAM)</a></li>
+<li><a href="https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis">James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.</a></li>
+<li><a href="https://nixtla.github.io/statsforecast/src/core/models.html#arch-model">Nixtla Parameters</a>.</li>
+<li><a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases">Pandas available frequencies</a>.</li>
+<li><a href="https://otexts.com/fpp3/tscv.html">Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting principles and practice, Time series cross-validation”.</a>.</li>
+<li><a href="https://robjhyndman.com/hyndsight/seasonal-periods/">Seasonal periods- Rob J Hyndman</a>.</li>
+</ol>
+
+
+</section>
+
+<p>Give us a ⭐&nbsp;on <a href="https://github.com/nixtla/statsforecast">Github</a></p></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="description" content="Step-by-step guide on using the AutoETS Model with Statsforecast.">
+
+<title>statsforecast - AutoETS Model</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../favicon_png.png" rel="icon" type="image/png">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-NXJNCVR18L"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-NXJNCVR18L', { 'anonymize_ip': true});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<link rel="stylesheet" href="../../styles.css">
+<meta property="og:title" content="statsforecast - AutoETS Model">
+<meta property="og:description" content="Step-by-step guide on using the AutoETS Model with Statsforecast.">
+<meta property="og:image" content="https://github.com/Nixtla/styles/blob/2abf51612584169874c90cd7c4d347e3917eaf73/images/Banner%20Github.png">
+<meta property="og:site-name" content="statsforecast">
+<meta name="twitter:title" content="statsforecast - AutoETS Model">
+<meta name="twitter:description" content="Step-by-step guide on using the AutoETS Model with Statsforecast.">
+<meta name="twitter:image" content="https://farm6.staticflickr.com/5510/14338202952_93595258ff_z.jpg">
+<meta name="twitter:site" content="@Nixtlainc">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-sidebar floating nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">statsforecast</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link active" href="../../docs/getting-started/getting_started_short.html" rel="" target="" aria-current="page">
+ <span class="menu-text">Get Started</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-nixtlaverse" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">NixtlaVerse</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-nixtlaverse">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/statsforecast" rel="" target="">
+ <span class="dropdown-text">StatsForecast ⚡️</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/mlforecast" rel="" target="">
+ <span class="dropdown-text">MLForecast 🤖</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/neuralforecast" rel="" target="">
+ <span class="dropdown-text">NeuralForecast 🧠</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/hierarchicalforecast" rel="" target="">
+ <span class="dropdown-text">HierarchicalForecast 👑</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-help" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Help</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-help">    
+        <li>
+    <a class="dropdown-item" href="https://github.com/nixtla/statsforecast/issues/new/choose" rel="" target=""><i class="bi bi-bug" role="img">
+</i> 
+ <span class="dropdown-text">Report an Issue</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A" rel="" target=""><i class="bi bi-chat-right-text" role="img">
+</i> 
+ <span class="dropdown-text">Join our Slack</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/nixtla/statsforecast" rel="" target=""><i class="bi bi-github" role="img">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://twitter.com/nixtlainc" rel="" target=""><i class="bi bi-twitter" role="img" aria-label="Nixtla Twitter">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../docs/models/adida.html">Model References</a></li><li class="breadcrumb-item"><a href="../../docs/models/autoets.html">AutoETS Model</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation floating overflow-auto">
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">StatsForecast ⚡️</span></a>
+  </div>
+</li>
+        <li class="px-0"><hr class="sidebar-divider hi "></li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="false">
+ <span class="menu-text">Getting Started</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/getting-started/installation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Install</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/getting-started/getting_started_short.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Quick Start</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/getting-started/getting_started_complete.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">End to End Walkthrough</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="false">
+ <span class="menu-text">Tutorials</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/anomalydetection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Anomaly Detection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/conformalprediction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Conformal Prediction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/crossvalidation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cross validation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/electricityloadforecasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Electricity Load Forecast</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/electricitypeakforecasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Detect Demand Peaks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/garch_tutorial.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Volatility forecasting (GARCH &amp; ARCH)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/intermittentdata.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Intermittent or Sparse Data</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/multipleseasonalities.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Multiple seasonalities</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/statisticalneuralmethods.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Statistical, Machine Learning and Neural Forecasting methods</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/tutorials/uncertaintyintervals.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Probabilistic Forecasting</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">How-To Guides</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/automatic_forecasting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Automatic Time Series Forecasting</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/amazonstatsforecast.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Amazon Forecast vs StatsForecast</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/autoarima_vs_prophet.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoARIMA Comparison (Prophet and pmdarima)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/dask.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dask</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/ets_ray_m5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Forecasting at Scale using ETS and ray (M5)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/exogenous.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Exogenous Regressors</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/getting_started_complete_polars.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">End to End Walkthrough with Polars</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/migrating_R.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Migrating from R</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/mlflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">MLFlow</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/numba_cache.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Numba caching</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/prophet_spark_m5.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">StatsForecast ETS and Facebook Prophet on Spark (M5)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/ray.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Ray</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/how-to-guides/spark.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Spark</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
+ <span class="menu-text">Model References</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/adida.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ADIDA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/arch.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ARCH Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/arima.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ARIMA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoarima.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoARIMA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoces.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoCES Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoets.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">AutoETS Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autoregressive.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoRegressive Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/autotheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">AutoTheta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/crostonclassic.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CrostonClassic Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/crostonoptimized.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CrostonOptimized Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/crostonsba.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">CrostonSBA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/dynamicoptimizedtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamic Optimized Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/dynamicstandardtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dynamic Standard Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/garch.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">GARCH Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/holt.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Holt Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/holtwinters.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Holt Winters Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/imapa.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">IMAPA Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/multipleseasonaltrend.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Multiple Seasonal Trend (MSTL)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/optimizedtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optimized Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/seasonalexponentialsmoothing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Seasonal Exponential Smoothing Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/seasonalexponentialsmoothingoptimized.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Seasonal Exponential Smoothing Optimized Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/simpleexponentialoptimized.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simple Exponential Smoothing Optimized Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/simpleexponentialsmoothing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Simple Exponential Smoothing Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/standardtheta.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Standard Theta Model</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/models/tsb.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">TSB Model</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
+ <span class="menu-text">API Reference</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/core.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Core Methods</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/distributed.fugue.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">FugueBackend</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Models</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../src/core/models_intro.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">StatsForecast’s Models</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">Contributing</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/contribute.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contribute to Nixtla</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/docs.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Nixtla Documentation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/issue-labels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Understanding Issue Labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/issues.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Submit an Issue 📢</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/step-by-step.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Step-by-step Contribution Guide</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../docs/contribute/techstack.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Contributing Code to Nixtla Development</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#table-of-contents" id="toc-table-of-contents" class="nav-link active" data-scroll-target="#table-of-contents">Table of Contents</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction </a><a class="anchor nav-link" id="introduction" data-scroll-target="undefined"></a></li>
+  <li><a href="#exponential-smoothing" id="toc-exponential-smoothing" class="nav-link" data-scroll-target="#exponential-smoothing">Exponential smoothing </a><a class="anchor nav-link" id="model" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#point-forecasts-for-all-methods" id="toc-point-forecasts-for-all-methods" class="nav-link" data-scroll-target="#point-forecasts-for-all-methods">Point forecasts for all methods</a></li>
+  <li><a href="#innovations-state-space-models" id="toc-innovations-state-space-models" class="nav-link" data-scroll-target="#innovations-state-space-models">Innovations state space models</a></li>
+  <li><a href="#etsann-simple-exponential-smoothing-with-additive-errors" id="toc-etsann-simple-exponential-smoothing-with-additive-errors" class="nav-link" data-scroll-target="#etsann-simple-exponential-smoothing-with-additive-errors"><strong>ETS(A,N,N): simple exponential smoothing with additive errors</strong></a></li>
+  <li><a href="#etsmnn-simple-exponential-smoothing-with-multiplicative-errors" id="toc-etsmnn-simple-exponential-smoothing-with-multiplicative-errors" class="nav-link" data-scroll-target="#etsmnn-simple-exponential-smoothing-with-multiplicative-errors"><strong>ETS(M,N,N): simple exponential smoothing with multiplicative errors</strong></a></li>
+  <li><a href="#etsaan-holts-linear-method-with-additive-errors" id="toc-etsaan-holts-linear-method-with-additive-errors" class="nav-link" data-scroll-target="#etsaan-holts-linear-method-with-additive-errors"><strong>ETS(A,A,N): Holt’s linear method with additive errors</strong></a></li>
+  <li><a href="#etsman-holts-linear-method-with-multiplicative-errors" id="toc-etsman-holts-linear-method-with-multiplicative-errors" class="nav-link" data-scroll-target="#etsman-holts-linear-method-with-multiplicative-errors"><strong>ETS(M,A,N): Holt’s linear method with multiplicative errors</strong></a></li>
+  <li><a href="#estimating-ets-models" id="toc-estimating-ets-models" class="nav-link" data-scroll-target="#estimating-ets-models">Estimating ETS models </a><a class="anchor nav-link" id="estimation" data-scroll-target="undefined"></a></li>
+  <li><a href="#model-selection" id="toc-model-selection" class="nav-link" data-scroll-target="#model-selection">Model selection </a><a class="anchor nav-link" id="selection" data-scroll-target="undefined"></a></li>
+  <li><a href="#loading-libraries-and-data" id="toc-loading-libraries-and-data" class="nav-link" data-scroll-target="#loading-libraries-and-data">Loading libraries and data </a><a class="anchor nav-link" id="loading" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#read-data" id="toc-read-data" class="nav-link" data-scroll-target="#read-data">Read Data</a></li>
+  </ul></li>
+  <li><a href="#explore-data-with-the-plot-method" id="toc-explore-data-with-the-plot-method" class="nav-link" data-scroll-target="#explore-data-with-the-plot-method">Explore data with the plot method </a><a class="anchor nav-link" id="plotting" data-scroll-target="undefined"></a></li>
+  <li><a href="#autocorrelation-plots" id="toc-autocorrelation-plots" class="nav-link" data-scroll-target="#autocorrelation-plots">Autocorrelation plots</a>
+  <ul class="collapse">
+  <li><a href="#decomposition-of-the-time-series" id="toc-decomposition-of-the-time-series" class="nav-link" data-scroll-target="#decomposition-of-the-time-series">Decomposition of the time series</a></li>
+  <li><a href="#additive-time-series" id="toc-additive-time-series" class="nav-link" data-scroll-target="#additive-time-series">Additive time series</a></li>
+  <li><a href="#multiplicative-time-series" id="toc-multiplicative-time-series" class="nav-link" data-scroll-target="#multiplicative-time-series">Multiplicative time series</a></li>
+  </ul></li>
+  <li><a href="#split-the-data-into-training-and-testing" id="toc-split-the-data-into-training-and-testing" class="nav-link" data-scroll-target="#split-the-data-into-training-and-testing">Split the data into training and testing</a><a class="anchor nav-link" id="splitting" data-scroll-target="undefined"></a></li>
+  <li><a href="#implementation-of-autoets-with-statsforecast" id="toc-implementation-of-autoets-with-statsforecast" class="nav-link" data-scroll-target="#implementation-of-autoets-with-statsforecast">Implementation of AutoETS with StatsForecast</a><a class="anchor nav-link" id="implementation" data-scroll-target="undefined"></a>
+  <ul class="collapse">
+  <li><a href="#instantiate-model" id="toc-instantiate-model" class="nav-link" data-scroll-target="#instantiate-model">Instantiate Model</a></li>
+  <li><a href="#fit-the-model" id="toc-fit-the-model" class="nav-link" data-scroll-target="#fit-the-model">Fit the Model</a></li>
+  <li><a href="#model-prediction" id="toc-model-prediction" class="nav-link" data-scroll-target="#model-prediction">Model Prediction</a></li>
+  <li><a href="#autoets.predict_in_sample-method" id="toc-autoets.predict_in_sample-method" class="nav-link" data-scroll-target="#autoets.predict_in_sample-method">AutoETS.predict_in_sample method</a></li>
+  <li><a href="#autoets.forecast-method" id="toc-autoets.forecast-method" class="nav-link" data-scroll-target="#autoets.forecast-method">AutoETS.forecast method</a></li>
+  <li><a href="#autoets.forward-method" id="toc-autoets.forward-method" class="nav-link" data-scroll-target="#autoets.forward-method">AutoETS.forward method</a></li>
+  </ul></li>
+  <li><a href="#model-evaluation" id="toc-model-evaluation" class="nav-link" data-scroll-target="#model-evaluation">Model Evaluation </a><a class="anchor nav-link" id="evaluate" data-scroll-target="undefined"></a></li>
+  <li><a href="#acknowledgements" id="toc-acknowledgements" class="nav-link" data-scroll-target="#acknowledgements">Acknowledgements</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References </a><a class="anchor nav-link" id="references" data-scroll-target="undefined"></a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/Nixtla/statsforecast/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">AutoETS Model</h1>
+</div>
+
+<div>
+  <div class="description">
+    Step-by-step guide on using the <code>AutoETS Model</code> with <code>Statsforecast</code>.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<!-- WARNING: THIS FILE WAS AUTOGENERATED! DO NOT EDIT! -->
+<section id="table-of-contents" class="level2">
+<h2 class="anchored" data-anchor-id="table-of-contents">Table of Contents</h2>
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#model">ETS Models</a></li>
+<li><a href="#estimation">ETS Estimation</a></li>
+<li><a href="#selection">Model Selection</a></li>
+<li><a href="#loading">Loading libraries and data</a></li>
+<li><a href="#plotting">Explore data with the plot method</a></li>
+<li><a href="#splitting">Split the data into training and testing</a></li>
+<li><a href="#implementation">Implementation of AutoETS with StatsForecast</a></li>
+<li><a href="#cross_validate">Cross-validation</a></li>
+<li><a href="#evaluate">Model evaluation</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+</section>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction <a class="anchor" id="introduction"></a></h2>
+<p>Automatic forecasts of large numbers of univariate time series are often needed in business. It is common to have over one thousand product lines that need forecasting at least monthly. Even when a smaller number of forecasts are required, there may be nobody suitably trained in the use of time series models to produce them. In these circumstances, an automatic forecasting algorithm is an essential tool. Automatic forecasting algorithms must determine an appropriate time series model, estimate the parameters and compute the forecasts. They must be robust to unusual time series patterns, and applicable to large numbers of series without user intervention. The most popular automatic forecasting algorithms are based on either exponential smoothing or ARIMA models.</p>
+</section>
+<section id="exponential-smoothing" class="level1">
+<h1>Exponential smoothing <a class="anchor" id="model"></a></h1>
+<p>Although exponential smoothing methods have been around since the 1950s, a modelling framework incorporating procedures for model selection was not developed until relatively recently. <code>Ord, Koehler</code>, and <code>Snyder (1997), Hyndman, Koehler, Snyder, and Grose (2002)</code> and <code>Hyndman, Koehler, Ord</code>, and <code>Snyder (2005b)</code> have shown that all exponential smoothing methods (including non-linear methods) are optimal forecasts from innovations state space models.</p>
+<p>Exponential smoothing methods were originally classified by <code>Pegels’ (1969) taxonomy</code>. This was later extended by <code>Gardner (1985), modified by Hyndman et al. (2002)</code>, and extended again by <code>Taylor (2003)</code>, giving a total of fifteen methods seen in the following table.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Trend Component</th>
+<th>Seasonal Component</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>N(None))</th>
+<th>A (Additive)</th>
+<th>M (Multiplicative)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>N (None)</td>
+<td>(N,N)</td>
+<td>(N,A)</td>
+<td>(N,M)</td>
+</tr>
+<tr class="even">
+<td>A (Additive)</td>
+<td>(A,N)</td>
+<td>(A,A)</td>
+<td>(A,M)</td>
+</tr>
+<tr class="odd">
+<td>Ad (Additive damped)</td>
+<td>(Ad,N)</td>
+<td>(Ad,A)</td>
+<td>(Ad,M)</td>
+</tr>
+<tr class="even">
+<td>M (Multiplicative)</td>
+<td>(M,N )</td>
+<td>(M,A )</td>
+<td>(M,M)</td>
+</tr>
+<tr class="odd">
+<td>Md (Multiplicative damped)</td>
+<td>(Md,N )</td>
+<td>( Md,A)</td>
+<td>(Md,M)</td>
+</tr>
+</tbody>
+</table>
+<p>Some of these methods are better known under other names. For example, cell <code>(N,N)</code> describes the <strong>simple exponential smoothing (or SES) method</strong>, cell <code>(A,N)</code> describes <strong>Holt’s linear method</strong>, and cell <code>(Ad,N)</code> describes <strong>the damped trend method</strong>. The <strong>additive Holt-Winters’ method</strong> is given by cell <code>(A,A)</code> and the <strong>multiplicative Holt-Winters’ method</strong> is given by cell <code>(A,M)</code>. The other cells correspond to less commonly used but analogous methods.</p>
+<section id="point-forecasts-for-all-methods" class="level3">
+<h3 class="anchored" data-anchor-id="point-forecasts-for-all-methods">Point forecasts for all methods</h3>
+<p>We denote the observed time series by <span class="math inline">\(y_1,y_2,...,y_n\)</span>. A forecast of <span class="math inline">\(y_{t+h}\)</span> based on all of the data up to time <span class="math inline">\(t\)</span> is denoted by <span class="math inline">\(\hat y_{t+h|t}\)</span>. To illustrate the method, we give the point forecasts and updating equation for method <code>(A,A)</code>, the he Holt-Winters’ additive method:</p>
+<p><span class="math display">\[\begin{align*}
+  Level: \ell_{t} &amp;= \alpha(y_{t} - s_{t-m}) + (1 - \alpha)(\ell_{t-1} + b_{t-1}) \tag{1a} \\
+  Growth: b_{t} &amp;= \beta^*(\ell_{t} - \ell_{t-1}) + (1 - \beta^*)b_{t-1} \tag{1b} \\
+  Seasonal: s_{t} &amp;= \gamma (y_{t}-\ell_{t-1}-b_{t-1}) + (1-\gamma)s_{t-m},\tag{1c} \\
+  Forecast:\hat{y}_{t+h|t} &amp;= \ell_{t} + hb_{t} + s_{t+h-m(k+1)} \tag{1d} \\
+\end{align*}\]</span></p>
+<p>where <span class="math inline">\(m\)</span> is the length of seasonality (e.g., the number of months or quarters in a year), $ _{t}$ represents the level of the series, <span class="math inline">\(b_t\)</span> denotes the growth, <span class="math inline">\(s_t\)</span> is the seasonal component, <span class="math inline">\(\hat y_{t+h|t}\)</span> is the forecast for <span class="math inline">\(h\)</span> periods ahead, and <span class="math inline">\(h_{m}^{+} = [(h − 1) mod \ m] + 1\)</span>. To use method (1), we need values for the initial states <span class="math inline">\(\ell_{0}\)</span>, <span class="math inline">\(b_0\)</span> and <span class="math inline">\(s_{1−m}, . . . , s_0\)</span>, and for the smoothing parameters <span class="math inline">\(\alpha, \beta^{*}\)</span> and <span class="math inline">\(\gamma\)</span>. All of these will be estimated from the observed data.</p>
+<p>Equation (1c) is slightly different from the usual Holt-Winters equations such as those in Makridakis et al.&nbsp;(1998) or Bowerman, O’Connell, and Koehler (2005). These authors replace (1c) with <span class="math display">\[s_{t} = \gamma^* (y_{t}-\ell_{t})+ (1-\gamma^*)s_{t-m}.\]</span></p>
+<p>If <span class="math inline">\(\ell_{t}\)</span> is substituted using (1a), we obtain</p>
+<p><span class="math display">\[s_{t} = \gamma^*(1-\alpha) (y_{t}-\ell_{t-1}-b_{t-1})+ [1-\gamma^*(1-\alpha)]s_{t-m},\]</span></p>
+<p>Thus, we obtain identical forecasts using this approach by replacing <span class="math inline">\(\gamma\)</span> in (1c) with <span class="math inline">\(\gamma^{*} (1-\alpha)\)</span>. The modification given in (1c) was proposed by Ord et al.&nbsp;(1997) to make the state space formulation simpler. It is equivalent to Archibald’s (1990) variation of the Holt-Winters’ method.</p>
+</section>
+<section id="innovations-state-space-models" class="level3">
+<h3 class="anchored" data-anchor-id="innovations-state-space-models">Innovations state space models</h3>
+<p>For each exponential smoothing method in <a href="https://otexts.com/fpp3/ets.html">Other ETS models</a> , Hyndman et al.&nbsp;(2008b) describe two possible innovations state space models, one corresponding to a model with additive errors and the other to a model with multiplicative errors. If the same parameter values are used, these two models give equivalent point forecasts, although different prediction intervals. Thus there are 30 potential models described in this classification.</p>
+<p>Historically, the nature of the error component has often been ignored, because the distinction between additive and multiplicative errors makes no difference to point forecasts.</p>
+<p>We are careful to distinguish exponential smoothing methods from the underlying state space models. An exponential smoothing method is an algorithm for producing point forecasts only. The underlying stochastic state space model gives the same point forecasts, but also provides a framework for computing prediction intervals and other properties.</p>
+<p>To distinguish the models with additive and multiplicative errors, we add an extra letter to the front of the method notation. The triplet <code>(E,T,S)</code> refers to the three components: error, trend and seasonality. So the model <code>ETS(A,A,N)</code> has additive errors, additive trend and no seasonality—in other words, this is Holt’s linear method with additive errors. Similarly, <code>ETS(M,Md,M)</code> refers to a model with multiplicative errors, a damped multiplicative trend and multiplicative seasonality. The notation <code>ETS(·,·,·)</code> helps in remembering the order in which the components are specified.</p>
+<p>Once a model is specified, we can study the probability distribution of future values of the series and find, for example, the conditional mean of a future observation given knowledge of the past. We denote this as <span class="math inline">\(\mu_{t+h|t} = E(y_{t+h | xt})\)</span>, where xt contains the unobserved components such as <span class="math inline">\(\ell_t\)</span>, <span class="math inline">\(b_t\)</span> and <span class="math inline">\(s_t\)</span>. For <span class="math inline">\(h = 1\)</span> we use <span class="math inline">\(\mu_t ≡ \mu_{t+1|t}\)</span> as a shorthand notation. For many models, these conditional means will be identical to the point forecasts given in Table <a href="https://otexts.com/fpp3/ets.html">Other ETS models</a>, so that <span class="math inline">\(\mu_{t+h|t} = \hat y_{t+h|t}\)</span>. However, for other models (those with multiplicative trend or multiplicative seasonality), the conditional mean and the point forecast will differ slightly for <span class="math inline">\(h ≥ 2\)</span>.</p>
+<p>We illustrate these ideas using the damped trend method of Gardner and McKenzie (1985).</p>
+<p>Each model consists of a measurement equation that describes the observed data, and some state equations that describe how the unobserved components or states (level, trend, seasonal) change over time. Hence, these are referred to as state space models.</p>
+<p>For each method there exist two models: one with additive errors and one with multiplicative errors. The point forecasts produced by the models are identical if they use the same smoothing parameter values. They will, however, generate different prediction intervals.</p>
+<p>To distinguish between a model with additive errors and one with multiplicative errors (and also to distinguish the models from the methods), we add a third letter to the classification of in the above Table. We label each state space model as <code>ETS(⋅,.,.)</code> for (Error, Trend, Seasonal). This label can also be thought of as ExponenTial Smoothing. Using the same notation as in the above Table, the possibilities for each component (or state) are: <code>Error ={ A,M }</code>, <code>Trend  ={N,A,Ad}</code> and <code>Seasonal  ={ N,A,M }</code>.</p>
+</section>
+<section id="etsann-simple-exponential-smoothing-with-additive-errors" class="level3">
+<h3 class="anchored" data-anchor-id="etsann-simple-exponential-smoothing-with-additive-errors"><strong>ETS(A,N,N): simple exponential smoothing with additive errors</strong></h3>
+<p>Recall the component form of simple exponential smoothing:</p>
+<p><span class="math display">\[\begin{align*}
+  \text{Forecast equation}  &amp;&amp; \hat{y}_{t+1|t} &amp; = \ell_{t}\\
+  \text{Smoothing equation} &amp;&amp; \ell_{t}        &amp; = \alpha y_{t} + (1 - \alpha)\ell_{t-1}.
+\end{align*}\]</span></p>
+<p>If we re-arrange the smoothing equation for the level, we get the “error correction” form,</p>
+<p><span class="math display">\[\begin{align*}
+\ell_{t} %&amp;= \alpha y_{t}+\ell_{t-1}-\alpha\ell_{t-1}\\
+         &amp;= \ell_{t-1}+\alpha( y_{t}-\ell_{t-1})\\
+         &amp;= \ell_{t-1}+\alpha e_{t},
+\end{align*}\]</span></p>
+<p>where <span class="math inline">\(e_{t}=y_{t}-\ell_{t-1}=y_{t}-\hat{y}_{t|t-1}\)</span> s the residual at time <span class="math inline">\(t\)</span>.</p>
+<p>The training data errors lead to the adjustment of the estimated level throughout the smoothing process for <span class="math inline">\(t=1,\dots,T\)</span>. For example, if the error at time <span class="math inline">\(t\)</span> is negative, then <span class="math inline">\(y_t &lt; \hat{y}_{t|t-1}\)</span> and so the level at time <span class="math inline">\(t-1\)</span> has been over-estimated. The new level <span class="math inline">\(\ell_{t}\)</span> is then the previous level <span class="math inline">\(\ell_{t-1}\)</span> adjusted downwards. The closer <span class="math inline">\(\alpha\)</span> is to one, the “rougher” the estimate of the level (large adjustments take place). The smaller the <span class="math inline">\(\alpha\)</span>, the “smoother” the level (small adjustments take place).</p>
+<p>We can also write <span class="math inline">\(y_t = \ell_{t-1} + e_t\)</span>, so that each observation can be represented by the previous level plus an error. To make this into an innovations state space model, all we need to do is specify the probability distribution for <span class="math inline">\(e_t\)</span>. For a model with additive errors, we assume that residuals (the one-step training errors) <span class="math inline">\(e_t\)</span> are normally distributed white noise with mean 0 and variance <span class="math inline">\(\sigma^2\)</span>. A short-hand notation for this is <span class="math inline">\(e_t = \varepsilon_t\sim\text{NID}(0,\sigma^2)\)</span>; NID stands for “normally and independently distributed”.</p>
+<p>Then the equations of the model can be written as</p>
+<p><span class="math display">\[\begin{align}
+  y_t &amp;= \ell_{t-1} + \varepsilon_t \tag{2}\\
+  \ell_t&amp;=\ell_{t-1}+\alpha \varepsilon_t. \tag{3}
+\end{align}\]</span></p>
+<p>We refer to (2) as the measurement (or observation) equation and (3) as the state (or transition) equation. These two equations, together with the statistical distribution of the errors, form a fully specified statistical model. Specifically, these constitute an innovations state space model underlying simple exponential smoothing.</p>
+<p>The term “innovations” comes from the fact that all equations use the same random error process, <span class="math inline">\(\varepsilon_t\)</span>. For the same reason, this formulation is also referred to as a “single source of error” model. There are alternative multiple source of error formulations which we do not present here.</p>
+<p>The measurement equation shows the relationship between the observations and the unobserved states. In this case, observation <span class="math inline">\(y_t\)</span> is a linear function of the level <span class="math inline">\(\ell_{t-1}\)</span>, the predictable part of <span class="math inline">\(y_t\)</span>, and the error <span class="math inline">\(\varepsilon_t\)</span>, the unpredictable part of <span class="math inline">\(y_t\)</span>. For other innovations state space models, this relationship may be nonlinear.</p>
+<p>The state equation shows the evolution of the state through time. The influence of the smoothing parameter <span class="math inline">\(\alpha\)</span> is the same as for the methods discussed earlier. For example, <span class="math inline">\(\alpha\)</span> governs the amount of change in successive levels: high values of <span class="math inline">\(\alpha\)</span> allow rapid changes in the level; low values of <span class="math inline">\(\alpha\)</span> lead to smooth changes. If <span class="math inline">\(\alpha=0\)</span>, the level of the series does not change over time; if <span class="math inline">\(\alpha=1\)</span>, the model reduces to a random walk model, <span class="math inline">\(y_t=y_{t-1}+\varepsilon_t\)</span>.</p>
+</section>
+<section id="etsmnn-simple-exponential-smoothing-with-multiplicative-errors" class="level3">
+<h3 class="anchored" data-anchor-id="etsmnn-simple-exponential-smoothing-with-multiplicative-errors"><strong>ETS(M,N,N): simple exponential smoothing with multiplicative errors</strong></h3>
+<p>In a similar fashion, we can specify models with multiplicative errors by writing the one-step-ahead training errors as relative errors</p>
+<p><span class="math display">\[\varepsilon_t = \frac{y_t-\hat{y}_{t|t-1}}{\hat{y}_{t|t-1}}\]</span></p>
+<p>where <span class="math inline">\(\varepsilon_t \sim \text{NID}(0,\sigma^2)\)</span>. Substituting <span class="math inline">\(\hat{y}_{t|t-1}=\ell_{t-1}\)</span> gives <span class="math inline">\(y_t = \ell_{t-1}+\ell_{t-1}\varepsilon_t\)</span> and <span class="math inline">\(e_t = y_t - \hat{y}_{t|t-1} = \ell_{t-1}\varepsilon_t\)</span>.</p>
+<p>Then we can write the multiplicative form of the state space model as</p>
+<p><span class="math display">\[\begin{align*}
+  y_t&amp;=\ell_{t-1}(1+\varepsilon_t)\\
+  \ell_t&amp;=\ell_{t-1}(1+\alpha \varepsilon_t).
+\end{align*}\]</span></p>
+</section>
+<section id="etsaan-holts-linear-method-with-additive-errors" class="level3">
+<h3 class="anchored" data-anchor-id="etsaan-holts-linear-method-with-additive-errors"><strong>ETS(A,A,N): Holt’s linear method with additive errors</strong></h3>
+<p>For this model, we assume that the one-step-ahead training errors are given by</p>
+<p><span class="math display">\[\varepsilon_t=y_t-\ell_{t-1}-b_{t-1} \sim \text{NID}(0,\sigma^2)\]</span></p>
+<p>Substituting this into the error correction equations for Holt’s linear method we obtain</p>
+<p><span class="math display">\[\begin{align*}
+y_t&amp;=\ell_{t-1}+b_{t-1}+\varepsilon_t\\
+\ell_t&amp;=\ell_{t-1}+b_{t-1}+\alpha \varepsilon_t\\
+b_t&amp;=b_{t-1}+\beta \varepsilon_t,
+\end{align*}\]</span></p>
+<p>where for simplicity we have set <span class="math inline">\(\beta=\alpha \beta^*\)</span>.</p>
+</section>
+<section id="etsman-holts-linear-method-with-multiplicative-errors" class="level3">
+<h3 class="anchored" data-anchor-id="etsman-holts-linear-method-with-multiplicative-errors"><strong>ETS(M,A,N): Holt’s linear method with multiplicative errors</strong></h3>
+<p>Specifying one-step-ahead training errors as relative errors such that</p>
+<p><span class="math display">\[\varepsilon_t=\frac{y_t-(\ell_{t-1}+b_{t-1})}{(\ell_{t-1}+b_{t-1})}\]</span></p>
+<p>and following an approach similar to that used above, the innovations state space model underlying Holt’s linear method with multiplicative errors is specified as</p>
+<p><span class="math display">\[\begin{align*}
+y_t&amp;=(\ell_{t-1}+b_{t-1})(1+\varepsilon_t)\\
+\ell_t&amp;=(\ell_{t-1}+b_{t-1})(1+\alpha \varepsilon_t)\\
+b_t&amp;=b_{t-1}+\beta(\ell_{t-1}+b_{t-1}) \varepsilon_t,
+\end{align*}\]</span></p>
+<p>where again <span class="math inline">\(\beta=\alpha \beta^*\)</span> and <span class="math inline">\(\varepsilon_t \sim \text{NID}(0,\sigma^2)\)</span>.</p>
+</section>
+<section id="estimating-ets-models" class="level2">
+<h2 class="anchored" data-anchor-id="estimating-ets-models">Estimating ETS models <a class="anchor" id="estimation"></a></h2>
+<p>An alternative to estimating the parameters by minimising the sum of squared errors is to maximise the “likelihood”. The likelihood is the probability of the data arising from the specified model. Thus, a large likelihood is associated with a good model. For an additive error model, maximising the likelihood (assuming normally distributed errors) gives the same results as minimising the sum of squared errors. However, different results will be obtained for multiplicative error models. In this section, we will estimate the smoothing parameters <span class="math inline">\(\alpha, \beta, \gamma\)</span> and <span class="math inline">\(\phi\)</span> and the initial states <span class="math inline">\(\ell_0, b_0, s_0,s_{-1},\dots,s_{-m+1}\)</span>, by maximising the likelihood.</p>
+<p>The possible values that the smoothing parameters can take are restricted. Traditionally, the parameters have been constrained to lie between 0 and 1 so that the equations can be interpreted as weighted averages. That is, <span class="math inline">\(0&lt; \alpha,\beta^*,\gamma^*,\phi&lt;1\)</span>. For the state space models, we have set <span class="math inline">\(\beta=\alpha\beta^*\)</span> and <span class="math inline">\(\gamma=(1-\alpha)\gamma^*\)</span>. Therefore, the traditional restrictions translate to <span class="math inline">\(0&lt; \alpha &lt;1, 0 &lt; \beta &lt; \alpha\)</span> and <span class="math inline">\(0&lt; \gamma &lt; 1-\alpha\)</span>. In practice, the damping parameter <span class="math inline">\(\phi\)</span> is usually constrained further to prevent numerical difficulties in estimating the model.</p>
+<p>Another way to view the parameters is through a consideration of the mathematical properties of the state space models. The parameters are constrained in order to prevent observations in the distant past having a continuing effect on current forecasts. This leads to some admissibility constraints on the parameters, which are usually (but not always) less restrictive than the traditional constraints region <code>(Hyndman et al., 2008, pp. 149–161)</code>. For example, for the <code>ETS(A,N,N)</code> model, the traditional parameter region is <span class="math inline">\(0&lt; \alpha &lt;1\)</span> but the admissible region is <span class="math inline">\(0&lt; \alpha &lt;2\)</span>. For the <code>ETS(A,A,N)</code> model, the traditional parameter region is <span class="math inline">\(0&lt;\alpha&lt;1\)</span> and <span class="math inline">\(0&lt;\beta&lt;\alpha\)</span> but the admissible region is <span class="math inline">\(0&lt;\alpha&lt;2\)</span> and <span class="math inline">\(0&lt;\beta&lt;4-2\alpha\)</span>.</p>
+</section>
+<section id="model-selection" class="level2">
+<h2 class="anchored" data-anchor-id="model-selection">Model selection <a class="anchor" id="selection"></a></h2>
+<p>A great advantage of the <a href="https://Nixtla.github.io/statsforecast/src/core/models.html#ets"><code>ETS</code></a> statistical framework is that information criteria can be used for model selection. The <code>AIC, AIC_c</code> and <code>BIC</code>, can be used here to determine which of the <a href="https://Nixtla.github.io/statsforecast/src/core/models.html#ets"><code>ETS</code></a> models is most appropriate for a given time series.</p>
+<p>For <a href="https://Nixtla.github.io/statsforecast/src/core/models.html#ets"><code>ETS</code></a> models, Akaike’s Information Criterion (<code>AIC)</code> is defined as</p>
+<p><span class="math display">\[\text{AIC} = -2\log(L) + 2k,\]</span></p>
+<p>where <span class="math inline">\(L\)</span> is the likelihood of the model and <span class="math inline">\(k\)</span> is the total number of parameters and initial states that have been estimated (including the residual variance).</p>
+<p>The <code>AIC</code> corrected for small sample bias <code>(AIC_c)</code> is defined as</p>
+<p><span class="math display">\[AIC_c = AIC + \frac{2k(k+1)}{T-k-1}\]</span></p>
+<p>and the Bayesian Information Criterion <code>(BIC)</code> is</p>
+<p><span class="math display">\[\text{BIC} = \text{AIC} + k[\log(T)-2]\]</span></p>
+<p>Three of the combinations of (Error, Trend, Seasonal) can lead to numerical difficulties. Specifically, the models that can cause such instabilities are <code>ETS(A,N,M), ETS(A,A,M)</code>, and <code>ETS(A,Ad,M)</code>, due to division by values potentially close to zero in the state equations. We normally do not consider these particular combinations when selecting a model.</p>
+<p>Models with multiplicative errors are useful when the data are strictly positive, but are not numerically stable when the data contain zeros or negative values. Therefore, multiplicative error models will not be considered if the time series is not strictly positive. In that case, only the six fully additive models will be applied.</p>
+</section>
+<section id="loading-libraries-and-data" class="level2">
+<h2 class="anchored" data-anchor-id="loading-libraries-and-data">Loading libraries and data <a class="anchor" id="loading"></a></h2>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Statsforecast will be needed. To install, see <a href="../../docs/getting-started/installation.html">instructions</a>.</p>
+</div>
+</div>
+<p>Next, we import plotting libraries and configure the plotting style.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> seaborn <span class="im">as</span> sns</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.graphics.tsaplots <span class="im">import</span> plot_acf</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.graphics.tsaplots <span class="im">import</span> plot_pacf</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'fivethirtyeight'</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>plt.rcParams[<span class="st">'lines.linewidth'</span>] <span class="op">=</span> <span class="fl">1.5</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>dark_style <span class="op">=</span> {</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">'figure.facecolor'</span>: <span class="st">'#212946'</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.facecolor'</span>: <span class="st">'#212946'</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">'savefig.facecolor'</span>:<span class="st">'#212946'</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.grid'</span>: <span class="va">True</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.grid.which'</span>: <span class="st">'both'</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.left'</span>: <span class="va">False</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.right'</span>: <span class="va">False</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.top'</span>: <span class="va">False</span>,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.spines.bottom'</span>: <span class="va">False</span>,</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">'grid.color'</span>: <span class="st">'#2A3459'</span>,</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">'grid.linewidth'</span>: <span class="st">'1'</span>,</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">'text.color'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">'axes.labelcolor'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">'xtick.color'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">'ytick.color'</span>: <span class="st">'0.9'</span>,</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">'font.size'</span>: <span class="dv">12</span> }</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update(dark_style)</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pylab <span class="im">import</span> rcParams</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>rcParams[<span class="st">'figure.figsize'</span>] <span class="op">=</span> (<span class="dv">18</span>,<span class="dv">7</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="read-data" class="level3">
+<h3 class="anchored" data-anchor-id="read-data">Read Data</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> pd.read_csv(<span class="st">"https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/Esperanza_vida.csv"</span>, usecols<span class="op">=</span>[<span class="dv">1</span>,<span class="dv">2</span>])</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">year</th>
+<th data-quarto-table-cell-role="th">value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1960-01-01</td>
+<td>69.123902</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1961-01-01</td>
+<td>69.760244</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1962-01-01</td>
+<td>69.149756</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>1963-01-01</td>
+<td>69.248049</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>1964-01-01</td>
+<td>70.311707</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>The input to StatsForecast is always a data frame in long format with three columns: unique_id, ds and y:</p>
+<ul>
+<li><p>The <code>unique_id</code> (string, int or category) represents an identifier for the series.</p></li>
+<li><p>The <code>ds</code> (datestamp) column should be of a format expected by Pandas, ideally YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.</p></li>
+<li><p>The <code>y</code> (numeric) represents the measurement we wish to forecast.</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">"unique_id"</span>]<span class="op">=</span><span class="st">"1"</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>df.columns<span class="op">=</span>[<span class="st">"ds"</span>, <span class="st">"y"</span>, <span class="st">"unique_id"</span>]</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>df.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">y</th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>1960-01-01</td>
+<td>69.123902</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>1961-01-01</td>
+<td>69.760244</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>1962-01-01</td>
+<td>69.149756</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>1963-01-01</td>
+<td>69.248049</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>1964-01-01</td>
+<td>70.311707</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(df.dtypes)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>ds            object
+y            float64
+unique_id     object
+dtype: object</code></pre>
+</div>
+</div>
+<p>We need to convert the <code>ds</code> from <code>object</code> type to datetime.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">"ds"</span>] <span class="op">=</span> pd.to_datetime(df[<span class="st">"ds"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+</section>
+<section id="explore-data-with-the-plot-method" class="level2">
+<h2 class="anchored" data-anchor-id="explore-data-with-the-plot-method">Explore data with the plot method <a class="anchor" id="plotting"></a></h2>
+<p>Plot some series using the plot method from the StatsForecast class. This method prints a random series from the dataset and is useful for basic EDA.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsforecast <span class="im">import</span> StatsForecast</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>StatsForecast.plot(df)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="AutoETS_files/figure-html/cell-8-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="autocorrelation-plots" class="level2">
+<h2 class="anchored" data-anchor-id="autocorrelation-plots">Autocorrelation plots</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig, axs <span class="op">=</span> plt.subplots(nrows<span class="op">=</span><span class="dv">1</span>, ncols<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>plot_acf(df[<span class="st">"y"</span>],  lags<span class="op">=</span><span class="dv">20</span>, ax<span class="op">=</span>axs[<span class="dv">0</span>],color<span class="op">=</span><span class="st">"fuchsia"</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">0</span>].set_title(<span class="st">"Autocorrelation"</span>)<span class="op">;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>plot_pacf(df[<span class="st">"y"</span>],  lags<span class="op">=</span><span class="dv">20</span>, ax<span class="op">=</span>axs[<span class="dv">1</span>],color<span class="op">=</span><span class="st">"lime"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>axs[<span class="dv">1</span>].set_title(<span class="st">'Partial Autocorrelation'</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>plt.show()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="AutoETS_files/figure-html/cell-9-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<section id="decomposition-of-the-time-series" class="level3">
+<h3 class="anchored" data-anchor-id="decomposition-of-the-time-series">Decomposition of the time series</h3>
+<p>How to decompose a time series and why?</p>
+<p>In time series analysis to forecast new values, it is very important to know past data. More formally, we can say that it is very important to know the patterns that values follow over time. There can be many reasons that cause our forecast values to fall in the wrong direction. Basically, a time series consists of four components. The variation of those components causes the change in the pattern of the time series. These components are:</p>
+<ul>
+<li><strong>Level:</strong> This is the primary value that averages over time.</li>
+<li><strong>Trend:</strong> The trend is the value that causes increasing or decreasing patterns in a time series.</li>
+<li><strong>Seasonality:</strong> This is a cyclical event that occurs in a time series for a short time and causes short-term increasing or decreasing patterns in a time series.</li>
+<li><strong>Residual/Noise:</strong> These are the random variations in the time series.</li>
+</ul>
+<p>Combining these components over time leads to the formation of a time series. Most time series consist of level and noise/residual and trend or seasonality are optional values.</p>
+<p>If seasonality and trend are part of the time series, then there will be effects on the forecast value. As the pattern of the forecasted time series may be different from the previous time series.</p>
+<p>The combination of the components in time series can be of two types: * Additive * Multiplicative</p>
+</section>
+<section id="additive-time-series" class="level3">
+<h3 class="anchored" data-anchor-id="additive-time-series">Additive time series</h3>
+<p>If the components of the time series are added to make the time series. Then the time series is called the additive time series. By visualization, we can say that the time series is additive if the increasing or decreasing pattern of the time series is similar throughout the series. The mathematical function of any additive time series can be represented by: <span class="math display">\[y(t) = level + Trend + seasonality + noise\]</span></p>
+</section>
+<section id="multiplicative-time-series" class="level3">
+<h3 class="anchored" data-anchor-id="multiplicative-time-series">Multiplicative time series</h3>
+<p>If the components of the time series are multiplicative together, then the time series is called a multiplicative time series. For visualization, if the time series is having exponential growth or decline with time, then the time series can be considered as the multiplicative time series. The mathematical function of the multiplicative time series can be represented as.</p>
+<p><span class="math display">\[y(t) = Level * Trend * seasonality * Noise\]</span></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsmodels.tsa.seasonal <span class="im">import</span> seasonal_decompose </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>a <span class="op">=</span> seasonal_decompose(df[<span class="st">"y"</span>], model <span class="op">=</span> <span class="st">"add"</span>, period<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>a.plot()<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="AutoETS_files/figure-html/cell-10-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Breaking down a time series into its components helps us to identify the behavior of the time series we are analyzing. In addition, it helps us to know what type of models we can apply, for our example of the Life expectancy data set, we can observe that our time series shows an increasing trend throughout the year, on the other hand, it can be observed also that the time series has no seasonality.</p>
+<p>By looking at the previous graph and knowing each of the components, we can get an idea of which model we can apply: * We have trend * There is no seasonality</p>
+</section>
+</section>
+<section id="split-the-data-into-training-and-testing" class="level2">
+<h2 class="anchored" data-anchor-id="split-the-data-into-training-and-testing">Split the data into training and testing<a class="anchor" id="splitting"></a></h2>
+<p>Let’s divide our data into sets</p>
+<ol type="1">
+<li>Data to train our model.</li>
+<li>Data to test our model.</li>
+</ol>
+<p>For the test data we will use the last 6 years to test and evaluate the performance of our model.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>train <span class="op">=</span> df[df.ds<span class="op">&lt;=</span><span class="st">'2013-01-01'</span>] </span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>test <span class="op">=</span> df[df.ds<span class="op">&gt;</span><span class="st">'2013-01-01'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>train.shape, test.shape</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>((54, 3), (6, 3))</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>sns.lineplot(train,x<span class="op">=</span><span class="st">"ds"</span>, y<span class="op">=</span><span class="st">"y"</span>, label<span class="op">=</span><span class="st">"Train"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>sns.lineplot(test, x<span class="op">=</span><span class="st">"ds"</span>, y<span class="op">=</span><span class="st">"y"</span>, label<span class="op">=</span><span class="st">"Test"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="AutoETS_files/figure-html/cell-13-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="implementation-of-autoets-with-statsforecast" class="level2">
+<h2 class="anchored" data-anchor-id="implementation-of-autoets-with-statsforecast">Implementation of AutoETS with StatsForecast<a class="anchor" id="implementation"></a></h2>
+<p>Automatically selects the best <code>ETS (Error, Trend, Seasonality)</code> model using an information criterion. Default is Akaike Information Criterion (AICc), while particular models are estimated using maximum likelihood. The state-space equations can be determined based on their <span class="math inline">\(M\)</span> multiplicative <span class="math inline">\(A\)</span> additive, <span class="math inline">\(Z\)</span> optimized or <span class="math inline">\(N\)</span> ommited components. The model string parameter defines the ETS equations: <span class="math inline">\(E\)</span> in <span class="math inline">\([M,A,Z]\)</span>, <span class="math inline">\(T\)</span> in <span class="math inline">\([N,A,M,Z]\)</span>, and <span class="math inline">\(S\)</span> in <span class="math inline">\([N,A,M,Z]\)</span>.</p>
+<p>For example when <code>model=‘ANN’</code> (additive error, no trend, and no seasonality), <a href="https://Nixtla.github.io/statsforecast/src/core/models.html#ets"><code>ETS</code></a> will explore only a simple exponential smoothing.</p>
+<p>If the component is selected as <code>‘Z’</code>, it operates as a placeholder to ask the <a href="https://Nixtla.github.io/statsforecast/src/core/models.html#autoets"><code>AutoETS</code></a> model to figure out the best parameter.</p>
+<p>To also know more about the parameters of the functions of the <code>AutoETS Model</code>, they are listed below. For more information, visit the <a href="https://nixtla.github.io/statsforecast/src/core/models.html#autoets">documentation</a></p>
+<pre><code>model : str
+    Controlling state-space-equations.
+season_length : int
+    Number of observations per unit of time. Ex: 24 Hourly data.
+damped : bool
+    A parameter that 'dampens' the trend.
+alias : str
+    Custom name of the model.
+prediction_intervals : Optional[ConformalIntervals],
+    Information to compute conformal prediction intervals.
+    By default, the model will compute the native prediction
+    intervals.</code></pre>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> statsforecast.models <span class="im">import</span> AutoETS</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<section id="instantiate-model" class="level3">
+<h3 class="anchored" data-anchor-id="instantiate-model">Instantiate Model</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>autoets <span class="op">=</span> AutoETS(model<span class="op">=</span>[<span class="st">"A"</span>,<span class="st">"Z"</span>,<span class="st">"N"</span>],  alias<span class="op">=</span><span class="st">"AutoETS"</span>, season_length<span class="op">=</span><span class="dv">1</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="fit-the-model" class="level3">
+<h3 class="anchored" data-anchor-id="fit-the-model">Fit the Model</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>autoets <span class="op">=</span> autoets.fit(df[<span class="st">"y"</span>].values)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>autoets</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>AutoETS</code></pre>
+</div>
+</div>
+</section>
+<section id="model-prediction" class="level3">
+<h3 class="anchored" data-anchor-id="model-prediction">Model Prediction</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>y_hat_dict <span class="op">=</span> autoets.predict(h<span class="op">=</span><span class="dv">6</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>y_hat_dict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'mean': array([83.56937105, 83.65696041, 83.74454977, 83.83213913, 83.91972848,
+        84.00731784])}</code></pre>
+</div>
+</div>
+<p>You can see that the result that has been extracted in the predictions or in any other method that we use from now on with the Arima model is a dictionary. To extract that result we can use the <code>.get()</code> function, which will help us to be able to extract the result of each part of the dictionary of each of the methods that we use.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>forecast<span class="op">=</span>pd.Series(pd.date_range(<span class="st">"2014-01-01"</span>, freq<span class="op">=</span><span class="st">"ys"</span>, periods<span class="op">=</span><span class="dv">6</span>))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>forecast<span class="op">=</span>pd.DataFrame(forecast)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>forecast.columns<span class="op">=</span>[<span class="st">"ds"</span>]</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"hat"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"mean"</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"unique_id"</span>]<span class="op">=</span><span class="st">"1"</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>forecast</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">hat</th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>2014-01-01</td>
+<td>83.569371</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2015-01-01</td>
+<td>83.656960</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2016-01-01</td>
+<td>83.744550</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>2017-01-01</td>
+<td>83.832139</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2018-01-01</td>
+<td>83.919728</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>2019-01-01</td>
+<td>84.007318</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>sns.lineplot(train,x<span class="op">=</span><span class="st">"ds"</span>, y<span class="op">=</span><span class="st">"y"</span>, label<span class="op">=</span><span class="st">"Train"</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>sns.lineplot(test, x<span class="op">=</span><span class="st">"ds"</span>, y<span class="op">=</span><span class="st">"y"</span>, label<span class="op">=</span><span class="st">"Test"</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>sns.lineplot(forecast,x<span class="op">=</span><span class="st">"ds"</span>, y<span class="op">=</span><span class="st">"hat"</span>, label<span class="op">=</span><span class="st">"Forecast"</span>,)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="AutoETS_files/figure-html/cell-19-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+<p>Let’s add a confidence interval to our forecast.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>y_hat_dict <span class="op">=</span> autoets.predict(h<span class="op">=</span><span class="dv">6</span>, level<span class="op">=</span>[<span class="dv">80</span>,<span class="dv">90</span>,<span class="dv">95</span>])</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>y_hat_dict</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'mean': array([83.56937105, 83.65696041, 83.74454977, 83.83213913, 83.91972848,
+        84.00731784]),
+ 'lo-95': array([83.09409059, 83.17958519, 83.25889648, 83.32836493, 83.3852606 ,
+        83.42814393]),
+ 'lo-90': array([83.17050311, 83.2563345 , 83.33697668, 83.40935849, 83.4711889 ,
+        83.52125977]),
+ 'lo-80': array([83.25860186, 83.34482153, 83.42699815, 83.50273888, 83.57025872,
+        83.62861638]),
+ 'hi-80': array([83.88014025, 83.96909929, 84.06210139, 84.16153937, 84.26919825,
+        84.38601931]),
+ 'hi-90': array([83.96823899, 84.05758633, 84.15212286, 84.25491976, 84.36826807,
+        84.49337591]),
+ 'hi-95': array([84.04465152, 84.13433563, 84.23020306, 84.33591332, 84.45419637,
+        84.58649176])}</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"hat"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"mean"</span>)</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"lo-80"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"lo-80"</span>)</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"hi-80"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"hi-80"</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"lo-90"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"lo-80"</span>)</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"hi-90"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"hi-80"</span>)</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"lo-95"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"lo-95"</span>)</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>forecast[<span class="st">"hi-95"</span>]<span class="op">=</span>y_hat_dict.get(<span class="st">"hi-95"</span>)</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>forecast</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">ds</th>
+<th data-quarto-table-cell-role="th">hat</th>
+<th data-quarto-table-cell-role="th">unique_id</th>
+<th data-quarto-table-cell-role="th">lo-80</th>
+<th data-quarto-table-cell-role="th">hi-80</th>
+<th data-quarto-table-cell-role="th">lo-90</th>
+<th data-quarto-table-cell-role="th">hi-90</th>
+<th data-quarto-table-cell-role="th">lo-95</th>
+<th data-quarto-table-cell-role="th">hi-95</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>2014-01-01</td>
+<td>83.569371</td>
+<td>1</td>
+<td>83.258602</td>
+<td>83.880140</td>
+<td>83.258602</td>
+<td>83.880140</td>
+<td>83.094091</td>
+<td>84.044652</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>2015-01-01</td>
+<td>83.656960</td>
+<td>1</td>
+<td>83.344822</td>
+<td>83.969099</td>
+<td>83.344822</td>
+<td>83.969099</td>
+<td>83.179585</td>
+<td>84.134336</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>2016-01-01</td>
+<td>83.744550</td>
+<td>1</td>
+<td>83.426998</td>
+<td>84.062101</td>
+<td>83.426998</td>
+<td>84.062101</td>
+<td>83.258896</td>
+<td>84.230203</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>2017-01-01</td>
+<td>83.832139</td>
+<td>1</td>
+<td>83.502739</td>
+<td>84.161539</td>
+<td>83.502739</td>
+<td>84.161539</td>
+<td>83.328365</td>
+<td>84.335913</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>2018-01-01</td>
+<td>83.919728</td>
+<td>1</td>
+<td>83.570259</td>
+<td>84.269198</td>
+<td>83.570259</td>
+<td>84.269198</td>
+<td>83.385261</td>
+<td>84.454196</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">5</td>
+<td>2019-01-01</td>
+<td>84.007318</td>
+<td>1</td>
+<td>83.628616</td>
+<td>84.386019</td>
+<td>83.628616</td>
+<td>84.386019</td>
+<td>83.428144</td>
+<td>84.586492</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>df<span class="op">=</span>df.set_index(<span class="st">"ds"</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>forecast<span class="op">=</span>forecast.set_index(<span class="st">"ds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>df[<span class="st">'unique_id'</span>] <span class="op">=</span> df[<span class="st">'unique_id'</span>].astype(<span class="bu">object</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>df_plot<span class="op">=</span>df.merge(forecast, how<span class="op">=</span><span class="st">'left'</span>, on<span class="op">=</span>[<span class="st">'unique_id'</span>, <span class="st">'ds'</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots()</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>plt.plot_date(df_plot.index, df_plot[<span class="st">"y"</span>],label<span class="op">=</span><span class="st">"Actual"</span>, linestyle<span class="op">=</span><span class="st">"-"</span>)</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>plt.plot_date(df_plot.index, df_plot[<span class="st">"hat"</span>],label<span class="op">=</span><span class="st">"Forecas"</span>, linestyle<span class="op">=</span><span class="st">"-"</span>)</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>ax.fill_between(df_plot.index, </span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>                df_plot[<span class="st">'lo-80'</span>], </span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>                df_plot[<span class="st">'hi-80'</span>],</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>                alpha<span class="op">=</span><span class="fl">.35</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>                color<span class="op">=</span><span class="st">'orange'</span>,</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>                label<span class="op">=</span><span class="st">'AutoETS-level-95'</span>)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">''</span>, fontsize<span class="op">=</span><span class="dv">22</span>)</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>ax.set_ylabel(<span class="st">''</span>, fontsize<span class="op">=</span><span class="dv">20</span>)</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>ax.set_xlabel(<span class="st">'Timestamp [t]'</span>, fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>plt.legend(fontsize<span class="op">=</span><span class="dv">12</span>)</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>ax.grid(<span class="va">True</span>)</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<p><img src="AutoETS_files/figure-html/cell-24-output-1.png" class="img-fluid"></p>
+</div>
+</div>
+</section>
+<section id="autoets.predict_in_sample-method" class="level3">
+<h3 class="anchored" data-anchor-id="autoets.predict_in_sample-method">AutoETS.predict_in_sample method</h3>
+<p>Access fitted Exponential Smoothing insample predictions.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>autoets.predict_in_sample()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'fitted': array([69.11047128, 69.33779313, 69.60481978, 69.82902341, 69.99867608,
+        70.19782129, 70.39447403, 70.6410976 , 70.91730954, 71.18057737,
+        71.40921444, 71.65195408, 71.90923238, 72.18210689, 72.44032072,
+        72.72619326, 73.00461648, 73.28185885, 73.56688287, 73.86376672,
+        74.17369207, 74.4619337 , 74.74004938, 75.02518845, 75.27413727,
+        75.53397698, 75.78785822, 76.0401374 , 76.30927822, 76.58417332,
+        76.88118063, 77.18657633, 77.47625869, 77.76062769, 78.04136835,
+        78.31088961, 78.56725183, 78.81937322, 79.07197167, 79.31551239,
+        79.56929831, 79.84269161, 80.14276586, 80.45093604, 80.71510722,
+        80.98548038, 81.23680745, 81.49249391, 81.74269063, 81.96870832,
+        82.16354077, 82.34648092, 82.51452241, 82.65668891, 82.80204272,
+        82.97448067, 83.1064133 , 83.2513209 , 83.36754658, 83.4818162 ])}</code></pre>
+</div>
+</div>
+</section>
+<section id="autoets.forecast-method" class="level3">
+<h3 class="anchored" data-anchor-id="autoets.forecast-method">AutoETS.forecast method</h3>
+<p>Memory Efficient Exponential Smoothing predictions.</p>
+<p>This method avoids memory burden due from object storage. It is analogous to fit_predict without storing information. It assumes you know the forecast horizon in advance.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>autoets.forecast(y<span class="op">=</span>train[<span class="st">"y"</span>].values, h<span class="op">=</span><span class="dv">6</span>, fitted<span class="op">=</span><span class="va">True</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'mean': array([82.95334067, 83.14710962, 83.34087858, 83.53464753, 83.72841648,
+        83.92218543]),
+ 'fitted': array([69.00631079, 69.23838078, 69.49672275, 69.73753749, 69.95373373,
+        70.18800832, 70.42142612, 70.68026343, 70.95296729, 71.21693197,
+        71.46051702, 71.70909162, 71.96257898, 72.22173709, 72.47104279,
+        72.73363157, 72.99184677, 73.25007587, 73.5140747 , 73.78708229,
+        74.07093074, 74.34832297, 74.62600899, 74.91319459, 75.18661412,
+        75.47027994, 75.75394823, 76.03846177, 76.33209228, 76.62765077,
+        76.93286853, 77.2399741 , 77.53597227, 77.82612695, 78.11104644,
+        78.38645253, 78.6510127 , 78.90909424, 79.16292255, 79.40732528,
+        79.65260623, 79.90420341, 80.16700064, 80.43291173, 80.67615301,
+        80.92469414, 81.16608469, 81.41337419, 81.66169821, 81.90113913,
+        82.12727338, 82.34886657, 82.56235691, 82.75957866])}</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>autoets.forecast(y<span class="op">=</span>train[<span class="st">"y"</span>].values, h<span class="op">=</span><span class="dv">6</span>, fitted<span class="op">=</span><span class="va">True</span>, level<span class="op">=</span>[<span class="dv">95</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'mean': array([82.95334067, 83.14710962, 83.34087858, 83.53464753, 83.72841648,
+        83.92218543]),
+ 'fitted': array([69.00631079, 69.23838078, 69.49672275, 69.73753749, 69.95373373,
+        70.18800832, 70.42142612, 70.68026343, 70.95296729, 71.21693197,
+        71.46051702, 71.70909162, 71.96257898, 72.22173709, 72.47104279,
+        72.73363157, 72.99184677, 73.25007587, 73.5140747 , 73.78708229,
+        74.07093074, 74.34832297, 74.62600899, 74.91319459, 75.18661412,
+        75.47027994, 75.75394823, 76.03846177, 76.33209228, 76.62765077,
+        76.93286853, 77.2399741 , 77.53597227, 77.82612695, 78.11104644,
+        78.38645253, 78.6510127 , 78.90909424, 79.16292255, 79.40732528,
+        79.65260623, 79.90420341, 80.16700064, 80.43291173, 80.67615301,
+        80.92469414, 81.16608469, 81.41337419, 81.66169821, 81.90113913,
+        82.12727338, 82.34886657, 82.56235691, 82.75957866]),
+ 'lo-95': array([82.50120336, 82.69439921, 82.88588753, 83.07456973, 83.2594347 ,
+        83.43962264]),
+ 'hi-95': array([83.40547799, 83.59982004, 83.79586962, 83.99472532, 84.19739825,
+        84.40474821]),
+ 'fitted-lo-95': array([68.5588109 , 68.79088089, 69.04922287, 69.2900376 , 69.50623384,
+        69.74050844, 69.97392623, 70.23276354, 70.5054674 , 70.76943209,
+        71.01301713, 71.26159173, 71.51507909, 71.7742372 , 72.0235429 ,
+        72.28613168, 72.54434688, 72.80257598, 73.06657481, 73.3395824 ,
+        73.62343085, 73.90082308, 74.1785091 , 74.4656947 , 74.73911423,
+        75.02278005, 75.30644834, 75.59096188, 75.88459239, 76.18015088,
+        76.48536864, 76.79247421, 77.08847238, 77.37862706, 77.66354655,
+        77.93895264, 78.20351282, 78.46159435, 78.71542266, 78.9598254 ,
+        79.20510634, 79.45670352, 79.71950075, 79.98541184, 80.22865312,
+        80.47719425, 80.7185848 , 80.96587431, 81.21419832, 81.45363924,
+        81.67977349, 81.90136668, 82.11485702, 82.31207877]),
+ 'fitted-hi-95': array([69.45381068, 69.68588067, 69.94422264, 70.18503738, 70.40123361,
+        70.63550821, 70.86892601, 71.12776332, 71.40046717, 71.66443186,
+        71.90801691, 72.15659151, 72.41007887, 72.66923698, 72.91854267,
+        73.18113146, 73.43934666, 73.69757575, 73.96157459, 74.23458218,
+        74.51843063, 74.79582286, 75.07350887, 75.36069448, 75.634114  ,
+        75.91777983, 76.20144811, 76.48596166, 76.77959217, 77.07515066,
+        77.38036842, 77.68747399, 77.98347215, 78.27362683, 78.55854633,
+        78.83395242, 79.09851259, 79.35659413, 79.61042244, 79.85482517,
+        80.10010612, 80.35170329, 80.61450053, 80.88041162, 81.1236529 ,
+        81.37219402, 81.61358458, 81.86087408, 82.1091981 , 82.34863902,
+        82.57477327, 82.79636645, 83.0098568 , 83.20707854])}</code></pre>
+</div>
+</div>
+</section>
+<section id="autoets.forward-method" class="level3">
+<h3 class="anchored" data-anchor-id="autoets.forward-method">AutoETS.forward method</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>autoets.forward(train[<span class="st">"y"</span>].values, h<span class="op">=</span><span class="dv">6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<pre><code>{'mean': array([82.80204272, 82.94739245, 83.09274218, 83.23809191, 83.38344164,
+        83.52879137])}</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="model-evaluation" class="level2">
+<h2 class="anchored" data-anchor-id="model-evaluation">Model Evaluation <a class="anchor" id="evaluate"></a></h2>
+<p>The commonly used accuracy metrics to judge forecasts are:</p>
+<ol type="1">
+<li>Mean Absolute Percentage Error (MAPE)</li>
+<li>Mean Error (ME)</li>
+<li>Mean Absolute Error (MAE)</li>
+<li>Mean Percentage Error (MPE)</li>
+<li>Root Mean Squared Error (RMSE)</li>
+<li>Correlation between the Actual and the Forecast (corr)</li>
+</ol>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn <span class="im">import</span> metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> model_evaluation(y_true, y_pred, model):</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> mean_absolute_percentage_error(y_true, y_pred): </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>        y_true, y_pred <span class="op">=</span> np.array(y_true), np.array(y_pred)</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.mean(np.<span class="bu">abs</span>((y_true <span class="op">-</span> y_pred) <span class="op">/</span> y_true)) <span class="op">*</span> <span class="dv">100</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span> (<span class="ss">f'Model Evaluation: </span><span class="sc">{</span>model<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'MSE is : </span><span class="sc">{</span>metrics<span class="sc">.</span>mean_squared_error(y_true, y_pred)<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'MAE is : </span><span class="sc">{</span>metrics<span class="sc">.</span>mean_absolute_error(y_true, y_pred)<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'RMSE is : </span><span class="sc">{</span>np<span class="sc">.</span>sqrt(metrics.mean_squared_error(y_true, y_pred))<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'MAPE is : </span><span class="sc">{</span>mean_absolute_percentage_error(y_true, y_pred)<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'R2 is : </span><span class="sc">{</span>metrics<span class="sc">.</span>r2_score(y_true, y_pred)<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f'corr is : </span><span class="sc">{</span>np<span class="sc">.</span>corrcoef(y_true, y_pred)[<span class="dv">0</span>,<span class="dv">1</span>]<span class="sc">}</span><span class="ss">'</span>,end<span class="op">=</span><span class="st">'</span><span class="ch">\n\n</span><span class="st">'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>model_evaluation(test[<span class="st">"y"</span>], forecast[<span class="st">"hat"</span>], <span class="st">"AutoETS"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Model Evaluation: AutoETS
+MSE is : 0.5813708312500836
+MAE is : 0.7269623343638779
+RMSE is : 0.7624767742364902
+MAPE is : 0.87594467113361
+R2 is : -7.407128931524218
+corr is : 0.4910418089228463
+</code></pre>
+</div>
+</div>
+</section>
+<section id="acknowledgements" class="level2">
+<h2 class="anchored" data-anchor-id="acknowledgements">Acknowledgements</h2>
+<p>We would like to thank <a href="https://www.linkedin.com/in/naren-castellon-1541b8101/?originalSubdomain=pa">Naren Castellon</a> for writing this tutorial.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References <a class="anchor" id="references"></a></h2>
+<ol type="1">
+<li><p><a href="https://nixtla.github.io/statsforecast/src/core/models_intro.html#automatic-forecasting">Nixtla Automatic Forecasting</a></p></li>
+<li><p><a href="https://otexts.com/fpp3/tscv.html">Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting principles and practice, Time series cross-validation”.</a></p></li>
+</ol>
+
+
+</section>
+</section>
+
+<p>Give us a ⭐&nbsp;on <a href="https://github.com/nixtla/statsforecast">Github</a></p></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
