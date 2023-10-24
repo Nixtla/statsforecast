@@ -22,4 +22,5 @@ _proc/
 nbs/.last_checked
 .venv
 .idea
+mlruns/
 .luarc.json
