@@ -62,6 +62,7 @@
         "docs/how-to-guides/exogenous.html",
         "docs/how-to-guides/getting_started_complete_polars.html",
         "docs/how-to-guides/migrating_R",
+        "docs/how-to-guides/MLFlow.html",
         "docs/how-to-guides/numba_cache.html",
         "docs/how-to-guides/prophet_spark_m5.html",
         "docs/how-to-guides/ray.html",
