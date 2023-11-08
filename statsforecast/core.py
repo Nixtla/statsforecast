@@ -19,9 +19,9 @@ from fugue.execution.factory import (
 )
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
-from utilsforecast.compat import DataFrame, pl_DataFrame, pl_col
+from utilsforecast.compat import DataFrame, pl_DataFrame, pl
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
-from utilsforecast.processing import DataFrameProcessor
+from utilsforecast.processing import process_df
 
 from .utils import ConformalIntervals
 
@@ -368,11 +368,8 @@ class GroupedArray(BaseGroupedArray):
             }
         return result
 
-    def _take_from_ranges(self, ranges):
-        items = [self.data[r] for r in ranges]
-        sizes = np.array([item.shape[0] for item in items])
-        data = np.vstack(items)
-        indptr = np.append(0, sizes.cumsum())
+    def take(self, idxs):
+        data, indptr = super().take(idxs)
         return GroupedArray(data, indptr)
 
     def split(self, n_chunks):
@@ -556,8 +553,9 @@ class _StatsForecast:
                 "You can leave it to its default value (True) to supress this warning",
                 category=DeprecationWarning,
             )
-        processor = DataFrameProcessor("unique_id", "ds", "y")
-        self.uids, self.last_dates, data, indptr, sort_idxs = processor.process(df)
+        self.uids, self.last_dates, data, indptr, sort_idxs = process_df(
+            df, "unique_id", "ds", "y"
+        )
         self.ga = GroupedArray(data, indptr)
         if save_original:
             self.og_unique_id = df["unique_id"]
@@ -633,7 +631,7 @@ class _StatsForecast:
         if isinstance(df, pd.DataFrame):
             df = df.set_index("unique_id")
         elif isinstance(df, pl_DataFrame):
-            df = df.with_columns(pl_col("unique_id").cast(self.uids.dtype))
+            df = df.with_columns(pl.col("unique_id").cast(self.uids.dtype))
         return df
 
     def _parse_X_level(
@@ -648,10 +646,8 @@ class _StatsForecast:
             raise ValueError(
                 f"Expected X to have shape {expected_shape}, but got {X.shape}"
             )
-        # check if this is necessary
         first_col = [c for c in X.columns if c not in ("unique_id", "ds")][0]
-        processor = DataFrameProcessor("unique_id", "ds", first_col)
-        _, _, data, indptr, _ = processor.process(X)
+        _, _, data, indptr, _ = process_df(X, "unique_id", "ds", first_col)
         return GroupedArray(data, indptr), level
 
     def predict(

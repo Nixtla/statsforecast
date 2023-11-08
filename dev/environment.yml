@@ -16,7 +16,7 @@ dependencies:
   - statsmodels>=0.13.2
   - tabulate
   - plotly
-  - utilsforecast>=0.0.5
+  - utilsforecast>=0.0.12
   - pip:
     - fugue[dask,ray]
     - nbdev
