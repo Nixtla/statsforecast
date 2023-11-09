@@ -58,7 +58,7 @@ jobs:
           cache-environment: true
 
       - name: Install pip requirements
-        run: pip install ./
+        run: pip install git+https://github.com/Nixtla/utilsforecast.git@ensure-times && pip install ./
 
       - name: Run local tests
         run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0
@@ -83,7 +83,7 @@ jobs:
           cache-environment: true
 
       - name: Install pip requirements
-        run: pip install ./ 
+        run: pip install git+https://github.com/Nixtla/utilsforecast.git@ensure-times && pip install ./
 
       - name: Run tests 
         run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0
@@ -109,7 +109,7 @@ jobs:
           cache-environment: true
 
       - name: Install library and extra deps
-        run: pip install ".[dev]" fire
+        run: pip install git+https://github.com/Nixtla/utilsforecast.git@ensure-times && pip install ".[dev]" fire
 
       - name: Run M3 experiment
         run: |
