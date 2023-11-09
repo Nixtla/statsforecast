@@ -15,7 +15,7 @@ dependencies:
   - statsmodels>=0.13.2
   - tabulate
   - plotly
-  - utilsforecast>=0.0.12
+  - utilsforecast>=0.0.13
   - pip:
     - nbdev
     - plotly-resampler
