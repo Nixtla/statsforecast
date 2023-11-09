@@ -22,6 +22,7 @@ from triad import conditional_dispatcher
 from utilsforecast.compat import DataFrame, pl_DataFrame, pl
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
 from utilsforecast.processing import process_df
+from utilsforecast.validation import ensure_time_dtype
 
 from .utils import ConformalIntervals
 
@@ -433,24 +434,6 @@ def _get_n_jobs(n_groups, n_jobs):
     return min(n_groups, actual_n_jobs)
 
 # %% ../nbs/src/core/core.ipynb 29
-def _parse_ds_type(df):
-    dt_col = df["ds"]
-    dt_check = pd.api.types.is_datetime64_any_dtype(dt_col)
-    int_float_check = dt_col.dtype.kind in ["i", "f"]
-    if not dt_check and not int_float_check:
-        df = df.copy()
-        try:
-            df["ds"] = pd.to_datetime(df["ds"])
-        except Exception as e:
-            msg = (
-                "Failed to parse `ds` column as datetime. "
-                "Please use `pd.to_datetime` outside to fix the error. "
-                f"{e}"
-            )
-            raise Exception(msg) from e
-    return df
-
-# %% ../nbs/src/core/core.ipynb 30
 def _warn_df_constructor():
     warnings.warn(
         "The `df` argument of the StatsForecast constructor is deprecated "
@@ -459,7 +442,7 @@ def _warn_df_constructor():
         category=DeprecationWarning,
     )
 
-# %% ../nbs/src/core/core.ipynb 31
+# %% ../nbs/src/core/core.ipynb 30
 class _StatsForecast:
     def __init__(
         self,
@@ -532,6 +515,7 @@ class _StatsForecast:
         if df is None:
             _warn_df_constructor()
             return
+        df = ensure_time_dtype(df, "ds")
         if isinstance(df, pd.DataFrame):
             if df.index.name == "unique_id":
                 warnings.warn(
@@ -540,13 +524,6 @@ class _StatsForecast:
                     category=DeprecationWarning,
                 )
                 df = df.reset_index()
-            if pd.api.types.is_object_dtype(df["ds"]):
-                warnings.warn(
-                    "Passing an object column as 'ds' is deprecated and will raise an error in a future version. "
-                    "Please convert it to datetime or integer.",
-                    category=DeprecationWarning,
-                )
-                df = _parse_ds_type(df)
         if not sort_df:
             warnings.warn(
                 "The `sort_df` argument is deprecated and will be removed in a future version. "
@@ -556,6 +533,8 @@ class _StatsForecast:
         self.uids, self.last_dates, data, indptr, sort_idxs = process_df(
             df, "unique_id", "ds", "y"
         )
+        if isinstance(df, pd.DataFrame):
+            self.last_dates = pd.Index(self.last_dates, name="ds")
         self.ga = GroupedArray(data, indptr)
         if save_original:
             self.og_unique_id = df["unique_id"]
@@ -1206,6 +1185,7 @@ class _StatsForecast:
         """
         from utilsforecast.plotting import plot_series
 
+        df = ensure_time_dtype(df, "ds")
         if isinstance(df, pd.DataFrame) and df.index.name == "unique_id":
             warnings.warn(
                 "Passing unique_id as the index is deprecated. "
@@ -1213,28 +1193,18 @@ class _StatsForecast:
                 category=DeprecationWarning,
             )
             df = df.reset_index()
-        if isinstance(df, pd.DataFrame) and pd.api.types.is_object_dtype(df["ds"]):
+        if forecasts_df is not None:
+            forecasts_df = ensure_time_dtype(forecasts_df, "ds")
+        if (
+            isinstance(forecasts_df, pd.DataFrame)
+            and forecasts_df.index.name == "unique_id"
+        ):
             warnings.warn(
-                "Passing an object column as 'ds' is deprecated and will raise an error in a future version. "
-                "Please convert it to datetime or integer.",
+                "Passing unique_id as the index is deprecated. "
+                "Please provide it as a column instead.",
                 category=DeprecationWarning,
             )
-            df = _parse_ds_type(df)
-        if isinstance(forecasts_df, pd.DataFrame):
-            if forecasts_df.index.name == "unique_id":
-                warnings.warn(
-                    "Passing unique_id as the index is deprecated. "
-                    "Please provide it as a column instead.",
-                    category=DeprecationWarning,
-                )
-                forecasts_df = forecasts_df.reset_index()
-            if pd.api.types.is_object_dtype(forecasts_df["ds"]):
-                warnings.warn(
-                    "Passing an object column as 'ds' is deprecated and will raise an error in a future version. "
-                    "Please convert it to datetime or integer.",
-                    category=DeprecationWarning,
-                )
-                forecasts_df = _parse_ds_type(forecasts_df)
+            forecasts_df = forecasts_df.reset_index()
         return plot_series(
             df=df,
             forecasts_df=forecasts_df,
@@ -1252,7 +1222,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/src/core/core.ipynb 32
+# %% ../nbs/src/core/core.ipynb 31
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
@@ -1273,7 +1243,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/src/core/core.ipynb 33
+# %% ../nbs/src/core/core.ipynb 32
 class StatsForecast(_StatsForecast):
     """Train statistical models.
 
