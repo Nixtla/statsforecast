@@ -14,9 +14,14 @@ jobs:
   build-docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Clone repo
+        uses: actions/checkout@v3
+      - name: Clone docs repo
+        uses: actions/checkout@v3
         with:
-          submodules: 'recursive'
+          repository: Nixtla/docs
+          ref: scripts
+          path: docs-scripts
       - uses: actions/setup-python@v4
         with:
           cache: "pip"
@@ -46,7 +51,16 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: docs
           publish_dir: ./_docs
-          # The following lines assign commit authorship to the official GH-Actions bot for deploys to `docs` branch.
-          # You can swap them out with your own user credentials.
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+      - name: Configure redirects for gh-pages
+        run: python docs-scripts/configure-redirects.py statsforecast
+      - name: Deploy to Github Pages
+        if: github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./gh-pages
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
