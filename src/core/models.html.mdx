@@ -244,29 +244,18 @@ Apply fitted ARIMA model to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# AutoARIMA's usage example
-
 from statsforecast.models import AutoARIMA
 from statsforecast.utils import AirPassengers as ap
+```
+
+
+```python
+# AutoARIMA's usage example
 
 arima = AutoARIMA(season_length=4)
 arima = arima.fit(y=ap)
 y_hat_dict = arima.predict(h=4, level=[80])
 y_hat_dict
-```
-
-``` text
-{'mean': array([497.95290378, 486.7806859 , 500.08214752, 494.10983682]),
- 'lo-80': 0    467.167462
- 1    442.112227
- 2    450.786736
- 3    440.963293
- Name: 80%, dtype: float64,
- 'hi-80': 0    528.738346
- 1    531.449145
- 2    549.377559
- 3    547.256381
- Name: 80%, dtype: float64}
 ```
 
 ## AutoETS
@@ -444,10 +433,13 @@ Apply fitted Exponential Smoothing model to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# AutoETS' usage example
-
 from statsforecast.models import AutoETS
 from statsforecast.utils import AirPassengers as ap
+```
+
+
+```python
+# AutoETS' usage example
 
 # Multiplicative trend, optimal error and seasonality
 autoets = AutoETS(model='ZMZ',  
@@ -455,10 +447,6 @@ autoets = AutoETS(model='ZMZ',
 autoets = autoets.fit(y=ap)
 y_hat_dict = autoets.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([416.63294737, 419.65915384, 442.66309931, 457.33314074])}
 ```
 
 ------------------------------------------------------------------------
@@ -677,10 +665,13 @@ Apply fitted Complex Exponential Smoothing to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# CES' usage example
-
 from statsforecast.models import AutoCES
 from statsforecast.utils import AirPassengers as ap
+```
+
+
+```python
+# CES' usage example
 
 # Multiplicative trend, optimal error and seasonality
 ces = AutoCES(model='Z',  
@@ -688,10 +679,6 @@ ces = AutoCES(model='Z',
 ces = ces.fit(y=ap)
 y_hat_dict = ces.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([424.30716324, 405.69589186, 442.02640533, 443.63488996])}
 ```
 
 ## AutoTheta
@@ -855,20 +842,17 @@ Apply fitted AutoTheta to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# AutoTheta's usage example
-
 from statsforecast.models import AutoTheta
 from statsforecast.utils import AirPassengers as ap
+```
 
 
+```python
+# AutoTheta's usage example
 theta = AutoTheta(season_length=4)
 theta = theta.fit(y=ap)
 y_hat_dict = theta.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([413.86262032, 410.60532872, 429.59124482, 440.16565301])}
 ```
 
 # ARIMA family
@@ -1037,30 +1021,18 @@ Apply fitted model to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# ARIMA's usage example
-
 from statsforecast.models import ARIMA
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# ARIMA's usage example
 
 arima = ARIMA(order=(1, 0, 0), season_length=12)
 arima = arima.fit(y=ap)
 y_hat_dict = arima.predict(h=4, level=[80])
 y_hat_dict
-```
-
-``` text
-{'mean': array([426.54529705, 421.28383474, 416.20876726, 411.31349129]),
- 'lo-80': 0    383.228999
- 1    361.100640
- 2    343.777875
- 3    329.110028
- Name: 80%, dtype: float64,
- 'hi-80': 0    469.861595
- 1    481.467029
- 2    488.639659
- 3    493.516954
- Name: 80%, dtype: float64}
 ```
 
 ## AutoRegressive
@@ -1219,30 +1191,18 @@ Apply fitted model to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# AutoRegressive's usage example
-
 from statsforecast.models import AutoRegressive
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# AutoRegressive's usage example
 
 ar = AutoRegressive(lags=[12])
 ar = ar.fit(y=ap)
 y_hat_dict = ar.predict(h=4, level=[80])
 y_hat_dict
-```
-
-``` text
-{'mean': array([460.01874698, 432.12629561, 462.16432016, 507.22135699]),
- 'lo-80': 0    439.539875
- 1    411.647423
- 2    441.685448
- 3    486.742485
- Name: 80%, dtype: float64,
- 'hi-80': 0    480.497619
- 1    452.605168
- 2    482.643192
- 3    527.700229
- Name: 80%, dtype: float64}
 ```
 
 # ExponentialSmoothing
@@ -1381,20 +1341,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted SimpleExponentialSmoothing insample predictions.
 
 ```python
-# SimpleExponentialSmoothing's usage example
-
 from statsforecast.models import SimpleExponentialSmoothing
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# SimpleExponentialSmoothing's usage example
 
 ses = SimpleExponentialSmoothing(alpha=0.5)
 ses = ses.fit(y=ap)
 y_hat_dict = ses.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([439.256, 439.256, 439.256, 439.256], dtype=float32)}
 ```
 
 ## SimpleSmoothOptimized
@@ -1531,20 +1489,18 @@ know the forecast horizon in advance.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# SimpleExponentialSmoothingOptimized's usage example
-
 from statsforecast.models import SimpleExponentialSmoothingOptimized
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# SimpleExponentialSmoothingOptimized's usage example
 
 seso = SimpleExponentialSmoothingOptimized()
 seso = seso.fit(y=ap)
 y_hat_dict = seso.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([431.58716, 431.58716, 431.58716, 431.58716], dtype=float32)}
 ```
 
 ## SeasonalSmooth
@@ -1693,20 +1649,18 @@ know the forecast horizon in advance.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# SeasonalExponentialSmoothing's usage example
-
 from statsforecast.models import SeasonalExponentialSmoothing
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# SeasonalExponentialSmoothing's usage example
 
 model = SeasonalExponentialSmoothing(alpha=0.5, season_length=12)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([376.28955, 354.71094, 396.02002, 412.06738], dtype=float32)}
 ```
 
 ## SeasonalSmoothOptimized
@@ -1857,20 +1811,18 @@ Access fitted SeasonalExponentialSmoothingOptimized insample
 predictions.
 
 ```python
-# SeasonalExponentialSmoothingOptimized's usage example
-
 from statsforecast.models import SeasonalExponentialSmoothingOptimized
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# SeasonalExponentialSmoothingOptimized's usage example
 
 model = SeasonalExponentialSmoothingOptimized(season_length=12)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([416.42798, 390.50757, 418.8656 , 460.3452 ], dtype=float32)}
 ```
 
 ## Holt’s method
@@ -2031,20 +1983,18 @@ Apply fitted Exponential Smoothing model to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# Holt's usage example
-
 from statsforecast.models import Holt
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# Holt's usage example
 
 model = Holt(season_length=12, error_type='A')
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([434.23881352, 436.48160242, 438.72439132, 440.96718023])}
 ```
 
 ## Holt-Winters’ method
@@ -2208,20 +2158,18 @@ Apply fitted Exponential Smoothing model to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# Holt-Winters' usage example
-
 from statsforecast.models import HoltWinters
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# Holt-Winters' usage example
 
 model = HoltWinters(season_length=12, error_type='A')
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([453.08875135, 427.4765464 , 460.63176307, 497.03681052])}
 ```
 
 # Baseline Models
@@ -2354,20 +2302,18 @@ Access fitted HistoricAverage insample predictions.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# HistoricAverage's usage example
-
 from statsforecast.models import HistoricAverage
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# HistoricAverage's usage example
 
 model = HistoricAverage()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([280.2986, 280.2986, 280.2986, 280.2986], dtype=float32)}
 ```
 
 ## Naive
@@ -2495,20 +2441,18 @@ Access fitted Naive insample predictions.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# Naive's usage example
-
 from statsforecast.models import Naive
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# Naive's usage example
 
 model = Naive()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([432., 432., 432., 432.], dtype=float32)}
 ```
 
 ## RandomWalkWithDrift
@@ -2644,20 +2588,18 @@ Access fitted RandomWalkWithDrift insample predictions.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# RandomWalkWithDrift's usage example
-
 from statsforecast.models import RandomWalkWithDrift
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# RandomWalkWithDrift's usage example
 
 model = RandomWalkWithDrift()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([434.23776, 436.47552, 438.7133 , 440.95105], dtype=float32)}
 ```
 
 ## SeasonalNaive
@@ -2790,20 +2732,18 @@ Access fitted SeasonalNaive insample predictions.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# SeasonalNaive's usage example
-
 from statsforecast.models import SeasonalNaive
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# SeasonalNaive's usage example
 
 model = SeasonalNaive(season_length=12)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([417., 391., 419., 461.], dtype=float32)}
 ```
 
 ## WindowAverage
@@ -2934,20 +2874,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted WindowAverage insample predictions.
 
 ```python
-# WindowAverage's usage example
-
 from statsforecast.models import WindowAverage
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# WindowAverage's usage example
 
 model = WindowAverage(window_size=12*4)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([413.47916, 413.47916, 413.47916, 413.47916], dtype=float32)}
 ```
 
 ## SeasonalWindowAverage
@@ -3077,20 +3015,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted SeasonalWindowAverage insample predictions.
 
 ```python
-# SeasonalWindowAverage's usage example
-
 from statsforecast.models import SeasonalWindowAverage
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# SeasonalWindowAverage's usage example
 
 model = SeasonalWindowAverage(season_length=12, window_size=4)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([358.  , 338.  , 385.75, 388.25], dtype=float32)}
 ```
 
 # Sparse or Intermittent
@@ -3224,20 +3160,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted ADIDA insample predictions.
 
 ```python
-# ADIDA's usage example
-
 from statsforecast.models import ADIDA
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# ADIDA's usage example
 
 model = ADIDA()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([461.7666, 461.7666, 461.7666, 461.7666], dtype=float32)}
 ```
 
 ## CrostonClassic
@@ -3372,20 +3306,18 @@ Access fitted CrostonClassic insample predictions.
 | **Returns** | **dict** | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# CrostonClassic's usage example
-
 from statsforecast.models import CrostonClassic
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# CrostonClassic's usage example
 
 model = CrostonClassic()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([460.30276, 460.30276, 460.30276, 460.30276], dtype=float32)}
 ```
 
 ## CrostonOptimized
@@ -3517,20 +3449,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted CrostonOptimized insample predictions.
 
 ```python
-# CrostonOptimized's usage example
-
 from statsforecast.models import CrostonOptimized
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# CrostonOptimized's usage example
 
 model = CrostonOptimized()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([461.7666, 461.7666, 461.7666, 461.7666], dtype=float32)}
 ```
 
 ## CrostonSBA
@@ -3660,20 +3590,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted CrostonSBA insample predictions.
 
 ```python
-# CrostonSBA's usage example
-
 from statsforecast.models import CrostonSBA
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# CrostonSBA's usage example
 
 model = CrostonSBA()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([437.28763, 437.28763, 437.28763, 437.28763], dtype=float32)}
 ```
 
 ## IMAPA
@@ -3799,20 +3727,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted IMAPA insample predictions.
 
 ```python
-# IMAPA's usage example
-
 from statsforecast.models import IMAPA
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# IMAPA's usage example
 
 model = IMAPA()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([461.7666, 461.7666, 461.7666, 461.7666], dtype=float32)}
 ```
 
 ## TSB
@@ -3953,20 +3879,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Access fitted TSB insample predictions.
 
 ```python
-# TSB's usage example
-
 from statsforecast.models import TSB
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# TSB's usage example
 
 model = TSB(alpha_d=0.5, alpha_p=0.5)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([439.256, 439.256, 439.256, 439.256], dtype=float32)}
 ```
 
 # Multiple Seasonalities
@@ -4128,22 +4052,18 @@ Apply fitted MSTL model to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# MSTL's usage example
-
 from statsforecast.models import MSTL
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# MSTL's usage example
 
 mstl_model = MSTL(season_length=[3, 12], trend_forecaster=AutoARIMA(prediction_intervals=ConformalIntervals(h=4, n_windows=2)))
 mstl_model = mstl_model.fit(y=ap)
 y_hat_dict = mstl_model.predict(h=4, level=[80])
 y_hat_dict
-```
-
-``` text
-{'mean': array([449.64812085, 411.68927237, 467.03003869, 472.74771836]),
- 'lo-80': array([439.9824947 , 400.44724213, 462.79116282, 463.15713004]),
- 'hi-80': array([459.31374699, 422.93130261, 471.26891456, 482.33830668])}
 ```
 
 # Theta Family
@@ -4302,20 +4222,18 @@ Apply fitted AutoTheta to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# Theta's usage example
-
 from statsforecast.models import Theta
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# Theta's usage example
 
 model = Theta(season_length=12)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([440.96918204, 429.24926382, 490.69323393, 476.65998055])}
 ```
 
 ## Optimized Theta Method
@@ -4477,20 +4395,18 @@ Apply fitted AutoTheta to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# OptimzedThetA's usage example
-
 from statsforecast.models import OptimizedTheta
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# OptimzedThetA's usage example
 
 model = OptimizedTheta(season_length=12)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([442.94078295, 432.22936898, 495.30609727, 482.30625563])}
 ```
 
 ## Dynamic Standard Theta Method
@@ -4650,20 +4566,18 @@ Apply fitted AutoTheta to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# DynStandardThetaMethod's usage example
-
 from statsforecast.models import DynamicTheta
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# DynStandardThetaMethod's usage example
 
 model = DynamicTheta(season_length=12)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([440.77412474, 429.06190332, 490.48332496, 476.46133269])}
 ```
 
 ## Dynamic Optimized Theta Method
@@ -4827,20 +4741,18 @@ Apply fitted AutoTheta to a new time series.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# OptimzedThetaMethod's usage example
-
 from statsforecast.models import DynamicOptimizedTheta
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# OptimzedThetaMethod's usage example
 
 model = DynamicOptimizedTheta(season_length=12)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([442.94256075, 432.31255941, 495.49774527, 482.58930649])}
 ```
 
 # ARCH Family
@@ -5279,20 +5191,18 @@ Apply Constant model predictions to a new/updated time series.
 | **Returns** | **dict** |             | **Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# ConstantModel's usage example
-
 from statsforecast.models import ConstantModel
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# ConstantModel's usage example
 
 model = ConstantModel(1)
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([1., 1., 1., 1.], dtype=float32)}
 ```
 
 ## ZeroModel
@@ -5435,20 +5345,18 @@ Apply Constant model predictions to a new/updated time series.
 | **Returns** | **dict** |             | **Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# NanModel's usage example
-
 from statsforecast.models import ZeroModel
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# NanModel's usage example
 
 model = ZeroModel()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([0., 0., 0., 0.], dtype=float32)}
 ```
 
 ## NaNModel
@@ -5564,20 +5472,18 @@ Access fitted Constant Model insample predictions.
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
 ```python
-# NanModel's usage example
-
 from statsforecast.models import NaNModel
 from statsforecast.utils import AirPassengers as ap
+```
 
+
+```python
+# NanModel's usage example
 
 model = NaNModel()
 model = model.fit(y=ap)
 y_hat_dict = model.predict(h=4)
 y_hat_dict
-```
-
-``` text
-{'mean': array([nan, nan, nan, nan], dtype=float32)}
 ```
 
 # References

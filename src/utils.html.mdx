@@ -62,24 +62,13 @@ nice opportunity to quickly showcase a model’s predictions performance.
 
 ```python
 from statsforecast.utils import AirPassengersDF
+```
 
+
+```python
 AirPassengersDF.head(12)
 ```
 
-|     | unique_id | ds         | y     |
-|-----|-----------|------------|-------|
-| 0   | 1.0       | 1949-01-31 | 112.0 |
-| 1   | 1.0       | 1949-02-28 | 118.0 |
-| 2   | 1.0       | 1949-03-31 | 132.0 |
-| 3   | 1.0       | 1949-04-30 | 129.0 |
-| 4   | 1.0       | 1949-05-31 | 121.0 |
-| 5   | 1.0       | 1949-06-30 | 135.0 |
-| 6   | 1.0       | 1949-07-31 | 148.0 |
-| 7   | 1.0       | 1949-08-31 | 148.0 |
-| 8   | 1.0       | 1949-09-30 | 136.0 |
-| 9   | 1.0       | 1949-10-31 | 119.0 |
-| 10  | 1.0       | 1949-11-30 | 104.0 |
-| 11  | 1.0       | 1949-12-31 | 118.0 |
 
 ```python
 #We are going to plot the ARIMA predictions, and the prediction intervals.

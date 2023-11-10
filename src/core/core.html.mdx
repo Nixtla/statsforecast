@@ -101,50 +101,15 @@ from statsforecast.models import (
     AutoETS,
     AutoCES
 )
+```
 
+
+```python
 # Generate synthetic panel DataFrame for example
 panel_df = generate_series(n_series=9, equal_ends=False, engine='pandas')
 panel_df.groupby('unique_id').tail(4)
 ```
 
-|      | unique_id | ds         | y        |
-|------|-----------|------------|----------|
-| 218  | 0         | 2000-08-06 | 1.212726 |
-| 219  | 0         | 2000-08-07 | 2.442669 |
-| 220  | 0         | 2000-08-08 | 3.339940 |
-| 221  | 0         | 2000-08-09 | 4.228065 |
-| 315  | 1         | 2000-04-03 | 0.048275 |
-| 316  | 1         | 2000-04-04 | 1.128070 |
-| 317  | 1         | 2000-04-05 | 2.295968 |
-| 318  | 1         | 2000-04-06 | 3.238239 |
-| 482  | 2         | 2000-06-12 | 6.480128 |
-| 483  | 2         | 2000-06-13 | 0.036217 |
-| 484  | 2         | 2000-06-14 | 1.009650 |
-| 485  | 2         | 2000-06-15 | 2.489787 |
-| 724  | 3         | 2000-08-26 | 3.289840 |
-| 725  | 3         | 2000-08-27 | 4.227949 |
-| 726  | 3         | 2000-08-28 | 5.321176 |
-| 727  | 3         | 2000-08-29 | 6.127013 |
-| 1097 | 4         | 2001-01-04 | 5.403709 |
-| 1098 | 4         | 2001-01-05 | 6.081779 |
-| 1099 | 4         | 2001-01-06 | 0.438420 |
-| 1100 | 4         | 2001-01-07 | 1.386855 |
-| 1398 | 5         | 2000-10-24 | 5.011166 |
-| 1399 | 5         | 2000-10-25 | 6.397153 |
-| 1400 | 5         | 2000-10-26 | 0.462146 |
-| 1401 | 5         | 2000-10-27 | 1.253125 |
-| 1643 | 6         | 2000-08-29 | 5.407805 |
-| 1644 | 6         | 2000-08-30 | 6.340789 |
-| 1645 | 6         | 2000-08-31 | 0.202894 |
-| 1646 | 6         | 2000-09-01 | 1.491204 |
-| 2052 | 7         | 2001-02-09 | 1.068102 |
-| 2053 | 7         | 2001-02-10 | 2.233974 |
-| 2054 | 7         | 2001-02-11 | 3.484143 |
-| 2055 | 7         | 2001-02-12 | 4.176505 |
-| 2111 | 8         | 2000-02-25 | 4.110373 |
-| 2112 | 8         | 2000-02-26 | 5.483879 |
-| 2113 | 8         | 2000-02-27 | 6.068916 |
-| 2114 | 8         | 2000-02-28 | 0.040499 |
 
 ```python
 # Declare list of instantiated StatsForecast estimators to be fitted
@@ -300,7 +265,10 @@ requires the forecast horizon `h` in advance.
 #from statsforecast.core import StatsForecast
 from statsforecast.utils import AirPassengersDF as panel_df
 from statsforecast.models import AutoARIMA, Naive
+```
 
+
+```python
 # Instantiate StatsForecast class
 fcst = StatsForecast(df=panel_df,
                      models=[AutoARIMA(), Naive()],
@@ -310,14 +278,6 @@ fcst = StatsForecast(df=panel_df,
 fcsts_df = fcst.forecast(h=4, fitted=True)
 fcsts_df.groupby('unique_id').tail(4)
 ```
-
-|           | ds         | AutoARIMA  | Naive |
-|-----------|------------|------------|-------|
-| unique_id |            |            |       |
-| 1.0       | 1961-01-01 | 476.006500 | 432.0 |
-| 1.0       | 1961-01-02 | 482.846222 | 432.0 |
-| 1.0       | 1961-01-03 | 512.423523 | 432.0 |
-| 1.0       | 1961-01-04 | 502.038269 | 432.0 |
 
 ------------------------------------------------------------------------
 
@@ -346,7 +306,10 @@ method and then use the `StatsForecast.forecast_fitted_values` method.
 #from statsforecast.core import StatsForecast
 from statsforecast.utils import AirPassengersDF as panel_df
 from statsforecast.models import Naive
+```
 
+
+```python
 # Instantiate StatsForecast class
 fcst = StatsForecast(df=panel_df,
                      models=[AutoARIMA()],
@@ -357,14 +320,6 @@ fcsts_df = fcst.forecast(h=12, fitted=True, level=(90, 10))
 insample_fcsts_df = fcst.forecast_fitted_values()
 insample_fcsts_df.tail(4)
 ```
-
-|           | ds         | y     | AutoARIMA  | AutoARIMA-lo-90 | AutoARIMA-lo-10 | AutoARIMA-hi-10 | AutoARIMA-hi-90 |
-|-----------|------------|-------|------------|-----------------|-----------------|-----------------|-----------------|
-| unique_id |            |       |            |                 |                 |                 |                 |
-| 1.0       | 1960-09-30 | 508.0 | 572.654175 | 525.092163      | 569.020630      | 576.287781      | 620.216187      |
-| 1.0       | 1960-10-31 | 461.0 | 451.528259 | 403.966248      | 447.894684      | 455.161835      | 499.090271      |
-| 1.0       | 1960-11-30 | 390.0 | 437.915375 | 390.353363      | 434.281799      | 441.548981      | 485.477386      |
-| 1.0       | 1960-12-31 | 432.0 | 369.718781 | 322.156769      | 366.085205      | 373.352356      | 417.280792      |
 
 ------------------------------------------------------------------------
 
@@ -421,7 +376,10 @@ length and diversity.
 #from statsforecast.core import StatsForecast
 from statsforecast.utils import AirPassengersDF as panel_df
 from statsforecast.models import Naive
+```
 
+
+```python
 # Instantiate StatsForecast class
 fcst = StatsForecast(df=panel_df,
                      models=[Naive()],
@@ -431,18 +389,6 @@ fcst = StatsForecast(df=panel_df,
 rolled_fcsts_df = fcst.cross_validation(14, n_windows=2)
 rolled_fcsts_df.head(4)
 ```
-
-``` text
-Cross Validation Time Series 1:   0%|          | 0/2 [00:00<?, ?it/s]Cross Validation Time Series 1: 100%|##########| 2/2 [00:00<00:00, 8330.30it/s]
-```
-
-|           | ds         | cutoff     | y     | Naive |
-|-----------|------------|------------|-------|-------|
-| unique_id |            |            |       |       |
-| 1.0       | 1960-12-17 | 1960-12-16 | 407.0 | 463.0 |
-| 1.0       | 1960-12-18 | 1960-12-16 | 362.0 | 463.0 |
-| 1.0       | 1960-12-19 | 1960-12-16 | 405.0 | 463.0 |
-| 1.0       | 1960-12-20 | 1960-12-16 | 417.0 | 463.0 |
 
 ------------------------------------------------------------------------
 
@@ -472,7 +418,10 @@ method.
 #from statsforecast.core import StatsForecast
 from statsforecast.utils import AirPassengersDF as panel_df
 from statsforecast.models import Naive
+```
 
+
+```python
 # Instantiate StatsForecast class
 fcst = StatsForecast(df=panel_df,
                      models=[Naive()],
@@ -483,14 +432,6 @@ rolled_fcsts_df = fcst.cross_validation(h=12, n_windows=2, fitted=True)
 insample_rolled_fcsts_df = fcst.cross_validation_fitted_values()
 insample_rolled_fcsts_df.tail(4)
 ```
-
-|           | ds         | cutoff     | y     | Naive |
-|-----------|------------|------------|-------|-------|
-| unique_id |            |            |       |       |
-| 1.0       | 1959-09-30 | 1959-12-31 | 463.0 | 559.0 |
-| 1.0       | 1959-10-31 | 1959-12-31 | 407.0 | 463.0 |
-| 1.0       | 1959-11-30 | 1959-12-31 | 362.0 | 407.0 |
-| 1.0       | 1959-12-31 | 1959-12-31 | 405.0 | 362.0 |
 
 ------------------------------------------------------------------------
 
