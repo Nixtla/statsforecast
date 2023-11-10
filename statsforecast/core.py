@@ -526,7 +526,10 @@ class _StatsForecast:
             )
 
     def _prepare_fit(
-        self, df: Optional[DataFrame], sort_df: bool = True, save_original: bool = False
+        self,
+        df: Optional[DataFrame] = None,
+        sort_df: bool = True,
+        save_original: bool = False,
     ) -> None:
         if df is None:
             _warn_df_constructor()
