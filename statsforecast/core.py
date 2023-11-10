@@ -458,6 +458,15 @@ def _warn_df_constructor():
         category=DeprecationWarning,
     )
 
+
+def _maybe_warn_sort_df(sort_df):
+    if not sort_df:
+        warnings.warn(
+            "The `sort_df` argument is deprecated and will be removed in a future version. "
+            "You can leave it to its default value (True) to supress this warning",
+            category=DeprecationWarning,
+        )
+
 # %% ../nbs/src/core/core.ipynb 31
 class _StatsForecast:
     def __init__(
@@ -515,6 +524,8 @@ class _StatsForecast:
         if df is not None:
             _warn_df_constructor()
             self._prepare_fit(df=df, sort_df=sort_df)
+        else:
+            _maybe_warn_sort_df(sort_df)
 
     def _validate_model_names(self):
         # Some test models don't have alias
@@ -526,10 +537,7 @@ class _StatsForecast:
             )
 
     def _prepare_fit(
-        self,
-        df: Optional[DataFrame] = None,
-        sort_df: bool = True,
-        save_original: bool = False,
+        self, df: Optional[DataFrame], sort_df: bool = True, save_original: bool = False
     ) -> None:
         if df is None:
             _warn_df_constructor()
@@ -543,12 +551,7 @@ class _StatsForecast:
                     category=DeprecationWarning,
                 )
                 df = df.reset_index()
-        if not sort_df:
-            warnings.warn(
-                "The `sort_df` argument is deprecated and will be removed in a future version. "
-                "You can leave it to its default value (True) to supress this warning",
-                category=DeprecationWarning,
-            )
+        _maybe_warn_sort_df(sort_df)
         self.uids, self.last_dates, data, indptr, sort_idxs = process_df(
             df, "unique_id", "ds", "y"
         )
@@ -630,7 +633,7 @@ class _StatsForecast:
         df = self.df_constructor({"unique_id": uids, "ds": dates})
         if isinstance(df, pd.DataFrame):
             df = df.set_index("unique_id")
-        elif isinstance(df, pl_DataFrame):
+        else:
             df = df.with_columns(pl.col("unique_id").cast(self.uids.dtype))
         return df
 
@@ -965,8 +968,6 @@ class _StatsForecast:
         if self.df_constructor is pd.DataFrame:
             fcsts_df = fcsts_df.set_index("unique_id")
         elif self.df_constructor is pl_DataFrame:
-            import polars as pl
-
             fcsts_df = pl.from_pandas(fcsts_df)
         return fcsts_df
 
@@ -1002,8 +1003,6 @@ class _StatsForecast:
         df["cutoff"] = df["ds"].where(df["cutoff"]).bfill()
 
         if self.df_constructor is pl_DataFrame:
-            import polars as pl
-
             df = pl.from_pandas(df)
         return df
 

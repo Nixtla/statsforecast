@@ -190,31 +190,31 @@ class FugueBackend(ParallelBackend):
         self, df: pd.DataFrame, models, freq, fallback_model, kwargs
     ) -> pd.DataFrame:
         model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
+            models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
         )
-        return model.forecast(**kwargs).reset_index()
+        return model.forecast(df=df, **kwargs).reset_index()
 
     # schema: unique_id:str, ds:str, *
     def _forecast_series_X(
         self, df: pd.DataFrame, X_df: pd.DataFrame, models, freq, fallback_model, kwargs
     ) -> pd.DataFrame:
         model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
+            models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
         )
         if len(X_df) != kwargs["h"]:
             raise Exception(
                 "Please be sure that your exogenous variables `X_df` "
                 "have the same length than your forecast horizon `h`"
             )
-        return model.forecast(X_df=X_df, **kwargs).reset_index()
+        return model.forecast(df=df, X_df=X_df, **kwargs).reset_index()
 
     def _cv(
         self, df: pd.DataFrame, models, freq, fallback_model, kwargs
     ) -> pd.DataFrame:
         model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
+            models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
         )
-        return model.cross_validation(**kwargs).reset_index()
+        return model.cross_validation(df=df, **kwargs).reset_index()
 
     def _get_output_schema(self, df, models, level=None, mode="forecast") -> Schema:
         keep_schema = fa.get_schema(df).extract(["unique_id", "ds"])
