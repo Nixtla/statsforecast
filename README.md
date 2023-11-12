@@ -43,7 +43,9 @@ Vist our [Installation Guide](https://nixtla.github.io/statsforecast/docs/gettin
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import AutoARIMA
+from statsforecast.utils import AirPassengersDF
 
+df = AirPassengersDF
 sf = StatsForecast(
     models = [AutoARIMA(season_length = 12)],
     freq = 'M'
@@ -114,7 +116,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |[AutoCES](https://nixtla.github.io/statsforecast/src/core/models.html#autoces)|✅|✅|✅|✅|✅|
 |[AutoTheta](https://nixtla.github.io/statsforecast/src/core/models.html#autotheta)|✅|✅|✅|✅|✅|
 
-## ARIMA Family
+### ARIMA Family
 These models exploit the existing autocorrelations in the time series.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
