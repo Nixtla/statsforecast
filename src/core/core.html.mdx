@@ -15,25 +15,10 @@ are:
 -   [`StatsForecast.cross_validation`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
 -   `StatsForecast.plot`
 
-```python
-def test_gp_df(df, sort_df):
-    df = df.set_index("ds", append=True)
-    if not df.index.is_monotonic_increasing and sort_df:
-        df = df.sort_index()
-    data = df.values.astype(np.float32)
-    indices_sizes = df.index.get_level_values("unique_id").value_counts(sort=False)
-    indices = indices_sizes.index
-    sizes = indices_sizes.values
-    cum_sizes = sizes.cumsum()
-    dates = df.index.get_level_values("ds")[cum_sizes - 1]
-    indptr = np.append(0, cum_sizes).astype(np.int32)
-    return GroupedArray(data, indptr), indices, dates, df.index
-```
-
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1684"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1375"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast
@@ -120,21 +105,20 @@ models=[AutoARIMA(), Naive(),
         AutoETS(), AutoARIMA(allowmean=True, alias='MeanAutoARIMA')] 
 
 # Instantiate StatsForecast class
-fcst = StatsForecast(df=panel_df,
-                     models=models,
-                     freq='D', 
-                     n_jobs=1, 
+fcst = StatsForecast(models=models,
+                     freq='D',
+                     n_jobs=1,
                      verbose=True)
 
 # Efficiently predict
-fcsts_df = fcst.forecast(h=4, fitted=True).reset_index()
+fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True).reset_index()
 fcsts_df.groupby('unique_id').tail(4)
 ```
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L860"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L579"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit
@@ -161,7 +145,7 @@ fitted models for later inspection.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L949"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L656"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## SatstForecast.predict
@@ -187,7 +171,7 @@ DataFrame `df`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L995"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L702"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit_predict
@@ -213,20 +197,20 @@ In contrast to
 [`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
 this method stores partial models outputs.
 
-|                      | **Type**                                 | **Default** | **Details**                                                                                                                                                                                                                              |
+|                      | **Type**  | **Default** | **Details**                                                                                                                                                                                                                              |
 |------|------------------|-------------------------|-------------------------|
-| h                    | int                                      |             | Forecast horizon.                                                                                                                                                                                                                        |
-| df                   | Union                                    | None        | DataFrame with columns \[`unique_id`, `ds`, `y`\] and exogenous variables.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated<br/>using `df`. |
-| X_df                 | Union                                    | None        | DataFrame with \[`unique_id`, `ds`\] columns and `df`’s future exogenous.                                                                                                                                                                |
-| level                | Optional                                 | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                            |
-| sort_df              | bool                                     | True        | If True, sort `df` by \[`unique_id`,`ds`\].                                                                                                                                                                                              |
-| prediction_intervals | Optional                                 | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                                  |
-| **Returns**          | **pandas.DataFrame \| polars.DataFrame** |             | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                                                      |
+| h                    | int       |             | Forecast horizon.                                                                                                                                                                                                                        |
+| df                   | Union     | None        | DataFrame with columns \[`unique_id`, `ds`, `y`\] and exogenous variables.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated<br/>using `df`. |
+| X_df                 | Union     | None        | DataFrame with \[`unique_id`, `ds`\] columns and `df`’s future exogenous.                                                                                                                                                                |
+| level                | Optional  | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                            |
+| sort_df              | bool      | True        | If True, sort `df` by \[`unique_id`,`ds`\].                                                                                                                                                                                              |
+| prediction_intervals | Optional  | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                                  |
+| **Returns**          | **Union** |             | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                                                      |
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1054"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L761"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast
@@ -248,16 +232,16 @@ This method avoids memory burden due from object storage. It is
 analogous to Scikit-Learn `fit_predict` without storing information. It
 requires the forecast horizon `h` in advance.
 
-|                      | **Type**                                 | **Default** | **Details**                                                                                                                                                                                                                    |
+|                      | **Type**  | **Default** | **Details**                                                                                                                                                                                                                    |
 |------|------------------|-------------------------|-------------------------|
-| h                    | int                                      |             | Forecast horizon.                                                                                                                                                                                                              |
-| df                   | Union                                    | None        | DataFrame with columns \[`unique_id`, `ds`, `y`\] and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated<br/>using `df`. |
-| X_df                 | Union                                    | None        | DataFrame with \[`unique_id`, `ds`\] columns and `df`’s future exogenous.                                                                                                                                                      |
-| level                | Optional                                 | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                  |
-| fitted               | bool                                     | False       | Wether or not return insample predictions.                                                                                                                                                                                     |
-| sort_df              | bool                                     | True        | If True, sort `df` by \[`unique_id`,`ds`\].                                                                                                                                                                                    |
-| prediction_intervals | Optional                                 | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                        |
-| **Returns**          | **pandas.DataFrame \| polars.DataFrame** |             | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                                            |
+| h                    | int       |             | Forecast horizon.                                                                                                                                                                                                              |
+| df                   | Union     | None        | DataFrame with columns \[`unique_id`, `ds`, `y`\] and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated<br/>using `df`. |
+| X_df                 | Union     | None        | DataFrame with \[`unique_id`, `ds`\] columns and `df`’s future exogenous.                                                                                                                                                      |
+| level                | Optional  | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                  |
+| fitted               | bool      | False       | Wether or not return insample predictions.                                                                                                                                                                                     |
+| sort_df              | bool      | True        | If True, sort `df` by \[`unique_id`,`ds`\].                                                                                                                                                                                    |
+| prediction_intervals | Optional  | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                        |
+| **Returns**          | **Union** |             | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                                            |
 
 ```python
 # StatsForecast.forecast method usage example
@@ -270,19 +254,18 @@ from statsforecast.models import AutoARIMA, Naive
 
 ```python
 # Instantiate StatsForecast class
-fcst = StatsForecast(df=panel_df,
-                     models=[AutoARIMA(), Naive()],
+fcst = StatsForecast(models=[AutoARIMA(), Naive()],
                      freq='D', n_jobs=1)
 
 # Efficiently predict without storing memory
-fcsts_df = fcst.forecast(h=4, fitted=True)
+fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True)
 fcsts_df.groupby('unique_id').tail(4)
 ```
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1118"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L825"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast_fitted_values
@@ -311,12 +294,10 @@ from statsforecast.models import Naive
 
 ```python
 # Instantiate StatsForecast class
-fcst = StatsForecast(df=panel_df,
-                     models=[AutoARIMA()],
-                     freq='D', n_jobs=1)
+fcst = StatsForecast(models=[AutoARIMA()], freq='D', n_jobs=1)
 
 # Access insample predictions
-fcsts_df = fcst.forecast(h=12, fitted=True, level=(90, 10))
+fcsts_df = fcst.forecast(df=panel_df, h=12, fitted=True, level=(90, 10))
 insample_fcsts_df = fcst.forecast_fitted_values()
 insample_fcsts_df.tail(4)
 ```
@@ -324,7 +305,7 @@ insample_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1148"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L848"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation
@@ -355,20 +336,20 @@ technique high computational costs. Temporal cross-validation provides
 better model’s generalization measurements by increasing the test’s
 length and diversity.
 
-|                      | **Type**             | **Default** | **Details**                                                                                                                                                                                                                    |
+|                      | **Type**  | **Default** | **Details**                                                                                                                                                                                                                    |
 |------|------------------|-------------------------|-------------------------|
-| h                    | int                  |             | Forecast horizon.                                                                                                                                                                                                              |
-| df                   | Union                | None        | DataFrame with columns \[`unique_id`, `ds`, `y`\] and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated<br/>using `df`. |
-| n_windows            | int                  | 1           | Number of windows used for cross validation.                                                                                                                                                                                   |
-| step_size            | int                  | 1           | Step size between each window.                                                                                                                                                                                                 |
-| test_size            | Optional             | None        | Length of test size. If passed, set `n_windows=None`.                                                                                                                                                                          |
-| input_size           | Optional             | None        | Input size for each window, if not none rolled windows.                                                                                                                                                                        |
-| level                | Optional             | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                  |
-| fitted               | bool                 | False       | Wether or not returns insample predictions.                                                                                                                                                                                    |
-| refit                | bool                 | True        | Wether or not refit the model for each window.                                                                                                                                                                                 |
-| sort_df              | bool                 | True        | If True, sort `df` by `unique_id` and `ds`.                                                                                                                                                                                    |
-| prediction_intervals | Optional             | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                        |
-| **Returns**          | **pandas.DataFrame** |             | **DataFrame with insample `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                                   |
+| h                    | int       |             | Forecast horizon.                                                                                                                                                                                                              |
+| df                   | Union     | None        | DataFrame with columns \[`unique_id`, `ds`, `y`\] and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated<br/>using `df`. |
+| n_windows            | int       | 1           | Number of windows used for cross validation.                                                                                                                                                                                   |
+| step_size            | int       | 1           | Step size between each window.                                                                                                                                                                                                 |
+| test_size            | Optional  | None        | Length of test size. If passed, set `n_windows=None`.                                                                                                                                                                          |
+| input_size           | Optional  | None        | Input size for each window, if not none rolled windows.                                                                                                                                                                        |
+| level                | Optional  | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                  |
+| fitted               | bool      | False       | Wether or not returns insample predictions.                                                                                                                                                                                    |
+| refit                | bool      | True        | Wether or not refit the model for each window.                                                                                                                                                                                 |
+| sort_df              | bool      | True        | If True, sort `df` by `unique_id` and `ds`.                                                                                                                                                                                    |
+| prediction_intervals | Optional  | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                        |
+| **Returns**          | **Union** |             | **DataFrame with insample `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                                   |
 
 ```python
 # StatsForecast.crossvalidation method usage example
@@ -381,19 +362,18 @@ from statsforecast.models import Naive
 
 ```python
 # Instantiate StatsForecast class
-fcst = StatsForecast(df=panel_df,
-                     models=[Naive()],
+fcst = StatsForecast(models=[Naive()],
                      freq='D', n_jobs=1, verbose=True)
 
 # Access insample predictions
-rolled_fcsts_df = fcst.cross_validation(14, n_windows=2)
+rolled_fcsts_df = fcst.cross_validation(df=panel_df, h=14, n_windows=2)
 rolled_fcsts_df.head(4)
 ```
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1273"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L974"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation_fitted_values
@@ -423,12 +403,11 @@ from statsforecast.models import Naive
 
 ```python
 # Instantiate StatsForecast class
-fcst = StatsForecast(df=panel_df,
-                     models=[Naive()],
+fcst = StatsForecast(models=[Naive()],
                      freq='D', n_jobs=1)
 
 # Access insample predictions
-rolled_fcsts_df = fcst.cross_validation(h=12, n_windows=2, fitted=True)
+rolled_fcsts_df = fcst.cross_validation(df=panel_df, h=12, n_windows=2, fitted=True)
 insample_rolled_fcsts_df = fcst.cross_validation_fitted_values()
 insample_rolled_fcsts_df.tail(4)
 ```
@@ -436,7 +415,7 @@ insample_rolled_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1467"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1167"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.plot
@@ -473,7 +452,7 @@ Plot forecasts and insample values.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1553"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1244"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.save
@@ -495,7 +474,7 @@ make it reproducible.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1640"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1331"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.load
@@ -510,6 +489,16 @@ Automatically loads the model into ready StatsForecast.
 |-------------|-----------------------|------------------------------------|
 | path        | Union                 | Path to saved StatsForecast file.  |
 | **Returns** | **sf: StatsForecast** | **Previously saved StatsForecast** |
+
+```python
+fcst = StatsForecast(
+    models=[ADIDA(), SimpleExponentialSmoothing(0.1), 
+            HistoricAverage(), CrostonClassic()],
+    freq='D',
+    n_jobs=1
+)
+res = fcst.forecast(df=series, h=14)
+```
 
 # Misc
 
@@ -530,7 +519,6 @@ from statsforecast.models import HistoricAverage
 ```python
 int_ds_df = pd.DataFrame({'ds': np.arange(1, len(ap) + 1), 'y': ap})
 int_ds_df.insert(0, 'unique_id', 'AirPassengers')
-int_ds_df.set_index('unique_id', inplace=True)
 int_ds_df.head()
 ```
 
@@ -546,9 +534,9 @@ int_ds_df
 
 
 ```python
-fcst = StatsForecast(df=int_ds_df, models=[HistoricAverage()], freq='D')
+fcst = StatsForecast(models=[HistoricAverage()], freq='D')
 horizon = 7
-forecast = fcst.forecast(horizon)
+forecast = fcst.forecast(df=int_ds_df, h=horizon)
 forecast.head()
 ```
 
@@ -560,7 +548,7 @@ test_eq(forecast['ds'].values, np.arange(last_date + 1, last_date + 1 + horizon)
 
 
 ```python
-int_ds_cv = fcst.cross_validation(h=7, test_size=8, n_windows=None)
+int_ds_cv = fcst.cross_validation(df=int_ds_df, h=7, test_size=8, n_windows=None)
 int_ds_cv
 ```
 
@@ -617,11 +605,10 @@ series_train = series_xreg[train_mask]
 series_valid = series_xreg[~train_mask]
 X_valid = series_valid.drop(columns=['y'])
 fcst = StatsForecast(
-    df=series_train,
     models=[LinearRegression()],
     freq='D',
 )
-xreg_res = fcst.forecast(14, X_df=X_valid)
+xreg_res = fcst.forecast(df=series_train, h=14, X_df=X_valid)
 xreg_res['y'] = series_valid['y'].values
 ```
 
@@ -632,7 +619,7 @@ xreg_res.groupby('ds').mean().plot()
 
 
 ```python
-xreg_res_cv = fcst.cross_validation(h=3, test_size=5, n_windows=None)
+xreg_res_cv = fcst.cross_validation(df=series_train, h=3, test_size=5, n_windows=None)
 ```
 
 ## Prediction intervals
