@@ -15,10 +15,10 @@ dependencies:
   - statsmodels>=0.13.2
   - tabulate
   - plotly
-  - utilsforecast>=0.0.5
   - pip:
     - nbdev
     - plotly-resampler
     - polars
     - supersmoother
     - tqdm
+    - utilsforecast>=0.0.14
