@@ -18,7 +18,7 @@ title: AutoRegressive Model
 -   [Model evaluation](#evaluate)
 -   [References](#references)
 
-## Introduction\*\* <a class="anchor" id="introduction"></a>
+## Introduction <a class="anchor" id="introduction"></a>
 
 The `autoregressive` time series model `(AutoRegressive)` is a
 `statistical` technique used to analyze and predict univariate time
@@ -52,16 +52,19 @@ is a regression of the variable against itself.
 ## Definition of Autoregressive Models <a class="anchor" id="model"></a>
 
 Before giving a formal definition of the ARCH model, let’s define the
-components of an ARCH model in a general way: \* Autoregressive, a
-concept that we have already known, is the construction of a univariate
-time series model using statistical methods, which means that the
-current value of a variable is influenced by past values of itself in
-different periods. \* Heteroscedasticity means that the model can have
-different magnitudes or variability at different time points (variance
-changes over time). \* Conditional, since volatility is not fixed, the
-reference here is the constant that we put in the model to limit
-heteroscedasticity and make it conditionally dependent on the previous
-value or values of the variable.
+components of an ARCH model in a general way:
+
+-   Autoregressive, a concept that we have already known, is the
+    construction of a univariate time series model using statistical
+    methods, which means that the current value of a variable is
+    influenced by past values of itself in different periods.
+-   Heteroscedasticity means that the model can have different
+    magnitudes or variability at different time points (variance changes
+    over time).
+-   Conditional, since volatility is not fixed, the reference here is
+    the constant that we put in the model to limit heteroscedasticity
+    and make it conditionally dependent on the previous value or values
+    of the variable.
 
 The AR model is the most basic building block of univariate time series.
 As you have seen before, univariate time series are a family of models
@@ -71,7 +74,11 @@ its future, and do not rely on other explanatory variables.
 **Definition 1.** (1) The following equation is called the
 autoregressive model of order $p$ and denoted by $\text{AR(p)}$:
 
-$$ Xt =\varphi_0 +\varphi_1X_{t−1}+\varphi_2X_{t−2}+\cdots+\varphi_p X_{t−p}+\varepsilon_t  \tag 1$$
+$$
+\begin{equation}
+Xt =\varphi_0 +\varphi_1X_{t−1}+\varphi_2X_{t−2}+\cdots+\varphi_p X_{t−p}+\varepsilon_t  \tag 1
+\end{equation}
+$$
 
 where $\{\varepsilon_t \} \sim WN(0,\sigma_{\epsilon}^2)$,
 $E(X_s \varepsilon_t) = 0$ if $s < t$ and
@@ -216,7 +223,12 @@ By Definition 2, $\phi_{kk} = 0$.
 1.  We multiply Eq.(1)by $X_{t−k}$,take expectations,divide by
     $\gamma_0$,and then obtain the recursive relationship between the
     autocorrelations:
-    $$for \ k ≥ 1, \rho_k = \varphi_1 \rho_{k−1} + \varphi_2 \rho_{k−2} + \cdots + \varphi_p \rho_{k−p} \tag 2$$
+
+$$
+\begin{equation}
+    for \ k ≥ 1, \rho_k = \varphi_1 \rho_{k−1} + \varphi_2 \rho_{k−2} + \cdots + \varphi_p \rho_{k−p} \tag 2
+\end{equation}
+$$
 
 For Eq.(2), let $k = 1,2,··· ,p$. Then we arrive at a set of difference
 equations, which is known as the Yule-Walker equations. If the
@@ -237,7 +249,12 @@ and the solutions are called the Yule-Walker estimates.
 ### Stationarity and Causality of AR Models
 
 Consider the AR(1) model:
-$$X_t = \varphi X_{t − 1} + \varepsilon_t , \varepsilon_t \sim W N( 0 , \sigma_{\varepsilon}^2 ) \tag 3$$
+
+$$
+\begin{equation}
+    X_t = \varphi X_{t − 1} + \varepsilon_t , \varepsilon_t \sim W N( 0 , \sigma_{\varepsilon}^2 ) \tag 3
+\end{equation}
+$$
 
 For $|\varphi|<1$,let
 $X_{1t} =\sum_{j=0}^{\infty} \varphi^j \varepsilon_{t−j}$ and for

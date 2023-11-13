@@ -60,8 +60,19 @@ Now we briefly list and describe several important stylized facts
 
 Specifically, we give the definition of the ARCH model as follows.
 
-**Definition 1.** An $\text{ARCH(p)}$ model with order $p≥1$ is ofthe
+**Definition 1.** An $\text{ARCH(p)}$ model with order $p≥1$ is of the
 form
+
+$$
+\begin{equation}
+    \left\{
+        \begin{array}{ll}
+         X_t =\sigma_t \varepsilon_t      \\
+         \sigma_{t}^2 =\omega+ \alpha_1 X_{t-1}^2 + \alpha_2 X_{t-2}^2  + \cdots+  \alpha_p X_{t-p}^2  \\
+        \end{array}
+    \right.
+\end{equation}
+$$
 
 where $\omega ≥ 0, \alpha_i ≥ 0$, and $\alpha_p > 0$ are constants,
 $\varepsilon_t \sim iid(0, 1)$, and $\varepsilon_t$ is independent of
@@ -81,11 +92,17 @@ easy to see that $\mathscr{F}_s$ is independent of $\varepsilon_t$ for
 any $s <t$. According to Definition 1 and the properties of the
 conditional mathematical expectation, we have that
 
-$$E(X_t|\mathscr{F}_{t−1}) = E(\sigma_t \varepsilon_t|\mathscr{F}_{t−1}) = \sigma_t E( \varepsilon_t|\mathscr{F}_{t−1}) = \sigma_t E(\varepsilon_t) = 0 \tag 2$$
+$$
+\begin{equation}
+    E(X_t|\mathscr{F}_{t−1}) = E(\sigma_t \varepsilon_t|\mathscr{F}_{t−1}) = \sigma_t E( \varepsilon_t|\mathscr{F}_{t−1}) = \sigma_t E(\varepsilon_t) = 0 \tag 2
+\end{equation}
+$$
 
 and
 
-$$ \text{Var}(X_{t}^2| \mathscr{F}_{t−1}) = E(X_{t}^2|\mathscr{F}_{t−1}) =  E(\sigma_{t}^2 \varepsilon_{t}^2|\mathscr{F}_{t−1}) = \sigma_{t}^2 E(\varepsilon_{t}^2|\mathscr{F}_{t−1}) = \sigma_{t}^2 E(\varepsilon_{t}^2) = \sigma_{t}^2. $$
+$$
+\text{Var}(X_{t}^2| \mathscr{F}_{t−1}) = E(X_{t}^2|\mathscr{F}_{t−1}) =  E(\sigma_{t}^2 \varepsilon_{t}^2|\mathscr{F}_{t−1}) = \sigma_{t}^2 E(\varepsilon_{t}^2|\mathscr{F}_{t−1}) = \sigma_{t}^2 E(\varepsilon_{t}^2) = \sigma_{t}^2.
+$$
 
 This implies that $\sigma_{t}^2$ is the conditional variance of $X_t$
 and it evolves according to the previous values of
@@ -95,14 +112,31 @@ Model (1) is named an $\text{ARCH}(p)$ model.
 As an example of $\text{ARCH}(p)$ models, let us consider the
 $\text{ARCH(1)}$ model
 
+$$
+\begin{equation}
+    \left\{ 
+        \begin{array}{ll} \tag 3
+         X_t =\sigma_t \varepsilon_t      \\
+         \sigma_{t}^2 =\omega+ \alpha_1 X_{t-1}^2   \\
+        \end{array}
+    \right.
+\end{equation}
+$$
+
 Explicitly, the unconditional mean
 $$E(X_t) = E(\sigma_t \varepsilon_t) = E(\sigma_t) E(\varepsilon_t) = 0. $$
 
 Additionally, the ARCH(1) model can be expressed as
 
-$$X_{t}^2 =\sigma_{t}^2 +X_{t}^2 − \sigma_{t}^2  =\omega +\alpha_1 X_{t-1}^2 +\sigma_{t}^2 \varepsilon_{t}^2 −\sigma_{t}^2  =\omega +\alpha_1 X_{t}^2 +\eta_t ,$$
+$$X_{t}^2 =\sigma_{t}^2 +X_{t}^2 − \sigma_{t}^2  =\omega +\alpha_1 X_{t-1}^2 +\sigma_{t}^2 \varepsilon_{t}^2 −\sigma_{t}^2  =\omega +\alpha_1 X_{t}^2 +\eta_t$$
 
-that is, $$X_{t}^2 =\omega +\alpha_1 X_{t}^2 +\eta_t \tag 4 $$
+that is,
+
+$$
+\begin{equation}
+    X_{t}^2 =\omega +\alpha_1 X_{t}^2 +\eta_t \tag 4
+\end{equation}
+$$
 
 where $\eta_t = \sigma_{t}^2(\varepsilon_{t}^2 − 1)$. It can been shown
 that $\eta_t$ is a new white noise, which is left as an exercise for
@@ -159,7 +193,7 @@ the data being modeled.
 
 ### Autoregressive Conditional Heteroskedasticity (ARCH) Applications
 
--   **Finance** – The ARCH model is widely used in finance to model
+-   **Finance** - The ARCH model is widely used in finance to model
     volatility in financial time series, such as stock prices, exchange
     rates, interest rates, etc.
 

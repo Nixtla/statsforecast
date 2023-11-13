@@ -77,19 +77,19 @@ title: ARIMA Model
     -   d is the number of differencing required to make the time series
         stationary
 
--   **AR(p) Autoregression** – a regression model that utilizes the
+-   **AR(p) Autoregression** - a regression model that utilizes the
     dependent relationship between a current observation and
     observations over a previous period. An auto regressive (AR(p))
     component refers to the use of past values in the regression
     equation for the time series.
 
--   **I(d) Integration** – uses differencing of observations
+-   **I(d) Integration** - uses differencing of observations
     (subtracting an observation from observation at the previous time
     step) in order to make the time series stationary. Differencing
     involves the subtraction of the current values of a series with its
     previous values d number of times.
 
--   **MA(q) Moving Average** – a model that uses the dependency between
+-   **MA(q) Moving Average** - a model that uses the dependency between
     an observation and a residual error from a moving average model
     applied to lagged observations. A moving average component depicts
     the error of the model as a combination of previous error terms. The
@@ -145,11 +145,15 @@ itself.
 
 Thus, an autoregressive model of order p can be written as
 
-$$y_{t} = c + \phi_{1}y_{t-1} + \phi_{2}y_{t-2} + \dots + \phi_{p}y_{t-p} + \varepsilon_{t}, \tag{1}$$
+$$
+\begin{equation}
+y_{t} = c + \phi_{1}y_{t-1} + \phi_{2}y_{t-2} + \dots + \phi_{p}y_{t-p} + \varepsilon_{t} \tag{1}
+\end{equation}
+$$
 
 where $\epsilon_t$ is white noise. This is like a multiple regression
 but with lagged values of $y_t$ as predictors. We refer to this as an
-AR( p) model, an autoregressive model of order p .
+AR( p) model, an autoregressive model of order p.
 
 ### MA model
 
@@ -157,7 +161,11 @@ Rather than using past values of the forecast variable in a regression,
 a moving average model uses past forecast errors in a regression-like
 model,
 
-$$y_{t} = c + \varepsilon_t + \theta_{1}\varepsilon_{t-1} + \theta_{2}\varepsilon_{t-2} + \dots + \theta_{q}\varepsilon_{t-q}, \tag{2}$$
+$$
+\begin{equation}
+y_{t} = c + \varepsilon_t + \theta_{1}\varepsilon_{t-1} + \theta_{2}\varepsilon_{t-2} + \dots + \theta_{q}\varepsilon_{t-q} \tag{2}
+\end{equation}
+$$
 
 where $\epsilon_t$ is white noise. We refer to this as an MA(q) model, a
 moving average model of order q. Of course, we do not observe the values
@@ -206,11 +214,11 @@ ARIMA model, as shown in Table
 | autoregressive model       |       |                                                                                                                                                                                                                                                  |                              |
 | ARIMA (0, 1, 1)            | 0 1 1 | $\hat Y_t = Y_{t-1} - \Phi_1 e^{t-1}$                                                                                                                                                                                                            | Simple exponential           |
 | smoothing                  |       |                                                                                                                                                                                                                                                  |                              |
-| ARIMA (0, 0, 1)            | 0 0 1 | $\hat Y_t = \mu_0+ \epsilon_t – \omega_1 \epsilon_{t-1}$                                                                                                                                                                                         | MA(1): First-order           |
+| ARIMA (0, 0, 1)            | 0 0 1 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1}$                                                                                                                                                                                         | MA(1): First-order           |
 | regression model           |       |                                                                                                                                                                                                                                                  |                              |
-| ARIMA (0, 0, 2)            | 0 0 2 | $\hat Y_t = \mu_0+ \epsilon_t – \omega_1 \epsilon_{t-1} – \omega_2 \epsilon_{t-2}$                                                                                                                                                               | MA(2): Second-order          |
+| ARIMA (0, 0, 2)            | 0 0 2 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1} - \omega_2 \epsilon_{t-2}$                                                                                                                                                               | MA(2): Second-order          |
 | regression model           |       |                                                                                                                                                                                                                                                  |                              |
-| ARIMA (1, 0, 1)            | 1 0 1 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1}+ \epsilon_t – \omega_1 \epsilon_{t-1}$                                                                                                                                                                       | ARMA model                   |
+| ARIMA (1, 0, 1)            | 1 0 1 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1}+ \epsilon_t - \omega_1 \epsilon_{t-1}$                                                                                                                                                                       | ARMA model                   |
 | ARIMA (1, 1, 1)            | 1 1 1 | $\Delta Y_t = \Phi_1 Y_{t-1} + \epsilon_t - \omega_1 \epsilon_{t-1}$                                                                                                                                                                             | ARIMA model                  |
 | ARIMA (1, 1, 2)            | 1 1 2 | $\hat Y_t = Y_{t-1} + \Phi_1 (Y_{t-1} - Y_{t-2} )- \Theta_1 e_{t-1} - \Theta_1 e_{t-1}$ Damped-trend linear Exponential smoothing                                                                                                                |                              |
 | ARIMA (0, 2, 1) OR (0,2,2) | 0 2 1 | $\hat Y_t = 2 Y_{t-1} - Y_{t-2} - \Theta_1 e_{t-1} - \Theta_2 e_{t-2}$                                                                                                                                                                           | Linear exponential smoothing |

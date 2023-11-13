@@ -49,7 +49,11 @@ Using the complex valued representation of time series, we propose the
 CES in analogy to the conventional exponential smoothing methods.
 Consider the simple exponential smoothing method:
 
-$$ {\hat{y}}_t=\alpha {y}_{t-1}+\left(1-\alpha \right){\hat{y}}_{t-1}, \tag 1$$
+$$
+\begin{equation}
+    {\hat{y}}_t=\alpha {y}_{t-1}+\left(1-\alpha \right){\hat{y}}_{t-1} \tag{1}
+\end{equation}
+$$
 
 where $\alpha$ is the smoothing parameter and ${\hat{y}}_t$ is the
 estimated value of series. The same method can be represented as a
@@ -57,60 +61,77 @@ weighted average of previous actual observations if we substitute
 ${\hat{y}}_{t-1}$ by the formula (1) with an index instead of (Brown,
 1956):
 
-$$ {\hat{y}}_t=\alpha \sum \limits_{j=1}^{t-1}{\left(1-\alpha \right)}^{j-1}{y}_{t-j} \tag 2 $$
+$$
+\begin{equation}
+    {\hat{y}}_t=\alpha \sum \limits_{j=1}^{t-1}{\left(1-\alpha \right)}^{j-1}{y}_{t-j} \tag{2}
+\end{equation}
+$$
 
-The idea of this representation is to demonstrate how the weights \$
-^{j-1} \$ are distributed over time in our sample. If the smoothing
-parameter \$ (0,1) \$ then the weights decline exponentially with the
-increase of . If it lies in the so called “admissible bounds” (Brenner
-et al., 1968), that is \$ (0,2) \$ then the weights decline in
-oscillating manner. Both traditional and admissible bounds have been
-used efficiently in practice and in academic literature (for application
-of the latter see for example Gardner & Diaz-Saiz, 2008; Snyder et al.,
+The idea of this representation is to demonstrate how the weights
+$\alpha {\left(1-\alpha \right)}^{j-1}$ are distributed over time in our
+sample. If the smoothing parameter $\alpha \in \left(0,1\right)$ then
+the weights decline exponentially with the increase of . If it lies in
+the so called “admissible bounds” (Brenner et al., 1968), that is
+$\alpha \in \left(0,2\right)$ then the weights decline in oscillating
+manner. Both traditional and admissible bounds have been used
+efficiently in practice and in academic literature (for application of
+the latter see for example Gardner & Diaz-Saiz, 2008; Snyder et al.,
 2017). However, in real life the distribution of weights can be more
 complex, with harmonic rather than exponential decline, meaning that
 some of the past observation might have more importance than the recent
 ones. In order to implement such distribution of weights, we build upon
 (2) and introduce complex dynamic interactions by substituting the real
-variables with the complex ones in (2). First, we substitute \$
-{y}*{t-j} \$ by the complex variable \$ {y}*{t-j}+{ie}*{t-j} \$, where
-\$ {e}*t \$ is the error term of the model and $i$ is the imaginary unit
-(which satisfies the equation \$ {i}^2=-1 \$). The idea behind this is
-to have the impact of both actual values and the error on each
-observation in the past on the final forecast. Second, we substitute
-$\alpha$ with a complex variable \${}*0+i{}*1 \$ and 1 by $1+i$ to
-introduce the harmonically declining weights. Depending on the values of
-the complex smoothing parameter, the weights distribution will exhibit a
-variety of trajectories over time, including exponential, oscillating,
-and harmonic. Finally, the result of multiplication of two complex
-numbers will be another complex number, so we substitute \$ {}*{t-j} \$
-with \${}*{t-j}+i{}*{t-j} \$, where \$ {}*{t-j} \$ is the proxy for the
-error term. The CES obtained as a result of this can be written as:
+variables with the complex ones in (2). First, we substitute ${y}_{t-j}$
+by the complex variable ${y}_{t-j}+{ie}_{t-j}$, where ${e}_t$ is the
+error term of the model and $i$ is the imaginary unit (which satisfies
+the equation ${i}^2=-1$). The idea behind this is to have the impact of
+both actual values and the error on each observation in the past on the
+final forecast. Second, we substitute $\alpha$ with a complex variable
+\${}\_0+i{}\_1 \$ and 1 by $1+i$ to introduce the harmonically declining
+weights. Depending on the values of the complex smoothing parameter, the
+weights distribution will exhibit a variety of trajectories over time,
+including exponential, oscillating, and harmonic. Finally, the result of
+multiplication of two complex numbers will be another complex number, so
+we substitute ${\hat{y}}_{t-j}$ with ${\hat{y}}_{t-j}+i{\hat{e}}_{t-j}$,
+where ${\hat{e}}_{t-j}$ is the proxy for the error term. The CES
+obtained as a result of this can be written as:
 
-$$ {\hat{y}}_t+i{\hat{e}}_t=\left({\alpha}_0+i{\alpha}_1\right)\sum \limits_{j=1}^{t-1}{\left(1+i-\left({\alpha}_0+i{\alpha}_1\right)\right)}^{j-1}\left({y}_{t-j}+{ie}_{t-j}\right). \tag 3$$
+$$
+\begin{equation}
+    {\hat{y}}_t+i{\hat{e}}_t=\left({\alpha}_0+i{\alpha}_1\right)\sum \limits_{j=1}^{t-1}{\left(1+i-\left({\alpha}_0+i{\alpha}_1\right)\right)}^{j-1}\left({y}_{t-j}+{ie}_{t-j}\right) \tag{3}
+\end{equation}
+$$
 
 Having arrived to the model with harmonically distributed weights, we
 can now move to the shorter form by substituting
 
-$$ {\displaystyle \begin{array}{cc}& {\hat{y}}_{t-1}+i{\hat{e}}_{t-1}\\ {}& \kern1em =\left({\alpha}_0+i{\alpha}_1\right)\sum \limits_{j=2}^{t-1}{\left(1+i-\left({\alpha}_0+i{\alpha}_1\right)\right)}^{j-1}\left({y}_{t-j}+{ie}_{t-j}\right)\end{array}} $$
+$${\displaystyle \begin{array}{cc}& {\hat{y}}_{t-1}+i{\hat{e}}_{t-1}\\ {}& \kern1em =\left({\alpha}_0+i{\alpha}_1\right)\sum \limits_{j=2}^{t-1}{\left(1+i-\left({\alpha}_0+i{\alpha}_1\right)\right)}^{j-1}\left({y}_{t-j}+{ie}_{t-j}\right)\end{array}}$$
 
 in (3) to get:
 
-$$ {\displaystyle \begin{array}{cc}{\hat{y}}_t+i{\hat{e}}_t& =\left({\alpha}_0+i{\alpha}_1\right)\left({y}_{t-1}+{ie}_{t-1}\right)\\ {}& \kern1em +\left(1-{\alpha}_0+i-i{\alpha}_1\right)\left({\hat{y}}_{t-1}+i{\hat{e}}_{t-1}\right).\end{array}}  \tag 4$$
+$$
+\begin{equation}
+    {\displaystyle \begin{array}{cc}{\hat{y}}_t+i{\hat{e}}_t& =\left({\alpha}_0+i{\alpha}_1\right)\left({y}_{t-1}+{ie}_{t-1}\right)\\ {}& \kern1em +\left(1-{\alpha}_0+i-i{\alpha}_1\right)\left({\hat{y}}_{t-1}+i{\hat{e}}_{t-1}\right).\end{array}} \tag 4
+\end{equation}
+$$
 
-Note that \$ {}\_t \$ is not interesting for the time series analysis
+Note that ${\hat{e}}_t$ is not interesting for the time series analysis
 and forecasting purposes, but is used as a vessel containing the
 information about the previous errors of the method. Having the complex
 variables instead of the real ones in (4), allows taking the
 exponentially weighted values of both actuals and the forecast errors.
-By changing the value of \$ {}\_0+i{}\_1 \$ , we can regulate what
+By changing the value of ${\alpha}_0+i{\alpha}_1$ , we can regulate what
 proportions of the actual and the forecast error should be carried out
 to the future in order to produce forecasts.
 
 Representing the complex-valued function as a system of two real-valued
 functions leads to:
 
-$$ {\displaystyle \begin{array}{ll}& {\hat{y}}_t=\left({\alpha}_0{y}_{t-1}+\left(1-{\alpha}_0\right){\hat{y}}_{t-1}\right)-\left({\alpha}_1{e}_{t-1}+\left(1-{\alpha}_1\right){\hat{e}}_{t-1}\right)\\ {}& {\hat{e}}_t=\left({\alpha}_1{y}_{t-1}+\left(1-{\alpha}_1\right){\hat{y}}_{t-1}\right)+\left({\alpha}_0{e}_{t-1}+\left(1-{\alpha}_0\right){\hat{e}}_{t-1}\right).\end{array}} \tag 5$$
+$$
+\begin{equation}
+    {\displaystyle \begin{array}{ll}& {\hat{y}}_t=\left({\alpha}_0{y}_{t-1}+\left(1-{\alpha}_0\right){\hat{y}}_{t-1}\right)-\left({\alpha}_1{e}_{t-1}+\left(1-{\alpha}_1\right){\hat{e}}_{t-1}\right)\\ {}& {\hat{e}}_t=\left({\alpha}_1{y}_{t-1}+\left(1-{\alpha}_1\right){\hat{y}}_{t-1}\right)+\left({\alpha}_0{e}_{t-1}+\left(1-{\alpha}_0\right){\hat{e}}_{t-1}\right).\end{array}} \tag 5
+\end{equation}
+$$
 
 CES introduces an interaction between the real and imaginary parts, and
 the equations in (6) are connected via the previous values of each
@@ -122,37 +143,48 @@ prediction intervals and deriving the likelihood function. It is also
 important to understand what sort of statistical model underlies CES.
 This model can be written in the following state space form:
 
-$$ {\displaystyle \begin{array}{ll}& {y}_t={l}_{t-1}+{\epsilon}_t\\ {}& {l}_t={l}_{t-1}-\left(1-{\alpha}_1\right){c}_{t-1}+\left({\alpha}_0-{\alpha}_1\right){\epsilon}_t\\ {}& {c}_t={l}_{t-1}+\left(1-{\alpha}_0\right){c}_{t-1}+\left({\alpha}_0+{\alpha}_1\right){\epsilon}_t,\end{array}} \tag 6 $$
+$$
+\begin{equation}
+    {\displaystyle \begin{array}{ll}& {y}_t={l}_{t-1}+{\epsilon}_t\\ {}& {l}_t={l}_{t-1}-\left(1-{\alpha}_1\right){c}_{t-1}+\left({\alpha}_0-{\alpha}_1\right){\epsilon}_t\\ {}& {c}_t={l}_{t-1}+\left(1-{\alpha}_0\right){c}_{t-1}+\left({\alpha}_0+{\alpha}_1\right){\epsilon}_t,\end{array}} \tag 6
+\end{equation}
+$$
 
-where \$ {}\_t \$ is the white noise error term, \$ {l}\_t \$ is the
-level component and \$ {c}*t \$ is the nonlinear trend component at
-observation . Observe that dependencies in time series have an
-interactive structure and no explicit trend component is present in the
-time series as this model does not need to artificially break the series
-into level and trend, as ETS does. Although we call the \$ {c}*t \$
-component as “nonlinear trend,” it does not correspond to the
-conventional trend component, because it contains the information of
-both previous \$ {c}*{t-1} \$ and the level \$ {l}*{t-1}\$. Also, note
-that we use \$ {}\_t \$ instead of \$ {e}\_t \$ in (6), which means that
-the CES has (6) as an underlying statistical model only when there is no
-misspecification error. In the case of the estimation of this model, the
-\$ {}\_t \$ will be substituted by \$ {e}\_t \$, which will then lead us
-to the original formulation (4).
+where ${\epsilon}_t$ is the white noise error term, ${l}_t$ is the level
+component and ${c}_t$ is the nonlinear trend component at observation .
+Observe that dependencies in time series have an interactive structure
+and no explicit trend component is present in the time series as this
+model does not need to artificially break the series into level and
+trend, as ETS does. Although we call the ${c}_t$ component as “nonlinear
+trend,” it does not correspond to the conventional trend component,
+because it contains the information of both previous ${c}_{t-1}$ and the
+level ${l}_{t-1}$. Also, note that we use ${\epsilon}_t$ instead of
+${e}_t$ in (6), which means that the CES has (6) as an underlying
+statistical model only when there is no misspecification error. In the
+case of the estimation of this model, the ${\epsilon}_t$ will be
+substituted by ${e}_t$, which will then lead us to the original
+formulation (4).
 
 This idea allows rewriting (6) in a shorter more generic way, resembling
 the general single source of error (SSOE) state space framework:
 
-$$ {\displaystyle \begin{array}{ll}& {y}_t={\mathbf{w}}^{\prime }{\mathbf{v}}_{t-1}+{\epsilon}_t\\ {}& {\mathbf{v}}_t={\mathbf{Fv}}_{t-1}+\mathbf{g}{\epsilon}_t,\end{array}} \tag 7$$
+$$
+\begin{equation}
+    {\displaystyle \begin{array}{ll}& {y}_t={\mathbf{w}}^{\prime }{\mathbf{v}}_{t-1}+{\epsilon}_t\\ {}& {\mathbf{v}}_t={\mathbf{Fv}}_{t-1}+\mathbf{g}{\epsilon}_t,\end{array}} \tag 7
+\end{equation}
+$$
 
-where \$ {}\_t=(
+where
+$${\mathbf{v}}_t=\left(\begin{array}{c}{l}_t\\ {}{c}_t\end{array}\right)$$
+is the state vector
 
-) \$ is the state vector, \$ =(
+$$\mathbf{F}=\left(\begin{array}{cc}1& -\left(1-{\alpha}_1\right)\\ {}1& 1-{\alpha}_0\end{array}\right)$$
+is the transition matrix
 
-) \$ is the transition matrix, \$ =(
+$$\mathbf{g}=\left(\begin{array}{c}{\alpha}_0-{\alpha}_1\\ {}{\alpha}_0+{\alpha}_1\end{array}\right)$$
+is the persistence vector and
 
-) \$ is the persistence vector and \$ =(
-
-) \$ is the measurement vector.
+$$\mathbf{w}=\left(\begin{array}{c}1\\ {}0\end{array}\right)$$ is the
+measurement vector.
 
 The state space form (7) permits extending CES in a similar ways to ETS
 to include additional states for seasonality or exogenous variables. The
@@ -166,11 +198,15 @@ The error term in (6) is additive, so the likelihood function for CES is
 trivial and is similar to the one in the additive exponential smoothing
 models (Hyndman et al., 2008, p. 68):
 
-$$ \mathrm{\mathcal{L}}\left(\mathbf{g},{\mathbf{v}}_0,{\sigma}^2\mid \mathbf{Y}\right)={\left(\frac{1}{\sigma \sqrt{2\pi }}\right)}^T\exp \left(-\frac{1}{2}\sum \limits_{t=1}^T{\left(\frac{\epsilon_t}{\sigma}\right)}^2\right), \tag 8$$
+$$
+\begin{equation}
+    \mathrm{\mathcal{L}}\left(\mathbf{g},{\mathbf{v}}_0,{\sigma}^2\mid \mathbf{Y}\right)={\left(\frac{1}{\sigma \sqrt{2\pi }}\right)}^T\exp \left(-\frac{1}{2}\sum \limits_{t=1}^T{\left(\frac{\epsilon_t}{\sigma}\right)}^2\right), \tag 8
+\end{equation}
+$$
 
-where \$ {}\_0 \$ is the vector of initial states, \$ {}^2 \$ is the
-variance of the error term and \$ \$ is the vector of all the in-sample
-observations.
+where ${\mathbf{v}}_0$ is the vector of initial states, ${\sigma}^2$ is
+the variance of the error term and $\mathbf{Y}$ is the vector of all the
+in-sample observations.
 
 ### Stationarity and stability conditions for CES
 
@@ -183,17 +219,25 @@ parameter value, in contrast to ETS models that are always
 non-stationary. Calculating eigenvalues of for CES gives the following
 roots:
 
-$$ \lambda =\frac{2-{\alpha}_0\pm \sqrt{\alpha_0^2+4{\alpha}_1-4}}{2}. \tag 9$$
+$$
+\begin{equation}
+    \lambda =\frac{2-{\alpha}_0\pm \sqrt{\alpha_0^2+4{\alpha}_1-4}}{2}. \tag 9
+\end{equation}    
+$$
 
 If the absolute values of both roots are less than 1 then the estimated
 CES is stationary.
 
-When \$ {}\_1\>1 \$ one of the eigenvalues will always be greater than
+When ${\alpha}_1>1$ one of the eigenvalues will always be greater than
 one. In this case both eigenvalues will be real numbers and CES produces
-a non-stationary trajectory. When \$ {}\_1=1 \$ CES becomes equivalent
+a non-stationary trajectory. When ${\alpha}_1=1$ CES becomes equivalent
 to ETS(A,N,N). Finally, the model becomes stationary when:
 
-$$ \left\{\begin{array}{l}{\alpha}_1<5-2{\alpha}_0\\ {}{\alpha}_1<1\\ {}{\alpha}_1>1-{\alpha}_0\end{array}\right.  \tag {10}$$
+$$
+\begin{equation}
+    \left\{\begin{array}{l}{\alpha}_1<5-2{\alpha}_0\\ {}{\alpha}_1<1\\ {}{\alpha}_1>1-{\alpha}_0\end{array}\right.  \tag {10}
+\end{equation}
+$$
 
 Note that we are not restricting CES with the conditions (10), we merely
 show, how the model will behave depending on the value of the complex
@@ -203,17 +247,24 @@ switch between them. The property of CES for each separate time series
 depends on the value of the smoothing parameters.
 
 The other important property that arises from (7) is the stability
-condition for CES. With \$ {}\_t={y}*t-{l}*{t-1} \$ the following is
+condition for CES. With $\epsilon_t={y}_t-{l}_{t-1}$ the following is
 obtained:
 
-$$ {\displaystyle \begin{array}{ll}{y}_t& ={l}_{t-1}+{\epsilon}_t\\ {}\left(\begin{array}{c}{l}_t\\ {}{c}_t\end{array}\right)& =\left(\begin{array}{cc}1-{\alpha}_0+{\alpha}_1& -\left(1-{\alpha}_1\right)\\ {}1-{\alpha}_0-{\alpha}_1& 1-{\alpha}_0\end{array}\right)\left(\begin{array}{c}{l}_{t-1}\\ {}{c}_{t-1}\end{array}\right)\\ {}& \kern1em +\left(\begin{array}{c}{\alpha}_0-{\alpha}_1\\ {}{\alpha}_1+{\alpha}_0\end{array}\right){y}_t.\end{array}} \tag {11}$$
+$$
+\begin{equation}
+    {\displaystyle \begin{array}{ll}{y}_t& ={l}_{t-1}+{\epsilon}_t\\ {}\left(\begin{array}{c}{l}_t\\ {}{c}_t\end{array}\right)& =\left(\begin{array}{cc}1-{\alpha}_0+{\alpha}_1& -\left(1-{\alpha}_1\right)\\ {}1-{\alpha}_0-{\alpha}_1& 1-{\alpha}_0\end{array}\right)\left(\begin{array}{c}{l}_{t-1}\\ {}{c}_{t-1}\end{array}\right)\\ {}& \kern1em +\left(\begin{array}{c}{\alpha}_0-{\alpha}_1\\ {}{\alpha}_1+{\alpha}_0\end{array}\right){y}_t.\end{array}} \tag {11}
+\end{equation}
+$$
 
-The matrix \$ =(
+The matrix
+$$\mathbf{D}=\left(\begin{array}{cc}1-{\alpha}_0+{\alpha}_1& -\left(1-{\alpha}_1\right)\\ {}1-{\alpha}_0-{\alpha}_1& 1-{\alpha}_0\end{array}\right)$$
+is called the discount matrix and can be written in the general form:
 
-) \$ is called the discount matrix and can be written in the general
-form:
-
-$$ \mathbf{D}=\mathbf{F}-\mathbf{g}{\mathbf{w}}^{\prime }. \tag {12}$$
+$$
+\begin{equation}
+    \mathbf{D}=\mathbf{F}-\mathbf{g}{\mathbf{w}}^{\prime }. \tag {12}
+\end{equation}    
+$$
 
 The model is said to be stable if all the eigenvalues of (12) lie inside
 the unit circle. This is more important condition than the stationarity
@@ -222,12 +273,20 @@ time and that the older observations have smaller weights than the new
 ones, which is one of the main features of the conventional ETS models.
 The eigenvalues are given by the following formula:
 
-$$ \lambda =\frac{2-2{\alpha}_0+{\alpha}_1\pm \sqrt{8{\alpha}_1+4{\alpha}_0-4{\alpha}_0{\alpha}_1-4-3{\alpha}_1^2}}{2}. \tag {13}$$
+$$
+\begin{equation}
+    \lambda =\frac{2-2{\alpha}_0+{\alpha}_1\pm \sqrt{8{\alpha}_1+4{\alpha}_0-4{\alpha}_0{\alpha}_1-4-3{\alpha}_1^2}}{2}. \tag {13}
+\end{equation}
+$$
 
 CES will be stable when the following system of inequalities is
 satisfied:
 
-$$ \left\{\begin{array}{l}{\left({\alpha}_0-2.5\right)}^2+{\alpha}_1^2>1.25\\ {}{\left({\alpha}_0-0.5\right)}^2+{\left({\alpha}_1-1\right)}^2>0.25\\ {}{\left({\alpha}_0-1.5\right)}^2+{\left({\alpha}_1-0.5\right)}^2<1.5\end{array}.\right. \tag {14}$$
+$$
+\begin{equation}
+    \left\{\begin{array}{l}{\left({\alpha}_0-2.5\right)}^2+{\alpha}_1^2>1.25\\ {}{\left({\alpha}_0-0.5\right)}^2+{\left({\alpha}_1-1\right)}^2>0.25\\ {}{\left({\alpha}_0-1.5\right)}^2+{\left({\alpha}_1-0.5\right)}^2<1.5\end{array}.\right. \tag {14}
+\end{equation}
+$$
 
 Both the stationarity and stability regions are shown in [Figure
 1](https://onlinelibrary.wiley.com/cms/asset/2a1bdd28-bbba-4ec3-aa4a-fbcf3823a209/nav22074-fig-0001-m.jpg).
@@ -244,10 +303,17 @@ stationary and non-stationary forecasts
 The conditional mean of CES for $h$ steps ahead with known \$ {l}\_t \$
 and \$ {c}\_t \$ can be calculated using the state space model (6):
 
-$$ \mathrm{E}\left({y}_{t+h}\mid {\mathbf{v}}_t\right)={\mathbf{w}}^{\prime }{\mathbf{F}}^{h-1}{\mathbf{v}}_t, \tag {15}$$
+$$
+\begin{equation}
+    \mathrm{E}\left({y}_{t+h}\mid {\mathbf{v}}_t\right)={\mathbf{w}}^{\prime }{\mathbf{F}}^{h-1}{\mathbf{v}}_t, \tag {15}
+\end{equation}    
+$$
 
-where \$ ({y}\_{t+h}*t)={}*{t+h} \$ while \$ \$ and \$ \$ re the
-matrices from (7).
+where
+
+$$\mathrm{E}\left({y}_{t+h}\mid {\mathbf{v}}_t\right)={\hat{y}}_{t+h}$$
+
+while $\mathbf{F}$ and $\mathbf{w}$ re the matrices from (7).
 
 The forecasting trajectories of (15) will differ depending on the values
 of \$ {l}\_t, {c}\_t \$, and the complex smoothing parameter. The
@@ -255,27 +321,27 @@ analysis of stationarity condition shows that there are several types of
 forecasting trajectories of CES depending on the particular value of the
 complex smoothing parameter:
 
-1.  When \$ {}\_1=1 \$ all the values of forecast will be equal to the
+1.  When ${\alpha}_1=1$ all the values of forecast will be equal to the
     last obtained forecast, which corresponds to a flat line. This
     trajectory is shown in [Figure
     2A](https://onlinelibrary.wiley.com/cms/asset/16feeb7e-adf2-48f6-9df9-cab3e34b6e67/nav22074-fig-0002-m.jpg).
-2.  When \$ {}\_1\>1 \$ the model produces trajectory with exponential
+2.  When ${\alpha}_1>1$ the model produces trajectory with exponential
     growth which is shown in [Figure
     2B](https://onlinelibrary.wiley.com/cms/asset/16feeb7e-adf2-48f6-9df9-cab3e34b6e67/nav22074-fig-0002-m.jpg).
-3.  When \$ \<{}\_1\<1 \$ trajectory becomes stationary and CES produces
-    exponential decline shown in [Figure
+3.  When $\frac{4-{\alpha}_0^2}{4}<{\alpha}_1<1$ trajectory becomes
+    stationary and CES produces exponential decline shown in [Figure
     2C](https://onlinelibrary.wiley.com/cms/asset/16feeb7e-adf2-48f6-9df9-cab3e34b6e67/nav22074-fig-0002-m.jpg).
-4.  When \$ 1-{}\_0\<{}\_1\< \$ trajectory becomes harmonic and will
-    converge to zero [Figure
+4.  When $1-{\alpha}_0<{\alpha}_1<\frac{4-{\alpha}_0^2}{4}$ trajectory
+    becomes harmonic and will converge to zero [Figure
     2D](https://onlinelibrary.wiley.com/cms/asset/16feeb7e-adf2-48f6-9df9-cab3e34b6e67/nav22074-fig-0002-m.jpg).
-5.  Finally, when \$ 0\<{}\_1\<1-{}\_0 \$ the diverging harmonic
+5.  Finally, when $0<{\alpha}_1<1-{\alpha}_0$ the diverging harmonic
     trajectory is produced, the model becomes non-stationary. This
     trajectory is of no use in forecasting, that is why we do not show
     it on graphs.
 
 Using (7) the conditional variance of CES for $h$ steps ahead with known
-\$ {l}\_t \$ and \$ {c}\_t \$ can be calculated similarly to the pure
-additive ETS models (Hyndman et al., 2008, p. 96).
+${l}_t$ and ${c}_t$ can be calculated similarly to the pure additive ETS
+models (Hyndman et al., 2008, p. 96).
 
 ## Loading libraries and data <a class="anchor" id="loading"></a>
 
