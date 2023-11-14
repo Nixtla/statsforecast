@@ -21,7 +21,7 @@ class MultiprocessBackend(ParallelBackend):
 
     Parameters
     ----------
-    n_jobs: int
+    n_jobs : int
         Number of jobs used in the parallel processing, use -1 for all cores.
     """
 

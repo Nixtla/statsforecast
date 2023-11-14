@@ -3,9 +3,8 @@
 # %% auto 0
 __all__ = ['AutoARIMAProphet']
 
-# %% ../../nbs/src/adapters.prophet.ipynb 3
+# %% ../../nbs/src/adapters.prophet.ipynb 4
 import sys
-from copy import deepcopy
 
 import pandas as pd
 from ..arima import AutoARIMA
@@ -33,7 +32,7 @@ elif sys.version_info.minor == 6 and (sys.platform in ["win32", "cygwin"]):
         )
         raise ModuleNotFoundError(msg) from e
 
-# %% ../../nbs/src/adapters.prophet.ipynb 6
+# %% ../../nbs/src/adapters.prophet.ipynb 7
 class AutoARIMAProphet(Prophet):
     """AutoARIMAProphet adapter.
 
