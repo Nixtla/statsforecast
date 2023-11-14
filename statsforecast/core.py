@@ -472,7 +472,8 @@ def _maybe_warn_sort_df(sort_df):
 def _warn_id_as_idx():
     warnings.warn(
         "In a future version the predictions will have the id as a column. "
-        "You can set `statsforecast.config.id_as_index=False` to suppress this warning.",
+        "You can set `statsforecast.config.id_as_index = False` "
+        "to adopt the new behavior and to suppress this warning.",
         category=DeprecationWarning,
     )
 
