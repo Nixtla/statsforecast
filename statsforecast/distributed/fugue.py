@@ -53,12 +53,17 @@ class FugueBackend(ParallelBackend):
     This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
     computation on Spark, Dask and Ray without any rewrites.
 
-    **Parameters:**<br>
-    `engine`: fugue.ExecutionEngine, a selection between Spark, Dask, and Ray.<br>
-    `conf`: fugue.Config, engine configuration.<br>
-    `**transform_kwargs`: additional kwargs for Fugue's transform method.<br>
+    Parameters
+    ----------
+    engine : fugue.ExecutionEngine
+        A selection between Spark, Dask, and Ray.
+    conf : fugue.Config
+        Engine configuration.
+    **transform_kwargs
+        Additional kwargs for Fugue's transform method.
 
-    **Notes:**<br>
+    Notes
+    -----
     A short introduction to Fugue, with examples on how to scale pandas code to Spark, Dask or Ray
      is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
     """
@@ -85,24 +90,33 @@ class FugueBackend(ParallelBackend):
         This method uses Fugue's transform function, in combination with
         `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models.
 
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `freq`: str, frequency of the data, [pandas available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-        `models`: List[typing.Any], list of instantiated objects `StatsForecast.models`.<br>
-        `fallback_model`: Any, Model to be used if a model fails.<br>
-        `X_df`: pandas.DataFrame, with [unique_id, ds] columns and df’s future exogenous.
-        `**kwargs`: Additional `core.StatsForecast` parameters. Example forecast horizon `h`.<br>
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
+        freq : str
+            Frequency of the data, [pandas available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+        models : List[typing.Any]
+            List of instantiated objects `StatsForecast.models`.
+        fallback_model : Any
+            Model to be used if a model fails.
+        X_df : pandas.DataFrame
+            DataFrame with [unique_id, ds] columns and df’s future exogenous.
+        **kwargs
+            Additional `core.StatsForecast` parameters. Example forecast horizon `h`.
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
 
-        **References:**<br>
+        References
+        ----------
         For more information check the
         [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html)
-        tutorial.<br>
+        tutorial.
         The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
-        method documentation.<br>
+        method documentation.
         Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
         """
         level = kwargs.get("level", [])
@@ -156,19 +170,26 @@ class FugueBackend(ParallelBackend):
         provides better model's generalization measurements by increasing the test's length
         and diversity.
 
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-        `models`: List[typing.Any], list of instantiated objects `StatsForecast.models`.<br>
-        `fallback_model`: Any, Model to be used if a model fails.<br>
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
+        freq : str
+            Frequency of the data, [pandas available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+        models : List[typing.Any]
+            List of instantiated objects `StatsForecast.models`.
+        fallback_model : Any
+            Model to be used if a model fails.
 
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.
 
-        **References:**<br>
+        References
+        ----------
         The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
-        method documentation.<br>
+        method documentation.
         [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
         """
         level = kwargs.get("level", [])
