@@ -301,8 +301,8 @@ def _calculate_intervals(out, level, h, sigmah):
 
 
 def _calculate_sigma(residuals, n):
-    sigma = np.nansum(residuals**2)
     if n > 0:
+        sigma = np.nansum(residuals**2)
         sigma = sigma / n
         sigma = np.sqrt(sigma)
     else:
