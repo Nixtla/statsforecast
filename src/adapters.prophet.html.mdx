@@ -16,10 +16,17 @@ title: Replace FB-Prophet
 
 ## AutoArimaProphet
 
+``` text
+/opt/hostedtoolcache/Python/3.10.13/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section Notes
+  else: warn(msg)
+/opt/hostedtoolcache/Python/3.10.13/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section References
+  else: warn(msg)
+```
+
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L37"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L36"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMAProphet
@@ -54,70 +61,80 @@ If your forecasting pipeline uses Prophet the
 [`AutoARIMAProphet`](https://Nixtla.github.io/statsforecast/src/adapters.prophet.html#autoarimaprophet)
 adapter helps to easily substitute Prophet with an AutoARIMA.
 
-**Parameters:**<br/> `growth`: String ‘linear’, ‘logistic’ or ‘flat’ to
-specify a linear, logistic or flat trend.<br/> `changepoints`: List of
-dates of potential changepoints. Otherwise selected automatically.<br/>
-`n_changepoints`: Number of potential changepoints to include.<br/>
-`changepoint_range`: Proportion of history in which trend changepoints
-will be estimated.<br/> `yearly_seasonality`: Fit yearly seasonality. Can
-be ‘auto’, True, False, or a number of Fourier terms to generate.<br/>
-`weekly_seasonality`: Fit weekly seasonality. Can be ‘auto’, True,
-False, or a number of Fourier terms to generate.<br/>
-`daily_seasonality`: Fit daily seasonality. Can be ‘auto’, True, False,
-or a number of Fourier terms to generate.<br/> `holidays`:
-pandas.DataFrame with columns holiday (string) and ds (date type).<br/>
-`interval_width`: float, uncertainty forecast intervals width.
-[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)’s
-level <br/>
-
-**Notes:**<br/> You can create automated exogenous variables from the
-Prophet data processing pipeline these exogenous will be included into
-[`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima)’s
-exogenous features. Parameters like `seasonality_mode`,
-`seasonality_prior_scale`, `holidays_prior_scale`,
-`changepoint_prior_scale`, `mcmc_samples`, `uncertainty_samples`,
-`stan_backend` are Prophet exclusive.
-
-**References:**<br/> [Sean J. Taylor, Benjamin Letham (2017). “Prophet
-Forecasting at Scale”](https://peerj.com/preprints/3190.pdf)
-
-[Oskar Triebe, Hansika Hewamalage, Polina Pilyugina, Nikolay Laptev,
-Christoph Bergmeir, Ram Rajagopal (2021). “NeuralProphet: Explainable
-Forecasting at Scale”.](https://arxiv.org/pdf/2111.15397.pdf)
-
-[Rob J. Hyndman, Yeasmin Khandakar (2008). “Automatic Time Series
-Forecasting: The forecast package for
-R”](https://www.jstatsoft.org/article/view/v027i03).
+|                         | **Type** | **Default** | **Details**                                                                                                                              |
+|------|------------------|-------------------------|-------------------------|
+| growth                  | str      | linear      | ‘linear’, ‘logistic’ or ‘flat’ to specify a linear, logistic or flat trend.                                                              |
+| changepoints            | NoneType | None        | Potential changepoints. Otherwise selected automatically.                                                                                |
+| n_changepoints          | int      | 25          | Number of potential changepoints to include.                                                                                             |
+| changepoint_range       | float    | 0.8         | Proportion of history in which trend changepoints will be estimated.                                                                     |
+| yearly_seasonality      | str      | auto        | Fit yearly seasonality. Can be ‘auto’, True, False, or a number of Fourier terms to generate.                                            |
+| weekly_seasonality      | str      | auto        | Fit weekly seasonality. Can be ‘auto’, True, False, or a number of Fourier terms to generate.                                            |
+| daily_seasonality       | str      | auto        | Fit daily seasonality. Can be ‘auto’, True, False, or a number of Fourier terms to generate.                                             |
+| holidays                | NoneType | None        | DataFrame with columns holiday (string) and ds (date type).                                                                              |
+| seasonality_mode        | str      | additive    |                                                                                                                                          |
+| seasonality_prior_scale | float    | 10.0        |                                                                                                                                          |
+| holidays_prior_scale    | float    | 10.0        |                                                                                                                                          |
+| changepoint_prior_scale | float    | 0.05        |                                                                                                                                          |
+| mcmc_samples            | int      | 0           |                                                                                                                                          |
+| interval_width          | float    | 0.8         | Uncertainty forecast intervals width. [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)’s level |
+| uncertainty_samples     | int      | 1000        |                                                                                                                                          |
+| stan_backend            | NoneType | None        |                                                                                                                                          |
+| d                       | NoneType | None        |                                                                                                                                          |
+| D                       | NoneType | None        |                                                                                                                                          |
+| max_p                   | int      | 5           |                                                                                                                                          |
+| max_q                   | int      | 5           |                                                                                                                                          |
+| max_P                   | int      | 2           |                                                                                                                                          |
+| max_Q                   | int      | 2           |                                                                                                                                          |
+| max_order               | int      | 5           |                                                                                                                                          |
+| max_d                   | int      | 2           |                                                                                                                                          |
+| max_D                   | int      | 1           |                                                                                                                                          |
+| start_p                 | int      | 2           |                                                                                                                                          |
+| start_q                 | int      | 2           |                                                                                                                                          |
+| start_P                 | int      | 1           |                                                                                                                                          |
+| start_Q                 | int      | 1           |                                                                                                                                          |
+| stationary              | bool     | False       |                                                                                                                                          |
+| seasonal                | bool     | True        |                                                                                                                                          |
+| ic                      | str      | aicc        |                                                                                                                                          |
+| stepwise                | bool     | True        |                                                                                                                                          |
+| nmodels                 | int      | 94          |                                                                                                                                          |
+| trace                   | bool     | False       |                                                                                                                                          |
+| approximation           | bool     | False       |                                                                                                                                          |
+| method                  | NoneType | None        |                                                                                                                                          |
+| truncate                | NoneType | None        |                                                                                                                                          |
+| test                    | str      | kpss        |                                                                                                                                          |
+| test_kwargs             | NoneType | None        |                                                                                                                                          |
+| seasonal_test           | str      | seas        |                                                                                                                                          |
+| seasonal_test_kwargs    | NoneType | None        |                                                                                                                                          |
+| allowdrift              | bool     | False       |                                                                                                                                          |
+| allowmean               | bool     | False       |                                                                                                                                          |
+| blambda                 | NoneType | None        |                                                                                                                                          |
+| biasadj                 | bool     | False       |                                                                                                                                          |
+| period                  | int      | 1           |                                                                                                                                          |
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L178"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L186"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMAProphet.fit
 
 > ``` text
->  AutoARIMAProphet.fit (df, disable_seasonal_features=True, **kwargs)
+>  AutoARIMAProphet.fit (df, disable_seasonal_features=True)
 > ```
 
 Fit the AutoARIMAProphet adapter.
 
-**Parameters:**<br/> `df`: pandas.DataFrame, with columns ds (date type)
-and y, the time series.<br/> `disable_seasonal_features`: bool, Wheter
-disable Prophet’s seasonal features.<br/> `kwargs`: Additional
-arguments.<br/>
-
-**Returns:**<br/> `self`:
-[`AutoARIMAProphet`](https://Nixtla.github.io/statsforecast/src/adapters.prophet.html#autoarimaprophet)
-adapter object with
-[`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima)
-fitted model.
+|                           | **Type**             | **Default** | **Details**                                                                                                                |
+|------|------------------|-------------------------|-------------------------|
+| df                        | pandas.DataFrame     |             | DataFrame with columns ds (date type) and y, the time series.                                                              |
+| disable_seasonal_features | bool                 | True        | Disable Prophet’s seasonal features.                                                                                       |
+| **Returns**               | **AutoARIMAProphet** |             | **Adapter object with [`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima) fitted model.** |
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L230"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L241"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMAProphet.predict
@@ -128,11 +145,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 Predict using the AutoARIMAProphet adapter.
 
-**Parameters:**<br/> `df`: pandas.DataFrame, with columns ds (date type)
-and y, the time series.<br/>
-
-**Returns:**<br/> `fcsts_df`: A pandas.DataFrame with the forecast
-components.
+|             | **Type**             | **Default** | **Details**                                                   |
+|------|------------------|-------------------------|-------------------------|
+| df          | NoneType             | None        | DataFrame with columns ds (date type) and y, the time series. |
+| **Returns** | **pandas.DataFrame** |             | **DataFrame with the forecast components.**                   |
 
 # 2. Prophet Substitution Example
 

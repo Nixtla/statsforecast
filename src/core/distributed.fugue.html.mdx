@@ -50,6 +50,11 @@ sf.cross_validation(df=sdf, h=horizon, step_size = 24,
     n_windows = 2, level=[90]).show()
 ```
 
+``` text
+/opt/hostedtoolcache/Python/3.10.13/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section Notes
+  else: warn(msg)
+```
+
 ------------------------------------------------------------------------
 
 <a
@@ -69,14 +74,11 @@ This class uses [Fugue](https://github.com/fugue-project/fugue) backend
 capable of distributing computation on Spark, Dask and Ray without any
 rewrites.
 
-**Parameters:**<br/> `engine`: fugue.ExecutionEngine, a selection between
-Spark, Dask, and Ray.<br/> `conf`: fugue.Config, engine
-configuration.<br/> `**transform_kwargs`: additional kwargs for Fugue’s
-transform method.<br/>
-
-**Notes:**<br/> A short introduction to Fugue, with examples on how to
-scale pandas code to Spark, Dask or Ray is available
-[here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
+|                  | **Type** | **Default** | **Details**                               |
+|------------------|----------|-------------|-------------------------------------------|
+| engine           | Any      | None        | A selection between Spark, Dask, and Ray. |
+| conf             | Any      | None        | Engine configuration.                     |
+| transform_kwargs | Any      |             |                                           |
 
 ## Dask Distributed Predictions
 
