@@ -302,11 +302,14 @@ def _calculate_intervals(out, level, h, sigmah):
 
 def _calculate_sigma(residuals, n):
     sigma = np.nansum(residuals**2)
-    sigma = sigma / n
-    sigma = np.sqrt(sigma)
+    if n > 0:
+        sigma = sigma / n
+        sigma = np.sqrt(sigma)
+    else:
+        sigma = 0
     return sigma
 
-# %% ../nbs/src/utils.ipynb 19
+# %% ../nbs/src/utils.ipynb 20
 class ConformalIntervals:
     """Class for storing conformal intervals metadata information."""
 
