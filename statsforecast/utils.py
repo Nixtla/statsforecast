@@ -44,17 +44,29 @@ def generate_series(
     If `n_static_features > 0`, then each series gets static features with random values.
     If `equal_ends == True` then all series end at the same date.
 
-    **Parameters:**<br>
-    `n_series`: int, number of series for synthetic panel.<br>
-    `min_length`: int, minimal length of synthetic panel's series.<br>
-    `max_length`: int, minimal length of synthetic panel's series.<br>
-    `n_static_features`: int, default=0, number of static exogenous variables for synthetic panel's series.<br>
-    `equal_ends`: bool, if True, series finish in the same date stamp `ds`.<br>
-    `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-    `engine`: str, engine to be used in DataFrame construction; NOTE: index does not exist in polars DataFrame
+    Parameters
+    ----------
+    n_series : int
+        Number of series for synthetic panel.
+    freq : str (default='D')
+        Frequency of the data, 'D' or 'M'.
+    min_length : int (default=50)
+        Minimum length of synthetic panel's series.
+    max_length : int (default=500)
+        Maximum length of synthetic panel's series.
+    n_static_features : int (default=0)
+        Number of static exogenous variables for synthetic panel's series.
+    equal_ends : bool (default=False)
+        Series should end in the same date stamp `ds`.
+    engine : str (default='pandas')
+        Output Dataframe type ('pandas' or 'polars').
+    seed : int (default=0)
+        Random seed used for generating the data.
 
-    **Returns:**<br>
-    `freq`: pandas.DataFrame | polars.DataFrame, synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
+    Returns
+    -------
+    pandas or polars DataFrame
+        Synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
     """
     return utils_generate_series(
         n_series=n_series,

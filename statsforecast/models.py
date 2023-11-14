@@ -42,7 +42,7 @@ from statsforecast.utils import (
     NOGIL,
 )
 
-# %% ../nbs/src/core/models.ipynb 8
+# %% ../nbs/src/core/models.ipynb 9
 def _add_fitted_pi(res, se, level):
     level = sorted(level)
     level = np.asarray(level)
@@ -55,7 +55,7 @@ def _add_fitted_pi(res, se, level):
     res = {**res, **lo, **hi}
     return res
 
-# %% ../nbs/src/core/models.ipynb 9
+# %% ../nbs/src/core/models.ipynb 10
 def _add_conformal_distribution_intervals(
     fcst: Dict,
     cs: np.ndarray,
@@ -84,7 +84,7 @@ def _add_conformal_distribution_intervals(
         fcst[col] = quantiles[i]
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 10
+# %% ../nbs/src/core/models.ipynb 11
 def _get_conformal_method(method: str):
     available_methods = {
         "conformal_distribution": _add_conformal_distribution_intervals,
@@ -97,7 +97,7 @@ def _get_conformal_method(method: str):
         )
     return available_methods[method]
 
-# %% ../nbs/src/core/models.ipynb 11
+# %% ../nbs/src/core/models.ipynb 12
 class _TS:
     def new(self):
         b = type(self).__new__(type(self))
@@ -145,17 +145,19 @@ class _TS:
     def _add_predict_conformal_intervals(self, fcst, level):
         return self._add_conformal_intervals(fcst=fcst, y=None, X=None, level=level)
 
-# %% ../nbs/src/core/models.ipynb 16
+# %% ../nbs/src/core/models.ipynb 17
 class AutoARIMA(_TS):
     """AutoARIMA model.
 
     Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average)
     model using an information criterion. Default is Akaike Information Criterion (AICc).
 
-    **Note:**<br>
+    Notes
+    -----
     This implementation is a mirror of Hyndman's [forecast::auto.arima](https://github.com/robjhyndman/forecast).
 
-    **References:**<br>
+    References
+    ----------
     [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
 
     Parameters
@@ -569,7 +571,7 @@ class AutoARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 31
+# %% ../nbs/src/core/models.ipynb 33
 class AutoETS(_TS):
     """Automatic Exponential Smoothing model.
 
@@ -585,10 +587,12 @@ class AutoETS(_TS):
     If the component is selected as 'Z', it operates as a placeholder to ask the AutoETS model
     to figure out the best parameter.
 
-    **Note:**<br>
+    Notes
+    -----
     This implementation is a mirror of Hyndman's [forecast::ets](https://github.com/robjhyndman/forecast).
 
-    **References:**<br>
+    References
+    ----------
     [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
 
     [Hyndman, Rob, et al (2008). "Forecasting with exponential smoothing: the state space approach"](https://robjhyndman.com/expsmooth/).
@@ -821,7 +825,7 @@ class AutoETS(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 45
+# %% ../nbs/src/core/models.ipynb 48
 class ETS(AutoETS):
     @classmethod
     def _warn(cls):
@@ -849,7 +853,7 @@ class ETS(AutoETS):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 50
+# %% ../nbs/src/core/models.ipynb 53
 class AutoCES(_TS):
     """Complex Exponential Smoothing model.
 
@@ -865,7 +869,8 @@ class AutoCES(_TS):
     If the component is selected as 'Z', it operates as a placeholder to ask the AutoCES model
     to figure out the best parameter.
 
-    **References:**<br>
+    References
+    ----------
     [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing". 10.13140/RG.2.1.3757.2562. ](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074).
 
     Parameters
@@ -1090,7 +1095,7 @@ class AutoCES(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 67
+# %% ../nbs/src/core/models.ipynb 71
 class AutoTheta(_TS):
     """AutoTheta model.
 
@@ -1098,7 +1103,8 @@ class AutoTheta(_TS):
     Optimized Theta Model ('OTM'), Dynamic Standard Theta Model ('DSTM'),
     Dynamic Optimized Theta Model ('DOTM')) model using mse.
 
-    **References:**<br>
+    References
+    ----------
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
 
     Parameters
@@ -1309,13 +1315,14 @@ class AutoTheta(_TS):
             res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 82
+# %% ../nbs/src/core/models.ipynb 87
 class ARIMA(_TS):
     """ARIMA model.
 
     AutoRegressive Integrated Moving Average model.
 
-    **References:**<br>
+    References
+    ----------
     [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
 
     Parameters
@@ -1609,7 +1616,7 @@ class ARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 96
+# %% ../nbs/src/core/models.ipynb 102
 class AutoRegressive(ARIMA):
     """Simple Autoregressive model.
 
@@ -1684,7 +1691,7 @@ class AutoRegressive(ARIMA):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 110
+# %% ../nbs/src/core/models.ipynb 117
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
@@ -1770,7 +1777,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
         sums[i] = array[start : start + chunk_size].sum()
     return sums
 
-# %% ../nbs/src/core/models.ipynb 111
+# %% ../nbs/src/core/models.ipynb 118
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses(
     y: np.ndarray,  # time series
@@ -1785,7 +1792,7 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 112
+# %% ../nbs/src/core/models.ipynb 119
 class SimpleExponentialSmoothing(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -1795,7 +1802,8 @@ class SimpleExponentialSmoothing(_TS):
 
     The rate $0 \leq \\alpha \leq 1$ at which the weights decrease is called the smoothing parameter. When $\\alpha = 1$, SES is equal to the naive method.
 
-    **References:**<br>
+    References
+    ----------
     [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
 
     Parameters
@@ -1947,7 +1955,7 @@ class SimpleExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 123
+# %% ../nbs/src/core/models.ipynb 131
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1960,7 +1968,7 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 124
+# %% ../nbs/src/core/models.ipynb 132
 class SimpleExponentialSmoothingOptimized(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -1970,7 +1978,8 @@ class SimpleExponentialSmoothingOptimized(_TS):
 
     The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
 
-    **References:**<br>
+    References
+    ----------
     [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
 
     Parameters
@@ -2117,7 +2126,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 135
+# %% ../nbs/src/core/models.ipynb 144
 @njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
@@ -2142,7 +2151,7 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 136
+# %% ../nbs/src/core/models.ipynb 145
 class SeasonalExponentialSmoothing(_TS):
     """SeasonalExponentialSmoothing model.
 
@@ -2151,11 +2160,13 @@ class SeasonalExponentialSmoothing(_TS):
     Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
     $\hat{y}_{t+1,s} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1,s}$
 
-    **Note:**<br>
+    Notes
+    -----
     This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
     And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
 
-    **References:**<br>
+    References
+    ----------
     [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
     [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
 
@@ -2321,7 +2332,7 @@ class SeasonalExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 150
+# %% ../nbs/src/core/models.ipynb 160
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2344,7 +2355,7 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 151
+# %% ../nbs/src/core/models.ipynb 161
 class SeasonalExponentialSmoothingOptimized(_TS):
     def __init__(
         self,
@@ -2361,11 +2372,13 @@ class SeasonalExponentialSmoothingOptimized(_TS):
 
         The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
 
-        **Note:**<br>
+        Notes
+        -----
         This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
         And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
 
-        **References:**<br>
+        References
+        ----------
         [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
         [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
 
@@ -2519,14 +2532,15 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 163
+# %% ../nbs/src/core/models.ipynb 174
 class Holt(AutoETS):
     """Holt's method.
 
     Also known as double exponential smoothing, Holt's method is an extension of exponential smoothing for series with a trend.
     This implementation returns the corresponding `ETS` model with additive (A) or multiplicative (M) errors (so either 'AAN' or 'MAN').
 
-    **References:**<br>
+    References
+    ----------
     [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with trend"](https://otexts.com/fpp3/holt.html).
 
     Parameters
@@ -2550,7 +2564,6 @@ class Holt(AutoETS):
         alias: str = "Holt",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-
         self.season_length = season_length
         self.error_type = error_type
         self.alias = alias
@@ -2563,14 +2576,15 @@ class Holt(AutoETS):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 176
+# %% ../nbs/src/core/models.ipynb 188
 class HoltWinters(AutoETS):
     """Holt-Winters' method.
 
     Also known as triple exponential smoothing, Holt-Winters' method is an extension of exponential smoothing for series that contain both trend and seasonality.
     This implementation returns the corresponding `ETS` model with additive (A) or multiplicative (M) errors (so either 'AAA' or 'MAM').
 
-    **References:**<br>
+    References
+    ----------
     [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with seasonality"](https://otexts.com/fpp3/holt-winters.html).
 
     Parameters
@@ -2605,7 +2619,7 @@ class HoltWinters(AutoETS):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 190
+# %% ../nbs/src/core/models.ipynb 203
 @njit(nogil=NOGIL, cache=CACHE)
 def _historic_average(
     y: np.ndarray,  # time series
@@ -2621,7 +2635,7 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 191
+# %% ../nbs/src/core/models.ipynb 204
 class HistoricAverage(_TS):
     def __init__(
         self,
@@ -2634,7 +2648,8 @@ class HistoricAverage(_TS):
         Assuming there are $t$ observations, the one-step forecast is given by:
         $$ \hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j $$
 
-        **References:**<br>
+        References
+        ----------
         [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Parameters
@@ -2749,7 +2764,6 @@ class HistoricAverage(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-
         """Memory Efficient HistoricAverage predictions.
 
         This method avoids memory burden due from object storage.
@@ -2799,7 +2813,7 @@ class HistoricAverage(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 203
+# %% ../nbs/src/core/models.ipynb 217
 class Naive(_TS):
     def __init__(
         self,
@@ -2811,7 +2825,8 @@ class Naive(_TS):
         All forecasts have the value of the last observation:
         $\hat{y}_{t+1} = y_t$ for all $t$
 
-        **References:**<br>
+        References
+        ----------
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Parameters
@@ -3007,7 +3022,7 @@ class Naive(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 218
+# %% ../nbs/src/core/models.ipynb 233
 @njit(nogil=NOGIL, cache=CACHE)
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -3027,7 +3042,7 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 219
+# %% ../nbs/src/core/models.ipynb 234
 class RandomWalkWithDrift(_TS):
     def __init__(
         self,
@@ -3044,7 +3059,8 @@ class RandomWalkWithDrift(_TS):
         From the previous equation, we can see that this is equivalent to extrapolating a line between
         the first and the last observation.
 
-        **References:**<br>
+        References
+        ----------
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Parameters
@@ -3204,7 +3220,7 @@ class RandomWalkWithDrift(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 233
+# %% ../nbs/src/core/models.ipynb 249
 class SeasonalNaive(_TS):
     def __init__(
         self,
@@ -3216,7 +3232,8 @@ class SeasonalNaive(_TS):
 
         A method similar to the naive, but uses the last known observation of the same period (e.g. the same month of the previous year) in order to capture seasonal variations.
 
-        **References:**<br>
+        References
+        ----------
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html#seasonal-na%C3%AFve-method).
 
         Parameters
@@ -3393,7 +3410,7 @@ class SeasonalNaive(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 247
+# %% ../nbs/src/core/models.ipynb 264
 @njit(nogil=NOGIL, cache=CACHE)
 def _window_average(
     y: np.ndarray,  # time series
@@ -3409,7 +3426,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 248
+# %% ../nbs/src/core/models.ipynb 265
 class WindowAverage(_TS):
     def __init__(
         self,
@@ -3424,7 +3441,8 @@ class WindowAverage(_TS):
         The length of the window selected should take into account the importance of past
         observations and how fast the series changes.
 
-        **References:**<br>
+        References
+        ----------
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Parameters
@@ -3567,7 +3585,7 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 259
+# %% ../nbs/src/core/models.ipynb 277
 @njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_window_average(
     y: np.ndarray,
@@ -3588,7 +3606,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/src/core/models.ipynb 260
+# %% ../nbs/src/core/models.ipynb 278
 class SeasonalWindowAverage(_TS):
     def __init__(
         self,
@@ -3601,7 +3619,8 @@ class SeasonalWindowAverage(_TS):
 
         An average of the last $k$ observations of the same period, with $k$ the length of the window.
 
-        **References:**<br>
+        References
+        ----------
         [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Parameters
@@ -3762,7 +3781,7 @@ class SeasonalWindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 272
+# %% ../nbs/src/core/models.ipynb 291
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3783,7 +3802,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 273
+# %% ../nbs/src/core/models.ipynb 292
 class ADIDA(_TS):
     def __init__(
         self,
@@ -3801,7 +3820,8 @@ class ADIDA(_TS):
         They are notoriously hard to forecast, and so, different methods have been developed
         especifically for them.
 
-        **References:**<br>
+        References
+        ----------
         [Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F., & Assimakopoulos, V. (2011). An aggregate–disaggregate intermittent demand approach (ADIDA) to forecasting: an empirical proposition and analysis. Journal of the Operational Research Society, 62(3), 544-554.](https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f).
 
         Parameters
@@ -3945,7 +3965,7 @@ class ADIDA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 285
+# %% ../nbs/src/core/models.ipynb 305
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -3967,7 +3987,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 286
+# %% ../nbs/src/core/models.ipynb 306
 class CrostonClassic(_TS):
     def __init__(
         self,
@@ -3984,7 +4004,8 @@ class CrostonClassic(_TS):
         where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter
         of both components is set equal to 0.1
 
-        **References:**<br>
+        References
+        ----------
         [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50)
 
         Parameters
@@ -4124,7 +4145,7 @@ class CrostonClassic(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 297
+# %% ../nbs/src/core/models.ipynb 318
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4145,7 +4166,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 298
+# %% ../nbs/src/core/models.ipynb 319
 class CrostonOptimized(_TS):
     def __init__(
         self,
@@ -4163,7 +4184,8 @@ class CrostonOptimized(_TS):
         selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
         intervals $p_t$ are smoothed separately, so their smoothing parameters can be different.
 
-        **References:**<br>
+        References
+        ----------
         [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
 
         Parameters
@@ -4298,7 +4320,7 @@ class CrostonOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 309
+# %% ../nbs/src/core/models.ipynb 331
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -4311,7 +4333,7 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/src/core/models.ipynb 310
+# %% ../nbs/src/core/models.ipynb 332
 class CrostonSBA(_TS):
     def __init__(
         self,
@@ -4329,7 +4351,8 @@ class CrostonSBA(_TS):
         forecast is given by:
         $$ \hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t} $$
 
-        **References:**<br>
+        References
+        ----------
         [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
 
         Parameters
@@ -4470,7 +4493,7 @@ class CrostonSBA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 321
+# %% ../nbs/src/core/models.ipynb 344
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4494,7 +4517,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 322
+# %% ../nbs/src/core/models.ipynb 345
 class IMAPA(_TS):
     def __init__(
         self,
@@ -4508,7 +4531,8 @@ class IMAPA(_TS):
         dynamics of the data. Uses the optimized SES to generate the forecasts at the new levels
         and then combines them using a simple average.
 
-        **References:**<br>
+        References
+        ----------
         [Syntetos, A. A., & Boylan, J. E. (2021). Intermittent demand forecasting: Context, methods and applications. John Wiley & Sons.](https://www.ifors.org/intermittent-demand-forecasting-context-methods-and-applications/).
 
         Parameters
@@ -4650,7 +4674,7 @@ class IMAPA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 333
+# %% ../nbs/src/core/models.ipynb 357
 @njit(nogil=NOGIL, cache=CACHE)
 def _tsb(
     y: np.ndarray,  # time series
@@ -4671,7 +4695,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 334
+# %% ../nbs/src/core/models.ipynb 358
 class TSB(_TS):
     def __init__(
         self,
@@ -4699,7 +4723,8 @@ class TSB(_TS):
         Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ,
         like in the optimized Croston's method.
 
-        **References:**<br>
+        References
+        ----------
         [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011). Intermittent demand: Linking forecasting to inventory obsolescence. European Journal of Operational Research, 214(3), 606-615.](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437)
 
         Parameters
@@ -4838,7 +4863,7 @@ class TSB(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 346
+# %% ../nbs/src/core/models.ipynb 371
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -4855,7 +4880,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/src/core/models.ipynb 347
+# %% ../nbs/src/core/models.ipynb 372
 class MSTL(_TS):
     """MSTL model.
 
@@ -4863,7 +4888,8 @@ class MSTL(_TS):
     in multiple seasonalities using LOESS. Then forecasts the trend using
     a custom non-seaonal model and each seasonality using a SeasonalNaive model.
 
-     **References:**<br>
+    References
+    ----------
     [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). "MSTL: A Seasonal-Trend Decomposition Algorithm for Time Series with Multiple Seasonal Patterns".](https://arxiv.org/abs/2107.13462).
 
     Parameters
@@ -4891,7 +4917,6 @@ class MSTL(_TS):
         alias: str = "MSTL",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
             if trend_forecaster.model[2] != "N":
@@ -5130,11 +5155,12 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/src/core/models.ipynb 363
+# %% ../nbs/src/core/models.ipynb 389
 class Theta(AutoTheta):
     """Standard Theta Method.
 
-    **References:**<br>
+    References
+    ----------
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
 
     Parameters
@@ -5166,11 +5192,12 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 376
+# %% ../nbs/src/core/models.ipynb 403
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
-    **References:**<br>
+    References
+    ----------
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
 
     Parameters
@@ -5202,11 +5229,12 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 389
+# %% ../nbs/src/core/models.ipynb 417
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
-    **References:**<br>
+    References
+    ----------
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
 
     Parameters
@@ -5238,11 +5266,12 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 402
+# %% ../nbs/src/core/models.ipynb 431
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
-    **References:**<br>
+    References
+    ----------
     [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
 
     Parameters
@@ -5274,7 +5303,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 416
+# %% ../nbs/src/core/models.ipynb 446
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5295,7 +5324,8 @@ class GARCH(_TS):
 
     The ARCH model is a particular case of the GARCH model when $q=0$.
 
-    **References:**<br>
+    References
+    ----------
     [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
 
     [Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. Journal of econometrics, 31(3), 307-327.](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=7da8bfa5295375c1141d797e80065a599153c19d)
@@ -5468,7 +5498,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 429
+# %% ../nbs/src/core/models.ipynb 459
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5481,10 +5511,11 @@ class ARCH(GARCH):
 
     $$ \sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
 
-    Here {$\epsilon_t$} is a sequence of iid random variables with zero mean and unit variance.
+    Here $\epsilon_t$ is a sequence of iid random variables with zero mean and unit variance.
     The coefficients $w$ and $a_i$, $i=1,...,p$ must be nonnegative and $\sum_{k=1}^p a_k < 1$.
 
-    **References:**<br>
+    References
+    ----------
     [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
 
     [James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
@@ -5514,7 +5545,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 440
+# %% ../nbs/src/core/models.ipynb 470
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -5699,7 +5730,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 453
+# %% ../nbs/src/core/models.ipynb 484
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -5713,7 +5744,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 466
+# %% ../nbs/src/core/models.ipynb 498
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.

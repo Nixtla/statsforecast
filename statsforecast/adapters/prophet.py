@@ -44,27 +44,36 @@ class AutoARIMAProphet(Prophet):
     If your forecasting pipeline uses Prophet the `AutoARIMAProphet` adapter helps to
     easily substitute Prophet with an AutoARIMA.
 
-    **Parameters:**<br>
-    `growth`: String 'linear', 'logistic' or 'flat' to specify a linear, logistic or flat trend.<br>
-    `changepoints`: List of dates of potential changepoints. Otherwise selected automatically.<br>
-    `n_changepoints`: Number of potential changepoints to include.<br>
-    `changepoint_range`: Proportion of history in which trend changepoints will be estimated.<br>
-    `yearly_seasonality`: Fit yearly seasonality.
-        Can be 'auto', True, False, or a number of Fourier terms to generate.<br>
-    `weekly_seasonality`: Fit weekly seasonality.
-        Can be 'auto', True, False, or a number of Fourier terms to generate.<br>
-    `daily_seasonality`: Fit daily seasonality.
-        Can be 'auto', True, False, or a number of Fourier terms to generate.<br>
-    `holidays`: pandas.DataFrame with columns holiday (string) and ds (date type).<br>
-    `interval_width`: float, uncertainty forecast intervals width. `StatsForecast`'s level <br>
+    Parameters
+    ----------
+    growth : string
+        'linear', 'logistic' or 'flat' to specify a linear, logistic or flat trend.
+    changepoints : List of dates
+        Potential changepoints. Otherwise selected automatically.
+    n_changepoints : int
+        Number of potential changepoints to include.
+    changepoint_range : float
+        Proportion of history in which trend changepoints will be estimated.
+    yearly_seasonality : str, bool or int
+        Fit yearly seasonality. Can be 'auto', True, False, or a number of Fourier terms to generate.
+    weekly_seasonality : str, bool or int
+        Fit weekly seasonality. Can be 'auto', True, False, or a number of Fourier terms to generate.
+    daily_seasonality : str, bool or int
+        Fit daily seasonality. Can be 'auto', True, False, or a number of Fourier terms to generate.
+    holidays : pandas.DataFrame
+        DataFrame with columns holiday (string) and ds (date type).
+    interval_width : float
+        Uncertainty forecast intervals width. `StatsForecast`'s level
 
-    **Notes:**<br>
+    Notes
+    -----
     You can create automated exogenous variables from the Prophet data processing pipeline
     these exogenous will be included into `AutoARIMA`'s exogenous features. Parameters like
     `seasonality_mode`, `seasonality_prior_scale`, `holidays_prior_scale`, `changepoint_prior_scale`,
     `mcmc_samples`, `uncertainty_samples`, `stan_backend` are Prophet exclusive.
 
-    **References:**<br>
+    References
+    ----------
     [Sean J. Taylor, Benjamin Letham (2017). "Prophet Forecasting at Scale"](https://peerj.com/preprints/3190.pdf)
 
     [Oskar Triebe, Hansika Hewamalage, Polina Pilyugina, Nikolay Laptev, Christoph Bergmeir, Ram Rajagopal (2021). "NeuralProphet: Explainable Forecasting at Scale".](https://arxiv.org/pdf/2111.15397.pdf)
@@ -175,16 +184,20 @@ class AutoARIMAProphet(Prophet):
             period=period,
         )
 
-    def fit(self, df, disable_seasonal_features=True, **kwargs):
+    def fit(self, df, disable_seasonal_features=True):
         """Fit the AutoARIMAProphet adapter.
 
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns ds (date type) and y, the time series.<br>
-        `disable_seasonal_features`: bool, Wheter disable Prophet's seasonal features.<br>
-        `kwargs`: Additional arguments.<br>
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with columns ds (date type) and y, the time series.
+        disable_seasonal_features : bool (default=True)
+            Disable Prophet's seasonal features.
 
-        **Returns:**<br>
-        `self`: `AutoARIMAProphet` adapter object with `AutoARIMA` fitted model.
+        Returns
+        -------
+        AutoARIMAProphet
+            Adapter object with `AutoARIMA` fitted model.
         """
         if self.history is not None:
             raise Exception(
@@ -213,7 +226,6 @@ class AutoARIMAProphet(Prophet):
         ) = self.make_all_seasonality_features(history)
         self.train_component_cols = component_cols
         self.component_modes = modes
-        self.fit_kwargs = deepcopy(kwargs)
         if disable_seasonal_features:
             seas = tuple(self.seasonalities.keys())
             seasonal_features = seasonal_features.loc[
@@ -230,11 +242,15 @@ class AutoARIMAProphet(Prophet):
     def predict(self, df=None):
         """Predict using the AutoARIMAProphet adapter.
 
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns ds (date type) and y, the time series.<br>
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            DataFrame with columns ds (date type) and y, the time series.
 
-        **Returns:**<br>
-        `fcsts_df`: A pandas.DataFrame with the forecast components.
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with the forecast components.
         """
         if self.history is None:
             raise Exception("Model has not been fit.")
