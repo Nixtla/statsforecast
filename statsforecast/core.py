@@ -855,9 +855,12 @@ class _StatsForecast:
         cols = self.fcst_fitted_values_["cols"]
         df = self.df_constructor({"unique_id": self.og_unique_id, "ds": self.og_dates})
         df[cols] = self.fcst_fitted_values_["values"]
-        if isinstance(df, pd.DataFrame) and sf_config.id_as_index:
-            _warn_id_as_idx()
-            df = df.set_index("unique_id")
+        if isinstance(df, pd.DataFrame):
+            if sf_config.id_as_index:
+                _warn_id_as_idx()
+                df = df.set_index("unique_id")
+            else:
+                df = df.reset_index(drop=True)
         return df
 
     def cross_validation(
@@ -1014,9 +1017,12 @@ class _StatsForecast:
         )
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
         df = df.iloc[idxs].reset_index()
-        if self.df_constructor is pd.DataFrame and sf_config.id_as_index:
-            _warn_id_as_idx()
-            df = df.set_index("unique_id")
+        if self.df_constructor is pd.DataFrame:
+            if sf_config.id_as_index:
+                _warn_id_as_idx()
+                df = df.set_index("unique_id")
+            else:
+                df = df.reset_index(drop=True)
         df["cutoff"] = df["ds"].where(df["cutoff"]).bfill()
 
         if self.df_constructor is pl_DataFrame:
