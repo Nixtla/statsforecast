@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['StatsForecast']
 
-# %% ../nbs/src/core/core.ipynb 5
+# %% ../nbs/src/core/core.ipynb 6
 import datetime as dt
 import errno
 import inspect
@@ -29,9 +29,10 @@ from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
 from utilsforecast.processing import process_df
 from utilsforecast.validation import ensure_time_dtype
 
+import statsforecast.config as sf_config
 from .utils import ConformalIntervals
 
-# %% ../nbs/src/core/core.ipynb 6
+# %% ../nbs/src/core/core.ipynb 7
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(name)s %(levelname)s: %(message)s",
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     )
 logger = logging.getLogger(__name__)
 
-# %% ../nbs/src/core/core.ipynb 9
+# %% ../nbs/src/core/core.ipynb 10
 class GroupedArray(BaseGroupedArray):
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
@@ -402,7 +403,7 @@ class GroupedArray(BaseGroupedArray):
             if idxs.size
         ]
 
-# %% ../nbs/src/core/core.ipynb 23
+# %% ../nbs/src/core/core.ipynb 24
 def _cv_dates(last_dates, freq, h, test_size, step_size=1):
     # assuming step_size = 1
     if (test_size - h) % step_size:
@@ -441,7 +442,7 @@ def _cv_dates(last_dates, freq, h, test_size, step_size=1):
         dates = dates.reset_index(drop=True)
     return dates
 
-# %% ../nbs/src/core/core.ipynb 27
+# %% ../nbs/src/core/core.ipynb 28
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
         actual_n_jobs = cpu_count()
@@ -449,7 +450,7 @@ def _get_n_jobs(n_groups, n_jobs):
         actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/src/core/core.ipynb 30
+# %% ../nbs/src/core/core.ipynb 31
 def _warn_df_constructor():
     warnings.warn(
         "The `df` argument of the StatsForecast constructor is deprecated "
@@ -467,7 +468,15 @@ def _maybe_warn_sort_df(sort_df):
             category=DeprecationWarning,
         )
 
-# %% ../nbs/src/core/core.ipynb 31
+
+def _warn_id_as_idx():
+    warnings.warn(
+        "In a future version the predictions will have the id as a column. "
+        "You can set `statsforecast.config.id_as_index=False` to suppress this warning.",
+        category=DeprecationWarning,
+    )
+
+# %% ../nbs/src/core/core.ipynb 32
 class _StatsForecast:
     def __init__(
         self,
@@ -632,7 +641,11 @@ class _StatsForecast:
             uids = uids.astype(str)
         df = self.df_constructor({"unique_id": uids, "ds": dates})
         if isinstance(df, pd.DataFrame):
-            df = df.set_index("unique_id")
+            if sf_config.id_as_index:
+                _warn_id_as_idx()
+                df = df.set_index("unique_id")
+            else:
+                df = df.reset_index(drop=True)
         else:
             df = df.with_columns(pl.col("unique_id").cast(self.uids.dtype))
         return df
@@ -841,7 +854,8 @@ class _StatsForecast:
         cols = self.fcst_fitted_values_["cols"]
         df = self.df_constructor({"unique_id": self.og_unique_id, "ds": self.og_dates})
         df[cols] = self.fcst_fitted_values_["values"]
-        if isinstance(df, pd.DataFrame):
+        if isinstance(df, pd.DataFrame) and sf_config.id_as_index:
+            _warn_id_as_idx()
             df = df.set_index("unique_id")
         return df
 
@@ -965,7 +979,8 @@ class _StatsForecast:
         )
         fcsts_df.insert(0, "unique_id", pd.Index(np.repeat(self.uids, h * n_windows)))
         fcsts_df[cols] = fcsts
-        if self.df_constructor is pd.DataFrame:
+        if self.df_constructor is pd.DataFrame and sf_config.id_as_index:
+            _warn_id_as_idx()
             fcsts_df = fcsts_df.set_index("unique_id")
         elif self.df_constructor is pl_DataFrame:
             fcsts_df = pl.from_pandas(fcsts_df)
@@ -998,7 +1013,8 @@ class _StatsForecast:
         )
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
         df = df.iloc[idxs].reset_index()
-        if self.df_constructor is pd.DataFrame:
+        if self.df_constructor is pd.DataFrame and sf_config.id_as_index:
+            _warn_id_as_idx()
             df = df.set_index("unique_id")
         df["cutoff"] = df["ds"].where(df["cutoff"]).bfill()
 
@@ -1350,7 +1366,7 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/src/core/core.ipynb 32
+# %% ../nbs/src/core/core.ipynb 33
 class ParallelBackend:
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
@@ -1371,7 +1387,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/src/core/core.ipynb 33
+# %% ../nbs/src/core/core.ipynb 34
 class StatsForecast(_StatsForecast):
     """Train statistical models.
 
