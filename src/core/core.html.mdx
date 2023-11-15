@@ -18,7 +18,7 @@ are:
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1375"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1398"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast
@@ -97,6 +97,16 @@ panel_df.groupby('unique_id').tail(4)
 
 
 ```python
+import statsforecast
+```
+
+
+```python
+statsforecast.config.id_as_index = False
+```
+
+
+```python
 # Declare list of instantiated StatsForecast estimators to be fitted
 # You can try other estimator's hyperparameters
 # You can try other methods from the `models.StatsForecast` collection
@@ -111,14 +121,14 @@ fcst = StatsForecast(models=models,
                      verbose=True)
 
 # Efficiently predict
-fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True).reset_index()
+fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True)
 fcsts_df.groupby('unique_id').tail(4)
 ```
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L579"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L589"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit
@@ -145,7 +155,7 @@ fitted models for later inspection.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L656"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L670"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## SatstForecast.predict
@@ -171,7 +181,7 @@ DataFrame `df`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L702"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L716"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit_predict
@@ -210,7 +220,7 @@ this method stores partial models outputs.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L761"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L775"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast
@@ -265,7 +275,7 @@ fcsts_df.groupby('unique_id').tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L825"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L839"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast_fitted_values
@@ -305,7 +315,7 @@ insample_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L848"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L866"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation
@@ -373,7 +383,7 @@ rolled_fcsts_df.head(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L974"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L993"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation_fitted_values
@@ -415,7 +425,7 @@ insample_rolled_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1167"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1190"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.plot
@@ -452,7 +462,7 @@ Plot forecasts and insample values.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1244"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1267"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.save
@@ -474,7 +484,7 @@ make it reproducible.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1331"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1354"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.load
@@ -614,7 +624,7 @@ xreg_res['y'] = series_valid['y'].values
 
 
 ```python
-xreg_res.groupby('ds').mean().plot()
+xreg_res.drop(columns='unique_id').groupby('ds').mean().plot()
 ```
 
 
@@ -641,7 +651,7 @@ sf = StatsForecast(
     freq='M',
     n_jobs=1
 )
-ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95)).reset_index()
+ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95))
 fcst.plot(ap_df, ap_ci, level=[80], engine="matplotlib")
 ```
 
@@ -667,7 +677,7 @@ sf = StatsForecast(
     freq='M',
     n_jobs=1
 )
-ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95)).reset_index()
+ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95))
 fcst.plot(ap_df, ap_ci, level=[80], engine="plotly")
 ```
 
@@ -687,7 +697,7 @@ ap_ci = sf.forecast(
     h=12, 
     level=(50, 80, 95), 
     prediction_intervals=ConformalIntervals(h=12),
-).reset_index()
+)
 fcst.plot(ap_df, ap_ci, level=[80], engine="matplotlib")
 ```
 
