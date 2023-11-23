@@ -25,7 +25,7 @@ from fugue.execution.factory import (
 )
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
-from utilsforecast.compat import DataFrame, pl, pl_DataFrame, pl_Series
+from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
 from utilsforecast.validation import ensure_time_dtype
 
@@ -443,7 +443,7 @@ class _StatsForecast:
     def __init__(
         self,
         models: List[Any],
-        freq: str,
+        freq: Union[str, int],
         n_jobs: int = 1,
         df: Optional[DataFrame] = None,
         sort_df: bool = True,
@@ -468,9 +468,8 @@ class _StatsForecast:
         ----------
         models : List[Any]
             List of instantiated objects models.StatsForecast.
-        freq : str
-            Frequency of the data.
-            See [pandas' available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+        freq : str or int.
+            Frequency of the data. Must be a valid pandas or polars offset alias.
         n_jobs : int (default=1)
             Number of jobs used in the parallel processing, use -1 for all cores.
         df : pandas.DataFrame or pl.DataFrame, optional (default=None)
@@ -516,14 +515,36 @@ class _StatsForecast:
             _warn_df_constructor()
             return
         df = ensure_time_dtype(df, "ds")
-        if isinstance(df, pd.DataFrame):
-            if df.index.name == "unique_id":
-                warnings.warn(
-                    "Passing unique_id as the index is deprecated. "
-                    "Please provide it as a column instead.",
-                    category=DeprecationWarning,
+        time_dtype = df["ds"].head(1).to_numpy().dtype
+        time_is_int = np.issubdtype(time_dtype, np.integer)
+        if time_is_int and not isinstance(self.freq, int):
+            raise ValueError(
+                "Time column contains integer but the specified frequency is not an integer. "
+                "Please provide a valid integer, like `freq=1`"
+            )
+        elif not time_is_int and not isinstance(self.freq, str):
+            # the ensure_time_dtype function makes sure that ds is either int or timestamp
+            raise ValueError(
+                "Time column contains timestamps but the specified frequency is an integer. "
+                "Please provide a valid pandas or polars offset."
+            )
+        # try to catch pandas frequency in polars dataframe
+        if isinstance(df, pl_DataFrame) and isinstance(self.freq, str):
+            missing_n = re.search(r"\d+", self.freq) is None
+            uppercase = re.sub("\d+", "", self.freq).isupper()
+            if missing_n or uppercase:
+                raise ValueError(
+                    "You must specify a valid polars offset when using polars dataframes. "
+                    "You can find the available offsets in "
+                    "https://pola-rs.github.io/polars/py-polars/html/reference/expressions/api/polars.Expr.dt.offset_by.html"
                 )
-                df = df.reset_index()
+        elif isinstance(df, pd.DataFrame) and df.index.name == "unique_id":
+            warnings.warn(
+                "Passing unique_id as the index is deprecated. "
+                "Please provide it as a column instead.",
+                category=DeprecationWarning,
+            )
+            df = df.reset_index()
         _maybe_warn_sort_df(sort_df)
         self.uids, last_times, data, indptr, sort_idxs = ufp.process_df(
             df, "unique_id", "ds", "y"
