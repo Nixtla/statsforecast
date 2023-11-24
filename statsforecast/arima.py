@@ -1481,8 +1481,7 @@ def Arima(
     missing = np.isnan(tmp["residuals"])
     nonmiss_idxs = np.where(~missing)[0]
     firstnonmiss = np.min(nonmiss_idxs)
-    lastnonmiss = np.max(nonmiss_idxs)
-    n = np.sum(~missing[firstnonmiss:lastnonmiss])
+    n = np.sum(~missing[firstnonmiss:])
     nstar = n - tmp["arma"][5] - tmp["arma"][6] * tmp["arma"][4]
     tmp["aicc"] = tmp["aic"] + 2 * npar * (nstar / (nstar - npar - 1) - 1)
     tmp["bic"] = tmp["aic"] + npar * (math.log(nstar) - 2)
