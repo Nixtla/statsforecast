@@ -64,6 +64,7 @@ Specifically, we give the definition of the ARCH model as follows.
 form
 
 $$
+
 \begin{equation}
     \left\{
         \begin{array}{ll}
@@ -72,6 +73,7 @@ $$
         \end{array}
     \right.
 \end{equation}
+
 $$
 
 where $\omega ≥ 0, \alpha_i ≥ 0$, and $\alpha_p > 0$ are constants,
@@ -93,15 +95,19 @@ any $s <t$. According to Definition 1 and the properties of the
 conditional mathematical expectation, we have that
 
 $$
+
 \begin{equation}
     E(X_t|\mathscr{F}_{t−1}) = E(\sigma_t \varepsilon_t|\mathscr{F}_{t−1}) = \sigma_t E( \varepsilon_t|\mathscr{F}_{t−1}) = \sigma_t E(\varepsilon_t) = 0 \tag 2
 \end{equation}
+
 $$
 
 and
 
 $$
+
 \text{Var}(X_{t}^2| \mathscr{F}_{t−1}) = E(X_{t}^2|\mathscr{F}_{t−1}) =  E(\sigma_{t}^2 \varepsilon_{t}^2|\mathscr{F}_{t−1}) = \sigma_{t}^2 E(\varepsilon_{t}^2|\mathscr{F}_{t−1}) = \sigma_{t}^2 E(\varepsilon_{t}^2) = \sigma_{t}^2.
+
 $$
 
 This implies that $\sigma_{t}^2$ is the conditional variance of $X_t$
@@ -113,6 +119,7 @@ As an example of $\text{ARCH}(p)$ models, let us consider the
 $\text{ARCH(1)}$ model
 
 $$
+
 \begin{equation}
     \left\{ 
         \begin{array}{ll} \tag 3
@@ -121,6 +128,7 @@ $$
         \end{array}
     \right.
 \end{equation}
+
 $$
 
 Explicitly, the unconditional mean
@@ -133,9 +141,11 @@ $$X_{t}^2 =\sigma_{t}^2 +X_{t}^2 − \sigma_{t}^2  =\omega +\alpha_1 X_{t-1}^2 +
 that is,
 
 $$
+
 \begin{equation}
     X_{t}^2 =\omega +\alpha_1 X_{t}^2 +\eta_t \tag 4
 \end{equation}
+
 $$
 
 where $\eta_t = \sigma_{t}^2(\varepsilon_{t}^2 − 1)$. It can been shown

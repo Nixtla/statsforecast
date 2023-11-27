@@ -50,9 +50,11 @@ CES in analogy to the conventional exponential smoothing methods.
 Consider the simple exponential smoothing method:
 
 $$
+
 \begin{equation}
     {\hat{y}}_t=\alpha {y}_{t-1}+\left(1-\alpha \right){\hat{y}}_{t-1} \tag{1}
 \end{equation}
+
 $$
 
 where $\alpha$ is the smoothing parameter and ${\hat{y}}_t$ is the
@@ -62,9 +64,11 @@ ${\hat{y}}_{t-1}$ by the formula (1) with an index instead of (Brown,
 1956):
 
 $$
+
 \begin{equation}
     {\hat{y}}_t=\alpha \sum \limits_{j=1}^{t-1}{\left(1-\alpha \right)}^{j-1}{y}_{t-j} \tag{2}
 \end{equation}
+
 $$
 
 The idea of this representation is to demonstrate how the weights
@@ -97,9 +101,11 @@ where ${\hat{e}}_{t-j}$ is the proxy for the error term. The CES
 obtained as a result of this can be written as:
 
 $$
+
 \begin{equation}
     {\hat{y}}_t+i{\hat{e}}_t=\left({\alpha}_0+i{\alpha}_1\right)\sum \limits_{j=1}^{t-1}{\left(1+i-\left({\alpha}_0+i{\alpha}_1\right)\right)}^{j-1}\left({y}_{t-j}+{ie}_{t-j}\right) \tag{3}
 \end{equation}
+
 $$
 
 Having arrived to the model with harmonically distributed weights, we
@@ -110,9 +116,11 @@ $${\displaystyle \begin{array}{cc}& {\hat{y}}_{t-1}+i{\hat{e}}_{t-1}\\ {}& \kern
 in (3) to get:
 
 $$
+
 \begin{equation}
     {\displaystyle \begin{array}{cc}{\hat{y}}_t+i{\hat{e}}_t& =\left({\alpha}_0+i{\alpha}_1\right)\left({y}_{t-1}+{ie}_{t-1}\right)\\ {}& \kern1em +\left(1-{\alpha}_0+i-i{\alpha}_1\right)\left({\hat{y}}_{t-1}+i{\hat{e}}_{t-1}\right).\end{array}} \tag 4
 \end{equation}
+
 $$
 
 Note that ${\hat{e}}_t$ is not interesting for the time series analysis
@@ -128,9 +136,11 @@ Representing the complex-valued function as a system of two real-valued
 functions leads to:
 
 $$
+
 \begin{equation}
     {\displaystyle \begin{array}{ll}& {\hat{y}}_t=\left({\alpha}_0{y}_{t-1}+\left(1-{\alpha}_0\right){\hat{y}}_{t-1}\right)-\left({\alpha}_1{e}_{t-1}+\left(1-{\alpha}_1\right){\hat{e}}_{t-1}\right)\\ {}& {\hat{e}}_t=\left({\alpha}_1{y}_{t-1}+\left(1-{\alpha}_1\right){\hat{y}}_{t-1}\right)+\left({\alpha}_0{e}_{t-1}+\left(1-{\alpha}_0\right){\hat{e}}_{t-1}\right).\end{array}} \tag 5
 \end{equation}
+
 $$
 
 CES introduces an interaction between the real and imaginary parts, and
@@ -144,9 +154,11 @@ important to understand what sort of statistical model underlies CES.
 This model can be written in the following state space form:
 
 $$
+
 \begin{equation}
     {\displaystyle \begin{array}{ll}& {y}_t={l}_{t-1}+{\epsilon}_t\\ {}& {l}_t={l}_{t-1}-\left(1-{\alpha}_1\right){c}_{t-1}+\left({\alpha}_0-{\alpha}_1\right){\epsilon}_t\\ {}& {c}_t={l}_{t-1}+\left(1-{\alpha}_0\right){c}_{t-1}+\left({\alpha}_0+{\alpha}_1\right){\epsilon}_t,\end{array}} \tag 6
 \end{equation}
+
 $$
 
 where ${\epsilon}_t$ is the white noise error term, ${l}_t$ is the level
@@ -168,9 +180,11 @@ This idea allows rewriting (6) in a shorter more generic way, resembling
 the general single source of error (SSOE) state space framework:
 
 $$
+
 \begin{equation}
     {\displaystyle \begin{array}{ll}& {y}_t={\mathbf{w}}^{\prime }{\mathbf{v}}_{t-1}+{\epsilon}_t\\ {}& {\mathbf{v}}_t={\mathbf{Fv}}_{t-1}+\mathbf{g}{\epsilon}_t,\end{array}} \tag 7
 \end{equation}
+
 $$
 
 where
@@ -199,9 +213,11 @@ trivial and is similar to the one in the additive exponential smoothing
 models (Hyndman et al., 2008, p. 68):
 
 $$
+
 \begin{equation}
     \mathrm{\mathcal{L}}\left(\mathbf{g},{\mathbf{v}}_0,{\sigma}^2\mid \mathbf{Y}\right)={\left(\frac{1}{\sigma \sqrt{2\pi }}\right)}^T\exp \left(-\frac{1}{2}\sum \limits_{t=1}^T{\left(\frac{\epsilon_t}{\sigma}\right)}^2\right), \tag 8
 \end{equation}
+
 $$
 
 where ${\mathbf{v}}_0$ is the vector of initial states, ${\sigma}^2$ is
@@ -220,9 +236,11 @@ non-stationary. Calculating eigenvalues of for CES gives the following
 roots:
 
 $$
+
 \begin{equation}
     \lambda =\frac{2-{\alpha}_0\pm \sqrt{\alpha_0^2+4{\alpha}_1-4}}{2}. \tag 9
 \end{equation}    
+
 $$
 
 If the absolute values of both roots are less than 1 then the estimated
@@ -234,9 +252,11 @@ a non-stationary trajectory. When ${\alpha}_1=1$ CES becomes equivalent
 to ETS(A,N,N). Finally, the model becomes stationary when:
 
 $$
+
 \begin{equation}
     \left\{\begin{array}{l}{\alpha}_1<5-2{\alpha}_0\\ {}{\alpha}_1<1\\ {}{\alpha}_1>1-{\alpha}_0\end{array}\right.  \tag {10}
 \end{equation}
+
 $$
 
 Note that we are not restricting CES with the conditions (10), we merely
@@ -251,9 +271,11 @@ condition for CES. With $\epsilon_t={y}_t-{l}_{t-1}$ the following is
 obtained:
 
 $$
+
 \begin{equation}
     {\displaystyle \begin{array}{ll}{y}_t& ={l}_{t-1}+{\epsilon}_t\\ {}\left(\begin{array}{c}{l}_t\\ {}{c}_t\end{array}\right)& =\left(\begin{array}{cc}1-{\alpha}_0+{\alpha}_1& -\left(1-{\alpha}_1\right)\\ {}1-{\alpha}_0-{\alpha}_1& 1-{\alpha}_0\end{array}\right)\left(\begin{array}{c}{l}_{t-1}\\ {}{c}_{t-1}\end{array}\right)\\ {}& \kern1em +\left(\begin{array}{c}{\alpha}_0-{\alpha}_1\\ {}{\alpha}_1+{\alpha}_0\end{array}\right){y}_t.\end{array}} \tag {11}
 \end{equation}
+
 $$
 
 The matrix
@@ -261,9 +283,11 @@ $$\mathbf{D}=\left(\begin{array}{cc}1-{\alpha}_0+{\alpha}_1& -\left(1-{\alpha}_1
 is called the discount matrix and can be written in the general form:
 
 $$
+
 \begin{equation}
     \mathbf{D}=\mathbf{F}-\mathbf{g}{\mathbf{w}}^{\prime }. \tag {12}
 \end{equation}    
+
 $$
 
 The model is said to be stable if all the eigenvalues of (12) lie inside
@@ -274,18 +298,22 @@ ones, which is one of the main features of the conventional ETS models.
 The eigenvalues are given by the following formula:
 
 $$
+
 \begin{equation}
     \lambda =\frac{2-2{\alpha}_0+{\alpha}_1\pm \sqrt{8{\alpha}_1+4{\alpha}_0-4{\alpha}_0{\alpha}_1-4-3{\alpha}_1^2}}{2}. \tag {13}
 \end{equation}
+
 $$
 
 CES will be stable when the following system of inequalities is
 satisfied:
 
 $$
+
 \begin{equation}
     \left\{\begin{array}{l}{\left({\alpha}_0-2.5\right)}^2+{\alpha}_1^2>1.25\\ {}{\left({\alpha}_0-0.5\right)}^2+{\left({\alpha}_1-1\right)}^2>0.25\\ {}{\left({\alpha}_0-1.5\right)}^2+{\left({\alpha}_1-0.5\right)}^2<1.5\end{array}.\right. \tag {14}
 \end{equation}
+
 $$
 
 Both the stationarity and stability regions are shown in [Figure
@@ -304,9 +332,11 @@ The conditional mean of CES for $h$ steps ahead with known \$ {l}\_t \$
 and \$ {c}\_t \$ can be calculated using the state space model (6):
 
 $$
+
 \begin{equation}
     \mathrm{E}\left({y}_{t+h}\mid {\mathbf{v}}_t\right)={\mathbf{w}}^{\prime }{\mathbf{F}}^{h-1}{\mathbf{v}}_t, \tag {15}
 \end{equation}    
+
 $$
 
 where

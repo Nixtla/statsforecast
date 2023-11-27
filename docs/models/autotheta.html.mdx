@@ -106,9 +106,11 @@ at every time period.
 Originally, AN proposed the theta line as the solution of the equation
 
 $$
+
 \begin{equation}
     \nabla^2 \text{Z}_t (\theta) =\theta \nabla^2 Y_t, \ \ t=3, \cdots, n \tag 1
 \end{equation}
+
 $$
 
 where $Y_1, \cdots Y_n$ is the original time series (non-seasonal or
@@ -120,9 +122,11 @@ solution to compute the $\text{Z}(\theta)$ was obtained by H&B, which is
 given by
 
 $$
+
 \begin{equation}
     \text{Z}_t(\theta)=\theta Y_t +(1-\theta)(A_n +B_n t) \ \ t=1, \cdots n \tag 2
 \end{equation}
+
 $$
 
 where $\text{A}_n$ and $\text{B}_n$ are the minimum square coefficients
@@ -130,9 +134,11 @@ of a simple linear regression over $Y_1, \cdots Y_n$ against
 $1, \cdots n \ $, given by
 
 $$
+
 \begin{equation}
     \text{A}_n =\frac{1}{n} \sum_{t=1}^{n} Y_t -\frac{n+1}{2} \text{B}_n ; \ \ \text{B}_n= \frac{6}{n^2 -1} (\frac{2}{n} \sum_{t=1}^{n} tY_t -\frac{1+n}{n} \sum_{t=1}^{n} Y_t ) \tag 3
 \end{equation}
+
 $$
 
 From this point of view, the theta lines can be interpreted as functions
@@ -183,9 +189,11 @@ decomposition approach.
 Let $X_t$ be the linear combination of two theta lines,
 
 $$
+
 \begin{equation}
     X_t=\omega \text{Z}_t (\theta_1) +(1-\omega) \text{Z}_t (\theta_2) \tag 4
 \end{equation}
+
 $$
 
 where $\omega \in [0,1]$ is the weight parameter. Assuming that
@@ -193,9 +201,11 @@ $\theta_1 <1$ and $\theta_2 \geq 1$, the weight $\omega$ can be derived
 as
 
 $$
+
 \begin{equation}
     \omega:=\omega(\theta_1, \theta_2)=\frac{\theta_2 -1}{\theta_2 -\theta_1} \tag 5
 \end{equation}
+
 $$
 
 It is straightforward to see from Eqs. (4), (5) that
@@ -223,9 +233,11 @@ $$Y_t=(1-\frac{1}{\theta}) (\text{A}_n+\text{B}_n t)+ \frac{1}{\theta} \text{Z}_
 The $h$ -step-ahead forecasts calculated at origin are given by
 
 $$
+
 \begin{equation}
     \hat Y_{n+h|n} = (1-\frac{1}{\theta}) [\text{A}_n+\text{B}_n (n+h)]+ \frac{1}{\theta} \tilde {\text{Z}}_{n+h|n} (\theta) \tag 6
 \end{equation}
+
 $$
 
 where
@@ -237,9 +249,11 @@ Eq. (6) corresponds to Step 4 of the STheta algorithm. After some
 algebra, we can write
 
 $$
+
 \begin{equation}
     \tilde {\text{Z}}_{n+1|n} (\theta)=\theta \ell{n}+(1-\theta) \{ \text{A}_n [1-(1-\alpha)^n] + \text{B}_n [n+(1-\frac{1}{\alpha}) [1-(1-\alpha)^n] ]  \}   \tag 7
 \end{equation}
+
 $$
 
 where $\ell_{t}=\alpha Y_t +(1-\alpha) \ell_{t-1}$ for $t=1, \cdots, n$
@@ -262,21 +276,27 @@ $t=1, \cdots, n$ so that Eqs. (6), (7) configure the state space model
 given by
 
 $$
+
 \begin{equation}
     Y_t=\mu_{t}+\varepsilon_{t} \tag 8
 \end{equation}
+
 $$
 
 $$
+
 \begin{equation}
     \mu_{t}=\ell_{t-1}+(1-\frac{1}{\theta}) \{(1-\alpha)^{t-1} \text{A}_n +[\frac{1-(1-\alpha)^t}{\alpha} \text{B}_n]  \tag 9 \}
 \end{equation}
+
 $$
 
 $$
+
 \begin{equation}
     \ell_{t}=\alpha Y_t +(1-\alpha)\ell_{t-1} \tag{10}
 \end{equation}
+
 $$
 
 with parameters $\ell_{0} \in \mathbb{R}$, $\alpha \in (0,1)$ and
