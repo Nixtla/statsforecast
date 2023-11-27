@@ -193,7 +193,7 @@ StatsForecast.plot(Y_df)
   from tqdm.autonotebook import tqdm
 ```
 
-![](/docs/how-to-guides/Getting_Started_complete_polars_files/figure-markdown_strict/cell-5-output-2.png)
+![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-5-output-2.png)
 
 ## Train multiple models for many series
 
@@ -309,7 +309,7 @@ method and pass in the historical data frame.
 sf = StatsForecast(
     df=Y_df, 
     models=models,
-    freq='H', 
+    freq=1, 
     n_jobs=-1,
     fallback_model = SeasonalNaive(season_length=7),
     verbose=True
@@ -377,7 +377,7 @@ method.
 sf.plot(Y_df,forecasts_df, engine='plotly')
 ```
 
-![](/docs/how-to-guides/Getting_Started_complete_polars_files/figure-markdown_strict/cell-10-output-2.png)
+![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-10-output-2.png)
 
 The `StatsForecast.plot` allows for further customization. For example,
 plot the results of the different models and unique ids.
@@ -387,14 +387,14 @@ plot the results of the different models and unique ids.
 sf.plot(Y_df, forecasts_df, models=["HoltWinters","DynamicOptimizedTheta"], unique_ids=["H10", "H105"], level=[90], engine='plotly')
 ```
 
-![](/docs/how-to-guides/Getting_Started_complete_polars_files/figure-markdown_strict/cell-11-output-1.png)
+![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-11-output-1.png)
 
 ```python
 # Explore other models 
 sf.plot(Y_df, forecasts_df, models=["AutoARIMA"], unique_ids=["H10", "H105"], level=[90], engine='plotly')
 ```
 
-![](/docs/how-to-guides/Getting_Started_complete_polars_files/figure-markdown_strict/cell-12-output-1.png)
+![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-12-output-1.png)
 
 ## Evaluate the model’s performance
 
@@ -587,7 +587,7 @@ seasonal_ids = evaluation_df.filter(pl.col('best_model') == 'SeasonalNaive')['un
 sf.plot(Y_df,forecasts_df, unique_ids=seasonal_ids, models=["SeasonalNaive","DynamicOptimizedTheta"], engine='plotly')
 ```
 
-![](/docs/how-to-guides/Getting_Started_complete_polars_files/figure-markdown_strict/cell-19-output-1.png)
+![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-19-output-1.png)
 
 ## Select the best model for every unique series
 
@@ -676,5 +676,5 @@ Plot the results.
 sf.plot(Y_df, prod_forecasts_df, level=[90], engine='plotly')
 ```
 
-![](/docs/how-to-guides/Getting_Started_complete_polars_files/figure-markdown_strict/cell-22-output-1.png)
+![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-22-output-1.png)
 
