@@ -33,7 +33,8 @@
       "pages": [
         "docs/getting-started/installation.html",
         "docs/getting-started/getting_started_short.html",
-        "docs/getting-started/getting_started_complete.html"
+        "docs/getting-started/getting_started_complete.html",
+        "docs/getting-started/getting_started_complete_polars.html"
       ]
     },
     {
@@ -61,7 +62,6 @@
         "docs/how-to-guides/ets_ray_m5.html",
         "docs/how-to-guides/exogenous.html",
         "docs/how-to-guides/generating_features.html",
-        "docs/how-to-guides/getting_started_complete_polars.html",
         "docs/how-to-guides/migrating_R",
         "docs/how-to-guides/mlflow.html",
         "docs/how-to-guides/numba_cache.html",
