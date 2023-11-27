@@ -22,14 +22,14 @@ Time series cross-validation is a method for evaluating how a model
 would have performed in the past. It works by defining a sliding window
 across the historical data and predicting the period following it.
 
-![](https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/ChainedWindows.gif)
+![](https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/chainedwindows.gif)
 
 [Statsforecast](https://nixtla.github.io/statsforecast/) has an
 implementation of time series cross-validation that is fast and easy to
 use. This implementation makes cross-validation a distributed operation,
 which makes it less time-consuming. In this notebook, we’ll use it on a
 subset of the [M4
-Competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128)
+Competition](https://www.sciencedirect.com/science/article/pii/s0169207019301128)
 hourly dataset.
 
 **Outline:**
@@ -235,7 +235,7 @@ Notice that in each cutoff period, we generated a forecast for the next
 
 We can now compute the accuracy of the forecast using an appropiate
 accuracy metric. Here we’ll use the [Root Mean Squared Error
-(RMSE).](https://en.wikipedia.org/wiki/Root-mean-square_deviation) To do
+(RMSE).](https://en.wikipedia.org/wiki/root-mean-square_deviation) To do
 this, we first need to install
 [datasetsforecast](https://github.com/Nixtla/datasetsforecast/tree/main/),
 a Python library developed by Nixtla that includes a function to compute

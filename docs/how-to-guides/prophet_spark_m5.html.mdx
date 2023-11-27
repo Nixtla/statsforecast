@@ -14,11 +14,11 @@ training. As a comparison, Facebook’s
 
 An AWS cluster (mounted on databricks) of 11 instances of type
 m5.2xlarge (8 cores, 32 GB RAM) with runtime 10.4 LTS was used.
-[This](https://d1r5llqwmkrl74.cloudfront.net/notebooks/RCG/Fine_Grained_Demand_Forecasting/index.html#Fine_Grained_Demand_Forecasting_1.html)
+[This](https://d1r5llqwmkrl74.cloudfront.net/notebooks/RCG/Fine_Grained_Demand_Forecasting/index.html#fine_grained_demand_forecasting_1.html)
 notebook was used as base case.
 
 The example uses the [M5
-dataset](https://github.com/Mcompetitions/M5-methods/blob/master/M5-Competitors-Guide.pdf).
+dataset](https://github.com/Mcompetitions/M5-methods/blob/master/m5-competitors-guide.pdf).
 It consists of `30,490` bottom time series.
 
 ## Main results
@@ -75,7 +75,7 @@ print(f'Minutes taken by StatsForecast on a Spark cluster: {(end - init) / 60}')
 
 The M5 competition used the weighted root mean squared scaled error. You
 can find details of the metric
-[here](https://github.com/Mcompetitions/M5-methods/blob/master/M5-Competitors-Guide.pdf).
+[here](https://github.com/Mcompetitions/M5-methods/blob/master/m5-competitors-guide.pdf).
 
 ```python
 Y_hat = ets_forecasts.set_index(['unique_id', 'ds']).unstack()
@@ -238,7 +238,7 @@ print(f'Minutes taken by Prophet on a Spark cluster: {(end - init) / 60}')
 
 The M5 competition used the weighted root mean squared scaled error. You
 can find details of the metric
-[here](https://github.com/Mcompetitions/M5-methods/blob/master/M5-Competitors-Guide.pdf).
+[here](https://github.com/Mcompetitions/M5-methods/blob/master/m5-competitors-guide.pdf).
 
 ```python
 Y_hat = results.set_index(['unique_id', 'ds']).unstack()

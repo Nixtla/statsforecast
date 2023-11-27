@@ -31,7 +31,7 @@ with LOESS
 For this example, we will use hourly electricity load data from
 Pennsylvania, New Jersey, and Maryland (PJM). The original data can be
 found
-[here](https://github.com/jnagura/Energy-consumption-prediction-analysis).
+[here](https://github.com/jnagura/energy-consumption-prediction-analysis).
 (Click here for info on [PJM](https://www.pjm.com/about-pjm))
 
 First, we will load the data, then we will use the `StatsForecast.fit`
@@ -60,7 +60,7 @@ You can use Colab to run this Notebook interactively
 ## Install libraries
 
 We assume you have StatsForecast already installed. Check this guide for
-instructions on [how to install StatsForecast](./Installation.ipynb).
+instructions on [how to install StatsForecast](./installation.html).
 
 Install the necessary packages using `pip install statsforecast` \`\`
 
@@ -183,7 +183,7 @@ We fit the models by instantiating a new
 object with the following required parameters:
 
 -   `models`: a list of models. Select the models you want from
-    [models](../models.ipynb) and import them.
+    [models](../models.html) and import them.
 
 -   `freq`: a string indicating the frequency of the data. (See [panda’s
     available
@@ -214,7 +214,7 @@ StatsForecast also supports this optional parameter.
 Use the `fit` method to fit each model to each time series. In this
 case, we are just fitting one model to one series. Check this guide to
 learn how to [fit many models to many
-series](./Getting_Started_complete.ipynb).
+series](./getting_started_complete.html).
 
 <Note>
 

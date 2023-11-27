@@ -3738,7 +3738,7 @@ SeasonalNaive model.
 |------|------------------|-------------------------|-------------------------|
 | season_length        | Union    |             | Number of observations per unit of time. For multiple seasonalities use a list.                                                                                                                                               |
 | trend_forecaster     | AutoETS  | AutoETS     | StatsForecast model used to forecast the trend component.                                                                                                                                                                     |
-| stl_kwargs           | Optional | None        | Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.STL.html#statsmodels.tsa.seasonal.STL).<br/>The `period` and `seasonal` arguments are reserved. |
+| stl_kwargs           | Optional | None        | Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.stl.html#statsmodels.tsa.seasonal.stl).<br/>The `period` and `seasonal` arguments are reserved. |
 | alias                | str      | MSTL        | Custom name of the model.                                                                                                                                                                                                     |
 | prediction_intervals | Optional | None        | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals.                                                                                              |
 
@@ -5261,7 +5261,7 @@ y_hat_dict
 -   [Charles. C. Holt (1957). “Forecasting seasonals and trends by
     exponentially weighted moving averages”, ONR Research Memorandum,
     Carnegie Institute of Technology
-    52](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
+    52](https://www.sciencedirect.com/science/article/abs/pii/s0169207003001134).
 
 -   [Peter R. Winters (1960). “Forecasting sales by exponentially
     weighted moving averages”. Management
@@ -5301,7 +5301,7 @@ y_hat_dict
 -   [Syntetos, A. A., & Boylan, J. E. (2005). “The accuracy of
     intermittent demand estimates”. International Journal of
     forecasting, 21(2),
-    303-314](https://www.academia.edu/1527250/The_accuracy_of_intermittent_demand_estimates).
+    303-314](https://www.academia.edu/1527250/the_accuracy_of_intermittent_demand_estimates).
 
 -   [Syntetos, A. A., & Boylan, J. E. (2021). “Intermittent demand
     forecasting: Context, methods and applications”. John Wiley &
@@ -5310,7 +5310,7 @@ y_hat_dict
 -   [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011).
     “Intermittent demand: Linking forecasting to inventory
     obsolescence”. European Journal of Operational Research, 214(3),
-    606-615](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437).
+    606-615](https://www.sciencedirect.com/science/article/abs/pii/s0377221711004437).
 
 #### **Multiple Seasonalities**
 
@@ -5324,7 +5324,7 @@ y_hat_dict
     Petropoulos, Anne B. Koehler (2016). “Models for optimising the
     theta method and their relationship to state space models”.
     International Journal of
-    Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
+    Forecasting](https://www.sciencedirect.com/science/article/pii/s0169207016300243).
 
 #### **GARCH Model**
 
