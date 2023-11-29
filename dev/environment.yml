@@ -23,4 +23,4 @@ dependencies:
     - polars
     - supersmoother
     - tqdm
-    - utilsforecast>=0.0.17
+    - utilsforecast>=0.0.19
