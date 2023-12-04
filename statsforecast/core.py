@@ -414,9 +414,9 @@ def _get_n_jobs(n_groups, n_jobs):
 # %% ../nbs/src/core/core.ipynb 27
 def _warn_df_constructor():
     warnings.warn(
-        "The `df` argument of the StatsForecast constructor is deprecated "
-        "and will be removed in a future version. "
-        "Please pass `df` to the fit/forecast methods instead.",
+        "The `df` argument of the StatsForecast constructor as well as reusing stored "
+        "dfs from other methods is deprecated and will raise an error in a future version. "
+        "Please provide the `df` argument to the corresponding method instead, e.g. fit/forecast.",
         category=DeprecationWarning,
     )
 
@@ -490,7 +490,6 @@ class _StatsForecast:
         self.n_jobs = n_jobs
         self.fallback_model = fallback_model
         self.verbose = verbose
-        self.n_jobs == 1
         if df is not None:
             _warn_df_constructor()
             self._prepare_fit(df=df, sort_df=sort_df)
@@ -512,6 +511,8 @@ class _StatsForecast:
         sort_df: bool = True,
     ) -> None:
         if df is None:
+            if not hasattr(self, "ga"):
+                raise ValueError("You must provide the `df` argument.")
             _warn_df_constructor()
             return
         df = ensure_time_dtype(df, "ds")
