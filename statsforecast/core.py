@@ -1406,19 +1406,79 @@ class _StatsForecast:
 
 # %% ../nbs/src/core/core.ipynb 29
 class ParallelBackend:
-    def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
-        model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model
-        )
-        return model.forecast(**kwargs)
-
-    def cross_validation(
-        self, df, models, freq, fallback_model=None, **kwargs: Any
+    def forecast(
+        self,
+        *,
+        models,
+        fallback_model,
+        freq,
+        h,
+        df,
+        X_df,
+        level,
+        fitted,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
     ) -> Any:
         model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model
+            models=models,
+            freq=freq,
+            fallback_model=fallback_model,
         )
-        return model.cross_validation(**kwargs)
+        return model.forecast(
+            df=df,
+            h=h,
+            X_df=X_df,
+            level=level,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+
+    def cross_validation(
+        self,
+        *,
+        df,
+        models,
+        freq,
+        fallback_model,
+        h,
+        n_windows,
+        step_size,
+        test_size,
+        input_size,
+        level,
+        refit,
+        fitted,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+    ) -> Any:
+        model = _StatsForecast(
+            models=models,
+            freq=freq,
+            fallback_model=fallback_model,
+        )
+        return model.cross_validation(
+            df=df,
+            h=h,
+            n_windows=n_windows,
+            step_size=step_size,
+            test_size=test_size,
+            input_size=input_size,
+            level=level,
+            refit=refit,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
 
 
 @conditional_dispatcher
