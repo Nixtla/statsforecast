@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+import re
+from pathlib import Path
+
+from nbdev.clean import process_write
+
+pat = re.compile(r'\$\s*([^\$]+?)\s*\$')
+
+def clean_equations(nb):
+    for cell in nb['cells']:
+        if cell['cell_type'] != 'markdown':
+            continue
+        lines = []
+        for i, line in enumerate(cell['source']):
+            line = pat.sub(r'$\1$', line)
+            lines.append(line)
+        cell['source'] = lines
+
+
+if __name__ == '__main__':
+    repo_root = Path(__file__).parents[1]
+    for nb in (repo_root / 'nbs' / 'docs').rglob('*.ipynb'):
+        process_write(warn_msg='Failed to clean_nb', proc_nb=clean_equations, f_in=nb)
