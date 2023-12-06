@@ -4,7 +4,9 @@ from pathlib import Path
 
 from nbdev.clean import process_write
 
-pat = re.compile(r'\$\s*([^\$]+?)\s*\$')
+single_line_with_spaces = re.compile(r'\$\s*([^\$]+?)\s*\$')
+with_tag_pat = re.compile(r'\$\$(.*?)\\tag\s*(\d+)(.*?)\$\$')
+with_tag_repl = r'\n$$\n\\begin{equation}\n\1\\tag \2\n\\end{equation}\n$$\n'
 
 def clean_equations(nb):
     for cell in nb['cells']:
@@ -12,7 +14,8 @@ def clean_equations(nb):
             continue
         lines = []
         for i, line in enumerate(cell['source']):
-            line = pat.sub(r'$\1$', line)
+            line = single_line_with_spaces.sub(r'$\1$', line)
+            line = with_tag_pat.sub(with_tag_repl, line)
             lines.append(line)
         cell['source'] = lines
 
