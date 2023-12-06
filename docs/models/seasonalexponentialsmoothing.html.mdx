@@ -29,7 +29,7 @@ values are more relevant to predicting the future than older values.
 
 SES is implemented by a simple formula:
 
-$$\hat{y}_{T+1|T} = \alpha y_T + \alpha(1-\alpha) y_{T-1} + \alpha(1-\alpha)^2 y_{T-2}+ \cdots, $$
+$$\hat{y}_{T+1|T} = \alpha y_T + \alpha(1-\alpha) y_{T-1} + \alpha(1-\alpha)^2 y_{T-2}+ \cdots,$$
 
 The smoothing factor controls the amount of weight that is assigned to
 the most recent values. A higher α value means more weight will be
@@ -55,7 +55,7 @@ forecasting data with no clear trend or seasonal pattern.
 Using the naïve method, all forecasts for the future are equal to the
 last observed value of the series, $$\hat{y}_{T+h|T} = y_{T},$$
 
-for \$h=1,2,\$. Hence, the naïve method assumes that the most recent
+for $h=1,2,\dots$. Hence, the naïve method assumes that the most recent
 observation is the only important one, and all previous observations
 provide no information for the future. This can be thought of as a
 weighted average where all of the weight is given to the last
@@ -63,11 +63,11 @@ observation.
 
 Using the average method, all future forecasts are equal to a simple
 average of the observed data,
-$$\hat{y}_{T+h|T} = \frac1T \sum_{t=1}^T y_t, $$
+$$\hat{y}_{T+h|T} = \frac1T \sum_{t=1}^T y_t,$$
 
-for \$h=1,2,\$ Hence, the average method assumes that all observations
-are of equal importance, and gives them equal weights when generating
-forecasts.
+for $h=1,2,\dots$ Hence, the average method assumes that all
+observations are of equal importance, and gives them equal weights when
+generating forecasts.
 
 We often want something between these two extremes. For example, it may
 be sensible to attach larger weights to more recent observations than to

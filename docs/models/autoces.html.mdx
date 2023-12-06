@@ -91,14 +91,15 @@ error term of the model and $i$ is the imaginary unit (which satisfies
 the equation ${i}^2=-1$). The idea behind this is to have the impact of
 both actual values and the error on each observation in the past on the
 final forecast. Second, we substitute $\alpha$ with a complex variable
-\${}\_0+i{}\_1 \$ and 1 by $1+i$ to introduce the harmonically declining
-weights. Depending on the values of the complex smoothing parameter, the
-weights distribution will exhibit a variety of trajectories over time,
-including exponential, oscillating, and harmonic. Finally, the result of
-multiplication of two complex numbers will be another complex number, so
-we substitute ${\hat{y}}_{t-j}$ with ${\hat{y}}_{t-j}+i{\hat{e}}_{t-j}$,
-where ${\hat{e}}_{t-j}$ is the proxy for the error term. The CES
-obtained as a result of this can be written as:
+${\alpha}_0+i{\alpha}_1$ and 1 by $1+i$ to introduce the harmonically
+declining weights. Depending on the values of the complex smoothing
+parameter, the weights distribution will exhibit a variety of
+trajectories over time, including exponential, oscillating, and
+harmonic. Finally, the result of multiplication of two complex numbers
+will be another complex number, so we substitute ${\hat{y}}_{t-j}$ with
+${\hat{y}}_{t-j}+i{\hat{e}}_{t-j}$, where ${\hat{e}}_{t-j}$ is the proxy
+for the error term. The CES obtained as a result of this can be written
+as:
 
 $$
 
@@ -328,8 +329,8 @@ stationary and non-stationary forecasts
 
 ### Conditional mean and variance of CES
 
-The conditional mean of CES for $h$ steps ahead with known \$ {l}\_t \$
-and \$ {c}\_t \$ can be calculated using the state space model (6):
+The conditional mean of CES for $h$ steps ahead with known ${l}_t$ and
+${c}_t$ can be calculated using the state space model (6):
 
 $$
 
@@ -346,10 +347,10 @@ $$\mathrm{E}\left({y}_{t+h}\mid {\mathbf{v}}_t\right)={\hat{y}}_{t+h}$$
 while $\mathbf{F}$ and $\mathbf{w}$ re the matrices from (7).
 
 The forecasting trajectories of (15) will differ depending on the values
-of \$ {l}\_t, {c}\_t \$, and the complex smoothing parameter. The
-analysis of stationarity condition shows that there are several types of
-forecasting trajectories of CES depending on the particular value of the
-complex smoothing parameter:
+of ${l}_t, {c}_t$, and the complex smoothing parameter. The analysis of
+stationarity condition shows that there are several types of forecasting
+trajectories of CES depending on the particular value of the complex
+smoothing parameter:
 
 1.  When ${\alpha}_1=1$ all the values of forecast will be equal to the
     last obtained forecast, which corresponds to a flat line. This

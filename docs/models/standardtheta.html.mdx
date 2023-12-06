@@ -87,22 +87,46 @@ values.
 Assimakopoulos and Nikolopoulo for standard theta model proposed the
 Theta line as the solution of the equation
 
-$$D^2 \zeta_t(\theta) = \theta D^2 Y_t, t = 1,\cdots,T \tag 1$$
+$$
+
+\begin{equation}
+D^2 \zeta_t(\theta) = \theta D^2 Y_t, t = 1,\cdots,T \tag 1
+\end{equation}
+
+$$
 
 where $Y_1, \cdots , Y_T$ represent the original time series data and
 $DX_t = (X_t − X_{t−1})$. The initial values $\zeta_1$ and $\zeta_2$ are
-obtained by minimizing \$\_{i=1}^{T} \[Y_t - \_t () \]^2 \$. However,
-the analytical solution of (1) is given by
+obtained by minimizing $\sum_{i=1}^{T} [Y_t - \zeta_t (\theta) ]^2$.
+However, the analytical solution of (1) is given by
 
-$$\zeta_t(\theta)=\theta Y_t +(1−\theta)(A_T +B_T t),\ t=1, \cdots, T,  \tag 2$$
+$$
+
+\begin{equation}
+\zeta_t(\theta)=\theta Y_t +(1−\theta)(A_T +B_T t),\ t=1, \cdots, T,  \tag 2
+\end{equation}
+
+$$
 
 where $A_T$ and $B_T$ are the minimum square coefficients of a simple
 linear regression over $Y_1, \cdots,Y_T$ against $1, \cdots , T$ which
 are only dependent on the original data and given as follow
 
-$$A_T=\frac{1}{T} \sum_{i=1}^{T} Y_t - \frac{T+1}{2} B_T \tag 3 $$
+$$
 
-$$B_T=\frac{6}{T^2 - 1} (\frac{2}{T} \sum_{t=1}^{T} tY_t - \frac{T+1}{T} \sum_{t=1}^{T} Y_t  \tag 4)   $$
+\begin{equation}
+A_T=\frac{1}{T} \sum_{i=1}^{T} Y_t - \frac{T+1}{2} B_T \tag 3
+\end{equation}
+
+$$
+
+$$
+
+\begin{equation}
+B_T=\frac{6}{T^2 - 1} (\frac{2}{T} \sum_{t=1}^{T} tY_t - \frac{T+1}{T} \sum_{t=1}^{T} Y_t  \tag 4
+\end{equation}
+
+$$
 
 Theta lines can be understood as functions of the linear regression
 model directly applied to the data from this perspective. Indeed, the
@@ -130,7 +154,7 @@ for building the theta method are as follows:
     statistically significant seasonal behaviour. A time series is
     seasonal if
 
-$$|\rho_m| > q_{1- \frac{\alpha}{2} } \sqrt{\frac{1+2 \sum_{i=1}^{m-1} \rho_{i}^{2} }{T} } $$
+$$|\rho_m| > q_{1- \frac{\alpha}{2} } \sqrt{\frac{1+2 \sum_{i=1}^{m-1} \rho_{i}^{2} }{T} }$$
 
 where ρk denotes the lag $k$ autocorrelation function, $m$ is the number
 of the periods within a seasonal cycle (for example, 12 for monthly

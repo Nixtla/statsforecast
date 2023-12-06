@@ -90,12 +90,26 @@ it has been seasonally adjusted using the multiplicative classical
 decomposition approach.
 
 Let $X_t$ be the linear combination of two theta lines,
-$$X_t=\omega \text{Z}_t (\theta_1) +(1-\omega) \text{Z}_t (\theta_2) \tag 1$$
+
+$$
+
+\begin{equation}
+X_t=\omega \text{Z}_t (\theta_1) +(1-\omega) \text{Z}_t (\theta_2) \tag 1
+\end{equation}
+
+$$
 
 where $\omega \in [0,1]$ is the weight parameter. Assuming that
 $\theta_1 <1$ and $\theta_2 \geq 1$, the weight $\omega$ can be derived
 as
-$$\omega:=\omega(\theta_1, \theta_2)=\frac{\theta_2 -1}{\theta_2 -\theta_1} \tag 2$$
+
+$$
+
+\begin{equation}
+\omega:=\omega(\theta_1, \theta_2)=\frac{\theta_2 -1}{\theta_2 -\theta_1} \tag 2
+\end{equation}
+
+$$
 
 It is straightforward to see from Eqs. (1), (2) that
 $X_t=Y_t, \ t=1, \cdots n$ i.e., the weights are calculated properly in
@@ -128,11 +142,17 @@ $\theta_1=0$ and focus on the optimisation of the short-term component,
 $\theta_2=0$ with $\theta \geq 1$. Thus, $\theta$ is the only parameter
 that requires estimation so far. The theta decomposition is now given by
 
-$$Y_t=(1-\frac{1}{\theta}) (\text{A}_n+\text{B}_n t)+ \frac{1}{\theta} \text{Z}_t (\theta), \ t=1, \cdots , n $$
+$$Y_t=(1-\frac{1}{\theta}) (\text{A}_n+\text{B}_n t)+ \frac{1}{\theta} \text{Z}_t (\theta), \ t=1, \cdots , n$$
 
 The $h$ -step-ahead forecasts calculated at origin are given by
 
-$$\hat Y_{n+h|n} = (1-\frac{1}{\theta}) [\text{A}_n+\text{B}_n (n+h)]+ \frac{1}{\theta} \tilde {\text{Z}}_{n+h|n} (\theta) \tag 3$$
+$$
+
+\begin{equation}
+\hat Y_{n+h|n} = (1-\frac{1}{\theta}) [\text{A}_n+\text{B}_n (n+h)]+ \frac{1}{\theta} \tilde {\text{Z}}_{n+h|n} (\theta) \tag 3
+\end{equation}
+
+$$
 
 where
 $\tilde {\text{Z}}_{n+h|n} (\theta)=\tilde {\text{Z}}_{n+1|n} (\theta)=\alpha \sum_{i=0}^{n-1}(1-\alpha)^i \text{Z}_{n-i}(\theta)+(1-\alpha)^n \ell_{0}^{*}$
@@ -142,10 +162,16 @@ $\alpha \in (0,1)$ as the smoothing parameter. Note that for $\theta=2$
 Eq. (3) corresponds to Step 4 of the STheta algorithm. After some
 algebra, we can write
 
-$$\tilde {\text{Z}}_{n+1|n} (\theta)=\theta \ell{n}+(1-\theta) \{ \text{A}_n [1-(1-\alpha)^n] + \text{B}_n [n+(1-\frac{1}{\alpha}) [1-(1-\alpha)^n] ]  \}   \tag 4$$
+$$
 
-where \$*{t}=Y_t +(1-) *{t-1} \$ for $t=1, \cdots, n$ and
-$\ell_{0}=\ell_{0}^{*}/\theta$.
+\begin{equation}
+\tilde {\text{Z}}_{n+1|n} (\theta)=\theta \ell{n}+(1-\theta) \{ \text{A}_n [1-(1-\alpha)^n] + \text{B}_n [n+(1-\frac{1}{\alpha}) [1-(1-\alpha)^n] ]  \}   \tag 4
+\end{equation}
+
+$$
+
+where $\ell_{t}=\alpha Y_t +(1-\alpha) \ell_{t-1}$ for $t=1, \cdots, n$
+and $\ell_{0}=\ell_{0}^{*}/\theta$.
 
 In the light of Eqs. (3), (4), we suggest four stochastic approaches.
 These approaches differ due to the parameter $\theta$ which may be
@@ -163,11 +189,29 @@ Let $\text{A}_n$ and $\text{B}_n$ be fixed coefficients for all
 $t=1, \cdots, n$ so that Eqs. (3), (4) configure the state space model
 given by
 
-$$Y_t=\mu_{t}+\varepsilon_{t} \tag 5$$
+$$
 
-$$\mu_{t}=\ell_{t-1}+(1-\frac{1}{\theta}) \{(1-\alpha)^{t-1} \text{A}_n +[\frac{1-(1-\alpha)^t}{\alpha} \text{B}_n]  \tag 6   \}$$
+\begin{equation}
+Y_t=\mu_{t}+\varepsilon_{t} \tag 5
+\end{equation}
 
-$$\ell_{t}=\alpha Y_t +(1-\alpha)\ell_{t-1} \tag 7 $$
+$$
+
+$$
+
+\begin{equation}
+\mu_{t}=\ell_{t-1}+(1-\frac{1}{\theta}) \{(1-\alpha)^{t-1} \text{A}_n +[\frac{1-(1-\alpha)^t}{\alpha} \text{B}_n]  \tag 6
+\end{equation}
+
+$$
+
+$$
+
+\begin{equation}
+\ell_{t}=\alpha Y_t +(1-\alpha)\ell_{t-1} \tag 7
+\end{equation}
+
+$$
 
 with parameters $\ell_{0} \in \mathbb{R}$, $\alpha \in (0,1)$ and
 $\theta \in [1,\infty)$ . The parameter $\theta$ is to be estimated
@@ -176,13 +220,13 @@ model (OTM).
 
 The $h$-step-ahead forecast at origin $n$ is given by
 
-$$\hat Y_{n+h|n}=E[Y_{n+h}|Y_1,\cdots, Y_n]=\ell_{n}+(1-\frac{1}{\theta}) \{(1-\alpha)^n \text{A}_n +[(h-1) + \frac{1-(1-\alpha)^{n+1}}{\alpha}] \text{B}_n \}   $$
+$$\hat Y_{n+h|n}=E[Y_{n+h}|Y_1,\cdots, Y_n]=\ell_{n}+(1-\frac{1}{\theta}) \{(1-\alpha)^n \text{A}_n +[(h-1) + \frac{1-(1-\alpha)^{n+1}}{\alpha}] \text{B}_n \}$$
 
 which is equivalent to Eq. (3). The conditional variance
-\$\[Y\_{n+h}\|Y_1, , Y_n\]=\[1+(h-1)^2\]^2 \$ can be computed easily
-from the state space model. Thus, the $(1-\alpha)\%$ prediction interval
-for $Y_{n+h}$ is given by
-$$\hat Y_{n+h|n} \ \pm  \ q_{1-\alpha/2} \sqrt{[1+(h-1)\alpha^2 ]\sigma^2 } $$
+$\text{Var}[Y_{n+h}|Y_1, \cdots, Y_n]=[1+(h-1)\alpha^2]\sigma^2$ can be
+computed easily from the state space model. Thus, the $(1-\alpha)\%$
+prediction interval for $Y_{n+h}$ is given by
+$$\hat Y_{n+h|n} \ \pm  \ q_{1-\alpha/2} \sqrt{[1+(h-1)\alpha^2 ]\sigma^2 }$$
 
 For $\theta=2$ OTM reproduces the forecasts of the STheta method;
 hereafter, we will refer to this particular case as the standard Theta
@@ -193,7 +237,7 @@ $\ell_{0}^{**} \in \mathbb{R}, \alpha \in (0,1)$ and $b \in \mathbb{R}$
 is equivalent to $\text{OTM} (\ell_{0}, \alpha, \theta )$ where
 $\ell_{0} \in \mathbb{R}$ and $\theta \geq 1$, if
 
-$$\ell_{0}^{**} = \ell_{0} + (1- \frac{1}{\theta} )A_n \ \ and \ \ b=(1-\frac{1}{\theta} )B_n $$
+$$\ell_{0}^{**} = \ell_{0} + (1- \frac{1}{\theta} )A_n \ \ and \ \ b=(1-\frac{1}{\theta} )B_n$$
 
 In Theorem 2, we show that OTM is mathematically equivalent to the SES-d
 model. As a corollary of Theorem 2, STM is mathematically equivalent to

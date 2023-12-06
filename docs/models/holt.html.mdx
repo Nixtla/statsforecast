@@ -124,8 +124,10 @@ two cases, both for the additive and the multiplicative
 ### ETS(A,A,N): Holt’s linear method with additive errors
 
 For this model, we assume that the one-step-ahead training errors are
-given by \$ *t=y_t-*{t-1}-b\_{t-1} (0,^2)\$. Substituting this into the
-error correction equations for Holt’s linear method we obtain
+given by
+$\varepsilon_t=y_t-\ell_{t-1}-b_{t-1} \sim \text{NID}(0,\sigma^2)$.
+Substituting this into the error correction equations for Holt’s linear
+method we obtain
 
 where, for simplicity, we have set $\beta=\alpha \beta^*$
 
@@ -216,9 +218,8 @@ Figures 1 and 2, presenting formulae for measurement and transition
 equations.
 
 Table 1: Additive error ETS models \| \| Nonseasonal \|Additive
-\|Multiplicative\| \|—-\|———–\|———–\|————–\| \|No trend\|\$
-
-\$
+\|Multiplicative\| \|—-\|———–\|———–\|————–\| \|No
+trend\|$\begin{aligned} &y_{t} = l_{t-1} + \epsilon_t \\ &l_t = l_{t-1} + \alpha \epsilon_t \end{aligned}$
 \|$\begin{aligned} &y_{t} = l_{t-1} + s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \alpha \epsilon_t \\ &s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}$
 \|$\begin{aligned} &y_{t} = l_{t-1} s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1}} \end{aligned}$\|
 \|Additive\|
@@ -233,9 +234,9 @@ $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + \epsilon_t \\ &l_t = l_{t-1} 
 $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\ &b_t = \phi b_{t-1} + \beta \epsilon_t \\ &s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}$
 \|
 $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \phi b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &b_t = \phi b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\ &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + \phi b_{t-1}} \end{aligned}$\|
-\|Multiplicative\| \$
-
-\$ \|
+\|Multiplicative\|
+$\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + \epsilon_t \\ &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\ &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}} \end{aligned}$
+\|
 $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\ &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}} \\ &s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}$
 \|
 $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\ &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}} \end{aligned}$\|
@@ -579,7 +580,7 @@ the mean squared error of prediction. Similarly, let $\hat X_{t −k}$
 denote the regression (prediction) of $X_{t −k}$ on
 $\{X_{t −k+1:t −1}\}$:
 
-$$\hat X_{t−k} =\eta_1 X_{t−1}+···+\eta_{k−1} X_{t−k+1} $$
+$$\hat X_{t−k} =\eta_1 X_{t−1}+···+\eta_{k−1} X_{t−k+1}$$
 
 Note that if $\{X_t\}$ is stationary, then
 $\{\alpha_{1:k−1} \} = \{\eta_{1:k−1} \}$. Now let
@@ -595,7 +596,7 @@ of a stationary time series $\{X_t \}$ with $E(X_t ) = 0$ is
 $$\phi_{11} = Corr(X_{t−1}, X_t ) = \frac{Cov(X_{t−1}, X_t )} {[Var(X_{t−1})Var(X_t)]^{1/2}} = \rho_1$$
 and
 
-$$\phi_{kk} = Corr(\hat Z_{t−k},\hat Z_t) = \frac{Cov(\hat Z_{t−k},\hat Z_t)} {[Var(\hat Z_{t −k} )Var(\hat Z_t )]^{1/2}}, \ k ≥ 2  $$
+$$\phi_{kk} = Corr(\hat Z_{t−k},\hat Z_t) = \frac{Cov(\hat Z_{t−k},\hat Z_t)} {[Var(\hat Z_{t −k} )Var(\hat Z_t )]^{1/2}}, \ k ≥ 2$$
 
 On the other hand, the following theorem paves the way to estimate the
 PACF of a stationary time series, and its proof can be seen in Fan and
@@ -604,7 +605,7 @@ Yao (2003).
 **Theorem 1.** Let $\{X_t \}$ be a stationary time series with
 $E(X_t ) = 0$, and $\{a_{1k},··· ,a_{kk}\}$ satisfy
 
-$$\{a_{1k},··· ,a_{kk}\}= \argmin_{a_1 ,··· ,a_k}  E(X_t − a_1 X_{t−1}−···−a_k X_{t−k})^2 $$
+$$\{a_{1k},··· ,a_{kk}\}= \argmin_{a_1 ,··· ,a_k}  E(X_t − a_1 X_{t−1}−···−a_k X_{t−k})^2$$
 
 Then $\phi_{kk} =a_{kk}$ for $k≥1$.
 

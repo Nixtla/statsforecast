@@ -56,7 +56,7 @@ exhibit a constant trend and seasonality.
 The Holt-Winters seasonal method comprises the forecast equation and
 three smoothing equations — one for the level $\ell_{t}$, one for the
 trend $b_t$, and one for the seasonal component $s_t$ , with
-corresponding smoothing parameters $\alpha$ , $\beta^*$ and \$ \$. We
+corresponding smoothing parameters $\alpha$ , $\beta^*$ and $\gamma$. We
 use $m$ to denote the period of the seasonality, i.e., the number of
 seasons in a year. For example, for quarterly data $m=4$, and for
 monthly data $m=12$.
@@ -194,9 +194,8 @@ Figures 1 and 2, presenting formulae for measurement and transition
 equations.
 
 Table 1: Additive error ETS models \| \| Nonseasonal \|Additive
-\|Multiplicative\| \|—-\|———–\|———–\|————–\| \|No trend\|\$
-
-\$
+\|Multiplicative\| \|—-\|———–\|———–\|————–\| \|No
+trend\|$\begin{aligned} &y_{t} = l_{t-1} + \epsilon_t \\ &l_t = l_{t-1} + \alpha \epsilon_t \end{aligned}$
 \|$\begin{aligned} &y_{t} = l_{t-1} + s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \alpha \epsilon_t \\ &s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}$
 \|$\begin{aligned} &y_{t} = l_{t-1} s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1}} \end{aligned}$\|
 \|Additive\|
@@ -211,9 +210,9 @@ $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + \epsilon_t \\ &l_t = l_{t-1} 
 $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\ &b_t = \phi b_{t-1} + \beta \epsilon_t \\ &s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}$
 \|
 $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} + \phi b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &b_t = \phi b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\ &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + \phi b_{t-1}} \end{aligned}$\|
-\|Multiplicative\| \$
-
-\$ \|
+\|Multiplicative\|
+$\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + \epsilon_t \\ &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\ &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}} \end{aligned}$
+\|
 $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\ &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}} \\ &s_t = s_{t-m} + \gamma \epsilon_t \end{aligned}$
 \|
 $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} s_{t-m} + \epsilon_t \\ &l_t = l_{t-1} b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\ &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\ &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}} \end{aligned}$\|

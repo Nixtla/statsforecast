@@ -110,7 +110,7 @@ In addition, using the
 backshift([see](https://otexts.com/fpp3/backshift.html)) operator $B$,
 the $\text{AR(p)}$ model can be rewritten as
 
-$$ \varphi(B)X_t = \varepsilon_t $$
+$$\varphi(B)X_t = \varepsilon_t$$
 
 where $\varphi(z) = 1 − \varphi_1z − \cdots − \varphi_p z^p$ is called
 the (corresponding) $\text{AR}$ polynomial. Besides, in the Python
@@ -130,7 +130,7 @@ $$\hat X_t =\alpha_1 X_{t−1}+ \cdots +\alpha_{k−1} X_{t−k+1}$$
 
 where $\{\alpha_1, \cdots , \alpha_{k−1} \}$ satisfy
 
-$$\{\alpha_1, \cdots , \alpha_{k−1} \}=\argmin_{β1,···,βk−1} E[X_t −(\beta_1 X_{t−1} +\cdots +\beta_{k−1}X_{t−k+1})]^2 $$
+$$\{\alpha_1, \cdots , \alpha_{k−1} \}=\argmin_{β1,···,βk−1} E[X_t −(\beta_1 X_{t−1} +\cdots +\beta_{k−1}X_{t−k+1})]^2$$
 
 That is, $\{\alpha_1, \cdots , \alpha_{k−1} \}$ are chosen by minimizing
 the mean squared error of prediction. Similarly, let $\hat X_{t −k}$
@@ -150,7 +150,7 @@ $\{X_{t −k+1:t −1} \}$ from $X_t$.
 **Definition 2.** The partial autocorrelation function(PACF) at lag $k$
 of astationary time series $\{X_t \}$ with $E(X_t ) = 0$ is
 
-$$\phi_{11} = Corr(X_{t−1}, X_t ) = \frac{Cov(X_{t−1}, X_t )} {[Var(X_{t−1})Var(X_t)]^1/2}=\rho_1 $$
+$$\phi_{11} = Corr(X_{t−1}, X_t ) = \frac{Cov(X_{t−1}, X_t )} {[Var(X_{t−1})Var(X_t)]^1/2}=\rho_1$$
 
 and
 
@@ -168,7 +168,7 @@ Yao (2003).
 **Theorem 1.** Let $\{X_t \}$ be a stationary time series with
 $E(X_t) = 0$, and $\{a_{1k},\cdots ,a_{kk} \}$ satisfy
 
-$$\{a_{1k},\cdots,a_{kk} \}=\argmin_{a_1 ,\cdots ,a_k} E(X_{t −a1}X_{t−1}−\cdots −a_k X_{t−k})^2 $$
+$$\{a_{1k},\cdots,a_{kk} \}=\argmin_{a_1 ,\cdots ,a_k} E(X_{t −a1}X_{t−1}−\cdots −a_k X_{t−k})^2$$
 
 Then $\phi_{kk}=a_{kk}$ for $k≥1$.
 
@@ -178,15 +178,15 @@ From the $\text{AR(p)}$ model, namely, Eq. (1), we can see that it is in
 the same form as the multiple linear regression model. However, it
 explains current itself with its own past. Given the past
 
-$$\{X_{(t−p):(t−1)} \} = \{x_{(t−p):(t−1)} \} $$
+$$\{X_{(t−p):(t−1)} \} = \{x_{(t−p):(t−1)} \}$$
 
 we have
-$$E(X_t |X_{(t−p):(t−1)}) = \varphi_0 + \varphi_1x_{t−1} + \varphi_2 x_{t−2} + \cdots + \varphi_p x_{t−p} $$
+$$E(X_t |X_{(t−p):(t−1)}) = \varphi_0 + \varphi_1x_{t−1} + \varphi_2 x_{t−2} + \cdots + \varphi_p x_{t−p}$$
 
 This suggests that given the past, the right-hand side of this equation
 is a good estimate of $X_t$ . Besides
 
-$$Var(X_t |X_{(t −p):(t −1)}) = Var(\varepsilon_t ) = \sigma_{\varepsilon}^2 $$
+$$Var(X_t |X_{(t −p):(t −1)}) = Var(\varepsilon_t ) = \sigma_{\varepsilon}^2$$
 
 Now we suppose that the AR(p) model, namely, Eq. (1), is stationary;
 then we have
@@ -203,7 +203,7 @@ $$\text {Var} (X_t) = \gamma_0 = \varphi_1 \gamma_1 + \varphi_2 \gamma2 + \cdots
 
 Furthermore
 
-$$\gamma_0 = \sigma_{\varepsilon}^2 / ( 1 − \varphi_1 \rho_1 − \varphi_2 \rho_2 − \cdots − \varphi_p \rho_p )  $$
+$$\gamma_0 = \sigma_{\varepsilon}^2 / ( 1 − \varphi_1 \rho_1 − \varphi_2 \rho_2 − \cdots − \varphi_p \rho_p )$$
 
 1.  For all $k > p$, the partial autocorrelation $\phi_{kk} = 0$, that
     is, the PACF of $\text{AR(p)}$ models cuts off after lag $p$, which
@@ -281,7 +281,7 @@ definition of causality is given below.
 **Definition 3** (1) A time series $\{X_t \}$ is causal if there exist
 coefficients $\psi_j$ such that
 
-$$X_t =\sum_{j=0}^{\infty} \psi_j \varepsilon_{t-j}, \ \ \sum_{j=0}^{\infty} |\psi_j |< \infty $$
+$$X_t =\sum_{j=0}^{\infty} \psi_j \varepsilon_{t-j}, \ \ \sum_{j=0}^{\infty} |\psi_j |< \infty$$
 
 where
 $\psi_0 = 1, \{\varepsilon_t \} \sim WN(0, \sigma_{\varepsilon}^2 )$. At
@@ -335,7 +335,7 @@ $\text{AR(2)}$ model is causal or not.
     the coefficients $\{\psi_j \}$ in Definition 3 satisfy $\psi_0=1$
     and
 
-$$\psi_j=\sum_{k=1}^{j} \varphi '_k \psi_{j-k}, \ \ j \geq 1 \ where \ \ \varphi '_k =\varphi_k  \ \ if \ \ k \leq p \ \ and \ \ \varphi '_k =0 \ \ if \ \ k>p $$
+$$\psi_j=\sum_{k=1}^{j} \varphi '_k \psi_{j-k}, \ \ j \geq 1 \ where \ \ \varphi '_k =\varphi_k  \ \ if \ \ k \leq p \ \ and \ \ \varphi '_k =0 \ \ if \ \ k>p$$
 
 ### Autocorrelation: the past influences the present
 

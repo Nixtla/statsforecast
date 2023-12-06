@@ -130,8 +130,8 @@ $$
 $$
 
 where $\text{A}_n$ and $\text{B}_n$ are the minimum square coefficients
-of a simple linear regression over $Y_1, \cdots Y_n$ against
-$1, \cdots n \ $, given by
+of a simple linear regression over $Y_1, \cdots Y_n$ against \$1, n \$,
+given by
 
 $$
 
@@ -147,15 +147,15 @@ note that $\text{A}_n$ and $\text{B}_n$ are only functions of the
 original data, not parameters of the Theta method.
 
 Finally, the forecasts produced by the Theta method for $h$ steps ahead
-of are an ad-hoc combination (50%-50%) of the extrapolations of \$(0) \$
-and $\text{Z}(2)$ by the linear regression model and the simple
-exponential smoothing model respectively. We will refer to the above
-setup as the standard Theta method (STheta).
+of are an ad-hoc combination (50%-50%) of the extrapolations of
+$\text{Z}(0)$ and $\text{Z}(2)$ by the linear regression model and the
+simple exponential smoothing model respectively. We will refer to the
+above setup as the standard Theta method (STheta).
 
 The steps for building the STheta method of AN are as follows: 1.
 Deseasonalisation: The time series is tested for statistically
 significant seasonal behaviour. A time series is seasonal if
-$$|r_m|>q_{1-\alpha/2} \sqrt{\frac{1+2 \sum_{i=1}^{m-1} r_{i}^2}{n} } $$
+$$|r_m|>q_{1-\alpha/2} \sqrt{\frac{1+2 \sum_{i=1}^{m-1} r_{i}^2}{n} }$$
 
 where $r_k$ denotes the lag $k$ autocorrelation function, $m$ is the
 number of the periods within a seasonal cycle (for example, 12 for
@@ -228,7 +228,7 @@ $\theta_1=0$ and focus on the optimisation of the short-term component,
 $\theta_2=0$ with $\theta \geq 1$. Thus, $\theta$ is the only parameter
 that requires estimation so far. The theta decomposition is now given by
 
-$$Y_t=(1-\frac{1}{\theta}) (\text{A}_n+\text{B}_n t)+ \frac{1}{\theta} \text{Z}_t (\theta), \ t=1, \cdots , n $$
+$$Y_t=(1-\frac{1}{\theta}) (\text{A}_n+\text{B}_n t)+ \frac{1}{\theta} \text{Z}_t (\theta), \ t=1, \cdots , n$$
 
 The $h$ -step-ahead forecasts calculated at origin are given by
 
@@ -306,13 +306,13 @@ model (OTM).
 
 The $h$-step-ahead forecast at origin $n$ is given by
 
-$$\hat Y_{n+h|n}=E[Y_{n+h}|Y_1,\cdots, Y_n]=\ell_{n}+(1-\frac{1}{\theta}) \{(1-\alpha)^n \text{A}_n +[(h-1) + \frac{1-(1-\alpha)^{n+1}}{\alpha}] \text{B}_n \}   $$
+$$\hat Y_{n+h|n}=E[Y_{n+h}|Y_1,\cdots, Y_n]=\ell_{n}+(1-\frac{1}{\theta}) \{(1-\alpha)^n \text{A}_n +[(h-1) + \frac{1-(1-\alpha)^{n+1}}{\alpha}] \text{B}_n \}$$
 
 which is equivalent to Eq. (6). The conditional variance
 $\text{Var}[Y_{n+h}|Y_1, \cdots, Y_n]=[1+(h-1)\alpha^2]\sigma^2$ can be
 computed easily from the state space model. Thus, the $(1-\alpha)\%$
 prediction interval for $Y_{n+h}$ is given by
-$$\hat Y_{n+h|n} \ \pm  \ q_{1-\alpha/2} \sqrt{[1+(h-1)\alpha^2 ]\sigma^2 } $$
+$$\hat Y_{n+h|n} \ \pm  \ q_{1-\alpha/2} \sqrt{[1+(h-1)\alpha^2 ]\sigma^2 }$$
 
 For $\theta=2$ OTM reproduces the forecasts of the STheta method;
 hereafter, we will refer to this particular case as the standard Theta
