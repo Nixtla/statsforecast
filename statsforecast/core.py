@@ -441,7 +441,65 @@ def _warn_id_as_idx():
     )
 
 # %% ../nbs/src/core/core.ipynb 28
+_param_descriptions = {
+    "freq": """freq : str or int
+            Frequency of the data. Must be a valid pandas or polars offset alias, or an integer.""",
+    "df": """df : pandas or polars DataFrame, optional (default=None)
+            DataFrame with ids, times, targets and exogenous.""",
+    "sort_df": """sort_df : bool (default=True)
+            Sort `df` by ids and times.""",
+    "fallback_model": """fallback_model : Any, optional (default=None)
+            Any, optional (default=None)
+            Model to be used if a model fails.
+            Only works with the `forecast` and `cross_validation` methods.""",
+    "id_col": """id_col : str (default='unique_id')
+            Column that identifies each serie.""",
+    "time_col": """time_col : str (default='ds')
+            Column that identifies each timestep, its values can be timestamps or integers.""",
+    "target_col": """target_col : str (default='y')
+            Column that contains the target.""",
+    "h": """h : int
+            Forecast horizon.""",
+    "X_df": """X_df : pandas or polars DataFrame, optional (default=None)
+            DataFrame with ids, times and future exogenous.""",
+    "level": """level : List[float], optional (default=None)
+            Confidence levels between 0 and 100 for prediction intervals.""",
+    "prediction_intervals": """prediction_intervals : ConformalIntervals, optional (default=None)
+            Configuration to calibrate prediction intervals (Conformal Prediction).""",
+    "fitted": """fitted : bool (default=False)
+            Store in-sample predictions.""",
+    "n_jobs": """n_jobs : int (default=1)
+            Number of jobs used in the parallel processing, use -1 for all cores.""",
+    "verbose": """verbose : bool (default=True)
+            Prints TQDM progress bar when `n_jobs=1`.""",
+    "models": """models : List[Any]
+            List of instantiated objects models.StatsForecast.""",
+    "n_windows": """n_windows : int (default=1)
+            Number of windows used for cross validation.""",
+    "step_size": """step_size : int (default=1)
+            Step size between each window.""",
+    "test_size": """test_size : int, optional (default=None)
+            Length of test size. If passed, set `n_windows=None`.""",
+    "input_size": """input_size : int, optional (default=None)
+            Input size for each window, if not none rolled windows.""",
+    "refit": """refit : bool (default=True)
+            Wether or not refit the model for each window.""",
+}
+
+# %% ../nbs/src/core/core.ipynb 29
 class _StatsForecast:
+    """The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
+    for large sets of time series. It operates on a DataFrame `df` with at least three columns
+    ids, times and targets.
+
+    The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
+    model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
+    Scikit-learn interface store the fitted models.
+
+    The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
+    See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+    """
+
     def __init__(
         self,
         models: List[Any],
@@ -454,37 +512,16 @@ class _StatsForecast:
     ):
         """Train statistical models.
 
-        The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
-        for large sets of time series. It operates with pandas DataFrame `df` that identifies series
-        and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target
-        time series variable.
-
-        The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
-        model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
-        Scikit-learn interface store the fitted models.
-
-        The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
-        See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
-
         Parameters
         ----------
-        models : List[Any]
-            List of instantiated objects models.StatsForecast.
-        freq : str or int.
-            Frequency of the data. Must be a valid pandas or polars offset alias.
-        n_jobs : int (default=1)
-            Number of jobs used in the parallel processing, use -1 for all cores.
-        df : pandas.DataFrame or pl.DataFrame, optional (default=None)
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-        sort_df : bool (default=True)
-            If True, sort `df` by [`unique_id`,`ds`].
-        fallback_model : Any, optional (default=None)
-            Model to be used if a model fails.
-            Only works with the `forecast` and `cross_validation` methods.
-        verbose : bool (default=True)
-            Prints TQDM progress bar when `n_jobs=1`.
+        {models}
+        {freq}
+        {n_jobs}
+        {df}
+        {sort_df}
+        {fallback_model}
+        {verbose}
         """
-
         # TODO @fede: needed for residuals, think about it later
         self.models = models
         self._validate_model_names()
@@ -497,6 +534,8 @@ class _StatsForecast:
             self._prepare_fit(df=df, sort_df=sort_df)
         else:
             _maybe_warn_sort_df(sort_df)
+
+    __init__.__doc__ = __init__.__doc__.format(**_param_descriptions)
 
     def _validate_model_names(self):
         # Some test models don't have alias
@@ -569,19 +608,13 @@ class _StatsForecast:
 
         Parameters
         ----------
-        df : pandas or polars DataFrame, optional (default=None)
-            DataFrame with columns [`id_col`, `time_col`, `target_col`] and exogenous.
+        {df}
             If None, the `StatsForecast` class should have been instantiated using `df`.
-        sort_df : bool (default=True)
-            If True, sort `df` by id and time.
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
-        id_col : str (default='unique_id')
-            Column that identifies each serie.
-        time_col : str (default='ds')
-            Column that identifies each timestep, its values can be timestamps or integers.
-        target_col : str (default='y')
-            Column that contains the target.
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
@@ -603,6 +636,8 @@ class _StatsForecast:
         else:
             self.fitted_ = self._fit_parallel()
         return self
+
+    fit.__doc__ = fit.__doc__.format(**_param_descriptions)
 
     def _make_future_df(self, h: int):
         start_dates = ufp.offset_times(self.last_dates, freq=self.freq, n=1)
@@ -645,20 +680,16 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        X_df : pandas or polars DataFrame, optional (default=None)
-            DataFrame with ids, times and future exogenous.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
+        {h}
+        {X_df}
+        {level}
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame | polars.DataFrame
+        fcsts_df : pandas or polars DataFrame
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
-
         if (
             any(
                 getattr(m, "prediction_intervals", None) is not None
@@ -678,6 +709,8 @@ class _StatsForecast:
         fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
         return fcsts_df
+
+    predict.__doc__ = predict.__doc__.format(**_param_descriptions)
 
     def fit_predict(
         self,
@@ -701,25 +734,16 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        df : pandas or polars DataFrame, optional (default=None)
-            DataFrame with columns [`id_col`, `time_col`, `target_col`] and exogenous.
+        {h}
+        {df}
             If None, the `StatsForecast` class should have been instantiated using `df`.
-        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
-        sort_df : bool (default=True)
-            If True, sort `df` by [`unique_id`,`ds`].
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
-        id_col : str (default='unique_id')
-            Column that identifies each serie.
-        time_col : str (default='ds')
-            Column that identifies each timestep, its values can be timestamps or integers.
-        target_col : str (default='y')
-            Column that contains the target.
+        {X_df}
+        {level}
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
@@ -752,6 +776,8 @@ class _StatsForecast:
         fcsts_df[cols] = fcsts
         return fcsts_df
 
+    fit_predict.__doc__ = fit_predict.__doc__.format(**_param_descriptions)
+
     def forecast(
         self,
         h: int,
@@ -773,27 +799,16 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        df : pandas or polars DataFrame, optional (default=None)
-            DataFrame with columns [`id_col`, `time_col`, `target_col`] and exogenous.
-            If None, the `StatsForecast` class should have been instantiated using `df`.
-        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
-        fitted : bool (default=False)
-            Wether or not return insample predictions.
-        sort_df : bool (default=True)
-            If True, sort `df` by [`unique_id`,`ds`].
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
-        id_col : str (default='unique_id')
-            Column that identifies each serie.
-        time_col : str (default='ds')
-            Column that identifies each timestep, its values can be timestamps or integers.
-        target_col : str (default='y')
-            Column that contains the target.
+        {h}
+        {df}
+        {X_df}
+        {level}
+        {fitted}
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
@@ -833,6 +848,8 @@ class _StatsForecast:
         fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
         return fcsts_df
+
+    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)
 
     def forecast_fitted_values(self):
         """Access insample predictions.
@@ -894,35 +911,21 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        df : pandas or polars DataFrame, optional (default=None)
-            DataFrame with columns [`id_col`, `time_col`, `target_col`] and exogenous.
+        {h}
+        {df}
             If None, the `StatsForecast` class should have been instantiated using `df`.
-        n_windows : int (default=1)
-            Number of windows used for cross validation.
-        step_size : int (default=1)
-            Step size between each window.
-        test_size : int, optional (default=None)
-            Length of test size. If passed, set `n_windows=None`.
-        input_size : int, optional (default=None)
-            Input size for each window, if not none rolled windows.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
-        fitted : bool (default=False)
-            Wether or not returns insample predictions.
-        refit : bool (default=True)
-            Wether or not refit the model for each window.
-        sort_df : bool (default=True)
-            If True, sort `df` by `unique_id` and `ds`.
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
-        id_col : str (default='unique_id')
-            Column that identifies each serie.
-        time_col : str (default='ds')
-            Column that identifies each timestep, its values can be timestamps or integers.
-        target_col : str (default='y')
-            Column that contains the target.
+        {n_windows}
+        {step_size}
+        {test_size}
+        {input_size}
+        {level}
+        {fitted}
+        {refit}
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
@@ -1003,6 +1006,8 @@ class _StatsForecast:
             _warn_id_as_idx()
             fcsts_df = fcsts_df.set_index(id_col)
         return fcsts_df
+
+    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)
 
     def cross_validation_fitted_values(self) -> DataFrame:
         """Access insample cross validated predictions.
@@ -1229,10 +1234,9 @@ class _StatsForecast:
 
         Parameters
         ----------
-        df : pandas or polars DataFrame
-            DataFrame with columns [`id_col`, `time_col`, `target_col`]
+        {df}
         forecasts_df : pandas or polars DataFrame, optional (default=None)
-            DataFrame with columns [`id_col`, `time_col`] and models.
+            DataFrame ids, times and models.
         unique_ids : list of str, optional (default=None)
             ids to plot. If None, they're selected randomly.
         plot_random : bool (default=True)
@@ -1247,12 +1251,9 @@ class _StatsForecast:
             Plot anomalies for each prediction interval.
         engine : str (default='matplotlib')
             Library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.
-        id_col : str (default='unique_id')
-            Column that identifies each serie.
-        time_col : str (default='ds')
-            Column that identifies each timestep, its values can be timestamps or integers.
-        target_col : str (default='y')
-            Column that contains the target.
+        {id_col}
+        {time_col}
+        {target_col}
         resampler_kwargs : dict
             Kwargs to be passed to plotly-resampler constructor.
             For further custumization ("show_dash") call the method,
@@ -1404,7 +1405,10 @@ class _StatsForecast:
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/src/core/core.ipynb 29
+
+_StatsForecast.plot.__doc__ = _StatsForecast.plot.__doc__.format(**_param_descriptions)
+
+# %% ../nbs/src/core/core.ipynb 30
 class ParallelBackend:
     def forecast(
         self,
@@ -1485,42 +1489,8 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/src/core/core.ipynb 30
+# %% ../nbs/src/core/core.ipynb 31
 class StatsForecast(_StatsForecast):
-    """Train statistical models.
-
-    The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
-    for large sets of time series. It operates with pandas DataFrame `df` that identifies series
-    and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target
-    time series variable.
-
-    The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
-    model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
-    Scikit-learn interface store the fitted models.
-
-    The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
-    See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
-
-    Parameters
-    ----------
-    models : List[Any]
-        List of instantiated objects models.StatsForecast.
-    freq : str
-        Frequency of the data.
-        See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-    n_jobs : int (default=1)
-        Number of jobs used in the parallel processing, use -1 for all cores.
-    df : pandas or polars DataFrame, optional (default=None)
-        DataFrame with columns [`id_col`, `time_col`, `target_col`] and exogenous.
-    sort_df : bool (default=True)
-        If True, sort `df` by [`unique_id`,`ds`].
-    fallback_model : Any, optional (default=None)
-        Model to be used if a model fails.
-        Only works with the `forecast` and `cross_validation` methods.
-    verbose : bool (default=True)
-        Prints TQDM progress bar when `n_jobs=1`.
-    """
-
     def forecast(
         self,
         h: int,

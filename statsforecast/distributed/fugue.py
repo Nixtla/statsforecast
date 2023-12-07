@@ -5,18 +5,24 @@ __all__ = ['FugueBackend']
 
 # %% ../../nbs/src/core/distributed.fugue.ipynb 4
 import inspect
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Union
 
 import fugue.api as fa
 import numpy as np
 import pandas as pd
-from fugue import transform, DataFrame, FugueWorkflow, ExecutionEngine
+from fugue import transform, DataFrame, FugueWorkflow, ExecutionEngine, AnyDataFrame
 from fugue.collections.yielded import Yielded
 from fugue.constants import FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT
 from triad import Schema
 
 import statsforecast.config as sf_config
-from ..core import _StatsForecast, ParallelBackend, make_backend
+from statsforecast.core import (
+    _StatsForecast,
+    ParallelBackend,
+    _param_descriptions,
+    make_backend,
+)
+from ..utils import ConformalIntervals
 
 # %% ../../nbs/src/core/distributed.fugue.ipynb 5
 def _cotransform(
@@ -81,18 +87,18 @@ class FugueBackend(ParallelBackend):
     def forecast(
         self,
         *,
-        models,
-        fallback_model,
-        freq,
-        h,
-        df,
-        X_df,
-        level,
-        fitted,
-        prediction_intervals,
-        id_col,
-        time_col,
-        target_col,
+        df: AnyDataFrame,
+        freq: Union[str, int],
+        models: List[Any],
+        fallback_model: Optional[Any],
+        X_df: Optional[AnyDataFrame],
+        h: int,
+        level: Optional[List[int]],
+        fitted: bool,
+        prediction_intervals: Optional[ConformalIntervals],
+        id_col: str,
+        time_col: str,
+        target_col: str,
     ) -> Any:
         """Memory Efficient core.StatsForecast predictions with FugueBackend.
 
@@ -101,16 +107,18 @@ class FugueBackend(ParallelBackend):
 
         Parameters
         ----------
-        df : pandas.DataFrame
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-        freq : str
-            Frequency of the data, [pandas available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-        models : List[typing.Any]
-            List of instantiated objects `StatsForecast.models`.
-        fallback_model : Any
-            Model to be used if a model fails.
-        X_df : pandas.DataFrame
-            DataFrame with [unique_id, ds] columns and df’s future exogenous.
+        {df}
+        {freq}
+        {models}
+        {fallback_model}
+        {X_df}
+        {h}
+        {level}
+        {fitted}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
@@ -170,25 +178,27 @@ class FugueBackend(ParallelBackend):
             )
         return res
 
+    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)
+
     def cross_validation(
         self,
         *,
-        models,
-        fallback_model,
-        freq,
-        h,
-        df,
-        n_windows,
-        step_size,
-        test_size,
-        input_size,
-        level,
-        refit,
-        fitted,
-        prediction_intervals,
-        id_col,
-        time_col,
-        target_col,
+        df: AnyDataFrame,
+        freq: Union[str, int],
+        models: List[Any],
+        fallback_model: Optional[Any],
+        h: int,
+        n_windows: int,
+        step_size: int,
+        test_size: int,
+        input_size: int,
+        level: Optional[List[int]],
+        refit: bool,
+        fitted: bool,
+        prediction_intervals: Optional[ConformalIntervals],
+        id_col: str,
+        time_col: str,
+        target_col: str,
     ) -> Any:
         """Temporal Cross-Validation with core.StatsForecast and FugueBackend.
 
@@ -203,14 +213,22 @@ class FugueBackend(ParallelBackend):
 
         Parameters
         ----------
-        df : pandas.DataFrame
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-        freq : str
-            Frequency of the data, [pandas available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-        models : List[typing.Any]
-            List of instantiated objects `StatsForecast.models`.
-        fallback_model : Any
-            Model to be used if a model fails.
+        {df}
+        {freq}
+        {models}
+        {fallback_model}
+        {h}
+        {n_windows}
+        {step_size}
+        {test_size}
+        {input_size}
+        {level}
+        {refit}
+        {fitted}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
@@ -258,6 +276,8 @@ class FugueBackend(ParallelBackend):
             engine_conf=self._conf,
             **self._transform_kwargs,
         )
+
+    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)
 
     def _forecast_series(
         self,
