@@ -178,7 +178,7 @@ class FugueBackend(ParallelBackend):
             )
         return res
 
-    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)
+    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def cross_validation(
         self,
@@ -277,7 +277,7 @@ class FugueBackend(ParallelBackend):
             **self._transform_kwargs,
         )
 
-    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)
+    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def _forecast_series(
         self,

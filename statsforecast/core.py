@@ -535,7 +535,7 @@ class _StatsForecast:
         else:
             _maybe_warn_sort_df(sort_df)
 
-    __init__.__doc__ = __init__.__doc__.format(**_param_descriptions)
+    __init__.__doc__ = __init__.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def _validate_model_names(self):
         # Some test models don't have alias
@@ -637,7 +637,7 @@ class _StatsForecast:
             self.fitted_ = self._fit_parallel()
         return self
 
-    fit.__doc__ = fit.__doc__.format(**_param_descriptions)
+    fit.__doc__ = fit.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def _make_future_df(self, h: int):
         start_dates = ufp.offset_times(self.last_dates, freq=self.freq, n=1)
@@ -710,7 +710,7 @@ class _StatsForecast:
         fcsts_df[cols] = fcsts
         return fcsts_df
 
-    predict.__doc__ = predict.__doc__.format(**_param_descriptions)
+    predict.__doc__ = predict.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def fit_predict(
         self,
@@ -776,7 +776,7 @@ class _StatsForecast:
         fcsts_df[cols] = fcsts
         return fcsts_df
 
-    fit_predict.__doc__ = fit_predict.__doc__.format(**_param_descriptions)
+    fit_predict.__doc__ = fit_predict.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def forecast(
         self,
@@ -849,7 +849,7 @@ class _StatsForecast:
         fcsts_df[cols] = fcsts
         return fcsts_df
 
-    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)
+    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def forecast_fitted_values(self):
         """Access insample predictions.
@@ -1007,7 +1007,7 @@ class _StatsForecast:
             fcsts_df = fcsts_df.set_index(id_col)
         return fcsts_df
 
-    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)
+    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def cross_validation_fitted_values(self) -> DataFrame:
         """Access insample cross validated predictions.
@@ -1406,7 +1406,7 @@ class _StatsForecast:
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
 
-_StatsForecast.plot.__doc__ = _StatsForecast.plot.__doc__.format(**_param_descriptions)
+_StatsForecast.plot.__doc__ = _StatsForecast.plot.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
 # %% ../nbs/src/core/core.ipynb 30
 class ParallelBackend:
