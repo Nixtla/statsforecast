@@ -21,7 +21,7 @@ from statsforecast.models import (
 )
 
 
-def pipeline(series, X_df, n_series, horizon):
+def pipeline(series, X_df, n_series, horizon, id_col='unique_id', time_col='ds', target_col='y'):
     models = [
 		ADIDA(),
         AutoARIMA(season_length=7),
@@ -45,14 +45,18 @@ def pipeline(series, X_df, n_series, horizon):
         models=models,
         freq='D',
     )
-    forecast = fa.as_pandas(sf.forecast(df=series, h=horizon, X_df=X_df))
+    forecast = fa.as_pandas(
+        sf.forecast(df=series, h=horizon, X_df=X_df, id_col=id_col, time_col=time_col, target_col=target_col)
+    )
     print(forecast)
     assert forecast.shape == (n_series * horizon, len(models) + 2)
 
     n_windows = 2
-    cv = fa.as_pandas(sf.cross_validation(df=series, n_windows=n_windows, h=horizon))
+    cv = fa.as_pandas(
+        sf.cross_validation(df=series, n_windows=n_windows, h=horizon, id_col=id_col, time_col=time_col, target_col=target_col)
+    )
     assert cv.shape[0] == n_series * n_windows * horizon
-    assert cv.columns.tolist() == ['unique_id', 'ds', 'cutoff', 'y'] + [m.alias for m in models]
+    assert cv.columns.tolist() == [id_col, time_col, 'cutoff', target_col] + [m.alias for m in models]
 
 def pipeline_with_level(series, X_df, n_series, horizon):
     models = [
