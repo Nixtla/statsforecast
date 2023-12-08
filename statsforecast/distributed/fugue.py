@@ -18,8 +18,8 @@ from triad import Schema
 from statsforecast.core import (
     _StatsForecast,
     ParallelBackend,
+    _id_as_idx,
     _param_descriptions,
-    _id_as_col,
     make_backend,
 )
 from ..utils import ConformalIntervals
@@ -311,7 +311,7 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if not _id_as_col():
+        if _id_as_idx():
             result = result.reset_index()
         return result
 
@@ -348,7 +348,7 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if not _id_as_col():
+        if _id_as_idx():
             result = result.reset_index()
         return result
 
@@ -393,7 +393,7 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if not _id_as_col():
+        if _id_as_idx():
             result = result.reset_index()
         return result
 

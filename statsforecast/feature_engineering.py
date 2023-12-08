@@ -16,8 +16,8 @@ from utilsforecast.processing import (
     vertical_concat,
 )
 
-import statsforecast.config as sf_config
 from . import StatsForecast
+from .core import _id_as_idx
 from .models import MSTL, _predict_mstl_seas
 
 # %% ../nbs/src/feature_engineering.ipynb 3
@@ -56,7 +56,7 @@ def mstl_decomposition(
     sf = StatsForecast(models=[model], freq=freq)
     sf.fit(df=df)
     X_df = sf._make_future_df(h=h)
-    if isinstance(X_df, pd.DataFrame) and sf_config.id_as_index:
+    if isinstance(X_df, pd.DataFrame) and _id_as_idx():
         X_df = X_df.reset_index()
     train_features = []
     future_features = []

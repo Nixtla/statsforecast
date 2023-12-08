@@ -440,8 +440,8 @@ def _warn_id_as_idx():
     )
 
 
-def _id_as_col() -> bool:
-    return bool(os.getenv("NIXTLA_ID_AS_COL", ""))
+def _id_as_idx() -> bool:
+    return not bool(os.getenv("NIXTLA_ID_AS_COL", ""))
 
 # %% ../nbs/src/core/core.ipynb 28
 _param_descriptions = {
@@ -648,7 +648,7 @@ class _StatsForecast:
         uids = ufp.repeat(self.uids, n=h)
         df = self.df_constructor({self.id_col: uids, self.time_col: dates})
         if isinstance(df, pd.DataFrame):
-            if not _id_as_col():
+            if _id_as_idx():
                 _warn_id_as_idx()
                 df = df.set_index(self.id_col)
             else:
@@ -879,7 +879,7 @@ class _StatsForecast:
         )
         df[cols] = self.fcst_fitted_values_["values"]
         if isinstance(df, pd.DataFrame):
-            if not _id_as_col():
+            if _id_as_idx():
                 _warn_id_as_idx()
                 df = df.set_index(self.id_col)
             else:
@@ -1005,7 +1005,7 @@ class _StatsForecast:
         fcsts_df = ufp.assign_columns(
             fcsts_df, res_fcsts["cols"], res_fcsts["forecasts"]
         )
-        if isinstance(fcsts_df, pd.DataFrame) and not _id_as_col():
+        if isinstance(fcsts_df, pd.DataFrame) and _id_as_idx():
             _warn_id_as_idx()
             fcsts_df = fcsts_df.set_index(id_col)
         return fcsts_df
@@ -1051,7 +1051,7 @@ class _StatsForecast:
         df = ufp.assign_columns(df, self.cv_fitted_values_["cols"], fitted_vals[idxs])
         df = ufp.drop_index_if_pandas(df)
         if isinstance(df, pd.DataFrame):
-            if not _id_as_col():
+            if _id_as_idx():
                 _warn_id_as_idx()
                 df = df.set_index(self.id_col)
             else:
