@@ -15,11 +15,11 @@ from fugue.collections.yielded import Yielded
 from fugue.constants import FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT
 from triad import Schema
 
-import statsforecast.config as sf_config
 from statsforecast.core import (
     _StatsForecast,
     ParallelBackend,
     _param_descriptions,
+    _id_as_col,
     make_backend,
 )
 from ..utils import ConformalIntervals
@@ -311,7 +311,7 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if sf_config.id_as_index:
+        if not _id_as_col():
             result = result.reset_index()
         return result
 
@@ -348,7 +348,7 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if sf_config.id_as_index:
+        if not _id_as_col():
             result = result.reset_index()
         return result
 
@@ -393,7 +393,7 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if sf_config.id_as_index:
+        if not _id_as_col():
             result = result.reset_index()
         return result
 
