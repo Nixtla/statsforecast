@@ -8,11 +8,11 @@ import datetime as dt
 import errno
 import inspect
 import logging
+import os
 import pickle
 import re
 import reprlib
 import warnings
-from os import cpu_count
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -29,7 +29,6 @@ from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
 from utilsforecast.validation import ensure_time_dtype, validate_freq
 
-import statsforecast.config as sf_config
 from .utils import ConformalIntervals
 
 # %% ../nbs/src/core/core.ipynb 7
@@ -408,7 +407,7 @@ class GroupedArray(BaseGroupedArray):
 # %% ../nbs/src/core/core.ipynb 24
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
-        actual_n_jobs = cpu_count()
+        actual_n_jobs = os.cpu_count()
     else:
         actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
@@ -435,10 +434,14 @@ def _maybe_warn_sort_df(sort_df):
 def _warn_id_as_idx():
     warnings.warn(
         "In a future version the predictions will have the id as a column. "
-        "You can set `statsforecast.config.id_as_index = False` "
+        "You can set the `NIXTLA_ID_AS_COL` environment variable "
         "to adopt the new behavior and to suppress this warning.",
         category=DeprecationWarning,
     )
+
+
+def _id_as_idx() -> bool:
+    return not bool(os.getenv("NIXTLA_ID_AS_COL", ""))
 
 # %% ../nbs/src/core/core.ipynb 28
 _param_descriptions = {
@@ -645,7 +648,7 @@ class _StatsForecast:
         uids = ufp.repeat(self.uids, n=h)
         df = self.df_constructor({self.id_col: uids, self.time_col: dates})
         if isinstance(df, pd.DataFrame):
-            if sf_config.id_as_index:
+            if _id_as_idx():
                 _warn_id_as_idx()
                 df = df.set_index(self.id_col)
             else:
@@ -876,7 +879,7 @@ class _StatsForecast:
         )
         df[cols] = self.fcst_fitted_values_["values"]
         if isinstance(df, pd.DataFrame):
-            if sf_config.id_as_index:
+            if _id_as_idx():
                 _warn_id_as_idx()
                 df = df.set_index(self.id_col)
             else:
@@ -1002,7 +1005,7 @@ class _StatsForecast:
         fcsts_df = ufp.assign_columns(
             fcsts_df, res_fcsts["cols"], res_fcsts["forecasts"]
         )
-        if isinstance(fcsts_df, pd.DataFrame) and sf_config.id_as_index:
+        if isinstance(fcsts_df, pd.DataFrame) and _id_as_idx():
             _warn_id_as_idx()
             fcsts_df = fcsts_df.set_index(id_col)
         return fcsts_df
@@ -1048,7 +1051,7 @@ class _StatsForecast:
         df = ufp.assign_columns(df, self.cv_fitted_values_["cols"], fitted_vals[idxs])
         df = ufp.drop_index_if_pandas(df)
         if isinstance(df, pd.DataFrame):
-            if sf_config.id_as_index:
+            if _id_as_idx():
                 _warn_id_as_idx()
                 df = df.set_index(self.id_col)
             else:
