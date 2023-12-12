@@ -2646,7 +2646,7 @@ class HistoricAverage(_TS):
 
         Also known as mean method. Uses a simple average of all past observations.
         Assuming there are $t$ observations, the one-step forecast is given by:
-        $$ \hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j $$
+        $$\hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j$$
 
         References
         ----------
@@ -3054,7 +3054,7 @@ class RandomWalkWithDrift(_TS):
         A variation of the naive method allows the forecasts to change over time.
         The amout of change, called drift, is the average change seen in the historical data.
 
-        $$ \hat{y}_{t+1} = y_t+\\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \\frac{y_t-y_1}{t-1} $$
+        $$\hat{y}_{t+1} = y_t+\\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \\frac{y_t-y_1}{t-1}$$
 
         From the previous equation, we can see that this is equivalent to extrapolating a line between
         the first and the last observation.
@@ -3999,7 +3999,7 @@ class CrostonClassic(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter
         of both components is set equal to 0.1
@@ -4178,7 +4178,7 @@ class CrostonOptimized(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method where the smooting paramater is optimally
         selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
@@ -4345,11 +4345,11 @@ class CrostonSBA(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method that uses a debiasing factor, so that the
         forecast is given by:
-        $$ \hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         References
         ----------
@@ -5310,11 +5310,11 @@ class GARCH(_TS):
     A method for modeling time series that exhibit non-constant volatility over time.
     The GARCH model assumes that at time $t$, $y_t$ is given by:
 
-    $$ y_t = v_t \sigma_t$$
+    $$y_t = v_t \sigma_t$$
 
     with
 
-    $$ \sigma_t^2 = w + \sum_{i=1}^p a_i y_{t-i}^2 + \sum_{j=1}^q b_j \sigma_{t-j}^2$$.
+    $$\sigma_t^2 = w + \sum_{i=1}^p a_i y_{t-i}^2 + \sum_{j=1}^q b_j \sigma_{t-j}^2$$.
 
     Here {$v_t$} is a sequence of iid random variables with zero mean and unit variance.
     The coefficients $w$, $a_i$, $i=1,...,p$, and $b_j$, $j=1,...,q$ must satisfy the following conditions:
@@ -5505,11 +5505,11 @@ class ARCH(GARCH):
     A particular case of the GARCH(p,q) model where $q=0$.
     It assumes that at time $t$, $y_t$ is given by:
 
-    $$ y_t = \epsilon_t \sigma_t$$
+    $$y_t = \epsilon_t \sigma_t$$
 
     with
 
-    $$ \sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
+    $$\sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
 
     Here $\epsilon_t$ is a sequence of iid random variables with zero mean and unit variance.
     The coefficients $w$ and $a_i$, $i=1,...,p$ must be nonnegative and $\sum_{k=1}^p a_k < 1$.
