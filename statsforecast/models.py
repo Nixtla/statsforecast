@@ -2646,12 +2646,7 @@ class HistoricAverage(_TS):
 
         Also known as mean method. Uses a simple average of all past observations.
         Assuming there are $t$ observations, the one-step forecast is given by:
-        
-        $$ 
-
-        \hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j
-        
-        $$
+        $$\hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j$$
 
         References
         ----------
