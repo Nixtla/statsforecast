@@ -61,7 +61,7 @@ jobs:
         run: pip install ./
 
       - name: Run local tests
-        run: nbdev_test --n_workers 0 --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0 --do_print --timing
+        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0 --do_print --timing
 
   run-tests:
     runs-on: ${{ matrix.os }}
@@ -86,7 +86,7 @@ jobs:
         run: pip install ./
 
       - name: Run tests 
-        run: nbdev_test --n_workers 0 --skip_file_re '(distributed).*.ipynb' --pause 1.0 --do_print --timing
+        run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0 --do_print --timing
 
       - name: Run integration tests
         run: |
