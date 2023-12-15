@@ -18,6 +18,7 @@ dependencies:
   - plotly
   - pip:
     - fugue[dask,ray]
+    - mlflavors
     - nbdev
     - plotly-resampler
     - polars

@@ -56,18 +56,28 @@
       "group": "How to Guides",
       "pages": [
         "docs/how-to-guides/automatic_forecasting.html",
-        "docs/how-to-guides/amazonstatsforecast.html",
-        "docs/how-to-guides/autoarima_vs_prophet.html",
-        "docs/how-to-guides/dask.html",
-        "docs/how-to-guides/ets_ray_m5.html",
         "docs/how-to-guides/exogenous.html",
         "docs/how-to-guides/generating_features.html",
         "docs/how-to-guides/migrating_R",
         "docs/how-to-guides/mlflow.html",
-        "docs/how-to-guides/numba_cache.html",
-        "docs/how-to-guides/prophet_spark_m5.html",
-        "docs/how-to-guides/ray.html",
-        "docs/how-to-guides/spark.html"
+        "docs/how-to-guides/numba_cache.html"
+      ]
+    },
+    {
+      "group": "Distributed",
+      "pages": [
+        "docs/distributed/dask.html",
+        "docs/distributed/ray.html",
+        "docs/distributed/spark.html"
+      ]
+    },
+    {
+      "group": "Experiments",
+      "pages": [
+        "docs/experiments/amazonstatsforecast.html",
+        "docs/experiments/autoarima_vs_prophet.html",
+        "docs/experiments/ets_ray_m5.html",
+        "docs/experiments/prophet_spark_m5.html"
       ]
     },
     {
@@ -106,7 +116,8 @@
         "src/core/core.html",
         "src/core/distributed.fugue.html",
         "src/core/models.html",
-        "src/core/models_intro"
+        "src/core/models_intro",
+        "src/feature_engineering.html"
       ]
     },
     {
