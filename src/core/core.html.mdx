@@ -84,6 +84,12 @@ panel_df.groupby('unique_id').tail(4)
 
 
 ```python
+if 'NIXTLA_ID_AS_COL' in os.environ:
+    del os.environ['NIXTLA_ID_AS_COL']
+```
+
+
+```python
 os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 

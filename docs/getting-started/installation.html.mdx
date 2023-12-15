@@ -57,3 +57,15 @@ $ conda env create -f environment.yml
 $ conda activate statsforecast
 ```
 
+## Extras
+
+The following features can also be installed by specifying the extra
+inside the install command,
+e.g. `pip install 'statsforecast[extra1,extra2]'`
+
+-   **polars**: provide polars dataframes to StatsForecast.
+-   **plotly**: use `StatsForecast.plot` with the plotly backend.
+-   **dask**: perform distributed forecasting with dask.
+-   **spark**: perform distributed forecasting with spark.
+-   **ray**: perform distributed forecasting with ray.
+
