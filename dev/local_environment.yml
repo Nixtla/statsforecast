@@ -16,7 +16,6 @@ dependencies:
   - tabulate
   - plotly
   - pip:
-    - mlflavors
     - nbdev
     - plotly-resampler
     - polars
