@@ -24,10 +24,17 @@ Use pip to install statsforecast and load Air Passangers dataset as an
 example
 
 ```python
-!pip install statsforecast
+# uncomment the following line to install the library
+# %pip install statsforecast
+```
 
+
+```python
 from statsforecast.utils import AirPassengersDF
+```
 
+
+```python
 Y_df = AirPassengersDF
 ```
 
@@ -61,7 +68,7 @@ models = [
 sf = StatsForecast(
     models=models, # models for forecasting
     freq='M',  # frequency of the data
-    n_jobs=-1  # number of jobs to run in parallel, -1 means using all processors
+    n_jobs=1  # number of jobs to run in parallel, -1 means using all processors
 )
 ```
 
@@ -73,10 +80,14 @@ save the fittted models
 ```python
 # Generate forecasts for the specified horizon using the sf object
 Y_hat_df = sf.forecast(df=Y_df, h=horizon) # forecast data
-
 # Display the first few rows of the forecast DataFrame
 Y_hat_df.head() # preview of forecasted data
 ```
+
+|           | ds         | AutoARIMA  | AutoETS    | AutoTheta  | CES       |
+|-----------|------------|------------|------------|------------|-----------|
+| unique_id |            |            |            |            |           |
+| 1.0       | 1961-01-31 | 444.300049 | 442.357178 | 442.940796 | 453.03418 |
 
 ## 4. b) Forecast with fit and predict
 
@@ -91,6 +102,11 @@ Y_hat_df = sf.predict(h=horizon) # Predict or forecast 'horizon' steps ahead usi
 
 Y_hat_df.head() # Preview the first few rows of the forecasted data
 ```
+
+|           | ds         | AutoARIMA  | AutoETS    | AutoTheta  | CES       |
+|-----------|------------|------------|------------|------------|-----------|
+| unique_id |            |            |            |            |           |
+| 1.0       | 1961-01-31 | 444.300049 | 442.357178 | 442.940796 | 453.03418 |
 
 ## References
 

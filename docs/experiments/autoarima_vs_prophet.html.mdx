@@ -99,7 +99,7 @@ test = test.query('unique_id in @uids')
 plot_series(train, test, max_ids=n_series)
 ```
 
-![](/docs/how-to-guides/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-7-output-1.png)
+![](/docs/experiments/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-7-output-1.png)
 
 Would an autorregresive model be the right choice for our data? There is
 no doubt that we observe seasonal periods. The autocorrelation function
@@ -110,7 +110,7 @@ observe a decreasing correlation to opt for an AR model.
 plot_autocorrelation_grid(train)
 ```
 
-![](/docs/how-to-guides/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-8-output-1.png)
+![](/docs/experiments/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-8-output-1.png)
 
 Thus, we observe a high autocorrelation for previous lags and also for
 the seasonal lags. Therefore, we will let `auto_arima` to handle our
@@ -307,7 +307,7 @@ test = test.merge(forecasts, how='left', on=['unique_id', 'ds'])
 plot_series(train, test)
 ```
 
-![](/docs/how-to-guides/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-16-output-1.png)
+![](/docs/experiments/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-16-output-1.png)
 
 ## Alternatives
 
@@ -391,7 +391,7 @@ test = test.merge(forecast_pmdarima, how='left', on=['unique_id', 'ds'])
 plot_series(train, test, plot_random=False)
 ```
 
-![](/docs/how-to-guides/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-24-output-1.png)
+![](/docs/experiments/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-24-output-1.png)
 
 ### Prophet
 
@@ -510,7 +510,7 @@ test = test.merge(forecast_prophet, how='left', on=['unique_id', 'ds'])
 plot_series(train, test)
 ```
 
-![](/docs/how-to-guides/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-30-output-1.png)
+![](/docs/experiments/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-30-output-1.png)
 
 ### Evaluation
 
@@ -580,7 +580,7 @@ for ax in axes:
         label.set_fontsize(20)
 ```
 
-![](/docs/how-to-guides/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-35-output-1.png)
+![](/docs/experiments/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-35-output-1.png)
 
 ```python
 fig.savefig('computational-efficiency.png', dpi=300)

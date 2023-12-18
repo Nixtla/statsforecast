@@ -15,6 +15,7 @@ function to extract those features for training and then use their
 future values for inference.
 
 ```python
+import os
 from functools import partial
 
 import pandas as pd
@@ -28,7 +29,9 @@ from utilsforecast.losses import smape, mase
 
 
 ```python
-statsforecast.config.id_as_index = False
+# this makes it so that the outputs of the predict methods have the id as a column 
+# instead of as the index
+os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 
@@ -53,7 +56,7 @@ model as external regressors. You can define the MSTL model to use and
 then provide it to the mstl_decomposition function.
 
 ```python
-freq = 'H'
+freq = 1
 season_length = 24
 horizon = 2 * season_length
 valid = df.groupby('unique_id').tail(horizon)
