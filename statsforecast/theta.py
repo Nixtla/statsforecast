@@ -687,7 +687,7 @@ def auto_theta(
         model["seas_forecast"] = dict(seas_forecast)
     return model
 
-# %% ../nbs/src/theta.ipynb 40
+# %% ../nbs/src/theta.ipynb 41
 def forward_theta(fitted_model, y):
     m = fitted_model["m"]
     model = fitted_model["modeltype"]
