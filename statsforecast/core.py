@@ -934,6 +934,12 @@ class _StatsForecast:
                     "Can only use integer refit with models that implement the forward method. "
                     f"The following models do not implement the forward method: {no_forward}."
                 )
+            if self.fallback_model is not None and not hasattr(
+                self.fallback_model, "forward"
+            ):
+                raise ValueError(
+                    "Can only use integer refit with a fallback model that implements the forward method."
+                )
         self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
             df=df,
