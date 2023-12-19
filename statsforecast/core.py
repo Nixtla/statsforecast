@@ -273,7 +273,9 @@ class GroupedArray(BaseGroupedArray):
                 disable=(not verbose),
                 total=len(steps),
             )
+            fitted_models = [None for _ in range(n_models)]
             for i_window, cutoff in iterable:
+                should_fit = i_window == 0 or (refit > 0 and i_window % refit == 0)
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size
                 y = grp[(cutoff - in_size_disp) : cutoff]
@@ -302,61 +304,41 @@ class GroupedArray(BaseGroupedArray):
                     kwargs = {}
                     if has_level:
                         kwargs["level"] = level
-                    if refit:
+                    # this is implemented like this because not all models have a forward method
+                    # so we can't do fit + forward
+                    if refit is True:
+                        forecast_kwargs = dict(
+                            h=h,
+                            y=y_train,
+                            X=X_train,
+                            X_future=X_future,
+                            fitted=fitted,
+                            **kwargs,
+                        )
                         try:
-                            res_i = model.forecast(
-                                h=h,
-                                y=y_train,
-                                X=X_train,
-                                X_future=X_future,
-                                fitted=fitted,
-                                **kwargs,
-                            )
+                            res_i = model.forecast(**forecast_kwargs)
                         except Exception as error:
-                            if fallback_model is not None:
-                                res_i = fallback_model.forecast(
-                                    h=h,
-                                    y=y_train,
-                                    X=X_train,
-                                    X_future=X_future,
-                                    fitted=fitted,
-                                    **kwargs,
-                                )
-                            else:
+                            if fallback_model is None:
                                 raise error
+                            res_i = fallback_model.forecast(**forecast_kwargs)
                     else:
-                        if i_window == 0:
-                            # for the first window we have to fit each model
+                        if should_fit:
                             try:
-                                model = model.fit(y=y_train, X=X_train)
+                                fitted_models[i_model] = model.fit(y=y_train, X=X_train)
                             except Exception as error:
-                                if fallback_model is not None:
-                                    fallback_model = fallback_model.fit(
-                                        y=y_train, X=X_train
-                                    )
-                                else:
+                                if fallback_model is None:
                                     raise error
-                        try:
-                            res_i = model.forward(
-                                h=h,
-                                y=y_train,
-                                X=X_train,
-                                X_future=X_future,
-                                fitted=fitted,
-                                **kwargs,
-                            )
-                        except Exception as error:
-                            if fallback_model is not None:
-                                res_i = fallback_model.forward(
-                                    h=h,
-                                    y=y_train,
-                                    X=X_train,
-                                    X_future=X_future,
-                                    fitted=fitted,
-                                    **kwargs,
+                                fitted_models[i_model] = fallback_model.new().fit(
+                                    y=y_train, X=X_train
                                 )
-                            else:
-                                raise error
+                        res_i = fitted_models[i_model].forward(
+                            h=h,
+                            y=y_train,
+                            X=X_train,
+                            X_future=X_future,
+                            fitted=fitted,
+                            **kwargs,
+                        )
                     cols_m = [
                         key
                         for key in res_i.keys()
