@@ -5,12 +5,19 @@ title: FugueBackend
 ---
 
 ```python
+import os
+
 from statsforecast.core import StatsForecast
 from statsforecast.models import ( 
     AutoARIMA,
     AutoETS,
 )
 from statsforecast.utils import generate_series
+```
+
+
+```python
+os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 
@@ -43,8 +50,15 @@ series['unique_id'] = series['unique_id'].astype(str)
 
 # Convert to Spark
 sdf = spark.createDataFrame(series)
+```
 
+
+```python
 # Returns a Spark DataFrame
+sf = StatsForecast(
+    models=[AutoETS(season_length=7)],
+    freq='D',
+)
 sf.cross_validation(df=sdf, h=horizon, step_size = 24,
     n_windows = 2, level=[90]).show()
 ```
@@ -57,7 +71,7 @@ sf.cross_validation(df=sdf, h=horizon, step_size = 24,
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L57"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L58"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### FugueBackend
@@ -87,7 +101,7 @@ rewrites.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L87"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L296"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### FugueBackend.forecast
@@ -127,7 +141,7 @@ StatsForecast models.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L183"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L456"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### FugueBackend.cross_validation
@@ -198,7 +212,7 @@ from statsforecast.utils import generate_series
 
 ```python
 # Generate Synthetic Panel Data
-df = generate_series(10).reset_index()
+df = generate_series(10)
 df['unique_id'] = df['unique_id'].astype(str)
 df = dd.from_pandas(df, npartitions=10)
 
@@ -231,6 +245,13 @@ numeric, and represents the measurement we wish to forecast. And the
 ```python
 # Distributed predictions with FugueBackend.
 sf.forecast(df=df, h=12).compute()
+```
+
+
+```python
+sf = StatsForecast(models=[Naive()], freq='D')
+xx = sf.forecast(df=df, h=12, fitted=True).compute()
+yy = sf.forecast_fitted_values().compute()
 ```
 
 ### Distributed Cross-Validation
