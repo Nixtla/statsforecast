@@ -849,12 +849,9 @@ def arima(
         if seasonal["period"] > 1 and seasonal["order"][1] > 0:
             dx = diff(dx, seasonal["period"], seasonal["order"][1])
             dxreg = diff(dxreg, seasonal["period"], seasonal["order"][1])
-        if len(dx) > dxreg.shape[1]:
-            model = sm.OLS(dx, dxreg)
-            result = model.fit()
-            fit = {"coefs": result.params, "stderrs": result.bse}
-        else:
-            raise RuntimeError
+        model = sm.OLS(dx, dxreg)
+        result = model.fit()
+        fit = {"coefs": result.params, "stderrs": result.bse}
         isna = np.isnan(x) | np.isnan(xreg).any(1)
         n_used = (~isna).sum() - len(Delta)
         init0 = np.append(init0, fit["coefs"])
@@ -1210,7 +1207,7 @@ def myarima(
     missing = np.isnan(x)
     missing_idxs = np.where(~missing)[0]
     firstnonmiss = missing_idxs.min()
-    lastnonmiss = missing_idxs.max()
+    lastnonmiss = missing_idxs.max() + 1
     n = np.sum(~missing[firstnonmiss:lastnonmiss])
     m = seasonal["period"]
     seas_order = seasonal["order"]
@@ -1481,7 +1478,7 @@ def Arima(
     missing = np.isnan(tmp["residuals"])
     nonmiss_idxs = np.where(~missing)[0]
     firstnonmiss = np.min(nonmiss_idxs)
-    lastnonmiss = np.max(nonmiss_idxs)
+    lastnonmiss = np.max(nonmiss_idxs) + 1
     n = np.sum(~missing[firstnonmiss:lastnonmiss])
     nstar = n - tmp["arma"][5] - tmp["arma"][6] * tmp["arma"][4]
     tmp["aicc"] = tmp["aic"] + 2 * npar * (nstar / (nstar - npar - 1) - 1)
@@ -1813,7 +1810,7 @@ def auto_arima_f(
     missing = np.isnan(x)
     nonmissing_idxs = np.where(~missing)[0]
     firstnonmiss = nonmissing_idxs.min()
-    lastnonmiss = nonmissing_idxs.max()
+    lastnonmiss = nonmissing_idxs.max() + 1
     series_len = int(np.sum(~missing[firstnonmiss:lastnonmiss]))
     x = x[firstnonmiss:]
     if xreg is not None:
