@@ -87,6 +87,7 @@ def pipeline_fitted(series, X_df, horizon):
     distributed_fitted = (
         fa.as_pandas(sf.forecast_fitted_values())
         .sort_values(['unique_id', 'ds'])
+        .reset_index(drop=True)
         [fitted.columns]
         .astype(fitted.dtypes)  # fugue returns nullable and pyarrow dtypes
     )
