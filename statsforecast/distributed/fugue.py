@@ -122,7 +122,7 @@ class FugueBackend(ParallelBackend):
             result = result.reset_index()
         return model, result
 
-    def _forecast_series(
+    def _forecast_noX(
         self,
         df: pd.DataFrame,
         *,
@@ -152,7 +152,7 @@ class FugueBackend(ParallelBackend):
         )
         return result
 
-    def _forecast_series_fitted(
+    def _forecast_noX_fitted(
         self,
         df: pd.DataFrame,
         *,
@@ -183,7 +183,7 @@ class FugueBackend(ParallelBackend):
         fitted_vals = model.forecast_fitted_values()
         return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
 
-    def _forecast_series_X(
+    def _forecast_X(
         self,
         df: pd.DataFrame,
         X_df: pd.DataFrame,
@@ -214,7 +214,7 @@ class FugueBackend(ParallelBackend):
         )
         return result
 
-    def _forecast_series_X_fitted(
+    def _forecast_X_fitted(
         self,
         df: pd.DataFrame,
         X_df: pd.DataFrame,
@@ -229,15 +229,12 @@ class FugueBackend(ParallelBackend):
         time_col,
         target_col,
     ) -> List[List[Any]]:
-        model = _StatsForecast(
-            models=models,
-            freq=freq,
-            fallback_model=fallback_model,
-            n_jobs=1,
-        )
-        result = model.forecast(
+        model, result = self._forecast(
             df=df,
             X_df=X_df,
+            models=models,
+            fallback_model=fallback_model,
+            freq=freq,
             h=h,
             level=level,
             fitted=True,
@@ -246,9 +243,8 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if _id_as_idx():
-            result = result.reset_index()
-        return result
+        fitted_vals = model.forecast_fitted_values()
+        return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
 
     def _get_output_schema(
         self,
@@ -373,15 +369,15 @@ class FugueBackend(ParallelBackend):
         )
         if not fitted:
             if X_df is None:
-                res = transform(df, self._forecast_series, **tfm_kwargs)
+                res = transform(df, self._forecast_noX, **tfm_kwargs)
             else:
-                res = _cotransform(df, X_df, self._forecast_series_X, **tfm_kwargs)
+                res = _cotransform(df, X_df, self._forecast_X, **tfm_kwargs)
         else:
             if X_df is None:
-                res_with_fitted = transform(df, _forecast_series_fitted, **tfm_kwargs)
+                res_with_fitted = transform(df, self._forecast_noX_fitted, **tfm_kwargs)
             else:
                 res_with_fitted = _cotransform(
-                    df, X_df, self._forecast_series_X_fitted, **tfm_kwargs
+                    df, X_df, self._forecast_X_fitted, **tfm_kwargs
                 )
             self._results = res_with_fitted
             res = transform(

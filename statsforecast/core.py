@@ -1546,7 +1546,7 @@ class StatsForecast(_StatsForecast):
         if hasattr(self, "_backend"):
             res = self._backend.forecast_fitted_values()
         else:
-            res = super().forecast_vitted_values()
+            res = super().forecast_fitted_values()
         return res
 
     def cross_validation(
