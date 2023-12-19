@@ -849,12 +849,9 @@ def arima(
         if seasonal["period"] > 1 and seasonal["order"][1] > 0:
             dx = diff(dx, seasonal["period"], seasonal["order"][1])
             dxreg = diff(dxreg, seasonal["period"], seasonal["order"][1])
-        if len(dx) > dxreg.shape[1]:
-            model = sm.OLS(dx, dxreg)
-            result = model.fit()
-            fit = {"coefs": result.params, "stderrs": result.bse}
-        else:
-            raise RuntimeError
+        model = sm.OLS(dx, dxreg)
+        result = model.fit()
+        fit = {"coefs": result.params, "stderrs": result.bse}
         isna = np.isnan(x) | np.isnan(xreg).any(1)
         n_used = (~isna).sum() - len(Delta)
         init0 = np.append(init0, fit["coefs"])
@@ -1210,7 +1207,7 @@ def myarima(
     missing = np.isnan(x)
     missing_idxs = np.where(~missing)[0]
     firstnonmiss = missing_idxs.min()
-    lastnonmiss = missing_idxs.max()
+    lastnonmiss = missing_idxs.max() + 1
     n = np.sum(~missing[firstnonmiss:lastnonmiss])
     m = seasonal["period"]
     seas_order = seasonal["order"]
