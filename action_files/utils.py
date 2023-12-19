@@ -1,4 +1,6 @@
 import fugue.api as fa
+import pandas as pd
+
 from statsforecast.core import StatsForecast
 from statsforecast.models import ( 
     ADIDA,
@@ -23,24 +25,24 @@ from statsforecast.models import (
 
 def pipeline(series, X_df, n_series, horizon, id_col='unique_id', time_col='ds', target_col='y'):
     models = [
-		ADIDA(),
+        ADIDA(),
         AutoARIMA(season_length=7),
         ARIMA(season_length=7, order=(0, 1, 2)),
-		CrostonClassic(),
+        CrostonClassic(),
         CrostonOptimized(),
-		CrostonSBA(),
+        CrostonSBA(),
         AutoETS(season_length=7),
-		HistoricAverage(),
-		IMAPA(),
+        HistoricAverage(),
+        IMAPA(),
         Naive(),
-		RandomWalkWithDrift(),
-		SeasonalExponentialSmoothing(season_length=7, alpha=0.1),
-		SeasonalNaive(season_length=7),
-		SeasonalWindowAverage(season_length=7, window_size=4),
-		SimpleExponentialSmoothing(alpha=0.1),
-		TSB(alpha_d=0.1, alpha_p=0.3),
-		WindowAverage(window_size=4)
-	]
+	RandomWalkWithDrift(),
+	SeasonalExponentialSmoothing(season_length=7, alpha=0.1),
+	SeasonalNaive(season_length=7),
+	SeasonalWindowAverage(season_length=7, window_size=4),
+	SimpleExponentialSmoothing(alpha=0.1),
+	TSB(alpha_d=0.1, alpha_p=0.3),
+	WindowAverage(window_size=4)
+    ]
     sf = StatsForecast(
         models=models,
         freq='D',
@@ -59,9 +61,7 @@ def pipeline(series, X_df, n_series, horizon, id_col='unique_id', time_col='ds',
     assert cv.columns.tolist() == [id_col, time_col, 'cutoff', target_col] + [m.alias for m in models]
 
 def pipeline_with_level(series, X_df, n_series, horizon):
-    models = [
-		AutoARIMA(season_length=7), 
-	]
+    models = [AutoARIMA(season_length=7)]
     sf = StatsForecast(
         models=models,
         freq='D',
@@ -75,3 +75,19 @@ def pipeline_with_level(series, X_df, n_series, horizon):
     cv = fa.as_pandas(sf.cross_validation(df=series, n_windows=n_windows, h=horizon, level=[80]))
     assert cv.shape[0] == n_series * n_windows * horizon
     assert cv.columns.tolist() == ['unique_id', 'ds', 'cutoff', 'y', 'AutoARIMA', 'AutoARIMA-lo-80', 'AutoARIMA-hi-80']
+
+def pipeline_fitted(series, X_df, horizon):
+    models = [SeasonalNaive(season_length=7)]
+    pd_series = fa.as_pandas(series)
+    pd_X = None if X_df is None else fa.as_pandas(X_df)
+    sf = StatsForecast(models=models, freq='D')
+    sf.forecast(df=pd_series, h=horizon, X_df=pd_X, level=[80, 90], fitted=True)
+    fitted = sf.forecast_fitted_values()
+    sf.forecast(df=series, h=horizon, X_df=X_df, level=[80, 90], fitted=True)
+    distributed_fitted = (
+        fa.as_pandas(sf.forecast_fitted_values())
+        .sort_values(['unique_id', 'ds'])
+        [fitted.columns]
+        .astype(fitted.dtypes)  # fugue returns nullable and pyarrow dtypes
+    )
+    pd.testing.assert_frame_equal(fitted, distributed_fitted)

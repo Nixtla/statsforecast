@@ -181,6 +181,8 @@ class FugueBackend(ParallelBackend):
             target_col=target_col,
         )
         fitted_vals = model.forecast_fitted_values()
+        if _id_as_idx():
+            fitted_vals = fitted_vals.reset_index()
         return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
 
     def _forecast_X(
@@ -244,6 +246,8 @@ class FugueBackend(ParallelBackend):
             target_col=target_col,
         )
         fitted_vals = model.forecast_fitted_values()
+        if _id_as_idx():
+            fitted_vals = fitted_vals.reset_index()
         return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
 
     def _get_output_schema(
@@ -348,6 +352,9 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
+        self._fitted_schema = self._fcst_schema + fa.get_schema(df).extract(
+            [target_col]
+        )
         tfm_schema = "a:binary, b:binary" if fitted else self._fcst_schema
         params = dict(
             models=models,
@@ -397,7 +404,7 @@ class FugueBackend(ParallelBackend):
         return transform(
             self._results,
             FugueBackend._retrieve_fitted_df,
-            schema=self._fcst_schema,
+            schema=self._fitted_schema,
             engine=self._engine,
         )
 
