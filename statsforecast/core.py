@@ -467,8 +467,9 @@ _param_descriptions = {
             Length of test size. If passed, set `n_windows=None`.""",
     "input_size": """input_size : int, optional (default=None)
             Input size for each window, if not none rolled windows.""",
-    "refit": """refit : bool (default=True)
-            Wether or not refit the model for each window.""",
+    "refit": """refit : bool or int (default=True)
+            Wether or not refit the model for each window.
+            If int, train the models every `refit` windows.""",
 }
 
 # %% ../nbs/src/core/core.ipynb 29
@@ -878,7 +879,7 @@ class _StatsForecast:
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
-        refit: bool = True,
+        refit: Union[bool, int] = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
@@ -926,6 +927,19 @@ class _StatsForecast:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
+        if not isinstance(refit, bool):
+            no_forward = [m for m in self.models if not hasattr(m, "forward")]
+            if no_forward:
+                raise ValueError(
+                    "Can only use integer refit with models that implement the forward method. "
+                    f"The following models do not implement the forward method: {no_forward}."
+                )
+            if self.fallback_model is not None and not hasattr(
+                self.fallback_model, "forward"
+            ):
+                raise ValueError(
+                    "Can only use integer refit with a fallback model that implements the forward method."
+                )
         self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
             df=df,
@@ -1541,7 +1555,7 @@ class StatsForecast(_StatsForecast):
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
-        refit: bool = True,
+        refit: Union[bool, int] = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
