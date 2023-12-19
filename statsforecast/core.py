@@ -1549,7 +1549,7 @@ class StatsForecast(_StatsForecast):
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
-        refit: bool = True,
+        refit: Union[bool, int] = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
