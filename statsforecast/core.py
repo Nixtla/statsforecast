@@ -927,7 +927,7 @@ class _StatsForecast:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
-        if isinstance(refit, int):
+        if not isinstance(refit, bool):
             no_forward = [m for m in self.models if not hasattr(m, "forward")]
             if no_forward:
                 raise ValueError(
