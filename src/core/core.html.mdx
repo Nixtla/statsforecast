@@ -18,7 +18,7 @@ are:
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1478"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1492"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast
@@ -95,36 +95,6 @@ os.environ['NIXTLA_ID_AS_COL'] = '1'
 
 
 ```python
-renamer = {'unique_id': 'uid', 'ds': 'time', 'y': 'target'}
-kwargs = dict(id_col='uid', time_col='time', target_col='target')
-inverse_renamer = {v: k for k, v in renamer.items()}
-non_std_df = panel_df.rename(columns=renamer)
-
-def assert_equal_results(df1, df2):
-    pd.testing.assert_frame_equal(
-        df1.reset_index(),
-        df2.rename(columns=inverse_renamer),
-    )
-
-fcst = StatsForecast(models=[Naive()], freq='D')
-fcst.fit(df=non_std_df, **kwargs)
-non_std_preds = fcst.predict(h=1)
-non_std_preds2 = fcst.fit_predict(df=non_std_df, h=1, **kwargs)
-non_std_fcst = fcst.forecast(df=non_std_df, h=1, fitted=True, **kwargs)
-non_std_fitted = fcst.forecast_fitted_values()
-non_std_cv = fcst.cross_validation(df=non_std_df, h=1, fitted=True, **kwargs)
-non_std_fitted_cv = fcst.cross_validation_fitted_values()
-
-assert_equal_results(std_preds, non_std_preds)
-assert_equal_results(std_preds2, non_std_preds2)
-assert_equal_results(std_fcst, non_std_fcst)
-assert_equal_results(std_fitted, non_std_fitted)
-assert_equal_results(std_cv, non_std_cv)
-assert_equal_results(std_fitted_cv, non_std_fitted_cv)
-```
-
-
-```python
 # Declare list of instantiated StatsForecast estimators to be fitted
 # You can try other estimator's hyperparameters
 # You can try other methods from the `models.StatsForecast` collection
@@ -146,7 +116,7 @@ fcsts_df.groupby('unique_id').tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L580"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L581"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit
@@ -177,7 +147,7 @@ fitted models for later inspection.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L656"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L657"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## SatstForecast.predict
@@ -203,7 +173,7 @@ DataFrame `df`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L700"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L701"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit_predict
@@ -246,7 +216,7 @@ this method stores partial models outputs.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L766"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L767"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast
@@ -305,7 +275,7 @@ fcsts_df.groupby('unique_id').tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L839"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L840"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast_fitted_values
@@ -347,7 +317,7 @@ insample_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L871"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L872"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation
@@ -360,7 +330,8 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                  test_size:Optional[int]=None,
 >                                  input_size:Optional[int]=None,
 >                                  level:Optional[List[int]]=None,
->                                  fitted:bool=False, refit:bool=True,
+>                                  fitted:bool=False,
+>                                  refit:Union[bool,int]=True,
 >                                  sort_df:bool=True, prediction_intervals:O
 >                                  ptional[statsforecast.utils.ConformalInte
 >                                  rvals]=None, id_col:str='unique_id',
@@ -389,7 +360,7 @@ length and diversity.
 | input_size           | Optional  | None        | Input size for each window, if not none rolled windows.                                                                                                                                                      |
 | level                | Optional  | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                |
 | fitted               | bool      | False       | Store in-sample predictions.                                                                                                                                                                                 |
-| refit                | bool      | True        | Wether or not refit the model for each window.                                                                                                                                                               |
+| refit                | Union     | True        | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows.                                                                                                            |
 | sort_df              | bool      | True        | Sort `df` by ids and times.                                                                                                                                                                                  |
 | prediction_intervals | Optional  | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                      |
 | id_col               | str       | unique_id   | Column that identifies each serie.                                                                                                                                                                           |
@@ -419,7 +390,7 @@ rolled_fcsts_df.head(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L997"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1011"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation_fitted_values
@@ -461,7 +432,7 @@ insample_rolled_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1203"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1217"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.plot
@@ -503,7 +474,7 @@ Plot forecasts and insample values.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1284"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1298"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.save
@@ -525,7 +496,7 @@ make it reproducible.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1371"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1385"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.load
