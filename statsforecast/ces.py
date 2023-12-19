@@ -782,7 +782,7 @@ def auto_ces(
         raise Exception("no model able to be fitted")
     return model
 
-# %% ../nbs/src/ces.ipynb 36
+# %% ../nbs/src/ces.ipynb 37
 def forward_ces(fitted_model, y):
     m = fitted_model["m"]
     model = fitted_model["seasontype"]

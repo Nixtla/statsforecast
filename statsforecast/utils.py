@@ -238,7 +238,7 @@ AirPassengersDF = pd.DataFrame(
     }
 )
 
-# %% ../nbs/src/utils.ipynb 16
+# %% ../nbs/src/utils.ipynb 17
 @njit(nogil=NOGIL, cache=CACHE)
 def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
     out = np.empty(h, np.float32)
@@ -291,7 +291,7 @@ def _naive(
         return {"mean": mean, "fitted": fitted_vals}
     return {"mean": mean}
 
-# %% ../nbs/src/utils.ipynb 18
+# %% ../nbs/src/utils.ipynb 19
 # Functions used for calculating prediction intervals
 def _quantiles(level):
     level = np.asarray(level)

@@ -3,14 +3,14 @@
 # %% auto 0
 __all__ = ['garch_model', 'garch_forecast']
 
-# %% ../nbs/src/garch.ipynb 3
+# %% ../nbs/src/garch.ipynb 4
 import numpy as np
 from numba import njit
 from scipy.optimize import minimize
 
 from .utils import CACHE, NOGIL
 
-# %% ../nbs/src/garch.ipynb 6
+# %% ../nbs/src/garch.ipynb 7
 @njit(nogil=NOGIL, cache=CACHE)
 def generate_garch_data(n, w, alpha, beta):
     np.random.seed(1)
@@ -53,7 +53,7 @@ def generate_garch_data(n, w, alpha, beta):
 
     return y
 
-# %% ../nbs/src/garch.ipynb 11
+# %% ../nbs/src/garch.ipynb 12
 @njit(nogil=NOGIL, cache=CACHE)
 def garch_sigma2(x0, x, p, q):
     w = x0[0]
@@ -75,14 +75,14 @@ def garch_sigma2(x0, x, p, q):
 
     return sigma2
 
-# %% ../nbs/src/garch.ipynb 13
+# %% ../nbs/src/garch.ipynb 14
 @njit(nogil=NOGIL, cache=CACHE)
 def garch_cons(x0):
     # Constraints for GARCH model
     # alpha+beta < 1
     return 1 - (x0[1:].sum())
 
-# %% ../nbs/src/garch.ipynb 15
+# %% ../nbs/src/garch.ipynb 16
 @njit(nogil=NOGIL, cache=CACHE)
 def garch_loglik(x0, x, p, q):
     sigma2 = garch_sigma2(x0, x, p, q)
@@ -98,7 +98,7 @@ def garch_loglik(x0, x, p, q):
 
     return -loglik
 
-# %% ../nbs/src/garch.ipynb 17
+# %% ../nbs/src/garch.ipynb 18
 def garch_model(x, p, q):
     np.random.seed(1)
     x0 = np.repeat(0.1, p + q + 1)
@@ -128,7 +128,7 @@ def garch_model(x, p, q):
 
     return res
 
-# %% ../nbs/src/garch.ipynb 21
+# %% ../nbs/src/garch.ipynb 22
 def garch_forecast(mod, h):
     np.random.seed(1)
 

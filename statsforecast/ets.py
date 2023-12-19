@@ -1639,6 +1639,6 @@ def forecast_ets(obj, h, level=None):
         out = {**out, **pi}
     return out
 
-# %% ../nbs/src/ets.ipynb 45
+# %% ../nbs/src/ets.ipynb 46
 def forward_ets(fitted_model, y):
     return ets_f(y=y, m=fitted_model["m"], model=fitted_model)
