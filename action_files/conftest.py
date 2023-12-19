@@ -1,8 +1,12 @@
+import os
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from statsforecast.utils import generate_series
+
+os.environ['NIXTLA_ID_AS_COL'] = '1'
 
 
 @pytest.fixture

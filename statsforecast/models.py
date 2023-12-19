@@ -416,7 +416,7 @@ class AutoARIMA(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         mean = fitted_arima(self.model_)
         res = {"fitted": mean}
@@ -704,7 +704,7 @@ class AutoETS(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -974,7 +974,7 @@ class AutoCES(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -1210,7 +1210,7 @@ class AutoTheta(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -1483,7 +1483,7 @@ class ARIMA(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         mean = fitted_arima(self.model_)
         res = {"fitted": mean}
@@ -1903,7 +1903,7 @@ class SimpleExponentialSmoothing(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions.
 
         """
         res = {"fitted": self.model_["fitted"]}
@@ -2075,7 +2075,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         return res
@@ -2279,7 +2279,7 @@ class SeasonalExponentialSmoothing(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         return res
@@ -2479,7 +2479,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         return res
@@ -2646,7 +2646,7 @@ class HistoricAverage(_TS):
 
         Also known as mean method. Uses a simple average of all past observations.
         Assuming there are $t$ observations, the one-step forecast is given by:
-        $$ \hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j $$
+        $$\hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j$$
 
         References
         ----------
@@ -2746,7 +2746,7 @@ class HistoricAverage(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -2923,7 +2923,7 @@ class Naive(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -3054,7 +3054,7 @@ class RandomWalkWithDrift(_TS):
         A variation of the naive method allows the forecasts to change over time.
         The amout of change, called drift, is the average change seen in the historical data.
 
-        $$ \hat{y}_{t+1} = y_t+\\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \\frac{y_t-y_1}{t-1} $$
+        $$\hat{y}_{t+1} = y_t+\\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \\frac{y_t-y_1}{t-1}$$
 
         From the previous equation, we can see that this is equivalent to extrapolating a line between
         the first and the last observation.
@@ -3154,7 +3154,7 @@ class RandomWalkWithDrift(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -3339,7 +3339,7 @@ class SeasonalNaive(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -3535,7 +3535,7 @@ class WindowAverage(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         raise NotImplementedError
 
@@ -3585,7 +3585,7 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 277
+# %% ../nbs/src/core/models.ipynb 276
 @njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_window_average(
     y: np.ndarray,
@@ -3606,7 +3606,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/src/core/models.ipynb 278
+# %% ../nbs/src/core/models.ipynb 277
 class SeasonalWindowAverage(_TS):
     def __init__(
         self,
@@ -3724,7 +3724,7 @@ class SeasonalWindowAverage(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         raise NotImplementedError
 
@@ -3781,7 +3781,7 @@ class SeasonalWindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 291
+# %% ../nbs/src/core/models.ipynb 289
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3802,7 +3802,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 292
+# %% ../nbs/src/core/models.ipynb 290
 class ADIDA(_TS):
     def __init__(
         self,
@@ -3913,7 +3913,7 @@ class ADIDA(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         raise NotImplementedError
 
@@ -3965,7 +3965,7 @@ class ADIDA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 305
+# %% ../nbs/src/core/models.ipynb 302
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -3987,7 +3987,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 306
+# %% ../nbs/src/core/models.ipynb 303
 class CrostonClassic(_TS):
     def __init__(
         self,
@@ -3999,7 +3999,7 @@ class CrostonClassic(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter
         of both components is set equal to 0.1
@@ -4094,7 +4094,7 @@ class CrostonClassic(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         raise NotImplementedError
 
@@ -4145,7 +4145,7 @@ class CrostonClassic(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 318
+# %% ../nbs/src/core/models.ipynb 314
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4166,7 +4166,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 319
+# %% ../nbs/src/core/models.ipynb 315
 class CrostonOptimized(_TS):
     def __init__(
         self,
@@ -4178,7 +4178,7 @@ class CrostonOptimized(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method where the smooting paramater is optimally
         selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
@@ -4272,7 +4272,7 @@ class CrostonOptimized(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         raise NotImplementedError
 
@@ -4320,7 +4320,7 @@ class CrostonOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 331
+# %% ../nbs/src/core/models.ipynb 326
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -4333,7 +4333,7 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/src/core/models.ipynb 332
+# %% ../nbs/src/core/models.ipynb 327
 class CrostonSBA(_TS):
     def __init__(
         self,
@@ -4345,11 +4345,11 @@ class CrostonSBA(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$ \hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method that uses a debiasing factor, so that the
         forecast is given by:
-        $$ \hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t} $$
+        $$\hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         References
         ----------
@@ -4493,7 +4493,7 @@ class CrostonSBA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 344
+# %% ../nbs/src/core/models.ipynb 338
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4517,7 +4517,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 345
+# %% ../nbs/src/core/models.ipynb 339
 class IMAPA(_TS):
     def __init__(
         self,
@@ -4674,7 +4674,7 @@ class IMAPA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 357
+# %% ../nbs/src/core/models.ipynb 350
 @njit(nogil=NOGIL, cache=CACHE)
 def _tsb(
     y: np.ndarray,  # time series
@@ -4695,7 +4695,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 358
+# %% ../nbs/src/core/models.ipynb 351
 class TSB(_TS):
     def __init__(
         self,
@@ -4863,7 +4863,7 @@ class TSB(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 371
+# %% ../nbs/src/core/models.ipynb 363
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -4880,7 +4880,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/src/core/models.ipynb 372
+# %% ../nbs/src/core/models.ipynb 364
 class MSTL(_TS):
     """MSTL model.
 
@@ -5026,7 +5026,7 @@ class MSTL(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = self.trend_forecaster.predict_in_sample(level=level)
         seas = self.model_.filter(regex="seasonal*").sum(axis=1).values
@@ -5155,7 +5155,7 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/src/core/models.ipynb 389
+# %% ../nbs/src/core/models.ipynb 381
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -5192,7 +5192,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 403
+# %% ../nbs/src/core/models.ipynb 395
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -5229,7 +5229,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 417
+# %% ../nbs/src/core/models.ipynb 409
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -5266,7 +5266,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 431
+# %% ../nbs/src/core/models.ipynb 423
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -5303,20 +5303,20 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 446
+# %% ../nbs/src/core/models.ipynb 438
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
     A method for modeling time series that exhibit non-constant volatility over time.
     The GARCH model assumes that at time $t$, $y_t$ is given by:
 
-    $$ y_t = v_t \sigma_t$$
+    $$y_t = v_t \sigma_t$$
 
     with
 
-    $$ \sigma_t^2 = w + \sum_{i=1}^p a_i y_{t-i}^2 + \sum_{j=1}^q b_j \sigma_{t-j}^2$$.
+    $$\sigma_t^2 = w + \sum_{i=1}^p a_i y_{t-i}^2 + \sum_{j=1}^q b_j \sigma_{t-j}^2$$.
 
-    Here {$v_t$} is a sequence of iid random variables with zero mean and unit variance.
+    Here $v_t$ is a sequence of iid random variables with zero mean and unit variance.
     The coefficients $w$, $a_i$, $i=1,...,p$, and $b_j$, $j=1,...,q$ must satisfy the following conditions:
 
     1. $w > 0$ and $a_i, b_j \geq 0$ for all $i$ and $j$.
@@ -5431,7 +5431,7 @@ class GARCH(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -5498,18 +5498,18 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 459
+# %% ../nbs/src/core/models.ipynb 451
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
     A particular case of the GARCH(p,q) model where $q=0$.
     It assumes that at time $t$, $y_t$ is given by:
 
-    $$ y_t = \epsilon_t \sigma_t$$
+    $$y_t = \epsilon_t \sigma_t$$
 
     with
 
-    $$ \sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
+    $$\sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
 
     Here $\epsilon_t$ is a sequence of iid random variables with zero mean and unit variance.
     The coefficients $w$ and $a_i$, $i=1,...,p$ must be nonnegative and $\sum_{k=1}^p a_k < 1$.
@@ -5545,7 +5545,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 470
+# %% ../nbs/src/core/models.ipynb 462
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -5632,7 +5632,7 @@ class ConstantModel(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         fitted = np.full(self.n_y, self.constant, dtype=np.float32)
         res = {"fitted": fitted}
@@ -5730,7 +5730,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 484
+# %% ../nbs/src/core/models.ipynb 476
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -5744,7 +5744,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 498
+# %% ../nbs/src/core/models.ipynb 490
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.
