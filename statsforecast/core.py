@@ -1526,8 +1526,8 @@ class StatsForecast(_StatsForecast):
             )
         assert df is not None
         engine = make_execution_engine(infer_by=[df])
-        backend = make_backend(engine)
-        return backend.forecast(
+        self._backend = make_backend(engine)
+        return self._backend.forecast(
             models=self.models,
             fallback_model=self.fallback_model,
             freq=self.freq,
@@ -1541,6 +1541,13 @@ class StatsForecast(_StatsForecast):
             time_col=time_col,
             target_col=target_col,
         )
+
+    def forecast_fitted_values(self):
+        if hasattr(self, "_backend"):
+            res = self._backend.forecast_fitted_values()
+        else:
+            res = super().forecast_fitted_values()
+        return res
 
     def cross_validation(
         self,
