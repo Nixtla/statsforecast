@@ -235,6 +235,7 @@ makeTBATSFMatrix <- function(alpha, beta=NULL, small.phi=NULL, seasonal.periods=
 }
 
 calcLikelihoodTBATS <- function(param.vector, opt.env, use.beta, use.small.phi, seasonal.periods, param.control, p=0, q=0, tau=0, bc.lower=0, bc.upper=1) {
+  print(param.vector)
   # param vector should be as follows: Box-Cox.parameter, alpha, beta, small.phi, gamma.vector, ar.coefs, ma.coefs
   # Put the components of the param.vector into meaningful individual variables
   paramz <- unParameteriseTBATS(param.vector, param.control) 
@@ -291,7 +292,6 @@ calcLikelihoodTBATS <- function(param.vector, opt.env, use.beta, use.small.phi, 
   
   assign("D", (opt.env$F - opt.env$g %*% opt.env$w.transpose), envir = opt.env)
   if (checkAdmissibility(opt.env, box.cox = box.cox.parameter, small.phi = small.phi, ar.coefs = ar.coefs, ma.coefs = ma.coefs, tau = sum(seasonal.periods), bc.lower = bc.lower, bc.upper = bc.upper)) {
-    #print(log.likelihood)
     return(log.likelihood)
   } else {
     #print("hi")

@@ -1,42 +1,26 @@
-
-setwd("~/Documents/tbats")
+source("/hdd/github/tbats/tbats_files/tbats_functions.R")
 
 library(fpp2)
 library(lubridate)
+library(tidyr)
 
 #------------------------------------------------------------------------------*
 # Load data 
 
 # AirPassengers 
 y <- AirPassengers
-seasonal.periods <- c(12)
-
-# Electricity consumption 
-pjm <- read.csv("/Users/marianamenchero/Documents/statsforecast_v1/nbs/tbats.files/PJMW_hourly.csv")
-pjm$Datetime <- ymd_hms(pjm$Datetime)
-
-msts_cons <- pjm$PJMW_MW %>% 
-  msts(seasonal.periods = c(24, 24*7))
-
-y <- msts_cons
-y <- msts_cons %>% head(24*7*3)
-seasonal.periods <- c(24, 24*7)
-#seasonal.perios <- c(1)
-
-# Call center 
-y <- calls %>%
-  subset(start=length(calls)-2000)
-seasonal.periods <- c(169, 169*5)
+seasonal.periods <- 12L
 #------------------------------------------------------------------------------*
-ar.coefs <- c(1.51, -0.55)
-ma.coefs <- c(-0.314)
+ar.coefs <- NULL
+ma.coefs <- NULL
+# ar.coefs <- c(1.51, -0.55)
+# ma.coefs <- c(-0.314)
+# ar.coefs <- NULL
+# ma.coefs <- c(0, 0)
 
-#ar.coefs <- NULL
-#ma.coefs <- NULL
-
-use.trend <- FALSE
-use.damped.trend <- FALSE
-use.box.cox <- TRUE
+use.trend <- TRUE
+use.damped.trend <- TRUE
+use.box.cox <- FALSE
 use.beta <- use.trend
 use.damping <- use.damped.trend
 use.small.phi <- use.damping 
@@ -47,9 +31,7 @@ bc.upper <- 1
 x.nought <- NULL
 biasadj <- FALSE
 
-#k.vector <- rep(1, length(seasonal.periods))
-k.vector <- c(5,1)
-#k.vector <- c(5)
+k.vector <- 5L
 
 fitSpecificTBATS <- function(y, use.box.cox, use.beta, use.damping, seasonal.periods=NULL, k.vector=NULL, starting.params=NULL, x.nought=NULL, ar.coefs=NULL, ma.coefs=NULL, init.box.cox=NULL, bc.lower=0, bc.upper=1, biasadj=FALSE) {
   if (!is.null(seasonal.periods)) {
@@ -308,7 +290,7 @@ fitSpecificTBATS <- function(y, use.box.cox, use.beta, use.damping, seasonal.per
     fitted.values <- InvBoxCox(fitted.values.and.errors$y.hat, lambda = lambda, biasadj, variance)
     attr(lambda, "biasadj") <- biasadj
     # e <- InvBoxCox(e, lambda=lambda)
-    ee <- y - fitted.values
+    ee <- as.vector(y) - fitted.values
   } else { # else if we are not using the Box-Cox transformation
     # Optimise the likelihood function
     if (length(param.vector$vect) > 1) {
@@ -357,17 +339,17 @@ fitSpecificTBATS <- function(y, use.box.cox, use.beta, use.damping, seasonal.per
   
   #----------------------------------------------------------------------------*
   # Plot fitted values (single frequency)
-  fits <- fitted.values.and.errors$y.hat
-  fits_trans <- InvBoxCox(fits, paramz$lambda)
-  res <- ts(as.numeric(fits_trans), frequency = seasonal.periods[1])
-  autoplot(y)+autolayer(res)+labs(title = paste0('k.vector = ', k.vector))
-  k.vector 
-  
-  # Plot fitted values for electricity consumption only
-  fits <- fitted.values.and.errors$y.hat
-  fits_trans <- InvBoxCox(fits, paramz$lambda)
-  res <- msts(as.numeric(fits_trans), seasonal.periods = c(24, 24*7))
-  autoplot(y)+autolayer(res)
+  # fits <- fitted.values.and.errors$y.hat
+  # fits_trans <- InvBoxCox(fits, paramz$lambda)
+  # res <- ts(c(fits_trans), start = start(y), frequency = seasonal.periods[1])
+  # autoplot(y)+autolayer(res)+labs(title = paste0('k.vector = ', k.vector))
+  # k.vector 
+  # 
+  # # Plot fitted values for electricity consumption only
+  # fits <- fitted.values.and.errors$y.hat
+  # fits_trans <- InvBoxCox(fits, paramz$lambda)
+  # res <- msts(c(fits_trans), start = start(y), seasonal.periods = c(24, 24*7))
+  # autoplot(y)+autolayer(res)
   #----------------------------------------------------------------------------*
   
   # Get the likelihood
@@ -381,7 +363,7 @@ fitSpecificTBATS <- function(y, use.box.cox, use.beta, use.damping, seasonal.per
   tsp(fits) <- tsp(e) <- tsp(y)
   model.for.output <- list(
     lambda = lambda, alpha = alpha, beta = beta.v, damping.parameter = small.phi, gamma.one.values = gamma.one.v, gamma.two.values = gamma.two.v, ar.coefficients = ar.coefs, ma.coefficients = ma.coefs, likelihood = likelihood, optim.return.code = optim.like$convergence, variance = variance, AIC = aic, parameters = list(vect = optim.like$par, control = param.vector$control), seed.states = x.nought,
-    fitted.values = fits, errors = e, x = fitted.values.and.errors$x, seasonal.periods = seasonal.periods, k.vector = k.vector, y = y, p = p, q = q
+    fitted.values = fits, errors = e, x = fitted.values.and.errors$x, seasonal.periods = seasonal.periods, k.vector = k.vector, y = y, p = p, q = q, F = F, w = w$w.transpose
   )
   class(model.for.output) <- c("tbats", "bats")
   return(model.for.output)
@@ -507,3 +489,16 @@ calcLikelihoodNOTransformedTBATS <- function(param.vector, opt.env, x.nought, us
     return(Inf)
   }
 }
+
+h <- 24
+n <- length(y)
+m <- fitSpecificTBATS(y, use.box.cox, use.beta, use.damping, seasonal.periods, k.vector, starting.params, x.nought, ar.coefs, ma.coefs, init.box.cox, bc.lower, bc.upper, biasadj)
+preds <- forecast(m, h = h)
+p <- data.frame(t = 1:(n + h), y = c(y, rep(NA, h)), preds = c(m$fitted.values, preds$mean)) %>% 
+  pivot_longer(cols = c("y", "preds")) %>% 
+  ggplot(aes(t, value, color = name)) +
+  geom_line() +
+  geom_point()
+cat(m$lambda, m$alpha, m$beta, m$damping.parameter)
+cat(m$AIC, m$ar.coefficients, m$ma.coefficients)
+p
