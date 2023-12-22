@@ -17,7 +17,6 @@ import numpy as np
 from numba import njit
 from scipy.optimize import minimize
 from scipy.special import inv_boxcox
-from scipy.stats import boxcox
 
 from statsforecast.arima import (
     Arima,

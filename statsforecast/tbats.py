@@ -15,7 +15,7 @@ from numba import njit
 from numpy.polynomial.polynomial import Polynomial
 from scipy.special import inv_boxcox
 from scipy.stats import boxcox
-from scipy.optimize import minimize_scalar, minimize
+from scipy.optimize import minimize
 from statsmodels.tsa.stattools import adfuller
 
 from .arima import auto_arima_f
@@ -249,7 +249,7 @@ def makeTBATSFMatrix(
         top = np.hstack((ck, sk))
         bottom = np.hstack((-sk, ck))
         Ak = np.vstack((top, bottom))
-        A[pos : pos + 2 * k, pos : pos + 2 * k] = np.vstack((top, bottom))
+        A[pos : pos + 2 * k, pos : pos + 2 * k] = Ak
         pos += 2 * k
     seasonal_row = np.hstack((seasonal_row, A))
 
@@ -318,7 +318,6 @@ def makeTBATSFMatrix(
 @njit(nogil=NOGIL, cache=CACHE)
 def calcTBATSFaster(y_trans, w_transpose, g, F, x_nought):
     n = y_trans.shape[0]
-    dimF = F.shape[0]
 
     yhat = np.zeros((1, n))
     e = np.zeros((1, n))
@@ -422,8 +421,6 @@ def updateTBATSGMatrix(g, gamma_bold, alpha, beta, k_vector, gamma_one_v, gamma_
         adjBeta = 1
 
     endPos = 0
-    numK = len(k_vector)
-
     for k, gamma_one, gamma_two in zip(k_vector, gamma_one_v, gamma_two_v):
         gamma_bold[0, endPos : endPos + k] = gamma_one
         gamma_bold[0, endPos + k : endPos + 2 * k] = gamma_two
