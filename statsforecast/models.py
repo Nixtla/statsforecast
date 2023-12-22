@@ -31,7 +31,7 @@ from .ets import ets_f, forecast_ets, forward_ets
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
-import statsforecast.tbats as tbats
+from .tbats import tbats_model, tbats_forecast, _compute_sigmah
 from statsforecast.utils import (
     _calculate_sigma,
     _calculate_intervals,
@@ -5568,9 +5568,9 @@ class TBATS(_TS):
         Number of observations per unit of time. Ex: 24 Hourly data.
     use_boxcox : bool (default=True)
         Whether or not to use a Box-Cox transformation.
-    bc_lower_bound : int (default=0)
+    bc_lower_bound : float (default=0.0)
         Lower bound for the Box-Cox transformation.
-    bc_upper_bound : int (default=1.5)
+    bc_upper_bound : float (default=1.5)
         Upper bound for the Box-Cox transformation.
     use_trend : bool (default=True)
         Whether or not to use a trend component.
@@ -5586,14 +5586,16 @@ class TBATS(_TS):
         self,
         seasonal_periods: Union[int, List[int]],
         use_boxcox: bool = True,
-        bc_lower_bound: int = 0,
-        bc_uppper_bound: int = 1.5,
+        bc_lower_bound: float = 0.0,
+        bc_uppper_bound: float = 1.5,
         use_trend: bool = True,
         use_damped_trend: bool = False,
         use_arma_errors: bool = False,
         alias: str = "TBATS",
     ):
-        self.seasonal_periods = (seasonal_periods,)
+        if isinstance(seasonal_periods, int):
+            seasonal_periods = [seasonal_periods]
+        self.seasonal_periods = list(seasonal_periods)
         self.use_boxcox = use_boxcox
         self.bc_lower_bound = bc_lower_bound
         self.bc_upper_bound = bc_uppper_bound
