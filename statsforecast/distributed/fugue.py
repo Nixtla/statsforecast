@@ -5,15 +5,25 @@ __all__ = ['FugueBackend']
 
 # %% ../../nbs/src/core/distributed.fugue.ipynb 4
 import inspect
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
+import cloudpickle
+import fugue.api as fa
 import numpy as np
 import pandas as pd
-from fugue import transform, DataFrame, FugueWorkflow, ExecutionEngine
+from fugue import transform, DataFrame, FugueWorkflow, ExecutionEngine, AnyDataFrame
 from fugue.collections.yielded import Yielded
 from fugue.constants import FUGUE_CONF_WORKFLOW_EXCEPTION_INJECT
-from ..core import _StatsForecast, ParallelBackend, make_backend
 from triad import Schema
+
+from statsforecast.core import (
+    _StatsForecast,
+    ParallelBackend,
+    _id_as_idx,
+    _param_descriptions,
+    make_backend,
+)
+from ..utils import ConformalIntervals
 
 # %% ../../nbs/src/core/distributed.fugue.ipynb 5
 def _cotransform(
@@ -52,12 +62,17 @@ class FugueBackend(ParallelBackend):
     This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
     computation on Spark, Dask and Ray without any rewrites.
 
-    **Parameters:**<br>
-    `engine`: fugue.ExecutionEngine, a selection between Spark, Dask, and Ray.<br>
-    `conf`: fugue.Config, engine configuration.<br>
-    `**transform_kwargs`: additional kwargs for Fugue's transform method.<br>
+    Parameters
+    ----------
+    engine : fugue.ExecutionEngine
+        A selection between Spark, Dask, and Ray.
+    conf : fugue.Config
+        Engine configuration.
+    **transform_kwargs
+        Additional kwargs for Fugue's transform method.
 
-    **Notes:**<br>
+    Notes
+    -----
     A short introduction to Fugue, with examples on how to scale pandas code to Spark, Dask or Ray
      is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
     """
@@ -70,159 +85,183 @@ class FugueBackend(ParallelBackend):
     def __getstate__(self) -> Dict[str, Any]:
         return {}
 
-    def forecast(
+    def _forecast(
         self,
+        *,
+        df: pd.DataFrame,
+        X_df: Optional[pd.DataFrame],
+        models,
+        fallback_model,
+        freq,
+        h,
+        level,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+        fitted,
+    ) -> Tuple[_StatsForecast, pd.DataFrame]:
+        model = _StatsForecast(
+            models=models,
+            freq=freq,
+            fallback_model=fallback_model,
+            n_jobs=1,
+        )
+        result = model.forecast(
+            df=df,
+            h=h,
+            X_df=X_df,
+            level=level,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        if _id_as_idx():
+            result = result.reset_index()
+        return model, result
+
+    def _forecast_noX(
+        self,
+        df: pd.DataFrame,
+        *,
+        models,
+        fallback_model,
+        freq,
+        h,
+        level,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+    ) -> pd.DataFrame:
+        _, result = self._forecast(
+            df=df,
+            X_df=None,
+            models=models,
+            fallback_model=fallback_model,
+            freq=freq,
+            h=h,
+            level=level,
+            fitted=False,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        return result
+
+    def _forecast_noX_fitted(
+        self,
+        df: pd.DataFrame,
+        *,
+        models,
+        fallback_model,
+        freq,
+        h,
+        level,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+    ) -> List[List[Any]]:
+        model, result = self._forecast(
+            df=df,
+            X_df=None,
+            models=models,
+            fallback_model=fallback_model,
+            freq=freq,
+            h=h,
+            level=level,
+            fitted=True,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        fitted_vals = model.forecast_fitted_values()
+        if _id_as_idx():
+            fitted_vals = fitted_vals.reset_index()
+        return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
+
+    def _forecast_X(
+        self,
+        df: pd.DataFrame,
+        X_df: pd.DataFrame,
+        *,
+        models,
+        fallback_model,
+        freq,
+        h,
+        level,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+    ) -> pd.DataFrame:
+        _, result = self._forecast(
+            df=df,
+            X_df=X_df,
+            models=models,
+            fallback_model=fallback_model,
+            freq=freq,
+            h=h,
+            level=level,
+            fitted=False,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        return result
+
+    def _forecast_X_fitted(
+        self,
+        df: pd.DataFrame,
+        X_df: pd.DataFrame,
+        *,
+        models,
+        fallback_model,
+        freq,
+        h,
+        level,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+    ) -> List[List[Any]]:
+        model, result = self._forecast(
+            df=df,
+            X_df=X_df,
+            models=models,
+            fallback_model=fallback_model,
+            freq=freq,
+            h=h,
+            level=level,
+            fitted=True,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        fitted_vals = model.forecast_fitted_values()
+        if _id_as_idx():
+            fitted_vals = fitted_vals.reset_index()
+        return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
+
+    def _get_output_schema(
+        self,
+        *,
         df,
         models,
-        freq,
-        fallback_model=None,
-        X_df=None,
-        **kwargs: Any,
-    ) -> Any:
-        """Memory Efficient core.StatsForecast predictions with FugueBackend.
-
-        This method uses Fugue's transform function, in combination with
-        `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models.
-
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `freq`: str, frequency of the data, [pandas available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-        `models`: List[typing.Any], list of instantiated objects `StatsForecast.models`.<br>
-        `fallback_model`: Any, Model to be used if a model fails.<br>
-        `X_df`: pandas.DataFrame, with [unique_id, ds] columns and df’s future exogenous.
-        `**kwargs`: Additional `core.StatsForecast` parameters. Example forecast horizon `h`.<br>
-
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
-
-        **References:**<br>
-        For more information check the
-        [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html)
-        tutorial.<br>
-        The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
-        method documentation.<br>
-        Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
-        """
-        level = kwargs.get("level", [])
-        schema = "*-y+" + str(self._get_output_schema(models, level))
-        if X_df is None:
-            return transform(
-                df,
-                self._forecast_series,
-                params=dict(
-                    models=models,
-                    freq=freq,
-                    kwargs=kwargs,
-                    fallback_model=fallback_model,
-                ),
-                schema=schema,
-                partition={"by": "unique_id"},
-                engine=self._engine,
-                engine_conf=self._conf,
-                **self._transform_kwargs,
-            )
-        else:
-            schema = "unique_id:str,ds:str," + str(
-                self._get_output_schema(models, level)
-            )
-            return _cotransform(
-                df,
-                X_df,
-                self._forecast_series_X,
-                params=dict(
-                    models=models,
-                    freq=freq,
-                    kwargs=kwargs,
-                    fallback_model=fallback_model,
-                ),
-                schema=schema,
-                partition={"by": "unique_id"},
-                engine=self._engine,
-                engine_conf=self._conf,
-                **self._transform_kwargs,
-            )
-
-    def cross_validation(
-        self,
-        df,
-        models,
-        freq,
-        fallback_model=None,
-        **kwargs: Any,
-    ) -> Any:
-        """Temporal Cross-Validation with core.StatsForecast and FugueBackend.
-
-        This method uses Fugue's transform function, in combination with
-        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast
-        models through multiple training windows, in either chained or rolled manner.
-
-        `StatsForecast.models`' speed along with Fugue's distributed computation allow to
-        overcome this evaluation technique high computational costs. Temporal cross-validation
-        provides better model's generalization measurements by increasing the test's length
-        and diversity.
-
-        **Parameters:**<br>
-        `df`: pandas.DataFrame, with columns [`unique_id`, `ds`, `y`] and exogenous.<br>
-        `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-        `models`: List[typing.Any], list of instantiated objects `StatsForecast.models`.<br>
-        `fallback_model`: Any, Model to be used if a model fails.<br>
-
-        **Returns:**<br>
-        `fcsts_df`: pandas.DataFrame, with `models` columns for point predictions and probabilistic
-        predictions for all fitted `models`.<br>
-
-        **References:**<br>
-        The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
-        method documentation.<br>
-        [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
-        """
-        level = kwargs.get("level", [])
-        schema = "*-y+" + str(self._get_output_schema(models, level, mode="cv"))
-        return transform(
-            df,
-            self._cv,
-            params=dict(
-                models=models, freq=freq, kwargs=kwargs, fallback_model=fallback_model
-            ),
-            schema=schema,
-            partition={"by": "unique_id"},
-            engine=self._engine,
-            engine_conf=self._conf,
-            **self._transform_kwargs,
-        )
-
-    def _forecast_series(
-        self, df: pd.DataFrame, models, freq, fallback_model, kwargs
-    ) -> pd.DataFrame:
-        model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
-        )
-        return model.forecast(**kwargs).reset_index()
-
-    # schema: unique_id:str, ds:str, *
-    def _forecast_series_X(
-        self, df: pd.DataFrame, X_df: pd.DataFrame, models, freq, fallback_model, kwargs
-    ) -> pd.DataFrame:
-        model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
-        )
-        if len(X_df) != kwargs["h"]:
-            raise Exception(
-                "Please be sure that your exogenous variables `X_df` "
-                "have the same length than your forecast horizon `h`"
-            )
-        return model.forecast(X_df=X_df, **kwargs).reset_index()
-
-    def _cv(
-        self, df: pd.DataFrame, models, freq, fallback_model, kwargs
-    ) -> pd.DataFrame:
-        model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model, n_jobs=1
-        )
-        return model.cross_validation(**kwargs).reset_index()
-
-    def _get_output_schema(self, models, level=None, mode="forecast") -> Schema:
+        level,
+        mode,
+        id_col,
+        time_col,
+        target_col,
+    ) -> Schema:
+        keep_schema = fa.get_schema(df).extract([id_col, time_col])
         cols: List[Any] = []
         if level is None:
             level = []
@@ -238,8 +277,280 @@ class FugueBackend(ParallelBackend):
                 )
                 cols.extend([(f"{repr(model)}-hi-{l}", np.float32) for l in level])
         if mode == "cv":
-            cols = [("cutoff", "datetime"), ("y", np.float32)] + cols
-        return Schema(cols)
+            cols = [
+                ("cutoff", keep_schema[time_col].type),
+                (target_col, np.float32),
+            ] + cols
+        return keep_schema + Schema(cols)
+
+    @staticmethod
+    def _retrieve_forecast_df(items: List[List[Any]]) -> Iterable[pd.DataFrame]:
+        for serialized_fcst_df, _ in items:
+            yield cloudpickle.loads(serialized_fcst_df)
+
+    @staticmethod
+    def _retrieve_fitted_df(items: List[List[Any]]) -> Iterable[pd.DataFrame]:
+        for _, serialized_fitted_df in items:
+            yield cloudpickle.loads(serialized_fitted_df)
+
+    def forecast(
+        self,
+        *,
+        df: AnyDataFrame,
+        freq: Union[str, int],
+        models: List[Any],
+        fallback_model: Optional[Any],
+        X_df: Optional[AnyDataFrame],
+        h: int,
+        level: Optional[List[int]],
+        fitted: bool,
+        prediction_intervals: Optional[ConformalIntervals],
+        id_col: str,
+        time_col: str,
+        target_col: str,
+    ) -> Any:
+        """Memory Efficient core.StatsForecast predictions with FugueBackend.
+
+        This method uses Fugue's transform function, in combination with
+        `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models.
+
+        Parameters
+        ----------
+        {df}
+        {freq}
+        {models}
+        {fallback_model}
+        {X_df}
+        {h}
+        {level}
+        {fitted}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
+
+        Returns
+        -------
+        fcsts_df : pandas.DataFrame
+            DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
+
+        References
+        ----------
+        For more information check the
+        [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html)
+        tutorial.
+        The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
+        method documentation.
+        Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
+        """
+        self._fcst_schema = self._get_output_schema(
+            df=df,
+            models=models,
+            level=level,
+            mode="forecast",
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        self._fitted_schema = self._fcst_schema + fa.get_schema(df).extract(
+            [target_col]
+        )
+        tfm_schema = "a:binary, b:binary" if fitted else self._fcst_schema
+        params = dict(
+            models=models,
+            freq=freq,
+            fallback_model=fallback_model,
+            h=h,
+            level=level,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        tfm_kwargs = dict(
+            params=params,
+            schema=tfm_schema,
+            partition={"by": id_col},
+            engine=self._engine,
+            engine_conf=self._conf,
+        )
+        if not fitted:
+            if X_df is None:
+                res = transform(df, self._forecast_noX, **tfm_kwargs)
+            else:
+                res = _cotransform(df, X_df, self._forecast_X, **tfm_kwargs)
+        else:
+            if X_df is None:
+                res_with_fitted = transform(df, self._forecast_noX_fitted, **tfm_kwargs)
+            else:
+                res_with_fitted = _cotransform(
+                    df, X_df, self._forecast_X_fitted, **tfm_kwargs
+                )
+            self._results = res_with_fitted
+            res = transform(
+                self._results,
+                FugueBackend._retrieve_forecast_df,
+                schema=self._fcst_schema,
+                engine=self._engine,
+            )
+        return res
+
+    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+
+    def forecast_fitted_values(self):
+        """Retrieve in-sample predictions"""
+        if not hasattr(self, "_results"):
+            raise ValueError("You must first call forecast with `fitted=True`.")
+        return transform(
+            self._results,
+            FugueBackend._retrieve_fitted_df,
+            schema=self._fitted_schema,
+            engine=self._engine,
+        )
+
+    def _cv(
+        self,
+        df: pd.DataFrame,
+        *,
+        models,
+        freq,
+        fallback_model,
+        h,
+        n_windows,
+        step_size,
+        test_size,
+        input_size,
+        level,
+        refit,
+        fitted,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+    ) -> pd.DataFrame:
+        model = _StatsForecast(
+            models=models,
+            freq=freq,
+            fallback_model=fallback_model,
+            n_jobs=1,
+        )
+        result = model.cross_validation(
+            df=df,
+            h=h,
+            n_windows=n_windows,
+            step_size=step_size,
+            test_size=test_size,
+            input_size=input_size,
+            level=level,
+            fitted=fitted,
+            refit=refit,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        if _id_as_idx():
+            result = result.reset_index()
+        return result
+
+    def cross_validation(
+        self,
+        *,
+        df: AnyDataFrame,
+        freq: Union[str, int],
+        models: List[Any],
+        fallback_model: Optional[Any],
+        h: int,
+        n_windows: int,
+        step_size: int,
+        test_size: int,
+        input_size: int,
+        level: Optional[List[int]],
+        refit: bool,
+        fitted: bool,
+        prediction_intervals: Optional[ConformalIntervals],
+        id_col: str,
+        time_col: str,
+        target_col: str,
+    ) -> Any:
+        """Temporal Cross-Validation with core.StatsForecast and FugueBackend.
+
+        This method uses Fugue's transform function, in combination with
+        `core.StatsForecast`'s cross-validation to efficiently fit a list of StatsForecast
+        models through multiple training windows, in either chained or rolled manner.
+
+        `StatsForecast.models`' speed along with Fugue's distributed computation allow to
+        overcome this evaluation technique high computational costs. Temporal cross-validation
+        provides better model's generalization measurements by increasing the test's length
+        and diversity.
+
+        Parameters
+        ----------
+        {df}
+        {freq}
+        {models}
+        {fallback_model}
+        {h}
+        {n_windows}
+        {step_size}
+        {test_size}
+        {input_size}
+        {level}
+        {refit}
+        {fitted}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
+
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.
+
+        References
+        ----------
+        The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
+        method documentation.
+        [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
+        """
+        schema = self._get_output_schema(
+            df=df,
+            models=models,
+            level=level,
+            mode="cv",
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+        return transform(
+            df,
+            self._cv,
+            params=dict(
+                models=models,
+                freq=freq,
+                fallback_model=fallback_model,
+                h=h,
+                n_windows=n_windows,
+                step_size=step_size,
+                test_size=test_size,
+                input_size=input_size,
+                level=level,
+                refit=refit,
+                fitted=fitted,
+                prediction_intervals=prediction_intervals,
+                id_col=id_col,
+                time_col=time_col,
+                target_col=target_col,
+            ),
+            schema=schema,
+            partition={"by": id_col},
+            engine=self._engine,
+            engine_conf=self._conf,
+            **self._transform_kwargs,
+        )
+
+    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
 
 @make_backend.candidate(lambda obj, *args, **kwargs: isinstance(obj, ExecutionEngine))

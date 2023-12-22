@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import re
+from pathlib import Path
+
+from nbdev.clean import process_write
+
+single_line_with_spaces = re.compile(r'(\${1,2})\s*(.+?)\s*(\${1,2})')
+with_tag_pat = re.compile(r'\$\$(.*?)\\tag\s*(\d+)(.*?)\$\$')
+with_tag_repl = r'\n$$\n\\begin{equation}\n\1\\tag \2\n\\end{equation}\n$$\n'
+
+def clean_equations(nb):
+    for cell in nb['cells']:
+        lines = []
+        for i, line in enumerate(cell['source']):
+            line = single_line_with_spaces.sub(r'\1\2\3', line)
+            line = with_tag_pat.sub(with_tag_repl, line)
+            lines.append(line)
+        cell['source'] = lines
+
+
+if __name__ == '__main__':
+    repo_root = Path(__file__).parents[1]
+    for nb in (repo_root / 'nbs').rglob('*.ipynb'):
+        process_write(warn_msg='Failed to clean_nb', proc_nb=clean_equations, f_in=nb)

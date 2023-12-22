@@ -5,12 +5,14 @@ __all__ = ['ces_target_fn']
 
 # %% ../nbs/src/ces.ipynb 1
 import math
-import os
+from typing import Tuple
 
 import numpy as np
 from numba import njit
-from .ets import nelder_mead
 from statsmodels.tsa.seasonal import seasonal_decompose
+
+from .ets import restrict_to_bounds, results
+from .utils import CACHE, NOGIL
 
 # %% ../nbs/src/ces.ipynb 4
 # Global variables
@@ -22,8 +24,6 @@ TOL = 1.0e-10
 HUGEN = 1.0e10
 NA = -99999.0
 smalno = np.finfo(float).eps
-NOGIL = os.environ.get("NUMBA_RELEASE_GIL", "False").lower() in ["true"]
-CACHE = os.environ.get("NUMBA_CACHE", "False").lower() in ["true"]
 
 # %% ../nbs/src/ces.ipynb 6
 def initstate(y, m, seasontype):
@@ -403,6 +403,122 @@ def ces_target_fn(
     return lik
 
 # %% ../nbs/src/ces.ipynb 26
+@njit(nogil=NOGIL, cache=CACHE)
+def nelder_mead_ces(
+    x0: np.ndarray,
+    args: Tuple = (),
+    lower: np.ndarray = np.empty(0),
+    upper: np.ndarray = np.empty(0),
+    init_step: float = 0.05,
+    zero_pert: float = 0.0001,
+    alpha: float = 1.0,
+    gamma: float = 2.0,
+    rho: float = 0.5,
+    sigma: float = 0.5,
+    max_iter: int = 2_000,
+    tol_std: float = 1e-10,
+    adaptive: bool = False,
+):
+    # We are trying to minimize the function fn(x, args)
+    # with initial point x0.
+    # Step 0:
+    # get x1, ..., x_{n+1}
+    # the original article suggested a simplex where an initial point is given as x0
+    # with the others generated with a fixed step along each dimension in turn.
+    bounds = len(lower) and len(upper)
+    if bounds:
+        x0 = restrict_to_bounds(x0, lower, upper)
+
+    n = x0.size
+    if adaptive:
+        gamma = 1.0 + 2.0 / n
+        rho = 0.75 - 1.0 / (2.0 * n)
+        sigma = 1.0 - 1.0 / n
+    simplex = np.full(
+        (n + 1, n), fill_value=np.nan, dtype=np.float64
+    )  # each row is x_j
+    simplex[:] = x0
+    # perturb simplex using `init_step`
+    diag = np.copy(np.diag(simplex))
+    diag[diag == 0.0] = zero_pert
+    diag[diag != 0.0] *= 1 + init_step
+    np.fill_diagonal(simplex, diag)
+    # restrict simplex to bounds if passed
+    if bounds:
+        for j in range(n + 1):
+            simplex[j] = restrict_to_bounds(simplex[j], lower, upper)
+    # array of the value of f
+    f_simplex = np.full(n + 1, fill_value=np.nan)
+    for j in range(n + 1):
+        f_simplex[j] = ces_target_fn(simplex[j], *args)
+    for it in range(max_iter):
+        # Step1: order of f_simplex
+        # print(simplex)
+        # print(f_simplex)
+        order_f = f_simplex.argsort()
+        best_idx = order_f[0]
+        worst_idx = order_f[-1]
+        second_worst_idx = order_f[-2]
+        # Check whether method should stop.
+        if np.std(f_simplex) < tol_std:
+            break
+        # calculate centroid except argmax f_simplex
+        x_o = simplex[np.delete(order_f, -1)].sum(axis=0) / n
+        # Step2: Reflection, Compute reflected point
+        x_r = x_o + alpha * (x_o - simplex[worst_idx])
+        # restrict x_r to bounds if passed
+        if bounds:
+            x_r = restrict_to_bounds(x_r, lower, upper)
+        f_r = ces_target_fn(x_r, *args)
+        if f_simplex[best_idx] <= f_r < f_simplex[second_worst_idx]:
+            simplex[worst_idx] = x_r
+            f_simplex[worst_idx] = f_r
+            continue
+        # Step3: Expansion, reflected point is the best point so far
+        if f_r < f_simplex[best_idx]:
+            x_e = x_o + gamma * (x_r - x_o)
+            # restrict x_e to bounds if passed
+            if bounds:
+                x_e = restrict_to_bounds(x_e, lower, upper)
+            f_e = ces_target_fn(x_e, *args)
+            if f_e < f_r:
+                simplex[worst_idx] = x_e
+                f_simplex[worst_idx] = f_e
+            else:
+                simplex[worst_idx] = x_r
+                f_simplex[worst_idx] = f_r
+            continue
+        # Step4: outside Contraction
+        if f_simplex[second_worst_idx] <= f_r < f_simplex[worst_idx]:
+            x_oc = x_o + rho * (x_r - x_o)
+            if bounds:
+                x_oc = restrict_to_bounds(x_oc, lower, upper)
+            f_oc = ces_target_fn(x_oc, *args)
+            if f_oc <= f_r:
+                simplex[worst_idx] = x_oc
+                f_simplex[worst_idx] = f_oc
+                continue
+        # step 5 inside contraction
+        else:
+            x_ic = x_o - rho * (x_r - x_o)
+            # restrict x_c to bounds if passed
+            if bounds:
+                x_ic = restrict_to_bounds(x_ic, lower, upper)
+            f_ic = ces_target_fn(x_ic, *args)
+            if f_ic < f_simplex[worst_idx]:
+                simplex[worst_idx] = x_ic
+                f_simplex[worst_idx] = f_ic
+                continue
+        # step 6: shrink
+        simplex[np.delete(order_f, 0)] = simplex[best_idx] + sigma * (
+            simplex[np.delete(order_f, 0)] - simplex[best_idx]
+        )
+        for i in np.delete(order_f, 0):
+            simplex[i] = restrict_to_bounds(simplex[i], lower, upper)
+            f_simplex[i] = ces_target_fn(simplex[i], *args)
+    return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
+
+# %% ../nbs/src/ces.ipynb 27
 def optimize_ces_target_fn(
     init_par, optimize_params, y, m, init_states, n_components, seasontype, nmse
 ):
@@ -421,8 +537,7 @@ def optimize_ces_target_fn(
     opt_beta_0 = optimize_params["beta_0"]
     opt_beta_1 = optimize_params["beta_1"]
 
-    res = nelder_mead(
-        ces_target_fn,
+    res = nelder_mead_ces(
         x0,
         args=(
             init_alpha_0,
@@ -448,7 +563,7 @@ def optimize_ces_target_fn(
     )
     return res
 
-# %% ../nbs/src/ces.ipynb 27
+# %% ../nbs/src/ces.ipynb 28
 def cesmodel(
     y: np.ndarray,
     m: int,
@@ -545,7 +660,7 @@ def cesmodel(
         sigma2=sigma2,
     )
 
-# %% ../nbs/src/ces.ipynb 29
+# %% ../nbs/src/ces.ipynb 30
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     m = obj["m"]
@@ -562,7 +677,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     )
     return forecast
 
-# %% ../nbs/src/ces.ipynb 30
+# %% ../nbs/src/ces.ipynb 31
 def _simulate_pred_intervals(model, h, level):
     np.random.seed(1)
     nsim = 5000
@@ -592,7 +707,7 @@ def _simulate_pred_intervals(model, h, level):
 
     return pi
 
-# %% ../nbs/src/ces.ipynb 31
+# %% ../nbs/src/ces.ipynb 32
 def forecast_ces(obj, h, level=None):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
@@ -602,7 +717,7 @@ def forecast_ces(obj, h, level=None):
         out = {**out, **pi}
     return out
 
-# %% ../nbs/src/ces.ipynb 33
+# %% ../nbs/src/ces.ipynb 34
 def auto_ces(
     y,
     m,
@@ -667,7 +782,7 @@ def auto_ces(
         raise Exception("no model able to be fitted")
     return model
 
-# %% ../nbs/src/ces.ipynb 35
+# %% ../nbs/src/ces.ipynb 37
 def forward_ces(fitted_model, y):
     m = fitted_model["m"]
     model = fitted_model["seasontype"]

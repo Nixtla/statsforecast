@@ -4,7 +4,7 @@
 __all__ = ['predict_arima', 'arima_string', 'forecast_arima', 'fitted_arima', 'auto_arima_f', 'print_statsforecast_ARIMA',
            'ARIMASummary', 'AutoARIMA']
 
-# %% ../nbs/src/arima.ipynb 3
+# %% ../nbs/src/arima.ipynb 4
 import math
 import warnings
 from collections import namedtuple
@@ -19,12 +19,13 @@ from scipy.optimize import minimize
 from scipy.stats import norm
 
 from .mstl import mstl
-
-# %% ../nbs/src/arima.ipynb 5
-OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
+from .utils import CACHE, NOGIL
 
 # %% ../nbs/src/arima.ipynb 6
-@njit
+OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
+
+# %% ../nbs/src/arima.ipynb 7
+@njit(nogil=NOGIL, cache=CACHE)
 def partrans(p, raw, new):
     if p > 100:
         raise ValueError("can only transform 100 pars in arima0")
@@ -38,8 +39,8 @@ def partrans(p, raw, new):
             work[k] -= a * new[j - k - 1]
         new[:j] = work[:j]
 
-# %% ../nbs/src/arima.ipynb 7
-@njit
+# %% ../nbs/src/arima.ipynb 8
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_gradtrans(x, arma):
     eps = 1e-3
     mp, mq, msp = arma[:3]
@@ -70,8 +71,8 @@ def arima_gradtrans(x, arma):
             w1[i] -= eps
     return y
 
-# %% ../nbs/src/arima.ipynb 9
-@njit
+# %% ../nbs/src/arima.ipynb 10
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_undopars(x, arma):
     mp, mq, msp = arma[:3]
     res = x.copy()
@@ -82,8 +83,8 @@ def arima_undopars(x, arma):
         partrans(msp, x[v:], res[v:])
     return res
 
-# %% ../nbs/src/arima.ipynb 11
-@njit
+# %% ../nbs/src/arima.ipynb 12
+@njit(nogil=NOGIL, cache=CACHE)
 def tsconv(a, b):
     na = len(a)
     nb = len(b)
@@ -97,8 +98,8 @@ def tsconv(a, b):
 
     return ab
 
-# %% ../nbs/src/arima.ipynb 13
-@njit
+# %% ../nbs/src/arima.ipynb 14
+@njit(nogil=NOGIL, cache=CACHE)
 def inclu2(np_, xnext, xrow, ynext, d, rbar, thetab):
     for i in range(np_):
         xrow[i] = xnext[i]
@@ -126,8 +127,8 @@ def inclu2(np_, xnext, xrow, ynext, d, rbar, thetab):
         else:
             ithisr = ithisr + np_ - i - 1
 
-# %% ../nbs/src/arima.ipynb 14
-@njit
+# %% ../nbs/src/arima.ipynb 15
+@njit(nogil=NOGIL, cache=CACHE)
 def invpartrans(p, phi, new):
     if p > 100:
         raise ValueError("can only transform 100 pars in arima0")
@@ -144,8 +145,8 @@ def invpartrans(p, phi, new):
     for j in range(p):
         new[j] = math.atanh(new[j])
 
-# %% ../nbs/src/arima.ipynb 15
-@njit
+# %% ../nbs/src/arima.ipynb 16
+@njit(nogil=NOGIL, cache=CACHE)
 def ARIMA_invtrans(x, arma):
     mp, mq, msp = arma[:3]
     y = x.copy()
@@ -156,8 +157,8 @@ def ARIMA_invtrans(x, arma):
         invpartrans(msp, x[v:], y[v:])
     return y
 
-# %% ../nbs/src/arima.ipynb 17
-@njit
+# %% ../nbs/src/arima.ipynb 18
+@njit(nogil=NOGIL, cache=CACHE)
 def getQ0(phi, theta):
     p = len(phi)
     q = len(theta)
@@ -286,8 +287,8 @@ def getQ0(phi, theta):
     res = res.reshape((r, r))
     return res
 
-# %% ../nbs/src/arima.ipynb 19
-@njit
+# %% ../nbs/src/arima.ipynb 20
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_transpar(params_in, arma, trans):
     # TODO check trans=True results
     mp, mq, msp, msq, ns = arma[:5]
@@ -325,8 +326,8 @@ def arima_transpar(params_in, arma, trans):
 
     return phi, theta
 
-# %% ../nbs/src/arima.ipynb 22
-@njit
+# %% ../nbs/src/arima.ipynb 23
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_css(y, arma, phi, theta, ncond):
     n = len(y)
     p = len(phi)
@@ -369,8 +370,8 @@ def arima_css(y, arma, phi, theta, ncond):
 
     return res, resid
 
-# %% ../nbs/src/arima.ipynb 24
-@njit
+# %% ../nbs/src/arima.ipynb 25
+@njit(nogil=NOGIL, cache=CACHE)
 def _make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps):
     # check nas phi
     # check nas theta
@@ -422,8 +423,8 @@ def make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(np.float64).eps):
     res = _make_arima(phi, theta, delta, kappa, tol)
     return dict(zip(keys, res))
 
-# %% ../nbs/src/arima.ipynb 26
-@njit
+# %% ../nbs/src/arima.ipynb 27
+@njit(nogil=NOGIL, cache=CACHE)
 def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
     n = len(y)
     rd = len(a)
@@ -559,8 +560,8 @@ def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
         rsResid = None
     return ssq, sumlog, nu, rsResid
 
-# %% ../nbs/src/arima.ipynb 28
-@njit
+# %% ../nbs/src/arima.ipynb 29
+@njit(nogil=NOGIL, cache=CACHE)
 def diff1d(x, lag, differences):
     y = x.copy()
     for _ in range(differences):
@@ -572,7 +573,7 @@ def diff1d(x, lag, differences):
     return y
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def diff2d(x, lag, differences):
     y = np.empty_like(x)
     for j in range(x.shape[1]):
@@ -591,7 +592,7 @@ def diff(x, lag, differences):
         raise ValueError(x.ndim)
     return y[~nan_mask]
 
-# %% ../nbs/src/arima.ipynb 29
+# %% ../nbs/src/arima.ipynb 30
 def fixed_params_from_dict(
     fixed_dict: dict, order: tuple, seasonal: dict, intercept: bool, n_ex: int
 ):
@@ -615,7 +616,7 @@ def fixed_params_from_dict(
     )  # prevent adding non-existing keys
     return list(full_dict.values())
 
-# %% ../nbs/src/arima.ipynb 31
+# %% ../nbs/src/arima.ipynb 32
 def arima(
     x: np.ndarray,
     order=(0, 0, 0),
@@ -848,12 +849,9 @@ def arima(
         if seasonal["period"] > 1 and seasonal["order"][1] > 0:
             dx = diff(dx, seasonal["period"], seasonal["order"][1])
             dxreg = diff(dxreg, seasonal["period"], seasonal["order"][1])
-        if len(dx) > dxreg.shape[1]:
-            model = sm.OLS(dx, dxreg)
-            result = model.fit()
-            fit = {"coefs": result.params, "stderrs": result.bse}
-        else:
-            raise RuntimeError
+        model = sm.OLS(dx, dxreg)
+        result = model.fit()
+        fit = {"coefs": result.params, "stderrs": result.bse}
         isna = np.isnan(x) | np.isnan(xreg).any(1)
         n_used = (~isna).sum() - len(Delta)
         init0 = np.append(init0, fit["coefs"])
@@ -1004,7 +1002,7 @@ def arima(
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
             sol = np.matmul(res.hess_inv, A) / n_used
-            var = np.dot(sol, sol)
+            var = np.dot(A, sol)
             coef = arima_undopars(coef, arma)
         else:
             var = None if no_optim else res.hess_inv / n_used
@@ -1058,8 +1056,8 @@ def arima(
     }
     return ans
 
-# %% ../nbs/src/arima.ipynb 39
-@njit
+# %% ../nbs/src/arima.ipynb 40
+@njit(nogil=NOGIL, cache=CACHE)
 def kalman_forecast(n, Z, a, P, T, V, h):
     p = len(a)
 
@@ -1100,13 +1098,13 @@ def kalman_forecast(n, Z, a, P, T, V, h):
 
     return forecasts, se
 
-# %% ../nbs/src/arima.ipynb 42
+# %% ../nbs/src/arima.ipynb 43
 def checkarima(obj):
     if obj["var_coef"] is None:
         return False
     return any(np.isnan(np.sqrt(np.diag(obj["var_coef"]))))
 
-# %% ../nbs/src/arima.ipynb 43
+# %% ../nbs/src/arima.ipynb 44
 def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
     myNCOL = lambda x: x.shape[1] if x is not None else 0
     # rsd = model['residuals']
@@ -1164,7 +1162,7 @@ def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
 
     return pred
 
-# %% ../nbs/src/arima.ipynb 47
+# %% ../nbs/src/arima.ipynb 48
 def convert_coef_name(name, inverse=False):
     if not inverse:
         if "ex" in name:
@@ -1186,13 +1184,13 @@ def convert_coef_name(name, inverse=False):
         else:
             return name
 
-# %% ../nbs/src/arima.ipynb 48
+# %% ../nbs/src/arima.ipynb 49
 def change_drift_name(model_coef, inverse=False):
     return {
         convert_coef_name(name, inverse): value for name, value in model_coef.items()
     }
 
-# %% ../nbs/src/arima.ipynb 49
+# %% ../nbs/src/arima.ipynb 50
 def myarima(
     x,
     order=(0, 0, 0),
@@ -1209,7 +1207,7 @@ def myarima(
     missing = np.isnan(x)
     missing_idxs = np.where(~missing)[0]
     firstnonmiss = missing_idxs.min()
-    lastnonmiss = missing_idxs.max()
+    lastnonmiss = missing_idxs.max() + 1
     n = np.sum(~missing[firstnonmiss:lastnonmiss])
     m = seasonal["period"]
     seas_order = seasonal["order"]
@@ -1288,7 +1286,7 @@ def myarima(
         raise e
         return {"ic": math.inf}
 
-# %% ../nbs/src/arima.ipynb 52
+# %% ../nbs/src/arima.ipynb 53
 def search_arima(
     x,
     d=0,
@@ -1331,7 +1329,7 @@ def search_arima(
                         best_fit = fit
     return best_fit
 
-# %% ../nbs/src/arima.ipynb 54
+# %% ../nbs/src/arima.ipynb 55
 def arima2(x, model, xreg, method):
     m = model["arma"][4]  # 5
     use_drift = "drift" in model["coef"].keys()
@@ -1398,7 +1396,7 @@ def arima2(x, model, xreg, method):
         refit["coef"] = change_drift_name(refit["coef"])
     return refit
 
-# %% ../nbs/src/arima.ipynb 55
+# %% ../nbs/src/arima.ipynb 56
 def Arima(
     x,
     order=(0, 0, 0),
@@ -1480,7 +1478,7 @@ def Arima(
     missing = np.isnan(tmp["residuals"])
     nonmiss_idxs = np.where(~missing)[0]
     firstnonmiss = np.min(nonmiss_idxs)
-    lastnonmiss = np.max(nonmiss_idxs)
+    lastnonmiss = np.max(nonmiss_idxs) + 1
     n = np.sum(~missing[firstnonmiss:lastnonmiss])
     nstar = n - tmp["arma"][5] - tmp["arma"][6] * tmp["arma"][4]
     tmp["aicc"] = tmp["aic"] + 2 * npar * (nstar / (nstar - npar - 1) - 1)
@@ -1492,7 +1490,7 @@ def Arima(
         tmp["sigma2"] = np.nansum(tmp["residuals"] ** 2) / (nstar - npar + 1)
     return tmp
 
-# %% ../nbs/src/arima.ipynb 63
+# %% ../nbs/src/arima.ipynb 64
 def arima_string(model, padding=False):
     order = tuple(model["arma"][i] for i in [0, 5, 1, 2, 6, 3, 4])
     m = order[6]
@@ -1522,11 +1520,11 @@ def arima_string(model, padding=False):
 
     return result
 
-# %% ../nbs/src/arima.ipynb 66
+# %% ../nbs/src/arima.ipynb 67
 def is_constant(x):
     return np.all(x[0] == x)
 
-# %% ../nbs/src/arima.ipynb 67
+# %% ../nbs/src/arima.ipynb 68
 def forecast_arima(
     model,
     h=None,
@@ -1621,7 +1619,7 @@ def forecast_arima(
 
     return ans
 
-# %% ../nbs/src/arima.ipynb 74
+# %% ../nbs/src/arima.ipynb 75
 def fitted_arima(model, h=1):
     """Returns h-step forecasts for the data used in fitting the model."""
     if h == 1:
@@ -1637,7 +1635,7 @@ def fitted_arima(model, h=1):
     else:
         raise NotImplementedError("h > 1")
 
-# %% ../nbs/src/arima.ipynb 79
+# %% ../nbs/src/arima.ipynb 80
 def seas_heuristic(x, period):
     # nperiods = period > 1
     season = math.nan
@@ -1649,7 +1647,7 @@ def seas_heuristic(x, period):
         season = max(0, min(1, 1 - vare / np.var(remainder + seasonal, ddof=1)))
     return season
 
-# %% ../nbs/src/arima.ipynb 81
+# %% ../nbs/src/arima.ipynb 82
 def nsdiffs(x, test="seas", alpha=0.05, period=1, max_D=1, **kwargs):
     D = 0
     if alpha < 0.01:
@@ -1712,7 +1710,7 @@ def nsdiffs(x, test="seas", alpha=0.05, period=1, max_D=1, **kwargs):
             dodiff = False
     return D
 
-# %% ../nbs/src/arima.ipynb 83
+# %% ../nbs/src/arima.ipynb 84
 def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
     x = x[~np.isnan(x)]
     d = 0
@@ -1757,13 +1755,13 @@ def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
             return d - 1
     return d
 
-# %% ../nbs/src/arima.ipynb 85
+# %% ../nbs/src/arima.ipynb 86
 def newmodel(p, d, q, P, D, Q, constant, results):
     curr = np.array([p, d, q, P, D, Q, constant])
     in_results = (curr == results[:, :7]).all(1).any()
     return not in_results
 
-# %% ../nbs/src/arima.ipynb 87
+# %% ../nbs/src/arima.ipynb 88
 def auto_arima_f(
     x,
     d=None,
@@ -1812,7 +1810,7 @@ def auto_arima_f(
     missing = np.isnan(x)
     nonmissing_idxs = np.where(~missing)[0]
     firstnonmiss = nonmissing_idxs.min()
-    lastnonmiss = nonmissing_idxs.max()
+    lastnonmiss = nonmissing_idxs.max() + 1
     series_len = int(np.sum(~missing[firstnonmiss:lastnonmiss]))
     x = x[firstnonmiss:]
     if xreg is not None:
@@ -2301,11 +2299,11 @@ def auto_arima_f(
 
     return bestfit
 
-# %% ../nbs/src/arima.ipynb 89
+# %% ../nbs/src/arima.ipynb 90
 def forward_arima(fitted_model, y, xreg=None, method="CSS-ML"):
     return Arima(x=y, model=fitted_model, xreg=xreg, method=method)
 
-# %% ../nbs/src/arima.ipynb 98
+# %% ../nbs/src/arima.ipynb 99
 def print_statsforecast_ARIMA(model, digits=3, se=True):
     print(arima_string(model, padding=False))
     if model["lambda"] is not None:
@@ -2335,7 +2333,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if not np.isnan(model["aic"]):
         print(f'AIC={round(model["aic"], 2)}')
 
-# %% ../nbs/src/arima.ipynb 100
+# %% ../nbs/src/arima.ipynb 101
 class ARIMASummary:
     """ARIMA Summary."""
 
@@ -2348,7 +2346,7 @@ class ARIMASummary:
     def summary(self):
         return print_statsforecast_ARIMA(self.model)
 
-# %% ../nbs/src/arima.ipynb 101
+# %% ../nbs/src/arima.ipynb 102
 class AutoARIMA:
     """An AutoARIMA estimator.
 

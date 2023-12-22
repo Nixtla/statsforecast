@@ -19,11 +19,10 @@ from ..core import _StatsForecast, ParallelBackend
 class MultiprocessBackend(ParallelBackend):
     """MultiprocessBackend Parent Class for Distributed Computation.
 
-    **Parameters:**<br>
-    `n_jobs`: int, number of jobs used in the parallel processing, use -1 for all cores.<br>
-
-    **Notes:**<br>
-
+    Parameters
+    ----------
+    n_jobs : int
+        Number of jobs used in the parallel processing, use -1 for all cores.
     """
 
     def __init__(self, n_jobs: int) -> None:

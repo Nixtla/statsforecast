@@ -26,7 +26,9 @@ The form to report the bug will appear.
 5. You can also add links, references, logs, screenshots, and so on.
 
 <Info>
-  Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
 </Info>
 
 Thank you for your contribution! Your report aids in refining Nixtla for current and future users.
@@ -43,7 +45,9 @@ The feature request form will appear.
 4. Additional references, links, logs, and screenshots are welcome!
 
 <Info>
-  Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
 </Info>
 
 Thank you for your feature request! It will help us enhance Nixtla for all users.
@@ -59,7 +63,9 @@ A form for suggesting improvements will appear.
 3. Any additional references, links, logs, screenshots are appreciated!
 
 <Info>
-  Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
 </Info>
 
 Thank you for your valuable suggestions! Your input helps us refine Nixtla's documentation.
@@ -80,7 +86,9 @@ A form for your proposal will appear.
 4. Any additional references, links, logs, screenshots, and so on, are welcome!
 
 <Info>
-  Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+
 </Info>
 
 Thank you for your proposal! Your suggestion helps us extend the capabilities of Nixtla.
@@ -92,6 +100,7 @@ Thank you for your proposal! Your suggestion helps us extend the capabilities of
 - Please be ready to respond to our feedback or questions regarding your issue.
 
 <Note>
- This document is based on the documentation from [MindsDB](https://github.com/mindsdb/mindsdb)
-</Note>
 
+This document is based on the documentation from [MindsDB](https://github.com/mindsdb/mindsdb)
+
+</Note>

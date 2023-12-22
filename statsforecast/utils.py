@@ -4,16 +4,30 @@
 __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 # %% ../nbs/src/utils.ipynb 3
-import random
-from typing import Union
+import os
+import warnings
 
 import numpy as np
 import pandas as pd
-import polars as pl
-from scipy.stats import norm
 from numba import njit
+from scipy.stats import norm
 
-# %% ../nbs/src/utils.ipynb 6
+from utilsforecast.compat import DataFrame
+from utilsforecast.data import generate_series as utils_generate_series
+
+# %% ../nbs/src/utils.ipynb 4
+# Global variables
+NOGIL = bool(os.getenv("NIXTLA_NUMBA_RELEASE_GIL", ""))
+LEGACY_CACHE = bool(os.getenv("NUMBA_CACHE", ""))
+if LEGACY_CACHE:
+    warnings.warn(
+        "The NUMBA_CACHE environment variable has been renamed to NIXTLA_NUMBA_CACHE. "
+        "Please set that one instead.",
+        DeprecationWarning,
+    )
+CACHE = bool(os.getenv("NIXTLA_NUMBA_CACHE", "")) or LEGACY_CACHE
+
+# %% ../nbs/src/utils.ipynb 7
 def generate_series(
     n_series: int,
     freq: str = "D",
@@ -23,95 +37,49 @@ def generate_series(
     equal_ends: bool = False,
     engine: str = "pandas",
     seed: int = 0,
-) -> Union[pd.DataFrame, pl.DataFrame]:
+) -> DataFrame:
     """Generate Synthetic Panel Series.
 
     Generates `n_series` of frequency `freq` of different lengths in the interval [`min_length`, `max_length`].
     If `n_static_features > 0`, then each series gets static features with random values.
     If `equal_ends == True` then all series end at the same date.
 
-    **Parameters:**<br>
-    `n_series`: int, number of series for synthetic panel.<br>
-    `min_length`: int, minimal length of synthetic panel's series.<br>
-    `max_length`: int, minimal length of synthetic panel's series.<br>
-    `n_static_features`: int, default=0, number of static exogenous variables for synthetic panel's series.<br>
-    `equal_ends`: bool, if True, series finish in the same date stamp `ds`.<br>
-    `freq`: str, frequency of the data, [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).<br>
-    `engine`: str, engine to be used in DataFrame construction; NOTE: index does not exist in polars DataFrame
+    Parameters
+    ----------
+    n_series : int
+        Number of series for synthetic panel.
+    freq : str (default='D')
+        Frequency of the data, 'D' or 'M'.
+    min_length : int (default=50)
+        Minimum length of synthetic panel's series.
+    max_length : int (default=500)
+        Maximum length of synthetic panel's series.
+    n_static_features : int (default=0)
+        Number of static exogenous variables for synthetic panel's series.
+    equal_ends : bool (default=False)
+        Series should end in the same date stamp `ds`.
+    engine : str (default='pandas')
+        Output Dataframe type ('pandas' or 'polars').
+    seed : int (default=0)
+        Random seed used for generating the data.
 
-    **Returns:**<br>
-    `freq`: pandas.DataFrame | polars.DataFrame, synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
+    Returns
+    -------
+    pandas or polars DataFrame
+        Synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
     """
-
-    available_engines = ["pandas", "polars"]
-    if engine.lower() not in available_engines:
-        raise ValueError(
-            """{} is not a correct engine; available options: {}""".format(
-                engine, ", ".join(available_engines)
-            )
-        )
-
-    seasonalities = {"D": 7, "M": 12}
-    season = seasonalities[freq]
-
-    rng = np.random.RandomState(seed)
-    series_lengths = rng.randint(min_length, max_length + 1, n_series)
-    total_length = series_lengths.sum()
-
-    vals_dict: dict = {}
-
-    # Unique id generator
-    vals_dict["unique_id"] = np.concatenate(
-        [np.repeat(i, serie_length) for i, serie_length in enumerate(series_lengths)]
+    return utils_generate_series(
+        n_series=n_series,
+        freq=freq,
+        min_length=min_length,
+        max_length=max_length,
+        n_static_features=n_static_features,
+        equal_ends=equal_ends,
+        engine=engine,
+        seed=seed,
     )
 
-    vals_dict["y"] = np.arange(total_length) % season + rng.rand(total_length) * 0.5
-
-    # Generating X number of dates that will be concatenated over to create
-    # continues repetition for each unique_id, 'ds' column will be the final
-    # result.
-    dates = pd.date_range("2000-01-01", periods=max_length, freq=freq).values
-
-    if equal_ends:
-        vals_dict["ds"] = np.concatenate(
-            [dates[-serie_length:] for serie_length in series_lengths],
-        )
-
-    else:
-        vals_dict["ds"] = np.concatenate(
-            [dates[:serie_length] for serie_length in series_lengths],
-        )
-
-    for i in range(n_static_features):
-        random.seed(seed)
-        static_values = [
-            [random.randint(0, 100)] * serie_length for serie_length in series_lengths
-        ]
-        vals_dict[f"static_{i}"] = np.hstack(static_values)
-        if i == 0:
-            vals_dict["y"] = vals_dict["y"] * (1 + vals_dict[f"static_{i}"])
-
-    cat_cols = [col for col in vals_dict.keys() if "static" in col]
-    cat_cols.append("unique_id")
-
-    if engine.lower() == "pandas":
-        df = pd.DataFrame(vals_dict)
-        df[cat_cols] = df[cat_cols].astype("category")
-        df["unique_id"] = df["unique_id"].cat.as_ordered()
-        df = df.set_index("unique_id")
-        return df
-
-    elif engine.lower() == "polars":
-        df = pl.DataFrame(vals_dict)
-        df = df.with_columns(pl.col("unique_id").sort())
-        for col in cat_cols:
-            df = df.with_columns(pl.col(col).cast(str).cast(pl.Categorical))
-        return df
-
-    else:
-        raise ValueError(f"{engine} is not available.")
-
-# %% ../nbs/src/utils.ipynb 10
+# %% ../nbs/src/utils.ipynb 11
 AirPassengers = np.array(
     [
         112.0,
@@ -261,7 +229,7 @@ AirPassengers = np.array(
     ]
 )
 
-# %% ../nbs/src/utils.ipynb 11
+# %% ../nbs/src/utils.ipynb 12
 AirPassengersDF = pd.DataFrame(
     {
         "unique_id": np.ones(len(AirPassengers)),
@@ -270,8 +238,8 @@ AirPassengersDF = pd.DataFrame(
     }
 )
 
-# %% ../nbs/src/utils.ipynb 15
-@njit
+# %% ../nbs/src/utils.ipynb 17
+@njit(nogil=NOGIL, cache=CACHE)
 def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
     out = np.empty(h, np.float32)
     for i in range(h):
@@ -279,7 +247,7 @@ def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
     return out
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_naive(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -305,12 +273,12 @@ def _seasonal_naive(
     return fcst
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _repeat_val(val: float, h: int):
     return np.full(h, val, np.float32)
 
 
-@njit
+@njit(nogil=NOGIL, cache=CACHE)
 def _naive(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -323,7 +291,7 @@ def _naive(
         return {"mean": mean, "fitted": fitted_vals}
     return {"mean": mean}
 
-# %% ../nbs/src/utils.ipynb 17
+# %% ../nbs/src/utils.ipynb 19
 # Functions used for calculating prediction intervals
 def _quantiles(level):
     level = np.asarray(level)
@@ -345,12 +313,15 @@ def _calculate_intervals(out, level, h, sigmah):
 
 
 def _calculate_sigma(residuals, n):
-    sigma = np.nansum(residuals**2)
-    sigma = sigma / n
-    sigma = np.sqrt(sigma)
+    if n > 0:
+        sigma = np.nansum(residuals**2)
+        sigma = sigma / n
+        sigma = np.sqrt(sigma)
+    else:
+        sigma = 0
     return sigma
 
-# %% ../nbs/src/utils.ipynb 18
+# %% ../nbs/src/utils.ipynb 20
 class ConformalIntervals:
     """Class for storing conformal intervals metadata information."""
 

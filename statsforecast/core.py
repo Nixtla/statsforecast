@@ -3,32 +3,35 @@
 # %% auto 0
 __all__ = ['StatsForecast']
 
-# %% ../nbs/src/core/core.ipynb 5
+# %% ../nbs/src/core/core.ipynb 6
+import datetime as dt
+import errno
 import inspect
 import logging
-import random
+import os
+import pickle
 import re
 import reprlib
 import warnings
-from itertools import product
-from os import cpu_count
-from typing import Any, List, Optional, Union, Dict
-import pkg_resources
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
-from fugue.execution.factory import make_execution_engine
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.colors as cm
 import numpy as np
 import pandas as pd
-import polars as pl
+import utilsforecast.processing as ufp
+from fugue.execution.factory import (
+    make_execution_engine,
+    try_get_context_execution_engine,
+)
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
-from fugue.execution.factory import try_get_context_execution_engine
+from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
+from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
+from utilsforecast.validation import ensure_time_dtype, validate_freq
 
 from .utils import ConformalIntervals
 
-# %% ../nbs/src/core/core.ipynb 6
+# %% ../nbs/src/core/core.ipynb 7
 if __name__ == "__main__":
     logging.basicConfig(
         format="%(asctime)s %(name)s %(levelname)s: %(message)s",
@@ -36,30 +39,8 @@ if __name__ == "__main__":
     )
 logger = logging.getLogger(__name__)
 
-# %% ../nbs/src/core/core.ipynb 9
-class GroupedArray:
-    def __init__(self, data, indptr):
-        self.data = data
-        self.indptr = indptr
-        self.n_groups = self.indptr.size - 1
-
-    def __getitem__(self, idx):
-        if isinstance(idx, int):
-            return self.data[self.indptr[idx] : self.indptr[idx + 1]]
-        elif isinstance(idx, slice):
-            idx = slice(idx.start, idx.stop + 1, idx.step)
-            new_indptr = self.indptr[idx].copy()
-            new_data = self.data[new_indptr[0] : new_indptr[-1]].copy()
-            new_indptr -= new_indptr[0]
-            return GroupedArray(new_data, new_indptr)
-        raise ValueError(f"idx must be either int or slice, got {type(idx)}")
-
-    def __len__(self):
-        return self.n_groups
-
-    def __repr__(self):
-        return f"GroupedArray(n_data={self.data.size:,}, n_groups={self.n_groups:,})"
-
+# %% ../nbs/src/core/core.ipynb 10
+class GroupedArray(BaseGroupedArray):
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
             return False
@@ -67,14 +48,21 @@ class GroupedArray:
             self.indptr, other.indptr
         )
 
-    def fit(self, models):
+    def fit(self, models, fallback_model=None):
         fm = np.full((self.n_groups, len(models)), np.nan, dtype=object)
         for i, grp in enumerate(self):
             y = grp[:, 0] if grp.ndim == 2 else grp
             X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
             for i_model, model in enumerate(models):
-                new_model = model.new()
-                fm[i, i_model] = new_model.fit(y=y, X=X)
+                try:
+                    new_model = model.new()
+                    fm[i, i_model] = new_model.fit(y=y, X=X)
+                except Exception as error:
+                    if fallback_model is not None:
+                        new_fallback_model = fallback_model.new()
+                        fm[i, i_model] = new_fallback_model.fit(y=y, X=X)
+                    else:
+                        raise error
         return fm
 
     def _get_cols(self, models, attr, h, X, level=tuple()):
@@ -156,6 +144,7 @@ class GroupedArray:
         X=None,
         level=tuple(),
         verbose=False,
+        target_col="y",
     ):
         fcsts, cuts, has_level_models = self._output_fcst(
             models=models, attr="forecast", h=h, X=X, level=level
@@ -240,7 +229,7 @@ class GroupedArray:
         result = {"forecasts": fcsts, "cols": cols}
         if fitted:
             result["fitted"] = {"values": fitted_vals}
-            result["fitted"]["cols"] = ["y"] + cols_fitted
+            result["fitted"]["cols"] = [target_col] + cols_fitted
         return result
 
     def cross_validation(
@@ -255,6 +244,7 @@ class GroupedArray:
         level=tuple(),
         refit=True,
         verbose=False,
+        target_col="y",
     ):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
@@ -283,7 +273,9 @@ class GroupedArray:
                 disable=(not verbose),
                 total=len(steps),
             )
+            fitted_models = [None for _ in range(n_models)]
             for i_window, cutoff in iterable:
+                should_fit = i_window == 0 or (refit > 0 and i_window % refit == 0)
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size
                 y = grp[(cutoff - in_size_disp) : cutoff]
@@ -306,63 +298,47 @@ class GroupedArray:
                     last_fitted_idxs[
                         self.indptr[i_ts] : self.indptr[i_ts + 1], i_window
                     ][cutoff - 1] = True
-                cols = ["y"]
+                cols = [target_col]
                 for i_model, model in enumerate(models):
                     has_level = has_level_models[i_model]
                     kwargs = {}
                     if has_level:
                         kwargs["level"] = level
-                    if refit:
+                    # this is implemented like this because not all models have a forward method
+                    # so we can't do fit + forward
+                    if refit is True:
+                        forecast_kwargs = dict(
+                            h=h,
+                            y=y_train,
+                            X=X_train,
+                            X_future=X_future,
+                            fitted=fitted,
+                            **kwargs,
+                        )
                         try:
-                            res_i = model.forecast(
-                                h=h,
-                                y=y_train,
-                                X=X_train,
-                                X_future=X_future,
-                                fitted=fitted,
-                                **kwargs,
-                            )
+                            res_i = model.forecast(**forecast_kwargs)
                         except Exception as error:
-                            if fallback_model is not None:
-                                res_i = fallback_model.forecast(
-                                    h=h,
-                                    y=y_train,
-                                    X=X_train,
-                                    X_future=X_future,
-                                    fitted=fitted,
-                                    **kwargs,
-                                )
-                            else:
+                            if fallback_model is None:
                                 raise error
+                            res_i = fallback_model.forecast(**forecast_kwargs)
                     else:
-                        if i_window == 0:
-                            # for the first window we have to fit each model
-                            model = model.fit(y=y_train, X=X_train)
-                            if fallback_model is not None:
-                                fallback_model = fallback_model.fit(
+                        if should_fit:
+                            try:
+                                fitted_models[i_model] = model.fit(y=y_train, X=X_train)
+                            except Exception as error:
+                                if fallback_model is None:
+                                    raise error
+                                fitted_models[i_model] = fallback_model.new().fit(
                                     y=y_train, X=X_train
                                 )
-                        try:
-                            res_i = model.forward(
-                                h=h,
-                                y=y_train,
-                                X=X_train,
-                                X_future=X_future,
-                                fitted=fitted,
-                                **kwargs,
-                            )
-                        except Exception as error:
-                            if fallback_model is not None:
-                                res_i = fallback_model.forward(
-                                    h=h,
-                                    y=y_train,
-                                    X=X_train,
-                                    X_future=X_future,
-                                    fitted=fitted,
-                                    **kwargs,
-                                )
-                            else:
-                                raise error
+                        res_i = fitted_models[i_model].forward(
+                            h=h,
+                            y=y_train,
+                            X=X_train,
+                            X_future=X_future,
+                            fitted=fitted,
+                            **kwargs,
+                        )
                     cols_m = [
                         key
                         for key in res_i.keys()
@@ -389,435 +365,163 @@ class GroupedArray:
                 "values": fitted_vals,
                 "idxs": fitted_idxs,
                 "last_idxs": last_fitted_idxs,
-                "cols": ["y"] + [repr(model) for model in models],
+                "cols": [target_col] + [repr(model) for model in models],
             }
         return result
 
+    def take(self, idxs):
+        data, indptr = super().take(idxs)
+        return GroupedArray(data, indptr)
+
     def split(self, n_chunks):
+        n_chunks = min(n_chunks, self.n_groups)
         return [
-            self[x[0] : x[-1] + 1]
-            for x in np.array_split(range(self.n_groups), n_chunks)
-            if x.size
+            self.take(idxs) for idxs in np.array_split(range(self.n_groups), n_chunks)
         ]
 
     def split_fm(self, fm, n_chunks):
         return [
-            fm[x[0] : x[-1] + 1]
-            for x in np.array_split(range(self.n_groups), n_chunks)
-            if x.size
+            fm[idxs]
+            for idxs in np.array_split(range(self.n_groups), n_chunks)
+            if idxs.size
         ]
 
-# %% ../nbs/src/core/core.ipynb 22
-class DataFrameProcessing:
-    """
-    A utility to process Pandas or Polars dataframes for time series forecasting.
-
-    This class ensures the dataframe is properly structured, with required columns
-    ('unique_id', 'ds', 'y'), and the 'ds' column is of datetime type. It also
-    provides options for sorting the dataframe based on a unique identifier and a
-    timestamp, and separates the data into different arrays for easy access during
-    forecasting operations.
-
-    Attributes:
-    ----------
-    dataframe : pd.DataFrame or pl.DataFrame
-        A pandas or polars dataframe to be processed.
-    sort_dataframe : bool
-        A boolean indicating whether the dataframe should be sorted.
-
-    Methods:
-    -------
-    __call__():
-        Processes the dataframe by ensuring the columns are in the correct format,
-        sorts the dataframe if required, and separates the data into different
-        arrays for future operations.
-    _to_np_and_engine():
-        Converts the dataframe to a numpy structured array and identifies the
-        dataframe engine (pandas or polars).
-    _validate_dataframe(dataframe: Union[pd.DataFrame, pl.DataFrame]):
-        Checks if the required columns ('unique_id', 'ds', 'y') are present in the
-        dataframe.
-    _check_datetime(arr: np.array) -> np.array:
-        Validates that the 'ds' column is of datetime type, and if not, attempts to
-        convert it to datetime.
-    """
-
-    def __init__(
-        self,
-        dataframe: Union[pd.DataFrame, pl.DataFrame],
-        sort_dataframe: bool,
-        validate: Optional[bool] = True,
-    ):
-        self.dataframe = dataframe
-        self.sort_dataframe = sort_dataframe
-        self.validate = validate
-
-        # Columns declaration
-        self.non_value_columns: Union[tuple, list] = ["unique_id", "ds"]
-        self.datetime_column_name: str = "ds"
-        self.dt_dtype = np.dtype("datetime64")
-        self.__call__()
-
-    def __call__(self):
-        """Sequential execution of the code"""
-        # Declaring values that will be utilized
-        self.np_df = self._to_np_and_engine()
-        self.dataframe_columns = self.np_df.dtype.names
-
-        # Processing value columns
-        value_columns = [
-            column
-            for column in self.dataframe_columns
-            if column not in self.non_value_columns
-        ]
-        self.value_array = self.np_df[value_columns]
-        if self.value_array.ndim == 1 and len(value_columns) > 1:
-            self.value_array = np.stack(
-                [
-                    self.value_array[name].astype(float)
-                    for name in self.value_array.dtype.names
-                ],
-                axis=1,
-            )
-        if self.value_array.ndim == 1 and len(value_columns) == 1:
-            self.value_array = (
-                self.value_array[value_columns].astype(float).reshape(-1, 1)
-            )
-
-        # Processing unique_id
-        self.unique_id = self.np_df["unique_id"]
-        if self.unique_id.dtype.kind == "O":
-            self.unique_id.astype(str)
-
-        # If values are already int or float then they won't be converted
-        if self.unique_id.dtype.kind not in ["i", "f"]:
-            # If all values in the numpy array are numerical then proceed with conversion
-            if np.char.isnumeric(self.unique_id.astype(str)).all():
-                # If number are whole then they will be converted to `int`, else `float`
-                # This is pure aesthetics addition.
-                self.unique_id = self.unique_id.astype(float)
-                if np.isclose(self.unique_id, np.round(self.unique_id)).all():
-                    self.unique_id = self.unique_id.astype(int)
-        # NOTE: When sorting with Numpy, character values may be prioritized over numerical values if the data
-        # type is set to 'object'. For instance, the value '10' would come before '3' because it contains '1' and '0'
-        # at the beginning. One solution to this problem is to convert the data to 'float' if it is numerical.
-        unique_id_count = pd.Series(self.unique_id).value_counts(sort=False)
-        self.indices, sizes = unique_id_count.index, unique_id_count.values
-        cum_sizes = np.cumsum(sizes)
-
-        # Processing datestamp
-        self.dates = self.np_df[self.datetime_column_name]
-        if self.engine_dataframe == pd.DataFrame:
-            self.dates = self.dataframe.index.get_level_values(
-                self.datetime_column_name
-            )
-        self.dates = self.dates[cum_sizes - 1]
-        self.indptr = np.append(0, cum_sizes).astype(np.int32)
-
-        # Index that will be used by pandas, not polars
-        self.index = pd.MultiIndex.from_arrays(
-            [
-                self.np_df["unique_id"],
-                self.np_df["ds"],
-            ],
-            names=["unique_id", "ds"],
-        )
-
-    def grouped_array(self):
-        return GroupedArray(self.value_array, self.indptr)
-
-    def _to_np_and_engine(self):
-        """
-        This function will be utilised to convert DataFrame to dictionary.
-
-        Returns:
-            tuple[pd.DataFrame or pl.DataFrame, dict]: the engine that will be used to construct
-                the output DataFrame and dictionary of DataFrame values
-
-        Raises:
-            ValueError: If DataFrame engine is not supported and/or accounted for.
-        """
-
-        ####################
-        # Polars DataFrame #
-        ####################
-        if isinstance(self.dataframe, pl.DataFrame):
-            # Ensure that all required columns are present in the DataFrame:
-            self.engine_dataframe = pl.DataFrame
-            if self.validate:
-                self._validate_dataframe(self.dataframe)
-            elif self.validate == False:
-                self._partial_val_df(self.dataframe)
-
-            # datetime check
-            dt_arr = self.dataframe["ds"].to_numpy()
-            processed_dt_arr = self._check_datetime(dt_arr)
-            if type(dt_arr) != type(processed_dt_arr):
-                self.dataframe = self.dataframe.with_columns(
-                    pl.from_numpy(processed_dt_arr.to_numpy(), schema=["ds"])
-                )
-
-            sample_index_df = self.dataframe[self.non_value_columns]
-            sorted_index_df = sample_index_df.sort(self.non_value_columns)
-            is_monotonic_increasing = sample_index_df.frame_equal(sorted_index_df)
-
-            # Sorting will be performed if sort is set to true and values are unsorted
-            if not is_monotonic_increasing and self.sort_dataframe:
-                self.dataframe = self.dataframe.sort(self.non_value_columns)
-
-            # resources: https://github.com/pola-rs/polars/blob/4fca1ae51864f74e0367d8bc91b4a2db00e54174/py-polars/polars/dataframe/frame.py#L1975
-            # resources: https://numpy.org/doc/stable/user/basics.rec.html
-            # resources: https://numpy.org/doc/stable/reference/generated/numpy.core.records.fromarrays.html
-            # NOTE: Structured array is not available in polars under the version 0.17.12
-            pl_version = pkg_resources.get_distribution("polars").version
-            min_pl_v = pkg_resources.parse_version("0.17.12")
-            if pkg_resources.parse_version(pl_version) >= min_pl_v:
-                return self.dataframe.to_numpy(structured=True)
-            else:
-                arrays = []
-                for column, column_dtype in self.dataframe.schema.items():
-                    ser = self.dataframe[column]
-                    arr = ser.to_numpy()
-                    arrays.append(
-                        arr.astype(str, copy=False)
-                        if str(column_dtype) == "Utf8" and not ser.has_validity()
-                        else arr
-                    )
-                arr_dtypes = list(
-                    zip(self.dataframe.columns, (a.dtype for a in arrays))
-                )
-                return np.rec.fromarrays(arrays, dtype=np.dtype(arr_dtypes))
-
-        ####################
-        # Pandas DataFrame #
-        ####################
-        elif isinstance(self.dataframe, pd.DataFrame):
-            self.engine_dataframe = pd.DataFrame
-            # Ensure that all required columns are present in the DataFrame:
-            # Full validation
-            if self.validate and self.dataframe.index.name == "unique_id":
-                reset_df = self.dataframe.reset_index()
-                self._validate_dataframe(reset_df)
-                del reset_df
-
-            elif self.validate and self.dataframe.index.name != "unique_id":
-                self._validate_dataframe(self.dataframe)
-                self.dataframe = self.dataframe.set_index("unique_id")
-
-            # Partial validation
-            elif self.validate == False and self.dataframe.index.name == "unique_id":
-                reset_df = self.dataframe.reset_index()
-                self._partial_val_df(reset_df)
-                del reset_df
-
-            elif self.validate == False and self.dataframe.index.name != "unique_id":
-                self._partial_val_df(self.dataframe)
-                self.dataframe = self.dataframe.set_index("unique_id")
-
-            # Datetime check
-            dt_arr = self.dataframe["ds"].values
-            self.dataframe = self.dataframe.copy(deep=False)
-            self.dataframe["ds"] = self._check_datetime(dt_arr)
-
-            self.dataframe = self.dataframe.set_index("ds", append=True)
-
-            # Sorting will be performed if sort is set to true and values are unsorted
-            if not self.dataframe.index.is_monotonic_increasing and self.sort_dataframe:
-                self.dataframe = self.dataframe.sort_values(self.non_value_columns)
-
-            np_df = self.dataframe.to_records(index=True)
-
-            return np_df
-
-        ####################
-        # Not Supported DF #
-        ####################
-        else:
-            raise ValueError(f"{type(self.dataframe)} is not supported")
-
-    def _validate_dataframe(self, dataframe: Union[pd.DataFrame, pl.DataFrame]):
-        """
-        Will ensure that all DataFrame columns match the required columns.
-
-        This code requires a pandas DataFrame with the following structure:
-
-        Columns:
-        - `unique_id` Union[str, int, categorical]: an identifier for the series
-        - `ds` Union[datestamp, int]: column should be either an integer indexing time or a
-            datestamp ideally like YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.
-        - `y` Union[float, int]: represents the measurement we wish to forecast.
-
-        Raise:
-            KeyError: DataFrame is missing `unique_id`, `ds`, `y` columns.
-        """
-        required_columns = ["unique_id", "ds", "y"]
-        matches = all(rc in dataframe.columns for rc in required_columns)
-        if not matches:
-            raise KeyError(
-                "The DataFrame doesn't contain {} columns".format(
-                    ", ".join(required_columns)
-                )
-            )
-
-    def _partial_val_df(self, dataframe: Union[pd.DataFrame, pl.DataFrame]):
-        """
-        Will ensure that all DataFrame columns match the required columns.
-
-        This code requires a pandas DataFrame with the following structure:
-
-        Columns:
-        - `unique_id` Union[str, int, categorical]: an identifier for the series
-        - `ds` Union[datestamp, int]: column should be either an integer indexing time or a
-            datestamp ideally like YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a timestamp.
-
-        Raise:
-            KeyError: DataFrame is missing `unique_id` and/or `ds` columns.
-        """
-        required_columns = ["unique_id", "ds"]
-        matches = all(rc in dataframe.columns for rc in required_columns)
-        if not matches:
-            raise KeyError(
-                "The DataFrame doesn't contain {} columns".format(
-                    ", ".join(required_columns)
-                )
-            )
-
-    def _check_datetime(self, arr: np.ndarray) -> Union[pd.DatetimeIndex, np.ndarray]:
-        dt_check = pd.api.types.is_datetime64_any_dtype(arr)
-        int_float_check = arr.dtype.kind in ["i", "f"]
-        if not dt_check and not int_float_check:
-            self._ds_is_dt = True
-            try:
-                return pd.to_datetime(arr)
-            except Exception as e:
-                msg = (
-                    "Failed to parse `ds` column as datetime. "
-                    "Please use `pd.to_datetime` outside to fix the error. "
-                    f"{e}"
-                )
-                raise Exception(msg) from e
-        return arr
-
-# %% ../nbs/src/core/core.ipynb 25
-def _cv_dates(last_dates, freq, h, test_size, step_size=1):
-    # assuming step_size = 1
-    if (test_size - h) % step_size:
-        raise Exception("`test_size - h` should be module `step_size`")
-    n_windows = int((test_size - h) / step_size) + 1
-    if len(np.unique(last_dates)) == 1:
-        if issubclass(last_dates.dtype.type, np.integer):
-            total_dates = np.arange(last_dates[0] - test_size + 1, last_dates[0] + 1)
-            out = np.empty((h * n_windows, 2), dtype=last_dates.dtype)
-            freq = 1
-        else:
-            total_dates = pd.date_range(end=last_dates[0], periods=test_size, freq=freq)
-            out = np.empty((h * n_windows, 2), dtype="datetime64[s]")
-        for i_window, cutoff in enumerate(
-            range(-test_size, -h + 1, step_size), start=0
-        ):
-            end_cutoff = cutoff + h
-            out[h * i_window : h * (i_window + 1), 0] = (
-                total_dates[cutoff:]
-                if end_cutoff == 0
-                else total_dates[cutoff:end_cutoff]
-            )
-            out[h * i_window : h * (i_window + 1), 1] = np.tile(
-                total_dates[cutoff] - freq, h
-            )
-        dates = pd.DataFrame(
-            np.tile(out, (len(last_dates), 1)), columns=["ds", "cutoff"]
-        )
-    else:
-        dates = pd.concat(
-            [
-                _cv_dates(np.array([ld]), freq, h, test_size, step_size)
-                for ld in last_dates
-            ]
-        )
-        dates = dates.reset_index(drop=True)
-    return dates
-
-# %% ../nbs/src/core/core.ipynb 29
+# %% ../nbs/src/core/core.ipynb 24
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
-        actual_n_jobs = cpu_count()
+        actual_n_jobs = os.cpu_count()
     else:
         actual_n_jobs = n_jobs
     return min(n_groups, actual_n_jobs)
 
-# %% ../nbs/src/core/core.ipynb 32
-def _parse_ds_type(df):
-    dt_col = df["ds"]
-    dt_check = pd.api.types.is_datetime64_any_dtype(dt_col)
-    int_float_check = dt_col.dtype.kind in ["i", "f"]
-    if not dt_check and not int_float_check:
-        df = df.copy()
-        try:
-            df["ds"] = pd.to_datetime(df["ds"])
-        except Exception as e:
-            msg = (
-                "Failed to parse `ds` column as datetime. "
-                "Please use `pd.to_datetime` outside to fix the error. "
-                f"{e}"
-            )
-            raise Exception(msg) from e
-    return df
+# %% ../nbs/src/core/core.ipynb 27
+def _warn_df_constructor():
+    warnings.warn(
+        "The `df` argument of the StatsForecast constructor as well as reusing stored "
+        "dfs from other methods is deprecated and will raise an error in a future version. "
+        "Please provide the `df` argument to the corresponding method instead, e.g. fit/forecast.",
+        category=DeprecationWarning,
+    )
 
-# %% ../nbs/src/core/core.ipynb 33
+
+def _maybe_warn_sort_df(sort_df):
+    if not sort_df:
+        warnings.warn(
+            "The `sort_df` argument is deprecated and will be removed in a future version. "
+            "You can leave it to its default value (True) to supress this warning",
+            category=DeprecationWarning,
+        )
+
+
+def _warn_id_as_idx():
+    warnings.warn(
+        "In a future version the predictions will have the id as a column. "
+        "You can set the `NIXTLA_ID_AS_COL` environment variable "
+        "to adopt the new behavior and to suppress this warning.",
+        category=DeprecationWarning,
+    )
+
+
+def _id_as_idx() -> bool:
+    return not bool(os.getenv("NIXTLA_ID_AS_COL", ""))
+
+# %% ../nbs/src/core/core.ipynb 28
+_param_descriptions = {
+    "freq": """freq : str or int
+            Frequency of the data. Must be a valid pandas or polars offset alias, or an integer.""",
+    "df": """df : pandas or polars DataFrame, optional (default=None)
+            DataFrame with ids, times, targets and exogenous.""",
+    "sort_df": """sort_df : bool (default=True)
+            Sort `df` by ids and times.""",
+    "fallback_model": """fallback_model : Any, optional (default=None)
+            Any, optional (default=None)
+            Model to be used if a model fails.
+            Only works with the `forecast` and `cross_validation` methods.""",
+    "id_col": """id_col : str (default='unique_id')
+            Column that identifies each serie.""",
+    "time_col": """time_col : str (default='ds')
+            Column that identifies each timestep, its values can be timestamps or integers.""",
+    "target_col": """target_col : str (default='y')
+            Column that contains the target.""",
+    "h": """h : int
+            Forecast horizon.""",
+    "X_df": """X_df : pandas or polars DataFrame, optional (default=None)
+            DataFrame with ids, times and future exogenous.""",
+    "level": """level : List[float], optional (default=None)
+            Confidence levels between 0 and 100 for prediction intervals.""",
+    "prediction_intervals": """prediction_intervals : ConformalIntervals, optional (default=None)
+            Configuration to calibrate prediction intervals (Conformal Prediction).""",
+    "fitted": """fitted : bool (default=False)
+            Store in-sample predictions.""",
+    "n_jobs": """n_jobs : int (default=1)
+            Number of jobs used in the parallel processing, use -1 for all cores.""",
+    "verbose": """verbose : bool (default=True)
+            Prints TQDM progress bar when `n_jobs=1`.""",
+    "models": """models : List[Any]
+            List of instantiated objects models.StatsForecast.""",
+    "n_windows": """n_windows : int (default=1)
+            Number of windows used for cross validation.""",
+    "step_size": """step_size : int (default=1)
+            Step size between each window.""",
+    "test_size": """test_size : int, optional (default=None)
+            Length of test size. If passed, set `n_windows=None`.""",
+    "input_size": """input_size : int, optional (default=None)
+            Input size for each window, if not none rolled windows.""",
+    "refit": """refit : bool or int (default=True)
+            Wether or not refit the model for each window.
+            If int, train the models every `refit` windows.""",
+}
+
+# %% ../nbs/src/core/core.ipynb 29
 class _StatsForecast:
+    """The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
+    for large sets of time series. It operates on a DataFrame `df` with at least three columns
+    ids, times and targets.
+
+    The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
+    model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
+    Scikit-learn interface store the fitted models.
+
+    The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
+    See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+    """
+
     def __init__(
         self,
         models: List[Any],
-        freq: str,
+        freq: Union[str, int],
         n_jobs: int = 1,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
         sort_df: bool = True,
         fallback_model: Optional[Any] = None,
         verbose: bool = False,
     ):
         """Train statistical models.
 
-        The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
-        for large sets of time series. It operates with pandas DataFrame `df` that identifies series
-        and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target
-        time series variable.
-
-        The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
-        model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
-        Scikit-learn interface store the fitted models.
-
-        The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
-        See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
-
         Parameters
         ----------
-        models : List[Any]
-            List of instantiated objects models.StatsForecast.
-        freq : str
-            Frequency of the data.
-            See [pandas' available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-        n_jobs : int (default=1)
-            Number of jobs used in the parallel processing, use -1 for all cores.
-        df : pandas.DataFrame or pl.DataFrame, optional (default=None)
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-        sort_df : bool (default=True)
-            If True, sort `df` by [`unique_id`,`ds`].
-        fallback_model : Any, optional (default=None)
-            Model to be used if a model fails.
-            Only works with the `forecast` and `cross_validation` methods.
-        verbose : bool (default=True)
-            Prints TQDM progress bar when `n_jobs=1`.
+        {models}
+        {freq}
+        {n_jobs}
+        {df}
+        {sort_df}
+        {fallback_model}
+        {verbose}
         """
-
         # TODO @fede: needed for residuals, think about it later
         self.models = models
         self._validate_model_names()
-        self.freq = pd.tseries.frequencies.to_offset(freq)
+        self.freq = freq
         self.n_jobs = n_jobs
         self.fallback_model = fallback_model
         self.verbose = verbose
-        self.n_jobs == 1
-        self._prepare_fit(df=df, sort_df=sort_df)
+        if df is not None:
+            _warn_df_constructor()
+            self._prepare_fit(df=df, sort_df=sort_df)
+        else:
+            _maybe_warn_sort_df(sort_df)
+
+    __init__.__doc__ = __init__.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def _validate_model_names(self):
         # Some test models don't have alias
@@ -828,18 +532,45 @@ class _StatsForecast:
                 "Model names must be unique. You can use `alias` to set a unique name for each model."
             )
 
-    def _prepare_fit(self, df, sort_df):
-        if df is not None:
-            df_process = DataFrameProcessing(df, sort_df)
-            self.ga = df_process.grouped_array()
-            self.uids = df_process.indices
-            self.last_dates = df_process.dates
-            self.ds = df_process.index
-            self.og_dates = df_process.np_df["ds"]
-            self.og_unique_id = df_process.np_df["unique_id"]
-            self.engine = df_process.engine_dataframe
-            self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs)
-            self.sort_df = sort_df
+    def _prepare_fit(
+        self,
+        df: Optional[DataFrame],
+        sort_df: bool = True,
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
+    ) -> None:
+        if df is None:
+            if not hasattr(self, "ga"):
+                raise ValueError("You must provide the `df` argument.")
+            _warn_df_constructor()
+            return
+        df = ensure_time_dtype(df, time_col)
+        validate_freq(df[time_col], self.freq)
+        if isinstance(df, pd.DataFrame) and df.index.name == id_col:
+            warnings.warn(
+                "Passing unique_id as the index is deprecated. "
+                "Please provide it as a column instead.",
+                category=DeprecationWarning,
+            )
+            df = df.reset_index()
+        _maybe_warn_sort_df(sort_df)
+        self.uids, last_times, data, indptr, sort_idxs = ufp.process_df(
+            df, id_col, time_col, target_col
+        )
+        if isinstance(df, pd.DataFrame):
+            self.last_dates = pd.Index(last_times, name=time_col)
+        else:
+            self.last_dates = pl_Series(last_times)
+        self.ga = GroupedArray(data, indptr)
+        self.og_dates = df[time_col].to_numpy()
+        if sort_idxs is not None:
+            self.og_dates = self.og_dates[sort_idxs]
+        self.n_jobs = _get_n_jobs(len(self.ga), self.n_jobs)
+        self.df_constructor = type(df)
+        self.id_col = id_col
+        self.time_col = time_col
+        self.target_col = target_col
 
     def _set_prediction_intervals(self, prediction_intervals):
         for model in self.models:
@@ -849,9 +580,12 @@ class _StatsForecast:
 
     def fit(
         self,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
     ):
         """Fit statistical models.
 
@@ -860,84 +594,70 @@ class _StatsForecast:
 
         Parameters
         ----------
-        df : pandas.DataFrame or polars.DataFrame, optional (default=None)
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-            If None, the `StatsForecast` class should have been instantiated
-            using `df`.
-        sort_df : bool (default=True)
-            If True, sort `df` by [`unique_id`,`ds`].
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
+        {df}
+            If None, the `StatsForecast` class should have been instantiated using `df`.
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
         self : StatsForecast
             Returns with stored `StatsForecast` fitted `models`.
         """
+        self._prepare_fit(
+            df=df,
+            sort_df=sort_df,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         if self.n_jobs == 1:
-            self.fitted_ = self.ga.fit(models=self.models)
+            self.fitted_ = self.ga.fit(
+                models=self.models, fallback_model=self.fallback_model
+            )
         else:
             self.fitted_ = self._fit_parallel()
         return self
 
+    fit.__doc__ = fit.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+
     def _make_future_df(self, h: int):
-        if issubclass(self.last_dates.dtype.type, np.integer):
-            last_date_f = lambda x: np.arange(
-                x + 1, x + 1 + h, dtype=self.last_dates.dtype
-            )
-        else:
-            last_date_f = lambda x: pd.date_range(
-                x + self.freq, periods=h, freq=self.freq
-            )
-        if len(np.unique(self.last_dates)) == 1:
-            dates = np.tile(last_date_f(self.last_dates[0]), len(self.ga))
-        else:
-            dates = np.hstack([last_date_f(last_date) for last_date in self.last_dates])
-        u_id_ser: Union[pd.Series, pl.Series] = np.repeat(self.uids, h)
-        unique_id: np.ndarray = u_id_ser.to_numpy()
-
-        # In older versions to_numpy converts string values into object,
-        # creating bytes error, this fixes it
-        if unique_id.dtype.kind == "O":
-            unique_id = unique_id.astype(str)
-
-        if self.engine == pd.DataFrame:
-            idx = pd.Index(unique_id, name="unique_id")
-            df = self.engine({"ds": dates}, index=idx)
-        elif self.engine == pl.DataFrame:
-            df = self.engine({"unique_id": unique_id, "ds": dates})
+        start_dates = ufp.offset_times(self.last_dates, freq=self.freq, n=1)
+        dates = ufp.time_ranges(start_dates, freq=self.freq, periods=h)
+        uids = ufp.repeat(self.uids, n=h)
+        df = self.df_constructor({self.id_col: uids, self.time_col: dates})
+        if isinstance(df, pd.DataFrame):
+            if _id_as_idx():
+                _warn_id_as_idx()
+                df = df.set_index(self.id_col)
+            else:
+                df = df.reset_index(drop=True)
         return df
 
-    def _parse_X_level(self, h, X, level):
-        if X is not None:
-            if isinstance(X, pd.DataFrame):
-                if X.index.name != "unique_id":
-                    X = X.set_index("unique_id")
-            expected_shape_rows = h * len(self.ga)
-            ga_shape = self.ga.data.shape[1]
-            # Polars doesn't have index, hence, extra "column"
-            expected_shape_cols = (
-                ga_shape if not isinstance(X, pl.DataFrame) else ga_shape + 1
-            )
-            expected_shape = (expected_shape_rows, expected_shape_cols)
-
-            if X.shape != expected_shape:
-                raise ValueError(
-                    f"Expected X to have shape {expected_shape}, but got {X.shape}"
-                )
-            X = DataFrameProcessing(
-                X, sort_dataframe=self.sort_df, validate=False
-            ).grouped_array()
+    def _parse_X_level(
+        self, h: int, X: Optional[DataFrame], level: Optional[List[int]]
+    ):
         if level is None:
-            level = tuple()
-        return X, level
+            level = []
+        if X is None:
+            return X, level
+        expected_shape = (h * len(self.ga), self.ga.data.shape[1] + 1)
+        if X.shape != expected_shape:
+            raise ValueError(
+                f"Expected X to have shape {expected_shape}, but got {X.shape}"
+            )
+        first_col = [c for c in X.columns if c not in (self.id_col, self.time_col)][0]
+        _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, first_col)
+        return GroupedArray(data, indptr), level
 
     def predict(
         self,
         h: int,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
     ):
         """Predict statistical models.
@@ -946,20 +666,16 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
+        {h}
+        {X_df}
+        {level}
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame | polars.DataFrame
+        fcsts_df : pandas or polars DataFrame
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
-
         if (
             any(
                 getattr(m, "prediction_intervals", None) is not None
@@ -980,15 +696,20 @@ class _StatsForecast:
         fcsts_df[cols] = fcsts
         return fcsts_df
 
+    predict.__doc__ = predict.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+
     def fit_predict(
         self,
         h: int,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-    ):
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
+    ) -> DataFrame:
         """Fit and Predict with statistical models.
 
         This method avoids memory burden due from object storage.
@@ -999,33 +720,35 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous variables.
-            If None, the `StatsForecast` class should have been instantiated
-            using `df`.
-        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
-        sort_df : bool (default=True)
-            If True, sort `df` by [`unique_id`,`ds`].
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
+        {h}
+        {df}
+            If None, the `StatsForecast` class should have been instantiated using `df`.
+        {X_df}
+        {level}
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame | polars.DataFrame
+        fcsts_df : pandas or polars DataFrame
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        self._prepare_fit(
+            df=df,
+            sort_df=sort_df,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
         if prediction_intervals is not None and level is None:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             self.fitted_, fcsts, cols = self.ga.fit_predict(
@@ -1039,16 +762,21 @@ class _StatsForecast:
         fcsts_df[cols] = fcsts
         return fcsts_df
 
+    fit_predict.__doc__ = fit_predict.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+
     def forecast(
         self,
         h: int,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-    ):
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
+    ) -> DataFrame:
         """Memory Efficient predictions.
 
         This method avoids memory burden due from object storage.
@@ -1057,31 +785,32 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-            If None, the `StatsForecast` class should have been instantiated
-            using `df`.
-        X_df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with [`unique_id`, `ds`] columns and `df`'s future exogenous.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
-        fitted : bool (default=False)
-            Wether or not return insample predictions.
-        sort_df : bool (default=True)
-            If True, sort `df` by [`unique_id`,`ds`].
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
+        {h}
+        {df}
+        {X_df}
+        {level}
+        {fitted}
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame | polars.DataFrame
+        fcsts_df : pandas or polars DataFrame
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        self.__dict__.pop("fcst_fitted_values_", None)
+        self._prepare_fit(
+            df=df,
+            sort_df=sort_df,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             res_fcsts = self.ga.forecast(
@@ -1092,9 +821,12 @@ class _StatsForecast:
                 X=X,
                 level=level,
                 verbose=self.verbose,
+                target_col=target_col,
             )
         else:
-            res_fcsts = self._forecast_parallel(h=h, fitted=fitted, X=X, level=level)
+            res_fcsts = self._forecast_parallel(
+                h=h, fitted=fitted, X=X, level=level, target_col=target_col
+            )
         if fitted:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
         fcsts = res_fcsts["forecasts"]
@@ -1102,6 +834,8 @@ class _StatsForecast:
         fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
         return fcsts_df
+
+    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def forecast_fitted_values(self):
         """Access insample predictions.
@@ -1111,10 +845,6 @@ class _StatsForecast:
         to the `StatsForecast.forecast` method and then use the
         `StatsForecast.forecast_fitted_values` method.
 
-        Parameters
-        ----------
-        self : StatsForecast
-
         Returns
         -------
         fcsts_df : pandas.DataFrame | polars.DataFrame
@@ -1122,31 +852,40 @@ class _StatsForecast:
             predictions for all fitted `models`.
         """
         if not hasattr(self, "fcst_fitted_values_"):
-            raise Exception("Please run `forecast` mehtod using `fitted=True`")
+            raise Exception("Please run `forecast` method using `fitted=True`")
         cols = self.fcst_fitted_values_["cols"]
-        if self.engine == pd.DataFrame:
-            df = self.engine(
-                self.fcst_fitted_values_["values"], columns=cols, index=self.ds
-            ).reset_index(level=1)
-        elif self.engine == pl.DataFrame:
-            df = self.engine({"unique_id": self.og_unique_id, "ds": self.og_dates})
-            df[cols] = self.fcst_fitted_values_["values"]
+        df = self.df_constructor(
+            {
+                self.id_col: ufp.repeat(self.uids, np.diff(self.ga.indptr)),
+                self.time_col: self.og_dates,
+            }
+        )
+        df[cols] = self.fcst_fitted_values_["values"]
+        if isinstance(df, pd.DataFrame):
+            if _id_as_idx():
+                _warn_id_as_idx()
+                df = df.set_index(self.id_col)
+            else:
+                df = df.reset_index(drop=True)
         return df
 
     def cross_validation(
         self,
         h: int,
-        df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: Optional[DataFrame] = None,
         n_windows: int = 1,
         step_size: int = 1,
         test_size: Optional[int] = None,
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
-        refit: bool = True,
+        refit: Union[bool, int] = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
-    ):
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
+    ) -> DataFrame:
         """Temporal Cross-Validation.
 
         Efficiently fits a list of `StatsForecast`
@@ -1158,53 +897,58 @@ class _StatsForecast:
 
         Parameters
         ----------
-        h : int
-            Forecast horizon.
-        df : pandas.DataFrame | polars.DataFrame, optional (default=None)
-            DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-            If None, the `StatsForecast` class should have been instantiated
-            using `df`.
-        n_windows : int (default=1)
-            Number of windows used for cross validation.
-        step_size : int (default=1)
-            Step size between each window.
-        test_size : int, optional (default=None)
-            Length of test size. If passed, set `n_windows=None`.
-        input_size : int, optional (default=None)
-            Input size for each window, if not none rolled windows.
-        level : List[float], optional (default=None)
-            Confidence levels between 0 and 100 for prediction intervals.
-        fitted : bool (default=False)
-            Wether or not returns insample predictions.
-        refit : bool (default=True)
-            Wether or not refit the model for each window.
-        sort_df : bool (default=True)
-            If True, sort `df` by `unique_id` and `ds`.
-        prediction_intervals : ConformalIntervals, optional (default=None)
-            Configuration to calibrate prediction intervals (Conformal Prediction).
+        {h}
+        {df}
+            If None, the `StatsForecast` class should have been instantiated using `df`.
+        {n_windows}
+        {step_size}
+        {test_size}
+        {input_size}
+        {level}
+        {fitted}
+        {refit}
+        {sort_df}
+        {prediction_intervals}
+        {id_col}
+        {time_col}
+        {target_col}
 
         Returns
         -------
-        fcsts_df : pandas.DataFrame
+        fcsts_df : pandas or polars DataFrame
             DataFrame with insample `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        if n_windows is None and test_size is None:
+            raise ValueError("you must define `n_windows` or `test_size`")
         if test_size is None:
             test_size = h + step_size * (n_windows - 1)
-        elif n_windows is None:
-            if (test_size - h) % step_size:
-                raise Exception("`test_size - h` should be module `step_size`")
-            n_windows = int((test_size - h) / step_size) + 1
-        elif (n_windows is None) and (test_size is None):
-            raise Exception("you must define `n_windows` or `test_size`")
-        else:
-            raise Exception("you must define `n_windows` or `test_size` but not both")
         if prediction_intervals is not None and level is None:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
+        if not isinstance(refit, bool):
+            no_forward = [m for m in self.models if not hasattr(m, "forward")]
+            if no_forward:
+                raise ValueError(
+                    "Can only use integer refit with models that implement the forward method. "
+                    f"The following models do not implement the forward method: {no_forward}."
+                )
+            if self.fallback_model is not None and not hasattr(
+                self.fallback_model, "forward"
+            ):
+                raise ValueError(
+                    "Can only use integer refit with a fallback model that implements the forward method."
+                )
+        self.__dict__.pop("cv_fitted_values_", None)
+        self._prepare_fit(
+            df=df,
+            sort_df=sort_df,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        self._prepare_fit(df, sort_df)
         series_sizes = np.diff(self.ga.indptr)
         short_series = series_sizes <= test_size
         if short_series.any():
@@ -1226,6 +970,7 @@ class _StatsForecast:
                 level=level,
                 verbose=self.verbose,
                 refit=refit,
+                target_col=target_col,
             )
         else:
             res_fcsts = self._cross_validation_parallel(
@@ -1236,29 +981,34 @@ class _StatsForecast:
                 fitted=fitted,
                 level=level,
                 refit=refit,
+                target_col=target_col,
             )
-
         if fitted:
             self.cv_fitted_values_ = res_fcsts["fitted"]
             self.n_cv_ = n_windows
-
-        fcsts = res_fcsts["forecasts"]
-        cols = res_fcsts["cols"]
-        fcsts_df = _cv_dates(
-            last_dates=self.last_dates,
-            freq=self.freq,
+        fcsts_df = ufp.cv_times(
+            times=self.og_dates,
+            uids=self.uids,
+            indptr=self.ga.indptr,
             h=h,
             test_size=test_size,
             step_size=step_size,
+            id_col=id_col,
+            time_col=time_col,
         )
-        idx = pd.Index(np.repeat(self.uids, h * n_windows), name="unique_id")
-        fcsts_df.index = idx
-        fcsts_df[cols] = fcsts
-        if self.engine == pl.DataFrame:
-            fcsts_df = pl.from_pandas(fcsts_df, include_index=True)
+        # the cv_times is sorted by window and then id
+        fcsts_df = ufp.sort(fcsts_df, [id_col, "cutoff", time_col])
+        fcsts_df = ufp.assign_columns(
+            fcsts_df, res_fcsts["cols"], res_fcsts["forecasts"]
+        )
+        if isinstance(fcsts_df, pd.DataFrame) and _id_as_idx():
+            _warn_id_as_idx()
+            fcsts_df = fcsts_df.set_index(id_col)
         return fcsts_df
 
-    def cross_validation_fitted_values(self):
+    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+
+    def cross_validation_fitted_values(self) -> DataFrame:
         """Access insample cross validated predictions.
 
         After executing `StatsForecast.cross_validation`, you can access the insample
@@ -1266,32 +1016,42 @@ class _StatsForecast:
         to the `StatsForecast.cross_validation` method and then use the
         `StatsForecast.cross_validation_fitted_values` method.
 
-        Parameters
-        ----------
-        self : StatsForecast
-
         Returns
         -------
-        fcsts_df : pandas.DataFrame | polars.DataFrame
+        fcsts_df : pandas or polars DataFrame
             DataFrame with insample `models` columns for point predictions
             and probabilistic predictions for all fitted `models`.
         """
         if not hasattr(self, "cv_fitted_values_"):
-            raise Exception("Please run `cross_validation` mehtod using `fitted=True`")
-        index = pd.MultiIndex.from_tuples(
-            np.tile(self.ds, self.n_cv_), names=["unique_id", "ds"]
-        )
-        df = pd.DataFrame(index=index)
-        df["cutoff"] = self.cv_fitted_values_["last_idxs"].flatten(order="F")
-        df[self.cv_fitted_values_["cols"]] = np.reshape(
-            self.cv_fitted_values_["values"], (-1, len(self.models) + 1), order="F"
-        )
+            raise Exception("Please run `cross_validation` method using `fitted=True`")
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
-        df = df.iloc[idxs].reset_index(level=1)
-        df["cutoff"] = df["ds"].where(df["cutoff"]).bfill()
-
-        if self.engine == pl.DataFrame:
-            df = pl.from_pandas(df, include_index=True)
+        train_uids = ufp.repeat(self.uids, np.diff(self.ga.indptr))
+        cv_uids = ufp.vertical_concat([train_uids for _ in range(self.n_cv_)])
+        used_uids = ufp.take_rows(cv_uids, idxs)
+        dates = np.tile(self.og_dates, self.n_cv_)[idxs]
+        cutoffs_mask = self.cv_fitted_values_["last_idxs"].flatten(order="F")[idxs]
+        cutoffs_sizes = np.diff(np.append(0, np.where(cutoffs_mask)[0] + 1))
+        cutoffs = np.repeat(dates[cutoffs_mask], cutoffs_sizes)
+        df = self.df_constructor(
+            {
+                self.id_col: used_uids,
+                self.time_col: dates,
+                "cutoff": cutoffs,
+            }
+        )
+        fitted_vals = np.reshape(
+            self.cv_fitted_values_["values"],
+            (-1, len(self.models) + 1),
+            order="F",
+        )
+        df = ufp.assign_columns(df, self.cv_fitted_values_["cols"], fitted_vals[idxs])
+        df = ufp.drop_index_if_pandas(df)
+        if isinstance(df, pd.DataFrame):
+            if _id_as_idx():
+                _warn_id_as_idx()
+                df = df.set_index(self.id_col)
+            else:
+                df = df.reset_index(drop=True)
         return df
 
     def _get_pool(self):
@@ -1306,7 +1066,9 @@ class _StatsForecast:
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
             for ga in gas:
-                future = executor.apply_async(ga.fit, (self.models,))
+                future = executor.apply_async(
+                    ga.fit, (self.models, self.fallback_model)
+                )
                 futures.append(future)
             fm = np.vstack([f.get() for f in futures])
         return fm
@@ -1371,7 +1133,7 @@ class _StatsForecast:
             cols = cols[0]
         return fm, fcsts, cols
 
-    def _forecast_parallel(self, h, fitted, X, level):
+    def _forecast_parallel(self, h, fitted, X, level, target_col):
         # create elements for each core
         gas, Xs = self._get_gas_Xs(X=X)
         Pool, pool_kwargs = self._get_pool()
@@ -1389,6 +1151,7 @@ class _StatsForecast:
                         fitted,
                         X_,
                         level,
+                        target_col,
                     ),
                 )
                 futures.append(future)
@@ -1406,7 +1169,7 @@ class _StatsForecast:
         return result
 
     def _cross_validation_parallel(
-        self, h, test_size, step_size, input_size, fitted, level, refit
+        self, h, test_size, step_size, input_size, fitted, level, refit, target_col
     ):
         # create elements for each core
         gas = self.ga.split(self.n_jobs)
@@ -1428,6 +1191,7 @@ class _StatsForecast:
                         fitted,
                         level,
                         refit,
+                        target_col,
                     ),
                 )
                 futures.append(future)
@@ -1451,8 +1215,8 @@ class _StatsForecast:
 
     @staticmethod
     def plot(
-        df: Union[pd.DataFrame, pl.DataFrame],
-        forecasts_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        df: DataFrame,
+        forecasts_df: Optional[DataFrame] = None,
         unique_ids: Union[Optional[List[str]], np.ndarray] = None,
         plot_random: bool = True,
         models: Optional[List[str]] = None,
@@ -1460,19 +1224,20 @@ class _StatsForecast:
         max_insample_length: Optional[int] = None,
         plot_anomalies: bool = False,
         engine: str = "matplotlib",
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
         resampler_kwargs: Optional[Dict] = None,
     ):
         """Plot forecasts and insample values.
 
         Parameters
         ----------
-        df : pandas.DataFrame
-            DataFrame with columns [`unique_id`, `ds`, `y`].
-        forecasts_df : pandas.DataFrame, optional (default=None)
-            DataFrame with columns [`unique_id`, `ds`] and models.
-        unique_ids : List[str], optional (default=None)
-            Time Series to plot.
-            If None, time series are selected randomly.
+        {df}
+        forecasts_df : pandas or polars DataFrame, optional (default=None)
+            DataFrame ids, times and models.
+        unique_ids : list of str, optional (default=None)
+            ids to plot. If None, they're selected randomly.
         plot_random : bool (default=True)
             Select time series to plot randomly.
         models : List[str], optional (default=None)
@@ -1485,411 +1250,258 @@ class _StatsForecast:
             Plot anomalies for each prediction interval.
         engine : str (default='matplotlib')
             Library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'.
+        {id_col}
+        {time_col}
+        {target_col}
         resampler_kwargs : dict
             Kwargs to be passed to plotly-resampler constructor.
             For further custumization ("show_dash") call the method,
             store the plotting object and add the extra arguments to
             its `show_dash` method.
         """
+        from utilsforecast.plotting import plot_series
 
-        if isinstance(df, pl.DataFrame):
-            df = df.to_pandas()
-        if isinstance(forecasts_df, pl.DataFrame):
-            forecasts_df = forecasts_df.to_pandas()
-
-        if level is not None and not isinstance(level, list):
-            raise Exception(
-                "Please use a list for the `level` argument "
-                "If you only have one level, use `level=[your_level]`"
+        df = ensure_time_dtype(df, time_col)
+        if isinstance(df, pd.DataFrame) and df.index.name == id_col:
+            warnings.warn(
+                "Passing the ids as the index is deprecated. "
+                "Please provide them as a column instead.",
+                category=DeprecationWarning,
             )
-
-        if unique_ids is None:
-            df_pt = DataFrameProcessing(
-                dataframe=df, sort_dataframe=True, validate=False
+            df = df.reset_index()
+        if forecasts_df is not None:
+            forecasts_df = ensure_time_dtype(forecasts_df, time_col)
+        if isinstance(forecasts_df, pd.DataFrame) and forecasts_df.index.name == id_col:
+            warnings.warn(
+                "Passing the ids as the index is deprecated. "
+                "Please provide them as a column instead.",
+                category=DeprecationWarning,
             )
-            uids_arr: pd.Index = df_pt.indices
-            uid_dtype = uids_arr.dtype
+            forecasts_df = forecasts_df.reset_index()
+        return plot_series(
+            df=df,
+            forecasts_df=forecasts_df,
+            ids=unique_ids,
+            plot_random=plot_random,
+            models=models,
+            level=level,
+            max_insample_length=max_insample_length,
+            plot_anomalies=plot_anomalies,
+            engine=engine,
+            resampler_kwargs=resampler_kwargs,
+            palette="tab20b",
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
 
-            if df.index.name != "unique_id":
-                df["unique_id"] = df["unique_id"].astype(uid_dtype)
-                df = df.set_index("unique_id")
-            else:
-                df.index = df.index.astype(uid_dtype)
+    def save(
+        self,
+        path: Optional[Union[Path, str]] = None,
+        max_size: Optional[str] = None,
+        trim: bool = False,
+    ):
+        """Function that will save StatsForecast class with certain settings to make it
+        reproducible.
 
-            if forecasts_df is not None:
-                if isinstance(forecasts_df, pl.DataFrame):
-                    forecasts_df = forecasts_df.to_pandas()
+        Parameters
+        ----------
+        path : str or pathlib.Path, optional (default=None)
+            Path of the file to be saved. If `None` will create one in the current
+            directory using the current UTC timestamp.
+        max_size : str, optional (default = None)
+            StatsForecast object should not exceed this size.
+            Available byte naming: ['B', 'KB', 'MB', 'GB']
+        trim : bool (default = False)
+            Delete any attributes not needed for inference.
+        """
+        # Will be used to find the size of the fitted models
+        # Never expecting anything higher than GB (even that's a lot')
+        bytes_hmap = {
+            "B": 1,
+            "KB": 2**10,
+            "MB": 2**20,
+            "GB": 2**30,
+        }
 
-                if forecasts_df.index.name == "unique_id":
-                    forecasts_df.index = forecasts_df.index.astype(uid_dtype)
-                    unique_ids = np.intersect1d(uids_arr, forecasts_df.index.unique())
-                else:
-                    forecasts_df["unique_id"] = forecasts_df["unique_id"].astype(
-                        uid_dtype
-                    )
-                    unique_ids = np.intersect1d(
-                        uids_arr, forecasts_df["unique_id"].unique()
-                    )
-            else:
-                unique_ids = uids_arr
+        # Removing unnecessary attributes
+        # @jmoralez decide future implementation
+        trim_attr: list = ["fcst_fitted_values_", "cv_fitted_values_"]
+        if trim:
+            for attr in trim_attr:
+                # remove unnecessary attributes here
+                self.__dict__.pop(attr, None)
 
-        if plot_random:
-            unique_ids = random.sample(list(unique_ids), k=min(8, len(unique_ids)))
+        sf_size = len(pickle.dumps(self))
+
+        if max_size is not None:
+            cap_size = self._get_cap_size(max_size, bytes_hmap)
+            if sf_size >= cap_size:
+                err_messg = "StatsForecast is larger than the specified max_size"
+                raise OSError(errno.EFBIG, err_messg)
+
+        converted_size, sf_byte = None, None
+        for key in reversed(list(bytes_hmap.keys())):
+            x_byte = bytes_hmap[key]
+            if sf_size >= x_byte:
+                converted_size = sf_size / x_byte
+                sf_byte = key
+                break
+
+        if converted_size is None or sf_byte is None:
+            err_messg = "Internal Error, this shouldn't happen, please open an issue"
+            raise RuntimeError(err_messg)
+
+        print(f"Saving StatsForecast object of size {converted_size:.2f}{sf_byte}.")
+
+        if path is None:
+            datetime_record = dt.datetime.utcnow().strftime("%Y-%m-%d_%H-%M-%S")
+            path = f"StatsForecast_{datetime_record}.pkl"
+
+        with open(path, "wb") as m_file:
+            pickle.dump(self, m_file)
+        print("StatsForecast object saved")
+
+    def _get_cap_size(self, max_size, bytes_hmap):
+        max_size = max_size.upper().replace(" ", "")
+        match = re.match(r"(\d+\.\d+|\d+)(\w+)", max_size)
+        if (
+            match is None
+            or len(match.groups()) < 2
+            or match[2] not in bytes_hmap.keys()
+        ):
+            parsing_error = (
+                "Couldn't parse `max_size`, it should be `None`",
+                " or a number followed by one of the following units: ['B', 'KB', 'MB', 'GB']",
+            )
+            raise ValueError(parsing_error)
         else:
-            unique_ids = unique_ids[:8]
+            m_size = float(match[1])
+            key_ = match[2]
+            cap_size = m_size * bytes_hmap[key_]
+        return cap_size
 
-        if engine in ["plotly", "plotly-resampler"]:
-            try:
-                import plotly.graph_objects as go
-                from plotly.subplots import make_subplots
-            except ImportError:
-                raise ImportError(
-                    "plotly is not installed. "
-                    "Please install it with `pip install statsforecast[plotly]`"
-                )
+    @staticmethod
+    def load(path: Union[Path, str]):
+        """
+        Automatically loads the model into ready StatsForecast.
 
-            n_rows = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
-            fig = make_subplots(
-                rows=n_rows,
-                cols=2 if len(unique_ids) >= 2 else 1,
-                vertical_spacing=0.1,
-                horizontal_spacing=0.07,
-                x_title="Datestamp [ds]",
-                y_title="Target [y]",
-                subplot_titles=[str(uid) for uid in unique_ids],
-            )
-            if engine == "plotly-resampler":
-                try:
-                    from plotly_resampler import FigureResampler
-                except ImportError:
-                    raise ImportError(
-                        "plotly-resampler is not installed. "
-                        "Please install it with `pip install plotly-resampler`"
-                    )
-                resampler_kwargs = {} if resampler_kwargs is None else resampler_kwargs
-                fig = FigureResampler(fig, **resampler_kwargs)
-            showed_legends: set = set()
+        Parameters
+        ----------
+        path : str or pathlib.Path
+            Path to saved StatsForecast file.
 
-            def plotly(
-                df,
-                fig,
-                n_rows,
-                unique_ids,
-                models,
-                plot_anomalies,
-                max_insample_length,
-                showed_legends,
-            ):
-                if models is None:
-                    exclude_str = ["lo", "hi", "unique_id", "ds"]
-                    models = [
-                        c
-                        for c in df.columns
-                        if all(item not in c for item in exclude_str)
-                    ]
-                if "y" not in models:
-                    models = ["y"] + models
-                for uid, (idx, idy) in zip(
-                    unique_ids, product(range(1, n_rows + 1), range(1, 2 + 1))
-                ):
-                    df_uid = df.query("unique_id == @uid")
-                    if max_insample_length:
-                        df_uid = df_uid.iloc[-max_insample_length:]
-                    plot_anomalies = "y" in df_uid and plot_anomalies
-                    df_uid = _parse_ds_type(df_uid)
-                    if pkg_resources.parse_version(
-                        mpl.__version__
-                    ) < pkg_resources.parse_version("3.6"):
-                        colors = plt.cm.get_cmap("tab20b", len(models))
-                    else:
-                        colors = mpl.colormaps["tab20b"].resampled(len(models))
-                    colors = ["#1f77b4"] + [
-                        cm.to_hex(colors(i)) for i in range(len(models))
-                    ]
-                    for col, color in zip(models, colors):
-                        if col in df_uid:
-                            model = df_uid[col]
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=df_uid["ds"],
-                                    y=model,
-                                    mode="lines",
-                                    name=col,
-                                    legendgroup=col,
-                                    line=dict(color=color, width=1),
-                                    showlegend=(
-                                        idx == 1
-                                        and idy == 1
-                                        and col not in showed_legends
-                                    ),
-                                ),
-                                row=idx,
-                                col=idy,
-                            )
-                            showed_legends.add(col)
-                        model_has_level = any(f"{col}-lo" in c for c in df_uid)
-                        if level is not None and model_has_level:
-                            level_ = level
-                        elif model_has_level:
-                            level_col = df_uid.filter(like=f"{col}-lo").columns[0]
-                            level_col = re.findall(
-                                "[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+", level_col
-                            )[0]
-                            level_ = [level_col]
-                        else:
-                            level_ = []
-                        ds = df_uid["ds"]
-                        for lv in level_:
-                            lo = df_uid[f"{col}-lo-{lv}"]
-                            hi = df_uid[f"{col}-hi-{lv}"]
-                            plot_name = f"{col}_level_{lv}"
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=np.concatenate([ds, ds[::-1]]),
-                                    y=np.concatenate([hi, lo[::-1]]),
-                                    fill="toself",
-                                    mode="lines",
-                                    fillcolor=color,
-                                    opacity=-float(lv) / 100 + 1,
-                                    name=plot_name,
-                                    legendgroup=plot_name,
-                                    line=dict(color=color, width=1),
-                                    showlegend=(
-                                        idx == 1
-                                        and idy == 1
-                                        and plot_name not in showed_legends
-                                    ),
-                                ),
-                                row=idx,
-                                col=idy,
-                            )
-                            showed_legends.add(plot_name)
-                            if col != "y" and plot_anomalies:
-                                anomalies = (df_uid["y"] < lo) | (df_uid["y"] > hi)
-                                plot_name = f"{col}_anomalies_level_{lv}"
-                                fig.add_trace(
-                                    go.Scatter(
-                                        x=ds[anomalies],
-                                        y=df_uid["y"][anomalies],
-                                        fillcolor=color,
-                                        mode="markers",
-                                        opacity=float(lv) / 100,
-                                        name=plot_name,
-                                        legendgroup=plot_name,
-                                        line=dict(color=color, width=0.7),
-                                        marker=dict(
-                                            size=4, line=dict(color="red", width=0.5)
-                                        ),
-                                        showlegend=(
-                                            idx == 1
-                                            and idy == 1
-                                            and plot_name not in showed_legends
-                                        ),
-                                    ),
-                                    row=idx,
-                                    col=idy,
-                                )
-                                showed_legends.add(plot_name)
-                return fig
-
-            fig = plotly(
-                df=df,
-                fig=fig,
-                n_rows=n_rows,
-                unique_ids=unique_ids,
-                models=models,
-                plot_anomalies=plot_anomalies,
-                max_insample_length=max_insample_length,
-                showed_legends=showed_legends,
-            )
-            if forecasts_df is not None:
-                fig = plotly(
-                    df=forecasts_df,
-                    fig=fig,
-                    n_rows=n_rows,
-                    unique_ids=unique_ids,
-                    models=models,
-                    plot_anomalies=plot_anomalies,
-                    max_insample_length=None,
-                    showed_legends=showed_legends,
-                )
-            fig.update_xaxes(matches=None, showticklabels=True, visible=True)
-            fig.update_layout(margin=dict(l=60, r=10, t=20, b=50))
-            fig.update_layout(template="plotly_white", font=dict(size=10))
-            fig.update_annotations(font_size=10)
-            fig.update_layout(autosize=True, height=150 * n_rows)
-
-        elif engine == "matplotlib":
-            if len(unique_ids) == 1:
-                fig, axes = plt.subplots(figsize=(24, 3.5))
-                axes = np.array([[axes]])
-                n_cols = 1
-            else:
-                n_cols = min(4, len(unique_ids) // 2 + 1 if len(unique_ids) > 2 else 1)
-                fig, axes = plt.subplots(n_cols, 2, figsize=(24, 3.5 * n_cols))
-                if n_cols == 1:
-                    axes = np.array([axes])
-
-            for uid, (idx, idy) in zip(unique_ids, product(range(n_cols), range(2))):
-                train_uid = df.query("unique_id == @uid")
-                train_uid = _parse_ds_type(train_uid)
-                if max_insample_length is not None:
-                    train_uid = train_uid.iloc[-max_insample_length:]
-                ds = train_uid["ds"]
-                y = train_uid["y"]
-                axes[idx, idy].plot(ds, y, label="y")
-                if forecasts_df is not None:
-                    if models is None:
-                        exclude_str = ["lo", "hi", "unique_id", "ds"]
-                        models = [
-                            c
-                            for c in forecasts_df.columns
-                            if all(item not in c for item in exclude_str)
-                        ]
-                    if "y" not in models:
-                        models = ["y"] + models
-                    test_uid = forecasts_df.query("unique_id == @uid")
-                    plot_anomalies = "y" in test_uid and plot_anomalies
-                    test_uid = _parse_ds_type(test_uid)
-                    first_ds_fcst = test_uid["ds"].min()
-                    axes[idx, idy].axvline(
-                        x=first_ds_fcst,
-                        color="black",
-                        label="First ds Forecast",
-                        linestyle="--",
-                    )
-
-                    if pkg_resources.parse_version(
-                        mpl.__version__
-                    ) < pkg_resources.parse_version("3.6"):
-                        colors = plt.cm.get_cmap("tab20b", len(models))
-                    else:
-                        colors = mpl.colormaps["tab20b"].resampled(len(models))
-                    colors = ["blue"] + [colors(i) for i in range(len(models))]
-                    for col, color in zip(models, colors):
-                        if col in test_uid:
-                            axes[idx, idy].plot(
-                                test_uid["ds"], test_uid[col], label=col, color=color
-                            )
-                        model_has_level = any(f"{col}-lo" in c for c in test_uid)
-                        if level is not None and model_has_level:
-                            level_ = level
-                        elif model_has_level:
-                            level_col = test_uid.filter(like=f"{col}-lo").columns[0]
-                            level_col = re.findall(
-                                "[\d]+[.,\d]+|[\d]*[.][\d]+|[\d]+", level_col
-                            )[0]
-                            level_ = [level_col]
-                        else:
-                            level_ = []
-                        for lv in level_:
-                            ds_test = test_uid["ds"]
-                            lo = test_uid[f"{col}-lo-{lv}"]
-                            hi = test_uid[f"{col}-hi-{lv}"]
-                            axes[idx, idy].fill_between(
-                                ds_test,
-                                lo,
-                                hi,
-                                alpha=-float(lv) / 100 + 1,
-                                color=color,
-                                label=f"{col}_level_{lv}",
-                            )
-                            if col != "y" and plot_anomalies:
-                                anomalies = (test_uid["y"] < lo) | (test_uid["y"] > hi)
-                                axes[idx, idy].scatter(
-                                    x=ds_test[anomalies],
-                                    y=test_uid["y"][anomalies],
-                                    color=color,
-                                    s=30,
-                                    alpha=float(lv) / 100,
-                                    label=f"{col}_anomalies_level_{lv}",
-                                    linewidths=0.5,
-                                    edgecolors="red",
-                                )
-
-                axes[idx, idy].set_title(f"{uid}")
-                axes[idx, idy].set_xlabel("Datestamp [ds]")
-                axes[idx, idy].set_ylabel("Target [y]")
-                axes[idx, idy].legend(loc="upper left")
-                axes[idx, idy].xaxis.set_major_locator(
-                    plt.MaxNLocator(min(len(df) // 30, 10))
-                )
-                axes[idx, idy].grid()
-            fig.subplots_adjust(hspace=0.5)
-            plt.close(fig)
-        else:
-            raise Exception(f"Unkwown plot engine {engine}")
-        return fig
+        Returns
+        -------
+        sf: StatsForecast
+            Previously saved StatsForecast
+        """
+        if not Path(path).exists():
+            raise ValueError("Specified path does not exist, check again and retry.")
+        with open(path, "rb") as f:
+            return pickle.load(f)
 
     def __repr__(self):
         return f"StatsForecast(models=[{','.join(map(repr, self.models))}])"
 
-# %% ../nbs/src/core/core.ipynb 34
-class ParallelBackend:
-    def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
-        model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model
-        )
-        return model.forecast(**kwargs)
 
-    def cross_validation(
-        self, df, models, freq, fallback_model=None, **kwargs: Any
+_StatsForecast.plot.__doc__ = _StatsForecast.plot.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+
+# %% ../nbs/src/core/core.ipynb 30
+class ParallelBackend:
+    def forecast(
+        self,
+        *,
+        models,
+        fallback_model,
+        freq,
+        h,
+        df,
+        X_df,
+        level,
+        fitted,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
     ) -> Any:
         model = _StatsForecast(
-            df=df, models=models, freq=freq, fallback_model=fallback_model
+            models=models,
+            freq=freq,
+            fallback_model=fallback_model,
         )
-        return model.cross_validation(**kwargs)
+        return model.forecast(
+            df=df,
+            h=h,
+            X_df=X_df,
+            level=level,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
+
+    def cross_validation(
+        self,
+        *,
+        df,
+        models,
+        freq,
+        fallback_model,
+        h,
+        n_windows,
+        step_size,
+        test_size,
+        input_size,
+        level,
+        refit,
+        fitted,
+        prediction_intervals,
+        id_col,
+        time_col,
+        target_col,
+    ) -> Any:
+        model = _StatsForecast(
+            models=models,
+            freq=freq,
+            fallback_model=fallback_model,
+        )
+        return model.cross_validation(
+            df=df,
+            h=h,
+            n_windows=n_windows,
+            step_size=step_size,
+            test_size=test_size,
+            input_size=input_size,
+            level=level,
+            refit=refit,
+            fitted=fitted,
+            prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+        )
 
 
 @conditional_dispatcher
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../nbs/src/core/core.ipynb 35
+# %% ../nbs/src/core/core.ipynb 31
 class StatsForecast(_StatsForecast):
-    """Train statistical models.
-
-    The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
-    for large sets of time series. It operates with pandas DataFrame `df` that identifies series
-    and datestamps with the `unique_id` and `ds` columns. The `y` column denotes the target
-    time series variable.
-
-    The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
-    model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
-    Scikit-learn interface store the fitted models.
-
-    The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
-    See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
-
-    Parameters
-    ----------
-    models : List[Any]
-        List of instantiated objects models.StatsForecast.
-    freq : str
-        Frequency of the data.
-        See [panda's available frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
-    n_jobs : int (default=1)
-        Number of jobs used in the parallel processing, use -1 for all cores.
-    df : pandas.DataFrame | pl.DataFrame, optional (default=None)
-        DataFrame with columns [`unique_id`, `ds`, `y`] and exogenous.
-    sort_df : bool (default=True)
-        If True, sort `df` by [`unique_id`,`ds`].
-    fallback_model : Any, optional (default=None)
-        Model to be used if a model fails.
-        Only works with the `forecast` and `cross_validation` methods.
-    verbose : bool (default=True)
-        Prints TQDM progress bar when `n_jobs=1`.
-    """
-
     def forecast(
         self,
         h: int,
         df: Any = None,
-        X_df: Optional[Union[pd.DataFrame, pl.DataFrame]] = None,
+        X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
     ):
         if prediction_intervals is not None and level is None:
             raise ValueError(
@@ -1897,28 +1509,41 @@ class StatsForecast(_StatsForecast):
             )
         if self._is_native(df=df):
             return super().forecast(
-                h=h,
                 df=df,
+                h=h,
                 X_df=X_df,
                 level=level,
                 fitted=fitted,
                 sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
+                id_col=id_col,
+                time_col=time_col,
+                target_col=target_col,
             )
         assert df is not None
         engine = make_execution_engine(infer_by=[df])
-        backend = make_backend(engine)
-        return backend.forecast(
-            df=df,
+        self._backend = make_backend(engine)
+        return self._backend.forecast(
             models=self.models,
-            freq=self.freq,
             fallback_model=self.fallback_model,
+            freq=self.freq,
+            df=df,
             h=h,
             X_df=X_df,
             level=level,
             fitted=fitted,
             prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
         )
+
+    def forecast_fitted_values(self):
+        if hasattr(self, "_backend"):
+            res = self._backend.forecast_fitted_values()
+        else:
+            res = super().forecast_fitted_values()
+        return res
 
     def cross_validation(
         self,
@@ -1930,9 +1555,12 @@ class StatsForecast(_StatsForecast):
         input_size: Optional[int] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
-        refit: bool = True,
+        refit: Union[bool, int] = True,
         sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
     ):
         if self._is_native(df=df):
             return super().cross_validation(
@@ -1947,6 +1575,9 @@ class StatsForecast(_StatsForecast):
                 refit=refit,
                 sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
+                id_col=id_col,
+                time_col=time_col,
+                target_col=target_col,
             )
         assert df is not None
         engine = make_execution_engine(infer_by=[df])
@@ -1965,10 +1596,13 @@ class StatsForecast(_StatsForecast):
             refit=refit,
             fitted=fitted,
             prediction_intervals=prediction_intervals,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
         )
 
     def _is_native(self, df) -> bool:
         engine = try_get_context_execution_engine()
         return engine is None and (
-            df is None or isinstance(df, pd.DataFrame) or isinstance(df, pl.DataFrame)
+            df is None or isinstance(df, pd.DataFrame) or isinstance(df, pl_DataFrame)
         )

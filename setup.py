@@ -28,11 +28,18 @@ requirements = cfg.get('requirements','').split()
 if cfg.get('pip_requirements'): requirements += cfg.get('pip_requirements','').split()
 min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
-dev_requirements = (cfg.get('dev_requirements') or '').split()
-dask_requirements = cfg.get('dask_requirements', '').split()
-ray_requirements = cfg.get('ray_requirements', '').split()
-spark_requirements = cfg.get('spark_requirements', '').split()
-plotly_requirements = cfg.get('plotly_requirements', '').split()
+dask_requirements = cfg['dask_requirements'].split()
+ray_requirements = cfg['ray_requirements'].split()
+spark_requirements = cfg['spark_requirements'].split()
+plotly_requirements = cfg['plotly_requirements'].split()
+polars_requirements = cfg['polars_requirements'].split()
+dev_requirements = cfg['dev_requirements'].split()
+dev_requirements.extend(dask_requirements)
+dev_requirements.extend(ray_requirements)
+dev_requirements.extend(spark_requirements)
+dev_requirements.extend(plotly_requirements)
+dev_requirements.extend(polars_requirements)
+dev_requirements = list(set(dev_requirements))
 
 setuptools.setup(
     name = 'statsforecast',
@@ -52,6 +59,7 @@ setuptools.setup(
         'ray': ray_requirements,
         'spark': spark_requirements,
         'plotly': plotly_requirements,
+        'polars': polars_requirements,
     },
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
