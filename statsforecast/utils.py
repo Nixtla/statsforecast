@@ -23,7 +23,7 @@ if LEGACY_CACHE:
     warnings.warn(
         "The NUMBA_CACHE environment variable has been renamed to NIXTLA_NUMBA_CACHE. "
         "Please set that one instead.",
-        DeprecationWarning,
+        FutureWarning,
     )
 CACHE = bool(os.getenv("NIXTLA_NUMBA_CACHE", "")) or LEGACY_CACHE
 
