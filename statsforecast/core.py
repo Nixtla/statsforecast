@@ -400,7 +400,7 @@ def _warn_df_constructor():
         "The `df` argument of the StatsForecast constructor as well as reusing stored "
         "dfs from other methods is deprecated and will raise an error in a future version. "
         "Please provide the `df` argument to the corresponding method instead, e.g. fit/forecast.",
-        category=DeprecationWarning,
+        category=FutureWarning,
     )
 
 
@@ -409,7 +409,7 @@ def _maybe_warn_sort_df(sort_df):
         warnings.warn(
             "The `sort_df` argument is deprecated and will be removed in a future version. "
             "You can leave it to its default value (True) to supress this warning",
-            category=DeprecationWarning,
+            category=FutureWarning,
         )
 
 
@@ -418,7 +418,7 @@ def _warn_id_as_idx():
         "In a future version the predictions will have the id as a column. "
         "You can set the `NIXTLA_ID_AS_COL` environment variable "
         "to adopt the new behavior and to suppress this warning.",
-        category=DeprecationWarning,
+        category=FutureWarning,
     )
 
 
@@ -551,7 +551,7 @@ class _StatsForecast:
             warnings.warn(
                 "Passing unique_id as the index is deprecated. "
                 "Please provide it as a column instead.",
-                category=DeprecationWarning,
+                category=FutureWarning,
             )
             df = df.reset_index()
         _maybe_warn_sort_df(sort_df)
@@ -1266,7 +1266,7 @@ class _StatsForecast:
             warnings.warn(
                 "Passing the ids as the index is deprecated. "
                 "Please provide them as a column instead.",
-                category=DeprecationWarning,
+                category=FutureWarning,
             )
             df = df.reset_index()
         if forecasts_df is not None:
@@ -1275,7 +1275,7 @@ class _StatsForecast:
             warnings.warn(
                 "Passing the ids as the index is deprecated. "
                 "Please provide them as a column instead.",
-                category=DeprecationWarning,
+                category=FutureWarning,
             )
             forecasts_df = forecasts_df.reset_index()
         return plot_series(
