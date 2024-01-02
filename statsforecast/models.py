@@ -863,7 +863,7 @@ class ETS(AutoETS):
     ):
         ETS._warn()
         super().__init__(
-            season_lengtgh=season_length,
+            season_length=season_length,
             model=model,
             damped=damped,
             phi=phi,
