@@ -25,6 +25,8 @@ TOL = 1.0e-10
 HUGEN = 1.0e10
 NA = -99999.0
 smalno = np.finfo(float).eps
+_PHI_LOWER = 0.8
+_PHI_UPPER = 0.98
 
 # %% ../nbs/src/ets.ipynb 6
 @njit(nogil=NOGIL, cache=CACHE)
@@ -1100,9 +1102,9 @@ def ets_f(
     if nmse < 1 or nmse > 30:
         raise ValueError("nmse out of range")
     if lower is None:
-        lower = np.array([0.0001, 0.0001, 0.0001, 0.8])
+        lower = np.array([0.0001, 0.0001, 0.0001, _PHI_LOWER])
     if upper is None:
-        upper = np.array([0.9999, 0.9999, 0.9999, 0.98])
+        upper = np.array([0.9999, 0.9999, 0.9999, _PHI_UPPER])
     if any(upper < lower):
         raise ValueError("Lower limits must be less than upper limits")
     # check if y is contant
