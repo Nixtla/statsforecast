@@ -1083,6 +1083,8 @@ def ets_f(
     use_initial_values=False,
     maxit=2_000,
 ):
+    if y.dtype not in (np.float32, np.float64):
+        y = y.astype(np.float32)
     # converting params to floats
     # to improve numba compilation
     if alpha is None:
