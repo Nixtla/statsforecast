@@ -857,15 +857,19 @@ class ETS(AutoETS):
         season_length: int = 1,
         model: str = "ZZZ",
         damped: Optional[bool] = None,
+        phi: Optional[float] = None,
         alias: str = "ETS",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         ETS._warn()
-        self.season_length = season_length
-        self.model = model
-        self.damped = damped
-        self.alias = alias
-        self.prediction_intervals = prediction_intervals
+        super().__init__(
+            season_lengtgh=season_length,
+            model=model,
+            damped=damped,
+            phi=phi,
+            alias=alias,
+            prediction_intervals=prediction_intervals,
+        )
 
     def __repr__(self):
         return self.alias
