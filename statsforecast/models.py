@@ -25,7 +25,13 @@ from statsforecast.arima import (
     forward_arima,
 )
 from .ces import auto_ces, forecast_ces, forward_ces
-from .ets import ets_f, forecast_ets, forward_ets
+from statsforecast.ets import (
+    _PHI_LOWER,
+    _PHI_UPPER,
+    ets_f,
+    forecast_ets,
+    forward_ets,
+)
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
@@ -605,6 +611,8 @@ class AutoETS(_TS):
         Number of observations per unit of time. Ex: 24 Hourly data.
     damped : bool
         A parameter that 'dampens' the trend.
+    phi : float, optional (default=None)
+        Smoothing parameter for trend damping. Only used when `damped=True`.
     alias : str
         Custom name of the model.
     prediction_intervals : Optional[ConformalIntervals],
@@ -618,12 +626,19 @@ class AutoETS(_TS):
         season_length: int = 1,
         model: str = "ZZZ",
         damped: Optional[bool] = None,
+        phi: Optional[float] = None,
         alias: str = "AutoETS",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
         self.season_length = season_length
         self.model = model
         self.damped = damped
+        if phi is not None:
+            if not isinstance(phi, float):
+                raise ValueError("phi must be `None` or float.")
+            if not _PHI_LOWER <= phi <= _PHI_UPPER:
+                raise ValueError(f"Valid range for phi is [{_PHI_LOWER}, {_PHI_UPPER}]")
+        self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -653,7 +668,7 @@ class AutoETS(_TS):
             Exponential Smoothing fitted model.
         """
         self.model_ = ets_f(
-            y, m=self.season_length, model=self.model, damped=self.damped
+            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
         )
         self.model_["actual_residuals"] = y - self.model_["fitted"]
         self._store_cs(y=y, X=X)
@@ -748,7 +763,9 @@ class AutoETS(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mod = ets_f(y, m=self.season_length, model=self.model, damped=self.damped)
+        mod = ets_f(
+            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
+        )
         fcst = forecast_ets(mod, h=h, level=level)
         keys = ["mean"]
         if fitted:
