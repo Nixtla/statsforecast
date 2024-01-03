@@ -11,7 +11,7 @@ dist
 *.gif
 *.icloud
 *.csv
-*/data/*
+data
 *.parquet
 tmp
 _docs/
