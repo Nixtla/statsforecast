@@ -53,7 +53,7 @@ categories:
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L149"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L155"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMA
@@ -120,7 +120,7 @@ Information Criterion (AICc).
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L308"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L314"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMA.fit
@@ -143,7 +143,7 @@ exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L370"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L376"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMA.predict
@@ -165,7 +165,7 @@ Predict with fitted AutoArima.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L408"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L414"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMA.predict_in_sample
@@ -184,7 +184,7 @@ Access fitted AutoArima insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L428"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L434"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMA.forecast
@@ -215,7 +215,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L519"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L525"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMA.forward
@@ -259,15 +259,16 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L575"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L581"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoETS
 
 > ``` text
 >  AutoETS (season_length:int=1, model:str='ZZZ',
->           damped:Optional[bool]=None, alias:str='AutoETS', prediction_inte
->           rvals:Optional[statsforecast.utils.ConformalIntervals]=None)
+>           damped:Optional[bool]=None, phi:Optional[float]=None,
+>           alias:str='AutoETS', prediction_intervals:Optional[statsforecast
+>           .utils.ConformalIntervals]=None)
 > ```
 
 Automatic Exponential Smoothing model.
@@ -291,13 +292,14 @@ the AutoETS model to figure out the best parameter.
 | season_length        | int      | 1           | Number of observations per unit of time. Ex: 24 Hourly data.                                                                     |
 | model                | str      | ZZZ         | Controlling state-space-equations.                                                                                               |
 | damped               | Optional | None        | A parameter that ‘dampens’ the trend.                                                                                            |
+| phi                  | Optional | None        | Smoothing parameter for trend damping. Only used when `damped=True`.                                                             |
 | alias                | str      | AutoETS     | Custom name of the model.                                                                                                        |
 | prediction_intervals | Optional | None        | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L633"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L648"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoETS.fit
@@ -320,7 +322,7 @@ and optionally exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L662"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L677"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoETS.predict
@@ -342,7 +344,7 @@ Predict with fitted Exponential Smoothing.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L696"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L711"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoETS.predict_in_sample
@@ -361,7 +363,7 @@ Access fitted Exponential Smoothing insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L716"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L731"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoETS.forecast
@@ -391,7 +393,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L773"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L790"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoETS.forward
@@ -434,15 +436,15 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L829"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L846"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ETS
 
 > ``` text
 >  ETS (season_length:int=1, model:str='ZZZ', damped:Optional[bool]=None,
->       alias:str='ETS', prediction_intervals:Optional[statsforecast.utils.C
->       onformalIntervals]=None)
+>       phi:Optional[float]=None, alias:str='ETS', prediction_intervals:Opti
+>       onal[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
 Automatic Exponential Smoothing model.
@@ -466,6 +468,7 @@ the AutoETS model to figure out the best parameter.
 | season_length        | int      | 1           | Number of observations per unit of time. Ex: 24 Hourly data.                                                                     |
 | model                | str      | ZZZ         | Controlling state-space-equations.                                                                                               |
 | damped               | Optional | None        | A parameter that ‘dampens’ the trend.                                                                                            |
+| phi                  | Optional | None        | Smoothing parameter for trend damping. Only used when `damped=True`.                                                             |
 | alias                | str      | ETS         | Custom name of the model.                                                                                                        |
 | prediction_intervals | Optional | None        | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
 
@@ -478,7 +481,7 @@ ets = ETS(model='ZMZ', season_length=4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L857"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L878"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoCES
@@ -513,7 +516,7 @@ the AutoCES model to figure out the best parameter.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L905"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L926"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoCES.fit
@@ -536,7 +539,7 @@ array) `y` and optionally exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L932"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L953"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoCES.predict
@@ -558,7 +561,7 @@ Predict with fitted Exponential Smoothing.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L966"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L987"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoCES.predict_in_sample
@@ -577,7 +580,7 @@ Access fitted Exponential Smoothing insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L986"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1007"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoCES.forecast
@@ -607,7 +610,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1043"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1064"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoCES.forward
@@ -652,7 +655,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1099"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1120"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoTheta
@@ -680,7 +683,7 @@ Dynamic Optimized Theta Model (‘DOTM’)) model using mse.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1143"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1164"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoTheta.fit
@@ -703,7 +706,7 @@ exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1175"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1196"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoTheta.predict
@@ -725,7 +728,7 @@ Predict with fitted AutoTheta.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1202"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1223"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoTheta.predict_in_sample
@@ -744,7 +747,7 @@ Access fitted AutoTheta insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1221"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1242"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoTheta.forecast
@@ -775,7 +778,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1273"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1294"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoTheta.forward
@@ -820,7 +823,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1319"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1340"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARIMA
@@ -857,7 +860,7 @@ AutoRegressive Integrated Moving Average model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1399"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1420"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARIMA.fit
@@ -878,7 +881,7 @@ exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1437"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1458"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARIMA.predict
@@ -900,7 +903,7 @@ Predict with fitted model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1475"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1496"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARIMA.predict_in_sample
@@ -919,7 +922,7 @@ Access fitted insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1495"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1516"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARIMA.forecast
@@ -949,7 +952,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1564"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1585"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARIMA.forward
@@ -992,7 +995,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1620"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1641"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoRegressive
@@ -1164,7 +1167,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1796"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1817"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothing
@@ -1196,7 +1199,7 @@ method.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1912"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1933"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothing.forecast
@@ -1228,7 +1231,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1835"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1856"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothing.fit
@@ -1252,7 +1255,7 @@ optionally exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1862"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1883"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothing.predict
@@ -1275,7 +1278,7 @@ Predict with fitted SimpleExponentialSmoothing.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1895"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1916"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothing.predict_in_sample
@@ -1306,7 +1309,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1972"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L1993"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothingOptimized
@@ -1336,7 +1339,7 @@ minimization.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2007"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2028"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothingOptimized.fit
@@ -1360,7 +1363,7 @@ array) `y` and optionally exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2034"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2055"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothingOptimized.predict
@@ -1384,7 +1387,7 @@ Predict with fitted SimpleExponentialSmoothingOptimized.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2067"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2088"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothingOptimized.predict_in_sample
@@ -1398,7 +1401,7 @@ Access fitted SimpleExponentialSmoothingOptimized insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2083"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2104"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SimpleExponentialSmoothingOptimized.forecast
@@ -1452,7 +1455,7 @@ plt.plot(np.concatenate([ap[6:], seas_es.forecast(ap[6:], h=12)['mean']]))
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2155"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2176"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothing
@@ -1482,7 +1485,7 @@ $\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2203"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2224"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothing.fit
@@ -1506,7 +1509,7 @@ and optionally exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2236"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2257"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothing.predict
@@ -1529,7 +1532,7 @@ Predict with fitted SeasonalExponentialSmoothing.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2271"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2292"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothing.predict_in_sample
@@ -1543,7 +1546,7 @@ Access fitted SeasonalExponentialSmoothing insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2287"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2308"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothing.forecast
@@ -1592,7 +1595,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2359"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2380"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothingOptimized
@@ -1624,7 +1627,7 @@ minimization.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2487"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2508"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothingOptimized.forecast
@@ -1657,7 +1660,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2404"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2425"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothingOptimized.fit
@@ -1682,7 +1685,7 @@ array) `y` and optionally exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2436"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2457"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothingOptimized.predict
@@ -1706,7 +1709,7 @@ Predict with fitted SeasonalExponentialSmoothingOptimized.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2471"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2492"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalExponentialSmoothingOptimized.predict_in_sample
@@ -1738,7 +1741,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2536"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2557"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Holt
@@ -1904,7 +1907,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2580"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2601"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### HoltWinters
@@ -2075,7 +2078,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2639"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2660"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### HistoricAverage
@@ -2099,7 +2102,7 @@ is given by: $$\hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j$$
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2758"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2779"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### HistoricAverage.forecast
@@ -2131,7 +2134,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2670"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2691"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### HistoricAverage.fit
@@ -2153,7 +2156,7 @@ Fit an HistoricAverage to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2700"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2721"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### HistoricAverage.predict
@@ -2175,7 +2178,7 @@ Predict with fitted HistoricAverage.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2738"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2759"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### HistoricAverage.predict_in_sample
@@ -2211,7 +2214,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2817"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2838"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Naive
@@ -2234,7 +2237,7 @@ $\hat{y}_{t+1} = y_t$ for all $t$
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2933"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2954"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Naive.forecast
@@ -2264,7 +2267,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2847"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2868"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Naive.fit
@@ -2286,7 +2289,7 @@ Fit an Naive to a time series (numpy.array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2877"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2898"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Naive.predict
@@ -2308,7 +2311,7 @@ Predict with fitted Naive.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2915"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L2936"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Naive.predict_in_sample
@@ -2344,7 +2347,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3046"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3067"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### RandomWalkWithDrift
@@ -2373,7 +2376,7 @@ extrapolating a line between the first and the last observation.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3164"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3185"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### RandomWalkWithDrift.forecast
@@ -2405,7 +2408,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3081"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3102"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### RandomWalkWithDrift.fit
@@ -2427,7 +2430,7 @@ Fit an RandomWalkWithDrift to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3110"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3131"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### RandomWalkWithDrift.predict
@@ -2449,7 +2452,7 @@ Predict with fitted RandomWalkWithDrift.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3146"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3167"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### RandomWalkWithDrift.predict_in_sample
@@ -2485,7 +2488,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3224"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3245"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalNaive
@@ -2511,7 +2514,7 @@ capture seasonal variations.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3350"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3371"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalNaive.forecast
@@ -2543,7 +2546,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3257"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3278"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalNaive.fit
@@ -2565,7 +2568,7 @@ Fit an SeasonalNaive to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3291"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3312"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalNaive.predict
@@ -2587,7 +2590,7 @@ Predict with fitted Naive.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3331"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3352"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalNaive.predict_in_sample
@@ -2623,7 +2626,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3430"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3451"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### WindowAverage
@@ -2651,7 +2654,7 @@ fast the series changes.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3542"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3563"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### WindowAverage.forecast
@@ -2683,7 +2686,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3467"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3488"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### WindowAverage.fit
@@ -2706,7 +2709,7 @@ exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3494"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3515"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### WindowAverage.predict
@@ -2745,7 +2748,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3610"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3631"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalWindowAverage
@@ -2771,7 +2774,7 @@ length of the window.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3731"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3752"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalWindowAverage.forecast
@@ -2803,7 +2806,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3648"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3669"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalWindowAverage.fit
@@ -2827,7 +2830,7 @@ optionally exogenous variables (numpy array) `X`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3681"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3702"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### SeasonalWindowAverage.predict
@@ -2868,7 +2871,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3806"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3827"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ADIDA
@@ -2898,7 +2901,7 @@ so, different methods have been developed especifically for them.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3920"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3941"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ADIDA.forecast
@@ -2928,7 +2931,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3843"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3864"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ADIDA.fit
@@ -2950,7 +2953,7 @@ Fit an ADIDA to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3867"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3888"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ADIDA.predict
@@ -2989,7 +2992,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L3991"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4012"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonClassic
@@ -3017,7 +3020,7 @@ smoothing parameter of both components is set equal to 0.1
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4101"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4122"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonClassic.forecast
@@ -3049,7 +3052,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4027"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4048"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonClassic.fit
@@ -3071,7 +3074,7 @@ Fit an CrostonClassic to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4051"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4072"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonClassic.predict
@@ -3110,7 +3113,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4170"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4191"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonOptimized
@@ -3140,7 +3143,7 @@ separately, so their smoothing parameters can be different.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4279"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4300"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonOptimized.forecast
@@ -3172,7 +3175,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4207"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4228"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonOptimized.fit
@@ -3194,7 +3197,7 @@ Fit an CrostonOptimized to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4231"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4252"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonOptimized.predict
@@ -3233,7 +3236,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4337"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4358"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonSBA
@@ -3262,7 +3265,7 @@ $$\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}$$
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4448"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4469"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonSBA.forecast
@@ -3293,7 +3296,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4374"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4395"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonSBA.fit
@@ -3315,7 +3318,7 @@ Fit an CrostonSBA to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4398"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4419"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### CrostonSBA.predict
@@ -3354,7 +3357,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4521"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4542"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### IMAPA
@@ -3380,7 +3383,7 @@ combines them using a simple average.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4629"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4650"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### IMAPA.forecast
@@ -3410,7 +3413,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4554"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4575"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### IMAPA.fit
@@ -3432,7 +3435,7 @@ Fit an IMAPA to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4578"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4599"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### IMAPA.predict
@@ -3471,7 +3474,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4699"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4720"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### TSB
@@ -3513,7 +3516,7 @@ of each may differ, like in the optimized Croston’s method.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4822"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4843"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### TSB.forecast
@@ -3543,7 +3546,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4752"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4773"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### TSB.fit
@@ -3565,7 +3568,7 @@ Fit an TSB to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4776"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4797"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### TSB.predict
@@ -3606,7 +3609,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4884"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4905"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### MSTL
@@ -3635,7 +3638,7 @@ SeasonalNaive model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4948"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4969"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### MSTL.fit
@@ -3657,7 +3660,7 @@ Fit MSTL to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L4979"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5000"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### MSTL.predict
@@ -3679,7 +3682,7 @@ Predict with fitted MSTL.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5018"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5039"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### MSTL.predict_in_sample
@@ -3698,7 +3701,7 @@ Access fitted MSTL insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5036"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5057"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### MSTL.forecast
@@ -3728,7 +3731,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5100"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5121"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### MSTL.forward
@@ -3773,7 +3776,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5159"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5180"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Theta
@@ -3933,7 +3936,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5196"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5217"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### OptimizedTheta
@@ -4098,7 +4101,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5233"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5254"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### DynamicTheta
@@ -4261,7 +4264,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5270"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5291"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### DynamicOptimizedTheta
@@ -4430,7 +4433,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5307"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5328"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH
@@ -4471,7 +4474,7 @@ The ARCH model is a particular case of the GARCH model when $q=0$.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5367"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5388"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.fit
@@ -4493,7 +4496,7 @@ Fit GARCH model to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5387"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5408"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.predict
@@ -4515,7 +4518,7 @@ Predict with fitted GARCH model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5423"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5444"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.predict_in_sample
@@ -4534,7 +4537,7 @@ Access fitted GARCH model predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5443"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5464"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.forecast
@@ -4566,7 +4569,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5502"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5523"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH
@@ -4600,7 +4603,7 @@ nonnegative and $\sum_{k=1}^p a_k < 1$.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5367"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5388"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.fit
@@ -4622,7 +4625,7 @@ Fit GARCH model to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5387"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5408"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.predict
@@ -4644,7 +4647,7 @@ Predict with fitted GARCH model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5423"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5444"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.predict_in_sample
@@ -4663,7 +4666,7 @@ Access fitted GARCH model predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5443"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5464"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.forecast
@@ -4697,7 +4700,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5549"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5570"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel
@@ -4713,7 +4716,7 @@ Returns Constant values.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5646"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5667"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.forecast
@@ -4745,7 +4748,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5568"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5589"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.fit
@@ -4767,7 +4770,7 @@ Fit an Constant Model to a time series (numpy.array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5592"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5613"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.predict
@@ -4789,7 +4792,7 @@ Predict with fitted ConstantModel.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5624"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5645"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.predict_in_sample
@@ -4808,7 +4811,7 @@ Access fitted Constant Model insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5697"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5718"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.forward
@@ -4852,7 +4855,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5734"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5755"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ZeroModel
@@ -5006,7 +5009,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5748"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5769"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### NaNModel
