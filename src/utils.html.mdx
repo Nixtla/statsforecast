@@ -46,7 +46,7 @@ then each series gets static features with random values. If
 
 ```python
 synthetic_panel = generate_series(n_series=2)
-synthetic_panel.groupby('unique_id').head(4)
+synthetic_panel.groupby('unique_id', observed=True).head(4)
 ```
 
 # 2. AirPassengers Data
