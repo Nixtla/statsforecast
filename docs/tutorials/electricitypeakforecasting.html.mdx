@@ -71,14 +71,7 @@ three columns: `unique_id`, `ds` and `y`:
     indexing time or a datestamp ideally like YYYY-MM-DD for a date or
     YYYY-MM-DD HH:MM:SS for a timestamp.
 
--   The `y` (numeric) represents the measurement we wish to forecast. We
-    will rename the
-
-First, download and read the 2022 historic total demand of the ERCOT
-market, available [here](https://www.ercot.com/gridinfo/load/load_hist).
-The data processing includes adding the missing hour due to daylight
-saving time, parsing the date to datetime format, and filtering columns
-of interest. This step should take around 2s.
+-   The `y` (numeric) represents the measurement we wish to forecast.
 
 ```python
 import numpy as np
@@ -87,20 +80,7 @@ import pandas as pd
 
 
 ```python
-# Load data
-historic = pd.read_csv('./Native_Load_2022.csv')
-# Add missing hour due to daylight saving time
-historic = pd.concat([historic, pd.DataFrame({'Hour Ending':['03/13/2022 03:00'], 'ERCOT':['43980.57']})])
-historic = historic.sort_values('Hour Ending').reset_index(drop=True)
-# Convert to datetime
-historic['ERCOT'] = historic['ERCOT'].str.replace(',','').astype(float)
-historic = historic[~pd.isna(historic['ERCOT'])]
-historic['ds'] = pd.to_datetime(historic['Hour Ending'].str[:10]) + pd.to_timedelta(np.tile(range(24), len(historic)//24),'h')
-historic['unique_id'] = 'ERCOT'
-historic['y'] = historic['ERCOT']
-# Select relevant columns and dates
-Y_df = historic[['unique_id', 'ds', 'y']]
-Y_df = Y_df[Y_df['ds']<='2022-10-01']
+Y_df = pd.read_csv('https://datasets-nixtla.s3.amazonaws.com/ERCOT-clean.csv', parse_dates=['ds'])
 ```
 
 Plot the series using the `plot` method from the
@@ -196,7 +176,6 @@ object with the following required parameters:
 ```python
 # Instantiate StatsForecast class as sf
 sf = StatsForecast(
-    df=Y_df, 
     models=models,
     freq='H', 
 )
