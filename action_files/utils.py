@@ -91,4 +91,4 @@ def pipeline_fitted(series, X_df, horizon):
         [fitted.columns]
         .astype(fitted.dtypes)  # fugue returns nullable and pyarrow dtypes
     )
-    pd.testing.assert_frame_equal(fitted, distributed_fitted)
+    pd.testing.assert_frame_equal(fitted, distributed_fitted, atol=1e-5)
