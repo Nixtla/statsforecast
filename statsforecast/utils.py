@@ -254,22 +254,18 @@ def _seasonal_naive(
     fitted: bool,  # fitted values
     season_length: int,  # season length
 ):
-    if y.size < season_length:
-        return {"mean": np.full(h, np.nan, np.float32)}
     n = y.size
-    season_vals = np.empty(season_length, np.float32)
-    fitted_vals = np.full(y.size, np.nan, np.float32)
-    for i in range(season_length):
-        s_naive = _naive(
-            y[(i + n % season_length) :: season_length], h=1, fitted=fitted
-        )
-        season_vals[i] = s_naive["mean"].item()
-        if fitted:
-            fitted_vals[(i + n % season_length) :: season_length] = s_naive["fitted"]
+    season_vals = np.full(season_length, np.nan, np.float32)
+    season_samples = min(season_length, n)
+    season_vals[:season_samples] = y[-season_samples:]
     out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
     fcst = {"mean": out}
     if fitted:
-        fcst["fitted"] = fitted_vals[-n:]
+        fitted_vals = np.empty(n, dtype=np.float32)
+        fitted_vals[:season_length] = np.nan
+        if n > season_length:
+            fitted_vals[season_length:] = y[: n - season_length]
+        fcst["fitted"] = fitted_vals
     return fcst
 
 
