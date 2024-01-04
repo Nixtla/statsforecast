@@ -747,7 +747,7 @@ def auto_ces(
         raise ValueError("Invalid model type")
 
     seasontype = model
-    if m < 1 or len(y) <= m or m == 1:
+    if m < 1 or len(y) < 2 * m or m == 1:
         seasontype = "N"
     n = len(y)
     npars = 2
