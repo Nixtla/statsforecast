@@ -5615,6 +5615,8 @@ class TBATS(_TS):
         ----------
         y : numpy.array
             Clean time series of shape (t, ).
+        X : numpy.array, optional (default=None)
+            Ignored
 
         Returns
         -------
@@ -5751,7 +5753,7 @@ class TBATS(_TS):
             res_trans = res
         return res_trans
 
-# %% ../nbs/src/core/models.ipynb 468
+# %% ../nbs/src/core/models.ipynb 470
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -5936,7 +5938,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 482
+# %% ../nbs/src/core/models.ipynb 484
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -5950,7 +5952,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 496
+# %% ../nbs/src/core/models.ipynb 498
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.

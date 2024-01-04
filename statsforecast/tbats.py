@@ -491,15 +491,6 @@ def checkAdmissibility(
         if (BoxCox_lambda < bc_lower_bound) or (BoxCox_lambda > bc_upper_bound):
             return False
 
-    # These 2 conditions are not in the R code, but they're added because of the definition of smoothing paramters (alpha & beta).
-    # if (alpha < 0) or (alpha > 1):
-    #     return False
-
-    # if beta is not None:
-    #     if (beta < 0) or (beta > 1):
-    #         return False
-    # --------------------------------
-
     if phi is not None:
         if (phi < 0.8) or (phi > 1):
             return False
