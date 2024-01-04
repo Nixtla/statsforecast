@@ -1,0 +1,136 @@
+---
+output-file: tbats.html
+title: TBATS model
+
+---
+
+```python
+import matplotlib.pyplot as plt
+import pandas as pd
+
+from statsforecast.utils import AirPassengers as ap
+```
+
+## Load data
+
+## Functions
+
+### find_harmonics
+
+### initial_parameters
+
+### makeXMatrix
+
+### findPQ
+
+### makeTBATSWMatrix
+
+### makeTBATSGMatrix
+
+### makeTBATSFMatrix
+
+### calcTBATSFaster
+
+### extract_params
+
+### updateTBATSWMatrix
+
+### updateTBATSGMatrix
+
+### updateTBATSFMatrix
+
+### checkAdmissibility
+
+### calcLikelihoodTBATS
+
+## TBATS model
+
+### tbats_model_generator
+
+### tbats_model
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/tbats.py#L813"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### tbats_model
+
+> ``` text
+>  tbats_model (y, seasonal_periods, use_boxcox, bc_lower_bound,
+>               bc_upper_bound, use_trend, use_damped_trend,
+>               use_arma_errors)
+> ```
+
+### tbats_forecast
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/tbats.py#L905"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### tbats_forecast
+
+> ``` text
+>  tbats_forecast (mod, h)
+> ```
+
+|     | **Details**                                |
+|-----|--------------------------------------------|
+| mod |                                            |
+| h   | this function is the same as bats_forecast |
+
+### Example
+
+```python
+y = ap
+seasonal_periods = np.array([12])
+```
+
+
+```python
+use_boxcox = True
+bc_lower_bound = 0
+bc_upper_bound = 1
+use_trend = True
+use_damped_trend = False
+use_arma_errors = True
+```
+
+
+```python
+mod = tbats_model(y, seasonal_periods, use_boxcox, bc_lower_bound, bc_upper_bound, use_trend, use_damped_trend, use_arma_errors)
+```
+
+
+```python
+mod['optim_params']
+```
+
+
+```python
+fitted_trans = mod['fitted'].ravel()
+if use_boxcox:
+    fitted_trans = inv_boxcox(fitted_trans, mod['BoxCox_lambda'])
+```
+
+
+```python
+h = 24
+fcst = tbats_forecast(mod, h)
+forecast = fcst['mean']
+if use_boxcox:
+    forecast = inv_boxcox(forecast,  mod['BoxCox_lambda'])
+```
+
+
+```python
+fig, ax = plt.subplots(1, 1, figsize = (20,7))
+plt.plot(np.arange(0, len(y)), y, color='black', label='original')
+plt.plot(np.arange(0, len(y)), fitted_trans, color='blue', label = "fitted")
+plt.plot(np.arange(len(y), len(y)+h), forecast, '.-', color = 'green', label = 'fcst')
+plt.legend()
+```
+
