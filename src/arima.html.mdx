@@ -7,7 +7,7 @@ title: ARIMA
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1108"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1105"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### predict_arima
@@ -24,7 +24,7 @@ myarima(ap, order=(2, 1, 1), seasonal={'order': (0, 1, 0), 'period': 12},
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1494"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1491"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### arima_string
@@ -36,7 +36,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1528"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1525"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### forecast_arima
@@ -49,7 +49,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1623"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1620"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### fitted_arima
@@ -63,7 +63,7 @@ Returns h-step forecasts for the data used in fitting the model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1765"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L1762"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### auto_arima_f
@@ -82,7 +82,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L2307"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L2304"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### print_statsforecast_ARIMA
@@ -94,7 +94,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L2337"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/arima.py#L2334"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARIMASummary
@@ -141,4 +141,11 @@ An AutoARIMA estimator.
 Returns best ARIMA model according to either AIC, AICc or BIC value. The
 function conducts a search over possible model within the order
 constraints provided.
+
+```python
+test_close(
+    AutoARIMA().fit(almost_constant_x).predict(1).loc[0, 'mean'],
+    almost_constant_x.mean(),
+)
+```
 
