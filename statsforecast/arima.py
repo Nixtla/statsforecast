@@ -1229,9 +1229,11 @@ def myarima(
             fit["coef"] = change_drift_name(fit["coef"])
         else:
             if use_season:
-                fit = arima(x, order, seasonal, method=method, xreg=xreg)
+                fit = arima(
+                    x, order, seasonal, include_mean=constant, method=method, xreg=xreg
+                )
             else:
-                fit = arima(x, order, method=method, xreg=xreg)
+                fit = arima(x, order, include_mean=constant, method=method, xreg=xreg)
         # nxreg = 0 if xreg is None else xreg.shape[1]
         nstar = n - order[1] - seas_order[1] * m
         if diffs == 1 and constant:
