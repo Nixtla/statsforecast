@@ -932,9 +932,11 @@ def arima(
                     options=optim_control,
                 )
                 # only update the initial parameters if they're valid
-                phi, _ = arima_transpar(res.x, arma, False)
+                candidate = init.copy()
+                candidate[mask] = res.x
+                phi, _ = arima_transpar(candidate, arma, False)
                 if np.logical_and(phi > -math.pi / 2, phi < math.pi / 2).all():
-                    init[mask] = res.x
+                    init = candidate
             if arma[0] > 0:
                 if not arCheck(init[: arma[0]]):
                     raise ValueError("non-stationary AR part from CSS")
