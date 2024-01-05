@@ -922,9 +922,7 @@ def arima(
         var = None if no_optim else res.hess_inv / n_used
     else:
         if method == "CSS-ML":
-            if no_optim:
-                res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
-            else:
+            if not no_optim:
                 res = minimize(
                     arma_css_op,
                     init[mask],
@@ -933,8 +931,10 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-            if res.success:
-                init[mask] = res.x
+                # only update the initial parameters if they're valid
+                phi, _ = arima_transpar(res.x, arma, False)
+                if np.logical_and(phi > -math.pi / 2, phi < math.pi / 2).all():
+                    init[mask] = res.x
             if arma[0] > 0:
                 if not arCheck(init[: arma[0]]):
                     raise ValueError("non-stationary AR part from CSS")
