@@ -912,7 +912,6 @@ def arima(
             warnings.warn(
                 f"possible convergence problem: minimize gave code {res.status}]"
             )
-
         coef[mask] = res.x
         phi, theta = arima_transpar(coef, arma, False)
         mod = make_arima(phi, theta, Delta, kappa)
@@ -923,9 +922,7 @@ def arima(
         var = None if no_optim else res.hess_inv / n_used
     else:
         if method == "CSS-ML":
-            if no_optim:
-                res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
-            else:
+            if not no_optim:
                 res = minimize(
                     arma_css_op,
                     init[mask],
@@ -934,10 +931,12 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-            # if not res.success:
-            # warnings.warn(res.message)
-            # if res.success:
-            init[mask] = res.x
+                # only update the initial parameters if they're valid
+                candidate = init.copy()
+                candidate[mask] = res.x
+                phi, _ = arima_transpar(candidate, arma, False)
+                if np.logical_and(phi > -math.pi / 2, phi < math.pi / 2).all():
+                    init = candidate
             if arma[0] > 0:
                 if not arCheck(init[: arma[0]]):
                     raise ValueError("non-stationary AR part from CSS")
@@ -945,14 +944,14 @@ def arima(
                 if not arCheck(init[np.sum(arma[:2])] + np.arange(arma[2])):
                     raise ValueError("non-stationary seasonal AR part from CSS")
             ncond = 0
-            if transform_pars:
-                init = ARIMA_invtrans(init, arma)
-                if arma[1] > 0:
-                    ind = arma[0] + np.arange(arma[1])
-                    init[ind] = maInvert(init[ind])
-                if arma[3] > 0:
-                    ind = np.sum(arma[:3]) + np.arange(arma[3])
-                    init[ind] = maInvert(init[ind])
+        if transform_pars:
+            init = ARIMA_invtrans(init, arma)
+            if arma[1] > 0:
+                ind = arma[0] + np.arange(arma[1])
+                init[ind] = maInvert(init[ind])
+            if arma[3] > 0:
+                ind = np.sum(arma[:3]) + np.arange(arma[3])
+                init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         if no_optim:
@@ -975,8 +974,6 @@ def arima(
                 tol=tol,
                 options=optim_control,
             )
-        # if not res.success:
-        # warnings.warn(res.message)
         coef[mask] = res.x
         if transform_pars:
             if arma[1] > 0:
@@ -1639,7 +1636,7 @@ def fitted_arima(model, h=1):
 def seas_heuristic(x, period):
     # nperiods = period > 1
     season = math.nan
-    stlfit = mstl(x, period)
+    stlfit = mstl(x, period, stl_kwargs={"seasonal_deg": 0})
     remainder = stlfit["remainder"]
     seasonal = stlfit.get("seasonal", None)
     vare = np.var(remainder, ddof=1)
