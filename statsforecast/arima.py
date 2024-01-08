@@ -651,7 +651,7 @@ def arima(
                 raise NotImplementedError('SSinit != "Gardner1980"')
                 # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
         else:
-            mod["Pn"][0, 0] = 1 / (1 - phi**2) if p > 0 else 1
+            mod["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
         mod["a"][:] = 0  # a es vector?
         return mod
 
@@ -1307,23 +1307,74 @@ def search_arima(
     m = period
     allow_drift = allow_drift and (d + D) == 1
     allow_mean = allow_mean and (d + D) == 0
-    # max_K = allow_drift or allow_mean
+    max_K = int(allow_drift or allow_mean)
 
     best_ic = np.inf
+    best_fit = None
     for i in range(max_p + 1):
         for j in range(max_q + 1):
             for I in range(max_P + 1):
                 for J in range(max_Q + 1):
                     if i + j + I + J > max_order:
                         continue
-                    fit = myarima(
-                        x,
-                        order=(i, d, j),
-                        seasonal={"order": (I, D, J), "period": m},
-                    )
-                    if fit["ic"] < best_ic:
-                        best_ic = fit["ic"]
-                        best_fit = fit
+                    for K in range(max_K + 1):
+                        fit = myarima(
+                            x,
+                            order=(i, d, j),
+                            seasonal={"order": (I, D, J), "period": m},
+                            constant=K == 1,
+                            trace=trace,
+                            ic=ic,
+                            approximation=approximation,
+                            offset=offset,
+                            xreg=xreg,
+                            **kwargs,
+                        )
+                        if fit["ic"] < best_ic:
+                            best_ic = fit["ic"]
+                            best_fit = fit
+                            constant = K == 1
+    if best_fit is None:
+        raise RuntimeError("No ARIMA model able to be estimated")
+    if approximation:
+        if trace:
+            print("Now re-fitting the best model(s) without approximations...\n")
+        new_best_fit = myarima(
+            x,
+            order=tuple(best_fit["arma"][i] for i in [0, 5, 1]),
+            seasonal={
+                "order": tuple(best_fit["arma"][i] for i in [2, 6, 3]),
+                "period": m,
+            },
+            constant=constant,
+            ic=ic,
+            trace=False,
+            approximation=False,
+            xreg=xreg,
+            **kwargs,
+        )
+        if math.isfinite(new_best_fit["ic"]):
+            best_fit = new_best_fit
+        else:
+            best_fit = search_arima(
+                x,
+                d=d,
+                D=D,
+                max_p=max_p,
+                max_q=max_q,
+                max_P=max_P,
+                max_Q=max_Q,
+                max_order=max_order,
+                stationary=stationary,
+                ic=ic,
+                trace=trace,
+                approximation=False,
+                xreg=xreg,
+                offset=offset,
+                allowdrift=allowdrift,
+                allowmean=allowmean,
+                **kwargs,
+            )
     return best_fit
 
 # %% ../nbs/src/arima.ipynb 55
