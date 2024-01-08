@@ -1371,8 +1371,8 @@ def search_arima(
                 approximation=False,
                 xreg=xreg,
                 offset=offset,
-                allowdrift=allowdrift,
-                allowmean=allowmean,
+                allow_drift=allow_drift,
+                allow_mean=allow_mean,
                 **kwargs,
             )
     return best_fit
