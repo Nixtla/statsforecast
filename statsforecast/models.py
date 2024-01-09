@@ -4734,21 +4734,21 @@ class TSB(_TS):
     ):
         """TSB model.
 
-        Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand 
+        Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
         intervals with the demand probability $d_t$, which is defined as follows.
 
         $$
         d_t = \\begin{cases}
-            1  & \\text{if demand occurs at time t} \\\ 
+            1  & \\text{if demand occurs at time t} \\\
             0  & \\text{otherwise.}
         \\end{cases}
         $$
 
-        Hence, the forecast is given by 
+        Hence, the forecast is given by
 
         $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
-        Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ, 
+        Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ,
         like in the optimized Croston's method.
 
         References
@@ -4758,11 +4758,11 @@ class TSB(_TS):
         Parameters
         ----------
         alpha_d : float
-            Smoothing parameter for demand. 
+            Smoothing parameter for demand.
         alpha_p : float
-            Smoothing parameter for probability. 
-        alias : str  
-            Custom name of the model. 
+            Smoothing parameter for probability.
+        alias : str
+            Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
