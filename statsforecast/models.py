@@ -117,6 +117,9 @@ class _TS:
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ) -> np.ndarray:
+        if y.ndim == 2:
+            X = y[:, 1:] if y.shape[1] > 1 else X
+            y = y[:, 0]
         n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
         step_size = self.prediction_intervals.h  # type: ignore[attr-defined]
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
@@ -125,12 +128,14 @@ class _TS:
         cs = np.full((n_windows, h), np.nan, dtype=np.float32)
         for i_window, cutoff in enumerate(steps, start=0):
             end_cutoff = cutoff + h
-            y_train = y[:, 0] if y.ndim == 2 else y
-            X_train = y[:, 1:] if (y.ndim == 2 and y.shape[1] > 1) else None
-            y_test = y[cutoff:] if end_cutoff == 0 else y[cutoff:end_cutoff]
-            X_future = (
-                y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
-            )
+            y_train = y[:cutoff]
+            X_train = None if X is None else X[:cutoff, :]
+            if end_cutoff == 0:
+                y_test = y[cutoff:]
+                X_future = None if X is None else X[cutoff:, :]
+            else:
+                y_test = y[cutoff:end_cutoff]
+                X_future = None if X is None else X[cutoff:end_cutoff, :]
             fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_future)  # type: ignore[attr-defined]
             cs[i_window] = np.abs(fcst_window["mean"] - y_test)
         return cs
@@ -4729,21 +4734,21 @@ class TSB(_TS):
     ):
         """TSB model.
 
-        Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
+        Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand 
         intervals with the demand probability $d_t$, which is defined as follows.
 
         $$
         d_t = \\begin{cases}
-            1  & \\text{if demand occurs at time t} \\\
+            1  & \\text{if demand occurs at time t} \\\ 
             0  & \\text{otherwise.}
         \\end{cases}
         $$
 
-        Hence, the forecast is given by
+        Hence, the forecast is given by 
 
         $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
-        Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ,
+        Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ, 
         like in the optimized Croston's method.
 
         References
@@ -4753,11 +4758,11 @@ class TSB(_TS):
         Parameters
         ----------
         alpha_d : float
-            Smoothing parameter for demand.
+            Smoothing parameter for demand. 
         alpha_p : float
-            Smoothing parameter for probability.
-        alias : str
-            Custom name of the model.
+            Smoothing parameter for probability. 
+        alias : str  
+            Custom name of the model. 
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
