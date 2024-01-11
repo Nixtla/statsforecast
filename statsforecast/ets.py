@@ -9,8 +9,8 @@ from collections import namedtuple
 from typing import Tuple
 
 import numpy as np
+from scipy.optimize import Bounds, minimize
 from numba import njit
-from numba.typed import List
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 from .utils import _calculate_intervals, CACHE, NOGIL
@@ -191,7 +191,6 @@ def update(oldl, l, oldb, b, olds, s, m, trend, season, alpha, beta, gamma, phi,
     return l, b, s
 
 # %% ../nbs/src/ets.ipynb 9
-@njit(nogil=NOGIL, cache=CACHE)
 def etssimulate(x, m, error, trend, season, alpha, beta, gamma, phi, h, y, e):
     oldb = 0.0
     olds = np.zeros(24)
@@ -232,7 +231,6 @@ def etssimulate(x, m, error, trend, season, alpha, beta, gamma, phi, h, y, e):
         )
 
 # %% ../nbs/src/ets.ipynb 10
-@njit(nogil=NOGIL, cache=CACHE)
 def etsforecast(x, m, trend, season, phi, h, f):
     s = np.zeros(m)
     if m < 1:
@@ -243,14 +241,12 @@ def etsforecast(x, m, trend, season, phi, h, f):
     if trend > NONE:
         b = x[1]
     if season > NONE:
-        for j in range(m):
-            s[j] = x[(trend > NONE) + j + 1]
+        s[:m] = x[(trend > NONE) + 1 : (trend > NONE) + 1 + m]
 
     # compute forecasts
     forecast(l, b, s, m, trend, season, phi, f, h)
 
 # %% ../nbs/src/ets.ipynb 13
-@njit(nogil=NOGIL, cache=CACHE)
 def initparam(
     alpha: float,
     beta: float,
@@ -361,17 +357,6 @@ def check_param(
     return True
 
 # %% ../nbs/src/ets.ipynb 17
-@njit(nogil=NOGIL, cache=CACHE)
-def sinpi(x):
-    return np.sin(np.pi * x)
-
-
-@njit(nogil=NOGIL, cache=CACHE)
-def cospi(x):
-    return np.cos(np.pi * x)
-
-# %% ../nbs/src/ets.ipynb 18
-@njit(nogil=NOGIL, cache=CACHE)
 def fourier(x, period, K, h=None):
     if h is None:
         times = np.arange(1, len(x) + 1)
@@ -379,10 +364,7 @@ def fourier(x, period, K, h=None):
         times = np.arange(len(x) + 1, len(x) + h + 1)
     # compute periods of all fourier terms
     # numba doesnt support list comprehension
-    len_p = 0
-    for k in K:
-        if k > 0:
-            len_p += k
+    len_p = sum(K)
     p = np.full(len_p, fill_value=np.nan)
     idx = 0
     for j, p_ in enumerate(period):
@@ -396,19 +378,19 @@ def fourier(x, period, K, h=None):
     X = np.full((len(times), 2 * len(p)), fill_value=np.nan)
     for j in range(len(p)):
         if k[j]:
-            X[:, 2 * j - 1] = sinpi(2 * p[j] * times)
-        X[:, 2 * j] = cospi(2 * p[j] * times)
+            X[:, 2 * j - 1] = np.sin(2 * np.pi * p[j] * times)
+        X[:, 2 * j] = np.cos(2 * np.pi * p[j] * times)
     X = X[:, ~np.isnan(X.sum(axis=0))]
     return X
 
-# %% ../nbs/src/ets.ipynb 20
+# %% ../nbs/src/ets.ipynb 19
 def initstate(y, m, trendtype, seasontype):
     n = len(y)
     if seasontype != "N":
         if n < 4:
             raise ValueError("You've got to be joking (not enough data).")
         elif n < 3 * m:  # fit simple Fourier model
-            fouriery = fourier(y, List(x for x in [m]), List(x for x in [1]))
+            fouriery = fourier(y, [m], [1])
             X_fourier = np.full((n, 4), fill_value=np.nan)
             X_fourier[:, 0] = np.ones(n)
             X_fourier[:, 1] = np.arange(1, n + 1)
@@ -479,13 +461,11 @@ def initstate(y, m, trendtype, seasontype):
                 b0 = max(y_sa[1] / div, 1e-3)
     return np.concatenate([[l0, b0], init_seas])
 
-# %% ../nbs/src/ets.ipynb 24
-@njit(nogil=NOGIL, cache=CACHE)
+# %% ../nbs/src/ets.ipynb 23
 def switch(x: str):
     return {"N": 0, "A": 1, "M": 2}[x]
 
-# %% ../nbs/src/ets.ipynb 26
-@njit(nogil=NOGIL, cache=CACHE)
+# %% ../nbs/src/ets.ipynb 25
 def pegelsresid_C(
     y: np.ndarray,
     m: int,
@@ -534,23 +514,8 @@ def pegelsresid_C(
             lik = np.nan
     return amse, e, x, lik
 
-# %% ../nbs/src/ets.ipynb 27
+# %% ../nbs/src/ets.ipynb 26
 results = namedtuple("results", "x fn nit simplex")
-
-
-@njit(nogil=NOGIL, cache=CACHE)
-def restrict_to_bounds(x, lower, upper):
-    new_x = np.full_like(x, fill_value=np.nan, dtype=x.dtype)
-    for i in range(x.size):
-        lo = lower[i]
-        up = upper[i]
-        if x[i] < lo:
-            new_x[i] = lo
-        elif x[i] > up:
-            new_x[i] = up
-        else:
-            new_x[i] = x[i]
-    return new_x
 
 
 @njit(nogil=NOGIL, cache=CACHE)
@@ -577,7 +542,7 @@ def nelder_mead_ets(
     # with the others generated with a fixed step along each dimension in turn.
     bounds = len(lower) and len(upper)
     if bounds:
-        x0 = restrict_to_bounds(x0, lower, upper)
+        x0 = np.clip(x0, lower, upper)
 
     n = x0.size
     if adaptive:
@@ -595,8 +560,7 @@ def nelder_mead_ets(
     np.fill_diagonal(simplex, diag)
     # restrict simplex to bounds if passed
     if bounds:
-        for j in range(n + 1):
-            simplex[j] = restrict_to_bounds(simplex[j], lower, upper)
+        simplex = np.clip(simplex, lower, upper)
     # array of the value of f
     f_simplex = np.full(n + 1, fill_value=np.nan)
     for j in range(n + 1):
@@ -618,7 +582,7 @@ def nelder_mead_ets(
         x_r = x_o + alpha * (x_o - simplex[worst_idx])
         # restrict x_r to bounds if passed
         if bounds:
-            x_r = restrict_to_bounds(x_r, lower, upper)
+            x_r = np.clip(x_r, lower, upper)
         f_r = ets_target_fn(x_r, *args)
         if f_simplex[best_idx] <= f_r < f_simplex[second_worst_idx]:
             simplex[worst_idx] = x_r
@@ -629,7 +593,7 @@ def nelder_mead_ets(
             x_e = x_o + gamma * (x_r - x_o)
             # restrict x_e to bounds if passed
             if bounds:
-                x_e = restrict_to_bounds(x_e, lower, upper)
+                x_e = np.clip(x_e, lower, upper)
             f_e = ets_target_fn(x_e, *args)
             if f_e < f_r:
                 simplex[worst_idx] = x_e
@@ -642,7 +606,7 @@ def nelder_mead_ets(
         if f_simplex[second_worst_idx] <= f_r < f_simplex[worst_idx]:
             x_oc = x_o + rho * (x_r - x_o)
             if bounds:
-                x_oc = restrict_to_bounds(x_oc, lower, upper)
+                x_oc = np.clip(x_oc, lower, upper)
             f_oc = ets_target_fn(x_oc, *args)
             if f_oc <= f_r:
                 simplex[worst_idx] = x_oc
@@ -653,7 +617,7 @@ def nelder_mead_ets(
             x_ic = x_o - rho * (x_r - x_o)
             # restrict x_c to bounds if passed
             if bounds:
-                x_ic = restrict_to_bounds(x_ic, lower, upper)
+                x_ic = np.clip(x_ic, lower, upper)
             f_ic = ets_target_fn(x_ic, *args)
             if f_ic < f_simplex[worst_idx]:
                 simplex[worst_idx] = x_ic
@@ -664,11 +628,11 @@ def nelder_mead_ets(
             simplex[np.delete(order_f, 0)] - simplex[best_idx]
         )
         for i in np.delete(order_f, 0):
-            simplex[i] = restrict_to_bounds(simplex[i], lower, upper)
+            simplex[i] = np.clip(simplex[i], lower, upper)
             f_simplex[i] = ets_target_fn(simplex[i], *args)
     return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
 
-# %% ../nbs/src/ets.ipynb 28
+# %% ../nbs/src/ets.ipynb 27
 @njit(nogil=NOGIL, cache=CACHE)
 def ets_target_fn(
     par,
@@ -775,7 +739,7 @@ def ets_target_fn(
         objval = mean
     return objval
 
-# %% ../nbs/src/ets.ipynb 29
+# %% ../nbs/src/ets.ipynb 28
 def optimize_ets_target_fn(
     x0,
     par,
@@ -883,7 +847,7 @@ def optimize_ets_target_fn(
     )
     return res
 
-# %% ../nbs/src/ets.ipynb 30
+# %% ../nbs/src/ets.ipynb 29
 def etsmodel(
     y: np.ndarray,
     m: int,
@@ -1056,12 +1020,11 @@ def etsmodel(
         n_params=np_,
     )
 
-# %% ../nbs/src/ets.ipynb 32
-@njit(nogil=NOGIL, cache=CACHE)
+# %% ../nbs/src/ets.ipynb 31
 def is_constant(x):
     return np.all(x[0] == x)
 
-# %% ../nbs/src/ets.ipynb 34
+# %% ../nbs/src/ets.ipynb 33
 def ets_f(
     y,
     m,
@@ -1306,7 +1269,7 @@ def ets_f(
     model["method"] = f"ETS({best_e},{best_t}{'d' if best_d else ''},{best_s})"
     return model
 
-# %% ../nbs/src/ets.ipynb 35
+# %% ../nbs/src/ets.ipynb 34
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     states = obj["states"][-1, :]
@@ -1316,26 +1279,18 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     etsforecast(x=states, m=m, trend=ttype, season=stype, phi=phi, h=h, f=forecast)
     return forecast
 
-# %% ../nbs/src/ets.ipynb 36
-# @njit(nogil=NOGIL, cache=CACHE)
+# %% ../nbs/src/ets.ipynb 35
 def _compute_sigmah(pf, h, sigma, cvals):
     theta = np.full(h, np.nan)
     theta[0] = pf[0] ** 2
 
     for k in range(1, h):
-        sum_val = 0
-        for j in range(1, k + 1):
-            val = cvals[j - 1] ** 2 * theta[k - j]
-            sum_val = sum_val + val
+        sum_val = cvals[:k] ** 2 @ theta[:k][::-1]
         theta[k] = pf[k] ** 2 + sigma * sum_val
 
-    sigmah = np.full(h, np.nan)
-    for k in range(0, h):
-        sigmah[k] = (1 + sigma) * theta[k] - pf[k] ** 2
+    return (1 + sigma) * theta - pf**2
 
-    return sigmah
-
-# %% ../nbs/src/ets.ipynb 37
+# %% ../nbs/src/ets.ipynb 36
 def _class3models(
     h,
     sigma,
@@ -1404,10 +1359,8 @@ def _class3models(
     var = np.zeros(h)
 
     for i in range(0, h):
-        mu[i] = np.matmul(H1, np.matmul(Mh, np.transpose(H2)))
-        var[i] = (1 + sigma) * np.matmul(
-            H21, np.matmul(Vh, np.transpose(H21))
-        ) + sigma * mu[i] ** 2
+        mu[i] = (H1 @ (Mh @ H2.T)).item()
+        var[i] = (1 + sigma) * (H21 @ (Vh @ H21.T)).item() + sigma * mu[i] ** 2
         vecMh = Mh.flatten()
         exp1 = np.matmul(F21, np.matmul(Vh, np.transpose(F21)))
         exp2 = np.matmul(F21, np.matmul(Vh, np.transpose(G21)))
@@ -1437,7 +1390,7 @@ def _class3models(
 
     return var
 
-# %% ../nbs/src/ets.ipynb 38
+# %% ../nbs/src/ets.ipynb 37
 def _compute_pred_intervals(model, forecasts, h, level):
     sigma = model["sigma2"]
     season_length = model["m"]
@@ -1632,7 +1585,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     return pi
 
-# %% ../nbs/src/ets.ipynb 39
+# %% ../nbs/src/ets.ipynb 38
 def forecast_ets(obj, h, level=None):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
@@ -1643,6 +1596,6 @@ def forecast_ets(obj, h, level=None):
         out = {**out, **pi}
     return out
 
-# %% ../nbs/src/ets.ipynb 46
+# %% ../nbs/src/ets.ipynb 45
 def forward_ets(fitted_model, y):
     return ets_f(y=y, m=fitted_model["m"], model=fitted_model)

@@ -11,7 +11,7 @@ import numpy as np
 from numba import njit
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-from .ets import restrict_to_bounds, results
+from .ets import results
 from .utils import CACHE, NOGIL
 
 # %% ../nbs/src/ces.ipynb 4
@@ -427,7 +427,7 @@ def nelder_mead_ces(
     # with the others generated with a fixed step along each dimension in turn.
     bounds = len(lower) and len(upper)
     if bounds:
-        x0 = restrict_to_bounds(x0, lower, upper)
+        x0 = np.clip(x0, lower, upper)
 
     n = x0.size
     if adaptive:
@@ -446,7 +446,7 @@ def nelder_mead_ces(
     # restrict simplex to bounds if passed
     if bounds:
         for j in range(n + 1):
-            simplex[j] = restrict_to_bounds(simplex[j], lower, upper)
+            simplex[j] = np.clip(simplex[j], lower, upper)
     # array of the value of f
     f_simplex = np.full(n + 1, fill_value=np.nan)
     for j in range(n + 1):
@@ -468,7 +468,7 @@ def nelder_mead_ces(
         x_r = x_o + alpha * (x_o - simplex[worst_idx])
         # restrict x_r to bounds if passed
         if bounds:
-            x_r = restrict_to_bounds(x_r, lower, upper)
+            x_r = np.clip(x_r, lower, upper)
         f_r = ces_target_fn(x_r, *args)
         if f_simplex[best_idx] <= f_r < f_simplex[second_worst_idx]:
             simplex[worst_idx] = x_r
@@ -479,7 +479,7 @@ def nelder_mead_ces(
             x_e = x_o + gamma * (x_r - x_o)
             # restrict x_e to bounds if passed
             if bounds:
-                x_e = restrict_to_bounds(x_e, lower, upper)
+                x_e = np.clip(x_e, lower, upper)
             f_e = ces_target_fn(x_e, *args)
             if f_e < f_r:
                 simplex[worst_idx] = x_e
@@ -492,7 +492,7 @@ def nelder_mead_ces(
         if f_simplex[second_worst_idx] <= f_r < f_simplex[worst_idx]:
             x_oc = x_o + rho * (x_r - x_o)
             if bounds:
-                x_oc = restrict_to_bounds(x_oc, lower, upper)
+                x_oc = np.clip(x_oc, lower, upper)
             f_oc = ces_target_fn(x_oc, *args)
             if f_oc <= f_r:
                 simplex[worst_idx] = x_oc
@@ -503,7 +503,7 @@ def nelder_mead_ces(
             x_ic = x_o - rho * (x_r - x_o)
             # restrict x_c to bounds if passed
             if bounds:
-                x_ic = restrict_to_bounds(x_ic, lower, upper)
+                x_ic = np.clip(x_ic, lower, upper)
             f_ic = ces_target_fn(x_ic, *args)
             if f_ic < f_simplex[worst_idx]:
                 simplex[worst_idx] = x_ic
@@ -514,7 +514,7 @@ def nelder_mead_ces(
             simplex[np.delete(order_f, 0)] - simplex[best_idx]
         )
         for i in np.delete(order_f, 0):
-            simplex[i] = restrict_to_bounds(simplex[i], lower, upper)
+            simplex[i] = np.clip(simplex[i], lower, upper)
             f_simplex[i] = ces_target_fn(simplex[i], *args)
     return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
 

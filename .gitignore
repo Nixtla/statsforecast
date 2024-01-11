@@ -24,3 +24,4 @@ nbs/.last_checked
 .idea
 mlruns/
 .luarc.json
+*.so
