@@ -135,6 +135,14 @@ Thus, when $\theta=1$, the DOTM is the SES method. When $\theta>1$, DOTM
 The out-of-sample one-step-ahead forecasts produced by DOTM at origin
 are given by
 
+$$
+
+\begin{equation}
+    \hat Y_{n+1|n}=E[Y_{n+1|Y_1, \cdots, Y_n} ]=\ell_{n} + \left(1-\frac{1}{\theta}\right) \left( (1-\alpha)^n A_n + \left(\frac{1-(1-\alpha)^{n+1}}{\alpha}\right) B_n  \right)  \tag 8
+\end{equation}
+
+$$
+
 for a horizon $h \geq 2$, the forecast
 $\hat Y_{n+2|n}, \cdots , \hat Y_{n+h|n}$ are computed recursively using
 Eqs. (3), (4), (5), (6), (7), (8) by replacing the non-observed values
