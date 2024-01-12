@@ -1,0 +1,23 @@
+name: Trigger Mintlify Update
+
+on:
+  push:
+    branches: docs
+  workflow_dispatch:
+
+jobs:
+  trigger-mintlify:
+    runs-on: ubuntu-latest
+    name: Trigger mintlify workflow
+    steps:
+    - name: Trigger mintlify workflow
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.DOCS_WORKFLOW_TOKEN }}
+        script: |
+          await github.rest.actions.createWorkflowDispatch({
+            owner: 'nixtla',
+            repo: 'docs',
+            workflow_id: 'mintlify-action.yml',
+            ref: 'main',
+          });
