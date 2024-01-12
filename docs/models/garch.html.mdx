@@ -42,6 +42,17 @@ other financial values.
 **Definition 1.** A $\text{GARCH}(p,q)$ model with order $(p≥1,q≥0)$ is
 of the form
 
+$$
+
+\begin{equation}
+    \begin{cases}
+        X_t = \sigma_t \varepsilon_t\\
+        \sigma_{t}^2 = \omega + \sum_{i=1}^{p} \alpha_i X_{t-i}^2 + \sum_{j=1}^{q} \beta_j \sigma_{t-j}^2
+    \end{cases}
+\end{equation}
+
+$$
+
 where $\omega ≥0,\alpha_i ≥0,\beta_j ≥0,\alpha_p >0$ ,and $\beta_q >0$
 are constants,$\varepsilon_t \sim iid(0,1)$, and $\varepsilon_t$ is
 independent of $\{X_k;k ≤ t − 1 \}$. A stochastic process $X_t$ is

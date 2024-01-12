@@ -59,17 +59,64 @@ replace $A_n$ and $B_n$ in equations (3) and (4) of the notebook of the
 new Eq. (4) to the new Eq. (3) and rewriting the result at time $t$ with
 $h=1$, we have
 
-$$\hat Y_{t+1|t}=\ell_{t}+(1-\frac{1}{\theta}) \{(1-\alpha)^t A_t +[\frac{1-(1-\alpha)^{t+1}}{\alpha}] B_t  \tag{1} \}$$
+$$
+
+\begin{equation}
+    \hat Y_{t+1|t}=\ell_{t} + \left(1 - \frac{1}{\theta} \right) \left( (1-\alpha)^t A_t + \left[ \frac{1 - ( 1 - \alpha)^{t+1}}{\alpha} \right] B_t  \tag 1 \right)
+\end{equation}
+
+$$
 
 Then, assuming additive one-step-ahead errors and rewriting Eqs. (3)
 (see AutoTheta Model), (1), we obtain
 
-$$Y_t=\mu_t +\varepsilon_t \tag{2}$$
-$$\mu_t=\ell_{t-1}+(1-\frac{1}{\theta}) [(1-\alpha)^{t-1} A_{t-1} +(\frac{1-(1-\alpha)^{t}}{\alpha} ) B_{t-1} \tag{3} ]$$
-$$\ell_{t}=\alpha Y_t+ (1-\alpha) \ell_{t-1} \tag {4}$$
-$$A_t=\bar Y_t - \frac{t+1}{2} B_t \tag {5}$$
-$$B_t=\frac{1}{t+1} [(t-2) B_{t-1} +\frac{6}{t} (Y_t - \bar Y_{t-1}) ] \tag {6}$$
-$$\bar Y_t=\frac{1}{t} [(t-1) \bar Y_{t-1} + Y_t ] \tag {7}$$
+$$
+
+\begin{equation}
+    Y_t=\mu_t +\varepsilon_t \tag 2
+\end{equation}
+
+$$
+
+$$
+
+\begin{equation}
+    \mu_t=\ell_{t-1}+ \left(1-\frac{1}{\theta}\right) \left( \left(1-\alpha\right)^{t-1} A_{t-1} + \left(\frac{1-(1-\alpha)^{t}}{\alpha}\right) B_{t-1} \tag 3 \right)
+\end{equation}
+
+$$
+
+$$
+
+\begin{equation}
+    \ell_{t}=\alpha Y_t+ (1-\alpha) \ell_{t-1} \tag 4
+\end{equation}
+
+$$
+
+$$
+
+\begin{equation}
+    A_t=\bar Y_t - \frac{t+1}{2} B_t \tag 5
+\end{equation}
+
+$$
+
+$$
+
+\begin{equation}
+    B_t=\frac{1}{t+1} \left((t-2) B_{t-1} +\frac{6}{t} (Y_t - \bar Y_{t-1}) \right) \tag 6
+\end{equation}
+
+$$
+
+$$
+
+\begin{equation}
+    \bar Y_t=\frac{1}{t} \left((t-1) \bar Y_{t-1} + Y_t \right) \tag 7
+\end{equation}
+
+$$
 
 for $t=1, \cdots ,n$. Eqs. (2), (3), (4), (5), (6), (7) configure a
 state space model with parameters
@@ -87,8 +134,6 @@ Thus, when $\theta=1$, the DOTM is the SES method. When $\theta>1$, DOTM
 
 The out-of-sample one-step-ahead forecasts produced by DOTM at origin
 are given by
-
-$$\hat Y_{n+1|n}=E[Y_{n+1|Y_1, \cdots, Y_n} ]=\ell_{n} +(1-\frac{1}{\theta}) \{(1-\alpha)^n A_n + [\frac{1-(1-\alpha)^{n+1}}{\alpha}] B_n  \}  \tag{8}$$
 
 for a horizon $h \geq 2$, the forecast
 $\hat Y_{n+2|n}, \cdots , \hat Y_{n+h|n}$ are computed recursively using
