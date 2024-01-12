@@ -55,6 +55,7 @@ jobs:
           publish_dir: ./_docs
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          exclude_assets: ''
       - name: Configure redirects for gh-pages
         run: python docs-scripts/configure-redirects.py statsforecast
       - name: Deploy to Github Pages
