@@ -44,6 +44,8 @@ jobs:
         run: |
           cp nbs/mint.json _docs/mint.json
           cp docs-scripts/imgs/* _docs/
+          mkdir -p _docs/.github/workflows
+          cp .github/workflows/mintlify-update.yaml _docs/.github/workflows
       - name: Deploy to Mintlify Docs
         if: github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v3
