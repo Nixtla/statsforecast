@@ -58,7 +58,7 @@ jobs:
           cache-environment: true
 
       - name: Install pip requirements
-        run: pip install ./
+        run: pip install --no-build-isolation ./ -v
 
       - name: Run local tests
         run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0 --do_print --timing
@@ -83,7 +83,7 @@ jobs:
           cache-environment: true
 
       - name: Install pip requirements
-        run: pip install ./
+        run: pip install --no-build-isolation -v ./
 
       - name: Run tests 
         run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0 --do_print --timing
@@ -109,7 +109,7 @@ jobs:
           cache-environment: true
 
       - name: Install library and extra deps
-        run: pip install ".[dev]" fire
+        run: pip install --no-build-isolation ".[dev]" -v && pip install fire
 
       - name: Run M3 experiment
         run: |
