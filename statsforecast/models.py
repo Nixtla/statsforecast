@@ -5,8 +5,8 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'AutoTBATS', '
            'SimpleExponentialSmoothing', 'SimpleExponentialSmoothingOptimized', 'SeasonalExponentialSmoothing',
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
-           'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'Theta', 'OptimizedTheta', 'DynamicTheta',
-           'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'TBATS', 'ConstantModel', 'ZeroModel', 'NaNModel']
+           'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'TBATS', 'Theta', 'OptimizedTheta', 'DynamicTheta',
+           'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'ConstantModel', 'ZeroModel', 'NaNModel']
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
@@ -36,7 +36,7 @@ from statsforecast.ets import (
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
-from .tbats import tbats_model, tbats_forecast, _compute_sigmah
+from .tbats import tbats_selection, tbats_forecast, _compute_sigmah
 from statsforecast.utils import (
     _calculate_sigma,
     _calculate_intervals,
@@ -1340,11 +1340,11 @@ class AutoTheta(_TS):
 
 # %% ../nbs/src/core/models.ipynb 86
 class AutoTBATS(_TS):
-    """Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
+    """AutoTBATS model.
 
-    TBATS is an innovations state space model framework used for forecasting time series with multiple seasonalities. It uses a Box-Cox tranformation, ARMA errors, and a trigonometric representation of the seasonal patterns based on Fourier series.
-
-    The name TBATS is an acronym for the key features of the model: Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal components.
+    Automatically selects the best TBATS model from all feasible combinations of the parameters use_boxcox, use_trend, use_damped_trend, and use_arma_errors.
+    Selection is made using the AIC.
+    Default value for use_arma_errors is True since this enables the evaluation of models with and without ARMA errors.
 
     References
     ----------
@@ -1414,7 +1414,7 @@ class AutoTBATS(_TS):
         self :
             TBATS model.
         """
-        self.model_ = tbats_model(
+        self.model_ = tbats_selection(
             y=y,
             seasonal_periods=self.seasonal_periods,
             use_boxcox=self.use_boxcox,
@@ -1515,7 +1515,7 @@ class AutoTBATS(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mod = tbats_model(
+        mod = tbats_selection(
             y=y,
             seasonal_periods=self.seasonal_periods,
             use_boxcox=self.use_boxcox,
@@ -1544,7 +1544,7 @@ class AutoTBATS(_TS):
             res_trans = res
         return res_trans
 
-# %% ../nbs/src/core/models.ipynb 89
+# %% ../nbs/src/core/models.ipynb 96
 class ARIMA(_TS):
     """ARIMA model.
 
@@ -1845,7 +1845,7 @@ class ARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 104
+# %% ../nbs/src/core/models.ipynb 111
 class AutoRegressive(ARIMA):
     """Simple Autoregressive model.
 
@@ -1920,7 +1920,7 @@ class AutoRegressive(ARIMA):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 119
+# %% ../nbs/src/core/models.ipynb 126
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     """Perform simple exponential smoothing on a series.
@@ -2006,7 +2006,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
         sums[i] = array[start : start + chunk_size].sum()
     return sums
 
-# %% ../nbs/src/core/models.ipynb 120
+# %% ../nbs/src/core/models.ipynb 127
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses(
     y: np.ndarray,  # time series
@@ -2021,7 +2021,7 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 121
+# %% ../nbs/src/core/models.ipynb 128
 class SimpleExponentialSmoothing(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -2184,7 +2184,7 @@ class SimpleExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 133
+# %% ../nbs/src/core/models.ipynb 140
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2197,7 +2197,7 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 134
+# %% ../nbs/src/core/models.ipynb 141
 class SimpleExponentialSmoothingOptimized(_TS):
     """SimpleExponentialSmoothing model.
 
@@ -2355,7 +2355,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 146
+# %% ../nbs/src/core/models.ipynb 153
 @njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
@@ -2380,7 +2380,7 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 147
+# %% ../nbs/src/core/models.ipynb 154
 class SeasonalExponentialSmoothing(_TS):
     """SeasonalExponentialSmoothing model.
 
@@ -2561,7 +2561,7 @@ class SeasonalExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 162
+# %% ../nbs/src/core/models.ipynb 169
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2584,7 +2584,7 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 163
+# %% ../nbs/src/core/models.ipynb 170
 class SeasonalExponentialSmoothingOptimized(_TS):
     def __init__(
         self,
@@ -2761,7 +2761,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 176
+# %% ../nbs/src/core/models.ipynb 183
 class Holt(AutoETS):
     """Holt's method.
 
@@ -2805,7 +2805,7 @@ class Holt(AutoETS):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 190
+# %% ../nbs/src/core/models.ipynb 197
 class HoltWinters(AutoETS):
     """Holt-Winters' method.
 
@@ -2848,7 +2848,7 @@ class HoltWinters(AutoETS):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 205
+# %% ../nbs/src/core/models.ipynb 212
 @njit(nogil=NOGIL, cache=CACHE)
 def _historic_average(
     y: np.ndarray,  # time series
@@ -2864,7 +2864,7 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 206
+# %% ../nbs/src/core/models.ipynb 213
 class HistoricAverage(_TS):
     def __init__(
         self,
@@ -3042,7 +3042,7 @@ class HistoricAverage(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 219
+# %% ../nbs/src/core/models.ipynb 226
 class Naive(_TS):
     def __init__(
         self,
@@ -3251,7 +3251,7 @@ class Naive(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 235
+# %% ../nbs/src/core/models.ipynb 242
 @njit(nogil=NOGIL, cache=CACHE)
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
@@ -3271,7 +3271,7 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/core/models.ipynb 236
+# %% ../nbs/src/core/models.ipynb 243
 class RandomWalkWithDrift(_TS):
     def __init__(
         self,
@@ -3449,7 +3449,7 @@ class RandomWalkWithDrift(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 251
+# %% ../nbs/src/core/models.ipynb 258
 class SeasonalNaive(_TS):
     def __init__(
         self,
@@ -3639,7 +3639,7 @@ class SeasonalNaive(_TS):
 
         return res
 
-# %% ../nbs/src/core/models.ipynb 266
+# %% ../nbs/src/core/models.ipynb 273
 @njit(nogil=NOGIL, cache=CACHE)
 def _window_average(
     y: np.ndarray,  # time series
@@ -3655,7 +3655,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 267
+# %% ../nbs/src/core/models.ipynb 274
 class WindowAverage(_TS):
     def __init__(
         self,
@@ -3814,7 +3814,7 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 278
+# %% ../nbs/src/core/models.ipynb 285
 @njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_window_average(
     y: np.ndarray,
@@ -3835,7 +3835,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
     return {"mean": out}
 
-# %% ../nbs/src/core/models.ipynb 279
+# %% ../nbs/src/core/models.ipynb 286
 class SeasonalWindowAverage(_TS):
     def __init__(
         self,
@@ -4010,7 +4010,7 @@ class SeasonalWindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 291
+# %% ../nbs/src/core/models.ipynb 298
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4031,7 +4031,7 @@ def _adida(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 292
+# %% ../nbs/src/core/models.ipynb 299
 class ADIDA(_TS):
     def __init__(
         self,
@@ -4194,7 +4194,7 @@ class ADIDA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 304
+# %% ../nbs/src/core/models.ipynb 311
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_classic(
     y: np.ndarray,  # time series
@@ -4216,7 +4216,7 @@ def _croston_classic(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 305
+# %% ../nbs/src/core/models.ipynb 312
 class CrostonClassic(_TS):
     def __init__(
         self,
@@ -4374,7 +4374,7 @@ class CrostonClassic(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 316
+# %% ../nbs/src/core/models.ipynb 323
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4395,7 +4395,7 @@ def _croston_optimized(
     mean = _repeat_val(val=mean, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 317
+# %% ../nbs/src/core/models.ipynb 324
 class CrostonOptimized(_TS):
     def __init__(
         self,
@@ -4549,7 +4549,7 @@ class CrostonOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 328
+# %% ../nbs/src/core/models.ipynb 335
 @njit(nogil=NOGIL, cache=CACHE)
 def _croston_sba(
     y: np.ndarray,  # time series
@@ -4562,7 +4562,7 @@ def _croston_sba(
     mean["mean"] *= 0.95
     return mean
 
-# %% ../nbs/src/core/models.ipynb 329
+# %% ../nbs/src/core/models.ipynb 336
 class CrostonSBA(_TS):
     def __init__(
         self,
@@ -4722,7 +4722,7 @@ class CrostonSBA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 340
+# %% ../nbs/src/core/models.ipynb 347
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4746,7 +4746,7 @@ def _imapa(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 341
+# %% ../nbs/src/core/models.ipynb 348
 class IMAPA(_TS):
     def __init__(
         self,
@@ -4903,7 +4903,7 @@ class IMAPA(_TS):
             )
         return res
 
-# %% ../nbs/src/core/models.ipynb 352
+# %% ../nbs/src/core/models.ipynb 359
 @njit(nogil=NOGIL, cache=CACHE)
 def _tsb(
     y: np.ndarray,  # time series
@@ -4924,7 +4924,7 @@ def _tsb(
     mean = _repeat_val(val=forecast, h=h)
     return {"mean": mean}
 
-# %% ../nbs/src/core/models.ipynb 353
+# %% ../nbs/src/core/models.ipynb 360
 class TSB(_TS):
     def __init__(
         self,
@@ -5092,7 +5092,7 @@ class TSB(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../nbs/src/core/models.ipynb 365
+# %% ../nbs/src/core/models.ipynb 372
 def _predict_mstl_seas(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -5109,7 +5109,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     lastseas = seascomp.sum(axis=1)
     return lastseas
 
-# %% ../nbs/src/core/models.ipynb 366
+# %% ../nbs/src/core/models.ipynb 373
 class MSTL(_TS):
     """MSTL model.
 
@@ -5384,7 +5384,213 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../nbs/src/core/models.ipynb 383
+# %% ../nbs/src/core/models.ipynb 389
+class TBATS(_TS):
+    """Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
+
+    TBATS is an innovations state space model framework used for forecasting time series with multiple seasonalities. It uses a Box-Cox tranformation, ARMA errors, and a trigonometric representation of the seasonal patterns based on Fourier series.
+
+    The name TBATS is an acronym for the key features of the model: Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal components.
+
+    References
+    ----------
+    - [De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011). Forecasting time series with complex seasonal patterns using exponential smoothing. Journal of the American statistical association, 106(496), 1513-1527.](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=f3de25596ab60ef0e886366826bf58a02b35a44f)
+
+    - [De Livera, Alysha M (2017). Modeling time series with complex seasonal patterns using exponential smoothing. Monash University. Thesis.](https://doi.org/10.4225/03/589299681de3d)
+
+    Parameters
+    ----------
+    seasonal_periods : int or list of int.
+        Number of observations per unit of time. Ex: 24 Hourly data.
+    use_boxcox : bool (default=True)
+        Whether or not to use a Box-Cox transformation.
+    bc_lower_bound : float (default=0.0)
+        Lower bound for the Box-Cox transformation.
+    bc_upper_bound : float (default=1.5)
+        Upper bound for the Box-Cox transformation.
+    use_trend : bool (default=True)
+        Whether or not to use a trend component.
+    use_damped_trend : bool (default=False)
+        Whether or not to dampen the trend component.
+    use_arma_errors : bool (default=False)
+        Whether or not to use a ARMA errors.
+    alias : str
+        Custom name of the model.
+    """
+
+    def __init__(
+        self,
+        seasonal_periods: Union[int, List[int]],
+        use_boxcox: bool = True,
+        bc_lower_bound: float = 0.0,
+        bc_uppper_bound: float = 1.5,
+        use_trend: bool = True,
+        use_damped_trend: bool = False,
+        use_arma_errors: bool = False,
+        alias: str = "TBATS",
+    ):
+        if isinstance(seasonal_periods, int):
+            seasonal_periods = [seasonal_periods]
+        self.seasonal_periods = list(seasonal_periods)
+        self.use_boxcox = use_boxcox
+        self.bc_lower_bound = bc_lower_bound
+        self.bc_upper_bound = bc_uppper_bound
+        self.use_trend = use_trend
+        self.use_damped_trend = use_damped_trend
+        self.use_arma_errors = use_arma_errors
+        self.alias = alias
+
+    def __repr__(self):
+        return self.alias
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
+        """Fit TBATS model.
+
+        Fit TBATS model to a time series (numpy array) `y`.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : numpy.array, optional (default=None)
+            Ignored
+
+        Returns
+        -------
+        self :
+            TBATS model.
+        """
+        self.model_ = tbats_selection(
+            y=y,
+            seasonal_periods=self.seasonal_periods,
+            use_boxcox=self.use_boxcox,
+            bc_lower_bound=self.bc_lower_bound,
+            bc_upper_bound=self.bc_upper_bound,
+            use_trend=self.use_trend,
+            use_damped_trend=self.use_damped_trend,
+            use_arma_errors=self.use_arma_errors,
+        )
+        return self
+
+    def predict(
+        self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
+    ):
+        """Predict with fitted TBATS model.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        fcst = tbats_forecast(self.model_, h)
+        res = {"mean": fcst["mean"]}
+        if level is not None:
+            level = sorted(level)
+            sigmah = _compute_sigmah(self.model_, h)
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
+        if self.model_["BoxCox_lambda"] is not None:
+            res_trans = {
+                k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
+            }
+        else:
+            res_trans = res
+        return res_trans
+
+    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
+        """Access fitted TBATS model predictions.
+
+        Parameters
+        ----------
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"].ravel()}
+        if level is not None:
+            se = _calculate_sigma(self.model_["errors"], self.model_["errors"].shape[1])
+            fitted_pred_int = _add_fitted_pi(res, se, level)
+            res = {**res, **fitted_pred_int}
+        if self.model_["BoxCox_lambda"] is not None:
+            res_trans = {
+                k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
+            }
+        else:
+            res_trans = res
+        return res_trans
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        """Memory Efficient TBATS model.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (n, ).
+        h : int
+            Forecast horizon.
+        level : List[float]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not returns insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        mod = tbats_selection(
+            y=y,
+            seasonal_periods=self.seasonal_periods,
+            use_boxcox=self.use_boxcox,
+            bc_lower_bound=self.bc_lower_bound,
+            bc_upper_bound=self.bc_upper_bound,
+            use_trend=self.use_trend,
+            use_damped_trend=self.use_damped_trend,
+            use_arma_errors=self.use_arma_errors,
+        )
+        fcst = tbats_forecast(mod, h)
+        res = {"mean": fcst["mean"]}
+        if fitted:
+            res["fitted"] = mod["fitted"].ravel()
+        if level is not None:
+            level = sorted(level)
+            sigmah = _compute_sigmah(mod, h)
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
+            if fitted:
+                se = _calculate_sigma(mod["errors"], mod["errors"].shape[1])
+                fitted_pred_int = _add_fitted_pi(res, se, level)
+                res = {**res, **fitted_pred_int}
+        if mod["BoxCox_lambda"] is not None:
+            res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
+        else:
+            res_trans = res
+        return res_trans
+
+# %% ../nbs/src/core/models.ipynb 398
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -5421,7 +5627,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 397
+# %% ../nbs/src/core/models.ipynb 412
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -5458,7 +5664,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 411
+# %% ../nbs/src/core/models.ipynb 426
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -5495,7 +5701,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 425
+# %% ../nbs/src/core/models.ipynb 440
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -5532,7 +5738,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 440
+# %% ../nbs/src/core/models.ipynb 455
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5727,7 +5933,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 453
+# %% ../nbs/src/core/models.ipynb 468
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5774,213 +5980,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 463
-class TBATS(_TS):
-    """Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
-
-    TBATS is an innovations state space model framework used for forecasting time series with multiple seasonalities. It uses a Box-Cox tranformation, ARMA errors, and a trigonometric representation of the seasonal patterns based on Fourier series.
-
-    The name TBATS is an acronym for the key features of the model: Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal components.
-
-    References
-    ----------
-    - [De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011). Forecasting time series with complex seasonal patterns using exponential smoothing. Journal of the American statistical association, 106(496), 1513-1527.](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=f3de25596ab60ef0e886366826bf58a02b35a44f)
-
-    - [De Livera, Alysha M (2017). Modeling time series with complex seasonal patterns using exponential smoothing. Monash University. Thesis.](https://doi.org/10.4225/03/589299681de3d)
-
-    Parameters
-    ----------
-    seasonal_periods : int or list of int.
-        Number of observations per unit of time. Ex: 24 Hourly data.
-    use_boxcox : bool (default=True)
-        Whether or not to use a Box-Cox transformation.
-    bc_lower_bound : float (default=0.0)
-        Lower bound for the Box-Cox transformation.
-    bc_upper_bound : float (default=1.5)
-        Upper bound for the Box-Cox transformation.
-    use_trend : bool (default=True)
-        Whether or not to use a trend component.
-    use_damped_trend : bool (default=False)
-        Whether or not to dampen the trend component.
-    use_arma_errors : bool (default=False)
-        Whether or not to use a ARMA errors.
-    alias : str
-        Custom name of the model.
-    """
-
-    def __init__(
-        self,
-        seasonal_periods: Union[int, List[int]],
-        use_boxcox: bool = True,
-        bc_lower_bound: float = 0.0,
-        bc_uppper_bound: float = 1.5,
-        use_trend: bool = True,
-        use_damped_trend: bool = False,
-        use_arma_errors: bool = False,
-        alias: str = "TBATS",
-    ):
-        if isinstance(seasonal_periods, int):
-            seasonal_periods = [seasonal_periods]
-        self.seasonal_periods = list(seasonal_periods)
-        self.use_boxcox = use_boxcox
-        self.bc_lower_bound = bc_lower_bound
-        self.bc_upper_bound = bc_uppper_bound
-        self.use_trend = use_trend
-        self.use_damped_trend = use_damped_trend
-        self.use_arma_errors = use_arma_errors
-        self.alias = alias
-
-    def __repr__(self):
-        return self.alias
-
-    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
-        """Fit TBATS model.
-
-        Fit TBATS model to a time series (numpy array) `y`.
-
-        Parameters
-        ----------
-        y : numpy.array
-            Clean time series of shape (t, ).
-        X : numpy.array, optional (default=None)
-            Ignored
-
-        Returns
-        -------
-        self :
-            TBATS model.
-        """
-        self.model_ = tbats_model(
-            y=y,
-            seasonal_periods=self.seasonal_periods,
-            use_boxcox=self.use_boxcox,
-            bc_lower_bound=self.bc_lower_bound,
-            bc_upper_bound=self.bc_upper_bound,
-            use_trend=self.use_trend,
-            use_damped_trend=self.use_damped_trend,
-            use_arma_errors=self.use_arma_errors,
-        )
-        return self
-
-    def predict(
-        self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
-    ):
-        """Predict with fitted TBATS model.
-
-        Parameters
-        ----------
-        h : int
-            Forecast horizon.
-        level : List[float]
-            Confidence levels (0-100) for prediction intervals.
-
-        Returns
-        -------
-        forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
-        fcst = tbats_forecast(self.model_, h)
-        res = {"mean": fcst["mean"]}
-        if level is not None:
-            level = sorted(level)
-            sigmah = _compute_sigmah(self.model_, h)
-            pred_int = _calculate_intervals(res, level, h, sigmah)
-            res = {**res, **pred_int}
-        if self.model_["BoxCox_lambda"] is not None:
-            res_trans = {
-                k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
-            }
-        else:
-            res_trans = res
-        return res_trans
-
-    def predict_in_sample(self, level: Optional[Tuple[int]] = None):
-        """Access fitted TBATS model predictions.
-
-        Parameters
-        ----------
-        level : List[float]
-            Confidence levels (0-100) for prediction intervals.
-
-        Returns
-        -------
-        forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
-        res = {"fitted": self.model_["fitted"].ravel()}
-        if level is not None:
-            se = _calculate_sigma(self.model_["errors"], self.model_["errors"].shape[1])
-            fitted_pred_int = _add_fitted_pi(res, se, level)
-            res = {**res, **fitted_pred_int}
-        if self.model_["BoxCox_lambda"] is not None:
-            res_trans = {
-                k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
-            }
-        else:
-            res_trans = res
-        return res_trans
-
-    def forecast(
-        self,
-        y: np.ndarray,
-        h: int,
-        X: Optional[np.ndarray] = None,
-        X_future: Optional[np.ndarray] = None,
-        level: Optional[List[int]] = None,
-        fitted: bool = False,
-    ):
-        """Memory Efficient TBATS model.
-
-        This method avoids memory burden due from object storage.
-        It is analogous to `fit_predict` without storing information.
-        It assumes you know the forecast horizon in advance.
-
-        Parameters
-        ----------
-        y : numpy.array
-            Clean time series of shape (n, ).
-        h : int
-            Forecast horizon.
-        level : List[float]
-            Confidence levels (0-100) for prediction intervals.
-        fitted : bool
-            Whether or not returns insample predictions.
-
-        Returns
-        -------
-        forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
-        mod = tbats_model(
-            y=y,
-            seasonal_periods=self.seasonal_periods,
-            use_boxcox=self.use_boxcox,
-            bc_lower_bound=self.bc_lower_bound,
-            bc_upper_bound=self.bc_upper_bound,
-            use_trend=self.use_trend,
-            use_damped_trend=self.use_damped_trend,
-            use_arma_errors=self.use_arma_errors,
-        )
-        fcst = tbats_forecast(mod, h)
-        res = {"mean": fcst["mean"]}
-        if fitted:
-            res["fitted"] = mod["fitted"].ravel()
-        if level is not None:
-            level = sorted(level)
-            sigmah = _compute_sigmah(mod, h)
-            pred_int = _calculate_intervals(res, level, h, sigmah)
-            res = {**res, **pred_int}
-            if fitted:
-                se = _calculate_sigma(mod["errors"], mod["errors"].shape[1])
-                fitted_pred_int = _add_fitted_pi(res, se, level)
-                res = {**res, **fitted_pred_int}
-        if mod["BoxCox_lambda"] is not None:
-            res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
-        else:
-            res_trans = res
-        return res_trans
-
-# %% ../nbs/src/core/models.ipynb 477
+# %% ../nbs/src/core/models.ipynb 479
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -6165,7 +6165,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 491
+# %% ../nbs/src/core/models.ipynb 493
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -6179,7 +6179,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 505
+# %% ../nbs/src/core/models.ipynb 507
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.

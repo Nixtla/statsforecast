@@ -678,6 +678,7 @@ def tbats_model_generator(
         new_cols = np.arange(0, start_cut, 1)
         w_tilda_transpose = w_tilda_transpose[:, new_cols]
 
+    print("OLS model-------------------")
     model = sm.OLS(e.reshape((e.shape[1], 1)), w_tilda_transpose).fit()
     x_nought = model.params
 
@@ -808,6 +809,8 @@ def tbats_model_generator(
         "x": x,
         "k_vector": k_vector,
         "BoxCox_lambda": optim_BoxCox_lambda,
+        "p": p,
+        "q": q,
     }
 
     return res
@@ -824,30 +827,6 @@ def tbats_model(
     use_damped_trend,
     use_arma_errors,
 ):
-    # # Sort seasonal periods
-    # seasonal_periods = np.sort(seasonal_periods)
-
-    # # Check if there are missing values
-    # indices = np.where(np.isnan(y))[0]
-    # if len(indices) > 0:
-    #     max_index = indices[-1]
-    #     y = y[max_index+1:len(y)]
-
-    # # Check if there are negative values
-    # if np.any(y < 0):
-    #     use_boxcox = False
-
-    # # Check if there is a trend
-    # if use_trend:
-    #     adf = adfuller(y, regression = 'ct')
-    #     if adf[1] <= 0.05:
-    #         warnings.warn('The time series is trend-stationary, disabling trend components.')
-    #         use_trend = False
-    #         use_damped_trend = False
-
-    # # Choose the number of harmonics
-    # k_vector = np.array([find_harmonics(y, m) for m in seasonal_periods])
-
     # First model - No ARMA errors
     ar_coeffs = None
     ma_coeffs = None
@@ -872,8 +851,7 @@ def tbats_model(
         "use_arma_errors": False,
     }
 
-    # Second model
-    # Uses ARMA errors and the k_vector from the first model
+    # Second model - ARMA errors
     if use_arma_errors:
         errors = best_model["errors"][0]  # ARMA errors from first model
         with np.errstate(invalid="ignore"):
@@ -902,7 +880,9 @@ def tbats_model(
             ma_coeffs,
         )
 
-        if model_arma_errors["aic"] <= best_model["aic"]:
+        if (
+            model_arma_errors["aic"] < best_model["aic"]
+        ):  # inequality must be strict to prevent use_arma_errors = True when p = q = 0
             best_model = model_arma_errors
             best_model["description"] = {
                 "use_boxcox": use_boxcox,
@@ -924,8 +904,6 @@ def tbats_selection(
     use_damped_trend,
     use_arma_errors,
 ):
-    # Default for use_boxcox, use_trend and use_damped_trend is None, while default for use_arma_errors is True
-
     # Check for banned parameter combinations
     if (not use_trend) and use_damped_trend:
         raise ValueError("Can't use damped trend without trend")
@@ -976,7 +954,6 @@ def tbats_selection(
     combinations = [(b, t, a) for b, t, a in product(B, T, A)]
 
     for k in range(len(combinations)):
-        print(combinations[k])
         boxcox = combinations[k][0]
         trend = combinations[k][1][0]
         damped_trend = combinations[k][1][1]
