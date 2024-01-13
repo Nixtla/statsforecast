@@ -22,7 +22,7 @@ from statsmodels.tsa.stattools import adfuller
 from .arima import auto_arima_f
 from .utils import NOGIL, CACHE
 
-# %% ../nbs/src/tbats.ipynb 7
+# %% ../nbs/src/tbats.ipynb 8
 def find_harmonics(y, m):
     # Compute a 2 x m moving average to estimate the trend
     window_size = 2 * m
@@ -74,7 +74,7 @@ def find_harmonics(y, m):
 
     return num_harmonics
 
-# %% ../nbs/src/tbats.ipynb 9
+# %% ../nbs/src/tbats.ipynb 10
 def initial_parameters(
     seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
 ):
@@ -120,7 +120,7 @@ def initial_parameters(
         epsilon_vector,
     )
 
-# %% ../nbs/src/tbats.ipynb 11
+# %% ../nbs/src/tbats.ipynb 12
 def makeXMatrix(b, s_vector, d_vector, epsilon_vector):
     # x = (l_t, b_t, s_vector, d_vector, epsilon_vector)
     x = np.array([0.0])
@@ -135,13 +135,13 @@ def makeXMatrix(b, s_vector, d_vector, epsilon_vector):
 
     return x
 
-# %% ../nbs/src/tbats.ipynb 13
+# %% ../nbs/src/tbats.ipynb 14
 def findPQ(ar_coeffs, ma_coeffs):
     p = 0 if ar_coeffs is None else len(ar_coeffs)
     q = 0 if ma_coeffs is None else len(ma_coeffs)
     return p, q
 
-# %% ../nbs/src/tbats.ipynb 15
+# %% ../nbs/src/tbats.ipynb 16
 def makeTBATSWMatrix(phi, k_vector, ar_coeffs, ma_coeffs, tau):
     # w_transpose = (1, phi, a, varphi, theta)
     p, q = findPQ(ar_coeffs, ma_coeffs)
@@ -174,7 +174,7 @@ def makeTBATSWMatrix(phi, k_vector, ar_coeffs, ma_coeffs, tau):
 
     return w_transpose
 
-# %% ../nbs/src/tbats.ipynb 17
+# %% ../nbs/src/tbats.ipynb 18
 def makeTBATSGMatrix(
     k_vector, alpha, adj_beta, beta, gamma_one_v, gamma_two_v, p, q, tau
 ):
@@ -202,7 +202,7 @@ def makeTBATSGMatrix(
 
     return g, gamma_bold
 
-# %% ../nbs/src/tbats.ipynb 19
+# %% ../nbs/src/tbats.ipynb 20
 @njit(nogil=NOGIL, cache=CACHE)
 def makeTBATSFMatrix(
     phi, tau, alpha, beta, ar_coeffs, ma_coeffs, gamma_bold, seasonal_periods, k_vector
@@ -315,7 +315,7 @@ def makeTBATSFMatrix(
 
     return F
 
-# %% ../nbs/src/tbats.ipynb 21
+# %% ../nbs/src/tbats.ipynb 22
 @njit(nogil=NOGIL, cache=CACHE)
 def calcTBATSFaster(y_trans, w_transpose, g, F, x_nought):
     n = y_trans.shape[0]
@@ -335,7 +335,7 @@ def calcTBATSFaster(y_trans, w_transpose, g, F, x_nought):
 
     return yhat, e, x
 
-# %% ../nbs/src/tbats.ipynb 23
+# %% ../nbs/src/tbats.ipynb 24
 def extract_params(
     params,
     use_boxcox,
@@ -391,7 +391,7 @@ def extract_params(
         ma_coeffs,
     )
 
-# %% ../nbs/src/tbats.ipynb 25
+# %% ../nbs/src/tbats.ipynb 26
 def updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q):
     adjBeta = 0
 
@@ -411,7 +411,7 @@ def updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q):
 
     return w_transpose
 
-# %% ../nbs/src/tbats.ipynb 27
+# %% ../nbs/src/tbats.ipynb 28
 def updateTBATSGMatrix(g, gamma_bold, alpha, beta, k_vector, gamma_one_v, gamma_two_v):
     # This function also updates gamma_bold
     adjBeta = 0
@@ -431,7 +431,7 @@ def updateTBATSGMatrix(g, gamma_bold, alpha, beta, k_vector, gamma_one_v, gamma_
 
     return g
 
-# %% ../nbs/src/tbats.ipynb 29
+# %% ../nbs/src/tbats.ipynb 30
 def updateTBATSFMatrix(
     F, phi, alpha, beta, gamma_bold, ar_coeffs, ma_coeffs, p, q, tau
 ):
@@ -476,7 +476,7 @@ def updateTBATSFMatrix(
 
     return F
 
-# %% ../nbs/src/tbats.ipynb 31
+# %% ../nbs/src/tbats.ipynb 32
 def checkAdmissibility(
     BoxCox_lambda,
     bc_lower_bound,
@@ -518,7 +518,7 @@ def checkAdmissibility(
 
     return np.all(abs(D_eigen_values) < 1 + 1e-2)
 
-# %% ../nbs/src/tbats.ipynb 33
+# %% ../nbs/src/tbats.ipynb 34
 def calcLikelihoodTBATS(
     params,
     use_boxcox,
@@ -599,7 +599,7 @@ def calcLikelihoodTBATS(
     else:
         return 10**20
 
-# %% ../nbs/src/tbats.ipynb 36
+# %% ../nbs/src/tbats.ipynb 37
 def tbats_model_generator(
     y,
     seasonal_periods,
@@ -678,9 +678,16 @@ def tbats_model_generator(
         new_cols = np.arange(0, start_cut, 1)
         w_tilda_transpose = w_tilda_transpose[:, new_cols]
 
-    print("OLS model-------------------")
-    model = sm.OLS(e.reshape((e.shape[1], 1)), w_tilda_transpose).fit()
-    x_nought = model.params
+    condition_number = np.linalg.cond(w_tilda_transpose)
+    if np.isinf(condition_number):
+        scaler = StandardScaler()
+        w_tilda_transpose_scaled = scaler.fit_transform(w_tilda_transpose)
+        model = sm.OLS(e.reshape((e.shape[1], 1)), w_tilda_transpose_scaled).fit()
+        x_nought_scaled = model.params
+        x_nought = x_nought_scaled / scaler.scale_
+    else:
+        model = sm.OLS(e.reshape((e.shape[1], 1)), w_tilda_transpose).fit()
+        x_nought = model.params
 
     if (p != 0) or (q != 0):
         arma_seed_states = np.zeros((p + q,))
@@ -815,7 +822,7 @@ def tbats_model_generator(
 
     return res
 
-# %% ../nbs/src/tbats.ipynb 38
+# %% ../nbs/src/tbats.ipynb 39
 def tbats_model(
     y,
     seasonal_periods,
@@ -893,7 +900,7 @@ def tbats_model(
 
     return best_model
 
-# %% ../nbs/src/tbats.ipynb 40
+# %% ../nbs/src/tbats.ipynb 41
 def tbats_selection(
     y,
     seasonal_periods,
@@ -988,7 +995,7 @@ def tbats_selection(
 
     return mod
 
-# %% ../nbs/src/tbats.ipynb 42
+# %% ../nbs/src/tbats.ipynb 43
 def tbats_forecast(mod, h):  # this function is the same as bats_forecast
     fcst = np.zeros(h)
     xx = np.zeros((h, mod["x"].shape[1]))
@@ -1006,7 +1013,7 @@ def tbats_forecast(mod, h):  # this function is the same as bats_forecast
 
     return res
 
-# %% ../nbs/src/tbats.ipynb 43
+# %% ../nbs/src/tbats.ipynb 44
 def _compute_sigmah(obj, h):
     """
     Computes the sigmah requiered for prediction intervals
