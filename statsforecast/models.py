@@ -1950,36 +1950,23 @@ def _ses_mse(alpha: float, x: np.ndarray) -> float:
     return mse
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     """One step ahead forecast with simple exponential smoothing."""
     forecast, _, fitted = _ses_fcst_mse(x, alpha)
     return forecast, fitted
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _demand(x: np.ndarray) -> np.ndarray:
     """Extract the positive elements of a vector."""
     return x[x > 0]
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _intervals(x: np.ndarray) -> np.ndarray:
     """Compute the intervals between non zero elements of a vector."""
-    y = []
-
-    ctr = 1
-    for val in x:
-        if val == 0:
-            ctr += 1
-        else:
-            y.append(ctr)
-            ctr = 1
-
-    return np.array(y)
+    nonzero_idxs = np.where(x != 0)[0]
+    return np.diff(nonzero_idxs + 1, prepend=0)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _probability(x: np.ndarray) -> np.ndarray:
     """Compute the element probabilities of being non zero."""
     return (x != 0).astype(np.int32)
@@ -1996,27 +1983,28 @@ def _optimized_ses_forecast(
     return forecast, fitted
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
-    """Splits an array into chunks and returns the sum of each chunk."""
-    n = array.size
-    n_chunks = n // chunk_size
-    sums = np.empty(n_chunks)
-    for i, start in enumerate(range(0, n, chunk_size)):
-        sums[i] = array[start : start + chunk_size].sum()
-    return sums
+    """Splits an array into chunks and returns the sum of each chunk.
 
+    Incomplete chunks are discarded"""
+    n_chunks = array.size // chunk_size
+    n_elems = n_chunks * chunk_size
+    return array[:n_elems].reshape(n_chunks, chunk_size).sum(axis=1)
+
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 127
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 118
+>>>>>>> origin/main
 def _ses(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
     alpha: float,  # smoothing parameter
-):
+) -> Dict[str, np.ndarray]:
     fcst, _, fitted_vals = _ses_fcst_mse(y, alpha)
-    mean = _repeat_val(val=fcst, h=h)
-    fcst = {"mean": mean}
+    fcst = {"mean": _repeat_val(val=fcst, h=h)}
     if fitted:
         fcst["fitted"] = fitted_vals
     return fcst
@@ -2355,15 +2343,19 @@ class SimpleExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 153
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 144
+>>>>>>> origin/main
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
     season_length: int,  # length of season
     alpha: float,  # smoothing parameter
-):
+) -> Dict[str, np.ndarray]:
     n = y.size
     if n < season_length:
         return {"mean": np.full(h, np.nan, np.float32)}
@@ -2374,7 +2366,7 @@ def _seasonal_exponential_smoothing(
         season_vals[i], fitted_vals[init_idx::season_length] = _ses_forecast(
             y[init_idx::season_length], alpha
         )
-    out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
+    out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
     if fitted:
         fcst["fitted"] = fitted_vals
@@ -2484,9 +2476,7 @@ class SeasonalExponentialSmoothing(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = _repeat_val_seas(
-            self.model_["mean"], season_length=self.season_length, h=h
-        )
+        mean = _repeat_val_seas(self.model_["mean"], h=h)
         res = {"mean": mean}
         if level is None:
             return res
@@ -2578,7 +2568,7 @@ def _seasonal_ses_optimized(
         season_vals[i], fitted_vals[init_idx::season_length] = _optimized_ses_forecast(
             y[init_idx::season_length], [(0.01, 0.99)]
         )
-    out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
+    out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
     if fitted:
         fcst["fitted"] = fitted_vals
@@ -2684,9 +2674,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = _repeat_val_seas(
-            self.model_["mean"], season_length=self.season_length, h=h
-        )
+        mean = _repeat_val_seas(self.model_["mean"], h=h)
         res = {"mean": mean}
         if level is None:
             return res
@@ -2848,18 +2836,19 @@ class HoltWinters(AutoETS):
     def __repr__(self):
         return self.alias
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 212
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 203
+>>>>>>> origin/main
 def _historic_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
-):
-    mean = _repeat_val(val=y.mean(), h=h)
-    fcst = {"mean": mean}
+) -> Dict[str, np.ndarray]:
+    fcst = {"mean": _repeat_val(val=y.mean(), h=h)}
     if fitted:
-        # fitted_vals = np.full(y.size, np.nan, np.float32) # one-step ahead
-        # fitted_vals[1:] = y.cumsum()[:-1] / np.arange(1, y.size)
         fitted_vals = _repeat_val(val=y.mean(), h=len(y))
         fcst["fitted"] = fitted_vals
     return fcst
@@ -3251,17 +3240,21 @@ class Naive(_TS):
         )
         return res
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 242
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 233
+>>>>>>> origin/main
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
-):
+) -> Dict[str, np.ndarray]:
     slope = (y[-1] - y[0]) / (y.size - 1)
-    mean = slope * (1 + np.arange(h)) + y[-1]
+    mean = slope * (1 + np.arange(h, dtype=np.float32)) + y[-1]
     fcst = {
-        "mean": mean.astype(np.float32),
+        "mean": mean.astype(np.float32, copy=False),
         "slope": np.array([slope], dtype=np.float32),
         "last_y": np.array([y[-1]], dtype=np.float32),
     }
@@ -3539,9 +3532,7 @@ class SeasonalNaive(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = _repeat_val_seas(
-            season_vals=self.model_["mean"], season_length=self.season_length, h=h
-        )
+        mean = _repeat_val_seas(season_vals=self.model_["mean"], h=h)
         res = {"mean": mean}
 
         if level is None:
@@ -3639,14 +3630,18 @@ class SeasonalNaive(_TS):
 
         return res
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 273
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 264
+>>>>>>> origin/main
 def _window_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
     window_size: int,  # window size
-):
+) -> Dict[str, np.ndarray]:
     if fitted:
         raise NotImplementedError("return fitted")
     if y.size < window_size:
@@ -3814,25 +3809,26 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 285
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 276
+>>>>>>> origin/main
 def _seasonal_window_average(
     y: np.ndarray,
     h: int,
     fitted: bool,
     season_length: int,
     window_size: int,
-):
+) -> Dict[str, np.ndarray]:
     if fitted:
         raise NotImplementedError("return fitted")
     min_samples = season_length * window_size
     if y.size < min_samples:
         return {"mean": np.full(h, np.nan, np.float32)}
-    season_avgs = np.zeros(season_length, np.float32)
-    for i, value in enumerate(y[-min_samples:]):
-        season = i % season_length
-        season_avgs[season] += value / window_size
-    out = _repeat_val_seas(season_vals=season_avgs, h=h, season_length=season_length)
+    season_avgs = y[-min_samples:].reshape(window_size, season_length).mean(axis=0)
+    out = _repeat_val_seas(season_vals=season_avgs, h=h)
     return {"mean": out}
 
 # %% ../nbs/src/core/models.ipynb 286
@@ -3929,9 +3925,7 @@ class SeasonalWindowAverage(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = _repeat_val_seas(
-            season_vals=self.model_["mean"], season_length=self.season_length, h=h
-        )
+        mean = _repeat_val_seas(season_vals=self.model_["mean"], h=h)
         res = {"mean": mean}
         if level is None:
             return res
@@ -4194,8 +4188,12 @@ class ADIDA(_TS):
             )
         return res
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 311
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 302
+>>>>>>> origin/main
 def _croston_classic(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4549,13 +4547,17 @@ class CrostonOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 335
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 326
+>>>>>>> origin/main
 def _croston_sba(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
-):
+) -> Dict[str, np.ndarray]:
     if fitted:
         raise NotImplementedError("return fitted")
     mean = _croston_classic(y, h, fitted)
@@ -4903,15 +4905,19 @@ class IMAPA(_TS):
             )
         return res
 
+<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 359
 @njit(nogil=NOGIL, cache=CACHE)
+=======
+# %% ../nbs/src/core/models.ipynb 350
+>>>>>>> origin/main
 def _tsb(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: int,  # fitted values
     alpha_d: float,
     alpha_p: float,
-):
+) -> Dict[str, np.ndarray]:
     if fitted:
         raise NotImplementedError("return fitted")
     if (y == 0).all():
