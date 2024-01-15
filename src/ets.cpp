@@ -5,7 +5,7 @@
 #include "nelder_mead.h"
 
 namespace ETS {
-double TargetFunction(const std::vector<double> &params, const double *y,
+double TargetFunction(const double *params, size_t n_params, const double *y,
                       size_t n, int n_state, Component error, Component trend,
                       Component season, Criterion opt_crit, int n_mse, int m,
                       bool opt_alpha, bool opt_beta, bool opt_gamma,
@@ -30,7 +30,7 @@ double TargetFunction(const std::vector<double> &params, const double *y,
   }
   int p = n_state + (season != Component::None);
   auto state = std::vector<double>(p * (n + 1), 0.0);
-  std::copy(params.end() - n_state, params.end(), state.begin());
+  std::copy(params + n_params - n_state, params + n_params, state.begin());
   if (season != Component::None) {
     // add extra state
     int start = 1 + (trend != Component::None);
@@ -282,16 +282,4 @@ OptimResult ETS_NelderMead(double *x0, size_t n_x0, const double *y, size_t n_y,
                     tol_std, adaptive, y, n_y, n_state, error, trend, season,
                     opt_crit, n_mse, m, opt_alpha, opt_beta, opt_gamma, opt_phi,
                     alpha, beta, gamma, phi);
-}
-
-double ETS_TargetFunction(const double *params, size_t n_params,
-                          const double *y, size_t n, int n_state,
-                          Component error, Component trend, Component season,
-                          Criterion opt_crit, int n_mse, int m, bool opt_alpha,
-                          bool opt_beta, bool opt_gamma, bool opt_phi,
-                          double alpha, double beta, double gamma, double phi) {
-  auto params_vec = std::vector<double>(params, params + n_params);
-  return ETS::TargetFunction(params_vec, y, n, n_state, error, trend, season,
-                             opt_crit, n_mse, m, opt_alpha, opt_beta, opt_gamma,
-                             opt_phi, alpha, beta, gamma, phi);
 }

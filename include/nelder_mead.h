@@ -64,10 +64,7 @@ OptimResult NelderMead(Func F, double *x0, size_t n, const double *lower,
   // array of the value of f
   auto f_simplex = std::vector<double>(n + 1);
   for (size_t i = 0; i < n + 1; ++i) {
-    std::vector<double> row(n);
-    std::copy(simplex.data() + i * n, simplex.data() + (i + 1) * n,
-              row.begin());
-    f_simplex[i] = F(row, std::forward<Args>(args)...);
+    f_simplex[i] = F(simplex.data() + i * n, n, std::forward<Args>(args)...);
   }
   int i;
   size_t best_idx = 0;
@@ -96,7 +93,7 @@ OptimResult NelderMead(Func F, double *x0, size_t n, const double *lower,
       x_r[j] = x_o[j] + alpha * (x_o[j] - simplex[worst_idx * n + j]);
     }
     Clamp(x_r.data(), x_r.size(), lower, upper);
-    double f_r = F(x_r, std::forward<Args>(args)...);
+    double f_r = F(x_r.data(), x_r.size(), std::forward<Args>(args)...);
     if (f_simplex[best_idx] <= f_r && f_r < f_simplex[second_worst_idx]) {
       // accept reflection point
       std::copy(x_r.begin(), x_r.end(), simplex.begin() + worst_idx * n);
@@ -111,7 +108,7 @@ OptimResult NelderMead(Func F, double *x0, size_t n, const double *lower,
         x_e[j] = x_o[j] + gamma * (x_r[j] - x_o[j]);
       }
       Clamp(x_e.data(), x_e.size(), lower, upper);
-      double f_e = F(x_e, std::forward<Args>(args)...);
+      double f_e = F(x_e.data(), x_e.size(), std::forward<Args>(args)...);
       if (f_e < f_r) {
         // accept expansion point
         std::copy(x_e.begin(), x_e.end(), simplex.begin() + worst_idx * n);
@@ -131,7 +128,7 @@ OptimResult NelderMead(Func F, double *x0, size_t n, const double *lower,
         x_oc[j] = x_o[j] + rho * (x_r[j] - x_o[j]);
       }
       Clamp(x_oc.data(), x_oc.size(), lower, upper);
-      double f_oc = F(x_oc, std::forward<Args>(args)...);
+      double f_oc = F(x_oc.data(), x_oc.size(), std::forward<Args>(args)...);
       if (f_oc <= f_r) {
         // accept contraction point
         std::copy(x_oc.begin(), x_oc.end(), simplex.begin() + worst_idx * n);
@@ -145,7 +142,7 @@ OptimResult NelderMead(Func F, double *x0, size_t n, const double *lower,
         x_ic[j] = x_o[j] - rho * (x_r[j] - x_o[j]);
       }
       Clamp(x_ic.data(), x_ic.size(), lower, upper);
-      double f_ic = F(x_ic, std::forward<Args>(args)...);
+      double f_ic = F(x_ic.data(), x_ic.size(), std::forward<Args>(args)...);
       if (f_ic < f_simplex[worst_idx]) {
         // accept inside contraction point
         std::copy(x_ic.begin(), x_ic.end(), simplex.begin() + worst_idx * n);
@@ -162,10 +159,7 @@ OptimResult NelderMead(Func F, double *x0, size_t n, const double *lower,
             sigma * (simplex[j * n + k] - simplex[best_idx * n + k]);
         simplex[j * n + k] = std::clamp(simplex[j * n + k], lower[k], upper[k]);
       }
-      std::vector<double> row(n);
-      std::copy(simplex.data() + j * n, simplex.data() + (j + 1) * n,
-                row.begin());
-      f_simplex[j] = F(row, std::forward<Args>(args)...);
+      f_simplex[j] = F(simplex.data() + j * n, n, std::forward<Args>(args)...);
     }
   }
   std::copy(simplex.begin() + best_idx * n,

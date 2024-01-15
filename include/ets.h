@@ -39,11 +39,4 @@ OptimResult ETS_NelderMead(double *x0, size_t n_x0, const double *y, size_t n_y,
                            double gamma, double phi, const double *lower,
                            const double *upper, double tol_std, int max_iter,
                            bool adaptive);
-
-double ETS_TargetFunction(const double *params, size_t n_params,
-                          const double *y, size_t n, int n_state,
-                          Component error, Component trend, Component season,
-                          Criterion opt_crit, int n_mse, int m, bool opt_alpha,
-                          bool opt_beta, bool opt_gamma, bool opt_phi,
-                          double alpha, double beta, double gamma, double phi);
 }
