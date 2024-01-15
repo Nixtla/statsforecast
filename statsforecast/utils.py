@@ -6,6 +6,7 @@ __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 # %% ../nbs/src/utils.ipynb 3
 import os
 import warnings
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
@@ -26,6 +27,7 @@ if LEGACY_CACHE:
         FutureWarning,
     )
 CACHE = bool(os.getenv("NIXTLA_NUMBA_CACHE", "")) or LEGACY_CACHE
+results = namedtuple("results", "x fn nit simplex")
 
 # %% ../nbs/src/utils.ipynb 7
 def generate_series(

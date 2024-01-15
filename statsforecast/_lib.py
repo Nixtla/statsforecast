@@ -25,11 +25,7 @@ else:
     _extension = "so"
 
 _LIB = ctypes.CDLL(
-    str(
-        files("statsforecast").joinpath(
-            "lib", _prefix, f"libstatsforecast.{_extension}"
-        )
-    )
+    str(files("statsforecast") / "lib" / _prefix / f"libstatsforecast.{_extension}")
 )
 
 # %% ../nbs/src/core/lib.ipynb 3

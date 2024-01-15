@@ -13,8 +13,7 @@ from scipy.stats import norm
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
 
-from .ets import results
-from .utils import _seasonal_naive, _repeat_val_seas, CACHE, NOGIL
+from .utils import _seasonal_naive, _repeat_val_seas, CACHE, NOGIL, results
 
 # %% ../nbs/src/theta.ipynb 4
 # Global variables

@@ -11,8 +11,7 @@ import numpy as np
 from numba import njit
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-from .ets import results
-from .utils import CACHE, NOGIL
+from .utils import CACHE, NOGIL, results
 
 # %% ../nbs/src/ces.ipynb 4
 # Global variables
