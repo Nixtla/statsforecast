@@ -576,9 +576,7 @@ def forecast_theta(obj, h, level=None):
             res[f"hi-{lv}"] = np.quantile(samples, max_q, axis=1)
 
     if obj.get("decompose", False):
-        seas_forecast = _repeat_val_seas(
-            obj["seas_forecast"]["mean"], h=h, season_length=obj["m"]
-        )
+        seas_forecast = _repeat_val_seas(obj["seas_forecast"]["mean"], h=h)
         for key in res:
             if obj["decomposition_type"] == "multiplicative":
                 res[key] = res[key] * seas_forecast

@@ -4,13 +4,14 @@
 __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 # %% ../nbs/src/utils.ipynb 3
+from typing import Dict
+import math
 import os
 import warnings
 from collections import namedtuple
 
 import numpy as np
 import pandas as pd
-from numba import njit
 from scipy.stats import norm
 
 from utilsforecast.compat import DataFrame
@@ -241,26 +242,22 @@ AirPassengersDF = pd.DataFrame(
 )
 
 # %% ../nbs/src/utils.ipynb 17
-@njit(nogil=NOGIL, cache=CACHE)
-def _repeat_val_seas(season_vals: np.ndarray, h: int, season_length: int):
-    out = np.empty(h, np.float32)
-    for i in range(h):
-        out[i] = season_vals[i % season_length]
-    return out
+def _repeat_val_seas(season_vals: np.ndarray, h: int) -> np.ndarray:
+    repeats = math.ceil(h / season_vals.size)
+    return np.tile(season_vals, repeats)[:h]
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _seasonal_naive(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
     season_length: int,  # season length
-):
+) -> Dict[str, np.ndarray]:
     n = y.size
     season_vals = np.full(season_length, np.nan, np.float32)
     season_samples = min(season_length, n)
     season_vals[:season_samples] = y[-season_samples:]
-    out = _repeat_val_seas(season_vals=season_vals, h=h, season_length=season_length)
+    out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
     if fitted:
         fitted_vals = np.empty(n, dtype=np.float32)
@@ -271,23 +268,21 @@ def _seasonal_naive(
     return fcst
 
 
-@njit(nogil=NOGIL, cache=CACHE)
-def _repeat_val(val: float, h: int):
+def _repeat_val(val: float, h: int) -> np.ndarray:
     return np.full(h, val, np.float32)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _naive(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
-):
-    mean = _repeat_val(val=y[-1], h=h)
+) -> Dict[str, np.ndarray]:
+    fcst = {"mean": _repeat_val(val=y[-1], h=h)}
     if fitted:
         fitted_vals = np.full(y.size, np.nan, np.float32)
         fitted_vals[1:] = np.roll(y, 1)[1:]
-        return {"mean": mean, "fitted": fitted_vals}
-    return {"mean": mean}
+        fcst["fitted"] = fitted_vals
+    return fcst
 
 # %% ../nbs/src/utils.ipynb 19
 # Functions used for calculating prediction intervals
