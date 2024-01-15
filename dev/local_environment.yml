@@ -13,6 +13,7 @@ dependencies:
   - pip
   - prophet
   - pyarrow
+  - scikit-build-core
   - scipy>=1.7.3
   - statsmodels>=0.13.2
   - tabulate

@@ -32,6 +32,24 @@ _PHI_LOWER = 0.8
 _PHI_UPPER = 0.98
 
 # %% ../nbs/src/ets.ipynb 7
+_LIB.ETS_Update.argtypes = [
+    ctypes.POINTER(ctypes.c_double),  # l
+    ctypes.POINTER(ctypes.c_double),  # b
+    ctypes.POINTER(ctypes.c_double),  # s
+    ctypes.c_double,  # old_l
+    ctypes.c_double,  # old_b
+    ctypes.POINTER(ctypes.c_double),  # old_s
+    ctypes.c_int,  # m
+    ctypes.c_int,  # trend
+    ctypes.c_int,  # season
+    ctypes.c_double,  # alpha
+    ctypes.c_double,  # beta
+    ctypes.c_double,  # gamma
+    ctypes.c_double,  # phi
+    ctypes.c_double,  # y
+]
+
+# %% ../nbs/src/ets.ipynb 8
 _LIB.ETS_Forecast.argtypes = [
     ctypes.c_double,  # l
     ctypes.c_double,  # b
@@ -44,7 +62,7 @@ _LIB.ETS_Forecast.argtypes = [
     ctypes.c_int,  # h
 ]
 
-# %% ../nbs/src/ets.ipynb 8
+# %% ../nbs/src/ets.ipynb 9
 _LIB.ETS_Calc.argtypes = [
     ctypes.POINTER(ctypes.c_double),  # y
     ctypes.c_size_t,  # n
@@ -63,7 +81,7 @@ _LIB.ETS_Calc.argtypes = [
 ]
 _LIB.ETS_Calc.restype = ctypes.c_double
 
-# %% ../nbs/src/ets.ipynb 9
+# %% ../nbs/src/ets.ipynb 10
 _LIB.ETS_NelderMead.argtypes = [
     ctypes.POINTER(ctypes.c_double),  # x0
     ctypes.c_size_t,  # n_x0
@@ -92,7 +110,7 @@ _LIB.ETS_NelderMead.argtypes = [
 ]
 _LIB.ETS_NelderMead.restype = OptimResult
 
-# %% ../nbs/src/ets.ipynb 10
+# %% ../nbs/src/ets.ipynb 11
 def etssimulate(
     x: np.ndarray,
     m: int,
@@ -135,7 +153,6 @@ def etssimulate(
             oldl,
             oldb,
             _arr_as_double_ptr(olds),
-            olds.size,
             m,
             trend,
             season,
@@ -151,11 +168,28 @@ def etssimulate(
         else:
             y[i] = f[0] * (1.0 + e[i])
         # Update state
-        l, b, s = update(
-            oldl, l, oldb, b, olds, s, m, trend, season, alpha, beta, gamma, phi, y[i]
+        c_l = ctypes.c_double(l)
+        c_b = ctypes.c_double(b)
+        _LIB.ETS_Update(
+            ctypes.byref(c_l),
+            ctypes.byref(c_b),
+            _arr_as_double_ptr(s),
+            oldl,
+            oldb,
+            _arr_as_double_ptr(olds),
+            m,
+            trend,
+            season,
+            alpha,
+            beta,
+            gamma,
+            phi,
+            y[i],
         )
+        l = c_l.value
+        b = c_b.value
 
-# %% ../nbs/src/ets.ipynb 11
+# %% ../nbs/src/ets.ipynb 12
 def etsforecast(
     x: np.ndarray,
     m: int,
@@ -190,7 +224,7 @@ def etsforecast(
         h,
     )
 
-# %% ../nbs/src/ets.ipynb 14
+# %% ../nbs/src/ets.ipynb 15
 def initparam(
     alpha: float,
     beta: float,
@@ -234,7 +268,7 @@ def initparam(
             phi = upper[3] - 1e-3
     return {"alpha": alpha, "beta": beta, "gamma": gamma, "phi": phi}
 
-# %% ../nbs/src/ets.ipynb 16
+# %% ../nbs/src/ets.ipynb 17
 def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     if np.isnan(phi):
         phi = 1
@@ -271,7 +305,7 @@ def admissible(alpha: float, beta: float, gamma: float, phi: float, m: int):
     # passed all tests
     return True
 
-# %% ../nbs/src/ets.ipynb 17
+# %% ../nbs/src/ets.ipynb 18
 def check_param(
     alpha: float,
     beta: float,
@@ -300,7 +334,7 @@ def check_param(
             return False
     return True
 
-# %% ../nbs/src/ets.ipynb 18
+# %% ../nbs/src/ets.ipynb 19
 def fourier(x, period, K, h=None):
     if h is None:
         times = np.arange(1, len(x) + 1)
@@ -327,7 +361,7 @@ def fourier(x, period, K, h=None):
     X = X[:, ~np.isnan(X.sum(axis=0))]
     return X
 
-# %% ../nbs/src/ets.ipynb 20
+# %% ../nbs/src/ets.ipynb 21
 def initstate(y, m, trendtype, seasontype):
     n = len(y)
     if seasontype != "N":
@@ -405,7 +439,7 @@ def initstate(y, m, trendtype, seasontype):
                 b0 = max(y_sa[1] / div, 1e-3)
     return np.concatenate([[l0, b0], init_seas])
 
-# %% ../nbs/src/ets.ipynb 24
+# %% ../nbs/src/ets.ipynb 25
 def switch(x: str) -> Component:
     if x == "N":
         return Component.NONE
@@ -415,7 +449,7 @@ def switch(x: str) -> Component:
         return Component.MULTIPLICATIVE
     raise ValueError(f"Unknown component {x}")
 
-# %% ../nbs/src/ets.ipynb 26
+# %% ../nbs/src/ets.ipynb 27
 def switch_criterion(x: str) -> Criterion:
     if x == "lik":
         return Criterion.LIKELIHOOD
@@ -429,7 +463,7 @@ def switch_criterion(x: str) -> Criterion:
         return Criterion.MAE
     raise ValueError(f"Unknown crtierion {x}")
 
-# %% ../nbs/src/ets.ipynb 28
+# %% ../nbs/src/ets.ipynb 29
 def pegelsresid_C(
     y: np.ndarray,
     m: int,
@@ -478,7 +512,7 @@ def pegelsresid_C(
             lik = np.nan
     return amse, e, x, lik
 
-# %% ../nbs/src/ets.ipynb 29
+# %% ../nbs/src/ets.ipynb 30
 results = namedtuple("results", "x fn nit")
 
 
@@ -581,7 +615,7 @@ def optimize_ets_target_fn(
     )
     return results(x0, res.fun, res.nit)
 
-# %% ../nbs/src/ets.ipynb 30
+# %% ../nbs/src/ets.ipynb 31
 def etsmodel(
     y: np.ndarray,
     m: int,
@@ -753,11 +787,11 @@ def etsmodel(
         n_params=np_,
     )
 
-# %% ../nbs/src/ets.ipynb 32
+# %% ../nbs/src/ets.ipynb 33
 def is_constant(x):
     return np.all(x[0] == x)
 
-# %% ../nbs/src/ets.ipynb 34
+# %% ../nbs/src/ets.ipynb 35
 def ets_f(
     y,
     m,
@@ -1001,7 +1035,7 @@ def ets_f(
     model["method"] = f"ETS({best_e},{best_t}{'d' if best_d else ''},{best_s})"
     return model
 
-# %% ../nbs/src/ets.ipynb 35
+# %% ../nbs/src/ets.ipynb 36
 def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     forecast = np.full(h, fill_value=np.nan)
     states = obj["states"][-1, :]
@@ -1011,7 +1045,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     etsforecast(x=states, m=m, trend=ttype, season=stype, phi=phi, h=h, f=forecast)
     return forecast
 
-# %% ../nbs/src/ets.ipynb 36
+# %% ../nbs/src/ets.ipynb 37
 def _compute_sigmah(pf, h, sigma, cvals):
     theta = np.full(h, np.nan)
     theta[0] = pf[0] ** 2
@@ -1022,7 +1056,7 @@ def _compute_sigmah(pf, h, sigma, cvals):
 
     return (1 + sigma) * theta - pf**2
 
-# %% ../nbs/src/ets.ipynb 37
+# %% ../nbs/src/ets.ipynb 38
 def _class3models(
     h,
     sigma,
@@ -1122,7 +1156,7 @@ def _class3models(
 
     return var
 
-# %% ../nbs/src/ets.ipynb 38
+# %% ../nbs/src/ets.ipynb 39
 def _compute_pred_intervals(model, forecasts, h, level):
     sigma = model["sigma2"]
     season_length = model["m"]
@@ -1317,7 +1351,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     return pi
 
-# %% ../nbs/src/ets.ipynb 39
+# %% ../nbs/src/ets.ipynb 40
 def forecast_ets(obj, h, level=None):
     fcst = pegelsfcast_C(h, obj)
     out = {"mean": fcst}
@@ -1328,6 +1362,6 @@ def forecast_ets(obj, h, level=None):
         out = {**out, **pi}
     return out
 
-# %% ../nbs/src/ets.ipynb 46
+# %% ../nbs/src/ets.ipynb 47
 def forward_ets(fitted_model, y):
     return ets_f(y=y, m=fitted_model["m"], model=fitted_model)

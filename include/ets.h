@@ -19,6 +19,10 @@ constexpr double NA = -99999.0;
 constexpr double TOL = 1e-10;
 
 extern "C" {
+void ETS_Update(double &l, double &b, double *s, double old_l, double old_b,
+                const double *old_s, int m, Component trend, Component season,
+                double alpha, double beta, double gamma, double phi, double y);
+
 void ETS_Forecast(double l, double b, const double *s, int m, Component trend,
                   Component season, double phi, double *f, int h);
 
