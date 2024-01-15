@@ -563,23 +563,14 @@ def optimize_ets_target_fn(
     optGamma = not np.isnan(gamma)
     optPhi = not np.isnan(phi)
 
-    givenAlpha = False
-    givenBeta = False
-    givenGamma = False
-    givenPhi = False
-
     if not np.isnan(par_noopt["alpha"]):
         optAlpha = False
-        givenAlpha = True
     if not np.isnan(par_noopt["beta"]):
         optBeta = False
-        givenBeta = True
     if not np.isnan(par_noopt["gamma"]):
         optGamma = False
-        givenGamma = True
     if not np.isnan(par_noopt["phi"]):
         optPhi = False
-        givenPhi = True
 
     if not damped:
         phi = 1.0

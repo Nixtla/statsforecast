@@ -1,7 +1,7 @@
 import dask.dataframe as dd
 import pytest
 
-from .utils import pipeline, pipeline_with_level, pipeline_fitted
+from utils import pipeline, pipeline_with_level, pipeline_fitted
 
 
 def to_distributed(df):

@@ -3,7 +3,7 @@ import sys
 import pytest
 import ray
 
-from .utils import pipeline, pipeline_with_level, pipeline_fitted
+from utils import pipeline, pipeline_with_level, pipeline_fitted
 
 
 def to_distributed(df):

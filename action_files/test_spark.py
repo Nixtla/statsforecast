@@ -3,7 +3,7 @@ import sys
 import pytest
 from pyspark.sql import SparkSession
 
-from .utils import pipeline, pipeline_with_level, pipeline_fitted
+from utils import pipeline, pipeline_with_level, pipeline_fitted
 
 
 @pytest.fixture

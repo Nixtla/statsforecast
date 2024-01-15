@@ -12,6 +12,7 @@ from collections import namedtuple
 
 import numpy as np
 import pandas as pd
+from numba import njit
 from scipy.stats import norm
 
 from utilsforecast.compat import DataFrame
@@ -30,7 +31,22 @@ if LEGACY_CACHE:
 CACHE = bool(os.getenv("NIXTLA_NUMBA_CACHE", "")) or LEGACY_CACHE
 results = namedtuple("results", "x fn nit simplex")
 
-# %% ../nbs/src/utils.ipynb 7
+# %% ../nbs/src/utils.ipynb 5
+@njit(nogil=NOGIL, cache=CACHE)
+def restrict_to_bounds(x, lower, upper):
+    new_x = np.full_like(x, fill_value=np.nan, dtype=x.dtype)
+    for i in range(x.size):
+        lo = lower[i]
+        up = upper[i]
+        if x[i] < lo:
+            new_x[i] = lo
+        elif x[i] > up:
+            new_x[i] = up
+        else:
+            new_x[i] = x[i]
+    return new_x
+
+# %% ../nbs/src/utils.ipynb 8
 def generate_series(
     n_series: int,
     freq: str = "D",
@@ -82,7 +98,7 @@ def generate_series(
         seed=seed,
     )
 
-# %% ../nbs/src/utils.ipynb 11
+# %% ../nbs/src/utils.ipynb 12
 AirPassengers = np.array(
     [
         112.0,
@@ -232,7 +248,7 @@ AirPassengers = np.array(
     ]
 )
 
-# %% ../nbs/src/utils.ipynb 12
+# %% ../nbs/src/utils.ipynb 13
 AirPassengersDF = pd.DataFrame(
     {
         "unique_id": np.ones(len(AirPassengers)),
@@ -241,7 +257,7 @@ AirPassengersDF = pd.DataFrame(
     }
 )
 
-# %% ../nbs/src/utils.ipynb 17
+# %% ../nbs/src/utils.ipynb 18
 def _repeat_val_seas(season_vals: np.ndarray, h: int) -> np.ndarray:
     repeats = math.ceil(h / season_vals.size)
     return np.tile(season_vals, repeats)[:h]
@@ -284,7 +300,7 @@ def _naive(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../nbs/src/utils.ipynb 19
+# %% ../nbs/src/utils.ipynb 20
 # Functions used for calculating prediction intervals
 def _quantiles(level):
     level = np.asarray(level)
@@ -314,7 +330,7 @@ def _calculate_sigma(residuals, n):
         sigma = 0
     return sigma
 
-# %% ../nbs/src/utils.ipynb 20
+# %% ../nbs/src/utils.ipynb 21
 class ConformalIntervals:
     """Class for storing conformal intervals metadata information."""
 

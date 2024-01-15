@@ -755,4 +755,6 @@ d = { 'settings': { 'branch': 'main',
                                      'statsforecast.utils._repeat_val': ('src/utils.html#_repeat_val', 'statsforecast/utils.py'),
                                      'statsforecast.utils._repeat_val_seas': ('src/utils.html#_repeat_val_seas', 'statsforecast/utils.py'),
                                      'statsforecast.utils._seasonal_naive': ('src/utils.html#_seasonal_naive', 'statsforecast/utils.py'),
-                                     'statsforecast.utils.generate_series': ('src/utils.html#generate_series', 'statsforecast/utils.py')}}}
+                                     'statsforecast.utils.generate_series': ('src/utils.html#generate_series', 'statsforecast/utils.py'),
+                                     'statsforecast.utils.restrict_to_bounds': ( 'src/utils.html#restrict_to_bounds',
+                                                                                 'statsforecast/utils.py')}}}

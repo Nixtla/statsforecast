@@ -40,12 +40,45 @@ jobs:
           git status -s # display the status to see which nbs need cleaning up
           if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks and running ./action_files/clean_nbs before committing"; false; fi
 
+  build_wheels:
+    name: Build wheels for ${{ matrix.platform-id }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-20.04
+            platform-id: manylinux_x86_64
+          - os: windows-2019
+            platform-id: win_amd64
+          - os: macos-11
+            platform-id: macosx_x86_64
+          - os: macos-latest
+            platform-id: macosx_arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.2
+        env:
+          CIBW_BUILD: cp38-${{ matrix.platform-id }}
+          CIBW_ARCHS: all
+          CIBW_TEST_SKIP: '*-macosx_arm64'
+          CIBW_BUILD_VERBOSITY: 3
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: wheelhouse/*.whl
+          retention-days: 1
+
   run-local-tests:
+    needs: [build_wheels]
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.10']
+        # python-version: ['3.8', '3.9', '3.10', '3.11']
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
@@ -55,22 +88,31 @@ jobs:
         with:
           environment-file: dev/local_environment.yml
           create-args: python=${{ matrix.python-version }}
-          cache-environment: true
+          cache-environment: false
 
-      - name: Install pip requirements
-        run: pip install --no-build-isolation ./ -v
+      - name: Download wheels
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run local tests
         run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0 --do_print --timing
 
+
   run-tests:
+    needs: [build_wheels]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.10']
+        # python-version: ['3.8', '3.9', '3.10', '3.11']
     steps:
       - name: Clone repo
         uses: actions/checkout@v3
@@ -82,8 +124,14 @@ jobs:
           create-args: python=${{ matrix.python-version }}
           cache-environment: true
 
-      - name: Install pip requirements
-        run: pip install --no-build-isolation -v ./
+      - name: Download wheels
+        uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run tests 
         run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0 --do_print --timing

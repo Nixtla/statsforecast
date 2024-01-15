@@ -72,12 +72,18 @@ build-backend = "scikit_build_core.build"
 [tool.scikit-build]
 cmake.verbose = true
 logging.level = "INFO"
-sdist.exclude = ["*.yml"]
+sdist.exclude = [
+    "action_files",
+    "dev",
+    "experiments",
+    "nbs",
+    "settings.ini",
+]
 sdist.reproducible = true
-wheel.install-dir = ["statsforecast"]
+wheel.install-dir = "statsforecast"
 wheel.packages = ["statsforecast"]
 wheel.py-api = "py3"
 
 [tool.cibuildwheel]
-test-requires = "pandas pytest"
+test-requires = "pytest"
 test-command = "pytest {project}/action_files/test_fit_predict.py"
