@@ -9,16 +9,13 @@ from functools import partial
 from itertools import product
 
 import numpy as np
-import pandas as pd
 import scipy.linalg
-import statsmodels.api as sm
 from numba import njit
 from numpy.polynomial.polynomial import Polynomial
 from scipy.special import inv_boxcox
 from scipy.stats import boxcox
 from scipy.optimize import minimize
 from statsmodels.tsa.stattools import adfuller
-from sklearn.preprocessing import StandardScaler
 
 from .arima import auto_arima_f
 from .utils import NOGIL, CACHE
@@ -61,10 +58,12 @@ def find_harmonics(y, m):
         # Perform regression to estimate the coefficients
         X = data[columns]
         y = data["z_t"]
-        model = sm.OLS(y, X).fit()
-        new_aic = model.aic
+        model, residuals = np.linalg.lstsq(X, y, rcond=None)[:2]
+        k = model.size
+        n = len(y)
+        new_aic = n * np.log(residuals / n) + 2 * k
 
-        if new_aic < aic:
+        if new_aic.size > 0 and new_aic < aic:
             aic = new_aic
             num_harmonics = h
         else:
@@ -681,14 +680,19 @@ def tbats_model_generator(
 
     condition_number = np.linalg.cond(w_tilda_transpose)
     if np.isinf(condition_number):
-        scaler = StandardScaler()
-        w_tilda_transpose_scaled = scaler.fit_transform(w_tilda_transpose)
-        model = sm.OLS(e.reshape((e.shape[1], 1)), w_tilda_transpose_scaled).fit()
-        x_nought_scaled = model.params
-        x_nought = x_nought_scaled / scaler.scale_
+        mu = np.mean(w_tilda_transpose, axis=0)
+        sigma = np.std(w_tilda_transpose, axis=0)
+        w_tilda_transpose_scaled = (w_tilda_transpose - mu) / sigma
+        model = np.linalg.lstsq(
+            w_tilda_transpose_scaled, e.reshape((e.shape[1], 1)), rcond=None
+        )
+        x_nought_scaled = model[0].ravel()
+        x_nought = x_nought_scaled / sigma
     else:
-        model = sm.OLS(e.reshape((e.shape[1], 1)), w_tilda_transpose).fit()
-        x_nought = model.params
+        model = np.linalg.lstsq(
+            w_tilda_transpose, e.reshape((e.shape[1], 1)), rcond=None
+        )
+        x_nought = model[0].ravel()
 
     if (p != 0) or (q != 0):
         arma_seed_states = np.zeros((p + q,))

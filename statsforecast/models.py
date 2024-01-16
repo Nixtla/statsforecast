@@ -1991,12 +1991,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     n_elems = n_chunks * chunk_size
     return array[:n_elems].reshape(n_chunks, chunk_size).sum(axis=1)
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 127
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 118
->>>>>>> origin/main
 def _ses(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2343,12 +2338,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 153
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 144
->>>>>>> origin/main
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2836,12 +2826,7 @@ class HoltWinters(AutoETS):
     def __repr__(self):
         return self.alias
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 212
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 203
->>>>>>> origin/main
 def _historic_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3240,12 +3225,7 @@ class Naive(_TS):
         )
         return res
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 242
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 233
->>>>>>> origin/main
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3630,12 +3610,7 @@ class SeasonalNaive(_TS):
 
         return res
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 273
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 264
->>>>>>> origin/main
 def _window_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3809,12 +3784,7 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 285
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 276
->>>>>>> origin/main
 def _seasonal_window_average(
     y: np.ndarray,
     h: int,
@@ -4188,12 +4158,7 @@ class ADIDA(_TS):
             )
         return res
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 311
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 302
->>>>>>> origin/main
 def _croston_classic(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4547,12 +4512,7 @@ class CrostonOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 335
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 326
->>>>>>> origin/main
 def _croston_sba(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4905,12 +4865,7 @@ class IMAPA(_TS):
             )
         return res
 
-<<<<<<< HEAD
 # %% ../nbs/src/core/models.ipynb 359
-@njit(nogil=NOGIL, cache=CACHE)
-=======
-# %% ../nbs/src/core/models.ipynb 350
->>>>>>> origin/main
 def _tsb(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
