@@ -180,12 +180,12 @@ Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[ADIDA](https://nixtla.github.io/statsforecast/src/core/models.html#adida)|✅|||||
-|[CrostonClassic](https://nixtla.github.io/statsforecast/src/core/models.html#crostonclassic)|✅|||||
-|[CrostonOptimized](https://nixtla.github.io/statsforecast/src/core/models.html#crostonoptimized)|✅|||||
-|[CrostonSBA](https://nixtla.github.io/statsforecast/src/core/models.html#crostonsba)|✅|||||
-|[IMAPA](https://nixtla.github.io/statsforecast/src/core/models.html#imapa)|✅|||||
-|[TSB](https://nixtla.github.io/statsforecast/src/core/models.html#tsb)|✅|||||
+|[ADIDA](https://nixtla.github.io/statsforecast/src/core/models.html#adida)|✅||✅|✅||
+|[CrostonClassic](https://nixtla.github.io/statsforecast/src/core/models.html#crostonclassic)|✅||✅|✅||
+|[CrostonOptimized](https://nixtla.github.io/statsforecast/src/core/models.html#crostonoptimized)|✅||✅|✅||
+|[CrostonSBA](https://nixtla.github.io/statsforecast/src/core/models.html#crostonsba)|✅||✅|✅||
+|[IMAPA](https://nixtla.github.io/statsforecast/src/core/models.html#imapa)|✅||✅|✅||
+|[TSB](https://nixtla.github.io/statsforecast/src/core/models.html#tsb)|✅||✅|✅||
 
 ## 🔨 How to contribute
 See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md).
