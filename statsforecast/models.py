@@ -1356,18 +1356,18 @@ class AutoTBATS(_TS):
     ----------
     seasonal_periods : int or list of int.
         Number of observations per unit of time. Ex: 24 Hourly data.
-    use_boxcox : bool (default=True)
-        Whether or not to use a Box-Cox transformation.
+    use_boxcox : bool (default=None)
+        Whether or not to use a Box-Cox transformation. By default tries both.
     bc_lower_bound : float (default=0.0)
         Lower bound for the Box-Cox transformation.
     bc_upper_bound : float (default=1.5)
         Upper bound for the Box-Cox transformation.
-    use_trend : bool (default=True)
-        Whether or not to use a trend component.
-    use_damped_trend : bool (default=False)
-        Whether or not to dampen the trend component.
-    use_arma_errors : bool (default=False)
-        Whether or not to use a ARMA errors.
+    use_trend : bool (default=None)
+        Whether or not to use a trend component. By default tries both.
+    use_damped_trend : bool (default=None)
+        Whether or not to dampen the trend component. By default tries both.
+    use_arma_errors : bool (default=True)
+        Whether or not to use a ARMA errors. Default is True and this evaluates both models.
     alias : str
         Custom name of the model.
     """
@@ -1375,11 +1375,11 @@ class AutoTBATS(_TS):
     def __init__(
         self,
         seasonal_periods: Union[int, List[int]],
-        use_boxcox: bool = None,
+        use_boxcox: Optional[bool] = None,
         bc_lower_bound: float = 0.0,
         bc_uppper_bound: float = 1.5,
-        use_trend: bool = None,
-        use_damped_trend: bool = None,
+        use_trend: Optional[bool] = None,
+        use_damped_trend: Optional[bool] = None,
         use_arma_errors: bool = True,
         alias: str = "AutoTBATS",
     ):

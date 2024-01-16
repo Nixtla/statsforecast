@@ -17,7 +17,7 @@ TBATS was tested using a dataset that contains 32,896 observations of hourly ele
 ** Total execution time **
 | Model         | Time (min) |
 |---------------|------------|
-|AutoTBATS      | 8.84       |
+|AutoTBATS      | 9.85       |
 |TBATS-R        | 36.08      |
 |TBATS-PY       | 60.97      |
 |Seasonal Naive | 0.03       |
@@ -26,8 +26,8 @@ TBATS was tested using a dataset that contains 32,896 observations of hourly ele
 ** Accuracy **
 | Metric | AutoTBATS | TBATS-R | TBATS-PY | Seasonal Naive | Prophet |
 |--------|-----------|---------|----------|----------------|---------|
-| MAE    | 1130.05   | 1932.32 | 3483.42  | 1593.33        | 2338.43 |
-| RMSE   | 1378.79   | 2204.27 | 4583.29  | 1863.48        | 2735.65 |
+| MAE    | 1459.05   | 1932.32 | 3483.42  | 1593.33        | 2338.43 |
+| RMSE   | 1692.79   | 2204.27 | 4583.29  | 1863.48        | 2735.65 |
 
 
 ** Notes ** 
