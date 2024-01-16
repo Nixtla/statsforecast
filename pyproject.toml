@@ -49,6 +49,7 @@ dev = [
     "plotly",
     "plotly-resampler",
     "pmdarima",
+    "polars",
     "prophet",
     "protobuf>=3.15.3,<4",
     "pyarrow",
@@ -81,7 +82,7 @@ sdist.exclude = [
 ]
 sdist.reproducible = true
 wheel.install-dir = "statsforecast"
-wheel.packages = ["statsforecast"]
+wheel.packages = ["python/statsforecast"]
 wheel.py-api = "py3"
 
 [tool.cibuildwheel]

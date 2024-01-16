@@ -21,8 +21,5 @@ jobs:
       - name: Install linters
         run: pip install mypy types-setuptools flake8
 
-      - name: mypy
-        run: mypy statsforecast/
-
-      - name: flake8
-        run: flake8 --select=F statsforecast/
+      - name: Run linters
+        run: ./action_files/lint

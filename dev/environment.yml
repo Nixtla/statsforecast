@@ -2,6 +2,7 @@ name: statsforecast
 channels:
   - conda-forge
 dependencies:
+  - cloudpickle
   - cmake
   - holidays<0.21 # zone info errors
   - jupyterlab
