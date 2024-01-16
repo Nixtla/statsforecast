@@ -44,8 +44,6 @@ jobs:
         run: |
           cp nbs/mint.json _docs/mint.json
           cp docs-scripts/imgs/* _docs/
-          mkdir -p _docs/.github/workflows
-          cp .github/workflows/mintlify-update.yaml _docs/.github/workflows
       - name: Deploy to Mintlify Docs
         if: github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v3
@@ -55,7 +53,6 @@ jobs:
           publish_dir: ./_docs
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
-          exclude_assets: ''
       - name: Trigger mintlify workflow
         uses: actions/github-script@v7
         with:
