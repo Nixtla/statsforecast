@@ -9,7 +9,9 @@ from functools import partial
 from itertools import product
 
 import numpy as np
+import pandas as pd
 import scipy.linalg
+import statsmodels.api as sm
 from numba import njit
 from numpy.polynomial.polynomial import Polynomial
 from scipy.special import inv_boxcox
@@ -58,10 +60,12 @@ def find_harmonics(y, m):
         # Perform regression to estimate the coefficients
         X = data[columns]
         y = data["z_t"]
-        model, residuals = np.linalg.lstsq(X, y, rcond=None)[:2]
-        k = model.size
-        n = len(y)
-        new_aic = n * np.log(residuals / n) + 2 * k
+        # model, residuals = np.linalg.lstsq(X, y, rcond=None)[:2]
+        # k = model.size
+        # n = len(y)
+        # new_aic = n*np.log(residuals/n)+2*k
+        model = sm.OLS(y, X).fit()
+        new_aic = model.aic
 
         if new_aic.size > 0 and new_aic < aic:
             aic = new_aic
