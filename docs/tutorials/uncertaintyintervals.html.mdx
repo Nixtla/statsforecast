@@ -166,7 +166,7 @@ StatsForecast.plot(train, test, plot_random = False)
   from tqdm.autonotebook import tqdm
 ```
 
-![](/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-7-output-3.png)
+![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-7-output-3.png)
 
 ## Train models
 
@@ -277,7 +277,7 @@ specify the model and the levels that we want to plot.
 sf.plot(train, test, plot_random = False, models=['AutoETS'], level=levels)
 ```
 
-![](/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-12-output-1.png)
+![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-12-output-1.png)
 
 ### Historic Average
 
@@ -285,7 +285,7 @@ sf.plot(train, test, plot_random = False, models=['AutoETS'], level=levels)
 sf.plot(train, test, plot_random = False, models=['HistoricAverage'], level=levels)
 ```
 
-![](/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-13-output-1.png)
 
 ### Naive
 
@@ -293,7 +293,7 @@ sf.plot(train, test, plot_random = False, models=['HistoricAverage'], level=leve
 sf.plot(train, test, plot_random = False, models=['Naive'], level=levels)
 ```
 
-![](/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-14-output-1.png)
+![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-14-output-1.png)
 
 ### Random Walk with Drift
 
@@ -301,7 +301,7 @@ sf.plot(train, test, plot_random = False, models=['Naive'], level=levels)
 sf.plot(train, test, plot_random = False, models=['RWD'], level=levels)
 ```
 
-![](/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-15-output-1.png)
+![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-15-output-1.png)
 
 ### Seasonal Naive
 
@@ -309,7 +309,7 @@ sf.plot(train, test, plot_random = False, models=['RWD'], level=levels)
 sf.plot(train, test, plot_random = False, models=['SeasonalNaive'], level=levels)
 ```
 
-![](/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-16-output-1.png)
+![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-16-output-1.png)
 
 From these plots, we can conclude that the uncertainty around each
 forecast varies according to the model that is being used. For the same

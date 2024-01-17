@@ -194,7 +194,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(Y_df)
 ```
 
-![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-6-output-1.png)
+![](/statsforecast/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-6-output-1.png)
 
 ## Train multiple models for many series
 
@@ -374,7 +374,7 @@ method.
 sf.plot(Y_df,forecasts_df)
 ```
 
-![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-11-output-1.png)
+![](/statsforecast/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-11-output-1.png)
 
 The `StatsForecast.plot` allows for further customization. For example,
 plot the results of the different models and unique ids.
@@ -384,14 +384,14 @@ plot the results of the different models and unique ids.
 sf.plot(Y_df, forecasts_df, models=["HoltWinters","DynamicOptimizedTheta"], unique_ids=["H10", "H105"], level=[90])
 ```
 
-![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-12-output-1.png)
+![](/statsforecast/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-12-output-1.png)
 
 ```python
 # Explore other models 
 sf.plot(Y_df, forecasts_df, models=["SeasonalNaive"], unique_ids=["H10", "H105"], level=[90])
 ```
 
-![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-13-output-1.png)
 
 ## Evaluate the model’s performance
 
@@ -579,7 +579,7 @@ seasonal_ids = evaluation_df.filter(pl.col('best_model') == 'SeasonalNaive')['un
 sf.plot(Y_df,forecasts_df, unique_ids=seasonal_ids, models=["SeasonalNaive","DynamicOptimizedTheta"])
 ```
 
-![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-20-output-1.png)
+![](/statsforecast/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-20-output-1.png)
 
 ## Select the best model for every unique series
 
@@ -667,5 +667,5 @@ Plot the results.
 sf.plot(Y_df, prod_forecasts_df, level=[90])
 ```
 
-![](/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-23-output-1.png)
+![](/statsforecast/docs/getting-started/3_Getting_Started_complete_polars_files/figure-markdown_strict/cell-23-output-1.png)
 

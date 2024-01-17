@@ -185,7 +185,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(prices)
 ```
 
-![](/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-8-output-2.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-8-output-2.png)
 
 With the prices, we can compute the logarithmic returns of the S&P 500
 and the publicly traded companies. This is the variable we’re interested
@@ -234,7 +234,7 @@ case, rescale the data and then generate the GARCH or ARCH model.
 StatsForecast.plot(returns)
 ```
 
-![](/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-10-output-1.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-10-output-1.png)
 
 From this plot, we can see that the returns seem suited for the GARCH
 framework, since large shocks *tend* to be followed by other large
@@ -350,7 +350,7 @@ crossvalidation_df.head()
 StatsForecast.plot(returns, crossvalidation_df.drop(['cutoff', 'actual'], axis=1))
 ```
 
-![](/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-15-output-1.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-15-output-1.png)
 
 A tutorial on cross-validation can be found
 [here](https://nixtla.github.io/statsforecast/examples/crossvalidation.html).
@@ -454,19 +454,19 @@ method:
 StatsForecast.plot(returns, forecasts, level=levels, unique_ids = ['AAPL'], models = ['GARCH(2,1)'])
 ```
 
-![](/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-21-output-1.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-21-output-1.png)
 
 ```python
 StatsForecast.plot(returns, forecasts, level=levels, unique_ids = ['MSFT'], models = ['ARCH(2)'])
 ```
 
-![](/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-22-output-1.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-22-output-1.png)
 
 ```python
 StatsForecast.plot(returns, forecasts, level=levels, unique_ids = ['NFLX'], models = ['ARCH(1)'])
 ```
 
-![](/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-23-output-1.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-23-output-1.png)
 
 ## References
 

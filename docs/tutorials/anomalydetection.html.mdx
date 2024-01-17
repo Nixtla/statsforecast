@@ -166,7 +166,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df, plot_random = False)
 ```
 
-![](/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-9-output-2.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-9-output-2.png)
 
 ## Train model
 
@@ -241,7 +241,7 @@ We can plot the forecasts using the `plot` method from before.
 StatsForecast.plot(df, fcst, plot_random = False)
 ```
 
-![](/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-13-output-1.png)
 
 ## Recover insample forecasts and identify anomalies
 
@@ -286,7 +286,7 @@ to the `plot` method.
 StatsForecast.plot(insample_forecasts, plot_random = False, plot_anomalies = True)
 ```
 
-![](/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-16-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-16-output-1.png)
 
 If we want to take a closer look, we can use the `unique_ids` argument
 to select one particular time series, for example, `H10`.
@@ -295,7 +295,7 @@ to select one particular time series, for example, `H10`.
 StatsForecast.plot(insample_forecasts, unique_ids = ['H10'], plot_anomalies = True)
 ```
 
-![](/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-17-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-17-output-1.png)
 
 Here we identified the anomalies in the data using the MSTL model, but
 any [probabilistic

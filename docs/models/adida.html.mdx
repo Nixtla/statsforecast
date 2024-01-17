@@ -316,7 +316,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/docs/models/ADIDA_files/figure-markdown_strict/cell-7-output-1.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-7-output-1.png)
 
 ### Autocorrelation plots
 
@@ -332,7 +332,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](/docs/models/ADIDA_files/figure-markdown_strict/cell-8-output-1.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Decomposition of the time series
 
@@ -424,7 +424,7 @@ plot_seasonal_decompose(
     title="Seasonal Decomposition")
 ```
 
-![](/docs/models/ADIDA_files/figure-markdown_strict/cell-10-output-2.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-10-output-2.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -457,7 +457,7 @@ plt.title("Falciparum Malaria");
 plt.show()
 ```
 
-![](/docs/models/ADIDA_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-13-output-1.png)
 
 ## Implementation of `ADIDA Model` with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -627,7 +627,7 @@ ax.legend(prop={'size': 15})
 ax.grid(True)
 ```
 
-![](/docs/models/ADIDA_files/figure-markdown_strict/cell-22-output-1.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-22-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -711,7 +711,7 @@ plt.ylabel("")
 Text(0, 0.5, '')
 ```
 
-![](/docs/models/ADIDA_files/figure-markdown_strict/cell-26-output-2.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-26-output-2.png)
 
 Let’s plot the same graph using the plot function that comes in
 `Statsforecast`, as shown below.
@@ -720,7 +720,7 @@ Let’s plot the same graph using the plot function that comes in
 sf.plot(df, forecast_df)
 ```
 
-![](/docs/models/ADIDA_files/figure-markdown_strict/cell-27-output-1.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-27-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

@@ -512,7 +512,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/docs/models/AutoRegressive_files/figure-markdown_strict/cell-8-output-1.png)
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -640,7 +640,7 @@ def tsplot(y, lags=None, figsize=(12, 7), style='bmh'): # [3]
 tsplot(df["y"].diff().dropna(), lags=20);
 ```
 
-![](/docs/models/AutoRegressive_files/figure-markdown_strict/cell-14-output-1.png)
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-14-output-1.png)
 
 As you can see, based on the blue background shaded area of the graph,
 the PACF shows the first, second, third, fourth, sixth, seventh, ninth,
@@ -710,7 +710,7 @@ sns.lineplot(test, x="ds", y="y", label="Test")
 plt.show()
 ```
 
-![](/docs/models/AutoRegressive_files/figure-markdown_strict/cell-17-output-1.png)
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-17-output-1.png)
 
 # Implementation of AutoRegressive with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -874,7 +874,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](/docs/models/AutoRegressive_files/figure-markdown_strict/cell-25-output-1.png)
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-25-output-1.png)
 
 ### Forecast Method
 
@@ -1002,7 +1002,7 @@ ax.grid(True)
 plt.show()
 ```
 
-![](/docs/models/AutoRegressive_files/figure-markdown_strict/cell-31-output-1.png)
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-31-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -1108,7 +1108,7 @@ def plot_forecasts(y_hist, y_true, y_pred, models):
 plot_forecasts(train, test, forecast_df, models=["AutoRegressive"])
 ```
 
-![](/docs/models/AutoRegressive_files/figure-markdown_strict/cell-36-output-1.png)
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-36-output-1.png)
 
 Let’s plot the same graph using the plot function that comes in
 `Statsforecast`, as shown below.

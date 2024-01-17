@@ -457,7 +457,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/docs/models/AutoETS_files/figure-markdown_strict/cell-8-output-1.png)
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-8-output-1.png)
 
 ## Autocorrelation plots
 
@@ -474,7 +474,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](/docs/models/AutoETS_files/figure-markdown_strict/cell-9-output-1.png)
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-9-output-1.png)
 
 ### Decomposition of the time series
 
@@ -535,7 +535,7 @@ a = seasonal_decompose(df["y"], model = "add", period=1)
 a.plot();
 ```
 
-![](/docs/models/AutoETS_files/figure-markdown_strict/cell-10-output-1.png)
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-10-output-1.png)
 
 Breaking down a time series into its components helps us to identify the
 behavior of the time series we are analyzing. In addition, it helps us
@@ -578,7 +578,7 @@ sns.lineplot(test, x="ds", y="y", label="Test")
 plt.show()
 ```
 
-![](/docs/models/AutoETS_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-13-output-1.png)
 
 ## Implementation of AutoETS with StatsForecast<a class="anchor" id="implementation"></a>
 
@@ -683,7 +683,7 @@ sns.lineplot(forecast,x="ds", y="hat", label="Forecast",)
 plt.show()
 ```
 
-![](/docs/models/AutoETS_files/figure-markdown_strict/cell-19-output-1.png)
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-19-output-1.png)
 
 Let’s add a confidence interval to our forecast.
 
@@ -763,7 +763,7 @@ ax.grid(True)
 plt.show()
 ```
 
-![](/docs/models/AutoETS_files/figure-markdown_strict/cell-24-output-1.png)
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-24-output-1.png)
 
 ### AutoETS.predict_in_sample method
 

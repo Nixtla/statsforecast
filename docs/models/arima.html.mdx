@@ -388,7 +388,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/docs/models/ARIMA_files/figure-markdown_strict/cell-7-output-1.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-7-output-1.png)
 
 Looking at the plot we can observe there is an upward trend over the
 period of time.
@@ -409,7 +409,7 @@ max      83.346341
 Name: y, Length: 8, dtype: float64
 ```
 
-![](/docs/models/ARIMA_files/figure-markdown_strict/cell-8-output-2.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-8-output-2.png)
 
 ### Seasonal Decomposed
 
@@ -475,7 +475,7 @@ decomposed.plot()
 plt.show()
 ```
 
-![](/docs/models/ARIMA_files/figure-markdown_strict/cell-10-output-1.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-10-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -621,7 +621,7 @@ plot_acf(df1["y"].diff().dropna(), ax=axes[1, 1],lags=20)
 plt.show()
 ```
 
-![](/docs/models/ARIMA_files/figure-markdown_strict/cell-16-output-1.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-16-output-1.png)
 
 -   For the above data, we can see that the time series reaches
     stationarity with one orders of differencing.
@@ -662,7 +662,7 @@ plot_pacf(df1["y"].diff().dropna(), ax=axes[1],lags=20)
 plt.show()
 ```
 
-![](/docs/models/ARIMA_files/figure-markdown_strict/cell-17-output-1.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-17-output-1.png)
 
 -   We can see that the PACF lag 1 is quite significant since it is well
     above the significance line. So, we will fix the value of p as 1.
@@ -689,7 +689,7 @@ plot_acf(df["y"].diff().dropna(), ax=axes[1], lags=20)
 plt.show()
 ```
 
-![](/docs/models/ARIMA_files/figure-markdown_strict/cell-18-output-1.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-18-output-1.png)
 
 -   We can see that couple of lags are well above the significance line.
     So, we will fix q as 1. If there is any doubt, we will go with the
@@ -917,7 +917,7 @@ ax.legend(prop={'size': 15})
 ax.grid(True)
 ```
 
-![](/docs/models/ARIMA_files/figure-markdown_strict/cell-28-output-1.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-28-output-1.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 

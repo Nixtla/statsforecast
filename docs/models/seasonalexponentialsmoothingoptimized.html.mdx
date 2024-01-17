@@ -222,7 +222,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-7-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-7-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -348,7 +348,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-10-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-10-output-1.png)
 
 ### Decomposition of the time series
 
@@ -411,7 +411,7 @@ a = seasonal_decompose(df["y"], model = "additive", period=12)
 a.plot();
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-11-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-11-output-1.png)
 
 ### Multiplicative
 
@@ -421,7 +421,7 @@ a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
 a.plot();
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-12-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-12-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -456,7 +456,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-15-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-15-output-1.png)
 
 ## Implementation of SeasonalExponentialSmoothingOptimized with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -626,7 +626,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-22-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-22-output-1.png)
 
 ### Forecast Method
 
@@ -684,7 +684,7 @@ values.head()
 StatsForecast.plot(values)
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-25-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-25-output-1.png)
 
 ```python
 Y_hat=Y_hat.reset_index()
@@ -727,7 +727,7 @@ ax.legend(prop={'size': 15})
 ax.grid(True)
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-28-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-28-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -790,7 +790,7 @@ sns.lineplot(df_plot, x="ds", y="SeasESOpt", label="SeasESOpt")
 plt.show()
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-31-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-31-output-1.png)
 
 Let’s plot the same graph using the plot function that comes in
 `Statsforecast`, as shown below.
@@ -799,7 +799,7 @@ Let’s plot the same graph using the plot function that comes in
 sf.plot(df, forecast_df)
 ```
 
-![](/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-32-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-32-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

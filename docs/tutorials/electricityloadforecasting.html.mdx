@@ -98,7 +98,7 @@ df.plot(x='ds', y='y')
 <Axes: xlabel='ds'>
 ```
 
-![](/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-5-output-2.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-5-output-2.png)
 
 We clearly observe that the time series exhibits seasonal patterns.
 Moreover, the time series contains `32,896` observations, so it is
@@ -206,7 +206,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![](/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-11-output-1.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-11-output-1.png)
 
 We observe that there is a clear trend towards the high (orange line).
 This component would be predicted with the
@@ -259,7 +259,7 @@ ax.legend(prop={'size': 15})
 ax.grid()
 ```
 
-![](/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-13-output-1.png)
 
 In the next section we will plot different models so it is convenient to
 reuse the previous code with the following function.
@@ -364,7 +364,7 @@ values.
 plot_forecasts(df_train, df_test, forecasts_test, models=['MSTL', 'SeasonalNaive'])
 ```
 
-![](/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-20-output-1.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-20-output-1.png)
 
 Let’s look at those produced only by
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl).
@@ -373,7 +373,7 @@ Let’s look at those produced only by
 plot_forecasts(df_train, df_test, forecasts_test, models=['MSTL'])
 ```
 
-![](/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-21-output-1.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-21-output-1.png)
 
 We note that
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl)
@@ -494,7 +494,7 @@ forecasts_test = forecasts_test.merge(forecast_prophet, how='left', on=['unique_
 plot_forecasts(df_train, df_test, forecasts_test, models=['MSTL', 'SeasonalNaive', 'Prophet'])
 ```
 
-![](/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-29-output-1.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-29-output-1.png)
 
 We note that `Prophet` is able to capture the overall behavior of the
 time series. However, in some cases it produces forecasts well below the
@@ -608,7 +608,7 @@ forecasts_test = forecasts_test.merge(forecast_np, how='left', on=['unique_id', 
 plot_forecasts(df_train, df_test, forecasts_test, models=['MSTL', 'NeuralProphet', 'Prophet'])
 ```
 
-![](/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-35-output-1.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-35-output-1.png)
 
 The forecasts graph shows that `NeuralProphet` generates very similar
 results to `Prophet`, as expected.

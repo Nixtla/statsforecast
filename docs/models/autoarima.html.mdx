@@ -289,7 +289,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df, engine="matplotlib")
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-8-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
 
@@ -305,7 +305,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-9-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-9-output-1.png)
 
 ### Decomposition of the time series
 
@@ -366,7 +366,7 @@ a = seasonal_decompose(df["y"], model = "add", period=12)
 a.plot();
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-10-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-10-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -398,7 +398,7 @@ sns.lineplot(Y_test_df, x="ds", y="y", label="Test")
 plt.show()
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-13-output-1.png)
 
 # Implementation of AutoArima with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -611,7 +611,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-21-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-21-output-1.png)
 
 To generate forecasts we only have to use the predict method specifying
 the forecast horizon (h). In addition, to calculate prediction intervals
@@ -728,7 +728,7 @@ ax.legend(prop={'size': 15})
 ax.grid()
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-26-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-26-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -835,7 +835,7 @@ ax.grid(True)
 plt.show()
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-30-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-30-output-1.png)
 
 Let’s plot the same graph using the plot function that comes in
 `Statsforecast`, as shown below.
@@ -844,7 +844,7 @@ Let’s plot the same graph using the plot function that comes in
 sf.plot(df, forecast_df, level=[95])
 ```
 
-![](/docs/models/AutoARIMA_files/figure-markdown_strict/cell-31-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-31-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

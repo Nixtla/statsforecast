@@ -226,7 +226,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-7-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-7-output-1.png)
 
 ### Autocorrelation plots
 
@@ -242,7 +242,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-8-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-8-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -277,7 +277,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-11-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-11-output-1.png)
 
 ## Implementation of SimpleExponentialSmoothingOptimized with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -435,7 +435,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-18-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-18-output-1.png)
 
 ### Forecast Method
 
@@ -496,7 +496,7 @@ values.head()
 StatsForecast.plot(values)
 ```
 
-![](/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-21-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-21-output-1.png)
 
 ```python
 sf.forecast(h=horizon)
@@ -591,7 +591,7 @@ plt.legend()
 plt.show()
 ```
 
-![](/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-26-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-26-output-1.png)
 
 Let’s plot the same graph using the plot function that comes in
 `Statsforecast`, as shown below.
@@ -600,7 +600,7 @@ Let’s plot the same graph using the plot function that comes in
 sf.plot(df, forecast_df)
 ```
 
-![](/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-27-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialOptimized_files/figure-markdown_strict/cell-27-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

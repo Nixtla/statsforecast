@@ -305,7 +305,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-8-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -429,7 +429,7 @@ fig = px.line(df, x=df["ds"], y="return",title="SP500 Return Chart",template = "
 fig.show()
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-12-output-2.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-12-output-2.png)
 
 ### Creating Squared Returns
 
@@ -471,7 +471,7 @@ fig.update_layout(height=600, width=800, title_text="Returns vs Squared Returns"
 fig.show()
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-14-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-14-output-1.png)
 
 ```python
 from scipy.stats import probplot, moment
@@ -506,7 +506,7 @@ def plot_correlogram(x, lags=None, title=None):
 plot_correlogram(df["return"], lags=30, title="Time Series Analysis plot \n")
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-16-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-16-output-1.png)
 
 ### Ljung-Box Test
 
@@ -582,7 +582,7 @@ sns.lineplot(test, x="ds", y="y", label="Test")
 plt.show()
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-21-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-21-output-1.png)
 
 ## Implementation of GARCH with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -863,7 +863,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-34-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-34-output-1.png)
 
 ### Forecast Method
 
@@ -999,7 +999,7 @@ ax.grid(True)
 plt.show()
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-41-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-41-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -1108,7 +1108,7 @@ def plot_forecasts(y_hist, y_true, y_pred, models):
 plot_forecasts(train, test, forecast_df, models=["GARCH(1,1)" ])
 ```
 
-![](/docs/models/GARCH_files/figure-markdown_strict/cell-46-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-46-output-1.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 

@@ -181,7 +181,7 @@ StatsForecast.plot(Y_df, unique_ids=["FOODS_3_432_TX_2"])
 StatsForecast.plot(Y_df, unique_ids=["FOODS_3_432_TX_2"], engine ='matplotlib')
 ```
 
-![](/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-9-output-1.png)
+![](/statsforecast/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-9-output-1.png)
 
 # Create forecasts with Stats, Ml and Neural methods.
 
@@ -567,7 +567,7 @@ to obtain an unbiased assessment of how well each model is likely to
 perform on unseen data.
 
 ![From the course of Modern Forecasting in
-Practice](/docs/tutorials/../imgs/cv-sphere.png)
+Practice](/statsforecast/docs/tutorials/../imgs/cv-sphere.png)
 
 ## Cross Validation in StatsForecast
 
@@ -921,7 +921,7 @@ sns.violinplot(evaluation_df_melted.query('metric=="smape"'), x='error', y='mode
 <Axes: xlabel='error', ylabel='model'>
 ```
 
-![](/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-50-output-2.png)
+![](/statsforecast/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-50-output-2.png)
 
 ### Choose models for groups of series
 
@@ -945,7 +945,7 @@ sns.barplot(count_best_model, x='n', y='best_model', hue='metric')
 <Axes: xlabel='n', ylabel='best_model'>
 ```
 
-![](/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-51-output-2.png)
+![](/statsforecast/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-51-output-2.png)
 
 ### Et pluribus unum: an inclusive forecasting Pie.
 
@@ -958,7 +958,7 @@ plt.pie(counts_series, labels=counts_series.index, autopct='%.0f%%')
 plt.show()
 ```
 
-![](/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-52-output-1.png)
+![](/statsforecast/docs/tutorials/StatisticalNeuralMethods_files/figure-markdown_strict/cell-52-output-1.png)
 
 ```python
 sf.plot(Y_df, cv_df.drop(columns=['cutoff', 'y']), 
