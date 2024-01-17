@@ -117,26 +117,25 @@ class _TS:
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        if y.ndim == 2:
-            X = y[:, 1:] if y.shape[1] > 1 else X
-            y = y[:, 0]
         n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
-        step_size = self.prediction_intervals.h  # type: ignore[attr-defined]
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
-        test_size = h + step_size * (n_windows - 1)
-        steps = list(range(-test_size, -h + 1, step_size))
-        cs = np.full((n_windows, h), np.nan, dtype=np.float32)
-        for i_window, cutoff in enumerate(steps, start=0):
-            end_cutoff = cutoff + h
-            y_train = y[:cutoff]
-            X_train = None if X is None else X[:cutoff, :]
-            if end_cutoff == 0:
-                y_test = y[cutoff:]
-                X_future = None if X is None else X[cutoff:, :]
+        test_size = n_windows * h
+        if y.size <= test_size:
+            raise ValueError(
+                f"Prediction intervals settings require at least {test_size + 1:,} samples, serie has {y.size:,}."
+            )
+        cs = np.empty((n_windows, h), dtype=np.float32)
+        for i_window in range(n_windows):
+            train_end = y.size - test_size + i_window * h
+            y_train = y[:train_end]
+            y_test = y[train_end : train_end + h]
+            if X is not None:
+                X_train = X[:train_end]
+                X_test = X[train_end : train_end + h]
             else:
-                y_test = y[cutoff:end_cutoff]
-                X_future = None if X is None else X[cutoff:end_cutoff, :]
-            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_future)  # type: ignore[attr-defined]
+                X_train = None
+                X_test = None
+            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_test)  # type: ignore[attr-defined]
             cs[i_window] = np.abs(fcst_window["mean"] - y_test)
         return cs
 
