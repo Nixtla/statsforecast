@@ -119,14 +119,17 @@ class _TS:
     ) -> np.ndarray:
         n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
-        test_size = n_windows * h
-        if y.size <= test_size:
+        n_samples = y.size
+        # use as many windows as possible for short series
+        n_windows = min(n_windows, n_samples // h)
+        if n_windows < 2:
             raise ValueError(
-                f"Prediction intervals settings require at least {test_size + 1:,} samples, serie has {y.size:,}."
+                f"Prediction intervals settings require at least {2 * h + 1:,} samples, serie has {n_samples:,}."
             )
+        test_size = n_windows * h
         cs = np.empty((n_windows, h), dtype=np.float32)
         for i_window in range(n_windows):
-            train_end = y.size - test_size + i_window * h
+            train_end = n_samples - test_size + i_window * h
             y_train = y[:train_end]
             y_test = y[train_end : train_end + h]
             if X is not None:
