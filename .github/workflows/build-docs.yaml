@@ -53,6 +53,18 @@ jobs:
           publish_dir: ./_docs
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
+      - name: Trigger mintlify workflow
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.DOCS_WORKFLOW_TOKEN }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'nixtla',
+              repo: 'docs',
+              workflow_id: 'mintlify-action.yml',
+              ref: 'main',
+            });
       - name: Configure redirects for gh-pages
         run: python docs-scripts/configure-redirects.py statsforecast
       - name: Deploy to Github Pages
