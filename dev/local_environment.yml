@@ -20,6 +20,7 @@ dependencies:
   - tabulate
   - plotly
   - pip:
+    - fugue
     - nbdev
     - plotly-resampler
     - polars
