@@ -979,7 +979,7 @@ class _StatsForecast:
         series_sizes = np.diff(self.ga.indptr)
         short_series = series_sizes <= test_size
         if short_series.any():
-            short_ids = self.uids[short_series].tolist()
+            short_ids = self.uids[short_series].to_numpy().tolist()
             raise ValueError(
                 f"The following series are too short for the cross validation settings: {reprlib.repr(short_ids)}\n"
                 "Please remove these series or change the settings, e.g. reducing the horizon or the number of windows."

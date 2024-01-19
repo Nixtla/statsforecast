@@ -121,6 +121,7 @@ class _TS:
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
         n_samples = y.size
         # use as many windows as possible for short series
+        # subtract 1 for the training set
         n_windows = min(n_windows, (n_samples - 1) // h)
         if n_windows < 2:
             raise ValueError(
