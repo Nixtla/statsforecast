@@ -94,7 +94,7 @@ jobs:
           pip install awscli beautifulsoup4
           aws s3 cp s3://nixtla-packages/statsforecast/index.html .
           python action_files/update_index.py
-          aws s3 sync dist s3://nixtla-packages/statsforecast/ --acl public-read
+          aws s3 sync dist s3://nixtla-packages/statsforecast/
 
 
   run-local-tests:
