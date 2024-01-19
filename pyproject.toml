@@ -1,6 +1,6 @@
 [project]
 name = "statsforecast"
-version = "1.7.1"
+version = "1.7.1.99"
 requires-python = ">=3.8"
 dependencies = [
     "cloudpickle",
