@@ -4965,6 +4965,10 @@ class MSTL(_TS):
                     "seasonal models. Please pass `season_length=1` "
                     "to your trend forecaster"
                 )
+        if isinstance(season_length, int):
+            season_length = [season_length]
+        else:
+            season_length = sorted(season_length)
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
         self.prediction_intervals = prediction_intervals
