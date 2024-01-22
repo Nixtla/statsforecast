@@ -4,7 +4,7 @@
 __all__ = ['mstl']
 
 # %% ../nbs/src/mstl.ipynb 3
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
