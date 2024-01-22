@@ -1687,7 +1687,7 @@ def fitted_arima(model, h=1):
 def seas_heuristic(x, period):
     # nperiods = period > 1
     season = math.nan
-    stlfit = mstl(x, [period])
+    stlfit = mstl(x, period)
     remainder = stlfit["remainder"]
     seasonal = stlfit.get("seasonal", None)
     vare = np.var(remainder, ddof=1)

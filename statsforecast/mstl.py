@@ -4,7 +4,7 @@
 __all__ = ['mstl']
 
 # %% ../nbs/src/mstl.ipynb 3
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -13,7 +13,7 @@ import statsmodels.api as sm
 # %% ../nbs/src/mstl.ipynb 4
 def mstl(
     x: np.ndarray,  # time series
-    period: List[int],  # season length
+    period: Union[int, List[int]],  # season length
     blambda: Optional[float] = None,  # box-cox transform
     iterate: int = 2,  # number of iterations
     s_window: Optional[np.ndarray] = None,  # seasonal window
@@ -23,9 +23,12 @@ def mstl(
         s_window = 7 + 4 * np.arange(1, 7)
     origx = x
     n = len(x)
-    msts = period
-    if len(period) == 1:
-        iterate = 1
+    if isinstance(period, int):
+        msts = [period]
+    else:
+        msts = sorted(period)
+    if len(msts) == 1:
+        period = 1
     if x.ndim == 2:
         x = x[:, 0]
     if np.isnan(x).any():
