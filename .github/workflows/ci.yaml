@@ -49,6 +49,8 @@ jobs:
         include:
           - os: ubuntu-20.04
             platform-id: manylinux_x86_64
+          - os: ubuntu-20.04
+            platform-id: manylinux_aarch64
           - os: windows-2019
             platform-id: win_amd64
           - os: macos-11
@@ -58,13 +60,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
         env:
           CIBW_BUILD: cp38-${{ matrix.platform-id }}
-          CIBW_ARCHS: all
-          CIBW_TEST_SKIP: '*-macosx_arm64'
-          CIBW_BUILD_VERBOSITY: 3
 
       - uses: actions/upload-artifact@v3
         with:
