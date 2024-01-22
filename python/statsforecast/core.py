@@ -572,7 +572,32 @@ class _StatsForecast:
         self.time_col = time_col
         self.target_col = target_col
 
-    def _set_prediction_intervals(self, prediction_intervals):
+    def _validate_sizes_for_prediction_intervals(
+        self,
+        prediction_intervals: Optional[ConformalIntervals],
+        offset: int = 0,
+    ) -> None:
+        if prediction_intervals is None:
+            return
+        sizes = np.diff(self.ga.indptr) - offset
+        # the absolute minimum requires two windows
+        min_samples = 2 * prediction_intervals.h + 1
+        if np.any(sizes < min_samples):
+            raise ValueError(
+                f"Minimum samples for computing prediction intervals are {min_samples + offset:,}, "
+                "some series have less. Please remove them or adjust the horizon."
+            )
+        # required samples for current configuration
+        required_samples = prediction_intervals.n_windows * prediction_intervals.h + 1
+        if np.any(sizes < required_samples):
+            warnings.warn(
+                f"Prediction intervals settings require at least {required_samples + offset:,} samples, "
+                "some series have less and will use less windows."
+            )
+
+    def _set_prediction_intervals(
+        self, prediction_intervals: Optional[ConformalIntervals]
+    ) -> None:
         for model in self.models:
             interval = getattr(model, "prediction_intervals", None)
             if interval is None:
@@ -614,6 +639,7 @@ class _StatsForecast:
             time_col=time_col,
             target_col=target_col,
         )
+        self._validate_sizes_for_prediction_intervals(prediction_intervals)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         if self.n_jobs == 1:
             self.fitted_ = self.ga.fit(
@@ -748,6 +774,7 @@ class _StatsForecast:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
+        self._validate_sizes_for_prediction_intervals(prediction_intervals)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -810,6 +837,7 @@ class _StatsForecast:
             time_col=time_col,
             target_col=target_col,
         )
+        self._validate_sizes_for_prediction_intervals(prediction_intervals)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
@@ -948,15 +976,18 @@ class _StatsForecast:
             time_col=time_col,
             target_col=target_col,
         )
-        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         series_sizes = np.diff(self.ga.indptr)
         short_series = series_sizes <= test_size
         if short_series.any():
-            short_ids = self.uids[short_series].tolist()
+            short_ids = self.uids[short_series].to_numpy().tolist()
             raise ValueError(
                 f"The following series are too short for the cross validation settings: {reprlib.repr(short_ids)}\n"
                 "Please remove these series or change the settings, e.g. reducing the horizon or the number of windows."
             )
+        self._validate_sizes_for_prediction_intervals(
+            prediction_intervals=prediction_intervals, offset=test_size
+        )
+        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         _, level = self._parse_X_level(h=h, X=None, level=level)
         if self.n_jobs == 1:
             res_fcsts = self.ga.cross_validation(

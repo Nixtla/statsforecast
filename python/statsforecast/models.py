@@ -118,20 +118,28 @@ class _TS:
         X: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
-        step_size = self.prediction_intervals.h  # type: ignore[attr-defined]
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
-        test_size = h + step_size * (n_windows - 1)
-        steps = list(range(-test_size, -h + 1, step_size))
-        cs = np.full((n_windows, h), np.nan, dtype=np.float32)
-        for i_window, cutoff in enumerate(steps, start=0):
-            end_cutoff = cutoff + h
-            y_train = y[:, 0] if y.ndim == 2 else y
-            X_train = y[:, 1:] if (y.ndim == 2 and y.shape[1] > 1) else None
-            y_test = y[cutoff:] if end_cutoff == 0 else y[cutoff:end_cutoff]
-            X_future = (
-                y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
+        n_samples = y.size
+        # use as many windows as possible for short series
+        # subtract 1 for the training set
+        n_windows = min(n_windows, (n_samples - 1) // h)
+        if n_windows < 2:
+            raise ValueError(
+                f"Prediction intervals settings require at least {2 * h + 1:,} samples, serie has {n_samples:,}."
             )
-            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_future)  # type: ignore[attr-defined]
+        test_size = n_windows * h
+        cs = np.empty((n_windows, h), dtype=np.float32)
+        for i_window in range(n_windows):
+            train_end = n_samples - test_size + i_window * h
+            y_train = y[:train_end]
+            y_test = y[train_end : train_end + h]
+            if X is not None:
+                X_train = X[:train_end]
+                X_test = X[train_end : train_end + h]
+            else:
+                X_train = None
+                X_test = None
+            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_test)  # type: ignore[attr-defined]
             cs[i_window] = np.abs(fcst_window["mean"] - y_test)
         return cs
 
