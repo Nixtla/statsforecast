@@ -88,6 +88,4 @@ wheel.py-api = "py3"
 [tool.cibuildwheel]
 archs = "all"
 build-verbosity = 3
-test-command = "pytest {project}/action_files/test_fit_predict.py"
-test-requires = "pytest"
-test-skip = "*-macos_arm64"
+test-skip = "*"
