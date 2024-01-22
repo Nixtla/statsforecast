@@ -17,7 +17,7 @@ def mstl(
     blambda: Optional[float] = None,  # box-cox transform
     iterate: int = 2,  # number of iterations
     s_window: Optional[np.ndarray] = None,  # seasonal window
-    stl_kwargs: Optional[Dict] = dict(),
+    stl_kwargs: Dict = dict(),
 ):
     if s_window is None:
         s_window = 7 + 4 * np.arange(1, 7)
