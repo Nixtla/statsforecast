@@ -49,13 +49,15 @@ def find_harmonics(y, m):
 
     aic = np.inf
     num_harmonics = 0
-    for h in range(1, max_harmonics + 1):
-        columns = []
-        for i in range(1, h + 1):
-            data[f"cos_{i}"] = np.cos(2 * np.pi * i * t / m)
-            data[f"sin_{i}"] = np.sin(2 * np.pi * i * t / m)
-            columns.extend([f"cos_{i}", f"sin_{i}"])
 
+    # Create cosine and sine terms
+    for i in range(1, max_harmonics + 1):
+        data[f"cos_{i}"] = np.cos(2 * np.pi * i * t / m)
+        data[f"sin_{i}"] = np.sin(2 * np.pi * i * t / m)
+
+    columns = []
+    for h in range(1, max_harmonics + 1):
+        columns.extend([f"cos_{h}", f"sin_{h}"])
         # Perform regression to estimate the coefficients
         X = data[columns]
         y = data["z_t"]
@@ -688,7 +690,7 @@ def tbats_model_generator(
             w_tilda_transpose_scaled, e.reshape((e.shape[1], 1)), rcond=None
         )
         x_nought_scaled = model[0].ravel()
-        x_nought = x_nought_scaled / sigma
+        x_nought = (x_nought_scaled / sigma) + mu
     else:
         model = np.linalg.lstsq(
             w_tilda_transpose, e.reshape((e.shape[1], 1)), rcond=None
@@ -966,38 +968,21 @@ def tbats_selection(
 
     combinations = [(b, t, a) for b, t, a in product(B, T, A)]
 
-    for k in range(len(combinations)):
-        boxcox = combinations[k][0]
-        trend = combinations[k][1][0]
-        damped_trend = combinations[k][1][1]
-        arma_errors = combinations[k][2]
-
-        if k == 0:
-            mod = tbats_model(
-                y,
-                seasonal_periods,
-                k_vector,
-                boxcox,
-                bc_lower_bound,
-                bc_upper_bound,
-                trend,
-                damped_trend,
-                arma_errors,
-            )
-        else:
-            new_mod = tbats_model(
-                y,
-                seasonal_periods,
-                k_vector,
-                boxcox,
-                bc_lower_bound,
-                bc_upper_bound,
-                trend,
-                damped_trend,
-                arma_errors,
-            )
-            if new_mod["aic"] < mod["aic"]:
-                mod = new_mod
+    mod = {"aic": np.inf}
+    for boxcox, (trend, damped_trend), arma_errors in combinations:
+        new_mod = tbats_model(
+            y,
+            seasonal_periods,
+            k_vector,
+            boxcox,
+            bc_lower_bound,
+            bc_upper_bound,
+            trend,
+            damped_trend,
+            arma_errors,
+        )
+        if new_mod["aic"] < mod["aic"]:
+            mod = new_mod
 
     return mod
 
