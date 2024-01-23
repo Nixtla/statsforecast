@@ -5176,11 +5176,11 @@ class TBATS(_TS):
     def __init__(
         self,
         seasonal_periods: Union[int, List[int]],
-        use_boxcox: bool = True,
+        use_boxcox: Optional[bool] = True,
         bc_lower_bound: float = 0.0,
         bc_uppper_bound: float = 1.5,
-        use_trend: bool = True,
-        use_damped_trend: bool = False,
+        use_trend: Optional[bool] = True,
+        use_damped_trend: Optional[bool] = False,
         use_arma_errors: bool = False,
         alias: str = "TBATS",
     ):
