@@ -1244,7 +1244,7 @@ def myarima(
             fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
         if not math.isnan(fit["aic"]):
             fit["bic"] = fit["aic"] + npar * (math.log(nstar) - 2)
-            if nstar - npar > 1:
+            if nstar - npar - 1 != 0:
                 fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
             else:
                 fit["aicc"] = math.inf
