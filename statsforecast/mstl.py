@@ -28,7 +28,7 @@ def mstl(
     else:
         msts = sorted(period)
     if len(msts) == 1:
-        period = 1
+        iterate = 1
     if x.ndim == 2:
         x = x[:, 0]
     if np.isnan(x).any():
