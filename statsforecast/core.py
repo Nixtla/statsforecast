@@ -571,6 +571,7 @@ class _StatsForecast:
         self.id_col = id_col
         self.time_col = time_col
         self.target_col = target_col
+        self._exog = [c for c in df.columns if c not in (id_col, time_col, target_col)]
 
     def _validate_sizes_for_prediction_intervals(
         self,
@@ -680,6 +681,19 @@ class _StatsForecast:
         _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, first_col)
         return GroupedArray(data, indptr), level
 
+    def _validate_exog(self, X_df: Optional[DataFrame] = None):
+        if not any(m.uses_exog for m in self.models):
+            return
+        err_msg = (
+            f"Models were trained with the following exogenous features: {self._exog}. "
+            "You must provide them through `X_df` in order to predict."
+        )
+        if X_df is None:
+            raise ValueError(err_msg)
+        missing_exog = [c for c in self._exog if c not in X_df.columns]
+        if missing_exog:
+            raise ValueError(err_msg)
+
     def predict(
         self,
         h: int,
@@ -702,6 +716,8 @@ class _StatsForecast:
             DataFrame with `models` columns for point predictions and probabilistic
             predictions for all fitted `models`.
         """
+        if not hasattr(self, "fitted_"):
+            raise ValueError("You must call the fit method before calling predict.")
         if (
             any(
                 getattr(m, "prediction_intervals", None) is not None
@@ -713,6 +729,7 @@ class _StatsForecast:
                 "Prediction intervals are set but `level` was not provided. "
                 "Predictions won't have intervals."
             )
+        self._validate_exog(X_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
@@ -770,6 +787,7 @@ class _StatsForecast:
             time_col=time_col,
             target_col=target_col,
         )
+        self._validate_exog(X_df)
         if prediction_intervals is not None and level is None:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
@@ -837,6 +855,7 @@ class _StatsForecast:
             time_col=time_col,
             target_col=target_col,
         )
+        self._validate_exog(X_df)
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)

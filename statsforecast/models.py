@@ -107,6 +107,8 @@ def _get_conformal_method(method: str):
 
 # %% ../nbs/src/core/models.ipynb 12
 class _TS:
+    uses_exog = False
+
     def new(self):
         b = type(self).__new__(type(self))
         b.__dict__.update(self.__dict__)
@@ -247,6 +249,8 @@ class AutoARIMA(_TS):
         By default, the model will compute the native prediction
         intervals.
     """
+
+    uses_exog = True
 
     def __init__(
         self,
@@ -1395,6 +1399,8 @@ class ARIMA(_TS):
         By default, the model will compute the native prediction
         intervals.
     """
+
+    uses_exog = True
 
     def __init__(
         self,
