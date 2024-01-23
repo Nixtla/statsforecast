@@ -17,6 +17,7 @@ from scipy.special import inv_boxcox
 from scipy.stats import boxcox
 from scipy.optimize import minimize
 from statsmodels.tsa.stattools import adfuller
+from threadpoolctl import threadpool_limits
 
 from .arima import auto_arima_f
 from .utils import NOGIL, CACHE
@@ -51,15 +52,14 @@ def find_harmonics(y, m):
     num_harmonics = 0
 
     # Create cosine and sine terms
-    for i in range(1, max_harmonics + 1):
-        data[f"cos_{i}"] = np.cos(2 * np.pi * i * t / m)
-        data[f"sin_{i}"] = np.sin(2 * np.pi * i * t / m)
+    fourier = np.empty((len(data), 2 * max_harmonics))
+    for i in range(max_harmonics):
+        fourier[:, 2 * i] = np.cos(2 * np.pi * (i + 1) * t / m)
+        fourier[:, 2 * i + 1] = np.sin(2 * np.pi * (i + 1) * t / m)
 
-    columns = []
     for h in range(1, max_harmonics + 1):
-        columns.extend([f"cos_{h}", f"sin_{h}"])
         # Perform regression to estimate the coefficients
-        X = data[columns]
+        X = fourier[:, : 2 * h]
         y = data["z_t"]
         model, residuals = np.linalg.lstsq(X, y, rcond=None)[:2]
         k = model.size
@@ -870,7 +870,9 @@ def tbats_model(
     if use_arma_errors:
         errors = best_model["errors"][0]  # ARMA errors from first model
         with np.errstate(invalid="ignore"):
-            fit = auto_arima_f(errors, max_d=0, seasonal=False)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore")
+                fit = auto_arima_f(errors, max_d=0, seasonal=False)
         p, q = fit["arma"][:2]
         if p != 0:
             ar_coeffs = np.zeros(p)
@@ -969,20 +971,21 @@ def tbats_selection(
     combinations = [(b, t, a) for b, t, a in product(B, T, A)]
 
     mod = {"aic": np.inf}
-    for boxcox_var, (trend, damped_trend), arma_errors in combinations:
-        new_mod = tbats_model(
-            y,
-            seasonal_periods,
-            k_vector,
-            boxcox_var,
-            bc_lower_bound,
-            bc_upper_bound,
-            trend,
-            damped_trend,
-            arma_errors,
-        )
-        if new_mod["aic"] < mod["aic"]:
-            mod = new_mod
+    with threadpool_limits(limits=1):
+        for boxcox_var, (trend, damped_trend), arma_errors in combinations:
+            new_mod = tbats_model(
+                y,
+                seasonal_periods,
+                k_vector,
+                boxcox_var,
+                bc_lower_bound,
+                bc_upper_bound,
+                trend,
+                damped_trend,
+                arma_errors,
+            )
+            if new_mod["aic"] < mod["aic"]:
+                mod = new_mod
 
     return mod
 
