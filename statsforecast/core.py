@@ -681,14 +681,14 @@ class _StatsForecast:
         _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, first_col)
         return GroupedArray(data, indptr), level
 
-    def _validate_exog(self, X_df: Optional[DataFrame] = None):
+    def _validate_exog(self, X_df: Optional[DataFrame] = None) -> None:
         if not any(m.uses_exog for m in self.models):
             return
         err_msg = (
             f"Models were trained with the following exogenous features: {self._exog}. "
             "You must provide them through `X_df` in order to predict."
         )
-        if X_df is None:
+        if X_df is None and self._exog:
             raise ValueError(err_msg)
         missing_exog = [c for c in self._exog if c not in X_df.columns]
         if missing_exog:
