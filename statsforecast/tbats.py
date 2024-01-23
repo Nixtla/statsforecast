@@ -969,12 +969,12 @@ def tbats_selection(
     combinations = [(b, t, a) for b, t, a in product(B, T, A)]
 
     mod = {"aic": np.inf}
-    for boxcox, (trend, damped_trend), arma_errors in combinations:
+    for boxcox_var, (trend, damped_trend), arma_errors in combinations:
         new_mod = tbats_model(
             y,
             seasonal_periods,
             k_vector,
-            boxcox,
+            boxcox_var,
             bc_lower_bound,
             bc_upper_bound,
             trend,
