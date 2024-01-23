@@ -682,13 +682,13 @@ class _StatsForecast:
         return GroupedArray(data, indptr), level
 
     def _validate_exog(self, X_df: Optional[DataFrame] = None) -> None:
-        if not any(m.uses_exog for m in self.models):
+        if not any(m.uses_exog for m in self.models) or not self._exog:
             return
         err_msg = (
             f"Models were trained with the following exogenous features: {self._exog}. "
             "You must provide them through `X_df` in order to predict."
         )
-        if X_df is None and self._exog:
+        if X_df is None:
             raise ValueError(err_msg)
         missing_exog = [c for c in self._exog if c not in X_df.columns]
         if missing_exog:
