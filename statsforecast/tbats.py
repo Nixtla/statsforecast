@@ -690,7 +690,7 @@ def tbats_model_generator(
             w_tilda_transpose_scaled, e.reshape((e.shape[1], 1)), rcond=None
         )
         x_nought_scaled = model[0].ravel()
-        x_nought = (x_nought_scaled / sigma) + mu
+        x_nought = x_nought_scaled * sigma + mu
     else:
         model = np.linalg.lstsq(
             w_tilda_transpose, e.reshape((e.shape[1], 1)), rcond=None

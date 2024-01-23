@@ -5397,9 +5397,6 @@ class AutoTBATS(TBATS):
             alias=alias,
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 398
 class Theta(AutoTheta):
     """Standard Theta Method.
