@@ -685,8 +685,8 @@ class _StatsForecast:
         if not any(m.uses_exog for m in self.models) or not self._exog:
             return
         err_msg = (
-            f"Models were trained with the following exogenous features: {self._exog}. "
-            "You must provide them through `X_df` in order to predict."
+            f"Models require the following exogenous features {self._exog} "
+            "for the forecasting step. Please provide them through `X_df`."
         )
         if X_df is None:
             raise ValueError(err_msg)
