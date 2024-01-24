@@ -890,8 +890,9 @@ def arima(
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
 
         res, resid = arima_css(x, arma, phi, theta, ncond)
-
-        return 0.5 * np.log(res)
+        if res == 0.0:
+            return math.inf
+        return 0.5 * math.log(res)
 
     coef = np.array(fixed)
     # parscale definition, think about it, scipy doesn't use it
@@ -1243,7 +1244,10 @@ def myarima(
             fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
         if not math.isnan(fit["aic"]):
             fit["bic"] = fit["aic"] + npar * (math.log(nstar) - 2)
-            fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
+            if nstar - npar - 1 != 0:
+                fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
+            else:
+                fit["aicc"] = math.inf
             fit["ic"] = fit[ic]
         else:
             fit["ic"] = fit["aic"] = fit["bic"] = fit["aicc"] = math.inf
