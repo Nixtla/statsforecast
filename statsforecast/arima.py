@@ -890,8 +890,8 @@ def arima(
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
 
         res, resid = arima_css(x, arma, phi, theta, ncond)
-        if res == 0.0:
-            return math.inf
+        if res <= 0.0:
+            return -math.inf
         return 0.5 * math.log(res)
 
     coef = np.array(fixed)
