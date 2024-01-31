@@ -107,6 +107,8 @@ def _get_conformal_method(method: str):
 
 # %% ../nbs/src/core/models.ipynb 12
 class _TS:
+    uses_exog = False
+
     def new(self):
         b = type(self).__new__(type(self))
         b.__dict__.update(self.__dict__)
@@ -118,20 +120,28 @@ class _TS:
         X: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
-        step_size = self.prediction_intervals.h  # type: ignore[attr-defined]
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
-        test_size = h + step_size * (n_windows - 1)
-        steps = list(range(-test_size, -h + 1, step_size))
-        cs = np.full((n_windows, h), np.nan, dtype=np.float32)
-        for i_window, cutoff in enumerate(steps, start=0):
-            end_cutoff = cutoff + h
-            y_train = y[:, 0] if y.ndim == 2 else y
-            X_train = y[:, 1:] if (y.ndim == 2 and y.shape[1] > 1) else None
-            y_test = y[cutoff:] if end_cutoff == 0 else y[cutoff:end_cutoff]
-            X_future = (
-                y_test[:, 1:] if (y_test.ndim == 2 and y_test.shape[1] > 1) else None
+        n_samples = y.size
+        # use as many windows as possible for short series
+        # subtract 1 for the training set
+        n_windows = min(n_windows, (n_samples - 1) // h)
+        if n_windows < 2:
+            raise ValueError(
+                f"Prediction intervals settings require at least {2 * h + 1:,} samples, serie has {n_samples:,}."
             )
-            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_future)  # type: ignore[attr-defined]
+        test_size = n_windows * h
+        cs = np.empty((n_windows, h), dtype=np.float32)
+        for i_window in range(n_windows):
+            train_end = n_samples - test_size + i_window * h
+            y_train = y[:train_end]
+            y_test = y[train_end : train_end + h]
+            if X is not None:
+                X_train = X[:train_end]
+                X_test = X[train_end : train_end + h]
+            else:
+                X_train = None
+                X_test = None
+            fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_test)  # type: ignore[attr-defined]
             cs[i_window] = np.abs(fcst_window["mean"] - y_test)
         return cs
 
@@ -239,6 +249,8 @@ class AutoARIMA(_TS):
         By default, the model will compute the native prediction
         intervals.
     """
+
+    uses_exog = True
 
     def __init__(
         self,
@@ -1387,6 +1399,8 @@ class ARIMA(_TS):
         By default, the model will compute the native prediction
         intervals.
     """
+
+    uses_exog = True
 
     def __init__(
         self,
@@ -3774,20 +3788,23 @@ def _adida(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
-    if fitted:
-        raise NotImplementedError("return fitted")
     if (y == 0).all():
-        return {"mean": np.repeat(np.float32(0), h)}
+        res = {"mean": np.zeros(h, dtype=np.float32)}
+        if fitted:
+            res["fitted"] = y.copy()
+        return res
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean()
     aggregation_level = round(mean_interval)
     lost_remainder_data = len(y) % aggregation_level
     y_cut = y[lost_remainder_data:]
     aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-    sums_forecast, _ = _optimized_ses_forecast(aggregation_sums)
+    sums_forecast, sums_fitted = _optimized_ses_forecast(aggregation_sums)
     forecast = sums_forecast / aggregation_level
-    mean = _repeat_val(val=forecast, h=h)
-    return {"mean": mean}
+    res = {"mean": _repeat_val(val=forecast, h=h)}
+    if fitted:
+        res["fitted"] = sums_fitted / aggregation_level
+    return res
 
 # %% ../nbs/src/core/models.ipynb 290
 class ADIDA(_TS):
@@ -3846,8 +3863,8 @@ class ADIDA(_TS):
         self :
             ADIDA fitted model.
         """
-        mod = _adida(y=y, h=1, fitted=False)
-        self.model_ = dict(mod)
+        self.model_ = _adida(y=y, h=1, fitted=True)
+        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
         return self
 
@@ -3887,9 +3904,7 @@ class ADIDA(_TS):
             )
         return res
 
-    def predict_in_sample(
-        self,
-    ):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted ADIDA insample predictions.
 
         Parameters
@@ -3902,7 +3917,10 @@ class ADIDA(_TS):
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        raise NotImplementedError
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
 
     def forecast(
         self,
@@ -3950,6 +3968,8 @@ class ADIDA(_TS):
                 "You have to instantiate the class with `prediction_intervals`"
                 "to calculate them"
             )
+        if fitted:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 302
@@ -3958,20 +3978,21 @@ def _croston_classic(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
-    if fitted:
-        raise NotImplementedError("return fitted")
     yd = _demand(y)
     yi = _intervals(y)
     if not yd.size:  # no demand
-        return {"mean": _repeat_val(val=y[-1], h=h)}
-    ydp, _ = _ses_forecast(yd, 0.1)
-    yip, _ = _ses_forecast(yi, 0.1)
+        return _naive(y=y, h=h, fitted=fitted)
+    ydp, ydf = _ses_forecast(yd, 0.1)
+    yip, yif = _ses_forecast(yi, 0.1)
     if yip != 0.0:
         mean = ydp / yip
     else:
         mean = ydp
-    mean = _repeat_val(val=mean, h=h)
-    return {"mean": mean}
+    out = {"mean": _repeat_val(val=mean, h=h)}
+    if fitted:
+        yif[yif == 0.0] = 1.0
+        out["fitted"] = ydf / yif
+    return out
 
 # %% ../nbs/src/core/models.ipynb 303
 class CrostonClassic(_TS):
@@ -4029,8 +4050,8 @@ class CrostonClassic(_TS):
         self :
             CrostonClassic fitted model.
         """
-        mod = _croston_classic(y=y, h=1, fitted=False)
-        self.model_ = dict(mod)
+        self.model_ = _croston_classic(y=y, h=1, fitted=True)
+        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
         return self
 
@@ -4069,7 +4090,7 @@ class CrostonClassic(_TS):
             )
         return res
 
-    def predict_in_sample(self, level):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted CrostonClassic insample predictions.
 
         Parameters
@@ -4082,7 +4103,10 @@ class CrostonClassic(_TS):
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        raise NotImplementedError
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
 
     def forecast(
         self,
@@ -4129,6 +4153,8 @@ class CrostonClassic(_TS):
             raise Exception(
                 "You have to instantiate the class with `prediction_intervals` to calculate them"
             )
+        if fitted:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 314
@@ -4137,20 +4163,21 @@ def _croston_optimized(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
-    if fitted:
-        raise NotImplementedError("return fitted")
     yd = _demand(y)
     yi = _intervals(y)
     if not yd.size:
-        return {"mean": _repeat_val(val=y[-1], h=h)}
-    ydp, _ = _optimized_ses_forecast(yd)
-    yip, _ = _optimized_ses_forecast(yi)
+        return _naive(y=y, h=h, fitted=fitted)
+    ydp, ydf = _optimized_ses_forecast(yd)
+    yip, yif = _optimized_ses_forecast(yi)
     if yip != 0.0:
         mean = ydp / yip
     else:
         mean = ydp
-    mean = _repeat_val(val=mean, h=h)
-    return {"mean": mean}
+    out = {"mean": _repeat_val(val=mean, h=h)}
+    if fitted:
+        yif[yif == 0.0] = 1.0
+        out["fitted"] = ydf / yif
+    return out
 
 # %% ../nbs/src/core/models.ipynb 315
 class CrostonOptimized(_TS):
@@ -4209,8 +4236,8 @@ class CrostonOptimized(_TS):
         self :
             CrostonOptimized fitted model.
         """
-        mod = _croston_optimized(y=y, h=1, fitted=False)
-        self.model_ = dict(mod)
+        self.model_ = _croston_optimized(y=y, h=1, fitted=True)
+        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
         return self
 
@@ -4247,7 +4274,7 @@ class CrostonOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted CrostonOptimized insample predictions.
 
         Parameters
@@ -4260,7 +4287,10 @@ class CrostonOptimized(_TS):
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        raise NotImplementedError
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
 
     def forecast(
         self,
@@ -4304,6 +4334,8 @@ class CrostonOptimized(_TS):
             res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         else:
             raise Exception("You must pass `prediction_intervals` to compute them.")
+        if fitted:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 326
@@ -4312,11 +4344,11 @@ def _croston_sba(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ) -> Dict[str, np.ndarray]:
+    out = _croston_classic(y=y, h=h, fitted=fitted)
+    out["mean"] *= 0.95
     if fitted:
-        raise NotImplementedError("return fitted")
-    mean = _croston_classic(y, h, fitted)
-    mean["mean"] *= 0.95
-    return mean
+        out["fitted"] *= 0.95
+    return out
 
 # %% ../nbs/src/core/models.ipynb 327
 class CrostonSBA(_TS):
@@ -4375,8 +4407,8 @@ class CrostonSBA(_TS):
         self :
             CrostonSBA fitted model.
         """
-        mod = _croston_sba(y=y, h=1, fitted=False)
-        self.model_ = dict(mod)
+        self.model_ = _croston_sba(y=y, h=1, fitted=True)
+        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
         return self
 
@@ -4415,7 +4447,7 @@ class CrostonSBA(_TS):
             )
         return res
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted CrostonSBA insample predictions.
 
         Parameters
@@ -4428,7 +4460,10 @@ class CrostonSBA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        raise NotImplementedError
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
 
     def forecast(
         self,
@@ -4476,6 +4511,8 @@ class CrostonSBA(_TS):
                 "You have to instantiate the class with `prediction_intervals`"
                 "to calculate them"
             )
+        if fitted:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 338
@@ -4484,23 +4521,28 @@ def _imapa(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
-    if fitted:
-        raise NotImplementedError("return fitted")
     if (y == 0).all():
-        return {"mean": np.repeat(np.float32(0), h)}
+        res = {"mean": np.zeros(h, dtype=np.float32)}
+        if fitted:
+            res["fitted"] = y.copy()
+        return res
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean().item()
     max_aggregation_level = round(mean_interval)
     forecasts = np.empty(max_aggregation_level, np.float32)
+    fitted_vals = np.empty((y.size, max_aggregation_level), dtype=np.float32)
     for aggregation_level in range(1, max_aggregation_level + 1):
         lost_remainder_data = len(y) % aggregation_level
         y_cut = y[lost_remainder_data:]
         aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-        forecast, _ = _optimized_ses_forecast(aggregation_sums)
+        forecast, fit = _optimized_ses_forecast(aggregation_sums)
         forecasts[aggregation_level - 1] = forecast / aggregation_level
+        fitted_vals[:, aggregation_level - 1] = fit / aggregation_level
     forecast = forecasts.mean()
-    mean = _repeat_val(val=forecast, h=h)
-    return {"mean": mean}
+    res = {"mean": _repeat_val(val=forecast, h=h)}
+    if fitted:
+        res["fitted"] = fitted_vals.mean(axis=1)
+    return res
 
 # %% ../nbs/src/core/models.ipynb 339
 class IMAPA(_TS):
@@ -4555,8 +4597,8 @@ class IMAPA(_TS):
         self :
             IMAPA fitted model.
         """
-        mod = _imapa(y=y, h=1, fitted=False)
-        self.model_ = dict(mod)
+        self.model_ = _imapa(y=y, h=1, fitted=True)
+        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
         return self
 
@@ -4596,7 +4638,7 @@ class IMAPA(_TS):
             )
         return res
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted IMAPA insample predictions.
 
         Parameters
@@ -4609,7 +4651,10 @@ class IMAPA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        raise NotImplementedError
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
 
     def forecast(
         self,
@@ -4657,6 +4702,8 @@ class IMAPA(_TS):
                 "You have to instantiate the class with `prediction_intervals`"
                 "to calculate them"
             )
+        if fitted:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 350
@@ -4667,17 +4714,19 @@ def _tsb(
     alpha_d: float,
     alpha_p: float,
 ) -> Dict[str, np.ndarray]:
-    if fitted:
-        raise NotImplementedError("return fitted")
     if (y == 0).all():
-        return {"mean": np.repeat(np.float32(0), h)}
+        res = {"mean": np.zeros(h, dtype=np.float32)}
+        if fitted:
+            res["fitted"] = y.copy()
+        return res
     yd = _demand(y)
     yp = _probability(y)
-    ypf, _ = _ses_forecast(yp, alpha_p)
-    ydf, _ = _ses_forecast(yd, alpha_d)
-    forecast = np.float32(ypf * ydf)
-    mean = _repeat_val(val=forecast, h=h)
-    return {"mean": mean}
+    ypf, ypft = _ses_forecast(yp, alpha_p)
+    ydf, ydft = _ses_forecast(yd, alpha_d)
+    res = {"mean": _repeat_val(val=ypf * ydf, h=h)}
+    if fitted:
+        res["fitted"] = ypft * ydft
+    return res
 
 # %% ../nbs/src/core/models.ipynb 351
 class TSB(_TS):
@@ -4752,8 +4801,10 @@ class TSB(_TS):
         self :
             TSB fitted model.
         """
-        mod = _tsb(y=y, h=1, fitted=False, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
-        self.model_ = dict(mod)
+        self.model_ = _tsb(
+            y=y, h=1, fitted=True, alpha_d=self.alpha_d, alpha_p=self.alpha_p
+        )
+        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
         return self
 
@@ -4788,7 +4839,7 @@ class TSB(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         """Access fitted TSB insample predictions.
 
         Parameters
@@ -4801,7 +4852,10 @@ class TSB(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        raise NotImplementedError
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
 
     def forecast(
         self,
@@ -4845,6 +4899,8 @@ class TSB(_TS):
             res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         else:
             raise Exception("You must pass `prediction_intervals` to compute them.")
+        if fitted:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 363
@@ -4915,6 +4971,10 @@ class MSTL(_TS):
                     "seasonal models. Please pass `season_length=1` "
                     "to your trend forecaster"
                 )
+        if isinstance(season_length, int):
+            season_length = [season_length]
+        else:
+            season_length = sorted(season_length)
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
         self.prediction_intervals = prediction_intervals
