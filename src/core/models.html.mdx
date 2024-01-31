@@ -2,8 +2,8 @@
 description: Models currently supported by StatsForecast
 output-file: models.html
 title: Models
-
 ---
+
 
 StatsForecast offers a wide variety of models grouped in the following
 categories:
@@ -27,7 +27,7 @@ categories:
 
 -   **Multiple Seasonalities:** suited for signals with more than one
     clear seasonality. Useful for low-frequency data like electricity
-    and logs. Examples: MSTL.
+    and logs. Examples: MSTL and TBATS.
 
 -   **Theta Models:** fit two theta lines to a deseasonalized time
     series, using different techniques to obtain and combine the two
@@ -3768,6 +3768,267 @@ y_hat_dict = mstl_model.predict(h=4, level=[80])
 y_hat_dict
 ```
 
+## TBATS
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5203"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS
+
+> ``` text
+>  TBATS (seasonal_periods:Union[int,List[int]],
+>         use_boxcox:Optional[bool]=True, bc_lower_bound:float=0.0,
+>         bc_uppper_bound:float=1.5, use_trend:Optional[bool]=True,
+>         use_damped_trend:Optional[bool]=False, use_arma_errors:bool=False,
+>         alias:str='TBATS')
+> ```
+
+Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal
+components (TBATS) model.
+
+TBATS is an innovations state space model framework used for forecasting
+time series with multiple seasonalities. It uses a Box-Cox
+tranformation, ARMA errors, and a trigonometric representation of the
+seasonal patterns based on Fourier series.
+
+The name TBATS is an acronym for the key features of the model:
+Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal
+components.
+
+|                  | **Type** | **Default** | **Details**                                                  |
+|------|------------------|-------------------------|-------------------------|
+| seasonal_periods | Union    |             | Number of observations per unit of time. Ex: 24 Hourly data. |
+| use_boxcox       | Optional | True        | Whether or not to use a Box-Cox transformation.              |
+| bc_lower_bound   | float    | 0.0         | Lower bound for the Box-Cox transformation.                  |
+| bc_uppper_bound  | float    | 1.5         |                                                              |
+| use_trend        | Optional | True        | Whether or not to use a trend component.                     |
+| use_damped_trend | Optional | False       | Whether or not to dampen the trend component.                |
+| use_arma_errors  | bool     | False       | Whether or not to use a ARMA errors.                         |
+| alias            | str      | TBATS       | Custom name of the model.                                    |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5261"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.fit
+
+> ``` text
+>  TBATS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
+> ```
+
+Fit TBATS model.
+
+Fit TBATS model to a time series (numpy array) `y`.
+
+|             | **Type** | **Default** | **Details**                       |
+|-------------|----------|-------------|-----------------------------------|
+| y           | ndarray  |             | Clean time series of shape (t, ). |
+| X           | Optional | None        | Ignored                           |
+| **Returns** |          |             | **TBATS model.**                  |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5290"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.predict
+
+> ``` text
+>  TBATS.predict (h:int, X:Optional[numpy.ndarray]=None,
+>                 level:Optional[List[int]]=None)
+> ```
+
+Predict with fitted TBATS model.
+
+|             | **Type** | **Default** | **Details**                                                                                           |
+|------|------------------|-------------------------|-------------------------|
+| h           | int      |             | Forecast horizon.                                                                                     |
+| X           | Optional | None        |                                                                                                       |
+| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
+| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5322"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.predict_in_sample
+
+> ``` text
+>  TBATS.predict_in_sample (level:Optional[Tuple[int]]=None)
+> ```
+
+Access fitted TBATS model predictions.
+
+|             | **Type** | **Default** | **Details**                                                                                           |
+|------|------------------|-------------------------|-------------------------|
+| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
+| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5348"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.forecast
+
+> ``` text
+>  TBATS.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
+>                  X_future:Optional[numpy.ndarray]=None,
+>                  level:Optional[List[int]]=None, fitted:bool=False)
+> ```
+
+Memory Efficient TBATS model.
+
+This method avoids memory burden due from object storage. It is
+analogous to `fit_predict` without storing information. It assumes you
+know the forecast horizon in advance.
+
+|             | **Type** | **Default** | **Details**                                                                                           |
+|------|------------------|-------------------------|-------------------------|
+| y           | ndarray  |             | Clean time series of shape (n, ).                                                                     |
+| h           | int      |             | Forecast horizon.                                                                                     |
+| X           | Optional | None        |                                                                                                       |
+| X_future    | Optional | None        |                                                                                                       |
+| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
+| fitted      | bool     | False       | Whether or not returns insample predictions.                                                          |
+| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
+## AutoTBATS
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5409"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### AutoTBATS
+
+> ``` text
+>  AutoTBATS (seasonal_periods:Union[int,List[int]],
+>             use_boxcox:Optional[bool]=None, use_trend:Optional[bool]=None,
+>             use_damped_trend:Optional[bool]=None,
+>             use_arma_errors:bool=True, alias:str='AutoTBATS')
+> ```
+
+AutoTBATS model.
+
+Automatically selects the best TBATS model from all feasible
+combinations of the parameters use_boxcox, use_trend, use_damped_trend,
+and use_arma_errors. Selection is made using the AIC. Default value for
+use_arma_errors is True since this enables the evaluation of models with
+and without ARMA errors.
+
+|                  | **Type** | **Default** | **Details**                                                                          |
+|------|------------------|-------------------------|-------------------------|
+| seasonal_periods | Union    |             | Number of observations per unit of time. Ex: 24 Hourly data.                         |
+| use_boxcox       | Optional | None        | Whether or not to use a Box-Cox transformation. By default tries both.               |
+| use_trend        | Optional | None        | Whether or not to use a trend component. By default tries both.                      |
+| use_damped_trend | Optional | None        | Whether or not to dampen the trend component. By default tries both.                 |
+| use_arma_errors  | bool     | True        | Whether or not to use a ARMA errors. Default is True and this evaluates both models. |
+| alias            | str      | AutoTBATS   | Custom name of the model.                                                            |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5261"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.fit
+
+> ``` text
+>  TBATS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
+> ```
+
+Fit TBATS model.
+
+Fit TBATS model to a time series (numpy array) `y`.
+
+|             | **Type** | **Default** | **Details**                       |
+|-------------|----------|-------------|-----------------------------------|
+| y           | ndarray  |             | Clean time series of shape (t, ). |
+| X           | Optional | None        | Ignored                           |
+| **Returns** |          |             | **TBATS model.**                  |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5290"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.predict
+
+> ``` text
+>  TBATS.predict (h:int, X:Optional[numpy.ndarray]=None,
+>                 level:Optional[List[int]]=None)
+> ```
+
+Predict with fitted TBATS model.
+
+|             | **Type** | **Default** | **Details**                                                                                           |
+|------|------------------|-------------------------|-------------------------|
+| h           | int      |             | Forecast horizon.                                                                                     |
+| X           | Optional | None        |                                                                                                       |
+| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
+| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5322"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.predict_in_sample
+
+> ``` text
+>  TBATS.predict_in_sample (level:Optional[Tuple[int]]=None)
+> ```
+
+Access fitted TBATS model predictions.
+
+|             | **Type** | **Default** | **Details**                                                                                           |
+|------|------------------|-------------------------|-------------------------|
+| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
+| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5348"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### TBATS.forecast
+
+> ``` text
+>  TBATS.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
+>                  X_future:Optional[numpy.ndarray]=None,
+>                  level:Optional[List[int]]=None, fitted:bool=False)
+> ```
+
+Memory Efficient TBATS model.
+
+This method avoids memory burden due from object storage. It is
+analogous to `fit_predict` without storing information. It assumes you
+know the forecast horizon in advance.
+
+|             | **Type** | **Default** | **Details**                                                                                           |
+|------|------------------|-------------------------|-------------------------|
+| y           | ndarray  |             | Clean time series of shape (n, ).                                                                     |
+| h           | int      |             | Forecast horizon.                                                                                     |
+| X           | Optional | None        |                                                                                                       |
+| X_future    | Optional | None        |                                                                                                       |
+| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
+| fitted      | bool     | False       | Whether or not returns insample predictions.                                                          |
+| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 # Theta Family
 
 ## Standard Theta Method
@@ -3775,7 +4036,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5203"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5461"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### Theta
@@ -3935,7 +4196,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5240"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5498"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### OptimizedTheta
@@ -4100,7 +4361,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5277"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5535"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### DynamicTheta
@@ -4263,7 +4524,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5314"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5572"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### DynamicOptimizedTheta
@@ -4432,7 +4693,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5351"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5609"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH
@@ -4473,7 +4734,7 @@ The ARCH model is a particular case of the GARCH model when $q=0$.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5411"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5669"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.fit
@@ -4495,7 +4756,7 @@ Fit GARCH model to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5431"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5689"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.predict
@@ -4517,7 +4778,7 @@ Predict with fitted GARCH model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5467"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5725"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.predict_in_sample
@@ -4536,7 +4797,7 @@ Access fitted GARCH model predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5487"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5745"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### GARCH.forecast
@@ -4568,7 +4829,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5546"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5804"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH
@@ -4602,7 +4863,7 @@ nonnegative and $\sum_{k=1}^p a_k < 1$.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5411"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5669"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.fit
@@ -4624,7 +4885,7 @@ Fit GARCH model to a time series (numpy array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5431"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5689"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.predict
@@ -4646,7 +4907,7 @@ Predict with fitted GARCH model.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5467"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5725"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.predict_in_sample
@@ -4665,7 +4926,7 @@ Access fitted GARCH model predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5487"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5745"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ARCH.forecast
@@ -4692,139 +4953,6 @@ know the forecast horizon in advance.
 | fitted      | bool     | False       | Whether or not returns insample predictions.                                                          |
 | **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
-# TBATS
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5593"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS
-
-> ``` text
->  TBATS (seasonal_periods:Union[int,List[int]], use_boxcox:bool=True,
->         bc_lower_bound:float=0.0, bc_uppper_bound:float=1.5,
->         use_trend:bool=True, use_damped_trend:bool=False,
->         use_arma_errors:bool=False, alias:str='TBATS')
-> ```
-
-Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal
-components (TBATS) model.
-
-TBATS is an innovations state space model framework used for forecasting
-time series with multiple seasonalities. It uses a Box-Cox
-tranformation, ARMA errors, and a trigonometric representation of the
-seasonal patterns based on Fourier series.
-
-The name TBATS is an acronym for the key features of the model:
-Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal
-components.
-
-|                  | **Type** | **Default** | **Details**                                                  |
-|------|------------------|-------------------------|-------------------------|
-| seasonal_periods | Union    |             | Number of observations per unit of time. Ex: 24 Hourly data. |
-| use_boxcox       | bool     | True        | Whether or not to use a Box-Cox transformation.              |
-| bc_lower_bound   | float    | 0.0         | Lower bound for the Box-Cox transformation.                  |
-| bc_uppper_bound  | float    | 1.5         |                                                              |
-| use_trend        | bool     | True        | Whether or not to use a trend component.                     |
-| use_damped_trend | bool     | False       | Whether or not to dampen the trend component.                |
-| use_arma_errors  | bool     | False       | Whether or not to use a ARMA errors.                         |
-| alias            | str      | TBATS       | Custom name of the model.                                    |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5738"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.forecast
-
-> ``` text
->  TBATS.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-Memory Efficient TBATS model.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
-
-|             | **Type** | **Default** | **Details**                                                                                           |
-|------|------------------|-------------------------|-------------------------|
-| y           | ndarray  |             | Clean time series of shape (n, ).                                                                     |
-| h           | int      |             | Forecast horizon.                                                                                     |
-| X           | Optional | None        |                                                                                                       |
-| X_future    | Optional | None        |                                                                                                       |
-| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
-| fitted      | bool     | False       | Whether or not returns insample predictions.                                                          |
-| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5651"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.fit
-
-> ``` text
->  TBATS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-Fit TBATS model.
-
-Fit TBATS model to a time series (numpy array) `y`.
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        | Ignored                           |
-| **Returns** |          |             | **TBATS model.**                  |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5680"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.predict
-
-> ``` text
->  TBATS.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-Predict with fitted TBATS model.
-
-|             | **Type** | **Default** | **Details**                                                                                           |
-|------|------------------|-------------------------|-------------------------|
-| h           | int      |             | Forecast horizon.                                                                                     |
-| X           | Optional | None        |                                                                                                       |
-| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
-| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5712"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.predict_in_sample
-
-> ``` text
->  TBATS.predict_in_sample (level:Optional[Tuple[int]]=None)
-> ```
-
-Access fitted TBATS model predictions.
-
-|             | **Type** | **Default** | **Details**                                                                                           |
-|------|------------------|-------------------------|-------------------------|
-| level       | Optional | None        | Confidence levels (0-100) for prediction intervals.                                                   |
-| **Returns** | **dict** |             | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
 # Fallback Models
 
 ## ConstantModel
@@ -4832,7 +4960,7 @@ Access fitted TBATS model predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5799"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5851"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel
@@ -4848,7 +4976,7 @@ Returns Constant values.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5896"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5948"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.forecast
@@ -4880,7 +5008,7 @@ know the forecast horizon in advance.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5818"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5870"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.fit
@@ -4902,7 +5030,7 @@ Fit an Constant Model to a time series (numpy.array) `y`.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5842"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5894"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.predict
@@ -4924,7 +5052,7 @@ Predict with fitted ConstantModel.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5874"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5926"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.predict_in_sample
@@ -4943,7 +5071,7 @@ Access fitted Constant Model insample predictions.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5947"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5999"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ConstantModel.forward
@@ -4987,7 +5115,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5984"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L6036"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### ZeroModel
@@ -5141,7 +5269,7 @@ y_hat_dict
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L5998"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/models.py#L6050"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### NaNModel

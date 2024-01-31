@@ -1,10 +1,20 @@
 ---
-author: [Fugue, Nixtla]
-date: 2022-10-05
-title: Scalable Time Series Modeling with open-source projects 
-description: How to Forecast 1M Time Series in 15 Minutes with Spark, Fugue and Nixtla's Statsforecast.
-tags: [fugue, scalability, spark, time-series, forecasting]
+author:
+  - Fugue
+  - Nixtla
+date: 2022-10-05T00:00:00.000Z
+title: Scalable Time Series Modeling with open-source projects
+description: >-
+  How to Forecast 1M Time Series in 15 Minutes with Spark, Fugue and Nixtla's
+  Statsforecast.
+tags:
+  - fugue
+  - scalability
+  - spark
+  - time-series
+  - forecasting
 ---
+
 
 [![](https://img.shields.io/github/stars/nixtla/statsforecast?label=github%20stars&style=social.png)](https://github.com/nixtla/statsforecast)
 
@@ -77,15 +87,13 @@ for each series. Both are valid approaches since the bigger model will
 pick up trends across the population, while training thousands of models
 may fit individual series data better.
 
-<Note>
-
-Note: to pick up both the micro and macro trends of the time series
-population in one model, check the Nixtla
-[HierarchicalForecast](https://github.com/Nixtla/hierarchicalforecast)
-library, but this is also more computationally expensive and trickier to
-scale.
-
-</Note>
+> **Note**
+>
+> Note: to pick up both the micro and macro trends of the time series
+> population in one model, check the Nixtla
+> [HierarchicalForecast](https://github.com/Nixtla/hierarchicalforecast)
+> library, but this is also more computationally expensive and trickier
+> to scale.
 
 This article will deal with the scenario where we train a couple of
 models (AutoARIMA or ETS) per univariate time series. For this setup, we
@@ -93,8 +101,11 @@ group the full data by time series, and then train each model for each
 group. The image below illustrates this. The distributed DataFrame can
 either be a Spark or Dask DataFrame.
 
-![AutoARIMA per
-partition](https://miro.medium.com/max/1400/0*hbhd-d8xmtn5f2bi.png)
+<figure>
+<img src="https://miro.medium.com/max/1400/0*HbHd-D8XmtN5F2bI.png"
+alt="AutoARIMA per partition" />
+<figcaption aria-hidden="true">AutoARIMA per partition</figcaption>
+</figure>
 
 Nixtla previously released benchmarks with
 [Anyscale](https://www.anyscale.com/) on distributing this model
@@ -104,8 +115,11 @@ The results are also shown below. It took 2000 cpus to run one million
 AutoARIMA models in 35 minutes. We’ll compare this against running on
 Spark.
 
-![StatsForecast on Ray
-results](https://miro.medium.com/max/1400/0*bnld5nasluxftniv.png)
+<figure>
+<img src="https://miro.medium.com/max/1400/0*bnlD5NAslUxfTniv.png"
+alt="StatsForecast on Ray results" />
+<figcaption aria-hidden="true">StatsForecast on Ray results</figcaption>
+</figure>
 
 ## StatsForecast code
 
@@ -214,13 +228,12 @@ or file path to the data. If a file path is provided, it will be loaded
 with the parallel backend. In this example above, we replaced the file
 each time we ran the experiment to generate benchmarks.
 
-<Warning>
-
-It’s also important to note that we can test locally before running the
-`forecast()` on full data. All we have to do is not supply anything for
-the parallel argument; everything will run on Pandas sequentially.
-
-</Warning>
+> **Caution**
+>
+> It’s also important to note that we can test locally before running
+> the `forecast()` on full data. All we have to do is not supply
+> anything for the parallel argument; everything will run on Pandas
+> sequentially.
 
 ## Benchmark Results
 
@@ -229,15 +242,17 @@ Dask and Ray made recent releases, so only the Spark metrics are up to
 date. We will make a follow-up article after running these experiments
 with the updates.
 
-![Spark and Dask benchmarks for StatsForecast at
-scale](https://miro.medium.com/max/1400/0*2ovs-d5xhqcvqobk.png)
+<figure>
+<img src="https://miro.medium.com/max/1400/0*2ovS-D5XHQcVQobK.png"
+alt="Spark and Dask benchmarks for StatsForecast at scale" />
+<figcaption aria-hidden="true">Spark and Dask benchmarks for
+StatsForecast at scale</figcaption>
+</figure>
 
-<Note>
-
-Note: The attempt was to use 2000 cpus but we were limited by available
-compute instances on AWS.
-
-</Note>
+> **Note**
+>
+> Note: The attempt was to use 2000 cpus but we were limited by
+> available compute instances on AWS.
 
 The important part here is that AutoARIMA trained one million time
 series models in less than 15 minutes. The cluster configuration is

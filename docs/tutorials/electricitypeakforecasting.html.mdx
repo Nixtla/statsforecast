@@ -1,10 +1,11 @@
 ---
-description: In this example we will show how to perform electricity load forecasting
-  on the ERCOT (Texas) market for detecting daily peaks.
+description: >-
+  In this example we will show how to perform electricity load forecasting on
+  the ERCOT (Texas) market for detecting daily peaks.
 output-file: electricitypeakforecasting.html
 title: Detect Demand Peaks
-
 ---
+
 
 ## Introduction
 
@@ -44,12 +45,10 @@ Finally, we show how to use the forecasts to detect the coincident peak.
 3.  Fit MSTL model and forecast
 4.  Peak detection
 
-<Tip>
-
-You can use Colab to run this Notebook interactively
-<a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/ElectricityPeakForecasting.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
-</Tip>
+> **Tip**
+>
+> You can use Colab to run this Notebook interactively
+> <a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/ElectricityPeakForecasting.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Libraries
 
@@ -88,12 +87,10 @@ Plot the series using the `plot` method from the
 class. This method prints up to 8 random series from the dataset and is
 useful for basic EDA.
 
-<Note>
-
-The `StatsForecast.plot` method uses Plotly as a default engine. You can
-change to MatPlotLib by setting `engine="matplotlib"`.
-
-</Note>
+> **Note**
+>
+> The `StatsForecast.plot` method uses Plotly as a default engine. You
+> can change to MatPlotLib by setting `engine="matplotlib"`.
 
 ```python
 from statsforecast import StatsForecast
@@ -118,12 +115,10 @@ Polynomial Regression (LOESS). Then it forecasts the trend using a
 custom non-seasonal model and each seasonality using a SeasonalNaive
 model.
 
-<Tip>
-
-Check our detailed explanation and tutorial on MSTL
-[here](https://nixtla.github.io/statsforecast/examples/multipleseasonalities.html)
-
-</Tip>
+> **Tip**
+>
+> Check our detailed explanation and tutorial on MSTL
+> [here](https://nixtla.github.io/statsforecast/examples/multipleseasonalities.html)
 
 Import the
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
@@ -154,13 +149,11 @@ models = [MSTL(
           ]
 ```
 
-<Tip>
-
-The parameter `nmodels` of the AutoARIMA controls the number of models
-considered in stepwise search. The default is 94, reduce it to decrease
-training times!
-
-</Tip>
+> **Tip**
+>
+> The parameter `nmodels` of the AutoARIMA controls the number of models
+> considered in stepwise search. The default is 94, reduce it to
+> decrease training times!
 
 We fit the model by instantiating a
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
@@ -181,17 +174,15 @@ sf = StatsForecast(
 )
 ```
 
-<Tip>
-
-StatsForecast also supports this optional parameter.
-
--   `n_jobs`: n_jobs: int, number of jobs used in the parallel
-    processing, use -1 for all cores. (Default: 1)
-
--   `fallback_model`: a model to be used if a model fails. (Default:
-    none)
-
-</Tip>
+> **Tip**
+>
+> StatsForecast also supports this optional parameter.
+>
+> -   `n_jobs`: n_jobs: int, number of jobs used in the parallel
+>     processing, use -1 for all cores. (Default: 1)
+>
+> -   `fallback_model`: a model to be used if a model fails. (Default:
+>     none)
 
 The `cross_validation` method allows the user to simulate multiple
 historic forecasts, greatly simplifying pipelines by replacing for loops
@@ -230,13 +221,11 @@ crossvalidation_df.head()
 | ERCOT     | 2022-09-01 03:00:00 | 2022-08-31 23:00:00 | 41663.160156 | 43187.812500 |
 | ERCOT     | 2022-09-01 04:00:00 | 2022-08-31 23:00:00 | 41710.621094 | 43369.859375 |
 
-<Important>
-
-When using `cross_validation` make sure the forecasts are produced at
-the desired timestamps. Check the `cutoff` column which specifices the
-last timestamp before the forecasting window.
-
-</Important>
+> **Important**
+>
+> When using `cross_validation` make sure the forecasts are produced at
+> the desired timestamps. Check the `cutoff` column which specifices the
+> last timestamp before the forecasting window.
 
 ## Peak Detection
 
@@ -283,21 +272,15 @@ plt.grid()
 plt.legend()
 ```
 
-``` text
-<matplotlib.legend.Legend>
-```
+![](/statsforecast/docs/tutorials/ElectricityPeakForecasting_files/figure-markdown_strict/cell-13-output-1.png)
 
-![](/statsforecast/docs/tutorials/ElectricityPeakForecasting_files/figure-markdown_strict/cell-13-output-2.png)
-
-<Important>
-
-In this example we only include September. However, MSTL can correctly
-predict the peaks for the 4 months of 2022. You can try this by
-increasing the `nwindows` parameter of `cross_validation` or filtering
-the `Y_df` dataset. The complete run for all months take only 10
-minutes.
-
-</Important>
+> **Important**
+>
+> In this example we only include September. However, MSTL can correctly
+> predict the peaks for the 4 months of 2022. You can try this by
+> increasing the `nwindows` parameter of `cross_validation` or filtering
+> the `Y_df` dataset. The complete run for all months take only 10
+> minutes.
 
 ## Next steps
 

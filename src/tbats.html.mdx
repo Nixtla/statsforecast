@@ -1,8 +1,8 @@
 ---
 output-file: tbats.html
 title: TBATS model
-
 ---
+
 
 ```python
 import matplotlib.pyplot as plt
@@ -52,15 +52,31 @@ from statsforecast.utils import AirPassengers as ap
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/tbats.py#L813"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/tbats.py#L834"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### tbats_model
 
 > ``` text
->  tbats_model (y, seasonal_periods, use_boxcox, bc_lower_bound,
+>  tbats_model (y, seasonal_periods, k_vector, use_boxcox, bc_lower_bound,
 >               bc_upper_bound, use_trend, use_damped_trend,
 >               use_arma_errors)
+> ```
+
+### tbats_selection
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/tbats.py#L914"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### tbats_selection
+
+> ``` text
+>  tbats_selection (y, seasonal_periods, use_boxcox, bc_lower_bound,
+>                   bc_upper_bound, use_trend, use_damped_trend,
+>                   use_arma_errors)
 > ```
 
 ### tbats_forecast
@@ -68,7 +84,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/tbats.py#L905"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/tbats.py#L993"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### tbats_forecast
@@ -91,28 +107,32 @@ seasonal_periods = np.array([12])
 
 
 ```python
-use_boxcox = True
+# Default parameters 
+use_boxcox = None
 bc_lower_bound = 0
 bc_upper_bound = 1
-use_trend = True
-use_damped_trend = False
+use_trend = None
+use_damped_trend = None
 use_arma_errors = True
 ```
 
 
 ```python
-mod = tbats_model(y, seasonal_periods, use_boxcox, bc_lower_bound, bc_upper_bound, use_trend, use_damped_trend, use_arma_errors)
+mod = tbats_selection(y, seasonal_periods, use_boxcox, bc_lower_bound, bc_upper_bound, use_trend, use_damped_trend, use_arma_errors)
 ```
 
 
 ```python
-mod['optim_params']
+# Values in R
+print(mod['aic']) # 1397.015
+print(mod['k_vector']) # 5
+print(mod['description']) # use_boxcox = TRUE, use_trend = TRUE, use_damped_trend = FALSE, use_arma_errors = FALSE
 ```
 
 
 ```python
 fitted_trans = mod['fitted'].ravel()
-if use_boxcox:
+if mod['BoxCox_lambda'] is not None:
     fitted_trans = inv_boxcox(fitted_trans, mod['BoxCox_lambda'])
 ```
 
@@ -121,7 +141,7 @@ if use_boxcox:
 h = 24
 fcst = tbats_forecast(mod, h)
 forecast = fcst['mean']
-if use_boxcox:
+if mod['BoxCox_lambda'] is not None:
     forecast = inv_boxcox(forecast,  mod['BoxCox_lambda'])
 ```
 

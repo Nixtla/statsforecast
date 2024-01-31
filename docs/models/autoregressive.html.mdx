@@ -2,8 +2,8 @@
 description: Step-by-step guide on using the `AutoRegressive Model` with `Statsforecast`.
 output-file: autoregressive.html
 title: AutoRegressive Model
-
 ---
+
 
 ## Table of Contents
 
@@ -270,7 +270,7 @@ easy to show that both $\{X_{1t } \}$ and $\{X_{2t } \}$ are stationary
 and satisfy Eq. (3). That is, both are the stationary solution of Eq.
 (3). This gives rise to a question: which one of both is preferable?
 Obviously, $\{X_{2t } \}$ depends on future values of unobservable
-$\{\varepsilon_t \}$, and so it is unnatural. Hence we take
+$\{\varepsilon_t  \}$, and so it is unnatural. Hence we take
 $\{X_{1t } \}$ and abandon $\{X_{2t } \}$. In other words, we require
 that the coefficient $\varphi$ in Eq. (3) is less 1 in absolute value.
 At this point, the $\text{AR}(1)$ model is said to be causal and its
@@ -392,12 +392,10 @@ This is where the Augmented Dickey Fuller (ADF) test comes in handy.
 
 ## Loading libraries and data <a class="anchor" id="loading"></a>
 
-<Tip>
-
-Statsforecast will be needed. To install, see
-[instructions](../getting-started/installation.html).
-
-</Tip>
+> **Tip**
+>
+> Statsforecast will be needed. To install, see
+> [instructions](../getting-started/installation.html).
 
 Next, we import plotting libraries and configure the plotting style.
 

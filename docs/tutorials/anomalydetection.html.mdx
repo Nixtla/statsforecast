@@ -1,19 +1,15 @@
 ---
-description: In this notebook, we'll implement anomaly detection in time series data
+description: 'In this notebook, we''ll implement anomaly detection in time series data'
 output-file: anomalydetection.html
 title: Anomaly Detection
-
 ---
 
-<Warning>
 
-### Prerequesites
-
-This tutorial assumes basic familiarity with StatsForecast. For a
-minimal example visit the [Quick
-Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
-
-</Warning>
+> **Prerequesites**
+>
+> This tutorial assumes basic familiarity with StatsForecast. For a
+> minimal example visit the [Quick
+> Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
 
 ## Introduction
 
@@ -43,25 +39,19 @@ models.
 3.  Train model
 4.  Recover insample forecasts and identify anomalies
 
-<Important>
+> **Important**
+>
+> Once an anomaly has been identified, we must decide what to do with
+> it. For example, we could remove it or replace it with another value.
+> The correct course of action is context-dependent and beyond this
+> notebook’s scope. Removing an anomaly will likely improve the accuracy
+> of the forecast, but it can also underestimate the amount of
+> randomness in the data.
 
-### Important
-
-Once an anomaly has been identified, we must decide what to do with it.
-For example, we could remove it or replace it with another value. The
-correct course of action is context-dependent and beyond this notebook’s
-scope. Removing an anomaly will likely improve the accuracy of the
-forecast, but it can also underestimate the amount of randomness in the
-data.
-
-</Important>
-
-<Tip>
-
-You can use Colab to run this Notebook interactively
-<a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/AnomalyDetection.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
-</Tip>
+> **Tip**
+>
+> You can use Colab to run this Notebook interactively
+> <a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/AnomalyDetection.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Install libraries
 

@@ -2,8 +2,8 @@
 description: Step-by-step guide on using the `Standard Theta Model` with `Statsforecast`.
 output-file: standardtheta.html
 title: Standard Theta Model
-
 ---
+
 
 ## Table of Contents
 
@@ -145,7 +145,12 @@ $\zeta(2)$.
 -   If $\theta > 1$ then the short term movements of the analyzed series
     show more local curvatures (see fig)
 
-![Figure](https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/eb9226e1acc10cc10b482dc6190aae521c377546/imagen/theta.png)
+<figure>
+<img
+src="https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/eb9226e1acc10cc10b482dc6190aae521c377546/imagen/theta.png"
+alt="Figure" />
+<figcaption aria-hidden="true">Figure</figcaption>
+</figure>
 
 We will refer to the above setup as the standard Theta method. The steps
 for building the theta method are as follows:
@@ -182,12 +187,10 @@ seasonal component to have a multiplicative relationship.
 
 ## Loading libraries and data <a class="anchor" id="loading"></a>
 
-<Tip>
-
-Statsforecast will be needed. To install, see
-[instructions](../getting-started/installation.html).
-
-</Tip>
+> **Tip**
+>
+> Statsforecast will be needed. To install, see
+> [instructions](../getting-started/installation.html).
 
 Next, we import plotting libraries and configure the plotting style.
 

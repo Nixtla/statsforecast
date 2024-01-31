@@ -2,8 +2,8 @@
 description: Step-by-step guide on using the `ARCH Model` with `Statsforecast`.
 output-file: arch.html
 title: ARCH Model
-
 ---
+
 
 ## Table of Contents
 
@@ -224,12 +224,10 @@ the data being modeled.
 
 ## Loading libraries and data <a class="anchor" id="loading"></a>
 
-<Tip>
-
-Statsforecast will be needed. To install, see
-[instructions](../getting-started/installation.html).
-
-</Tip>
+> **Tip**
+>
+> Statsforecast will be needed. To install, see
+> [instructions](../getting-started/installation.html).
 
 Next, we import plotting libraries and configure the plotting style.
 
@@ -571,7 +569,7 @@ The Ljung-Box with the Box-Pierce option will return, for each lag, the
 Ljung-Box test statistic, Ljung-Box p-values, Box-Pierce test statistic,
 and Box-Pierce p-values.
 
-If $p<\alpha (0.05)$ we reject the null hypothesis.
+If $p<\alpha  (0.05)$ we reject the null hypothesis.
 
 ```python
 from statsmodels.stats.diagnostic import acorr_ljungbox

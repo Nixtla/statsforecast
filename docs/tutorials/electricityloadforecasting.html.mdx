@@ -1,10 +1,11 @@
 ---
-description: In this example we will show how to perform electricity load forecasting
+description: >-
+  In this example we will show how to perform electricity load forecasting
   considering a model capable of handling multiple seasonalities (MSTL).
 output-file: electricityloadforecasting.html
 title: Electricity Load Forecast
-
 ---
+
 
 <a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/ElectricityLoadForecasting.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
@@ -94,11 +95,7 @@ df.tail()
 df.plot(x='ds', y='y')
 ```
 
-``` text
-<Axes: xlabel='ds'>
-```
-
-![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-5-output-2.png)
+![](/statsforecast/docs/tutorials/ElectricityLoadForecasting_files/figure-markdown_strict/cell-5-output-1.png)
 
 We clearly observe that the time series exhibits seasonal patterns.
 Moreover, the time series contains `32,896` observations, so it is
@@ -629,13 +626,12 @@ results of `Prophet`, as expected, however,
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl)
 improves over `NeuralProphet`’s foreacasts by 68% (`MASE`).
 
-<Important>
-
-The performance of `NeuralProphet` can be improved using hyperparameter
-optimization, which can increase the fitting time significantly. In this
-example we show its performance with the default version.
-
-</Important>
+> **Important**
+>
+> The performance of `NeuralProphet` can be improved using
+> hyperparameter optimization, which can increase the fitting time
+> significantly. In this example we show its performance with the
+> default version.
 
 ## Conclusion
 

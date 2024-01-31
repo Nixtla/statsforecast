@@ -1,18 +1,14 @@
 ---
-description: Model training, evaluation and selection for multiple time series
+description: 'Model training, evaluation and selection for multiple time series'
 output-file: getting_started_complete.html
 title: End to End Walkthrough
-
 ---
 
-<Warning>
 
-### Prerequesites
-
-This Guide assumes basic familiarity with StatsForecast. For a minimal
-example visit the [Quick Start](./getting_started_short.html).
-
-</Warning>
+> **Prerequesites**
+>
+> This Guide assumes basic familiarity with StatsForecast. For a minimal
+> example visit the [Quick Start](./getting_started_short.html).
 
 Follow this article for a step to step guide on building a
 production-ready forecasting pipeline for multiple time series.
@@ -43,31 +39,27 @@ it ideal for this task.
 5.  Evaluate the model’s performance using cross-validation.
 6.  Select the best model for every unique time series.
 
-<Tip>
-
-### Not Covered in this guide
-
--   Forecasting at scale using clusters on the cloud.
-    -   [Forecast the M5 Dataset in
-        5min](../how-to-guides/ets_ray_m5.html) using Ray clusters.
-    -   [Forecast the M5 Dataset in
-        5min](../how-to-guides/prophet_spark_m5.html) using Spark
-        clusters.
-    -   Learn how to predict [1M series in less than
-        30min](https://www.anyscale.com/blog/how-nixtla-uses-ray-to-accurately-predict-more-than-a-million-time-series).
--   Training models on Multiple Seasonalities.
-    -   Learn to use multiple seasonality in this [Electricity Load
-        forecasting](../tutorials/electricityloadforecasting.html)
-        tutorial.
--   Using external regressors or exogenous variables
-    -   Follow this tutorial to [include exogenous
-        variables](../how-to-guides/exogenous.html) like weather or
-        holidays or static variables like category or family.
--   Comparing StatsForecast with other popular libraries.
-    -   You can reproduce our benchmarks
-        [here](https://github.com/Nixtla/statsforecast/tree/main/experiments).
-
-</Tip>
+> **Not Covered in this guide**
+>
+> -   Forecasting at scale using clusters on the cloud.
+>     -   [Forecast the M5 Dataset in
+>         5min](../how-to-guides/ets_ray_m5.html) using Ray clusters.
+>     -   [Forecast the M5 Dataset in
+>         5min](../how-to-guides/prophet_spark_m5.html) using Spark
+>         clusters.
+>     -   Learn how to predict [1M series in less than
+>         30min](https://www.anyscale.com/blog/how-nixtla-uses-ray-to-accurately-predict-more-than-a-million-time-series).
+> -   Training models on Multiple Seasonalities.
+>     -   Learn to use multiple seasonality in this [Electricity Load
+>         forecasting](../tutorials/electricityloadforecasting.html)
+>         tutorial.
+> -   Using external regressors or exogenous variables
+>     -   Follow this tutorial to [include exogenous
+>         variables](../how-to-guides/exogenous.html) like weather or
+>         holidays or static variables like category or family.
+> -   Comparing StatsForecast with other popular libraries.
+>     -   You can reproduce our benchmarks
+>         [here](https://github.com/Nixtla/statsforecast/tree/main/experiments).
 
 ## Install libraries
 
@@ -132,13 +124,11 @@ average. For this example and reproducibility’s sake, we will select
 only 10 unique IDs and keep only the last week. Depending on your
 processing infrastructure feel free to select more or less series.
 
-<Note>
-
-Processing time is dependent on the available computing resources.
-Running this example with the complete dataset takes around 10 minutes
-in a c5d.24xlarge (96 cores) instance from AWS.
-
-</Note>
+> **Note**
+>
+> Processing time is dependent on the available computing resources.
+> Running this example with the complete dataset takes around 10 minutes
+> in a c5d.24xlarge (96 cores) instance from AWS.
 
 ```python
 uids = Y_df['unique_id'].unique()[:10] # Select 10 ids to make the example faster
@@ -153,12 +143,10 @@ Plot some series using the `plot` method from the
 class. This method prints 8 random series from the dataset and is useful
 for basic EDA.
 
-<Note>
-
-The `StatsForecast.plot` method uses Plotly as a defaul engine. You can
-change to MatPlotLib by setting `engine="matplotlib"`.
-
-</Note>
+> **Note**
+>
+> The `StatsForecast.plot` method uses Plotly as a defaul engine. You
+> can change to MatPlotLib by setting `engine="matplotlib"`.
 
 ```python
 from statsforecast import StatsForecast
@@ -288,14 +276,12 @@ sf = StatsForecast(
 )
 ```
 
-<Note>
-
-StatsForecast achieves its blazing speed using JIT compiling through
-Numba. The first time you call the statsforecast class, the fit method
-should take around 5 seconds. The second time -once Numba compiled your
-settings- it should take less than 0.2s.
-
-</Note>
+> **Note**
+>
+> StatsForecast achieves its blazing speed using JIT compiling through
+> Numba. The first time you call the statsforecast class, the fit method
+> should take around 5 seconds. The second time -once Numba compiled
+> your settings- it should take less than 0.2s.
 
 The
 [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
@@ -316,16 +302,14 @@ uncertainty intervals. Depending on your computer, this step should take
 around 1min. (If you want to speed things up to a couple of seconds,
 remove the AutoModels like ARIMA and Theta)
 
-<Note>
-
-The
-[`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
-method is compatible with distributed clusters, so it does not store any
-model parameters. If you want to store parameters for every model you
-can use the `fit` and `predict` methods. However, those methods are not
-defined for distrubed engines like Spark, Ray or Dask.
-
-</Note>
+> **Note**
+>
+> The
+> [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
+> method is compatible with distributed clusters, so it does not store
+> any model parameters. If you want to store parameters for every model
+> you can use the `fit` and `predict` methods. However, those methods
+> are not defined for distrubed engines like Spark, Ray or Dask.
 
 ```python
 forecasts_df = sf.forecast(df=Y_df, h=48, level=[90])
@@ -394,13 +378,11 @@ In this case, we want to evaluate the performance of each model for the
 last 2 days (n_windows=2), forecasting every second day (step_size=48).
 Depending on your computer, this step should take around 1 min.
 
-<Tip>
-
-Setting `n_windows=1` mirrors a traditional train-test split with our
-historical data serving as the training set and the last 48 hours
-serving as the testing set.
-
-</Tip>
+> **Tip**
+>
+> Setting `n_windows=1` mirrors a traditional train-test split with our
+> historical data serving as the training set and the last 48 hours
+> serving as the testing set.
 
 The `cross_validation` method from the
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
@@ -484,14 +466,12 @@ def evaluate_cross_validation(df, metric):
     return evals
 ```
 
-<Warning>
-
-You can also use Mean Average Percentage Error (MAPE), however for
-granular forecasts, MAPE values are extremely [hard to
-judge](https://blog.blueyonder.com/mean-absolute-percentage-error-mape-has-served-its-duty-and-should-now-retire/)
-and not useful to assess forecasting quality.
-
-</Warning>
+> **Warning**
+>
+> You can also use Mean Average Percentage Error (MAPE), however for
+> granular forecasts, MAPE values are extremely [hard to
+> judge](https://blog.blueyonder.com/mean-absolute-percentage-error-mape-has-served-its-duty-and-should-now-retire/)
+> and not useful to assess forecasting quality.
 
 Create the data frame with the results of the evaluation of your
 cross-validation data frame using a Mean Squared Error metric.

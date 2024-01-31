@@ -2,8 +2,8 @@
 description: Minimal Example of StatsForecast
 output-file: getting_started_short.html
 title: Quick Start
-
 ---
+
 
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 follows the sklearn model API. For this minimal example, you will create
@@ -11,14 +11,12 @@ an instance of the StatsForecast class and then call its `fit` and
 `predict` methods. We recommend this option if speed is not paramount
 and you want to explore the fitted values and parameters.
 
-<Tip>
-
-If you want to forecast many series, we recommend using the
-[`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
-method. Check this [Getting Started with multiple time
-series](./getting_started_complete.html) guide.
-
-</Tip>
+> **Tip**
+>
+> If you want to forecast many series, we recommend using the
+> [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
+> method. Check this [Getting Started with multiple time
+> series](./getting_started_complete.html) guide.
 
 The input to StatsForecast is always a data frame in [long
 format](https://www.theanalysisfactor.com/wide-and-long-data/) with
@@ -95,14 +93,12 @@ periods](https://robjhyndman.com/hyndsight/seasonal-periods/))
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
-<Note>
-
-StatsForecast achieves its blazing speed using JIT compiling through
-Numba. The first time you call the statsforecast class, the fit method
-should take around 5 seconds. The second time -once Numba compiled your
-settings- it should take less than 0.2s.
-
-</Note>
+> **Note**
+>
+> StatsForecast achieves its blazing speed using JIT compiling through
+> Numba. The first time you call the statsforecast class, the fit method
+> should take around 5 seconds. The second time -once Numba compiled
+> your settings- it should take less than 0.2s.
 
 ```python
 from statsforecast import StatsForecast
@@ -158,17 +154,13 @@ sf.plot(df, forecast_df, level=[90])
 
 ![](/statsforecast/docs/getting-started/1_Getting_Started_short_files/figure-markdown_strict/cell-8-output-1.png)
 
-<Tip>
-
-### Next Steps
-
--   Build and end-to-end forecasting pipeline following best practices
-    in [End to End Walkthrough](./getting_started_complete.html)
--   [Forecast millions of
-    series](../how-to-guides/prophet_spark_m5.html) in a scalable
-    cluster in the cloud using Spark and Nixtla
--   [Detect anomalies](../tutorials/anomalydetection.html) in your past
-    observations
-
-</Tip>
+> **Next Steps**
+>
+> -   Build and end-to-end forecasting pipeline following best practices
+>     in [End to End Walkthrough](./getting_started_complete.html)
+> -   [Forecast millions of
+>     series](../how-to-guides/prophet_spark_m5.html) in a scalable
+>     cluster in the cloud using Spark and Nixtla
+> -   [Detect anomalies](../tutorials/anomalydetection.html) in your
+>     past observations
 

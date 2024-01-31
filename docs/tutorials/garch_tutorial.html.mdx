@@ -1,20 +1,17 @@
 ---
-description: In this example, we'll forecast the volatility of the S&P 500 and several
+description: >-
+  In this example, we'll forecast the volatility of the S&P 500 and several
   publicly traded companies using GARCH and ARCH models
 output-file: garch_tutorial.html
 title: Volatility forecasting (GARCH & ARCH)
-
 ---
 
-<Warning>
 
-### Prerequesites
-
-This tutorial assumes basic familiarity with StatsForecast. For a
-minimal example visit the [Quick
-Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
-
-</Warning>
+> **Prerequesites**
+>
+> This tutorial assumes basic familiarity with StatsForecast. For a
+> minimal example visit the [Quick
+> Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
 
 ## Introduction
 
@@ -54,12 +51,10 @@ can be used to analyze and predict financial time series data.
 5.  Evaluate results
 6.  Forecast volatility
 
-<Tip>
-
-You can use Colab to run this Notebook interactively
-<a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/GARCH_tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
-</Tip>
+> **Tip**
+>
+> You can use Colab to run this Notebook interactively
+> <a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/GARCH_tutorial.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Install libraries
 
@@ -222,13 +217,11 @@ returns
 | 598 | NFLX      | 2022-11-01 | 0.045705  |
 | 599 | NFLX      | 2022-12-01 | -0.035479 |
 
-<Warning>
-
-If the order of the data is very small (say $<1e-5$),
-`scipy.optimize.minimize` might not terminate successfully. In this
-case, rescale the data and then generate the GARCH or ARCH model.
-
-</Warning>
+> **Warning**
+>
+> If the order of the data is very small (say $<1e-5$),
+> `scipy.optimize.minimize` might not terminate successfully. In this
+> case, rescale the data and then generate the GARCH or ARCH model.
 
 ```python
 StatsForecast.plot(returns)

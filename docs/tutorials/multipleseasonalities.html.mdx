@@ -1,19 +1,18 @@
 ---
-description: In this example we will show how to forecast data with multiple seasonalities
+description: >-
+  In this example we will show how to forecast data with multiple seasonalities
   using an MSTL.
 output-file: multipleseasonalities.html
 title: Multiple seasonalities
-
 ---
 
-<Tip>
 
-For this task, StatsForecast’s MSTL is 68% more accurate and 600% faster
-than [Prophet](https://facebook.github.io/prophet/) and
-[NeuralProphet](https://neuralprophet.com/). (Reproduce experiments
-[here](https://github.com/Nixtla/statsforecast/tree/main/experiments/mstl))
-
-</Tip>
+> **Tip**
+>
+> For this task, StatsForecast’s MSTL is 68% more accurate and 600%
+> faster than [Prophet](https://facebook.github.io/prophet/) and
+> [NeuralProphet](https://neuralprophet.com/). (Reproduce experiments
+> [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/mstl))
 
 Multiple seasonal data refers to time series that have more than one
 clear seasonality. Multiple seasonality is traditionally present in data
@@ -50,12 +49,10 @@ for production-ready forecasting.
 5.  Predict the next 24 hours
 6.  Optional: Forecast in production
 
-<Tip>
-
-You can use Colab to run this Notebook interactively
-<a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/MultipleSeasonalities.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
-</Tip>
+> **Tip**
+>
+> You can use Colab to run this Notebook interactively
+> <a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/tutorials/MultipleSeasonalities.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Install libraries
 
@@ -112,12 +109,10 @@ class. This method prints up to 8 random series from the dataset and is
 useful for basic EDA. In this case, it will print just one series given
 that we have just one unique_id.
 
-<Note>
-
-The `StatsForecast.plot` method uses Plotly as a default engine. You can
-change to MatPlotLib by setting `engine="matplotlib"`.
-
-</Note>
+> **Note**
+>
+> The `StatsForecast.plot` method uses Plotly as a default engine. You
+> can change to MatPlotLib by setting `engine="matplotlib"`.
 
 ```python
 from statsforecast import StatsForecast
@@ -199,31 +194,27 @@ sf = StatsForecast(
 )
 ```
 
-<Tip>
-
-StatsForecast also supports this optional parameter.
-
--   `n_jobs`: n_jobs: int, number of jobs used in the parallel
-    processing, use -1 for all cores. (Default: 1)
-
--   `fallback_model`: a model to be used if a model fails. (Default:
-    none)
-
-</Tip>
+> **Tip**
+>
+> StatsForecast also supports this optional parameter.
+>
+> -   `n_jobs`: n_jobs: int, number of jobs used in the parallel
+>     processing, use -1 for all cores. (Default: 1)
+>
+> -   `fallback_model`: a model to be used if a model fails. (Default:
+>     none)
 
 Use the `fit` method to fit each model to each time series. In this
 case, we are just fitting one model to one series. Check this guide to
 learn how to [fit many models to many
 series](./getting_started_complete.html).
 
-<Note>
-
-StatsForecast achieves its blazing speed using JIT compiling through
-Numba. The first time you call the statsforecast class, the fit method
-should take around 10 seconds. The second time -once Numba compiled your
-settings- it should take less than 5s.
-
-</Note>
+> **Note**
+>
+> StatsForecast achieves its blazing speed using JIT compiling through
+> Numba. The first time you call the statsforecast class, the fit method
+> should take around 10 seconds. The second time -once Numba compiled
+> your settings- it should take less than 5s.
 
 ```python
 sf = sf.fit(df=df)
@@ -355,14 +346,12 @@ uncertainty intervals. Depending on your computer, this step should take
 around 1min. (If you want to speed things up to a couple of seconds,
 remove the AutoModels like ARIMA and Theta)
 
-<Note>
-
-StatsForecast achieves its blazing speed using JIT compiling through
-Numba. The first time you call the statsforecast class, the fit method
-should take around 10 seconds. The second time -once Numba compiled your
-settings- it should take less than 5s.
-
-</Note>
+> **Note**
+>
+> StatsForecast achieves its blazing speed using JIT compiling through
+> Numba. The first time you call the statsforecast class, the fit method
+> should take around 10 seconds. The second time -once Numba compiled
+> your settings- it should take less than 5s.
 
 ```python
 forecasts_df = sf.forecast(h=24, level=[90])

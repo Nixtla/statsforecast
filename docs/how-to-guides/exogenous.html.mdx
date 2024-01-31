@@ -1,20 +1,17 @@
 ---
-description: In this notebook, we'll incorporate exogenous regressors to a StatsForecast
+description: >-
+  In this notebook, we'll incorporate exogenous regressors to a StatsForecast
   model.
 output-file: exogenous.html
 title: Exogenous Regressors
-
 ---
 
-<Warning>
 
-### Prerequesites
-
-This tutorial assumes basic familiarity with StatsForecast. For a
-minimal example visit the [Quick
-Start](../getting-started/getting_started_short.html)
-
-</Warning>
+> **Prerequesites**
+>
+> This tutorial assumes basic familiarity with StatsForecast. For a
+> minimal example visit the [Quick
+> Start](../getting-started/getting_started_short.html)
 
 ## Introduction
 
@@ -42,12 +39,10 @@ whether or not they can help enhance the forecast.
 6.  Train model
 7.  Evaluate results
 
-<Tip>
-
-You can use Colab to run this Notebook interactively
-<a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/how-to-guides/Exogenous.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
-</Tip>
+> **Tip**
+>
+> You can use Colab to run this Notebook interactively
+> <a href="https://colab.research.google.com/github/Nixtla/statsforecast/blob/main/nbs/docs/how-to-guides/Exogenous.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Install libraries
 
@@ -220,13 +215,12 @@ X_test.head()
 | 1944 | FOODS_3_586_CA_3 | 2016-05-26 | 1.68       | 0       |
 | 1945 | FOODS_3_586_CA_3 | 2016-05-27 | 1.68       | 0       |
 
-<Important>
-
-If the future values of the exogenous regressors are not available, then
-they must be forecasted or the regressors need to be eliminated from the
-model. Without them, it is not possible to generate the forecast.
-
-</Important>
+> **Important**
+>
+> If the future values of the exogenous regressors are not available,
+> then they must be forecasted or the regressors need to be eliminated
+> from the model. Without them, it is not possible to generate the
+> forecast.
 
 ## Train model
 
