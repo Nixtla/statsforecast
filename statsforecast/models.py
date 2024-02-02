@@ -3791,6 +3791,46 @@ def _chunk_forecast(y, aggregation_level):
     return sums_forecast
 
 
+@njit(nogil=NOGIL, cache=CACHE)
+def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
+    out = np.empty_like(y)
+    out[0] = np.nan
+    fitted_idx = 0
+    for i in range(1, y.size):
+        if y[i - 1] > 0:
+            fitted_idx += 1
+            out[i] = fitted[fitted_idx]
+        elif fitted_idx > 0:
+            # if this entry is zero, the model didn't change
+            out[i] = out[i - 1]
+        else:
+            # if we haven't seen any demand, use naive
+            out[i] = y[i - 1]
+    return out
+
+
+@njit(nogil=NOGIL, cache=CACHE)
+def _expand_fitted_intervals(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
+    out = np.empty_like(y)
+    out[0] = np.nan
+    fitted_idx = 0
+    for i in range(1, y.size):
+        if y[i - 1] != 0:
+            fitted_idx += 1
+            if fitted[fitted_idx] == 0:
+                # to avoid division by zero
+                out[i] = 1
+            else:
+                out[i] = fitted[fitted_idx]
+        elif fitted_idx > 0:
+            # if this entry is zero, the model didn't change
+            out[i] = out[i - 1]
+        else:
+            # if we haven't seen any intervals, use 1 to avoid division by zero
+            out[i] = 1
+    return out
+
+
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3995,46 +4035,6 @@ class ADIDA(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 302
-@njit(nogil=NOGIL, cache=CACHE)
-def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
-    out = np.empty_like(y)
-    out[0] = np.nan
-    fitted_idx = 0
-    for i in range(1, y.size):
-        if y[i - 1] > 0:
-            fitted_idx += 1
-            out[i] = fitted[fitted_idx]
-        elif fitted_idx > 0:
-            # if this entry is zero, the model didn't change
-            out[i] = out[i - 1]
-        else:
-            # if we haven't seen any demand, use naive
-            out[i] = y[i - 1]
-    return out
-
-
-@njit(nogil=NOGIL, cache=CACHE)
-def _expand_fitted_intervals(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
-    out = np.empty_like(y)
-    out[0] = np.nan
-    fitted_idx = 0
-    for i in range(1, y.size):
-        if y[i - 1] != 0:
-            fitted_idx += 1
-            if fitted[fitted_idx] == 0:
-                # to avoid division by zero
-                out[i] = 1
-            else:
-                out[i] = fitted[fitted_idx]
-        elif fitted_idx > 0:
-            # if this entry is zero, the model didn't change
-            out[i] = out[i - 1]
-        else:
-            # if we haven't seen any intervals, use 1 to avoid division by zero
-            out[i] = 1
-    return out
-
-
 def _croston_classic(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
