@@ -3783,6 +3783,14 @@ class SeasonalWindowAverage(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 289
+def _chunk_forecast(y, aggregation_level):
+    lost_remainder_data = len(y) % aggregation_level
+    y_cut = y[lost_remainder_data:]
+    aggregation_sums = _chunk_sums(y_cut, aggregation_level)
+    sums_forecast, _ = _optimized_ses_forecast(aggregation_sums)
+    return sums_forecast
+
+
 def _adida(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3792,18 +3800,29 @@ def _adida(
         res = {"mean": np.zeros(h, dtype=np.float32)}
         if fitted:
             res["fitted"] = y.copy()
+            res["fitted"][0] = np.nan
         return res
+    y = y.astype(np.float32, copy=False)
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean()
     aggregation_level = round(mean_interval)
-    lost_remainder_data = len(y) % aggregation_level
-    y_cut = y[lost_remainder_data:]
-    aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-    sums_forecast, sums_fitted = _optimized_ses_forecast(aggregation_sums)
+    sums_forecast = _chunk_forecast(y, aggregation_level)
     forecast = sums_forecast / aggregation_level
     res = {"mean": _repeat_val(val=forecast, h=h)}
     if fitted:
-        res["fitted"] = sums_fitted / aggregation_level
+        warnings.warn("Computing fitted values for ADIDA is very expensive")
+        fitted_aggregation_levels = np.round(
+            y_intervals.cumsum() / np.arange(1, y_intervals.size + 1)
+        )
+        fitted_aggregation_levels = _expand_fitted_intervals(
+            np.append(np.nan, fitted_aggregation_levels), y
+        )[1:].astype(np.int32)
+
+        sums_fitted = np.empty(y.size - 1, dtype=y.dtype)
+        for i, agg_lvl in enumerate(fitted_aggregation_levels):
+            sums_fitted[i] = _chunk_forecast(y[: i + 1], agg_lvl)
+
+        res["fitted"] = np.append(np.nan, sums_fitted / fitted_aggregation_levels)
     return res
 
 # %% ../nbs/src/core/models.ipynb 290
@@ -3863,8 +3882,8 @@ class ADIDA(_TS):
         self :
             ADIDA fitted model.
         """
-        self.model_ = _adida(y=y, h=1, fitted=True)
-        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
+        self.model_ = _adida(y=y, h=1, fitted=False)
+        self._y = y
         self._store_cs(y=y, X=X)
         return self
 
@@ -3917,9 +3936,11 @@ class ADIDA(_TS):
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"]}
+        fitted = _adida(y=self._y, h=1, fitted=True)["fitted"]
+        sigma = _calculate_sigma(self._y - fitted, self._y.size)
+        res = {"fitted": fitted}
         if level is not None:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
     def forecast(
@@ -3969,28 +3990,74 @@ class ADIDA(_TS):
                 "to calculate them"
             )
         if fitted:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            sigma = _calculate_sigma(y - res["fitted"], y.size)
+            res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 302
+@njit(nogil=NOGIL, cache=CACHE)
+def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
+    out = np.empty_like(y)
+    out[0] = np.nan
+    fitted_idx = 0
+    for i in range(1, y.size):
+        if y[i - 1] > 0:
+            fitted_idx += 1
+            out[i] = fitted[fitted_idx]
+        elif fitted_idx > 0:
+            # if this entry is zero, the model didn't change
+            out[i] = out[i - 1]
+        else:
+            # if we haven't seen any demand, use naive
+            out[i] = y[i - 1]
+    return out
+
+
+@njit(nogil=NOGIL, cache=CACHE)
+def _expand_fitted_intervals(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
+    out = np.empty_like(y)
+    out[0] = np.nan
+    fitted_idx = 0
+    for i in range(1, y.size):
+        if y[i - 1] != 0:
+            fitted_idx += 1
+            if fitted[fitted_idx] == 0:
+                # to avoid division by zero
+                out[i] = 1
+            else:
+                out[i] = fitted[fitted_idx]
+        elif fitted_idx > 0:
+            # if this entry is zero, the model didn't change
+            out[i] = out[i - 1]
+        else:
+            # if we haven't seen any intervals, use 1 to avoid division by zero
+            out[i] = 1
+    return out
+
+
 def _croston_classic(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
+    # demand
     yd = _demand(y)
-    yi = _intervals(y)
     if not yd.size:  # no demand
         return _naive(y=y, h=h, fitted=fitted)
     ydp, ydf = _ses_forecast(yd, 0.1)
+
+    # intervals
+    yi = _intervals(y)
     yip, yif = _ses_forecast(yi, 0.1)
+
     if yip != 0.0:
         mean = ydp / yip
     else:
         mean = ydp
     out = {"mean": _repeat_val(val=mean, h=h)}
     if fitted:
-        yif[yif == 0.0] = 1.0
+        ydf = _expand_fitted_demand(np.append(ydf, ydp), y)
+        yif = _expand_fitted_intervals(np.append(yif, yip), y)
         out["fitted"] = ydf / yif
     return out
 
@@ -4163,19 +4230,38 @@ def _croston_optimized(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
+    # demand
     yd = _demand(y)
-    yi = _intervals(y)
     if not yd.size:
         return _naive(y=y, h=h, fitted=fitted)
-    ydp, ydf = _optimized_ses_forecast(yd)
-    yip, yif = _optimized_ses_forecast(yi)
+    ydp, _ = _optimized_ses_forecast(yd)
+
+    # intervals
+    yi = _intervals(y)
+    yip, _ = _optimized_ses_forecast(yi)
+
     if yip != 0.0:
         mean = ydp / yip
     else:
         mean = ydp
     out = {"mean": _repeat_val(val=mean, h=h)}
     if fitted:
-        yif[yif == 0.0] = 1.0
+        warnings.warn("Computing fitted values for CrostonOptimized is very expensive")
+        ydf = np.empty(yd.size + 1, dtype=y.dtype)
+        ydf[0] = np.nan
+        for i in range(yd.size):
+            ydf[i + 1] = _optimized_ses_forecast(yd[: i + 1])[0]
+
+        yif = np.empty(yi.size + 1, dtype=y.dtype)
+        yif[0] = np.nan
+        for i in range(yi.size):
+            yiff = _optimized_ses_forecast(yi[: i + 1])[0]
+            if yiff == 0:
+                yiff = 1.0
+            yif[i + 1] = yiff
+
+        ydf = _expand_fitted_demand(ydf, y)
+        yif = _expand_fitted_intervals(yif, y)
         out["fitted"] = ydf / yif
     return out
 
@@ -4236,8 +4322,8 @@ class CrostonOptimized(_TS):
         self :
             CrostonOptimized fitted model.
         """
-        self.model_ = _croston_optimized(y=y, h=1, fitted=True)
-        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
+        self.model_ = _croston_optimized(y=y, h=1, fitted=False)
+        self._y = y
         self._store_cs(y=y, X=X)
         return self
 
@@ -4287,9 +4373,11 @@ class CrostonOptimized(_TS):
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"]}
+        fitted = _croston_optimized(y=self._y, h=1, fitted=True)["fitted"]
+        sigma = _calculate_sigma(self._y - fitted, self._y.size)
+        res = {"fitted": fitted}
         if level is not None:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
     def forecast(
@@ -4335,7 +4423,8 @@ class CrostonOptimized(_TS):
         else:
             raise Exception("You must pass `prediction_intervals` to compute them.")
         if fitted:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            sigma = _calculate_sigma(y - res["fitted"], y.size)
+            res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 326
@@ -4525,23 +4614,27 @@ def _imapa(
         res = {"mean": np.zeros(h, dtype=np.float32)}
         if fitted:
             res["fitted"] = y.copy()
+            res["fitted"][0] = np.nan
         return res
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean().item()
     max_aggregation_level = round(mean_interval)
     forecasts = np.empty(max_aggregation_level, np.float32)
-    fitted_vals = np.empty((y.size, max_aggregation_level), dtype=np.float32)
     for aggregation_level in range(1, max_aggregation_level + 1):
         lost_remainder_data = len(y) % aggregation_level
         y_cut = y[lost_remainder_data:]
         aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-        forecast, fit = _optimized_ses_forecast(aggregation_sums)
+        forecast, _ = _optimized_ses_forecast(aggregation_sums)
         forecasts[aggregation_level - 1] = forecast / aggregation_level
-        fitted_vals[:, aggregation_level - 1] = fit / aggregation_level
     forecast = forecasts.mean()
     res = {"mean": _repeat_val(val=forecast, h=h)}
     if fitted:
-        res["fitted"] = fitted_vals.mean(axis=1)
+        warnings.warn("Computing fitted values for IMAPA is very expensive.")
+        fitted_vals = np.empty_like(y)
+        fitted_vals[0] = np.nan
+        for i in range(y.size - 1):
+            fitted_vals[i + 1] = _imapa(y[: i + 1], h=1, fitted=False)["mean"].item()
+        res["fitted"] = fitted_vals
     return res
 
 # %% ../nbs/src/core/models.ipynb 339
@@ -4718,6 +4811,7 @@ def _tsb(
         res = {"mean": np.zeros(h, dtype=np.float32)}
         if fitted:
             res["fitted"] = y.copy()
+            res["fitted"][0] = np.nan
         return res
     yd = _demand(y)
     yp = _probability(y)
@@ -4725,6 +4819,7 @@ def _tsb(
     ydf, ydft = _ses_forecast(yd, alpha_d)
     res = {"mean": _repeat_val(val=ypf * ydf, h=h)}
     if fitted:
+        ydft = _expand_fitted_demand(np.append(ydft, ydf), y)
         res["fitted"] = ypft * ydft
     return res
 
@@ -4739,21 +4834,21 @@ class TSB(_TS):
     ):
         """TSB model.
 
-        Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand 
+        Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
         intervals with the demand probability $d_t$, which is defined as follows.
 
         $$
         d_t = \\begin{cases}
-            1  & \\text{if demand occurs at time t} \\\ 
+            1  & \\text{if demand occurs at time t} \\\
             0  & \\text{otherwise.}
         \\end{cases}
         $$
 
-        Hence, the forecast is given by 
+        Hence, the forecast is given by
 
         $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
-        Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ, 
+        Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ,
         like in the optimized Croston's method.
 
         References
@@ -4763,11 +4858,11 @@ class TSB(_TS):
         Parameters
         ----------
         alpha_d : float
-            Smoothing parameter for demand. 
+            Smoothing parameter for demand.
         alpha_p : float
-            Smoothing parameter for probability. 
-        alias : str  
-            Custom name of the model. 
+            Smoothing parameter for probability.
+        alias : str
+            Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
