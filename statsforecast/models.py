@@ -4694,8 +4694,8 @@ class IMAPA(_TS):
         self :
             IMAPA fitted model.
         """
-        self.model_ = _imapa(y=y, h=1, fitted=True)
-        self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
+        self.model_ = _imapa(y=y, h=1, fitted=False)
+        self._y = y
         self._store_cs(y=y, X=X)
         return self
 
@@ -4748,9 +4748,11 @@ class IMAPA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"]}
+        fitted = _imapa(y=y, h=1, fitted=True)["fitted"]
+        res = {"fitted": fitted}
         if level is not None:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            sigma = _calculate_sigma(self._y - fitted, self._y.size)
+            res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
     def forecast(
