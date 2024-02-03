@@ -40,6 +40,7 @@ from .tbats import tbats_selection, tbats_forecast, _compute_sigmah
 from statsforecast.utils import (
     _calculate_sigma,
     _calculate_intervals,
+    _ensure_float,
     _naive,
     _quantiles,
     _repeat_val,
@@ -3839,10 +3840,10 @@ def _adida(
     if (y == 0).all():
         res = {"mean": np.zeros(h, dtype=np.float32)}
         if fitted:
-            res["fitted"] = y.copy()
+            res["fitted"] = np.zeros(y.size, dtype=np.float32)
             res["fitted"][0] = np.nan
         return res
-    y = y.astype(np.float32, copy=False)
+    y = _ensure_float(y)
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean()
     aggregation_level = round(mean_interval)
@@ -3977,9 +3978,9 @@ class ADIDA(_TS):
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         fitted = _adida(y=self._y, h=1, fitted=True)["fitted"]
-        sigma = _calculate_sigma(self._y - fitted, self._y.size)
         res = {"fitted": fitted}
         if level is not None:
+            sigma = _calculate_sigma(self._y - fitted, self._y.size)
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
@@ -4040,6 +4041,7 @@ def _croston_classic(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
+    y = _ensure_float(y)
     # demand
     yd = _demand(y)
     if not yd.size:  # no demand
@@ -4230,6 +4232,7 @@ def _croston_optimized(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
+    y = _ensure_float(y)
     # demand
     yd = _demand(y)
     if not yd.size:
@@ -4374,9 +4377,9 @@ class CrostonOptimized(_TS):
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         fitted = _croston_optimized(y=self._y, h=1, fitted=True)["fitted"]
-        sigma = _calculate_sigma(self._y - fitted, self._y.size)
         res = {"fitted": fitted}
         if level is not None:
+            sigma = _calculate_sigma(self._y - fitted, self._y.size)
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
@@ -4613,9 +4616,10 @@ def _imapa(
     if (y == 0).all():
         res = {"mean": np.zeros(h, dtype=np.float32)}
         if fitted:
-            res["fitted"] = y.copy()
+            res["fitted"] = np.zeros(y.size, dtype=np.float32)
             res["fitted"][0] = np.nan
         return res
+    y = _ensure_float(y)
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean().item()
     max_aggregation_level = round(mean_interval)
@@ -4810,9 +4814,10 @@ def _tsb(
     if (y == 0).all():
         res = {"mean": np.zeros(h, dtype=np.float32)}
         if fitted:
-            res["fitted"] = y.copy()
+            res["fitted"] = np.zeros(y.size, dtype=np.float32)
             res["fitted"][0] = np.nan
         return res
+    y = _ensure_float(y)
     yd = _demand(y)
     yp = _probability(y)
     ypf, ypft = _ses_forecast(yp, alpha_p)
