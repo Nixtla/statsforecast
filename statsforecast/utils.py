@@ -282,6 +282,12 @@ def _naive(
         fcst["fitted"] = fitted_vals
     return fcst
 
+
+def _ensure_float(x: np.ndarray) -> np.ndarray:
+    if x.dtype not in (np.float32, np.float64):
+        x = x.astype(np.float32)
+    return x
+
 # %% ../nbs/src/utils.ipynb 19
 # Functions used for calculating prediction intervals
 def _quantiles(level):
