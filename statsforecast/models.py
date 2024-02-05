@@ -4802,7 +4802,8 @@ class IMAPA(_TS):
                 "to calculate them"
             )
         if fitted:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            sigma = _calculate_sigma(y - res["fitted"], y.size)
+            res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
 # %% ../nbs/src/core/models.ipynb 350
