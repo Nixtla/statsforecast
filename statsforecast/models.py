@@ -4748,7 +4748,7 @@ class IMAPA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        fitted = _imapa(y=y, h=1, fitted=True)["fitted"]
+        fitted = _imapa(y=self._y, h=1, fitted=True)["fitted"]
         res = {"fitted": fitted}
         if level is not None:
             sigma = _calculate_sigma(self._y - fitted, self._y.size)
