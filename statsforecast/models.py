@@ -36,7 +36,12 @@ from statsforecast.ets import (
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
-from .tbats import tbats_selection, tbats_forecast, _compute_sigmah
+from statsforecast.tbats import (
+    tbats_selection,
+    tbats_forecast,
+    _compute_sigmah,
+    forward_tbats,
+)
 from statsforecast.utils import (
     _calculate_sigma,
     _calculate_intervals,
@@ -5511,7 +5516,60 @@ class TBATS(_TS):
             res_trans = res
         return res_trans
 
-# %% ../nbs/src/core/models.ipynb 388
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        """Apply fitted TBATS model to a new time series.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (n, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Optional insample exogenpus of shape (t, n_x).
+        X_future : array-like
+            Optional exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        mod = forward_tbats(self.model_, y=y, seasonal_periods=self.seasonal_periods)
+        fcst = tbats_forecast(mod, h)
+        res = {"mean": fcst["mean"]}
+        if fitted:
+            res["fitted"] = mod["fitted"].ravel()
+        if level is not None:
+            level = sorted(level)
+            sigmah = _compute_sigmah(mod, h)
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
+            if fitted:
+                se = _calculate_sigma(mod["errors"], mod["errors"].shape[1])
+                fitted_pred_int = _add_fitted_pi(res, se, level)
+                res = {**res, **fitted_pred_int}
+        if mod["BoxCox_lambda"] is not None:
+            res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
+        else:
+            res_trans = res
+        return res_trans
+
+# %% ../nbs/src/core/models.ipynb 389
 class AutoTBATS(TBATS):
     """AutoTBATS model.
 
@@ -5563,7 +5621,7 @@ class AutoTBATS(TBATS):
             alias=alias,
         )
 
-# %% ../nbs/src/core/models.ipynb 398
+# %% ../nbs/src/core/models.ipynb 400
 class Theta(AutoTheta):
     """Standard Theta Method.
 
@@ -5600,7 +5658,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 412
+# %% ../nbs/src/core/models.ipynb 414
 class OptimizedTheta(AutoTheta):
     """Optimized Theta Method.
 
@@ -5637,7 +5695,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 426
+# %% ../nbs/src/core/models.ipynb 428
 class DynamicTheta(AutoTheta):
     """Dynamic Standard Theta Method.
 
@@ -5674,7 +5732,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 440
+# %% ../nbs/src/core/models.ipynb 442
 class DynamicOptimizedTheta(AutoTheta):
     """Dynamic Optimized Theta Method.
 
@@ -5711,7 +5769,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../nbs/src/core/models.ipynb 455
+# %% ../nbs/src/core/models.ipynb 457
 class GARCH(_TS):
     """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5906,7 +5964,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 468
+# %% ../nbs/src/core/models.ipynb 470
 class ARCH(GARCH):
     """Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5953,7 +6011,7 @@ class ARCH(GARCH):
     def __repr__(self):
         return self.alias
 
-# %% ../nbs/src/core/models.ipynb 479
+# %% ../nbs/src/core/models.ipynb 481
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -6138,7 +6196,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 493
+# %% ../nbs/src/core/models.ipynb 495
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -6152,7 +6210,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 507
+# %% ../nbs/src/core/models.ipynb 509
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.

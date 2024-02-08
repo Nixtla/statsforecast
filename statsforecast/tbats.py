@@ -824,6 +824,8 @@ def tbats_model_generator(
         "x": x,
         "k_vector": k_vector,
         "BoxCox_lambda": optim_BoxCox_lambda,
+        "bc_lower_bound": bc_lower_bound,
+        "bc_upper_bound": bc_upper_bound,
         "p": p,
         "q": q,
     }
@@ -1025,3 +1027,36 @@ def _compute_sigmah(obj, h):
     sigma2h = obj["sigma2"] * var_mult
     sigmah = np.sqrt(sigma2h)
     return sigmah
+
+# %% ../nbs/src/tbats.ipynb 45
+def forward_tbats(fitted_model, y, seasonal_periods):
+    p = fitted_model["p"]
+    q = fitted_model["q"]
+    optim_params = fitted_model["optim_params"]
+
+    ar_coeffs = None
+    ma_coeffs = None
+
+    if p != 0 and q != 0:
+        ar_coeffs = optim_params[-p - q : -q]
+        ma_coeffs = optim_params[-q:]
+    elif p != 0:
+        ar_coeffs = optim_params[-p:]
+    elif q != 0:
+        ma_coeffs = optim_params[-q:]
+
+    mod = tbats_model_generator(
+        y,
+        seasonal_periods,
+        fitted_model["k_vector"],
+        fitted_model["description"]["use_boxcox"],
+        fitted_model["bc_lower_bound"],
+        fitted_model["bc_upper_bound"],
+        fitted_model["description"]["use_trend"],
+        fitted_model["description"]["use_damped_trend"],
+        fitted_model["description"]["use_arma_errors"],
+        ar_coeffs,
+        ma_coeffs,
+    )
+
+    return mod
