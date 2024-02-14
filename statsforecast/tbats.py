@@ -828,6 +828,7 @@ def tbats_model_generator(
         "bc_upper_bound": bc_upper_bound,
         "p": p,
         "q": q,
+        "seed_states": x_nought,
     }
 
     return res
@@ -1029,34 +1030,35 @@ def _compute_sigmah(obj, h):
     return sigmah
 
 # %% ../nbs/src/tbats.ipynb 45
-def forward_tbats(fitted_model, y, seasonal_periods):
-    p = fitted_model["p"]
-    q = fitted_model["q"]
-    optim_params = fitted_model["optim_params"]
+def forward_tbats(fitted_model, y_new):
+    if fitted_model["description"]["use_boxcox"]:
+        y_new = boxcox(y_new, fitted_model["BoxCox_lambda"])
 
-    ar_coeffs = None
-    ma_coeffs = None
-
-    if p != 0 and q != 0:
-        ar_coeffs = optim_params[-p - q : -q]
-        ma_coeffs = optim_params[-q:]
-    elif p != 0:
-        ar_coeffs = optim_params[-p:]
-    elif q != 0:
-        ma_coeffs = optim_params[-q:]
-
-    mod = tbats_model_generator(
-        y,
-        seasonal_periods,
-        fitted_model["k_vector"],
-        fitted_model["description"]["use_boxcox"],
-        fitted_model["bc_lower_bound"],
-        fitted_model["bc_upper_bound"],
-        fitted_model["description"]["use_trend"],
-        fitted_model["description"]["use_damped_trend"],
-        fitted_model["description"]["use_arma_errors"],
-        ar_coeffs,
-        ma_coeffs,
+    fitted, errors, x = calcTBATSFaster(
+        y_new,
+        fitted_model["w_transpose"],
+        fitted_model["g"],
+        fitted_model["F"],
+        true_ss,
     )
 
-    return mod
+    sigma2 = np.sum(errors * errors) / len(y_new)
+
+    if fitted_model["description"]["use_boxcox"]:
+        log_likelihood = len(y_new) * np.log(np.nansum(errors**2)) - 2 * (
+            fitted_model["BoxCox_lambda"] - 1
+        ) * np.nansum(np.log(y_new))
+    else:
+        log_likelihood = len(y_new) * np.log(np.nansum(errors**2))
+
+    kval = len(fitted_model["optim_params"]) + true_ss.shape[0]
+    aic = log_likelihood + 2 * kval
+
+    fitted_res = fitted_model.copy()
+    fitted_res["fitted"] = fitted
+    fitted_res["errors"] = errors
+    fitted_res["x"] = x
+    fitted_res["sigma2"] = sigma2
+    fitted_res["aic"] = aic
+
+    return fitted_res
