@@ -336,6 +336,43 @@ def calcTBATSFaster(y_trans, w_transpose, g, F, x_nought):
 
     return yhat, e, x
 
+# %% ../nbs/src/tbats.ipynb 23
+def find_seeds(y, w_transpose, F, g, e, p, q):
+    w_tilda_transpose = np.zeros((y.shape[0], w_transpose.shape[1]))
+    w_tilda_transpose[0, :] = w_transpose
+
+    D = F - np.dot(g, w_transpose)
+    for k in range(1, w_tilda_transpose.shape[0]):
+        w_tilda_transpose[k, :] = np.dot(w_tilda_transpose[k - 1, :], D)
+
+    if p != 0 or q != 0:
+        end_cut = w_tilda_transpose.shape[1]
+        start_cut = end_cut - (p + q)
+        new_cols = np.arange(0, start_cut, 1)
+        w_tilda_transpose = w_tilda_transpose[:, new_cols]
+
+    condition_number = np.linalg.cond(w_tilda_transpose)
+    if np.isinf(condition_number):
+        mu = np.mean(w_tilda_transpose, axis=0)
+        sigma = np.std(w_tilda_transpose, axis=0)
+        w_tilda_transpose_scaled = (w_tilda_transpose - mu) / sigma
+        model = np.linalg.lstsq(
+            w_tilda_transpose_scaled, e.reshape((e.shape[1], 1)), rcond=None
+        )
+        x_nought_scaled = model[0].ravel()
+        x_nought = x_nought_scaled * sigma + mu
+    else:
+        model = np.linalg.lstsq(
+            w_tilda_transpose, e.reshape((e.shape[1], 1)), rcond=None
+        )
+        x_nought = model[0].ravel()
+
+    if (p != 0) or (q != 0):
+        arma_seed_states = np.zeros((p + q,))
+        x_nought = np.concatenate((x_nought, arma_seed_states))
+
+    return x_nought
+
 # %% ../nbs/src/tbats.ipynb 25
 def extract_params(
     params,
