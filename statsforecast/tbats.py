@@ -78,9 +78,7 @@ def find_harmonics(y, m):
     return num_harmonics
 
 # %% ../nbs/src/tbats.ipynb 9
-def initial_parameters(
-    seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-):
+def initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs):
     alpha = 0.09
 
     if use_trend:
@@ -638,9 +636,7 @@ def tbats_model_generator(
         s_vector,
         d_vector,
         epsilon_vector,
-    ) = initial_parameters(
-        seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-    )
+    ) = initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs)
 
     # seed states
     x_nought = makeXMatrix(b, s_vector, d_vector, epsilon_vector)

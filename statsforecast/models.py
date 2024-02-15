@@ -5549,7 +5549,7 @@ class TBATS(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
-        mod = forward_tbats(self.model_, y=y, seasonal_periods=self.seasonal_periods)
+        mod = forward_tbats(self.model_, y=y)
         fcst = tbats_forecast(mod, h)
         res = {"mean": fcst["mean"]}
         if fitted:
