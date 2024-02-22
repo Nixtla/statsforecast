@@ -234,7 +234,9 @@ AirPassengers = np.array(
 AirPassengersDF = pd.DataFrame(
     {
         "unique_id": np.ones(len(AirPassengers)),
-        "ds": pd.date_range(start="1949-01-01", periods=len(AirPassengers), freq="M"),
+        "ds": pd.date_range(
+            start="1949-01-01", periods=len(AirPassengers), freq=pd.offsets.MonthEnd()
+        ),
         "y": AirPassengers,
     }
 )
