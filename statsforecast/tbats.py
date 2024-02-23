@@ -26,33 +26,26 @@ from .utils import NOGIL, CACHE
 def find_harmonics(y, m):
     # Compute a 2 x m moving average to estimate the trend
     window_size = 2 * m
-    data = pd.DataFrame({"value": y})
-    f_t = data["value"].rolling(window=window_size, center=True).mean()
-
+    f_t = pd.Series(y).rolling(window=window_size, min_periods=1).mean().to_numpy()
     # Obtain an approximation of seasonal component using z_t = y_t - f_t
-    data["f_t"] = f_t
-    data["z_t"] = data["value"] - data["f_t"]
-
-    # Drop missing values (due to the moving average)
-    data.dropna(inplace=True)
-
-    if data.empty:
-        return 1
+    z = y - f_t
 
     # Approximate the seasonal component using trigonometric terms
-    t = np.arange(len(data))
+    t = np.arange(len(y))
     if m % 2 == 0:
         max_harmonics = int(m / 2)
     else:
         max_harmonics = int((m - 1) / 2)
 
-    max_harmonics = min(max_harmonics, len(data))
+    max_harmonics = min(max_harmonics, len(y))
+    if max_harmonics == 0:
+        return 1, y
 
     aic = np.inf
     num_harmonics = 0
 
     # Create cosine and sine terms
-    fourier = np.empty((len(data), 2 * max_harmonics))
+    fourier = np.empty((len(y), 2 * max_harmonics))
     for i in range(max_harmonics):
         fourier[:, 2 * i] = np.cos(2 * np.pi * (i + 1) * t / m)
         fourier[:, 2 * i + 1] = np.sin(2 * np.pi * (i + 1) * t / m)
@@ -60,22 +53,23 @@ def find_harmonics(y, m):
     for h in range(1, max_harmonics + 1):
         # Perform regression to estimate the coefficients
         X = fourier[:, : 2 * h]
-        y = data["z_t"]
-        model, residuals = np.linalg.lstsq(X, y, rcond=None)[:2]
+        model, residuals = np.linalg.lstsq(X, z, rcond=None)[:2]
         k = model.size
-        n = len(y)
+        n = len(z)
         new_aic = n * np.log(residuals / n) + 2 * k
 
         if new_aic.size > 0 and new_aic < aic:
             aic = new_aic
             num_harmonics = h
+            best_model = model
         else:
             break
 
     if num_harmonics == 0:
-        num_harmonics += 1
+        num_harmonics = 1
+        best_model = np.zeros(2)
 
-    return num_harmonics
+    return num_harmonics, y - X[:, : 2 * num_harmonics] @ best_model
 
 # %% ../nbs/src/tbats.ipynb 9
 def initial_parameters(
@@ -796,6 +790,7 @@ def tbats_model_generator(
 
     if use_boxcox:
         y_trans = boxcox(y, optim_BoxCox_lambda)
+        x_nought = boxcox(x_nought_untransformed, optim_BoxCox_lambda)
 
     fitted, errors, x = calcTBATSFaster(y_trans, w_transpose, g, F, x_nought)
 
@@ -826,6 +821,7 @@ def tbats_model_generator(
         "BoxCox_lambda": optim_BoxCox_lambda,
         "p": p,
         "q": q,
+        "seed_states": x_nought,
     }
 
     return res
@@ -922,7 +918,7 @@ def tbats_selection(
     use_arma_errors,
 ):
     # Check for banned parameter combinations
-    if (not use_trend) and use_damped_trend:
+    if not use_trend and use_damped_trend:
         raise ValueError("Can't use damped trend without trend")
 
     # Sort seasonal periods
@@ -939,18 +935,22 @@ def tbats_selection(
         use_boxcox = False
 
     # Check if there is a trend
-    adf = adfuller(y, regression="ct")
-    if adf[1] <= 0.05:
-        warnings.warn(
-            "The time series is trend-stationary, disabling trend components."
-        )
-        use_trend = False
-        use_damped_trend = False
-    else:
-        use_trend = True
+    if use_trend:
+        adf = adfuller(y, regression="ct")
+        if adf[1] <= 0.05:
+            warnings.warn(
+                "The time series is trend-stationary, disabling trend components."
+            )
+            use_trend = False
+            use_damped_trend = False
 
     # Choose the number of harmonics
-    k_vector = np.array([find_harmonics(y, m) for m in seasonal_periods])
+    ks = []
+    z = y.copy()
+    for period in seasonal_periods:
+        k, z = find_harmonics(z, period)
+        ks.append(k)
+    k_vector = np.array(ks)
 
     # Select combinations to try out
     if use_boxcox is None:
