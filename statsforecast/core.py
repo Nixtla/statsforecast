@@ -1201,6 +1201,7 @@ class _StatsForecast:
                         fitted,
                         X_,
                         level,
+                        self.verbose,
                         target_col,
                     ),
                 )
@@ -1241,6 +1242,7 @@ class _StatsForecast:
                         fitted,
                         level,
                         refit,
+                        self.verbose,
                         target_col,
                     ),
                 )
