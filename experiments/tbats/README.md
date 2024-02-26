@@ -68,3 +68,16 @@ Looking ahead, we plan to conduct a more comprehensive analysis of this model's 
 ## References 
 
 [De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011). Forecasting time series with complex seasonal patterns using exponential smoothing. J American Statistical Association, 106(496), 1513–1527.](https://www.robjhyndman.com/papers/ComplexSeasonality.pdf)
+
+
+## M4 Hourly Results
+| Model    | SMAPE | Time (minutes) |
+| -------- | ----- | -------------- |
+| AutoTBATS| 12.9% | 9.6            |
+| TBATS (R)| 12.8% | 128.3          |
+
+To replicate:
+```shell
+python m4/tbats.py
+Rscript m4/tbats.R
+```
