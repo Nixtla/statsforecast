@@ -958,13 +958,20 @@ def tbats_selection(
     else:
         B = [use_boxcox]
 
-    if use_trend:
+    if use_trend is None:
         if use_damped_trend is None:
-            T = [[True, True], [True, False]]
+            T = [
+                [True, True],
+                [True, False],
+                [False, False],
+            ]
         else:
-            T = [[True, use_damped_trend]]
+            T = [
+                [True, use_damped_trend],
+                [False, False],
+            ]
     else:
-        T = [[False, False]]
+        T = [[use_trend, use_damped_trend]]
 
     A = [use_arma_errors]
 
