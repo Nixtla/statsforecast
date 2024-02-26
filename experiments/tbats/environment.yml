@@ -8,6 +8,7 @@ dependencies:
   - prophet
   - python=3.10
   - r-base
+  - r-data.table
   - r-dplyr
   - r-forecast
   - r-readr
