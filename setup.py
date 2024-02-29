@@ -20,9 +20,16 @@ licenses = {
     'gpl3': ('GNU General Public License v3', 'OSI Approved :: GNU General Public License v3 (GPLv3)'),
     'bsd3': ('BSD License', 'OSI Approved :: BSD License'),
 }
-statuses = [ '1 - Planning', '2 - Pre-Alpha', '3 - Alpha',
-    '4 - Beta', '5 - Production/Stable', '6 - Mature', '7 - Inactive' ]
-py_versions = '3.6 3.7 3.8 3.9 3.10 3.11'.split()
+statuses = [
+    '1 - Planning',
+    '2 - Pre-Alpha',
+    '3 - Alpha',
+    '4 - Beta',
+    '5 - Production/Stable',
+    '6 - Mature',
+    '7 - Inactive'
+]
+py_versions = '3.6 3.7 3.8 3.9 3.10 3.11 3.12'.split()
 
 requirements = cfg.get('requirements','').split()
 if cfg.get('pip_requirements'): requirements += cfg.get('pip_requirements','').split()
