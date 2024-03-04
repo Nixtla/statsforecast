@@ -73,7 +73,7 @@ Looking ahead, we plan to conduct a more comprehensive analysis of this model's 
 ## M4 Hourly Results
 | Model    | SMAPE | Time (minutes) |
 | -------- | ----- | -------------- |
-| AutoTBATS| 12.4% | 33.7           |
+| AutoTBATS| 12.7% | 27.7           |
 | TBATS (R)| 12.8% | 128.3          |
 
 To replicate:
