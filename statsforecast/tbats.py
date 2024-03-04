@@ -931,11 +931,14 @@ def tbats_selection(
         y = y[max_index + 1 : len(y)]
 
     # Check if there are negative values
-    if np.any(y < 0):
+    if use_boxcox in (True, None) and np.any(y <= 0):
+        warnings.warn(
+            "Data contains zero or negative values, disabling Box-Cox transformation."
+        )
         use_boxcox = False
 
     # Check if there is a trend
-    if use_trend:
+    if use_trend in (True, None):
         adf = adfuller(y, regression="ct")
         if adf[1] <= 0.05:
             warnings.warn(
