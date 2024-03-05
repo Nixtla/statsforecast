@@ -16,7 +16,6 @@ from numpy.polynomial.polynomial import Polynomial
 from scipy.special import inv_boxcox
 from scipy.stats import boxcox
 from scipy.optimize import minimize
-from statsmodels.tsa.stattools import adfuller
 from threadpoolctl import threadpool_limits
 
 from .arima import auto_arima_f
@@ -936,16 +935,6 @@ def tbats_selection(
             "Data contains zero or negative values, disabling Box-Cox transformation."
         )
         use_boxcox = False
-
-    # Check if there is a trend
-    if use_trend in (True, None):
-        adf = adfuller(y, regression="ct")
-        if adf[1] <= 0.05:
-            warnings.warn(
-                "The time series is trend-stationary, disabling trend components."
-            )
-            use_trend = False
-            use_damped_trend = False
 
     # Choose the number of harmonics
     ks = []
