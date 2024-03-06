@@ -355,7 +355,7 @@ def _old_kw_to_pos(old_names, new_positions):
                     new_name = arg_names[pos]
                     warnings.warn(
                         f"`{old_name}` has been deprecated, please use `{new_name}` instead.",
-                        DeprecationWarning,
+                        FutureWarning,
                     )
                     if len(new_args) > pos:
                         new_args = [
