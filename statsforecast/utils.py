@@ -4,10 +4,12 @@
 __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 # %% ../nbs/src/utils.ipynb 3
-from typing import Dict
+import inspect
 import math
 import os
 import warnings
+from functools import wraps
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -340,3 +342,34 @@ class ConformalIntervals:
         self.n_windows = n_windows
         self.h = h
         self.method = method
+
+# %% ../nbs/src/utils.ipynb 21
+def _old_kw_to_pos(old_names, new_positions):
+    def decorator(f):
+        @wraps(f)
+        def inner(*args, **kwargs):
+            arg_names = inspect.getfullargspec(f).args
+            new_args = list(args)
+            for old_name, pos in zip(old_names, new_positions):
+                if old_name in kwargs:
+                    new_name = arg_names[pos]
+                    warnings.warn(
+                        f"`{old_name}` has been deprecated, please use `{new_name}` instead.",
+                        DeprecationWarning,
+                    )
+                    if len(new_args) > pos:
+                        new_args = [
+                            *new_args[:pos],
+                            kwargs[old_name],
+                            *new_args[pos + 1 :],
+                        ]
+                    else:
+                        new_args = list(new_args)
+                        for i in range(len(new_args), pos):
+                            new_args.append(kwargs.pop(arg_names[i]))
+                        new_args.append(kwargs.pop(old_name))
+            return f(*new_args, **kwargs)
+
+        return inner
+
+    return decorator
