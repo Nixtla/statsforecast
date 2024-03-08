@@ -41,7 +41,7 @@ def experiment():
     print(f"SeasonalNaive Time: {time_seas:.2f} minutes")
     
     # TBATS model
-    sf = StatsForecast(models=[AutoTBATS(seasonal_periods=[24, 24*7])], freq="H")
+    sf = StatsForecast(models=[AutoTBATS(season_length=[24, 24*7])], freq="H")
     init = time()
     forecasts_cv = sf.cross_validation(df=df, h=24, n_windows=5, step_size=24)
     end = time()

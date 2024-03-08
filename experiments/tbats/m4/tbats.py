@@ -14,7 +14,7 @@ train = data[train_mask].reset_index(drop=True)
 valid = data[~train_mask].reset_index(drop=True)
 start = time.perf_counter()
 sf = StatsForecast(
-    models=[AutoTBATS(seasonal_periods=[24, 24 * 7])],
+    models=[AutoTBATS(season_length=[24, 24 * 7])],
     freq=1,
     n_jobs=-1,
 )
