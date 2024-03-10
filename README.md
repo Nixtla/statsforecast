@@ -115,6 +115,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |[AutoETS](https://nixtla.github.io/statsforecast/src/core/models.html#autoets)|✅|✅|✅|✅||
 |[AutoCES](https://nixtla.github.io/statsforecast/src/core/models.html#autoces)|✅|✅|✅|✅||
 |[AutoTheta](https://nixtla.github.io/statsforecast/src/core/models.html#autotheta)|✅|✅|✅|✅||
+|[AutoTBATS](https://nixtla.github.io/statsforecast/src/core/models.html#autotbats)|✅|✅|✅|✅||
 
 ### ARIMA Family
 These models exploit the existing autocorrelations in the time series.
@@ -140,6 +141,7 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
 |[MSTL](https://nixtla.github.io/statsforecast/src/core/models.html#mstl)|✅|✅|✅|✅|If trend forecaster supports|
+|[TBATS](https://nixtla.github.io/statsforecast/src/core/models.html#tbats)|✅|✅|✅|✅||
 
 ### GARCH and ARCH Models 
 Suited for modeling time series that exhibit non-constant volatility over time. The ARCH model is a particular case of GARCH. 

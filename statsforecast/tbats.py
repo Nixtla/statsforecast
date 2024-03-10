@@ -78,9 +78,7 @@ def find_harmonics(y, m):
     return num_harmonics
 
 # %% ../nbs/src/tbats.ipynb 9
-def initial_parameters(
-    seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-):
+def initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs):
     alpha = 0.09
 
     if use_trend:
@@ -339,6 +337,43 @@ def calcTBATSFaster(y_trans, w_transpose, g, F, x_nought):
     return yhat, e, x
 
 # %% ../nbs/src/tbats.ipynb 23
+def find_seeds(y, w_transpose, F, g, e, p, q):
+    w_tilda_transpose = np.zeros((y.shape[0], w_transpose.shape[1]))
+    w_tilda_transpose[0, :] = w_transpose
+
+    D = F - np.dot(g, w_transpose)
+    for k in range(1, w_tilda_transpose.shape[0]):
+        w_tilda_transpose[k, :] = np.dot(w_tilda_transpose[k - 1, :], D)
+
+    if p != 0 or q != 0:
+        end_cut = w_tilda_transpose.shape[1]
+        start_cut = end_cut - (p + q)
+        new_cols = np.arange(0, start_cut, 1)
+        w_tilda_transpose = w_tilda_transpose[:, new_cols]
+
+    condition_number = np.linalg.cond(w_tilda_transpose)
+    if np.isinf(condition_number):
+        mu = np.mean(w_tilda_transpose, axis=0)
+        sigma = np.std(w_tilda_transpose, axis=0)
+        w_tilda_transpose_scaled = (w_tilda_transpose - mu) / sigma
+        model = np.linalg.lstsq(
+            w_tilda_transpose_scaled, e.reshape((e.shape[1], 1)), rcond=None
+        )
+        x_nought_scaled = model[0].ravel()
+        x_nought = x_nought_scaled * sigma + mu
+    else:
+        model = np.linalg.lstsq(
+            w_tilda_transpose, e.reshape((e.shape[1], 1)), rcond=None
+        )
+        x_nought = model[0].ravel()
+
+    if (p != 0) or (q != 0):
+        arma_seed_states = np.zeros((p + q,))
+        x_nought = np.concatenate((x_nought, arma_seed_states))
+
+    return x_nought
+
+# %% ../nbs/src/tbats.ipynb 25
 def extract_params(
     params,
     use_boxcox,
@@ -394,7 +429,7 @@ def extract_params(
         ma_coeffs,
     )
 
-# %% ../nbs/src/tbats.ipynb 25
+# %% ../nbs/src/tbats.ipynb 27
 def updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q):
     adjBeta = 0
 
@@ -414,7 +449,7 @@ def updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q):
 
     return w_transpose
 
-# %% ../nbs/src/tbats.ipynb 27
+# %% ../nbs/src/tbats.ipynb 29
 def updateTBATSGMatrix(g, gamma_bold, alpha, beta, k_vector, gamma_one_v, gamma_two_v):
     # This function also updates gamma_bold
     adjBeta = 0
@@ -434,7 +469,7 @@ def updateTBATSGMatrix(g, gamma_bold, alpha, beta, k_vector, gamma_one_v, gamma_
 
     return g
 
-# %% ../nbs/src/tbats.ipynb 29
+# %% ../nbs/src/tbats.ipynb 31
 def updateTBATSFMatrix(
     F, phi, alpha, beta, gamma_bold, ar_coeffs, ma_coeffs, p, q, tau
 ):
@@ -479,7 +514,7 @@ def updateTBATSFMatrix(
 
     return F
 
-# %% ../nbs/src/tbats.ipynb 31
+# %% ../nbs/src/tbats.ipynb 33
 def checkAdmissibility(
     BoxCox_lambda,
     bc_lower_bound,
@@ -521,7 +556,7 @@ def checkAdmissibility(
 
     return np.all(abs(D_eigen_values) < 1 + 1e-2)
 
-# %% ../nbs/src/tbats.ipynb 33
+# %% ../nbs/src/tbats.ipynb 35
 def calcLikelihoodTBATS(
     params,
     use_boxcox,
@@ -602,7 +637,7 @@ def calcLikelihoodTBATS(
     else:
         return 10**20
 
-# %% ../nbs/src/tbats.ipynb 36
+# %% ../nbs/src/tbats.ipynb 38
 def tbats_model_generator(
     y,
     seasonal_periods,
@@ -638,9 +673,7 @@ def tbats_model_generator(
         s_vector,
         d_vector,
         epsilon_vector,
-    ) = initial_parameters(
-        seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-    )
+    ) = initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs)
 
     # seed states
     x_nought = makeXMatrix(b, s_vector, d_vector, epsilon_vector)
@@ -664,42 +697,11 @@ def tbats_model_generator(
         seasonal_periods,
         k_vector,
     )
-    D = F - np.dot(g, w_transpose)
 
     # Find seed states
     _, e, x = calcTBATSFaster(y_trans, w_transpose, g, F, x_nought)
 
-    w_tilda_transpose = np.zeros((y.shape[0], w_transpose.shape[1]))
-    w_tilda_transpose[0, :] = w_transpose
-
-    for k in range(1, w_tilda_transpose.shape[0]):
-        w_tilda_transpose[k, :] = np.dot(w_tilda_transpose[k - 1, :], D)
-
-    if p != 0 or q != 0:
-        end_cut = w_tilda_transpose.shape[1]
-        start_cut = end_cut - (p + q)
-        new_cols = np.arange(0, start_cut, 1)
-        w_tilda_transpose = w_tilda_transpose[:, new_cols]
-
-    condition_number = np.linalg.cond(w_tilda_transpose)
-    if np.isinf(condition_number):
-        mu = np.mean(w_tilda_transpose, axis=0)
-        sigma = np.std(w_tilda_transpose, axis=0)
-        w_tilda_transpose_scaled = (w_tilda_transpose - mu) / sigma
-        model = np.linalg.lstsq(
-            w_tilda_transpose_scaled, e.reshape((e.shape[1], 1)), rcond=None
-        )
-        x_nought_scaled = model[0].ravel()
-        x_nought = x_nought_scaled * sigma + mu
-    else:
-        model = np.linalg.lstsq(
-            w_tilda_transpose, e.reshape((e.shape[1], 1)), rcond=None
-        )
-        x_nought = model[0].ravel()
-
-    if (p != 0) or (q != 0):
-        arma_seed_states = np.zeros((p + q,))
-        x_nought = np.concatenate((x_nought, arma_seed_states))
+    x_nought = find_seeds(y, w_transpose, F, g, e, p, q)
 
     # Optimization
     # Create vector with parameters
@@ -824,13 +826,16 @@ def tbats_model_generator(
         "x": x,
         "k_vector": k_vector,
         "BoxCox_lambda": optim_BoxCox_lambda,
+        "bc_lower_bound": bc_lower_bound,
+        "bc_upper_bound": bc_upper_bound,
         "p": p,
         "q": q,
+        "seed_states": x_nought,
     }
 
     return res
 
-# %% ../nbs/src/tbats.ipynb 38
+# %% ../nbs/src/tbats.ipynb 40
 def tbats_model(
     y,
     seasonal_periods,
@@ -910,7 +915,7 @@ def tbats_model(
 
     return best_model
 
-# %% ../nbs/src/tbats.ipynb 40
+# %% ../nbs/src/tbats.ipynb 42
 def tbats_selection(
     y,
     seasonal_periods,
@@ -989,7 +994,7 @@ def tbats_selection(
 
     return mod
 
-# %% ../nbs/src/tbats.ipynb 42
+# %% ../nbs/src/tbats.ipynb 44
 def tbats_forecast(mod, h):  # this function is the same as bats_forecast
     fcst = np.zeros(h)
     xx = np.zeros((h, mod["x"].shape[1]))
@@ -1007,7 +1012,7 @@ def tbats_forecast(mod, h):  # this function is the same as bats_forecast
 
     return res
 
-# %% ../nbs/src/tbats.ipynb 43
+# %% ../nbs/src/tbats.ipynb 45
 def _compute_sigmah(obj, h):
     """
     Computes the sigmah requiered for prediction intervals
@@ -1025,3 +1030,59 @@ def _compute_sigmah(obj, h):
     sigma2h = obj["sigma2"] * var_mult
     sigmah = np.sqrt(sigma2h)
     return sigmah
+
+# %% ../nbs/src/tbats.ipynb 47
+def forward_tbats(fitted_model, y_new):
+    if fitted_model["description"]["use_boxcox"]:
+        y_trans = boxcox(y_new, fitted_model["BoxCox_lambda"])
+    else:
+        y_trans = y_new
+
+    initial_seeds = np.zeros(fitted_model["seed_states"].shape[0])
+    _, e, _ = calcTBATSFaster(
+        y_trans,
+        fitted_model["w_transpose"],
+        fitted_model["g"],
+        fitted_model["F"],
+        initial_seeds,
+    )
+
+    new_seeds = find_seeds(
+        y_trans,
+        fitted_model["w_transpose"],
+        fitted_model["F"],
+        fitted_model["g"],
+        e,
+        fitted_model["p"],
+        fitted_model["q"],
+    )
+
+    fitted, errors, x = calcTBATSFaster(
+        y_trans,
+        fitted_model["w_transpose"],
+        fitted_model["g"],
+        fitted_model["F"],
+        new_seeds,
+    )
+
+    sigma2 = np.sum(errors * errors) / len(y_trans)
+
+    if fitted_model["description"]["use_boxcox"]:
+        log_likelihood = len(y_trans) * np.log(np.nansum(errors**2)) - 2 * (
+            fitted_model["BoxCox_lambda"] - 1
+        ) * np.nansum(np.log(y_new))
+    else:
+        log_likelihood = len(y_trans) * np.log(np.nansum(errors**2))
+
+    kval = len(fitted_model["optim_params"]) + fitted_model["seed_states"].shape[0]
+    aic = log_likelihood + 2 * kval
+
+    fitted_res = fitted_model.copy()
+    fitted_res["fitted"] = fitted
+    fitted_res["errors"] = errors
+    fitted_res["sigma2"] = sigma2
+    fitted_res["aic"] = aic
+    fitted_res["x"] = x
+    fitted_res["seed_states"] = new_seeds
+
+    return fitted_res
