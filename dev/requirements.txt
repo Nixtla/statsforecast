@@ -1,4 +1,4 @@
-holidays<0.21
+holidays<0.26
 jupyterlab
 matplotlib
 numba>=0.55.0
