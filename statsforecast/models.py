@@ -5425,6 +5425,8 @@ class TBATS(_TS):
             res_trans = {
                 k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
             }
+            for k, v in res_trans.items():
+                res_trans[k] = np.where(np.isnan(v), res[k], v)
         else:
             res_trans = res
         return res_trans
@@ -5451,6 +5453,8 @@ class TBATS(_TS):
             res_trans = {
                 k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
             }
+            for k, v in res_trans.items():
+                res_trans[k] = np.where(np.isnan(v), res[k], v)
         else:
             res_trans = res
         return res_trans
@@ -5511,6 +5515,8 @@ class TBATS(_TS):
                 res = {**res, **fitted_pred_int}
         if mod["BoxCox_lambda"] is not None:
             res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
+            for k, v in res_trans.items():
+                res_trans[k] = np.where(np.isnan(v), res[k], v)
         else:
             res_trans = res
         return res_trans

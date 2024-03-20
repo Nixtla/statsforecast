@@ -18,15 +18,29 @@ from scipy.stats import boxcox
 from scipy.optimize import minimize
 from threadpoolctl import threadpool_limits
 
+# -----------------------------------------------
+from statsmodels.tsa.stattools import adfuller
+from time import time
+
+# -----------------------------------------------
+
 from .arima import auto_arima_f
 from .utils import NOGIL, CACHE
 
 # %% ../nbs/src/tbats.ipynb 7
 def find_harmonics(y, m):
     # Compute a 2 x m moving average to estimate the trend
-    window_size = 2 * m
-    f_t = pd.Series(y).rolling(window=window_size, min_periods=1).mean().to_numpy()
-    # Obtain an approximation of seasonal component using z_t = y_t - f_t
+    if m.is_integer():
+        window_size = 2 * m
+        f_t = pd.Series(y).rolling(window=window_size, min_periods=1).mean().to_numpy()
+        # f_t = pd.Series(y).rolling(window=window_size, center=True).mean().to_numpy()
+        # indices = np.isnan(f_t)
+        # f_t = f_t[~indices]
+        # y = y[~indices]
+    # else:  # for fractional seasonality (E.g. daily with 7 and 365.25)
+    #     f_t = 0
+
+    # Obtain an approximation of seasonal component using z_t = y_t - f_t. If f_t=0, don't detrend series
     z = y - f_t
 
     # Approximate the seasonal component using trigonometric terms
@@ -717,6 +731,7 @@ def tbats_model_generator(
     else:
         x_nought_untransformed = x_nought
 
+    start = time()
     objective_fn = partial(
         calcLikelihoodTBATS,
         use_boxcox=use_boxcox,
@@ -739,6 +754,8 @@ def tbats_model_generator(
         p=p,
         q=q,
     )
+    end = time()
+
     # Solve optimization problem
     optim_params = minimize(objective_fn, params, method="Nelder-Mead").x
 
@@ -804,6 +821,17 @@ def tbats_model_generator(
         log_likelihood = len(y_trans) * np.log(np.nansum(errors**2))
 
     kval = len(optim_params) + x_nought.shape[0]
+
+    # special cases
+    if optim_BoxCox_lambda == 1:
+        kval -= 1
+    if optim_beta is not None:
+        if abs(optim_beta) < 1e-08:
+            kval -= 1
+    if optim_phi is not None:
+        if optim_phi == 1:
+            kval -= 1
+
     aic = log_likelihood + 2 * kval
 
     res = {
@@ -952,18 +980,20 @@ def tbats_selection(
 
     if use_trend is None:
         if use_damped_trend is None:
-            T = [
-                [True, True],
-                [True, False],
-                [False, False],
-            ]
+            T = [[True, True], [True, False], [False, False]]
+        elif use_damped_trend:
+            T = [[True, True]]
         else:
-            T = [
-                [True, use_damped_trend],
-                [False, False],
-            ]
+            T = [[True, False], [False, False]]
+    elif use_trend:
+        if use_damped_trend is None:
+            T = [[True, True], [True, False]]
+        elif use_damped_trend:
+            T = [[True, True]]
+        else:
+            T = [[True, False]]
     else:
-        T = [[use_trend, use_damped_trend]]
+        T = [[False, False]]
 
     A = [use_arma_errors]
 

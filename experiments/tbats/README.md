@@ -1,82 +1,64 @@
 # TBATS: A brand-new implementation for the Python ecosystem
 
-## TL;DR 
-For next-day forecasting of electricity load, StatsForecast's new implementation of TBATS outperforms current implementations of this model in both accuracy and speed.
+## TL;DR
+
+StatsForecast's new implementation of TBATS outperforms the R implementation in terms of speed with comparable accuracy. 
 
 ## Intro 
+
+TBATS, developed by [De Livera, Hyndman, and Snyder (2011)](https://www.robjhyndman.com/papers/ComplexSeasonality.pdf), stands for **T**rigonometric, **B**ox-Cox transformation, **A**RMA errors, **T**rend, and **Seasonal components. It is an innovations state space model used for forecasting time series with multiple seasonalities. The model employs a combination of Fourier terms to represent the seasonal patterns, a Box-Cox transformation, and ARMA errors.
+
 TBATS, developed by [De Livera, Hyndman, and Snyder (2011)](https://www.robjhyndman.com/papers/ComplexSeasonality.pdf), is an innovations state space model used for forecasting time series with multiple seasonalities. It uses a combination of Fourier terms to represent the seasonal patterns, a Box-Cox transformation, and ARMA errors. 
 
-The first implementation of TBATS was in the [forecast](https://pkg.robjhyndman.com/forecast/reference/tbats.html) R package, and until now, the only Python implementation of this model was [tbats](https://github.com/intive-DataScience/tbats). A well-known drawback of both implementations is that they can be very slow for long time series. 
-
-StatsForecast's new TBATS improves the performance of these two implementations, exceeding both in accuracy and speed. A standout feature of this new version is its automatic selection of the optimal number of Fourier terms. The method to do this was proposed in the 2011 paper by [De Livera et al.](https://www.robjhyndman.com/papers/ComplexSeasonality.pdf), but it was not incorporated in any of the current implementations although it considerably reduces the total execution time. 
+The original implementation of the TBATS model was in the [forecast](https://pkg.robjhyndman.com/forecast/reference/tbats.html) R package, and is well-known for its slow performance with long time series. StatsForecast has addressed this issue by introducing an improved version of TBATS that enhances speed while maintaining similar accuracy. A notable advancement in this new version is the automatic selection of the optimal number of Fourier terms, a significant improvement proposed by [De Livera et al.](https://www.robjhyndman.com/papers/ComplexSeasonality.pdf) in their 2011 paper. This method, not implemented in the R version, reduces the total execution time, marking a considerable improvement over the original model.
 
 Two versions of the model have been included in StatsForecast: `AutoTBATS` and `TBATS`. The former automatically tests all feasible combinations of the parameters `use_box_cox`, `use_trend`, `use_damped_trend`, and `use_arma_errors`, selecting the model with the lowest AIC, while the latter only generates the model specified by the user's parameters.
 
-TBATS excels in analyzing time series with multiple seasonalities, such as hourly electricity data showing daily and weekly patterns. In fact, it was developed to overcome the limitations of traditional models like ETS or ARIMA, which can only handle one seasonal pattern, and thus, have a more limited modeling capacity.
+TBATS excels in analyzing time series with multiple seasonalities. In fact, it was developed to overcome the limitations of traditional models like ETS or ARIMA, which can only handle one seasonal pattern, and thus, have a more limited modeling capacity.
 
-## PJM Load Hourly Experiment
+## Experiment 
 
-StatsForecast's `AutoTBATS` was evaluated using a dataset of 32,896 hourly electricity consumption observations, featuring daily (24-hour) and weekly (168-hour) seasonal periods. This data, sourced from PJM Interconnection LLC, a US regional transmission organization, is available [here](https://raw.githubusercontent.com/panambY/Hourly_Energy_Consumption/master/data/PJM_Load_hourly.csv.). 
+StatsForecast's `AutoTBATS` was evaluated using the [M3](https://www.sciencedirect.com/science/article/abs/pii/S0169207000000571) and the [M4](https://www.sciencedirect.com/science/article/pii/S0169207019301128) Competition datasets, comparing its performance in accuracy and time with the existing R implementation. 
 
-In our analysis, we benchmarked StatsForecast's implementation against the two existing versions. We refer to the R version as `TBATS-R` and the Python version as `TBATS-PY`. We opted for `AutoTBATS` instead of `TBATS` because the former is what the current R and Python versions do: unless otherwise specified by the user, automatically test all feasible combinations of the parameters and then select the model with the lowest AIC. Additionally, our comparison included a [Seasonal Naive model](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#seasonalnaive), which uses the value of the last seasonal period, and [Prophet](https://facebook.github.io/prophet/), an additive model designed to handle complex seasonality and holiday effects. 
+The M3 dataset contains 3003 time series, with the following frequencies and seasonal periods. 
 
+![m3_description](https://github.com/Nixtla/statsforecast/assets/47995617/95cbc7a4-593c-4252-b943-e97040f7a32b)
+
+The M4 dataset contains 100,000 time series, with the following frequencies and seasonal periods.
+
+![m4_description](https://github.com/Nixtla/statsforecast/assets/47995617/70a4b280-193f-4881-bbd6-21063ac5a86b)
+
+Notice that in this dataset, the hourly frequency has multiple seasonalities, namely 24 (a day) and 168 (a week). Both StatsForecast and R used both seasonalities when generating the forecasts. 
 
 ### Perfomance evaluation
 
-We used cross-validation to evaluate the accuracy of the models, focusing on two key error metrics: Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE). In time series data, cross-validation is implemented by defining a sliding window across the historical data, followed by predicting the subsequent period. Here we used 5 validation windows, each spanning 24 hours, to ensure a thorough and accurate assessment. The error metrics are averaged across each window to derive the final score. For a more detailed understanding of cross-validation in this context, refer to the StatsForecast's [documentation](https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/crossvalidation.html).
+To evaluate the accuracy of the forecasts, we used common performance metrics: the [Mean Average Error](https://nixtlaverse.nixtla.io/utilsforecast/losses.html#mae) (MAE), the [Root Mean Squared Error](https://nixtlaverse.nixtla.io/utilsforecast/losses.html#rmse) (RMSE), the [Mean Absolute Percentage Error](https://nixtlaverse.nixtla.io/utilsforecast/losses.html#mape) (MAPE), and the [symmetric Mean Absolute Percentage Error](https://nixtlaverse.nixtla.io/utilsforecast/losses.html#smape) (sMAPE).
+
+The forecast horizons were the same as in the M3 and M4 competitions, shown in the previous tables. 
 
 ### Results
 
-Using one cross-validation window, we obtained the following results. 
+For the M3 dataset, we obtained the following results: 
 
-![tbats_results1](https://github.com/Nixtla/statsforecast/assets/47995617/41e2f738-011e-4299-9c9b-8a1913ab6f06)
+![m3_accuracy](https://github.com/Nixtla/statsforecast/assets/47995617/db711c1d-6857-4adc-910a-4d061873596e)
 
-Given the long execution time of the Python version, we decided to exclude it from the experiment with 5 cross-validation windows. Here we also included the Seasonal Naive model and Prophet as baselines. 
+![m3_time](https://github.com/Nixtla/statsforecast/assets/47995617/3ef6e360-ad08-46af-aa22-666a7f63c5f6)
 
-![tbats_results5](https://github.com/Nixtla/statsforecast/assets/47995617/e73a7ca6-132e-45c8-bdfa-e4f0aa412eec)
+For the M4 dataset, we obtained the following results:  
+
+![m4_accuracy](https://github.com/Nixtla/statsforecast/assets/47995617/985112dc-4f4d-4302-acd2-a6e1b89dd59d)
+
+![m4_time](https://github.com/Nixtla/statsforecast/assets/47995617/c9da434b-2334-476c-9531-ed8395cdaf30)
 
 ### Conclusion
 
-In this experiment, StastsForecast's new TBATS implementation demonstrated superior performance over the existing R and Python versions in both accuracy and speed.
+In this experiment, StatsForecast's `AutoTBATS` implementation demonstrated similar performance to the R implementation in terms of accuracy across several metrics. In terms of speed, it demonstrated equal or superior performance compared to R's.
 
-- The new model is significantly faster, being almost 4 times faster than the R version and 30 times faster than the Python version.
-- In terms of accuracy, it outperformed the R version by 10 to 20%, which itself already surpasses the Python version.
+  - For the largest group in the M3 dataset (Monthly), StatsForecast's `AutoTBATS` is 3x faster than the R implementation. For the second largest group (Quarterly), it is 1.5x faster than R.
+  - Similarly, for the largest group in the M4 dataset (Monthly), StatsForecast's `AutoTBATS` is 3.2x faster than the R implementation. For the second largest group (Quarterly), it is almost 2x faster than R.
+  - In the cases where StatsForecast's `AutoTBATS` is slower than R, the difference is relatively small.
 
-Moreover, this implementation has proven more accurate than both the Seasonal Naive model and Prophet, proving its effectiveness as a forecasting method for time series data with multiple seasonalities.
-
-Looking ahead, we plan to conduct a more comprehensive analysis of this model's performance across various datasets, which will provide deeper insights into its capabilities and potential applications.
-
-### Reproducibility
-
-1. Create a conda environment `exp_tbats` using the `environment.yml` file.
-  ```shell
-  conda env create -f environment.yml
-  ```
-
-3. Activate the conda environment using 
-  ```shell
-  conda activate exp_tbats
-  ```
-
-4. Run the experiments for each dataset and each model using 
-  ```shell
-  Rscript pjm_hourly/tbats_r.R
-  python pjm_hourly/tbats_py.py
-  python pjm_hourly/main.py
-  ```
-
-### References
-
-[De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011). Forecasting time series with complex seasonal patterns using exponential smoothing. J American Statistical Association, 106(496), 1513–1527.](https://www.robjhyndman.com/papers/ComplexSeasonality.pdf)
-
-
-## M4 Hourly Experiment
-
-### Results
-| Model    | SMAPE | Time (minutes) |
-| -------- | ----- | -------------- |
-| AutoTBATS| 12.4% | 31.8           |
-| TBATS (R)| 12.8% | 128.3          |
+As a result, we can conclude that StatsForecast's `AutoTBATS` is a competitive Python implementation of the TBATS model, with similar accuracy and superior speed compared to the R implementation. Hence, it should be considered as a viable option that can be used as part of a forecasting pipeline, alongside other models from StatsForecast, or as a baseline.
 
 ### Reproducibility
 1. Create a conda environment `exp_tbats` using the `environment.yml` file.
@@ -89,8 +71,19 @@ Looking ahead, we plan to conduct a more comprehensive analysis of this model's 
   conda activate exp_tbats
   ```
 
-4. Run the experiments for each language:
+4. Run the experiments for each dataset and for each group
   ```shell
-  Rscript m4/tbats.R
-  python m4/tbats.py
+  python -m data --dataset=dataset --group=group 
+  python -m data --dataset=dataset --group=group --train=False
+  python -m experiment --dataset=dataset --group=group
+  Rscript r_tbats.R
   ```
+  
+5. Evaluate the forecasts 
+  ```shell
+  python -m evaluation --dataset=dataset
+  ```
+
+### References
+
+[De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011). Forecasting time series with complex seasonal patterns using exponential smoothing. J American Statistical Association, 106(496), 1513–1527.](https://www.robjhyndman.com/papers/ComplexSeasonality.pdf)
