@@ -17,13 +17,6 @@ from scipy.special import inv_boxcox
 from scipy.stats import boxcox
 from scipy.optimize import minimize
 from threadpoolctl import threadpool_limits
-
-# -----------------------------------------------
-from statsmodels.tsa.stattools import adfuller
-from time import time
-
-# -----------------------------------------------
-
 from .arima import auto_arima_f
 from .utils import NOGIL, CACHE
 
@@ -33,12 +26,6 @@ def find_harmonics(y, m):
     if m.is_integer():
         window_size = 2 * m
         f_t = pd.Series(y).rolling(window=window_size, min_periods=1).mean().to_numpy()
-        # f_t = pd.Series(y).rolling(window=window_size, center=True).mean().to_numpy()
-        # indices = np.isnan(f_t)
-        # f_t = f_t[~indices]
-        # y = y[~indices]
-    # else:  # for fractional seasonality (E.g. daily with 7 and 365.25)
-    #     f_t = 0
 
     # Obtain an approximation of seasonal component using z_t = y_t - f_t. If f_t=0, don't detrend series
     z = y - f_t
@@ -85,9 +72,7 @@ def find_harmonics(y, m):
     return num_harmonics, y - X[:, : 2 * num_harmonics] @ best_model
 
 # %% ../nbs/src/tbats.ipynb 9
-def initial_parameters(
-    seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-):
+def initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs):
     alpha = 0.09
 
     if use_trend:
@@ -488,15 +473,7 @@ def updateTBATSFMatrix(
 
 # %% ../nbs/src/tbats.ipynb 31
 def checkAdmissibility(
-    BoxCox_lambda,
-    bc_lower_bound,
-    bc_upper_bound,
-    alpha,
-    beta,
-    phi,
-    ar_coeffs,
-    ma_coeffs,
-    D,
+    BoxCox_lambda, bc_lower_bound, bc_upper_bound, phi, ar_coeffs, ma_coeffs, D
 ):
     if BoxCox_lambda is not None:
         if (BoxCox_lambda < bc_lower_bound) or (BoxCox_lambda > bc_upper_bound):
@@ -595,15 +572,7 @@ def calcLikelihoodTBATS(
     D = F - np.dot(g, w_transpose)
 
     if checkAdmissibility(
-        BoxCox_lambda,
-        bc_lower_bound,
-        bc_upper_bound,
-        alpha,
-        beta,
-        phi,
-        ar_coeffs,
-        ma_coeffs,
-        D,
+        BoxCox_lambda, bc_lower_bound, bc_upper_bound, phi, ar_coeffs, ma_coeffs, D
     ):
         return log_likelihood
     else:
@@ -645,9 +614,7 @@ def tbats_model_generator(
         s_vector,
         d_vector,
         epsilon_vector,
-    ) = initial_parameters(
-        seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-    )
+    ) = initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs)
 
     # seed states
     x_nought = makeXMatrix(b, s_vector, d_vector, epsilon_vector)
@@ -731,7 +698,6 @@ def tbats_model_generator(
     else:
         x_nought_untransformed = x_nought
 
-    start = time()
     objective_fn = partial(
         calcLikelihoodTBATS,
         use_boxcox=use_boxcox,
@@ -754,7 +720,6 @@ def tbats_model_generator(
         p=p,
         q=q,
     )
-    end = time()
 
     # Solve optimization problem
     optim_params = minimize(objective_fn, params, method="Nelder-Mead").x
