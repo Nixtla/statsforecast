@@ -28,7 +28,7 @@ The M4 dataset contains 100,000 time series, with the following frequencies and 
 
 ![m4_description](https://github.com/Nixtla/statsforecast/assets/47995617/70a4b280-193f-4881-bbd6-21063ac5a86b)
 
-Notice that in this dataset, the hourly frequency has multiple seasonalities, namely 24 (a day) and 168 (a week). Both StatsForecast and R used both seasonalities when generating the forecasts. 
+Notice that in this dataset, the hourly frequency has multiple seasonalities, namely 24 (a day) and 168 (a week). Both StatsForecast and R used both seasonalities when generating the forecasts. We also included the `SeasonalNaive` model from StatsForecast as a baseline. 
 
 ### Perfomance evaluation
 
@@ -40,13 +40,13 @@ The forecast horizons were the same as in the M3 and M4 competitions, shown in t
 
 For the M3 dataset, we obtained the following results: 
 
-![m3_accuracy](https://github.com/Nixtla/statsforecast/assets/47995617/db711c1d-6857-4adc-910a-4d061873596e)
+![m3_accuracy](https://github.com/Nixtla/statsforecast/assets/47995617/79936ad8-fd07-4c29-aaf1-e900946c1b79)
 
 ![m3_time](https://github.com/Nixtla/statsforecast/assets/47995617/3ef6e360-ad08-46af-aa22-666a7f63c5f6)
 
 For the M4 dataset, we obtained the following results:  
 
-![m4_accuracy](https://github.com/Nixtla/statsforecast/assets/47995617/985112dc-4f4d-4302-acd2-a6e1b89dd59d)
+![m4_accuracy](https://github.com/Nixtla/statsforecast/assets/47995617/94c6099a-e9c4-4c7f-9343-8729abfcf534)
 
 ![m4_time](https://github.com/Nixtla/statsforecast/assets/47995617/c9da434b-2334-476c-9531-ed8395cdaf30)
 

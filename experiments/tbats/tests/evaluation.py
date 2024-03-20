@@ -11,7 +11,9 @@ def accuracy(model: str, dataset: str, group: str):
     y_test['id'] = y_test.groupby('unique_id').cumcount()+1 # create id column to merge with R forecasts 
     y_test.drop(columns=['ds'], inplace=True)
 
-    stats_fcst = pd.read_csv(f'data/AutoTBATS-{dataset}-{group}.csv') 
+    tbats = pd.read_csv(f'data/AutoTBATS-{dataset}-{group}.csv') 
+    snaive = pd.read_csv(f'data/SeasonalNaive-{dataset}-{group}.csv')
+    stats_fcst = tbats.merge(snaive, on=['unique_id', 'ds'])
     stats_fcst['id'] = stats_fcst.groupby('unique_id').cumcount()+1 
 
     r_fcst = pd.read_csv(f'data/R-forecasts-{dataset}-{group}.csv')
@@ -24,7 +26,7 @@ def accuracy(model: str, dataset: str, group: str):
     
     predictions = forecasts.merge(y_test, on=['unique_id', 'id'])
     predictions.drop(columns=['id'], inplace=True) 
-    predictions = predictions[['unique_id', 'ds', 'y', 'AutoTBATS', 'R-TBATS']]   
+    predictions = predictions[['unique_id', 'ds', 'y', 'AutoTBATS', 'R-TBATS', 'SeasonalNaive']]   
 
     metrics = [mae, rmse, mape, smape]
     evaluation = evaluate(
@@ -41,6 +43,9 @@ def accuracy(model: str, dataset: str, group: str):
     if model == 'AutoTBATS':
         time = pd.read_csv(f'data/AutoTBATS-time-{dataset}-{group}.csv')
         time['model'] = model 
+    elif model == 'SeasonalNaive': 
+        time = pd.read_csv(f'data/SeasonalNaive-time-{dataset}-{group}.csv')
+        time['model'] = model
     else: 
         time = pd.read_csv(f'data/R-time-{dataset}-{group}.csv')
         time['model'] = 'R-TBATS'
@@ -56,7 +61,7 @@ def main(dataset: str = 'M3'):
         groups = ['Yearly', 'Quarterly', 'Monthly', 'Weekly', 'Daily', 'Hourly']
     else: 
         raise ValueError(f'Dataset {dataset} not found')
-    models = ['AutoTBATS', 'R-TBATS']
+    models = ['AutoTBATS', 'R-TBATS', 'SeasonalNaive']
     evaluation = [accuracy(model, dataset, group) for model, group in product(models, groups)]
     evaluation = [eval_ for eval_ in evaluation if eval_ is not None]
     evaluation = pd.concat(evaluation)
