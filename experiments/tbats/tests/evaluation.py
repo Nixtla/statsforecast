@@ -18,7 +18,12 @@ def accuracy(model: str, dataset: str, group: str):
 
     r_fcst = pd.read_csv(f'data/R-forecasts-{dataset}-{group}.csv')
 
+    py_fcst = pd.read_csv(f'data/PY-TBATS-forecasts-{dataset}-{group}.csv')
+    py_fcst['id'] = py_fcst.groupby('unique_id').cumcount()+1 
+    py_fcst.rename(columns={'y': 'PY-TBATS'}, inplace=True)
+
     forecasts = stats_fcst.merge(r_fcst, on=['unique_id', 'id'])
+    forecasts = forecasts.merge(py_fcst, on=['unique_id', 'id'])
 
     # Validation 
     if forecasts.shape[0] != stats_fcst.shape[0] or forecasts.shape[0] != r_fcst.shape[0]:
@@ -26,7 +31,7 @@ def accuracy(model: str, dataset: str, group: str):
     
     predictions = forecasts.merge(y_test, on=['unique_id', 'id'])
     predictions.drop(columns=['id'], inplace=True) 
-    predictions = predictions[['unique_id', 'ds', 'y', 'AutoTBATS', 'R-TBATS', 'SeasonalNaive']]   
+    predictions = predictions[['unique_id', 'ds', 'y', 'AutoTBATS', 'R-TBATS', 'PY-TBATS', 'SeasonalNaive']]   
 
     metrics = [mae, rmse, mape, smape]
     evaluation = evaluate(
@@ -46,9 +51,12 @@ def accuracy(model: str, dataset: str, group: str):
     elif model == 'SeasonalNaive': 
         time = pd.read_csv(f'data/SeasonalNaive-time-{dataset}-{group}.csv')
         time['model'] = model
-    else: 
+    elif model == 'R-TBATS': 
         time = pd.read_csv(f'data/R-time-{dataset}-{group}.csv')
         time['model'] = 'R-TBATS'
+    else: # model == 'PY-TBATS'
+        time = pd.read_csv(f'data/PY-TBATS-time-{dataset}-{group}.csv')
+        time['model'] = 'PY-TBATS'
 
     evals = pd.merge(evals, time, on=['model'], how='left')
 
@@ -57,18 +65,18 @@ def accuracy(model: str, dataset: str, group: str):
 def main(dataset: str = 'M3'):
     if dataset == 'M3':
         groups = ['Yearly', 'Quarterly', 'Monthly', 'Other']
+        models = ['AutoTBATS', 'R-TBATS', 'PY-TBATS', 'SeasonalNaive']
     elif dataset == 'M4':
         groups = ['Yearly', 'Quarterly', 'Monthly', 'Weekly', 'Daily', 'Hourly']
+        models = ['AutoTBATS', 'R-TBATS', 'SeasonalNaive']
     else: 
         raise ValueError(f'Dataset {dataset} not found')
-    models = ['AutoTBATS', 'R-TBATS', 'SeasonalNaive']
     evaluation = [accuracy(model, dataset, group) for model, group in product(models, groups)]
     evaluation = [eval_ for eval_ in evaluation if eval_ is not None]
     evaluation = pd.concat(evaluation)
     evaluation = evaluation[['dataset', 'model', 'mae', 'rmse', 'mape', 'smape', 'time']]
     evaluation = evaluation.sort_values(by=['dataset', 'model'])
-    if dataset == 'M4': 
-        evaluation['time'] = evaluation['time'] / 60 # convert to minutes
+    evaluation['time'] = evaluation['time'] / 60 # convert to minutes
     evaluation.to_csv(f'data/evaluation-{dataset}.csv')
     print(evaluation)
 
