@@ -2376,6 +2376,7 @@ def _seasonal_ses_optimized(
 
 # %% ../nbs/src/core/models.ipynb 161
 class SeasonalExponentialSmoothingOptimized(_TS):
+
     def __init__(
         self,
         season_length: int,
@@ -2581,6 +2582,7 @@ class Holt(AutoETS):
         alias: str = "Holt",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+
         self.season_length = season_length
         self.error_type = error_type
         self.alias = alias
@@ -2650,6 +2652,7 @@ def _historic_average(
 
 # %% ../nbs/src/core/models.ipynb 204
 class HistoricAverage(_TS):
+
     def __init__(
         self,
         alias: str = "HistoricAverage",
@@ -2828,6 +2831,7 @@ class HistoricAverage(_TS):
 
 # %% ../nbs/src/core/models.ipynb 217
 class Naive(_TS):
+
     def __init__(
         self,
         alias: str = "Naive",
@@ -3056,6 +3060,7 @@ def _random_walk_with_drift(
 
 # %% ../nbs/src/core/models.ipynb 234
 class RandomWalkWithDrift(_TS):
+
     def __init__(
         self,
         alias: str = "RWD",
@@ -3234,6 +3239,7 @@ class RandomWalkWithDrift(_TS):
 
 # %% ../nbs/src/core/models.ipynb 249
 class SeasonalNaive(_TS):
+
     def __init__(
         self,
         season_length: int,
@@ -3437,6 +3443,7 @@ def _window_average(
 
 # %% ../nbs/src/core/models.ipynb 265
 class WindowAverage(_TS):
+
     def __init__(
         self,
         window_size: int,
@@ -3613,6 +3620,7 @@ def _seasonal_window_average(
 
 # %% ../nbs/src/core/models.ipynb 277
 class SeasonalWindowAverage(_TS):
+
     def __init__(
         self,
         season_length: int,
@@ -3869,6 +3877,7 @@ def _adida(
 
 # %% ../nbs/src/core/models.ipynb 290
 class ADIDA(_TS):
+
     def __init__(
         self,
         alias: str = "ADIDA",
@@ -4066,6 +4075,7 @@ def _croston_classic(
 
 # %% ../nbs/src/core/models.ipynb 303
 class CrostonClassic(_TS):
+
     def __init__(
         self,
         alias: str = "CrostonClassic",
@@ -4272,6 +4282,7 @@ def _croston_optimized(
 
 # %% ../nbs/src/core/models.ipynb 315
 class CrostonOptimized(_TS):
+
     def __init__(
         self,
         alias: str = "CrostonOptimized",
@@ -4446,6 +4457,7 @@ def _croston_sba(
 
 # %% ../nbs/src/core/models.ipynb 327
 class CrostonSBA(_TS):
+
     def __init__(
         self,
         alias: str = "CrostonSBA",
@@ -4646,6 +4658,7 @@ def _imapa(
 
 # %% ../nbs/src/core/models.ipynb 339
 class IMAPA(_TS):
+
     def __init__(
         self,
         alias: str = "IMAPA",
@@ -4836,6 +4849,7 @@ def _tsb(
 
 # %% ../nbs/src/core/models.ipynb 351
 class TSB(_TS):
+
     def __init__(
         self,
         alpha_d: float,
@@ -5064,6 +5078,7 @@ class MSTL(_TS):
         alias: str = "MSTL",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
             if trend_forecaster.model[2] != "N":
@@ -5328,7 +5343,7 @@ class TBATS(_TS):
         Whether or not to use a Box-Cox transformation.
     bc_lower_bound : float (default=0.0)
         Lower bound for the Box-Cox transformation.
-    bc_upper_bound : float (default=1.5)
+    bc_upper_bound : float (default=1.0)
         Upper bound for the Box-Cox transformation.
     use_trend : bool (default=True)
         Whether or not to use a trend component.
@@ -5346,7 +5361,7 @@ class TBATS(_TS):
         season_length: Union[int, List[int]],
         use_boxcox: Optional[bool] = True,
         bc_lower_bound: float = 0.0,
-        bc_uppper_bound: float = 1.5,
+        bc_upper_bound: float = 1.0,
         use_trend: Optional[bool] = True,
         use_damped_trend: Optional[bool] = False,
         use_arma_errors: bool = False,
@@ -5359,7 +5374,7 @@ class TBATS(_TS):
         self.season_length = list(season_length)
         self.use_boxcox = use_boxcox
         self.bc_lower_bound = bc_lower_bound
-        self.bc_upper_bound = bc_uppper_bound
+        self.bc_upper_bound = bc_upper_bound
         self.use_trend = use_trend
         self.use_damped_trend = use_damped_trend
         self.use_arma_errors = use_arma_errors
@@ -5543,7 +5558,7 @@ class AutoTBATS(TBATS):
         Whether or not to use a Box-Cox transformation. By default tries both.
     bc_lower_bound : float (default=0.0)
         Lower bound for the Box-Cox transformation.
-    bc_upper_bound : float (default=1.5)
+    bc_upper_bound : float (default=1.0)
         Upper bound for the Box-Cox transformation.
     use_trend : bool (default=None)
         Whether or not to use a trend component. By default tries both.
@@ -5560,6 +5575,8 @@ class AutoTBATS(TBATS):
         self,
         season_length: Union[int, List[int]],
         use_boxcox: Optional[bool] = None,
+        bc_lower_bound: float = 0.0,
+        bc_upper_bound: float = 1.0,
         use_trend: Optional[bool] = None,
         use_damped_trend: Optional[bool] = None,
         use_arma_errors: bool = True,
@@ -5570,6 +5587,8 @@ class AutoTBATS(TBATS):
         super().__init__(
             season_length=season_length,
             use_boxcox=use_boxcox,
+            bc_lower_bound=bc_lower_bound,
+            bc_upper_bound=bc_upper_bound,
             use_trend=use_trend,
             use_damped_trend=use_damped_trend,
             use_arma_errors=use_arma_errors,
@@ -5968,6 +5987,7 @@ class ARCH(GARCH):
 
 # %% ../nbs/src/core/models.ipynb 479
 class ConstantModel(_TS):
+
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
 
@@ -6153,6 +6173,7 @@ class ConstantModel(_TS):
 
 # %% ../nbs/src/core/models.ipynb 493
 class ZeroModel(ConstantModel):
+
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
 
@@ -6167,6 +6188,7 @@ class ZeroModel(ConstantModel):
 
 # %% ../nbs/src/core/models.ipynb 507
 class NaNModel(ConstantModel):
+
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.
 
