@@ -58,7 +58,7 @@ def accuracy(model: str, dataset: str, group: str):
         time = pd.read_csv(f'data/R-time-{dataset}-{group}.csv')
         time['model'] = 'R-TBATS'
     elif dataset == 'M3':
-        # add PY-TBATS time
+        # add PY-TBATS time when using M3 dataset
         time = pd.read_csv(f'data/PY-TBATS-time-{dataset}-{group}.csv')
         time['model'] = 'PY-TBATS'
 

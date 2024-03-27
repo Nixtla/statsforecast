@@ -69,12 +69,12 @@ As a result, StatsForecast's `AutoTBATS` represents a competitive Python impleme
   conda env create -f environment.yml
   ```
 
-3. Activate the conda environment using
+2. Activate the conda environment using
   ```shell
   conda activate exp_tbats
   ```
 
-4. Run the experiments. When running the Python scripts for StatsForecast, you need to specify the dataset, group, and model (`AutoTBATS` or `SeasonalNaive`). 
+3. Run the experiments. When running the Python scripts for StatsForecast, you need to specify the dataset, group, and model (`AutoTBATS` or `SeasonalNaive`). 
   ```shell
   python -m data --dataset=dataset --group=group # generates train set
   python -m data --dataset=dataset --group=group --train=False # generates test set 
@@ -83,7 +83,7 @@ As a result, StatsForecast's `AutoTBATS` represents a competitive Python impleme
   Rscript r_tbats.R # select dataset and group inside script
   ```
   
-5. Evaluate the forecasts 
+4. Once the experiments for each dataset are complete, evaluate the forecasts. 
   ```shell
   python -m evaluation --dataset=dataset
   ```

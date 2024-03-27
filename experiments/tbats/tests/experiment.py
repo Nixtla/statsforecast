@@ -36,7 +36,7 @@ def main(dataset: str = 'M3', group: str = 'Other', model: str='AutoTBATS') -> N
 
     if dataset == 'M4':
         train['ds'] = train['ds'].astype(int)
-        frequency = 1 # values in ds column are integers
+        frequency = 1 # since values in ds column are integers
 
     seasonality = find_seasonality(model, group)
     if model == 'AutoTBATS': 
