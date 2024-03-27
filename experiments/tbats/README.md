@@ -80,7 +80,7 @@ As a result, StatsForecast's `AutoTBATS` represents a competitive Python impleme
   python -m data --dataset=dataset --group=group --train=False # generates test set 
   python -m experiment --dataset=dataset --group=group --model=model 
   python -m py_tbats --dataset=dataset --group=group
-  Rscript r_tbats.R # select dataset and group inside the script
+  Rscript r_tbats.R # select dataset and group inside script
   ```
   
 5. Evaluate the forecasts 
