@@ -32,7 +32,7 @@ def accuracy(model: str, dataset: str, group: str):
     predictions = forecasts.merge(y_test, on=['unique_id', 'id'])
     predictions.drop(columns=['id'], inplace=True) 
     predictions = predictions[['unique_id', 'ds', 'y', 'AutoTBATS', 'R-TBATS', 'PY-TBATS', 'SeasonalNaive']]   
-
+    
     metrics = [mae, rmse, mape, smape]
     evaluation = evaluate(
         predictions,
