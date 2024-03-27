@@ -51,7 +51,7 @@ def main(dataset: str = 'M3', group: str = 'Other', model: str='AutoTBATS') -> N
     forecasts = fcst.forecast(df=train, h=horizon)
     end = time.time()
 
-    forecasts.to_csv(f'data/{model}-forecasts-{dataset}-{group}.csv', index=False)
+    forecasts.to_csv(f'data/{model}-{dataset}-{group}.csv', index=False)
 
     time_df = pd.DataFrame({'time': [end - start], 'model': [model]})
     time_df.to_csv(f'data/{model}-time-{dataset}-{group}.csv', index=False)
