@@ -42,6 +42,7 @@ from statsforecast.utils import (
     _calculate_intervals,
     _ensure_float,
     _naive,
+    _old_kw_to_pos,
     _quantiles,
     _repeat_val,
     _repeat_val_seas,
@@ -5321,13 +5322,13 @@ class TBATS(_TS):
 
     Parameters
     ----------
-    seasonal_periods : int or list of int.
+    season_length : int or list of int.
         Number of observations per unit of time. Ex: 24 Hourly data.
     use_boxcox : bool (default=True)
         Whether or not to use a Box-Cox transformation.
     bc_lower_bound : float (default=0.0)
         Lower bound for the Box-Cox transformation.
-    bc_upper_bound : float (default=1.5)
+    bc_upper_bound : float (default=1.0)
         Upper bound for the Box-Cox transformation.
     use_trend : bool (default=True)
         Whether or not to use a trend component.
@@ -5339,23 +5340,26 @@ class TBATS(_TS):
         Custom name of the model.
     """
 
+    @_old_kw_to_pos(["seasonal_periods"], [1])
     def __init__(
         self,
-        seasonal_periods: Union[int, List[int]],
+        season_length: Union[int, List[int]],
         use_boxcox: Optional[bool] = True,
         bc_lower_bound: float = 0.0,
-        bc_uppper_bound: float = 1.5,
+        bc_upper_bound: float = 1.0,
         use_trend: Optional[bool] = True,
         use_damped_trend: Optional[bool] = False,
         use_arma_errors: bool = False,
         alias: str = "TBATS",
+        *,
+        seasonal_periods=None,  # noqa: ARG002
     ):
-        if isinstance(seasonal_periods, int):
-            seasonal_periods = [seasonal_periods]
-        self.seasonal_periods = list(seasonal_periods)
+        if isinstance(season_length, int):
+            season_length = [season_length]
+        self.season_length = list(season_length)
         self.use_boxcox = use_boxcox
         self.bc_lower_bound = bc_lower_bound
-        self.bc_upper_bound = bc_uppper_bound
+        self.bc_upper_bound = bc_upper_bound
         self.use_trend = use_trend
         self.use_damped_trend = use_damped_trend
         self.use_arma_errors = use_arma_errors
@@ -5383,7 +5387,7 @@ class TBATS(_TS):
         """
         self.model_ = tbats_selection(
             y=y,
-            seasonal_periods=self.seasonal_periods,
+            seasonal_periods=self.season_length,
             use_boxcox=self.use_boxcox,
             bc_lower_bound=self.bc_lower_bound,
             bc_upper_bound=self.bc_upper_bound,
@@ -5421,6 +5425,8 @@ class TBATS(_TS):
             res_trans = {
                 k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
             }
+            for k, v in res_trans.items():
+                res_trans[k] = np.where(np.isnan(v), res[k], v)
         else:
             res_trans = res
         return res_trans
@@ -5447,6 +5453,8 @@ class TBATS(_TS):
             res_trans = {
                 k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
             }
+            for k, v in res_trans.items():
+                res_trans[k] = np.where(np.isnan(v), res[k], v)
         else:
             res_trans = res
         return res_trans
@@ -5484,7 +5492,7 @@ class TBATS(_TS):
         """
         mod = tbats_selection(
             y=y,
-            seasonal_periods=self.seasonal_periods,
+            seasonal_periods=self.season_length,
             use_boxcox=self.use_boxcox,
             bc_lower_bound=self.bc_lower_bound,
             bc_upper_bound=self.bc_upper_bound,
@@ -5507,6 +5515,8 @@ class TBATS(_TS):
                 res = {**res, **fitted_pred_int}
         if mod["BoxCox_lambda"] is not None:
             res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
+            for k, v in res_trans.items():
+                res_trans[k] = np.where(np.isnan(v), res[k], v)
         else:
             res_trans = res
         return res_trans
@@ -5533,7 +5543,7 @@ class AutoTBATS(TBATS):
         Whether or not to use a Box-Cox transformation. By default tries both.
     bc_lower_bound : float (default=0.0)
         Lower bound for the Box-Cox transformation.
-    bc_upper_bound : float (default=1.5)
+    bc_upper_bound : float (default=1.0)
         Upper bound for the Box-Cox transformation.
     use_trend : bool (default=None)
         Whether or not to use a trend component. By default tries both.
@@ -5545,18 +5555,25 @@ class AutoTBATS(TBATS):
         Custom name of the model.
     """
 
+    @_old_kw_to_pos(["seasonal_periods"], [1])
     def __init__(
         self,
-        seasonal_periods: Union[int, List[int]],
+        season_length: Union[int, List[int]],
         use_boxcox: Optional[bool] = None,
+        bc_lower_bound: float = 0.0,
+        bc_upper_bound: float = 1.0,
         use_trend: Optional[bool] = None,
         use_damped_trend: Optional[bool] = None,
         use_arma_errors: bool = True,
         alias: str = "AutoTBATS",
+        *,
+        seasonal_periods=None  # noqa: ARG002
     ):
         super().__init__(
-            seasonal_periods,
+            season_length=season_length,
             use_boxcox=use_boxcox,
+            bc_lower_bound=bc_lower_bound,
+            bc_upper_bound=bc_upper_bound,
             use_trend=use_trend,
             use_damped_trend=use_damped_trend,
             use_arma_errors=use_arma_errors,
