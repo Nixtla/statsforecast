@@ -1194,14 +1194,16 @@ class _StatsForecast:
             for ga, X_ in zip(gas, Xs):
                 future = executor.apply_async(
                     ga.forecast,
-                    (
-                        self.models,
-                        h,
-                        self.fallback_model,
-                        fitted,
-                        X_,
-                        level,
-                        target_col,
+                    tuple(),
+                    dict(
+                        models=self.models,
+                        h=h,
+                        fallback_model=self.fallback_model,
+                        fitted=fitted,
+                        X=X_,
+                        level=level,
+                        verbose=self.verbose,
+                        target_col=target_col,
                     ),
                 )
                 futures.append(future)
@@ -1231,17 +1233,19 @@ class _StatsForecast:
             for ga in gas:
                 future = executor.apply_async(
                     ga.cross_validation,
-                    (
-                        self.models,
-                        h,
-                        test_size,
-                        self.fallback_model,
-                        step_size,
-                        input_size,
-                        fitted,
-                        level,
-                        refit,
-                        target_col,
+                    tuple(),
+                    dict(
+                        models=self.models,
+                        h=h,
+                        test_size=test_size,
+                        fallback_model=self.fallback_model,
+                        step_size=step_size,
+                        input_size=input_size,
+                        fitted=fitted,
+                        level=level,
+                        refit=refit,
+                        verbose=self.verbose,
+                        target_col=target_col,
                     ),
                 )
                 futures.append(future)
