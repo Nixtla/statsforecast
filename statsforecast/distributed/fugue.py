@@ -386,7 +386,9 @@ class FugueBackend(ParallelBackend):
                 res_with_fitted = _cotransform(
                     df, X_df, self._forecast_X_fitted, **tfm_kwargs
                 )
-            self._results = res_with_fitted
+            # the persist here avoids recomputing the whole thing
+            # when retrieving the fitted values
+            self._results = fa.persist(res_with_fitted)
             res = transform(
                 self._results,
                 FugueBackend._retrieve_forecast_df,
