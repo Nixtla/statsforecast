@@ -11,76 +11,72 @@ from itertools import product
 import numpy as np
 import pandas as pd
 import scipy.linalg
+from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from numba import njit
 from numpy.polynomial.polynomial import Polynomial
-from scipy.special import inv_boxcox
-from scipy.stats import boxcox
 from scipy.optimize import minimize
-from statsmodels.tsa.stattools import adfuller
 from threadpoolctl import threadpool_limits
-
 from .arima import auto_arima_f
 from .utils import NOGIL, CACHE
 
 # %% ../nbs/src/tbats.ipynb 7
 def find_harmonics(y, m):
+
     # Compute a 2 x m moving average to estimate the trend
     window_size = 2 * m
-    data = pd.DataFrame({"value": y})
-    f_t = data["value"].rolling(window=window_size, center=True).mean()
+    f_t = pd.Series(y).rolling(window=window_size, min_periods=1).mean().to_numpy()
 
-    # Obtain an approximation of seasonal component using z_t = y_t - f_t
-    data["f_t"] = f_t
-    data["z_t"] = data["value"] - data["f_t"]
-
-    # Drop missing values (due to the moving average)
-    data.dropna(inplace=True)
-
-    if data.empty:
-        return 1
+    # Obtain an approximation of seasonal component using z_t = y_t - f_t. If f_t=0, don't detrend series
+    z = y - f_t
 
     # Approximate the seasonal component using trigonometric terms
-    t = np.arange(len(data))
+    t = np.arange(len(y))
     if m % 2 == 0:
         max_harmonics = int(m / 2)
     else:
         max_harmonics = int((m - 1) / 2)
 
-    max_harmonics = min(max_harmonics, len(data))
-
-    aic = np.inf
-    num_harmonics = 0
+    max_harmonics = min(max_harmonics, len(y))
+    if max_harmonics == 0:
+        return 1, y
 
     # Create cosine and sine terms
-    fourier = np.empty((len(data), 2 * max_harmonics))
+    fourier = np.empty((len(y), 2 * max_harmonics))
     for i in range(max_harmonics):
         fourier[:, 2 * i] = np.cos(2 * np.pi * (i + 1) * t / m)
         fourier[:, 2 * i + 1] = np.sin(2 * np.pi * (i + 1) * t / m)
 
+    aic = np.inf
+    num_harmonics = 0
+    tol = 2
+    without_improv = 0
     for h in range(1, max_harmonics + 1):
         # Perform regression to estimate the coefficients
         X = fourier[:, : 2 * h]
-        y = data["z_t"]
-        model, residuals = np.linalg.lstsq(X, y, rcond=None)[:2]
+        model, residuals = np.linalg.lstsq(X, z, rcond=None)[:2]
         k = model.size
-        n = len(y)
+        n = len(z)
         new_aic = n * np.log(residuals / n) + 2 * k
 
         if new_aic.size > 0 and new_aic < aic:
             aic = new_aic
             num_harmonics = h
+            best_model = model
+            without_improv = 0
         else:
-            break
+            without_improv += 1
+            if without_improv >= tol:
+                break
 
     if num_harmonics == 0:
-        num_harmonics += 1
+        num_harmonics = 1
+        best_model = np.zeros(2)
 
-    return num_harmonics
+    return num_harmonics, y - X[:, : 2 * num_harmonics] @ best_model
 
 # %% ../nbs/src/tbats.ipynb 9
-def initial_parameters(
-    seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-):
+def initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs):
+
     alpha = 0.09
 
     if use_trend:
@@ -125,6 +121,7 @@ def initial_parameters(
 
 # %% ../nbs/src/tbats.ipynb 11
 def makeXMatrix(b, s_vector, d_vector, epsilon_vector):
+
     # x = (l_t, b_t, s_vector, d_vector, epsilon_vector)
     x = np.array([0.0])
     if b is not None:
@@ -181,6 +178,7 @@ def makeTBATSWMatrix(phi, k_vector, ar_coeffs, ma_coeffs, tau):
 def makeTBATSGMatrix(
     k_vector, alpha, adj_beta, beta, gamma_one_v, gamma_two_v, p, q, tau
 ):
+
     # g = (alpha, beta, gamma_bold, 1, 0_{p-1}, 1, 0_{q-1})
     g = np.zeros((1 + adj_beta + 2 * np.sum(k_vector) + p + q, 1))
 
@@ -321,6 +319,7 @@ def makeTBATSFMatrix(
 # %% ../nbs/src/tbats.ipynb 21
 @njit(nogil=NOGIL, cache=CACHE)
 def calcTBATSFaster(y_trans, w_transpose, g, F, x_nought):
+
     n = y_trans.shape[0]
 
     yhat = np.zeros((1, n))
@@ -405,9 +404,9 @@ def updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q):
     if p != 0:
         w_transpose[0, adjBeta + tau + 1 : adjBeta + tau + p + 1] = ar_coeffs
         if q != 0:
-            w_transpose[
-                0, adjBeta + tau + p + 1 : adjBeta + tau + p + q + 1
-            ] = ma_coeffs
+            w_transpose[0, adjBeta + tau + p + 1 : adjBeta + tau + p + q + 1] = (
+                ma_coeffs
+            )
     elif q != 0:
         # here p = 0
         w_transpose[0, adjBeta + tau + 1 : adjBeta + tau + q + 1] = ma_coeffs
@@ -454,9 +453,9 @@ def updateTBATSFMatrix(
                 (1 + betaAdjust) : (betaAdjust + tau + 1),
                 (betaAdjust + tau + 1) : (betaAdjust + tau + p + 1),
             ] = B
-        F[
-            betaAdjust + tau + 1, (betaAdjust + tau + 1) : (betaAdjust + tau + p + 1)
-        ] = ar_coeffs
+        F[betaAdjust + tau + 1, (betaAdjust + tau + 1) : (betaAdjust + tau + p + 1)] = (
+            ar_coeffs
+        )
     if ma_coeffs is not None:
         F[0, (betaAdjust + tau + p + 1) : (betaAdjust + tau + p + q + 1)] = (
             alpha * ma_coeffs
@@ -481,15 +480,7 @@ def updateTBATSFMatrix(
 
 # %% ../nbs/src/tbats.ipynb 31
 def checkAdmissibility(
-    BoxCox_lambda,
-    bc_lower_bound,
-    bc_upper_bound,
-    alpha,
-    beta,
-    phi,
-    ar_coeffs,
-    ma_coeffs,
-    D,
+    BoxCox_lambda, bc_lower_bound, bc_upper_bound, phi, ar_coeffs, ma_coeffs, D
 ):
     if BoxCox_lambda is not None:
         if (BoxCox_lambda < bc_lower_bound) or (BoxCox_lambda > bc_upper_bound):
@@ -543,25 +534,19 @@ def calcLikelihoodTBATS(
     bc_upper_bound,
     p,
     q,
+    scale,
 ):
-    (
-        BoxCox_lambda,
-        alpha,
-        beta,
-        phi,
-        gamma_one_v,
-        gamma_two_v,
-        ar_coeffs,
-        ma_coeffs,
-    ) = extract_params(
-        params,
-        use_boxcox,
-        use_trend,
-        use_damped_trend,
-        use_arma_errors,
-        seasonal_periods,
-        p,
-        q,
+    BoxCox_lambda, alpha, beta, phi, gamma_one_v, gamma_two_v, ar_coeffs, ma_coeffs = (
+        extract_params(
+            params * scale,
+            use_boxcox,
+            use_trend,
+            use_damped_trend,
+            use_arma_errors,
+            seasonal_periods,
+            p,
+            q,
+        )
     )
 
     w_transpose = updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q)
@@ -588,15 +573,7 @@ def calcLikelihoodTBATS(
     D = F - np.dot(g, w_transpose)
 
     if checkAdmissibility(
-        BoxCox_lambda,
-        bc_lower_bound,
-        bc_upper_bound,
-        alpha,
-        beta,
-        phi,
-        ar_coeffs,
-        ma_coeffs,
-        D,
+        BoxCox_lambda, bc_lower_bound, bc_upper_bound, phi, ar_coeffs, ma_coeffs, D
     ):
         return log_likelihood
     else:
@@ -616,9 +593,16 @@ def tbats_model_generator(
     ar_coeffs,
     ma_coeffs,
 ):
+
     # Initial Box-Cox transformation (if required)
     if use_boxcox:
-        BoxCox_lambda = 0  # This is the initial value used in the thesis
+        BoxCox_lambda = boxcox_lambda(
+            y,
+            method="guerrero",
+            season_length=max(seasonal_periods),
+            lower=bc_lower_bound,
+            upper=bc_upper_bound,
+        )
         y_trans = boxcox(y, BoxCox_lambda)
     else:
         BoxCox_lambda = None
@@ -638,9 +622,7 @@ def tbats_model_generator(
         s_vector,
         d_vector,
         epsilon_vector,
-    ) = initial_parameters(
-        seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
-    )
+    ) = initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs)
 
     # seed states
     x_nought = makeXMatrix(b, s_vector, d_vector, epsilon_vector)
@@ -703,26 +685,36 @@ def tbats_model_generator(
 
     # Optimization
     # Create vector with parameters
+    scale = []
     if use_boxcox:
         params = np.concatenate([np.array([BoxCox_lambda]), np.array([alpha])])
+        scale.extend([0.001, 0.01])
     else:
         params = np.array([alpha])
+        scale.append(0.01)
     if beta is not None:
         params = np.concatenate([params, np.array([beta])])
+        scale.append(0.01)
     if phi is not None and phi != 1:
         use_damped_trend = True
         params = np.concatenate([params, np.array([phi])])
+        scale.append(0.01)
     else:
         use_damped_trend = False
     params = np.concatenate([params, gamma_one_v, gamma_two_v])
+    scale.extend((gamma_one_v.size + gamma_two_v.size) * [1e-5])
     if ar_coeffs is not None:
         params = np.concatenate([params, ar_coeffs])
+        scale.extend(ar_coeffs.size * [0.1])
     if ma_coeffs is not None:
         params = np.concatenate([params, ma_coeffs])
+        scale.extend(ma_coeffs.size * [0.1])
     if use_boxcox:
         x_nought_untransformed = inv_boxcox(x_nought, BoxCox_lambda)
     else:
         x_nought_untransformed = x_nought
+    scale = np.array(scale)
+    params = params / scale
 
     objective_fn = partial(
         calcLikelihoodTBATS,
@@ -745,9 +737,17 @@ def tbats_model_generator(
         bc_upper_bound=bc_upper_bound,
         p=p,
         q=q,
+        scale=scale,
     )
+
     # Solve optimization problem
-    optim_params = minimize(objective_fn, params, method="Nelder-Mead").x
+    res = minimize(
+        objective_fn,
+        params,
+        method="Nelder-Mead",
+        options={"maxiter": 100 * params.size**2},
+    )
+    optim_params = res.x * scale
 
     (
         optim_BoxCox_lambda,
@@ -796,20 +796,27 @@ def tbats_model_generator(
 
     if use_boxcox:
         y_trans = boxcox(y, optim_BoxCox_lambda)
+        x_nought = boxcox(x_nought_untransformed, optim_BoxCox_lambda)
 
     fitted, errors, x = calcTBATSFaster(y_trans, w_transpose, g, F, x_nought)
 
     sigma2 = np.sum(errors * errors) / len(y_trans)
 
     # Calculate log-likelihood
-    if use_boxcox:
-        log_likelihood = len(y_trans) * np.log(np.nansum(errors**2)) - 2 * (
-            optim_BoxCox_lambda - 1
-        ) * np.nansum(np.log(y))
-    else:
-        log_likelihood = len(y_trans) * np.log(np.nansum(errors**2))
+    log_likelihood = res.fun
 
+    # AIC
     kval = len(optim_params) + x_nought.shape[0]
+    # special cases
+    if optim_BoxCox_lambda == 1:
+        kval -= 1
+    if optim_beta is not None:
+        if abs(optim_beta) < 1e-08:
+            kval -= 1
+    if optim_phi is not None:
+        if optim_phi == 1:
+            kval -= 1
+
     aic = log_likelihood + 2 * kval
 
     res = {
@@ -826,6 +833,7 @@ def tbats_model_generator(
         "BoxCox_lambda": optim_BoxCox_lambda,
         "p": p,
         "q": q,
+        "seed_states": x_nought,
     }
 
     return res
@@ -842,6 +850,7 @@ def tbats_model(
     use_damped_trend,
     use_arma_errors,
 ):
+
     # First model - No ARMA errors
     ar_coeffs = None
     ma_coeffs = None
@@ -921,8 +930,9 @@ def tbats_selection(
     use_damped_trend,
     use_arma_errors,
 ):
+
     # Check for banned parameter combinations
-    if (not use_trend) and use_damped_trend:
+    if not use_trend and use_damped_trend:
         raise ValueError("Can't use damped trend without trend")
 
     # Sort seasonal periods
@@ -935,22 +945,19 @@ def tbats_selection(
         y = y[max_index + 1 : len(y)]
 
     # Check if there are negative values
-    if np.any(y < 0):
+    if use_boxcox in (True, None) and np.any(y <= 0):
+        warnings.warn(
+            "Data contains zero or negative values, disabling Box-Cox transformation."
+        )
         use_boxcox = False
 
-    # Check if there is a trend
-    adf = adfuller(y, regression="ct")
-    if adf[1] <= 0.05:
-        warnings.warn(
-            "The time series is trend-stationary, disabling trend components."
-        )
-        use_trend = False
-        use_damped_trend = False
-    else:
-        use_trend = True
-
     # Choose the number of harmonics
-    k_vector = np.array([find_harmonics(y, m) for m in seasonal_periods])
+    ks = []
+    z = y.copy()
+    for period in seasonal_periods:
+        k, z = find_harmonics(z, period)
+        ks.append(k)
+    k_vector = np.array(ks)
 
     # Select combinations to try out
     if use_boxcox is None:
@@ -958,11 +965,20 @@ def tbats_selection(
     else:
         B = [use_boxcox]
 
-    if use_trend:
+    if use_trend is None:
+        if use_damped_trend is None:
+            T = [[True, True], [True, False], [False, False]]
+        elif use_damped_trend:
+            T = [[True, True]]
+        else:
+            T = [[True, False], [False, False]]
+    elif use_trend:
         if use_damped_trend is None:
             T = [[True, True], [True, False]]
+        elif use_damped_trend:
+            T = [[True, True]]
         else:
-            T = [[True, use_damped_trend]]
+            T = [[True, False]]
     else:
         T = [[False, False]]
 
