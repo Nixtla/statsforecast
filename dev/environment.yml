@@ -2,7 +2,7 @@ name: statsforecast
 channels:
   - conda-forge
 dependencies:
-  - holidays<0.26 # zone info errors
+  - coreforecast>=0.0.7
   - jupyterlab
   - matplotlib
   - numba>=0.55.0
