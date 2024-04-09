@@ -5990,7 +5990,7 @@ class SklearnModel(_TS):
     def __init__(
         self,
         model,
-        prediction_intervals: ConformalIntervals = None,
+        prediction_intervals: Optional[ConformalIntervals] = None,
         alias: Optional[str] = None,
     ):
         self.model = model

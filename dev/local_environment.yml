@@ -12,12 +12,14 @@ dependencies:
   - pip
   - prophet
   - pyarrow
+  - scikit-learn
   - scipy>=1.7.3
   - statsmodels>=0.13.2
   - tabulate
   - threadpoolctl
   - plotly
   - pip:
+    - datasetsforecast
     - nbdev
     - plotly-resampler
     - polars
