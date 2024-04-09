@@ -6,7 +6,8 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'TBATS', 'AutoTBATS', 'Theta', 'OptimizedTheta',
-           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'ConstantModel', 'ZeroModel', 'NaNModel']
+           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'ConstantModel', 'ZeroModel',
+           'NaNModel']
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
@@ -5971,6 +5972,218 @@ class ARCH(GARCH):
         return self.alias
 
 # %% ../nbs/src/core/models.ipynb 479
+class SklearnModel(_TS):
+    """scikit-learn model wrapper
+
+    Parameters
+    ----------
+    model : sklearn.base.BaseEstimator
+        scikit-learn estimator
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        By default, the model will compute the native prediction
+        intervals.
+    alias : str, optional (default=None)
+        Custom name of the model. If `None` will use the model's class.
+    """
+
+    def __init__(
+        self,
+        model,
+        prediction_intervals: ConformalIntervals = None,
+        alias: Optional[str] = None,
+    ):
+        self.model = model
+        self.prediction_intervals = prediction_intervals
+        self.alias = alias
+
+    def __repr__(self):
+        if self.alias is not None:
+            return self.alias
+        return self.model.__class__.__name__
+
+    def fit(
+        self,
+        y: np.ndarray,
+        X: np.ndarray,
+    ) -> "SklearnModel":
+        """Fit the model.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like
+            Exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self : SklearnModel
+            Fitted SklearnModel object.
+        """
+        from sklearn.base import clone
+
+        self.model_ = {"model": clone(self.model)}
+        self.model_["model"].fit(X, y)
+        self._store_cs(y=y, X=X)
+        self.model_["fitted"] = self.model_["model"].predict(X)
+        residuals = y - self.model_["fitted"]
+        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: np.ndarray,
+        level: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        """Predict with fitted SklearnModel.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like
+            Exogenous of shape (h, n_x).
+        level: List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"mean": self.model_["model"].predict(X)}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
+        """Access fitted SklearnModel insample predictions.
+
+        Parameters
+        ----------
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray,
+        X_future: np.ndarray,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ) -> Dict[str, Any]:
+        """Memory Efficient SklearnModel predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        from sklearn.base import clone
+
+        model = clone(self.model)
+        model.fit(X, y)
+        res = {"mean": model.predict(X_future)}
+        if fitted:
+            res["fitted"] = model.predict(X)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
+
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray,
+        X_future: np.ndarray,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        """Apply fitted SklearnModel to a new/updated time series.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels for prediction intervals.
+        fitted : bool
+            Whether or not returns insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.
+        """
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        res = {"mean": self.model_["model"].predict(X_future)}
+        if fitted:
+            res["fitted"] = self.model_["model"].predict(X)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                se = _calculate_sigma(y - res["fitted"], y.size)
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        return res
+
+# %% ../nbs/src/core/models.ipynb 490
 class ConstantModel(_TS):
     def __init__(self, constant: float, alias: str = "ConstantModel"):
         """Constant Model.
@@ -6155,7 +6368,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 493
+# %% ../nbs/src/core/models.ipynb 504
 class ZeroModel(ConstantModel):
     def __init__(self, alias: str = "ZeroModel"):
         """Returns Zero forecasts.
@@ -6169,7 +6382,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 507
+# %% ../nbs/src/core/models.ipynb 518
 class NaNModel(ConstantModel):
     def __init__(self, alias: str = "NaNModel"):
         """NaN Model.
