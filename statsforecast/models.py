@@ -2011,8 +2011,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         Custom name of the model.
     prediction_intervals : Optional[ConformalIntervals]
         Information to compute conformal prediction intervals.
-        By default, the model will compute the native prediction
-        intervals.
+        This is required for generating future prediction intervals.
     """
 
     def __init__(
@@ -2084,7 +2083,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
-            raise Exception("You must pass `prediction_intervals` to " "compute them.")
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
     def predict_in_sample(self):
@@ -2202,8 +2201,7 @@ class SeasonalExponentialSmoothing(_TS):
         Custom name of the model.
     prediction_intervals : Optional[ConformalIntervals]
         Information to compute conformal prediction intervals.
-        By default, the model will compute the native prediction
-        intervals.
+        This is required for generating future prediction intervals.
     """
 
     def __init__(
@@ -2410,8 +2408,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
+            This is required for generating future prediction intervals.
         """
         self.season_length = season_length
         self.alias = alias
@@ -3463,8 +3460,7 @@ class WindowAverage(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
+            This is required for generating future prediction intervals.
         """
         self.window_size = window_size
         self.alias = alias
@@ -3592,7 +3588,7 @@ class WindowAverage(_TS):
         if self.prediction_intervals is not None:
             res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         else:
-            raise Exception("You must pass `prediction_intervals` to " "compute them.")
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
 # %% ../nbs/src/core/models.ipynb 276
@@ -3639,8 +3635,7 @@ class SeasonalWindowAverage(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
+            This is required for generating future prediction intervals.
         """
         self.season_length = season_length
         self.window_size = window_size
@@ -4299,8 +4294,7 @@ class CrostonOptimized(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
+            This is required for generating future prediction intervals.
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
@@ -4877,8 +4871,7 @@ class TSB(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
+            This is required for generating future prediction intervals.
         """
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
@@ -4943,7 +4936,7 @@ class TSB(_TS):
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
-            raise Exception("You must pass `prediction_intervals` to " "compute them.")
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
@@ -5981,8 +5974,7 @@ class SklearnModel(_TS):
         scikit-learn estimator
     prediction_intervals : Optional[ConformalIntervals]
         Information to compute conformal prediction intervals.
-        By default, the model will compute the native prediction
-        intervals.
+        This is required for generating future prediction intervals.
     alias : str, optional (default=None)
         Custom name of the model. If `None` will use the model's class.
     """
