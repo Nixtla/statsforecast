@@ -23,6 +23,7 @@ from fugue.execution.factory import (
     make_execution_engine,
     try_get_context_execution_engine,
 )
+from threadpoolctl import threadpool_limits
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
 from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 # %% ../nbs/src/core/core.ipynb 10
 class GroupedArray(BaseGroupedArray):
+
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
             return False
@@ -216,9 +218,11 @@ class GroupedArray(BaseGroupedArray):
                     ]
                     fitted_i = np.vstack([res_i[key] for key in cols_m_fitted]).T
                     cols_m_fitted = [
-                        f"{repr(model)}"
-                        if col == "fitted"
-                        else f"{repr(model)}-{col.replace('fitted-', '')}"
+                        (
+                            f"{repr(model)}"
+                            if col == "fitted"
+                            else f"{repr(model)}-{col.replace('fitted-', '')}"
+                        )
                         for col in cols_m_fitted
                     ]
                     fitted_vals[
@@ -385,6 +389,70 @@ class GroupedArray(BaseGroupedArray):
             for idxs in np.array_split(range(self.n_groups), n_chunks)
             if idxs.size
         ]
+
+    def _single_threaded_fit(self, models, fallback_model=None):
+        with threadpool_limits(limits=1):
+            return self.fit(models=models, fallback_model=fallback_model)
+
+    def _single_threaded_predict(self, fm, h, X=None, level=tuple()):
+        with threadpool_limits(limits=1):
+            return self.predict(fm=fm, h=h, X=X, level=level)
+
+    def _single_threaded_fit_predict(self, models, h, X=None, level=tuple()):
+        with threadpool_limits(limits=1):
+            return self.fit_predict(models=models, h=h, X=X, level=level)
+
+    def _single_threaded_forecast(
+        self,
+        models,
+        h,
+        fallback_model=None,
+        fitted=False,
+        X=None,
+        level=tuple(),
+        verbose=False,
+        target_col="y",
+    ):
+        with threadpool_limits(limits=1):
+            return self.forecast(
+                models=models,
+                h=h,
+                fallback_model=fallback_model,
+                fitted=fitted,
+                X=X,
+                level=level,
+                verbose=verbose,
+                target_col=target_col,
+            )
+
+    def _single_threaded_cross_validation(
+        self,
+        models,
+        h,
+        test_size,
+        fallback_model=None,
+        step_size=1,
+        input_size=None,
+        fitted=False,
+        level=tuple(),
+        refit=True,
+        verbose=False,
+        target_col="y",
+    ):
+        with threadpool_limits(limits=1):
+            return self.cross_validation(
+                models=models,
+                h=h,
+                test_size=test_size,
+                fallback_model=fallback_model,
+                step_size=step_size,
+                input_size=input_size,
+                fitted=fitted,
+                level=level,
+                refit=refit,
+                verbose=verbose,
+                target_col=target_col,
+            )
 
 # %% ../nbs/src/core/core.ipynb 24
 def _get_n_jobs(n_groups, n_jobs):
@@ -1117,7 +1185,7 @@ class _StatsForecast:
             futures = []
             for ga in gas:
                 future = executor.apply_async(
-                    ga.fit, (self.models, self.fallback_model)
+                    ga._single_threaded_fit, (self.models, self.fallback_model)
                 )
                 futures.append(future)
             fm = np.vstack([f.get() for f in futures])
@@ -1143,13 +1211,8 @@ class _StatsForecast:
             futures = []
             for ga, fm, X_ in zip(gas, fms, Xs):
                 future = executor.apply_async(
-                    ga.predict,
-                    (
-                        fm,
-                        h,
-                        X_,
-                        level,
-                    ),
+                    ga._single_threaded_predict,
+                    (fm, h, X_, level),
                 )
                 futures.append(future)
             out = [f.get() for f in futures]
@@ -1167,13 +1230,8 @@ class _StatsForecast:
             futures = []
             for ga, X_ in zip(gas, Xs):
                 future = executor.apply_async(
-                    ga.fit_predict,
-                    (
-                        self.models,
-                        h,
-                        X_,
-                        level,
-                    ),
+                    ga._single_threaded_fit_predict,
+                    (self.models, h, X_, level),
                 )
                 futures.append(future)
             out = [f.get() for f in futures]
@@ -1193,7 +1251,7 @@ class _StatsForecast:
             futures = []
             for ga, X_ in zip(gas, Xs):
                 future = executor.apply_async(
-                    ga.forecast,
+                    ga._single_threaded_forecast,
                     tuple(),
                     dict(
                         models=self.models,
@@ -1232,7 +1290,7 @@ class _StatsForecast:
             futures = []
             for ga in gas:
                 future = executor.apply_async(
-                    ga.cross_validation,
+                    ga._single_threaded_cross_validation,
                     tuple(),
                     dict(
                         models=self.models,
