@@ -620,7 +620,7 @@ def auto_theta(
     # seasonal decomposition if needed
     decompose = False
     # seasonal test
-    if m >= 4:
+    if m >= 4 and len(y) >= 2 * m:
         r = acf(y, nlags=m, fft=False)[1:]
         stat = np.sqrt((1 + 2 * np.sum(r[:-1] ** 2)) / len(y))
         decompose = np.abs(r[-1]) / stat > norm.ppf(0.95)
