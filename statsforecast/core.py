@@ -745,8 +745,7 @@ class _StatsForecast:
             raise ValueError(
                 f"Expected X to have shape {expected_shape}, but got {X.shape}"
             )
-        first_col = [c for c in X.columns if c not in (self.id_col, self.time_col)][0]
-        _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, first_col)
+        _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, None)
         return GroupedArray(data, indptr), level
 
     def _validate_exog(self, X_df: Optional[DataFrame] = None) -> None:
