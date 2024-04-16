@@ -1042,18 +1042,18 @@ class _StatsForecast:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
-        if not isinstance(refit, bool):
+        if refit is not True:
             no_forward = [m for m in self.models if not hasattr(m, "forward")]
             if no_forward:
                 raise ValueError(
-                    "Can only use integer refit with models that implement the forward method. "
+                    "Can only use integer refit or refit=False with models that implement the forward method. "
                     f"The following models do not implement the forward method: {no_forward}."
                 )
             if self.fallback_model is not None and not hasattr(
                 self.fallback_model, "forward"
             ):
                 raise ValueError(
-                    "Can only use integer refit with a fallback model that implements the forward method."
+                    "Can only use integer refit or refit=False with a fallback model that implements the forward method."
                 )
         self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
