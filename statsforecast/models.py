@@ -22,9 +22,10 @@ from scipy.special import inv_boxcox
 from statsforecast.arima import (
     Arima,
     auto_arima_f,
-    forecast_arima,
     fitted_arima,
+    forecast_arima,
     forward_arima,
+    is_constant,
 )
 from .ces import auto_ces, forecast_ces, forward_ces
 from statsforecast.ets import (
@@ -42,7 +43,6 @@ from statsforecast.utils import (
     _calculate_sigma,
     _calculate_intervals,
     _ensure_float,
-    _is_constant,
     _naive,
     _old_kw_to_pos,
     _quantiles,
@@ -963,7 +963,7 @@ class AutoCES(_TS):
         self :
             Complex Exponential Smoothing fitted model.
         """
-        if _is_constant(y):
+        if is_constant(y):
             model = Naive(
                 alias=self.alias, prediction_intervals=self.prediction_intervals
             )
@@ -1063,7 +1063,7 @@ class AutoCES(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        if _is_constant(y):
+        if is_constant(y):
             model = Naive(
                 alias=self.alias, prediction_intervals=self.prediction_intervals
             )
