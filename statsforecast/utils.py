@@ -292,6 +292,10 @@ def _ensure_float(x: np.ndarray) -> np.ndarray:
         x = x.astype(np.float32)
     return x
 
+
+def _is_constant(x):
+    return np.all(x[0] == x)
+
 # %% ../nbs/src/utils.ipynb 19
 # Functions used for calculating prediction intervals
 def _quantiles(level):
