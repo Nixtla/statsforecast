@@ -18,7 +18,6 @@ dependencies:
   - tabulate
   - threadpoolctl
   - plotly
-  - utilsforecast>=0.1.4
   - pip:
     - datasetsforecast
     - nbdev
@@ -26,3 +25,4 @@ dependencies:
     - polars
     - supersmoother
     - tqdm
+    - utilsforecast>=0.1.4

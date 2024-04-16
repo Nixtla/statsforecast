@@ -19,7 +19,6 @@ dependencies:
   - tabulate
   - threadpoolctl
   - plotly
-  - utilsforecast>=0.1.4
   - pip:
     - datasetsforecast
     - fugue[dask,ray]
@@ -28,3 +27,4 @@ dependencies:
     - polars
     - supersmoother
     - tqdm
+    - utilsforecast>=0.1.4
