@@ -890,6 +890,10 @@ def arima(
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
 
         res, resid = arima_css(x, arma, phi, theta, ncond)
+        if math.isinf(res):
+            import sys
+
+            return sys.float_info.max
         if res <= 0.0:
             return -math.inf
         return 0.5 * math.log(res)
@@ -1104,6 +1108,7 @@ def checkarima(obj):
 
 # %% ../nbs/src/arima.ipynb 44
 def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
+
     myNCOL = lambda x: x.shape[1] if x is not None else 0
     # rsd = model['residuals']
     # xreg = model['xreg']
