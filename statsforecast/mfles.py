@@ -4,17 +4,16 @@
 __all__ = ['MFLES']
 
 # %% ../nbs/src/mfles.ipynb 3
-from itertools import cycle
 import itertools
 from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
 
+from .utils import _ensure_float
+
 # %% ../nbs/src/mfles.ipynb 4
 # utility functions
-
-
 def cross_validation(y, test_size, n_splits, model_obj, step_size=1, **kwargs):
     mses = []
     maes = []
@@ -326,6 +325,11 @@ class OLS:
     def predict(self, X):
         return X @ self.coefs
 
+
+class Zeros:
+    def predict(self, X):
+        return np.zeros(X.shape[0])
+
 # %% ../nbs/src/mfles.ipynb 5
 class MFLES:
     def __init__(self, verbose=1, robust=None):
@@ -421,6 +425,8 @@ class MFLES:
         if cov_threshold == -1:
             cov_threshold = 10000
         n = len(y)
+        y = _ensure_float(y)
+        self.exogenous_lr = exogenous_lr
         if n < 4 or np.all(y == np.mean(y)):
             if self.verbose:
                 if n < 4:
@@ -430,8 +436,9 @@ class MFLES:
             self.trend = np.append(y[-1], y[-1])
             self.seasonality = np.zeros(len(y))
             self.trend_penalty = False
-            self.mean = 0
+            self.mean = y[-1]
             self.std = 0
+            self.exo_model = [Zeros()]
             return np.tile(y[-1], len(y))
         og_y = y
         self.og_y = og_y
@@ -445,7 +452,6 @@ class MFLES:
         self.ses_component = np.zeros(n)
         self.median_component = np.zeros(n)
         self.exogenous_component = np.zeros(n)
-        self.exogenous_lr = exogenous_lr
         self.exo_model = []
         self.round_cost = []
         if multiplicative is None:
@@ -476,13 +482,13 @@ class MFLES:
         mse = None
         equal = 0
         if ma is None:
-            ma_cycle = cycle([1])
+            ma_cycle = itertools.cycle([1])
         else:
             if not isinstance(ma, list):
                 ma = [ma]
-            ma_cycle = cycle(ma)
+            ma_cycle = itertools.cycle(ma)
         if seasonal_period is not None:
-            seasons_cycle = cycle(list(range(len(seasonal_period))))
+            seasons_cycle = itertools.cycle(list(range(len(seasonal_period))))
             self.seasonality = np.zeros(max(seasonal_period))
             fourier_series = []
             for period in seasonal_period:
@@ -542,7 +548,9 @@ class MFLES:
                 i % 2
             ):  # if even get linear piece, allows for multiple seasonality fitting a bit more
                 if self.robust:
-                    tren = siegel_repeated_medians(x=np.arange(n), y=resids)
+                    tren = siegel_repeated_medians(
+                        x=np.arange(n, dtype=resids.dtype), y=resids
+                    )
                 else:
                     if i == 1 or not changepoints:
                         tren = fast_ols(x=np.arange(n), y=resids)
@@ -618,7 +626,6 @@ class MFLES:
         else:
             fitted = self.mean + (fitted * self.std)
         self.multiplicative = multiplicative
-        self.fitted = fitted
         return fitted
 
     def predict(self, forecast_horizon, X=None):
@@ -640,7 +647,6 @@ class MFLES:
             predicted = np.exp(predicted)
         else:
             predicted = self.mean + (predicted * self.std)
-        self.predicted = predicted
         return predicted
 
     def optimize(
