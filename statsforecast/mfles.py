@@ -14,18 +14,17 @@ from .utils import _ensure_float
 
 # %% ../nbs/src/mfles.ipynb 4
 # utility functions
-def cross_validation(y, test_size, n_splits, model_obj, step_size=1, **kwargs):
+def cross_validation(y, X, test_size, n_splits, model_obj, step_size=1, **kwargs):
     mses = []
     maes = []
     mapes = []
     smapes = []
     residuals = []
     param_keys = list(kwargs.keys())
-    if "X" in param_keys:
-        exogenous = kwargs["X"].copy()
-        kwargs.pop("X")
-    else:
+    if X is None:
         exogenous = None
+    else:
+        exogenous = X.copy()
     for split in range(n_splits):
         train_y = y[: -(split * step_size + test_size)]
         test_y = y[len(train_y) : len(train_y) + test_size]
@@ -652,6 +651,7 @@ class MFLES:
     def optimize(
         self,
         y,
+        X,
         test_size,
         n_steps,
         step_size=1,
@@ -702,6 +702,7 @@ class MFLES:
             try:
                 cv_results = cross_validation(
                     y,
+                    X,
                     test_size,
                     n_steps,
                     MFLES(verbose=self.verbose),

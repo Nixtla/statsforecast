@@ -6356,7 +6356,7 @@ class MFLES(_TS):
         ----------
         y : numpy.array
             Clean time series of shape (t, ).
-        X : array-like
+        X : array-like, optional (default=None)
             Exogenous of shape (t, n_x).
 
         Returns
@@ -6373,7 +6373,7 @@ class MFLES(_TS):
     def predict(
         self,
         h: int,
-        X: np.ndarray,
+        X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """Predict with fitted MFLES.
@@ -6382,7 +6382,7 @@ class MFLES(_TS):
         ----------
         h : int
             Forecast horizon.
-        X : array-like
+        X : array-like, optional (default=None)
             Exogenous of shape (h, n_x).
         level: List[int]
             Confidence levels (0-100) for prediction intervals.
@@ -6472,7 +6472,7 @@ class MFLES(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 498
+# %% ../nbs/src/core/models.ipynb 501
 class ConstantModel(_TS):
 
     def __init__(self, constant: float, alias: str = "ConstantModel"):
@@ -6658,7 +6658,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 512
+# %% ../nbs/src/core/models.ipynb 515
 class ZeroModel(ConstantModel):
 
     def __init__(self, alias: str = "ZeroModel"):
@@ -6673,7 +6673,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 526
+# %% ../nbs/src/core/models.ipynb 529
 class NaNModel(ConstantModel):
 
     def __init__(self, alias: str = "NaNModel"):
