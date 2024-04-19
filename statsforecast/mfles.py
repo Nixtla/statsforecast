@@ -128,6 +128,11 @@ def calc_mse(y_true, y_pred):
     return np.mean(sq_err)
 
 
+def calc_mae(y_true, y_pred):
+    abs_err = np.abs(y_true - y_pred)
+    return np.mean(abs_err)
+
+
 def set_fourier(period):
     if period < 10:
         fourier = 5
@@ -651,12 +656,12 @@ class MFLES:
     def optimize(
         self,
         y,
-        X,
         test_size,
         n_steps,
         step_size=1,
         seasonal_period=None,
         metric="smape",
+        X=None,
         params=None,
     ):
         """
