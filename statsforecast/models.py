@@ -6,8 +6,8 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'TBATS', 'AutoTBATS', 'Theta', 'OptimizedTheta',
-           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'MFLES', 'ConstantModel',
-           'ZeroModel', 'NaNModel']
+           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'MFLES', 'AutoMFLES',
+           'ConstantModel', 'ZeroModel', 'NaNModel']
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
@@ -6431,6 +6431,200 @@ class MFLES(_TS):
         fitted: bool = False,
     ) -> Dict[str, Any]:
         """Memory Efficient MFLES predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        model = self._fit(y=y, X=X)
+        res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
+        if fitted:
+            res["fitted"] = model["fitted"]
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
+
+# %% ../nbs/src/core/models.ipynb 497
+class AutoMFLES(_TS):
+    """AutoMFLES
+
+    Parameters
+    ----------
+    h : int
+        Forecast horizon used during cross validation.
+    season_length : int or list of int, optional (default=None)
+        Number of observations per unit of time. Ex: 24 Hourly data.
+    n_windows : int (default=2)
+        Number of windows used for cross validation.
+    config : dict
+        Mapping from parameter name (from the init arguments of MFLES) to a list of values to try.
+    step_size : int (default=1)
+        Step size between each window.
+    metric : str (default='smape')
+        Metric used to select the best model. Possible options are: 'smape', 'mape', 'mse' and 'mae'.
+    verbose : bool (default=False)
+        Print debugging information.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        This is required for generating future prediction intervals.
+    alias : str (default='AutoMFLES')
+        Custom name of the model.
+    """
+
+    def __init__(
+        self,
+        test_size: int,
+        season_length: Optional[Union[int, List[int]]] = None,
+        n_windows: int = 2,
+        config: Optional[Dict[str, Any]] = None,
+        step_size: int = 1,
+        metric: str = "smape",
+        verbose: bool = False,
+        prediction_intervals: Optional[ConformalIntervals] = None,
+        alias: str = "AutoMFLES",
+    ):
+        self.season_length = season_length
+        self.n_windows = n_windows
+        self.test_size = test_size
+        self.config = config
+        self.step_size = step_size
+        self.metric = metric
+        self.verbose = verbose
+        self.prediction_intervals = prediction_intervals
+        self.alias = alias
+
+    def _fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> Dict[str, Any]:
+        model = _MFLES(verbose=self.verbose)
+        optim_params = model.optimize(
+            y=y,
+            X=X,
+            test_size=self.test_size,
+            n_steps=self.n_windows,
+            step_size=self.step_size,
+            seasonal_period=self.season_length,
+            metric=self.metric,
+            params=self.config,
+        )
+        # the seasonal_period may've been found during the optimization
+        seasonal_period = optim_params.pop("seasonal_period", self.season_length)
+        fitted = model.fit(
+            y=y,
+            X=X,
+            seasonal_period=seasonal_period,
+            **optim_params,
+        )
+        return {"model": model, "fitted": fitted}
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> "AutoMFLES":
+        """Fit the model
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like, optional (default=None)
+            Exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self : AutoMFLES
+            Fitted AutoMFLES object.
+        """
+        self.model_ = self._fit(y=y, X=X)
+        self._store_cs(y=y, X=X)
+        residuals = y - self.model_["fitted"]
+        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: np.ndarray,
+        level: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        """Predict with fitted AutoMFLES.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like, optional (default=None)
+            Exogenous of shape (h, n_x).
+        level: List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"mean": self.model_["model"].predict(forecast_horizon=h, X=X)}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
+        """Access fitted AutoMFLES insample predictions.
+
+        Parameters
+        ----------
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ) -> Dict[str, Any]:
+        """Memory Efficient AutoMFLES predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
