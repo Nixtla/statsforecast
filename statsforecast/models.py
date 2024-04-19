@@ -6567,7 +6567,7 @@ class AutoMFLES(_TS):
     def predict(
         self,
         h: int,
-        X: np.ndarray,
+        X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """Predict with fitted AutoMFLES.
