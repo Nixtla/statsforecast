@@ -5,7 +5,6 @@ __all__ = ['MFLES']
 
 # %% ../nbs/src/mfles.ipynb 3
 import itertools
-from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -14,13 +13,40 @@ from .utils import _ensure_float
 
 # %% ../nbs/src/mfles.ipynb 4
 # utility functions
-def cross_validation(y, X, test_size, n_splits, model_obj, step_size=1, **kwargs):
-    mses = []
-    maes = []
-    mapes = []
-    smapes = []
+def calc_mse(y_true, y_pred):
+    sq_err = (y_true - y_pred) ** 2
+    return np.mean(sq_err)
+
+
+def calc_mae(y_true, y_pred):
+    abs_err = np.abs(y_true - y_pred)
+    return np.mean(abs_err)
+
+
+def calc_mape(y_true, y_pred):
+    pct_err = np.abs((y_true - y_pred) / (y_pred + 1e-6))
+    return np.mean(pct_err)
+
+
+def calc_smape(y_true, y_pred):
+    pct_err = 2 * np.abs(y_true - y_pred) / np.abs(y_true + y_pred + 1e-6)
+    return np.mean(pct_err)
+
+
+_metric2fn = {
+    "mse": calc_mse,
+    "mae": calc_mae,
+    "mape": calc_mape,
+    "smape": calc_smape,
+}
+
+
+def cross_validation(
+    y, X, test_size, n_splits, model_obj, metric, step_size=1, **kwargs
+):
+    metrics = []
+    metric_fn = _metric2fn[metric]
     residuals = []
-    param_keys = list(kwargs.keys())
     if X is None:
         exogenous = None
     else:
@@ -36,18 +62,9 @@ def cross_validation(y, X, test_size, n_splits, model_obj, step_size=1, **kwargs
             test_X = None
         model_obj.fit(train_y, X=train_X, **kwargs)
         prediction = model_obj.predict(test_size, X=test_X)
-        mses.append(calc_mse(test_y, prediction))
-        maes.append(calc_mae(test_y, prediction))
-        mapes.append(calc_mape(test_y, prediction))
-        smapes.append(calc_smape(test_y, prediction))
+        metrics.append(metric_fn(test_y, prediction))
         residuals.append(test_y - prediction)
-    return {
-        "mse": mses,
-        "mae": maes,
-        "mape": mapes,
-        "smape": smapes,
-        "residuals": residuals,
-    }
+    return {"metric": np.mean(metrics), "residuals": residuals}
 
 
 def logic_check(keys_to_check, keys):
@@ -121,16 +138,6 @@ def cap_outliers(series, outlier_cap=3):
     mean = np.mean(series)
     std = np.std(series)
     return series.clip(min=mean - outlier_cap * std, max=mean + outlier_cap * std)
-
-
-def calc_mse(y_true, y_pred):
-    sq_err = (y_true - y_pred) ** 2
-    return np.mean(sq_err)
-
-
-def calc_mae(y_true, y_pred):
-    abs_err = np.abs(y_true - y_pred)
-    return np.mean(abs_err)
 
 
 def set_fourier(period):
@@ -714,7 +721,7 @@ class MFLES:
                     step_size=step_size,
                     **param,
                 )
-                metrics.append(np.mean(cv_results[metric]))
+                metrics.append(cv_results["metric"])
             except:
                 metrics.append(10**10)
         opt_param = configs[np.argmin(metrics)]
