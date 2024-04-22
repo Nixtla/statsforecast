@@ -709,23 +709,20 @@ class MFLES:
                     f"Series length too small, setting test_size to {test_size} and n_steps to {n_steps}"
                 )
 
-        metrics = []
+        self.metrics = []
         for param in configs:
-            try:
-                cv_results = cross_validation(
-                    y,
-                    X,
-                    test_size,
-                    n_steps,
-                    MFLES(verbose=self.verbose),
-                    step_size=step_size,
-                    **param,
-                )
-                metrics.append(cv_results["metric"])
-            except:
-                metrics.append(10**10)
-        opt_param = configs[np.argmin(metrics)]
-        return opt_param
+            cv_results = cross_validation(
+                y,
+                X,
+                test_size,
+                n_steps,
+                MFLES(verbose=self.verbose),
+                step_size=step_size,
+                metric=metric,
+                **param,
+            )
+            self.metrics.append(cv_results["metric"])
+        return configs[np.argmin(self.metrics)]
 
     def seasonal_decompose(self, y, **kwargs):
         fitted = self.fit(y, **kwargs)
