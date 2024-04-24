@@ -2058,8 +2058,8 @@ def auto_arima_f(
             method=method,
             xreg=xreg,
             offset=offset,
-            allowdrift=allowdrift,
-            allowmean=allowmean,
+            allow_drift=allowdrift,
+            allow_mean=allowmean,
             period=m,
         )
         bestfit["lambda"] = blambda
