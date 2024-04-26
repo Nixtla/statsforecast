@@ -259,12 +259,16 @@ def lasso_nb(X, y, alpha, tol=0.001, maxiter=10000):
 # different models
 def siegel_repeated_medians(x, y):
     # Siegel repeated medians regression
+    n = x.size
     ys = y - y.reshape(-1, 1)
     xs = x - x.reshape(-1, 1)
     xs[xs == 0] = 1
     xs[np.diag_indices_from(xs)] = np.nan
     ys[xs == 0] = 0
-    slopes = np.nanmedian(ys / xs, axis=1)
+    quot = ys / xs
+    remove_diag_mask = ~np.eye(n, dtype=bool)
+    quot = quot[remove_diag_mask].reshape(n, n - 1)
+    slopes = np.median(quot, axis=1)
     ints = y - slopes * x
     return x * np.median(slopes) + np.median(ints)
 
