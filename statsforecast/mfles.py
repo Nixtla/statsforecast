@@ -8,6 +8,7 @@ import itertools
 
 import numpy as np
 import pandas as pd
+from numba import njit
 
 from .utils import _ensure_float
 
@@ -189,6 +190,7 @@ def get_fourier_series(length, seasonal_period, fourier_order):
     return np.hstack([np.cos(x), np.sin(x)])
 
 
+@njit
 def get_basis(y, n_changepoints, decay=-1, gradient_strategy=0):
     y = y.copy()
     y -= y[0]
@@ -257,18 +259,25 @@ def lasso_nb(X, y, alpha, tol=0.001, maxiter=10000):
 
 
 # different models
+@njit
 def siegel_repeated_medians(x, y):
     # Siegel repeated medians regression
-    n = x.size
-    ys = y - y.reshape(-1, 1)
-    xs = x - x.reshape(-1, 1)
-    xs[xs == 0] = 1
-    xs[np.diag_indices_from(xs)] = np.nan
-    ys[xs == 0] = 0
-    quot = ys / xs
-    remove_diag_mask = ~np.eye(n, dtype=bool)
-    quot = quot[remove_diag_mask].reshape(n, n - 1)
-    slopes = np.median(quot, axis=1)
+    n = y.size
+    slopes = np.empty_like(y)
+    slopes_sub = np.empty(shape=n - 1, dtype=y.dtype)
+    for i in range(n):
+        k = 0
+        for j in range(n):
+            if i == j:
+                continue
+            xd = x[j] - x[i]
+            if xd == 0:
+                slope = 0
+            else:
+                slope = (y[j] - y[i]) / xd
+            slopes_sub[k] = slope
+            k += 1
+        slopes[i] = np.median(slopes_sub)
     ints = y - slopes * x
     return x * np.median(slopes) + np.median(ints)
 
