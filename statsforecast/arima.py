@@ -890,6 +890,10 @@ def arima(
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
 
         res, resid = arima_css(x, arma, phi, theta, ncond)
+        if math.isinf(res):
+            import sys
+
+            return sys.float_info.max
         if res <= 0.0:
             return -math.inf
         return 0.5 * math.log(res)
@@ -2054,8 +2058,8 @@ def auto_arima_f(
             method=method,
             xreg=xreg,
             offset=offset,
-            allowdrift=allowdrift,
-            allowmean=allowmean,
+            allow_drift=allowdrift,
+            allow_mean=allowmean,
             period=m,
         )
         bestfit["lambda"] = blambda

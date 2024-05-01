@@ -5,14 +5,13 @@ channels:
 dependencies:
   - fire
   - pip
-  - prophet
   - python=3.10
   - r-base
-  - r-dplyr
+  - r-data.table
   - r-forecast
-  - r-readr
+  - r-parallel 
+  - r-tidyverse
   - pip:
-    - neuralprophet
     - statsforecast
-    - tbats
     - utilsforecast
+    - tbats 

@@ -2,6 +2,7 @@ name: statsforecast
 channels:
   - conda-forge
 dependencies:
+  - coreforecast>=0.0.7
   - holidays<0.21 # zone info errors
   - jupyterlab
   - matplotlib
@@ -12,16 +13,18 @@ dependencies:
   - pip
   - prophet
   - pyarrow
+  - scikit-learn
   - scipy>=1.7.3
   - statsmodels>=0.13.2
   - tabulate
   - threadpoolctl
   - plotly
   - pip:
+    - datasetsforecast
     - fugue[dask,ray]
     - nbdev
     - plotly-resampler
     - polars
     - supersmoother
     - tqdm
-    - utilsforecast>=0.0.24
+    - utilsforecast>=0.1.4
