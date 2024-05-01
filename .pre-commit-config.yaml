@@ -1,0 +1,24 @@
+fail_fast: true
+
+repos:
+  - repo: local
+    hooks:
+      - id: imports_with_code
+        name: Cells with imports and code
+        entry: python action_files/imports_with_code.py
+        language: system
+  - repo: https://github.com/fastai/nbdev
+    rev: 2.2.10
+    hooks:
+      - id: nbdev_clean
+      - id: nbdev_export
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.2.1
+    hooks:
+      - id: ruff
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        args: [--ignore-missing-imports]
+        exclude: 'setup.py'
