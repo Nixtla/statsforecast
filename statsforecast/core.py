@@ -41,6 +41,7 @@ logger = logging.getLogger(__name__)
 
 # %% ../nbs/src/core/core.ipynb 10
 class GroupedArray(BaseGroupedArray):
+
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
             return False
@@ -216,9 +217,11 @@ class GroupedArray(BaseGroupedArray):
                     ]
                     fitted_i = np.vstack([res_i[key] for key in cols_m_fitted]).T
                     cols_m_fitted = [
-                        f"{repr(model)}"
-                        if col == "fitted"
-                        else f"{repr(model)}-{col.replace('fitted-', '')}"
+                        (
+                            f"{repr(model)}"
+                            if col == "fitted"
+                            else f"{repr(model)}-{col.replace('fitted-', '')}"
+                        )
                         for col in cols_m_fitted
                     ]
                     fitted_vals[

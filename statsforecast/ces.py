@@ -679,6 +679,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 
 # %% ../nbs/src/ces.ipynb 31
 def _simulate_pred_intervals(model, h, level):
+
     np.random.seed(1)
     nsim = 5000
     y_path = np.zeros([nsim, h])

@@ -24,6 +24,7 @@ from .utils import NOGIL, CACHE
 
 # %% ../nbs/src/tbats.ipynb 7
 def find_harmonics(y, m):
+
     # Compute a 2 x m moving average to estimate the trend
     window_size = 2 * m
     data = pd.DataFrame({"value": y})
@@ -81,6 +82,7 @@ def find_harmonics(y, m):
 def initial_parameters(
     seasonal_periods, k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs
 ):
+
     alpha = 0.09
 
     if use_trend:
@@ -125,6 +127,7 @@ def initial_parameters(
 
 # %% ../nbs/src/tbats.ipynb 11
 def makeXMatrix(b, s_vector, d_vector, epsilon_vector):
+
     # x = (l_t, b_t, s_vector, d_vector, epsilon_vector)
     x = np.array([0.0])
     if b is not None:
@@ -181,6 +184,7 @@ def makeTBATSWMatrix(phi, k_vector, ar_coeffs, ma_coeffs, tau):
 def makeTBATSGMatrix(
     k_vector, alpha, adj_beta, beta, gamma_one_v, gamma_two_v, p, q, tau
 ):
+
     # g = (alpha, beta, gamma_bold, 1, 0_{p-1}, 1, 0_{q-1})
     g = np.zeros((1 + adj_beta + 2 * np.sum(k_vector) + p + q, 1))
 
@@ -321,6 +325,7 @@ def makeTBATSFMatrix(
 # %% ../nbs/src/tbats.ipynb 21
 @njit(nogil=NOGIL, cache=CACHE)
 def calcTBATSFaster(y_trans, w_transpose, g, F, x_nought):
+
     n = y_trans.shape[0]
 
     yhat = np.zeros((1, n))
@@ -405,9 +410,9 @@ def updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q):
     if p != 0:
         w_transpose[0, adjBeta + tau + 1 : adjBeta + tau + p + 1] = ar_coeffs
         if q != 0:
-            w_transpose[
-                0, adjBeta + tau + p + 1 : adjBeta + tau + p + q + 1
-            ] = ma_coeffs
+            w_transpose[0, adjBeta + tau + p + 1 : adjBeta + tau + p + q + 1] = (
+                ma_coeffs
+            )
     elif q != 0:
         # here p = 0
         w_transpose[0, adjBeta + tau + 1 : adjBeta + tau + q + 1] = ma_coeffs
@@ -454,9 +459,9 @@ def updateTBATSFMatrix(
                 (1 + betaAdjust) : (betaAdjust + tau + 1),
                 (betaAdjust + tau + 1) : (betaAdjust + tau + p + 1),
             ] = B
-        F[
-            betaAdjust + tau + 1, (betaAdjust + tau + 1) : (betaAdjust + tau + p + 1)
-        ] = ar_coeffs
+        F[betaAdjust + tau + 1, (betaAdjust + tau + 1) : (betaAdjust + tau + p + 1)] = (
+            ar_coeffs
+        )
     if ma_coeffs is not None:
         F[0, (betaAdjust + tau + p + 1) : (betaAdjust + tau + p + q + 1)] = (
             alpha * ma_coeffs
@@ -544,24 +549,17 @@ def calcLikelihoodTBATS(
     p,
     q,
 ):
-    (
-        BoxCox_lambda,
-        alpha,
-        beta,
-        phi,
-        gamma_one_v,
-        gamma_two_v,
-        ar_coeffs,
-        ma_coeffs,
-    ) = extract_params(
-        params,
-        use_boxcox,
-        use_trend,
-        use_damped_trend,
-        use_arma_errors,
-        seasonal_periods,
-        p,
-        q,
+    BoxCox_lambda, alpha, beta, phi, gamma_one_v, gamma_two_v, ar_coeffs, ma_coeffs = (
+        extract_params(
+            params,
+            use_boxcox,
+            use_trend,
+            use_damped_trend,
+            use_arma_errors,
+            seasonal_periods,
+            p,
+            q,
+        )
     )
 
     w_transpose = updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q)
@@ -616,6 +614,7 @@ def tbats_model_generator(
     ar_coeffs,
     ma_coeffs,
 ):
+
     # Initial Box-Cox transformation (if required)
     if use_boxcox:
         BoxCox_lambda = 0  # This is the initial value used in the thesis
@@ -842,6 +841,7 @@ def tbats_model(
     use_damped_trend,
     use_arma_errors,
 ):
+
     # First model - No ARMA errors
     ar_coeffs = None
     ma_coeffs = None
@@ -921,6 +921,7 @@ def tbats_selection(
     use_damped_trend,
     use_arma_errors,
 ):
+
     # Check for banned parameter combinations
     if (not use_trend) and use_damped_trend:
         raise ValueError("Can't use damped trend without trend")

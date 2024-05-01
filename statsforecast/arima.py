@@ -1104,6 +1104,7 @@ def checkarima(obj):
 
 # %% ../nbs/src/arima.ipynb 44
 def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
+
     myNCOL = lambda x: x.shape[1] if x is not None else 0
     # rsd = model['residuals']
     # xreg = model['xreg']
