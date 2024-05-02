@@ -1319,6 +1319,7 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 # %% ../nbs/src/ets.ipynb 36
 # @njit(nogil=NOGIL, cache=CACHE)
 def _compute_sigmah(pf, h, sigma, cvals):
+
     theta = np.full(h, np.nan)
     theta[0] = pf[0] ** 2
 
@@ -1350,6 +1351,7 @@ def _class3models(
     gamma,
     phi,
 ):
+
     if damped == "N":
         damped_val = False
     else:
@@ -1460,11 +1462,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
     gamma = model["par"][2]
     phi = model["par"][3]
 
-    exp1 = (
-        alpha**2
-        + alpha * beta * steps
-        + (1 / 6) * beta**2 * steps * (2 * steps - 1)
-    )
+    exp1 = alpha**2 + alpha * beta * steps + (1 / 6) * beta**2 * steps * (2 * steps - 1)
     exp2 = (beta * phi * steps) / (1 - phi) ** 2
     exp3 = 2 * alpha * (1 - phi) + beta * phi
     exp4 = (beta * phi * (1 - phi**steps)) / ((1 - phi) ** 2 * (1 - phi**2))

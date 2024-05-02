@@ -172,6 +172,8 @@ Now install the library to make interactive changes and other additional depende
 
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/501c8223-862d-40a9-8f2d-ecdaceaeaedb)
 
+Finally, setup the pre-commit hooks, which will run some checks when you commit your changes: `pre-commit install`
+
 ### 4. Make the changes you want.
 
 In this section, we assume that we want to increase the default number of windows used to create prediction intervals from 2 to 3. The first thing we need to do is create a specific branch for that change using `git checkout -b [new_branch]` like this:
@@ -192,9 +194,7 @@ We will change the default value of `n_window` from 2 to 3:
 
 Once you have made the change and performed any necessary validations, it's time to convert the notebook to Python modules. To do this, simply use `nbdev_export` in the terminal.
 
-You will see that the `mlforecast/utils.py` file has been modified (the changes from `nbs/utils.ipynb` are reflected in that module). Before committing the changes, we need to clean the notebooks using the command `./action_files/clean_nbs` and verify that the linters pass using `./action_files/lint`:
-
-![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/cecf76a1-c025-4b6f-97c0-584394a3f56a)
+You will see that the `mlforecast/utils.py` file has been modified (the changes from `nbs/utils.ipynb` are reflected in that module). Before committing the changes, we need to clean the notebooks using the command `./action_files/clean_nbs`.
 
 Once you have done the above, simply add the changes using `git add nbs/utils.ipynb mlforecast/utils.py`:
 
