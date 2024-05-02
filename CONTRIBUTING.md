@@ -194,7 +194,7 @@ We will change the default value of `n_window` from 2 to 3:
 
 Once you have made the change and performed any necessary validations, it's time to convert the notebook to Python modules. To do this, simply use `nbdev_export` in the terminal.
 
-You will see that the `mlforecast/utils.py` file has been modified (the changes from `nbs/utils.ipynb` are reflected in that module). 
+You will see that the `mlforecast/utils.py` file has been modified (the changes from `nbs/utils.ipynb` are reflected in that module). Before committing the changes, we need to clean the notebooks using the command `./action_files/clean_nbs`.
 
 Once you have done the above, simply add the changes using `git add nbs/utils.ipynb mlforecast/utils.py`:
 

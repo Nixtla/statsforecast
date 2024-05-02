@@ -7,10 +7,14 @@ repos:
         name: Cells with imports and code
         entry: python action_files/imports_with_code.py
         language: system
+      - id: nbdev_clean
+        name: Clean notebooks
+        entry: sh action_files/clean_nbs
+        language: system
+
   - repo: https://github.com/fastai/nbdev
     rev: 2.2.10
     hooks:
-      - id: nbdev_clean
       - id: nbdev_export
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.2.1
