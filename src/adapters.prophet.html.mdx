@@ -19,13 +19,6 @@ title: Replace FB-Prophet
 
 ## AutoArimaProphet
 
-``` text
-/opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section Notes
-  else: warn(msg)
-/opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section References
-  else: warn(msg)
-```
-
 ------------------------------------------------------------------------
 
 <a
@@ -54,7 +47,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                    allowmean=False, blambda=None, biasadj=False, period=1)
 > ```
 
-AutoARIMAProphet adapter.
+\*AutoARIMAProphet adapter.
 
 Returns best ARIMA model using external variables created by the Prophet
 interface. This class receives as parameters the same as prophet.Prophet
@@ -62,7 +55,7 @@ and uses a `models.AutoARIMA` backend.
 
 If your forecasting pipeline uses Prophet the
 [`AutoARIMAProphet`](https://Nixtla.github.io/statsforecast/src/adapters.prophet.html#autoarimaprophet)
-adapter helps to easily substitute Prophet with an AutoARIMA.
+adapter helps to easily substitute Prophet with an AutoARIMA.\*
 
 |                         | **Type** | **Default** | **Details**                                                                                                                              |
 |------|------------------|-------------------------|-------------------------|
@@ -126,7 +119,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoARIMAProphet.fit (df, disable_seasonal_features=True)
 > ```
 
-Fit the AutoARIMAProphet adapter.
+*Fit the AutoARIMAProphet adapter.*
 
 |                           | **Type**             | **Default** | **Details**                                                                                                                |
 |------|------------------|-------------------------|-------------------------|
@@ -137,7 +130,7 @@ Fit the AutoARIMAProphet adapter.
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L241"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/adapters/prophet.py#L238"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### AutoARIMAProphet.predict
@@ -146,7 +139,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoARIMAProphet.predict (df=None)
 > ```
 
-Predict using the AutoARIMAProphet adapter.
+*Predict using the AutoARIMAProphet adapter.*
 
 |             | **Type**             | **Default** | **Details**                                                   |
 |------|------------------|-------------------------|-------------------------|

@@ -30,7 +30,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 fallback_model:Optional[Any]=None, verbose:bool=False)
 > ```
 
-The
+\*The
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 class allows you to efficiently fit multiple
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
@@ -47,7 +47,7 @@ The
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 class offers parallelization utilities with Dask, Spark and Ray
 back-ends. See distributed computing example
-[here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+[here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).\*
 
 ```python
 # StatsForecast's class usage example
@@ -129,10 +129,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     time_col:str='ds', target_col:str='y')
 > ```
 
-Fit statistical models.
+\*Fit statistical models.
 
 Fit `models` to a large set of time series from DataFrame `df` and store
-fitted models for later inspection.
+fitted models for later inspection.\*
 
 |                      | **Type**          | **Default** | **Details**                                                                                                                                                                                                  |
 |------|------------------|-------------------------|-------------------------|
@@ -158,10 +158,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         level:Optional[List[int]]=None)
 > ```
 
-Predict statistical models.
+\*Predict statistical models.
 
 Use stored fitted `models` to predict large set of time series from
-DataFrame `df`.
+DataFrame `df`.\*
 
 |             | **Type**                       | **Default** | **Details**                                                                                                         |
 |------|------------------|-------------------------|-------------------------|
@@ -190,7 +190,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                             target_col:str='y')
 > ```
 
-Fit and Predict with statistical models.
+\*Fit and Predict with statistical models.
 
 This method avoids memory burden due from object storage. It is
 analogous to Scikit-Learn `fit_predict` without storing information. It
@@ -198,7 +198,7 @@ requires the forecast horizon `h` in advance.
 
 In contrast to
 [`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
-this method stores partial models outputs.
+this method stores partial models outputs.\*
 
 |                      | **Type**  | **Default** | **Details**                                                                                                                                                                                                  |
 |------|------------------|-------------------------|-------------------------|
@@ -233,11 +233,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          time_col:str='ds', target_col:str='y')
 > ```
 
-Memory Efficient predictions.
+\*Memory Efficient predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to Scikit-Learn `fit_predict` without storing information. It
-requires the forecast horizon `h` in advance.
+requires the forecast horizon `h` in advance.\*
 
 |                      | **Type**  | **Default** | **Details**                                                                                                         |
 |------|------------------|-------------------------|-------------------------|
@@ -284,7 +284,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  StatsForecast.forecast_fitted_values ()
 > ```
 
-Access insample predictions.
+\*Access insample predictions.
 
 After executing
 [`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast),
@@ -293,7 +293,7 @@ them, you need to pass `fitted=True` to the
 [`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
 method and then use the
 [`StatsForecast.forecast_fitted_values`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast_fitted_values)
-method.
+method.\*
 
 ```python
 # StatsForecast.forecast_fitted_values method usage example
@@ -338,7 +338,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                  time_col:str='ds', target_col:str='y')
 > ```
 
-Temporal Cross-Validation.
+\*Temporal Cross-Validation.
 
 Efficiently fits a list of
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
@@ -348,7 +348,7 @@ manner.
 `StatsForecast.models`’ speed allows to overcome this evaluation
 technique high computational costs. Temporal cross-validation provides
 better model’s generalization measurements by increasing the test’s
-length and diversity.
+length and diversity.\*
 
 |                      | **Type**  | **Default** | **Details**                                                                                                                                                                                                  |
 |------|------------------|-------------------------|-------------------------|
@@ -399,7 +399,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  StatsForecast.cross_validation_fitted_values ()
 > ```
 
-Access insample cross validated predictions.
+\*Access insample cross validated predictions.
 
 After executing
 [`StatsForecast.cross_validation`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation),
@@ -407,7 +407,7 @@ you can access the insample prediction values for each model and window.
 To get them, you need to pass `fitted=True` to the
 [`StatsForecast.cross_validation`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
 method and then use the `StatsForecast.cross_validation_fitted_values`
-method.
+method.\*
 
 ```python
 # StatsForecast.cross_validation_fitted_values method usage example
@@ -453,7 +453,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                      resampler_kwargs:Optional[Dict]=None)
 > ```
 
-Plot forecasts and insample values.
+*Plot forecasts and insample values.*
 
 |                     | **Type** | **Default** | **Details**                                                                                                                                                                                              |
 |------|------------------|-------------------------|-------------------------|
@@ -484,8 +484,8 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                      max_size:Optional[str]=None, trim:bool=False)
 > ```
 
-Function that will save StatsForecast class with certain settings to
-make it reproducible.
+*Function that will save StatsForecast class with certain settings to
+make it reproducible.*
 
 |          | **Type** | **Default** | **Details**                                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -505,7 +505,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  StatsForecast.load (path:Union[pathlib.Path,str])
 > ```
 
-Automatically loads the model into ready StatsForecast.
+*Automatically loads the model into ready StatsForecast.*
 
 |             | **Type**              | **Details**                        |
 |-------------|-----------------------|------------------------------------|

@@ -63,11 +63,6 @@ sf.cross_validation(df=sdf, h=horizon, step_size = 24,
     n_windows = 2, level=[90]).show()
 ```
 
-``` text
-/opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section Notes
-  else: warn(msg)
-```
-
 ------------------------------------------------------------------------
 
 <a
@@ -80,23 +75,18 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  FugueBackend (engine:Any=None, conf:Any=None, **transform_kwargs:Any)
 > ```
 
-FugueBackend for Distributed Computation. [Source
+\*FugueBackend for Distributed Computation. [Source
 code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
 
 This class uses [Fugue](https://github.com/fugue-project/fugue) backend
 capable of distributing computation on Spark, Dask and Ray without any
-rewrites.
+rewrites.\*
 
 |                  | **Type** | **Default** | **Details**                               |
 |------------------|----------|-------------|-------------------------------------------|
 | engine           | Any      | None        | A selection between Spark, Dask, and Ray. |
 | conf             | Any      | None        | Engine configuration.                     |
 | transform_kwargs | Any      |             |                                           |
-
-``` text
-/opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section References
-  else: warn(msg)
-```
 
 ------------------------------------------------------------------------
 
@@ -116,11 +106,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         target_col:str)
 > ```
 
-Memory Efficient core.StatsForecast predictions with FugueBackend.
+\*Memory Efficient core.StatsForecast predictions with FugueBackend.
 
 This method uses Fugue’s transform function, in combination with
 `core.StatsForecast`’s forecast to efficiently fit a list of
-StatsForecast models.
+StatsForecast models.\*
 
 |                      | **Type**     | **Details**                                                                                                                                                                                          |
 |--------|---------------------------|-------------------------------------|
@@ -158,7 +148,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                 id_col:str, time_col:str, target_col:str)
 > ```
 
-Temporal Cross-Validation with core.StatsForecast and FugueBackend.
+\*Temporal Cross-Validation with core.StatsForecast and FugueBackend.
 
 This method uses Fugue’s transform function, in combination with
 `core.StatsForecast`’s cross-validation to efficiently fit a list of
@@ -168,7 +158,7 @@ chained or rolled manner.
 `StatsForecast.models`’ speed along with Fugue’s distributed computation
 allow to overcome this evaluation technique high computational costs.
 Temporal cross-validation provides better model’s generalization
-measurements by increasing the test’s length and diversity.
+measurements by increasing the test’s length and diversity.\*
 
 |                      | **Type**     | **Details**                                                                                                                                                                                          |
 |--------|---------------------------|-------------------------------------|

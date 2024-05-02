@@ -43,13 +43,6 @@ categories:
 
 ## AutoARIMA
 
-``` text
-/opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section Notes
-  else: warn(msg)
-/opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/fastcore/docscrape.py:225: UserWarning: Unknown section References
-  else: warn(msg)
-```
-
 ------------------------------------------------------------------------
 
 <a
@@ -75,11 +68,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >             ls:Optional[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-AutoARIMA model.
+\*AutoARIMA model.
 
 Automatically selects the best ARIMA (AutoRegressive Integrated Moving
 Average) model using an information criterion. Default is Akaike
-Information Criterion (AICc).
+Information Criterion (AICc).\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -129,10 +122,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoARIMA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the AutoARIMA model.
+\*Fit the AutoARIMA model.
 
 Fit an AutoARIMA to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -153,7 +146,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted AutoArima.
+*Predict with fitted AutoArima.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -174,7 +167,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoARIMA.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted AutoArima insample predictions.
+*Access fitted AutoArima insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -196,11 +189,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                      level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient AutoARIMA predictions.
+\*Memory Efficient AutoARIMA predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -227,7 +220,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted ARIMA model to a new time series.
+*Apply fitted ARIMA model to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -271,7 +264,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >           .utils.ConformalIntervals]=None)
 > ```
 
-Automatic Exponential Smoothing model.
+\*Automatic Exponential Smoothing model.
 
 Automatically selects the best ETS (Error, Trend, Seasonality) model
 using an information criterion. Default is Akaike Information Criterion
@@ -285,7 +278,7 @@ For example when model=‘ANN’ (additive error, no trend, and no
 seasonality), ETS will explore only a simple exponential smoothing.
 
 If the component is selected as ‘Z’, it operates as a placeholder to ask
-the AutoETS model to figure out the best parameter.
+the AutoETS model to figure out the best parameter.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -308,10 +301,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoETS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Exponential Smoothing model.
+\*Fit the Exponential Smoothing model.
 
 Fit an Exponential Smoothing model to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.
+and optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                             |
 |-------------|----------|-------------|-----------------------------------------|
@@ -332,7 +325,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                   level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted Exponential Smoothing.
+*Predict with fitted Exponential Smoothing.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -353,7 +346,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoETS.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Exponential Smoothing insample predictions.
+*Access fitted Exponential Smoothing insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -374,11 +367,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                    level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient Exponential Smoothing predictions.
+\*Memory Efficient Exponential Smoothing predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -404,7 +397,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                   level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted Exponential Smoothing model to a new time series.
+*Apply fitted Exponential Smoothing model to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -447,7 +440,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >       onal[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-Automatic Exponential Smoothing model.
+\*Automatic Exponential Smoothing model.
 
 Automatically selects the best ETS (Error, Trend, Seasonality) model
 using an information criterion. Default is Akaike Information Criterion
@@ -461,7 +454,7 @@ For example when model=‘ANN’ (additive error, no trend, and no
 seasonality), ETS will explore only a simple exponential smoothing.
 
 If the component is selected as ‘Z’, it operates as a placeholder to ask
-the AutoETS model to figure out the best parameter.
+the AutoETS model to figure out the best parameter.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -491,7 +484,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >           intervals:Optional[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-Complex Exponential Smoothing model.
+\*Complex Exponential Smoothing model.
 
 Automatically selects the best Complex Exponential Smoothing model using
 an information criterion. Default is Akaike Information Criterion
@@ -504,7 +497,7 @@ seasonality (without complex part), $F$ for full seasonality (lagged CES
 with real and complex seasonal parts).
 
 If the component is selected as ‘Z’, it operates as a placeholder to ask
-the AutoCES model to figure out the best parameter.
+the AutoCES model to figure out the best parameter.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -525,10 +518,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoCES.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Complex Exponential Smoothing model.
+\*Fit the Complex Exponential Smoothing model.
 
 Fit the Complex Exponential Smoothing model to a time series (numpy
-array) `y` and optionally exogenous variables (numpy array) `X`.
+array) `y` and optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                                     |
 |-------------|----------|-------------|-------------------------------------------------|
@@ -549,7 +542,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                   level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted Exponential Smoothing.
+*Predict with fitted Exponential Smoothing.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -570,7 +563,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoCES.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Exponential Smoothing insample predictions.
+*Access fitted Exponential Smoothing insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -591,11 +584,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                    level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient Complex Exponential Smoothing predictions.
+\*Memory Efficient Complex Exponential Smoothing predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -621,7 +614,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                   level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted Complex Exponential Smoothing to a new time series.
+*Apply fitted Complex Exponential Smoothing to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -666,11 +659,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >             tervals:Optional[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-AutoTheta model.
+\*AutoTheta model.
 
 Automatically selects the best Theta (Standard Theta Model (‘STM’),
 Optimized Theta Model (‘OTM’), Dynamic Standard Theta Model (‘DSTM’),
-Dynamic Optimized Theta Model (‘DOTM’)) model using mse.
+Dynamic Optimized Theta Model (‘DOTM’)) model using mse.\*
 
 |                      | **Type** | **Default**    | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -692,10 +685,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoTheta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the AutoTheta model.
+\*Fit the AutoTheta model.
 
 Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -716,7 +709,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted AutoTheta.
+*Predict with fitted AutoTheta.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -737,7 +730,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoTheta.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted AutoTheta insample predictions.
+*Access fitted AutoTheta insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -759,11 +752,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                      level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient AutoTheta predictions.
+\*Memory Efficient AutoTheta predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -790,7 +783,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted AutoTheta to a new time series.
+*Apply fitted AutoTheta to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -838,9 +831,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >         rvals:Optional[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-ARIMA model.
+\*ARIMA model.
 
-AutoRegressive Integrated Moving Average model.
+AutoRegressive Integrated Moving Average model.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                                                                                                                                                                                                                                                                                              |
 |------|------------------|-------------------------|-------------------------|
@@ -869,8 +862,8 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ARIMA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+*Fit the model to a time series (numpy array) `y` and optionally
+exogenous variables (numpy array) `X`.*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -891,7 +884,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted model.
+*Predict with fitted model.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -912,7 +905,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ARIMA.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted insample predictions.
+*Access fitted insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -933,11 +926,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory efficient predictions.
+\*Memory efficient predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -963,7 +956,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted model to a new time series.
+*Apply fitted model to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1009,7 +1002,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  Intervals]=None)
 > ```
 
-Simple Autoregressive model.
+*Simple Autoregressive model.*
 
 |                      | **Type** | **Default**    | **Details**                                                                                                                                                                                                         |
 |------|------------------|-------------------------|-------------------------|
@@ -1035,8 +1028,8 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoRegressive.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+*Fit the model to a time series (numpy array) `y` and optionally
+exogenous variables (numpy array) `X`.*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -1057,7 +1050,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted model.
+*Predict with fitted model.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1078,7 +1071,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  AutoRegressive.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted insample predictions.
+*Access fitted insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -1101,11 +1094,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                           fitted:bool=False)
 > ```
 
-Memory efficient predictions.
+\*Memory efficient predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1133,7 +1126,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          fitted:bool=False)
 > ```
 
-Apply fitted model to a new time series.
+*Apply fitted model to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1178,7 +1171,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                              ntervals]=None)
 > ```
 
-SimpleExponentialSmoothing model.
+\*SimpleExponentialSmoothing model.
 
 Uses a weighted average of all past observations where the weights
 decrease exponentially into the past. Suitable for data with no clear
@@ -1188,7 +1181,7 @@ $\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
 
 The rate $0 \leq \alpha \leq 1$ at which the weights decrease is called
 the smoothing parameter. When $\alpha = 1$, SES is equal to the naive
-method.
+method.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -1212,11 +1205,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                       fitted:bool=False)
 > ```
 
-Memory Efficient SimpleExponentialSmoothing predictions.
+\*Memory Efficient SimpleExponentialSmoothing predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1241,10 +1234,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                  X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the SimpleExponentialSmoothing model.
+\*Fit the SimpleExponentialSmoothing model.
 
 Fit an SimpleExponentialSmoothing to a time series (numpy array) `y` and
-optionally exogenous variables (numpy array) `X`.
+optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                                  |
 |-------------|----------|-------------|----------------------------------------------|
@@ -1266,7 +1259,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                      level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted SimpleExponentialSmoothing.
+*Predict with fitted SimpleExponentialSmoothing.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1287,7 +1280,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SimpleExponentialSmoothing.predict_in_sample ()
 > ```
 
-Access fitted SimpleExponentialSmoothing insample predictions.
+*Access fitted SimpleExponentialSmoothing insample predictions.*
 
 ```python
 from statsforecast.models import SimpleExponentialSmoothing
@@ -1320,7 +1313,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                       nformalIntervals]=None)
 > ```
 
-SimpleExponentialSmoothing model.
+\*SimpleExponentialSmoothing model.
 
 Uses a weighted average of all past observations where the weights
 decrease exponentially into the past. Suitable for data with no clear
@@ -1329,7 +1322,7 @@ forecast is given by:
 $\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
 
 The smoothing parameter $\alpha^*$ is optimized by square error
-minimization.
+minimization.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -1349,10 +1342,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                           X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the SimpleExponentialSmoothingOptimized model.
+\*Fit the SimpleExponentialSmoothingOptimized model.
 
 Fit an SimpleExponentialSmoothingOptimized to a time series (numpy
-array) `y` and optionally exogenous variables (numpy array) `X`.
+array) `y` and optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1375,7 +1368,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                               ]=None)
 > ```
 
-Predict with fitted SimpleExponentialSmoothingOptimized.
+*Predict with fitted SimpleExponentialSmoothingOptimized.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1396,7 +1389,8 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SimpleExponentialSmoothingOptimized.predict_in_sample ()
 > ```
 
-Access fitted SimpleExponentialSmoothingOptimized insample predictions.
+*Access fitted SimpleExponentialSmoothingOptimized insample
+predictions.*
 
 ------------------------------------------------------------------------
 
@@ -1415,11 +1409,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                                fitted:bool=False)
 > ```
 
-Memory Efficient SimpleExponentialSmoothingOptimized predictions.
+\*Memory Efficient SimpleExponentialSmoothingOptimized predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1467,13 +1461,13 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                ervals]=None)
 > ```
 
-SeasonalExponentialSmoothing model.
+\*SeasonalExponentialSmoothing model.
 
 Uses a weighted average of all past observations where the weights
 decrease exponentially into the past. Suitable for data with no clear
 trend or seasonality. Assuming there are $t$ observations and season
 $s$, the one-step forecast is given by:
-$\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
+$\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -1495,10 +1489,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                    X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the SeasonalExponentialSmoothing model.
+\*Fit the SeasonalExponentialSmoothing model.
 
 Fit an SeasonalExponentialSmoothing to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.
+and optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                                    |
 |-------------|----------|-------------|------------------------------------------------|
@@ -1520,7 +1514,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                        level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted SeasonalExponentialSmoothing.
+*Predict with fitted SeasonalExponentialSmoothing.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1541,7 +1535,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SeasonalExponentialSmoothing.predict_in_sample ()
 > ```
 
-Access fitted SeasonalExponentialSmoothing insample predictions.
+*Access fitted SeasonalExponentialSmoothing insample predictions.*
 
 ------------------------------------------------------------------------
 
@@ -1559,11 +1553,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                         fitted:bool=False)
 > ```
 
-Memory Efficient SeasonalExponentialSmoothing predictions.
+\*Memory Efficient SeasonalExponentialSmoothing predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1607,7 +1601,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                         tils.ConformalIntervals]=None)
 > ```
 
-SeasonalExponentialSmoothingOptimized model.
+\*SeasonalExponentialSmoothingOptimized model.
 
 Uses a weighted average of all past observations where the weights
 decrease exponentially into the past. Suitable for data with no clear
@@ -1616,7 +1610,7 @@ $s$, the one-step forecast is given by:
 $\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
 
 The smoothing parameter $\alpha^*$ is optimized by square error
-minimization.
+minimization.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -1641,11 +1635,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                                  e, fitted:bool=False)
 > ```
 
-Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
+\*Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1671,10 +1665,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                             )
 > ```
 
-Fit the SeasonalExponentialSmoothingOptimized model.
+\*Fit the SeasonalExponentialSmoothingOptimized model.
 
 Fit an SeasonalExponentialSmoothingOptimized to a time series (numpy
-array) `y` and optionally exogenous variables (numpy array) `X`.
+array) `y` and optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -1697,7 +1691,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                                 int]]=None)
 > ```
 
-Predict with fitted SeasonalExponentialSmoothingOptimized.
+*Predict with fitted SeasonalExponentialSmoothingOptimized.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1718,8 +1712,8 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SeasonalExponentialSmoothingOptimized.predict_in_sample ()
 > ```
 
-Access fitted SeasonalExponentialSmoothingOptimized insample
-predictions.
+*Access fitted SeasonalExponentialSmoothingOptimized insample
+predictions.*
 
 ```python
 from statsforecast.models import SeasonalExponentialSmoothingOptimized
@@ -1751,14 +1745,14 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >        on_intervals:Optional[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-Holt’s method.
+\*Holt’s method.
 
 Also known as double exponential smoothing, Holt’s method is an
 extension of exponential smoothing for series with a trend. This
 implementation returns the corresponding
 [`ETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#ets)
 model with additive (A) or multiplicative (M) errors (so either ‘AAN’ or
-‘MAN’).
+‘MAN’).\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -1781,11 +1775,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient Exponential Smoothing predictions.
+\*Memory Efficient Exponential Smoothing predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1809,10 +1803,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  Holt.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Exponential Smoothing model.
+\*Fit the Exponential Smoothing model.
 
 Fit an Exponential Smoothing model to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.
+and optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                             |
 |-------------|----------|-------------|-----------------------------------------|
@@ -1833,7 +1827,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted Exponential Smoothing.
+*Predict with fitted Exponential Smoothing.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1854,7 +1848,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  Holt.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Exponential Smoothing insample predictions.
+*Access fitted Exponential Smoothing insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -1875,7 +1869,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted Exponential Smoothing model to a new time series.
+*Apply fitted Exponential Smoothing model to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1918,14 +1912,14 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >               forecast.utils.ConformalIntervals]=None)
 > ```
 
-Holt-Winters’ method.
+\*Holt-Winters’ method.
 
 Also known as triple exponential smoothing, Holt-Winters’ method is an
 extension of exponential smoothing for series that contain both trend
 and seasonality. This implementation returns the corresponding
 [`ETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#ets)
 model with additive (A) or multiplicative (M) errors (so either ‘AAA’ or
-‘MAM’).
+‘MAM’).\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -1949,11 +1943,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                        level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient Exponential Smoothing predictions.
+\*Memory Efficient Exponential Smoothing predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -1977,10 +1971,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  HoltWinters.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Exponential Smoothing model.
+\*Fit the Exponential Smoothing model.
 
 Fit an Exponential Smoothing model to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.
+and optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                             |
 |-------------|----------|-------------|-----------------------------------------|
@@ -2001,7 +1995,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                       level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted Exponential Smoothing.
+*Predict with fitted Exponential Smoothing.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2022,7 +2016,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  HoltWinters.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Exponential Smoothing insample predictions.
+*Access fitted Exponential Smoothing insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -2044,7 +2038,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                       level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted Exponential Smoothing model to a new time series.
+*Apply fitted Exponential Smoothing model to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2088,11 +2082,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                   al[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-HistoricAverage model.
+\*HistoricAverage model.
 
 Also known as mean method. Uses a simple average of all past
 observations. Assuming there are $t$ observations, the one-step forecast
-is given by: $$\hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j$$
+is given by: $$\hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j$$\*
 
 |                      | **Type** | **Default**     | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -2115,11 +2109,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                            fitted:bool=False)
 > ```
 
-Memory Efficient HistoricAverage predictions.
+\*Memory Efficient HistoricAverage predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2143,9 +2137,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  HistoricAverage.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the HistoricAverage model.
+\*Fit the HistoricAverage model.
 
-Fit an HistoricAverage to a time series (numpy array) `y`.
+Fit an HistoricAverage to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -2166,7 +2160,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                           level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted HistoricAverage.
+*Predict with fitted HistoricAverage.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2187,7 +2181,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  HistoricAverage.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted HistoricAverage insample predictions.
+*Access fitted HistoricAverage insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                 |
 |------|------------------|-------------------------|-------------------------|
@@ -2224,10 +2218,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >         ls.ConformalIntervals]=None)
 > ```
 
-Naive model.
+\*Naive model.
 
 All forecasts have the value of the last observation:  
-$\hat{y}_{t+1} = y_t$ for all $t$
+$\hat{y}_{t+1} = y_t$ for all $t$\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -2248,11 +2242,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient Naive predictions.
+\*Memory Efficient Naive predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2276,9 +2270,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  Naive.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Naive model.
+\*Fit the Naive model.
 
-Fit an Naive to a time series (numpy.array) `y`.
+Fit an Naive to a time series (numpy.array) `y`.\*
 
 |             | **Type**  | **Default** | **Details**                           |
 |-------------|-----------|-------------|---------------------------------------|
@@ -2299,7 +2293,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted Naive.
+*Predict with fitted Naive.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2320,7 +2314,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  Naive.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Naive insample predictions.
+*Access fitted Naive insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                 |
 |------|------------------|-------------------------|-------------------------|
@@ -2357,7 +2351,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                       forecast.utils.ConformalIntervals]=None)
 > ```
 
-RandomWalkWithDrift model.
+\*RandomWalkWithDrift model.
 
 A variation of the naive method allows the forecasts to change over
 time. The amout of change, called drift, is the average change seen in
@@ -2366,7 +2360,7 @@ the historical data.
 $$\hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-y_1}{t-1}$$
 
 From the previous equation, we can see that this is equivalent to
-extrapolating a line between the first and the last observation.
+extrapolating a line between the first and the last observation.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -2389,11 +2383,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                fitted:bool=False)
 > ```
 
-Memory Efficient RandomWalkWithDrift predictions.
+\*Memory Efficient RandomWalkWithDrift predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type**            | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2417,9 +2411,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  RandomWalkWithDrift.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the RandomWalkWithDrift model.
+\*Fit the RandomWalkWithDrift model.
 
-Fit an RandomWalkWithDrift to a time series (numpy array) `y`.
+Fit an RandomWalkWithDrift to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -2440,7 +2434,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                               level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted RandomWalkWithDrift.
+*Predict with fitted RandomWalkWithDrift.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2461,7 +2455,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  RandomWalkWithDrift.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted RandomWalkWithDrift insample predictions.
+*Access fitted RandomWalkWithDrift insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -2499,11 +2493,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 None)
 > ```
 
-Seasonal naive model.
+\*Seasonal naive model.
 
 A method similar to the naive, but uses the last known observation of
 the same period (e.g. the same month of the previous year) in order to
-capture seasonal variations.
+capture seasonal variations.\*
 
 |                      | **Type** | **Default**   | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -2527,11 +2521,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          fitted:bool=False)
 > ```
 
-Memory Efficient SeasonalNaive predictions.
+\*Memory Efficient SeasonalNaive predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2555,9 +2549,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SeasonalNaive.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the SeasonalNaive model.
+\*Fit the SeasonalNaive model.
 
-Fit an SeasonalNaive to a time series (numpy array) `y`.
+Fit an SeasonalNaive to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -2578,7 +2572,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted Naive.
+*Predict with fitted Naive.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2599,7 +2593,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SeasonalNaive.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted SeasonalNaive insample predictions.
+*Access fitted SeasonalNaive insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -2637,13 +2631,13 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 ne)
 > ```
 
-WindowAverage model.
+\*WindowAverage model.
 
 Uses the average of the last $k$ observations, with $k$ the length of
 the window. Wider windows will capture global trends, while narrow
 windows will reveal local trends. The length of the window selected
 should take into account the importance of past observations and how
-fast the series changes.
+fast the series changes.\*
 
 |                      | **Type** | **Default**   | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -2667,11 +2661,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          fitted:bool=False)
 > ```
 
-Memory Efficient WindowAverage predictions.
+\*Memory Efficient WindowAverage predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2695,10 +2689,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  WindowAverage.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the WindowAverage model.
+\*Fit the WindowAverage model.
 
 Fit an WindowAverage to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -2719,7 +2713,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted WindowAverage.
+*Predict with fitted WindowAverage.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2759,10 +2753,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-SeasonalWindowAverage model.
+\*SeasonalWindowAverage model.
 
 An average of the last $k$ observations of the same period, with $k$ the
-length of the window.
+length of the window.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -2787,11 +2781,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                  fitted:bool=False)
 > ```
 
-Memory Efficient SeasonalWindowAverage predictions.
+\*Memory Efficient SeasonalWindowAverage predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2816,10 +2810,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                             X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the SeasonalWindowAverage model.
+\*Fit the SeasonalWindowAverage model.
 
 Fit an SeasonalWindowAverage to a time series (numpy array) `y` and
-optionally exogenous variables (numpy array) `X`.
+optionally exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                             |
 |-------------|----------|-------------|-----------------------------------------|
@@ -2840,7 +2834,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted SeasonalWindowAverage.
+*Predict with fitted SeasonalWindowAverage.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2881,7 +2875,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >         ls.ConformalIntervals]=None)
 > ```
 
-ADIDA model.
+\*ADIDA model.
 
 Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal
 aggregation to reduce the number of zero observations. Once the data has
@@ -2891,7 +2885,7 @@ using equal weights.
 
 ADIDA specializes on sparse or intermittent series are series with very
 few non-zero observations. They are notoriously hard to forecast, and
-so, different methods have been developed especifically for them.
+so, different methods have been developed especifically for them.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -2912,11 +2906,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient ADIDA predictions.
+\*Memory Efficient ADIDA predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -2940,9 +2934,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ADIDA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the ADIDA model.
+\*Fit the ADIDA model.
 
-Fit an ADIDA to a time series (numpy array) `y`.
+Fit an ADIDA to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -2963,7 +2957,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted ADIDA.
+*Predict with fitted ADIDA.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3002,7 +2996,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  [statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-CrostonClassic model.
+\*CrostonClassic model.
 
 A method to forecast time series that exhibit intermittent demand. It
 decomposes the original time series into a non-zero demand size $z_t$
@@ -3010,7 +3004,7 @@ and inter-demand intervals $p_t$. Then the forecast is given by:
 $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
 
 where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The
-smoothing parameter of both components is set equal to 0.1
+smoothing parameter of both components is set equal to 0.1\*
 
 |                      | **Type** | **Default**    | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -3033,11 +3027,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                           fitted:bool=False)
 > ```
 
-Memory Efficient CrostonClassic predictions.
+\*Memory Efficient CrostonClassic predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3061,9 +3055,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  CrostonClassic.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the CrostonClassic model.
+\*Fit the CrostonClassic model.
 
-Fit an CrostonClassic to a time series (numpy array) `y`.
+Fit an CrostonClassic to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -3084,7 +3078,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted CrostonClassic.
+*Predict with fitted CrostonClassic.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3123,7 +3117,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                    onal[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-CrostonOptimized model.
+\*CrostonOptimized model.
 
 A method to forecast time series that exhibit intermittent demand. It
 decomposes the original time series into a non-zero demand size $z_t$
@@ -3133,7 +3127,7 @@ $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
 A variation of the classic Croston’s method where the smooting paramater
 is optimally selected from the range $[0.1,0.3]$. Both the non-zero
 demand $z_t$ and the inter-demand intervals $p_t$ are smoothed
-separately, so their smoothing parameters can be different.
+separately, so their smoothing parameters can be different.\*
 
 |                      | **Type** | **Default**      | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -3156,11 +3150,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                             fitted:bool=False)
 > ```
 
-Memory Efficient CrostonOptimized predictions.
+\*Memory Efficient CrostonOptimized predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3184,9 +3178,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  CrostonOptimized.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the CrostonOptimized model.
+\*Fit the CrostonOptimized model.
 
-Fit an CrostonOptimized to a time series (numpy array) `y`.
+Fit an CrostonOptimized to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                        |
 |-------------|----------|-------------|------------------------------------|
@@ -3207,7 +3201,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                            level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted CrostonOptimized.
+*Predict with fitted CrostonOptimized.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3246,7 +3240,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >              recast.utils.ConformalIntervals]=None)
 > ```
 
-CrostonSBA model.
+\*CrostonSBA model.
 
 A method to forecast time series that exhibit intermittent demand. It
 decomposes the original time series into a non-zero demand size $z_t$
@@ -3255,7 +3249,7 @@ $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
 
 A variation of the classic Croston’s method that uses a debiasing
 factor, so that the forecast is given by:
-$$\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}$$
+$$\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}$$\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -3277,11 +3271,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                       level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient CrostonSBA predictions.
+\*Memory Efficient CrostonSBA predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3305,9 +3299,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  CrostonSBA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the CrostonSBA model.
+\*Fit the CrostonSBA model.
 
-Fit an CrostonSBA to a time series (numpy array) `y`.
+Fit an CrostonSBA to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -3328,7 +3322,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                      level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted CrostonSBA.
+*Predict with fitted CrostonSBA.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3367,13 +3361,13 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >         ls.ConformalIntervals]=None)
 > ```
 
-IMAPA model.
+\*IMAPA model.
 
 Intermittent Multiple Aggregation Prediction Algorithm: Similar to
 ADIDA, but instead of using a single aggregation level, it considers
 multiple in order to capture different dynamics of the data. Uses the
 optimized SES to generate the forecasts at the new levels and then
-combines them using a simple average.
+combines them using a simple average.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -3394,11 +3388,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient IMAPA predictions.
+\*Memory Efficient IMAPA predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3422,9 +3416,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  IMAPA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the IMAPA model.
+\*Fit the IMAPA model.
 
-Fit an IMAPA to a time series (numpy array) `y`.
+Fit an IMAPA to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -3445,7 +3439,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted IMAPA.
+*Predict with fitted IMAPA.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3484,7 +3478,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >       Optional[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-TSB model.
+\*TSB model.
 
 Teunter-Syntetos-Babai: A modification of Croston’s method that replaces
 the inter-demand intervals with the demand probability $d_t$, which is
@@ -3503,7 +3497,7 @@ Hence, the forecast is given by
 $$\hat{y}_t= \hat{d}_t\hat{z_t}$$
 
 Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters
-of each may differ, like in the optimized Croston’s method.
+of each may differ, like in the optimized Croston’s method.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -3526,11 +3520,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient TSB predictions.
+\*Memory Efficient TSB predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3554,9 +3548,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  TSB.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the TSB model.
+\*Fit the TSB model.
 
-Fit an TSB to a time series (numpy array) `y`.
+Fit an TSB to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -3577,7 +3571,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >               level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted TSB.
+*Predict with fitted TSB.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3619,12 +3613,12 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >        als:Optional[statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-MSTL model.
+\*MSTL model.
 
 The MSTL (Multiple Seasonal-Trend decomposition using LOESS) decomposes
 the time series in multiple seasonalities using LOESS. Then forecasts
 the trend using a custom non-seaonal model and each seasonality using a
-SeasonalNaive model.
+SeasonalNaive model.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                                                                                                                   |
 |------|------------------|-------------------------|-------------------------|
@@ -3646,9 +3640,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  MSTL.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the MSTL model.
+\*Fit the MSTL model.
 
-Fit MSTL to a time series (numpy array) `y`.
+Fit MSTL to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -3669,7 +3663,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted MSTL.
+*Predict with fitted MSTL.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3690,7 +3684,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  MSTL.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted MSTL insample predictions.
+*Access fitted MSTL insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -3711,11 +3705,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient MSTL predictions.
+\*Memory Efficient MSTL predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3741,7 +3735,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted MSTL model to a new time series.
+*Apply fitted MSTL model to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3786,7 +3780,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >         alias:str='TBATS', seasonal_periods=None)
 > ```
 
-Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal
+\*Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal
 components (TBATS) model.
 
 TBATS is an innovations state space model framework used for forecasting
@@ -3796,7 +3790,7 @@ seasonal patterns based on Fourier series.
 
 The name TBATS is an acronym for the key features of the model:
 Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal
-components.
+components.\*
 
 |                  | **Type** | **Default** | **Details**                                                  |
 |------|------------------|-------------------------|-------------------------|
@@ -3822,9 +3816,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  TBATS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit TBATS model.
+\*Fit TBATS model.
 
-Fit TBATS model to a time series (numpy array) `y`.
+Fit TBATS model to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -3845,7 +3839,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted TBATS model.
+*Predict with fitted TBATS model.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3866,7 +3860,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  TBATS.predict_in_sample (level:Optional[Tuple[int]]=None)
 > ```
 
-Access fitted TBATS model predictions.
+*Access fitted TBATS model predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3887,11 +3881,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient TBATS model.
+\*Memory Efficient TBATS model.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3922,13 +3916,13 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >             seasonal_periods=None)
 > ```
 
-AutoTBATS model.
+\*AutoTBATS model.
 
 Automatically selects the best TBATS model from all feasible
 combinations of the parameters use_boxcox, use_trend, use_damped_trend,
 and use_arma_errors. Selection is made using the AIC. Default value for
 use_arma_errors is True since this enables the evaluation of models with
-and without ARMA errors.
+and without ARMA errors.\*
 
 |                  | **Type** | **Default** | **Details**                                                                          |
 |------|------------------|-------------------------|-------------------------|
@@ -3954,9 +3948,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  TBATS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit TBATS model.
+\*Fit TBATS model.
 
-Fit TBATS model to a time series (numpy array) `y`.
+Fit TBATS model to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -3977,7 +3971,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted TBATS model.
+*Predict with fitted TBATS model.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -3998,7 +3992,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  TBATS.predict_in_sample (level:Optional[Tuple[int]]=None)
 > ```
 
-Access fitted TBATS model predictions.
+*Access fitted TBATS model predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4019,11 +4013,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient TBATS model.
+\*Memory Efficient TBATS model.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4053,7 +4047,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >         ls.ConformalIntervals]=None)
 > ```
 
-Standard Theta Method.
+*Standard Theta Method.*
 
 |                      | **Type** | **Default**    | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -4076,11 +4070,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient AutoTheta predictions.
+\*Memory Efficient AutoTheta predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4104,10 +4098,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  Theta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the AutoTheta model.
+\*Fit the AutoTheta model.
 
 Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -4128,7 +4122,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted AutoTheta.
+*Predict with fitted AutoTheta.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4149,7 +4143,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  Theta.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted AutoTheta insample predictions.
+*Access fitted AutoTheta insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -4170,7 +4164,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted AutoTheta to a new time series.
+*Apply fitted AutoTheta to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4214,7 +4208,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  [statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-Optimized Theta Method.
+*Optimized Theta Method.*
 
 |                      | **Type** | **Default**    | **Details**                                                                                                                       |
 |------|------------------|-------------------------|-------------------------|
@@ -4239,11 +4233,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                           fitted:bool=False)
 > ```
 
-Memory Efficient AutoTheta predictions.
+\*Memory Efficient AutoTheta predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4267,10 +4261,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  OptimizedTheta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the AutoTheta model.
+\*Fit the AutoTheta model.
 
 Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -4291,7 +4285,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted AutoTheta.
+*Predict with fitted AutoTheta.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4312,7 +4306,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  OptimizedTheta.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted AutoTheta insample predictions.
+*Access fitted AutoTheta insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -4335,7 +4329,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          fitted:bool=False)
 > ```
 
-Apply fitted AutoTheta to a new time series.
+*Apply fitted AutoTheta to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4379,7 +4373,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                tsforecast.utils.ConformalIntervals]=None)
 > ```
 
-Dynamic Standard Theta Method.
+*Dynamic Standard Theta Method.*
 
 |                      | **Type** | **Default**    | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -4403,11 +4397,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient AutoTheta predictions.
+\*Memory Efficient AutoTheta predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4431,10 +4425,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  DynamicTheta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the AutoTheta model.
+\*Fit the AutoTheta model.
 
 Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -4455,7 +4449,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                        level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted AutoTheta.
+*Predict with fitted AutoTheta.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4476,7 +4470,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  DynamicTheta.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted AutoTheta insample predictions.
+*Access fitted AutoTheta insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -4498,7 +4492,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                        level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply fitted AutoTheta to a new time series.
+*Apply fitted AutoTheta to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4543,7 +4537,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         als]=None)
 > ```
 
-Dynamic Optimized Theta Method.
+*Dynamic Optimized Theta Method.*
 
 |                      | **Type** | **Default**           | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -4568,11 +4562,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                  fitted:bool=False)
 > ```
 
-Memory Efficient AutoTheta predictions.
+\*Memory Efficient AutoTheta predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4597,10 +4591,10 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                             X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the AutoTheta model.
+\*Fit the AutoTheta model.
 
 Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.
+exogenous variables (numpy array) `X`.\*
 
 |             | **Type** | **Default** | **Details**                           |
 |-------------|----------|-------------|---------------------------------------|
@@ -4621,7 +4615,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted AutoTheta.
+*Predict with fitted AutoTheta.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4642,7 +4636,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  DynamicOptimizedTheta.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted AutoTheta insample predictions.
+*Access fitted AutoTheta insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -4665,7 +4659,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                                 fitted:bool=False)
 > ```
 
-Apply fitted AutoTheta to a new time series.
+*Apply fitted AutoTheta to a new time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4709,7 +4703,8 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >         [statsforecast.utils.ConformalIntervals]=None)
 > ```
 
-Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
+\*Generalized Autoregressive Conditional Heteroskedasticity (GARCH)
+model.
 
 A method for modeling time series that exhibit non-constant volatility
 over time. The GARCH model assumes that at time $t$, $y_t$ is given by:
@@ -4728,7 +4723,7 @@ $j=1,...,q$ must satisfy the following conditions:
 2.  $\sum_{k=1}^{max(p,q)} a_k + b_k < 1$. Here it is assumed that
     $a_i=0$ for $i>p$ and $b_j=0$ for $j>q$.
 
-The ARCH model is a particular case of the GARCH model when $q=0$.
+The ARCH model is a particular case of the GARCH model when $q=0$.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -4749,9 +4744,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  GARCH.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit GARCH model.
+\*Fit GARCH model.
 
-Fit GARCH model to a time series (numpy array) `y`.
+Fit GARCH model to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -4772,7 +4767,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted GARCH model.
+*Predict with fitted GARCH model.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4793,7 +4788,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  GARCH.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted GARCH model predictions.
+*Access fitted GARCH model predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -4814,11 +4809,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                  level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient GARCH model.
+\*Memory Efficient GARCH model.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4845,7 +4840,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >        ast.utils.ConformalIntervals]=None)
 > ```
 
-Autoregressive Conditional Heteroskedasticity (ARCH) model.
+\*Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
 A particular case of the GARCH(p,q) model where $q=0$. It assumes that
 at time $t$, $y_t$ is given by:
@@ -4858,7 +4853,7 @@ $$\sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
 
 Here $\epsilon_t$ is a sequence of iid random variables with zero mean
 and unit variance. The coefficients $w$ and $a_i$, $i=1,...,p$ must be
-nonnegative and $\sum_{k=1}^p a_k < 1$.
+nonnegative and $\sum_{k=1}^p a_k < 1$.\*
 
 |                      | **Type** | **Default** | **Details**                                                                                                                      |
 |------|------------------|-------------------------|-------------------------|
@@ -4878,9 +4873,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ARCH.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit GARCH model.
+\*Fit GARCH model.
 
-Fit GARCH model to a time series (numpy array) `y`.
+Fit GARCH model to a time series (numpy array) `y`.\*
 
 |             | **Type** | **Default** | **Details**                       |
 |-------------|----------|-------------|-----------------------------------|
@@ -4901,7 +4896,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted GARCH model.
+*Predict with fitted GARCH model.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4922,7 +4917,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ARCH.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted GARCH model predictions.
+*Access fitted GARCH model predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -4943,11 +4938,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                 level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient GARCH model.
+\*Memory Efficient GARCH model.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -4976,7 +4971,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                nformalIntervals]=None, alias:Optional[str]=None)
 > ```
 
-scikit-learn model wrapper
+*scikit-learn model wrapper*
 
 |                      | **Type**                   | **Default** | **Details**                                                                                                            |
 |------|------------------|-------------------------|-------------------------|
@@ -4996,7 +4991,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SklearnModel.fit (y:numpy.ndarray, X:numpy.ndarray)
 > ```
 
-Fit the model.
+*Fit the model.*
 
 |             | **Type**         | **Details**                       |
 |-------------|------------------|-----------------------------------|
@@ -5017,7 +5012,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                        level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted SklearnModel.
+*Predict with fitted SklearnModel.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5038,7 +5033,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  SklearnModel.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted SklearnModel insample predictions.
+*Access fitted SklearnModel insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -5059,11 +5054,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient SklearnModel predictions.
+\*Memory Efficient SklearnModel predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5091,9 +5086,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ConstantModel (constant:float, alias:str='ConstantModel')
 > ```
 
-Constant Model.
+\*Constant Model.
 
-Returns Constant values.
+Returns Constant values.\*
 
 ------------------------------------------------------------------------
 
@@ -5111,11 +5106,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                          fitted:bool=False)
 > ```
 
-Memory Efficient Constant Model predictions.
+\*Memory Efficient Constant Model predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5139,9 +5134,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ConstantModel.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Constant model.
+\*Fit the Constant model.
 
-Fit an Constant Model to a time series (numpy.array) `y`.
+Fit an Constant Model to a time series (numpy.array) `y`.\*
 
 |             | **Type**  | **Default** | **Details**                           |
 |-------------|-----------|-------------|---------------------------------------|
@@ -5162,7 +5157,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted ConstantModel.
+*Predict with fitted ConstantModel.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5183,7 +5178,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ConstantModel.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Constant Model insample predictions.
+*Access fitted Constant Model insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -5205,7 +5200,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                         level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply Constant model predictions to a new/updated time series.
+*Apply Constant model predictions to a new/updated time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                               |
 |------|------------------|-------------------------|-------------------------|
@@ -5246,9 +5241,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ZeroModel (alias:str='ZeroModel')
 > ```
 
-Returns Zero forecasts.
+\*Returns Zero forecasts.
 
-Returns Zero values.
+Returns Zero values.\*
 
 ------------------------------------------------------------------------
 
@@ -5265,11 +5260,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                      level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient Constant Model predictions.
+\*Memory Efficient Constant Model predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5293,9 +5288,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ZeroModel.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Constant model.
+\*Fit the Constant model.
 
-Fit an Constant Model to a time series (numpy.array) `y`.
+Fit an Constant Model to a time series (numpy.array) `y`.\*
 
 |             | **Type**  | **Default** | **Details**                           |
 |-------------|-----------|-------------|---------------------------------------|
@@ -5316,7 +5311,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted ConstantModel.
+*Predict with fitted ConstantModel.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5337,7 +5332,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  ZeroModel.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Constant Model insample predictions.
+*Access fitted Constant Model insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
@@ -5359,7 +5354,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Apply Constant model predictions to a new/updated time series.
+*Apply Constant model predictions to a new/updated time series.*
 
 |             | **Type** | **Default** | **Details**                                                                                               |
 |------|------------------|-------------------------|-------------------------|
@@ -5400,9 +5395,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  NaNModel (alias:str='NaNModel')
 > ```
 
-NaN Model.
+\*NaN Model.
 
-Returns NaN values.
+Returns NaN values.\*
 
 ------------------------------------------------------------------------
 
@@ -5419,11 +5414,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                     level:Optional[List[int]]=None, fitted:bool=False)
 > ```
 
-Memory Efficient Constant Model predictions.
+\*Memory Efficient Constant Model predictions.
 
 This method avoids memory burden due from object storage. It is
 analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.
+know the forecast horizon in advance.\*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5447,9 +5442,9 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  NaNModel.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
 > ```
 
-Fit the Constant model.
+\*Fit the Constant model.
 
-Fit an Constant Model to a time series (numpy.array) `y`.
+Fit an Constant Model to a time series (numpy.array) `y`.\*
 
 |             | **Type**  | **Default** | **Details**                           |
 |-------------|-----------|-------------|---------------------------------------|
@@ -5470,7 +5465,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >                    level:Optional[List[int]]=None)
 > ```
 
-Predict with fitted ConstantModel.
+*Predict with fitted ConstantModel.*
 
 |             | **Type** | **Default** | **Details**                                                                                           |
 |------|------------------|-------------------------|-------------------------|
@@ -5491,7 +5486,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >  NaNModel.predict_in_sample (level:Optional[List[int]]=None)
 > ```
 
-Access fitted Constant Model insample predictions.
+*Access fitted Constant Model insample predictions.*
 
 |             | **Type** | **Default** | **Details**                                                                                             |
 |------|------------------|-------------------------|-------------------------|
