@@ -7,7 +7,8 @@ __all__ = ['MFLES']
 import itertools
 
 import numpy as np
-import pandas as pd
+from coreforecast.exponentially_weighted import exponentially_weighted_mean
+from coreforecast.rolling import rolling_mean
 from numba import njit
 
 from .utils import _ensure_float
@@ -282,20 +283,16 @@ def siegel_repeated_medians(x, y):
     return x * np.median(slopes) + np.median(ints)
 
 
-def ses(x, alpha):
-    return pd.Series(x).ewm(alpha=alpha, adjust=False).mean().to_numpy()
-
-
 def ses_ensemble(y, min_alpha=0.05, max_alpha=1.0, smooth=False, order=1):
     # bad name but does either a ses ensemble or simple moving average
     if smooth:
         results = np.zeros_like(y)
         alphas = np.arange(min_alpha, max_alpha, 0.05)
         for alpha in alphas:
-            results += ses(y, alpha)
+            results += exponentially_weighted_mean(y, alpha)
         results = results / len(alphas)
     else:
-        results = pd.Series(y).rolling(order + 1).mean().to_numpy()
+        results = rolling_mean(y, order + 1)
         results[: order + 1] = y[: order + 1]
     return results
 
