@@ -55,6 +55,8 @@ def cross_validation(
         exogenous = X.copy()
     for split in range(n_splits):
         train_y = y[: -(split * step_size + test_size)]
+        if train_y.size == 0:
+            continue
         test_y = y[len(train_y) : len(train_y) + test_size]
         if exogenous is not None:
             train_X = exogenous[: -(split * step_size + test_size), :]
@@ -193,6 +195,8 @@ def get_fourier_series(length, seasonal_period, fourier_order):
 
 @njit
 def get_basis(y, n_changepoints, decay=-1, gradient_strategy=0):
+    if n_changepoints < 1:
+        return np.arange(y.size, dtype=np.float64).reshape(-1, 1)
     y = y.copy()
     y -= y[0]
     n = len(y)
@@ -448,6 +452,26 @@ class MFLES:
         n = len(y)
         y = _ensure_float(y)
         self.exogenous_lr = exogenous_lr
+        if multiplicative is None:
+            if seasonal_period is None:
+                multiplicative = False
+            else:
+                multiplicative = True
+            if min(y) <= 0:
+                multiplicative = False
+        if multiplicative:
+            self.const = y.min()
+            y = np.log(y)
+        else:
+            self.const = None
+            self.std = np.std(y)
+            self.mean = np.mean(y)
+            y = y - self.mean
+            if self.std > 0:
+                y = y / self.std
+        if seasonal_period is not None:
+            if not isinstance(seasonal_period, list):
+                seasonal_period = [seasonal_period]
         if n < 4 or np.all(y == np.mean(y)):
             if self.verbose:
                 if n < 4:
@@ -475,24 +499,6 @@ class MFLES:
         self.exogenous_component = np.zeros(n)
         self.exo_model = []
         self.round_cost = []
-        if multiplicative is None:
-            if seasonal_period is None:
-                multiplicative = False
-            else:
-                multiplicative = True
-            if min(y) <= 0:
-                multiplicative = False
-        if multiplicative:
-            self.const = y.min()
-            y = np.log(y)
-        else:
-            self.const = None
-            self.std = np.std(y)
-            self.mean = np.mean(y)
-            y = (y - self.mean) / self.std
-        if seasonal_period is not None:
-            if not isinstance(seasonal_period, list):
-                seasonal_period = [seasonal_period]
         self.trend_penalty = trend_penalty
         if moving_medians and seasonal_period is not None:
             fitted = median(y, max(seasonal_period))
