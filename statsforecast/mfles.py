@@ -55,8 +55,6 @@ def cross_validation(
         exogenous = X.copy()
     for split in range(n_splits):
         train_y = y[: -(split * step_size + test_size)]
-        if train_y.size == 0:
-            continue
         test_y = y[len(train_y) : len(train_y) + test_size]
         if exogenous is not None:
             train_X = exogenous[: -(split * step_size + test_size), :]
@@ -457,7 +455,7 @@ class MFLES:
                 multiplicative = False
             else:
                 multiplicative = True
-            if min(y) <= 0:
+            if y.min() <= 0:
                 multiplicative = False
         if multiplicative:
             self.const = y.min()
@@ -714,16 +712,19 @@ class MFLES:
 
         """
         configs = default_configs(seasonal_period, params)
-        if len(y) - 5 < n_steps + test_size:
-            n_steps = 1
-            if len(y) - 5 < n_steps + test_size:
-                test_size = int(0.5 * test_size)
-                if len(y) - 5 < n_steps + test_size:
-                    test_size = int(0.5 * test_size)
+        # the 4 here is because with less than 4 samples the model defaults to naive
+        max_steps = (len(y) - test_size - 4) // step_size + 1
+        if max_steps < 1:
             if self.verbose:
                 print(
-                    f"Series length too small, setting test_size to {test_size} and n_steps to {n_steps}"
+                    "Series does not have enough samples for a single cross validation step "
+                    f"({test_size + 4}). Choosing the first configuration."
                 )
+            return configs[0]
+        if max_steps < n_steps:
+            n_steps = max_steps
+            if self.verbose:
+                print(f"Series length too small, setting n_steps to {n_steps}")
 
         self.metrics = []
         for param in configs:
