@@ -13,6 +13,7 @@ from .utils import CACHE, NOGIL
 # %% ../nbs/src/garch.ipynb 7
 @njit(nogil=NOGIL, cache=CACHE)
 def generate_garch_data(n, w, alpha, beta):
+
     np.random.seed(1)
 
     y = np.zeros(n)
@@ -56,6 +57,7 @@ def generate_garch_data(n, w, alpha, beta):
 # %% ../nbs/src/garch.ipynb 12
 @njit(nogil=NOGIL, cache=CACHE)
 def garch_sigma2(x0, x, p, q):
+
     w = x0[0]
     alpha = x0[1 : (p + 1)]
     beta = x0[(p + 1) :]
@@ -85,6 +87,7 @@ def garch_cons(x0):
 # %% ../nbs/src/garch.ipynb 16
 @njit(nogil=NOGIL, cache=CACHE)
 def garch_loglik(x0, x, p, q):
+
     sigma2 = garch_sigma2(x0, x, p, q)
     z = x - np.nanmean(x)
     loglik = 0
@@ -100,6 +103,7 @@ def garch_loglik(x0, x, p, q):
 
 # %% ../nbs/src/garch.ipynb 18
 def garch_model(x, p, q):
+
     np.random.seed(1)
     x0 = np.repeat(0.1, p + q + 1)
     bnds = ((0, None),) * len(x0)
@@ -130,6 +134,7 @@ def garch_model(x, p, q):
 
 # %% ../nbs/src/garch.ipynb 22
 def garch_forecast(mod, h):
+
     np.random.seed(1)
 
     p = mod["p"]

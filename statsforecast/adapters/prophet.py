@@ -217,12 +217,9 @@ class AutoARIMAProphet(Prophet):
         history = self.setup_dataframe(history, initialize_scales=True)
         self.history = history
         self.set_auto_seasonalities()
-        (
-            seasonal_features,
-            prior_scales,
-            component_cols,
-            modes,
-        ) = self.make_all_seasonality_features(history)
+        seasonal_features, prior_scales, component_cols, modes = (
+            self.make_all_seasonality_features(history)
+        )
         self.train_component_cols = component_cols
         self.component_modes = modes
         if disable_seasonal_features:
