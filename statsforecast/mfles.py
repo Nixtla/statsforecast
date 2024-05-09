@@ -99,35 +99,17 @@ def default_configs(seasonal_period, configs=None):
             if not isinstance(seasonal_period, list):
                 seasonal_period = [seasonal_period]
             configs = {
-                # 'decay': [.01, .99, -1],
-                # 'n_changepoints': [None, .25],
-                # 'moving_medians': [True, False],
-                # # 'trend_penalty': [True, False],
-                # 'multiplicative': [True, False],
+                "seasonality_weights": [True, False],
                 "smoother": [True, False],
-                # 'cov_threshold': [.7, -1],
-                # 'ma': [None],
-                "max_rounds": [3, 20],
+                "ma": [int(min(seasonal_period)), int(min(seasonal_period) / 2), None],
                 "seasonal_period": [None, seasonal_period],
-                # 'seasonal_lr': [.1, .4, .6, .8, .9, 1]
-                # 'rs_lr': [1, .9, .5, .1, 0],
-                # 'linear_lr': [1, .9, .5, .1, 0],
-                # 'alpha': [0.01, .1, .2, .3, .5, 1]
             }
         else:
             configs = {
-                # 'decay': [.01, .99, -1],
-                # 'n_changepoints': [None, .1],
-                # 'moving_medians': [True, False],
-                # 'trend_penalty': [True, False],
                 "smoother": [True, False],
                 "cov_threshold": [0.5, -1],
-                # 'ma': [None],
                 "max_rounds": [5, 20],
                 "seasonal_period": [None],
-                # 'ets_lr': [1, .9, .5, .1, 0],
-                # 'linear_lr': [1, .9, .5, .1, 0],
-                # 'alpha': [0.01, .1, .2, .3, .5, 1]
             }
     keys = configs.keys()
     combinations = itertools.product(*configs.values())
@@ -175,7 +157,10 @@ def calc_cov(y, mult=1):
         # source http://medcraveonline.com/MOJPB/MOJPB-06-00200.pdf
         res = np.sqrt(np.exp(np.log(10) * (np.std(y) ** 2) - 1))
     else:
-        res = np.std(y) / np.mean(y)
+        res = np.std(y)
+        mean = np.mean(y)
+        if mean != 0:
+            res = res / mean
     return res
 
 

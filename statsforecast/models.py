@@ -6207,8 +6207,17 @@ class SklearnModel(_TS):
 
 # %% ../nbs/src/core/models.ipynb 489
 class MFLES(_TS):
-    """
-    ...
+    """MFLES model.
+
+    A method to forecast time series based on Gradient Boosted Time Series Decomposition
+    which treats traditional decomposition as the base estimator in the boosting
+    process. Unlike normal gradient boosting, slight learning rates are applied at the
+    component level (trend/seasonality/exogenous).
+
+    The method derives its name from some of the underlying estimators that can
+    enter into the boosting procedure, specifically: a simple Median, Fourier
+    functions for seasonality, a simple/piecewise Linear trend, and Exponential
+    Smoothing.
 
     Parameters
     ----------
@@ -6239,7 +6248,7 @@ class MFLES(_TS):
         A shrinkage parameter (0 < trend_lr <= 1) which penalizes the linear trend fit
         A value of 0.9 will flatly multiply the linear fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or exogenous components.
     exogenous_lr : float (default=1.0)
-        ...
+        The shrinkage parameter (0 < exogenous_lr <= 1) which controls how much of the exogenous signal is carried to the next round.
     residuals_lr : float (default=1.0)
         A shrinkage parameter (0 < residuals_lr <= 1) which penalizes the residual smoothing.
         A value of 0.9 will flatly multiply the residual fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or linear components.
@@ -6259,7 +6268,8 @@ class MFLES(_TS):
     smoother : bool (default=False)
         If True, then a simple exponential ensemble will be used rather than auto settings.
     robust : bool, optional (default=None)
-        ...
+        If True then MFLES will fit using more reserved methods, i.e. not using piecewise trend or moving average residual smoother.
+        Auto-set based on internal logic.
     verbose : bool (default=False)
         Print debugging information.
     prediction_intervals : Optional[ConformalIntervals]
@@ -6478,16 +6488,17 @@ class AutoMFLES(_TS):
 
     Parameters
     ----------
-    h : int
+    test_size : int
         Forecast horizon used during cross validation.
     season_length : int or list of int, optional (default=None)
         Number of observations per unit of time. Ex: 24 Hourly data.
     n_windows : int (default=2)
         Number of windows used for cross validation.
-    config : dict
+    config : dict, optional (default=None)
         Mapping from parameter name (from the init arguments of MFLES) to a list of values to try.
+        If `None`, will use defaults.
     step_size : int (default=1)
-        Step size between each window.
+        Step size between each cross validation window.
     metric : str (default='smape')
         Metric used to select the best model. Possible options are: 'smape', 'mape', 'mse' and 'mae'.
     verbose : bool (default=False)
