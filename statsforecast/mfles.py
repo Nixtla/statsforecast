@@ -5,6 +5,7 @@ __all__ = ['MFLES']
 
 # %% ../nbs/src/mfles.ipynb 3
 import itertools
+import warnings
 
 import numpy as np
 from coreforecast.exponentially_weighted import exponentially_weighted_mean
@@ -214,7 +215,9 @@ def get_basis(y, n_changepoints, decay=-1, gradient_strategy=0):
             end_point = final_point
         else:
             if decay == -1:
-                dd = moving_point**2 / (mean_y**2)
+                dd = moving_point**2
+                if mean_y != 0:
+                    dd /= mean_y**2
                 if dd > 0.99:
                     dd = 0.99
                 if dd < 0.001:
@@ -241,8 +244,12 @@ def get_future_basis(basis_functions, forecast_horizon):
 
 def lasso_nb(X, y, alpha, tol=0.001, maxiter=10000):
     from sklearn.linear_model import Lasso
+    from sklearn.exceptions import ConvergenceWarning
 
-    lasso = Lasso(fit_intercept=False, tol=tol, max_iter=maxiter).fit(X, y)
+    with warnings.catch_warnings(record=False):
+        warnings.filterwarnings("ignore", category=ConvergenceWarning)
+        lasso = Lasso(alpha=alpha, fit_intercept=False, tol=tol, max_iter=maxiter)
+        lasso.fit(X, y)
     return lasso.coef_
 
 
