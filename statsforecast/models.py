@@ -6409,8 +6409,8 @@ class AutoMFLES(_TS):
     config : dict, optional (default=None)
         Mapping from parameter name (from the init arguments of MFLES) to a list of values to try.
         If `None`, will use defaults.
-    step_size : int (default=1)
-        Step size between each cross validation window.
+    step_size : int, optional (default=None)
+        Step size between each cross validation window. If `None` will be set to test_size.
     metric : str (default='smape')
         Metric used to select the best model. Possible options are: 'smape', 'mape', 'mse' and 'mae'.
     verbose : bool (default=False)
@@ -6428,7 +6428,7 @@ class AutoMFLES(_TS):
         season_length: Optional[Union[int, List[int]]] = None,
         n_windows: int = 2,
         config: Optional[Dict[str, Any]] = None,
-        step_size: int = 1,
+        step_size: Optional[int] = None,
         metric: str = "smape",
         verbose: bool = False,
         prediction_intervals: Optional[ConformalIntervals] = None,
@@ -6442,7 +6442,7 @@ class AutoMFLES(_TS):
         self.n_windows = n_windows
         self.test_size = test_size
         self.config = config
-        self.step_size = step_size
+        self.step_size = step_size if step_size is not None else test_size
         self.metric = metric
         self.verbose = verbose
         self.prediction_intervals = prediction_intervals
