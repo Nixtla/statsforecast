@@ -119,6 +119,9 @@ class _TS:
         b.__dict__.update(self.__dict__)
         return b
 
+    def __repr__(self):
+        return self.alias
+
     def _conformity_scores(
         self,
         y: np.ndarray,
@@ -326,9 +329,6 @@ class AutoARIMA(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -661,9 +661,6 @@ class AutoETS(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -890,9 +887,6 @@ class ETS(AutoETS):
             prediction_intervals=prediction_intervals,
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 53
 class AutoCES(_TS):
     """Complex Exponential Smoothing model.
@@ -938,9 +932,6 @@ class AutoCES(_TS):
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -1189,9 +1180,6 @@ class AutoTheta(_TS):
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -1447,9 +1435,6 @@ class ARIMA(_TS):
         self.fixed = fixed
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -1743,9 +1728,6 @@ class AutoRegressive(ARIMA):
             prediction_intervals=prediction_intervals,
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 117
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
@@ -1866,9 +1848,6 @@ class SimpleExponentialSmoothing(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2037,9 +2016,6 @@ class SimpleExponentialSmoothingOptimized(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2231,9 +2207,6 @@ class SeasonalExponentialSmoothing(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2431,9 +2404,6 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -2605,9 +2575,6 @@ class Holt(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 188
 class HoltWinters(AutoETS):
     """Holt-Winters' method.
@@ -2647,9 +2614,6 @@ class HoltWinters(AutoETS):
         super().__init__(
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
-
-    def __repr__(self):
-        return self.alias
 
 # %% ../nbs/src/core/models.ipynb 203
 def _historic_average(
@@ -2692,9 +2656,6 @@ class HistoricAverage(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2870,9 +2831,6 @@ class Naive(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -3105,9 +3063,6 @@ class RandomWalkWithDrift(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -3281,9 +3236,6 @@ class SeasonalNaive(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -3489,9 +3441,6 @@ class WindowAverage(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -3665,9 +3614,6 @@ class SeasonalWindowAverage(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -3922,9 +3868,6 @@ class ADIDA(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -4118,9 +4061,6 @@ class CrostonClassic(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -4326,9 +4266,6 @@ class CrostonOptimized(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -4500,9 +4437,6 @@ class CrostonSBA(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -4697,9 +4631,6 @@ class IMAPA(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -4908,9 +4839,6 @@ class TSB(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -5116,9 +5044,6 @@ class MSTL(_TS):
         ):
             self.trend_forecaster.prediction_intervals = prediction_intervals
         self.stl_kwargs = dict() if stl_kwargs is None else stl_kwargs
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -5388,9 +5313,6 @@ class TBATS(_TS):
         self.use_damped_trend = use_damped_trend
         self.use_arma_errors = use_arma_errors
         self.alias = alias
-
-    def __repr__(self):
-        return self.alias
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         """Fit TBATS model.
@@ -5810,9 +5732,6 @@ class GARCH(_TS):
             self.alias = alias + "(" + str(p) + ")"
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         """Fit GARCH model.
 
@@ -5991,9 +5910,6 @@ class ARCH(GARCH):
         self.alias = alias
         super().__init__(p, q=0, alias=alias)
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 479
 class SklearnModel(_TS):
     """scikit-learn model wrapper
@@ -6017,12 +5933,7 @@ class SklearnModel(_TS):
     ):
         self.model = model
         self.prediction_intervals = prediction_intervals
-        self.alias = alias
-
-    def __repr__(self):
-        if self.alias is not None:
-            return self.alias
-        return self.model.__class__.__name__
+        self.alias = alias if alias is not None else model.__class__.__name__
 
     def fit(
         self,
@@ -6305,6 +6216,10 @@ class MFLES(_TS):
         prediction_intervals: Optional[ConformalIntervals] = None,
         alias: str = "MFLES",
     ):
+        try:
+            import sklearn  # noqa: F401
+        except ImportError:
+            raise ImportError("MFLES requires scikit-learn.") from None
         self.season_length = season_length
         self.fourier_order = fourier_order
         self.max_rounds = max_rounds
@@ -6328,9 +6243,6 @@ class MFLES(_TS):
         self.verbose = verbose
         self.prediction_intervals = prediction_intervals
         self.alias = alias
-
-    def __repr__(self):
-        return self.alias
 
     def _fit(self, y: np.ndarray, X: Optional[np.ndarray]) -> Dict[str, Any]:
         model = _MFLES(verbose=self.verbose, robust=self.robust)
@@ -6522,6 +6434,10 @@ class AutoMFLES(_TS):
         prediction_intervals: Optional[ConformalIntervals] = None,
         alias: str = "AutoMFLES",
     ):
+        try:
+            import sklearn  # noqa: F401
+        except ImportError:
+            raise ImportError("MFLES requires scikit-learn.") from None
         self.season_length = season_length
         self.n_windows = n_windows
         self.test_size = test_size
@@ -6694,9 +6610,6 @@ class ConstantModel(_TS):
         """
         self.constant = constant
         self.alias = alias
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
