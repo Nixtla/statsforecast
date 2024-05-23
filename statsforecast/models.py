@@ -6144,7 +6144,7 @@ class MFLES(_TS):
     ma : int, optional (default=None)
         The moving average order to use, this is auto-set based on internal logic.
         Passing 4 would fit a 4 period moving average on the residual component.
-    alpha : float (default=0.1)
+    alpha : float (default=1.0)
         The alpha which is used in fitting the underlying LASSO when using piecewise functions.
     decay : float (default=-1.0)
         Effects the slopes of the piecewise-linear basis function.
@@ -6196,7 +6196,7 @@ class MFLES(_TS):
         fourier_order: Optional[int] = None,
         max_rounds: int = 50,
         ma: Optional[int] = None,
-        alpha: float = 0.1,
+        alpha: float = 1.0,
         decay: float = -1.0,
         changepoints: bool = True,
         n_changepoints: Union[float, int] = 0.25,
