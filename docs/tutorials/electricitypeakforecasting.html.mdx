@@ -184,19 +184,22 @@ sf = StatsForecast(
 > -   `fallback_model`: a model to be used if a model fails. (Default:
 >     none)
 
-The `cross_validation` method allows the user to simulate multiple
-historic forecasts, greatly simplifying pipelines by replacing for loops
-with `fit` and `predict` methods. This method re-trains the model and
-forecast each window. See [this
+The
+[`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation)
+method allows the user to simulate multiple historic forecasts, greatly
+simplifying pipelines by replacing for loops with `fit` and `predict`
+methods. This method re-trains the model and forecast each window. See
+[this
 tutorial](https://nixtla.github.io/statsforecast/examples/getting_started_complete.html)
 for an animation of how the windows are defined.
 
-Use the `cross_validation` method to produce all the daily forecasts for
-September. To produce daily forecasts set the forecasting horizon `h` as
-24. In this example we are simulating deploying the pipeline during
-September, so set the number of windows as 30 (one for each day).
-Finally, set the step size between windows as 24, to only produce one
-forecast per day.
+Use the
+[`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation)
+method to produce all the daily forecasts for September. To produce
+daily forecasts set the forecasting horizon `h` as 24. In this example
+we are simulating deploying the pipeline during September, so set the
+number of windows as 30 (one for each day). Finally, set the step size
+between windows as 24, to only produce one forecast per day.
 
 ```python
 crossvalidation_df = sf.cross_validation(
@@ -223,9 +226,11 @@ crossvalidation_df.head()
 
 > **Important**
 >
-> When using `cross_validation` make sure the forecasts are produced at
-> the desired timestamps. Check the `cutoff` column which specifices the
-> last timestamp before the forecasting window.
+> When using
+> [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation)
+> make sure the forecasts are produced at the desired timestamps. Check
+> the `cutoff` column which specifices the last timestamp before the
+> forecasting window.
 
 ## Peak Detection
 
@@ -278,9 +283,10 @@ plt.legend()
 >
 > In this example we only include September. However, MSTL can correctly
 > predict the peaks for the 4 months of 2022. You can try this by
-> increasing the `nwindows` parameter of `cross_validation` or filtering
-> the `Y_df` dataset. The complete run for all months take only 10
-> minutes.
+> increasing the `nwindows` parameter of
+> [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation)
+> or filtering the `Y_df` dataset. The complete run for all months take
+> only 10 minutes.
 
 ## Next steps
 
