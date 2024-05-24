@@ -16,7 +16,7 @@ to full blown gradient boosting.
 Average SMAPE from a few M4 datasets
 | Dataset    | AutoMFLES | AutoETS |
 | -------- | ------- | ------- |
-| Monthly  | 12.84    | 13.59 |
-| Hourly | 11.81     | 17.19 |
-| Weekly    | 8.32    | 8.64 |
-| Quarterly    | 10.66    | 10.26 |
+| Monthly  | 12.91    | 13.59* |
+| Hourly | 11.73     | 17.19 |
+| Weekly    | 8.18    | 8.64 |
+| Quarterly    | 10.72    | 10.25 |
