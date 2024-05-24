@@ -6,8 +6,8 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'TBATS', 'AutoTBATS', 'Theta', 'OptimizedTheta',
-           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'ConstantModel', 'ZeroModel',
-           'NaNModel']
+           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'MFLES', 'AutoMFLES',
+           'ConstantModel', 'ZeroModel', 'NaNModel']
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
@@ -35,6 +35,7 @@ from statsforecast.ets import (
     forecast_ets,
     forward_ets,
 )
+from .mfles import MFLES as _MFLES
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
@@ -117,6 +118,9 @@ class _TS:
         b = type(self).__new__(type(self))
         b.__dict__.update(self.__dict__)
         return b
+
+    def __repr__(self):
+        return self.alias
 
     def _conformity_scores(
         self,
@@ -325,9 +329,6 @@ class AutoARIMA(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -660,9 +661,6 @@ class AutoETS(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -889,9 +887,6 @@ class ETS(AutoETS):
             prediction_intervals=prediction_intervals,
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 53
 class AutoCES(_TS):
     """Complex Exponential Smoothing model.
@@ -937,9 +932,6 @@ class AutoCES(_TS):
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -1188,9 +1180,6 @@ class AutoTheta(_TS):
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -1446,9 +1435,6 @@ class ARIMA(_TS):
         self.fixed = fixed
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -1742,9 +1728,6 @@ class AutoRegressive(ARIMA):
             prediction_intervals=prediction_intervals,
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 117
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
@@ -1865,9 +1848,6 @@ class SimpleExponentialSmoothing(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2036,9 +2016,6 @@ class SimpleExponentialSmoothingOptimized(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2230,9 +2207,6 @@ class SeasonalExponentialSmoothing(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2430,9 +2404,6 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -2604,9 +2575,6 @@ class Holt(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 188
 class HoltWinters(AutoETS):
     """Holt-Winters' method.
@@ -2646,9 +2614,6 @@ class HoltWinters(AutoETS):
         super().__init__(
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
-
-    def __repr__(self):
-        return self.alias
 
 # %% ../nbs/src/core/models.ipynb 203
 def _historic_average(
@@ -2691,9 +2656,6 @@ class HistoricAverage(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -2869,9 +2831,6 @@ class Naive(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -3104,9 +3063,6 @@ class RandomWalkWithDrift(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -3280,9 +3236,6 @@ class SeasonalNaive(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -3488,9 +3441,6 @@ class WindowAverage(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -3664,9 +3614,6 @@ class SeasonalWindowAverage(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -3921,9 +3868,6 @@ class ADIDA(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -4117,9 +4061,6 @@ class CrostonClassic(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -4325,9 +4266,6 @@ class CrostonOptimized(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -4499,9 +4437,6 @@ class CrostonSBA(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -4696,9 +4631,6 @@ class IMAPA(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -4907,9 +4839,6 @@ class TSB(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
@@ -5115,9 +5044,6 @@ class MSTL(_TS):
         ):
             self.trend_forecaster.prediction_intervals = prediction_intervals
         self.stl_kwargs = dict() if stl_kwargs is None else stl_kwargs
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -5387,9 +5313,6 @@ class TBATS(_TS):
         self.use_damped_trend = use_damped_trend
         self.use_arma_errors = use_arma_errors
         self.alias = alias
-
-    def __repr__(self):
-        return self.alias
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         """Fit TBATS model.
@@ -5809,9 +5732,6 @@ class GARCH(_TS):
             self.alias = alias + "(" + str(p) + ")"
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         """Fit GARCH model.
 
@@ -5990,9 +5910,6 @@ class ARCH(GARCH):
         self.alias = alias
         super().__init__(p, q=0, alias=alias)
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 479
 class SklearnModel(_TS):
     """scikit-learn model wrapper
@@ -6016,12 +5933,7 @@ class SklearnModel(_TS):
     ):
         self.model = model
         self.prediction_intervals = prediction_intervals
-        self.alias = alias
-
-    def __repr__(self):
-        if self.alias is not None:
-            return self.alias
-        return self.model.__class__.__name__
+        self.alias = alias if alias is not None else model.__class__.__name__
 
     def fit(
         self,
@@ -6204,7 +6116,484 @@ class SklearnModel(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../nbs/src/core/models.ipynb 490
+# %% ../nbs/src/core/models.ipynb 489
+class MFLES(_TS):
+    """MFLES model.
+
+    A method to forecast time series based on Gradient Boosted Time Series Decomposition
+    which treats traditional decomposition as the base estimator in the boosting
+    process. Unlike normal gradient boosting, slight learning rates are applied at the
+    component level (trend/seasonality/exogenous).
+
+    The method derives its name from some of the underlying estimators that can
+    enter into the boosting procedure, specifically: a simple Median, Fourier
+    functions for seasonality, a simple/piecewise Linear trend, and Exponential
+    Smoothing.
+
+    Parameters
+    ----------
+    season_length : int or list of int, optional (default=None)
+        Number of observations per unit of time. Ex: 24 Hourly data.
+    fourier_order : int, optional (default=None)
+        How many fourier sin/cos pairs to create, the larger the number the more complex of a seasonal pattern can be fitted.
+        A lower number leads to smoother results.
+        This is auto-set based on seasonal_period.
+    max_rounds : int (default=50)
+        The max number of boosting rounds. The boosting will auto-stop but depending on other parameters such as rs_lr you may want more rounds.
+        Generally more rounds means a smoother fit.
+    ma : int, optional (default=None)
+        The moving average order to use, this is auto-set based on internal logic.
+        Passing 4 would fit a 4 period moving average on the residual component.
+    alpha : float (default=1.0)
+        The alpha which is used in fitting the underlying LASSO when using piecewise functions.
+    decay : float (default=-1.0)
+        Effects the slopes of the piecewise-linear basis function.
+    changepoints : boolean (default=True)
+        Whether to fit for changepoints if all other logic allows for it. If False, MFLES will not ever fit a piecewise trend.
+    n_changepoints : int or float (default=0.25)
+        Number (if int) or proportion (if float) of changepoint knots to place. The default of 0.25 will place 0.25 * (series length) number of knots.
+    seasonal_lr : float (default=0.9)
+        A shrinkage parameter (0 < seasonal_lr <= 1) which penalizes the seasonal fit.
+        A value of 0.9 will flatly multiply the seasonal fit by 0.9 each boosting round, this can be used to allow more signal to the exogenous component.
+    trend_lr : float (default=0.9)
+        A shrinkage parameter (0 < trend_lr <= 1) which penalizes the linear trend fit
+        A value of 0.9 will flatly multiply the linear fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or exogenous components.
+    exogenous_lr : float (default=1.0)
+        The shrinkage parameter (0 < exogenous_lr <= 1) which controls how much of the exogenous signal is carried to the next round.
+    residuals_lr : float (default=1.0)
+        A shrinkage parameter (0 < residuals_lr <= 1) which penalizes the residual smoothing.
+        A value of 0.9 will flatly multiply the residual fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or linear components.
+    cov_threshold : float (default=0.7)
+        The deseasonalized cov is used to auto-set some logic, lowering the cov_threshold will result in simpler and less complex residual smoothing.
+        If you pass something like 1000 then there will be no safeguards applied.
+    moving_medians : bool (default=False)
+        The default behavior is to fit an initial median to the time series. If True, then it will fit a median per seasonal period.
+    min_alpha : float (default=0.05)
+        The minimum alpha in the SES ensemble.
+    max_alpha : float (default=1.0)
+        The maximum alpha used in the SES ensemble.
+    trend_penalty : bool (default=True)
+        Whether to apply a simple penalty to the linear trend component, very useful for dealing with the potentially dangerous piecewise trend.
+    multiplicative : bool, optional (default=None)
+        Auto-set based on internal logic. If True, it will simply take the log of the time series.
+    smoother : bool (default=False)
+        If True, then a simple exponential ensemble will be used rather than auto settings.
+    robust : bool, optional (default=None)
+        If True then MFLES will fit using more reserved methods, i.e. not using piecewise trend or moving average residual smoother.
+        Auto-set based on internal logic.
+    verbose : bool (default=False)
+        Print debugging information.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        This is required for generating future prediction intervals.
+    alias : str (default='MFLES')
+        Custom name of the model.
+    """
+
+    def __init__(
+        self,
+        season_length: Optional[Union[int, List[int]]] = None,
+        fourier_order: Optional[int] = None,
+        max_rounds: int = 50,
+        ma: Optional[int] = None,
+        alpha: float = 1.0,
+        decay: float = -1.0,
+        changepoints: bool = True,
+        n_changepoints: Union[float, int] = 0.25,
+        seasonal_lr: float = 0.9,
+        trend_lr: float = 0.9,
+        exogenous_lr: float = 1.0,
+        residuals_lr: float = 1.0,
+        cov_threshold: float = 0.7,
+        moving_medians: bool = False,
+        min_alpha: float = 0.05,
+        max_alpha: float = 1.0,
+        trend_penalty: bool = True,
+        multiplicative: Optional[bool] = None,
+        smoother: bool = False,
+        robust: Optional[bool] = None,
+        verbose: bool = False,
+        prediction_intervals: Optional[ConformalIntervals] = None,
+        alias: str = "MFLES",
+    ):
+        try:
+            import sklearn  # noqa: F401
+        except ImportError:
+            raise ImportError("MFLES requires scikit-learn.") from None
+        self.season_length = season_length
+        self.fourier_order = fourier_order
+        self.max_rounds = max_rounds
+        self.ma = ma
+        self.alpha = alpha
+        self.decay = decay
+        self.changepoints = changepoints
+        self.n_changepoints = n_changepoints
+        self.seasonal_lr = seasonal_lr
+        self.trend_lr = trend_lr
+        self.exogenous_lr = exogenous_lr
+        self.residuals_lr = residuals_lr
+        self.cov_threshold = cov_threshold
+        self.moving_medians = moving_medians
+        self.min_alpha = min_alpha
+        self.max_alpha = max_alpha
+        self.trend_penalty = trend_penalty
+        self.multiplicative = multiplicative
+        self.smoother = smoother
+        self.robust = robust
+        self.verbose = verbose
+        self.prediction_intervals = prediction_intervals
+        self.alias = alias
+
+    def _fit(self, y: np.ndarray, X: Optional[np.ndarray]) -> Dict[str, Any]:
+        model = _MFLES(verbose=self.verbose, robust=self.robust)
+        fitted = model.fit(
+            y=y,
+            X=X,
+            seasonal_period=self.season_length,
+            fourier_order=self.fourier_order,
+            ma=self.ma,
+            alpha=self.alpha,
+            decay=self.decay,
+            n_changepoints=self.n_changepoints,
+            seasonal_lr=self.seasonal_lr,
+            linear_lr=self.trend_lr,
+            exogenous_lr=self.exogenous_lr,
+            rs_lr=self.residuals_lr,
+            cov_threshold=self.cov_threshold,
+            moving_medians=self.moving_medians,
+            max_rounds=self.max_rounds,
+            min_alpha=self.min_alpha,
+            max_alpha=self.max_alpha,
+            trend_penalty=self.trend_penalty,
+            multiplicative=self.multiplicative,
+            changepoints=self.changepoints,
+            smoother=self.smoother,
+        )
+        return {"model": model, "fitted": fitted}
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> "MFLES":
+        """Fit the model
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like, optional (default=None)
+            Exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self : MFLES
+            Fitted MFLES object.
+        """
+        self.model_ = self._fit(y=y, X=X)
+        self._store_cs(y=y, X=X)
+        residuals = y - self.model_["fitted"]
+        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        """Predict with fitted MFLES.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like, optional (default=None)
+            Exogenous of shape (h, n_x).
+        level: List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"mean": self.model_["model"].predict(forecast_horizon=h, X=X)}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
+        """Access fitted SklearnModel insample predictions.
+
+        Parameters
+        ----------
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ) -> Dict[str, Any]:
+        """Memory Efficient MFLES predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        model = self._fit(y=y, X=X)
+        res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
+        if fitted:
+            res["fitted"] = model["fitted"]
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
+
+# %% ../nbs/src/core/models.ipynb 497
+class AutoMFLES(_TS):
+    """AutoMFLES
+
+    Parameters
+    ----------
+    test_size : int
+        Forecast horizon used during cross validation.
+    season_length : int or list of int, optional (default=None)
+        Number of observations per unit of time. Ex: 24 Hourly data.
+    n_windows : int (default=2)
+        Number of windows used for cross validation.
+    config : dict, optional (default=None)
+        Mapping from parameter name (from the init arguments of MFLES) to a list of values to try.
+        If `None`, will use defaults.
+    step_size : int, optional (default=None)
+        Step size between each cross validation window. If `None` will be set to test_size.
+    metric : str (default='smape')
+        Metric used to select the best model. Possible options are: 'smape', 'mape', 'mse' and 'mae'.
+    verbose : bool (default=False)
+        Print debugging information.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        This is required for generating future prediction intervals.
+    alias : str (default='AutoMFLES')
+        Custom name of the model.
+    """
+
+    def __init__(
+        self,
+        test_size: int,
+        season_length: Optional[Union[int, List[int]]] = None,
+        n_windows: int = 2,
+        config: Optional[Dict[str, Any]] = None,
+        step_size: Optional[int] = None,
+        metric: str = "smape",
+        verbose: bool = False,
+        prediction_intervals: Optional[ConformalIntervals] = None,
+        alias: str = "AutoMFLES",
+    ):
+        try:
+            import sklearn  # noqa: F401
+        except ImportError:
+            raise ImportError("MFLES requires scikit-learn.") from None
+        self.season_length = season_length
+        self.n_windows = n_windows
+        self.test_size = test_size
+        self.config = config
+        self.step_size = step_size if step_size is not None else test_size
+        self.metric = metric
+        self.verbose = verbose
+        self.prediction_intervals = prediction_intervals
+        self.alias = alias
+
+    def _fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> Dict[str, Any]:
+        model = _MFLES(verbose=self.verbose)
+        optim_params = model.optimize(
+            y=y,
+            X=X,
+            test_size=self.test_size,
+            n_steps=self.n_windows,
+            step_size=self.step_size,
+            seasonal_period=self.season_length,
+            metric=self.metric,
+            params=self.config,
+        )
+        # the seasonal_period may've been found during the optimization
+        seasonal_period = optim_params.pop("seasonal_period", self.season_length)
+        fitted = model.fit(
+            y=y,
+            X=X,
+            seasonal_period=seasonal_period,
+            **optim_params,
+        )
+        return {"model": model, "fitted": fitted}
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> "AutoMFLES":
+        """Fit the model
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like, optional (default=None)
+            Exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self : AutoMFLES
+            Fitted AutoMFLES object.
+        """
+        self.model_ = self._fit(y=y, X=X)
+        self._store_cs(y=y, X=X)
+        residuals = y - self.model_["fitted"]
+        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        """Predict with fitted AutoMFLES.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like, optional (default=None)
+            Exogenous of shape (h, n_x).
+        level: List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"mean": self.model_["model"].predict(forecast_horizon=h, X=X)}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
+        """Access fitted AutoMFLES insample predictions.
+
+        Parameters
+        ----------
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ) -> Dict[str, Any]:
+        """Memory Efficient AutoMFLES predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        model = self._fit(y=y, X=X)
+        res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
+        if fitted:
+            res["fitted"] = model["fitted"]
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
+
+# %% ../nbs/src/core/models.ipynb 501
 class ConstantModel(_TS):
 
     def __init__(self, constant: float, alias: str = "ConstantModel"):
@@ -6221,9 +6610,6 @@ class ConstantModel(_TS):
         """
         self.constant = constant
         self.alias = alias
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
@@ -6390,7 +6776,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 504
+# %% ../nbs/src/core/models.ipynb 515
 class ZeroModel(ConstantModel):
 
     def __init__(self, alias: str = "ZeroModel"):
@@ -6405,7 +6791,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 518
+# %% ../nbs/src/core/models.ipynb 529
 class NaNModel(ConstantModel):
 
     def __init__(self, alias: str = "NaNModel"):
