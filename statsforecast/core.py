@@ -62,6 +62,7 @@ class GroupedArray(BaseGroupedArray):
                 except Exception as error:
                     if fallback_model is not None:
                         new_fallback_model = fallback_model.new()
+                        new_fallback_model.alias = model.alias
                         fm[i, i_model] = new_fallback_model.fit(y=y, X=X)
                     else:
                         raise error
