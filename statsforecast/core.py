@@ -1247,19 +1247,21 @@ class _StatsForecast:
             cols = cols[0]
         return fm, fcsts, cols
 
-    def _forecast_serie(self, **forecast_kwargs):
+    def _forecast_serie(self, level, **forecast_kwargs):
         forecast_res = {}
         fitted_res = {}
         with threadpool_limits(limits=1):
             for model in self.models:
-                if "level" not in inspect.signature(model.forecast).parameters:
-                    forecast_kwargs.pop("level", None)
+                if "level" in inspect.signature(model.forecast).parameters and level:
+                    model_kwargs = {**forecast_kwargs, "level": level}
+                else:
+                    model_kwargs = forecast_kwargs
                 try:
-                    model_res = model.forecast(**forecast_kwargs)
+                    model_res = model.forecast(**model_kwargs)
                 except Exception as e:
                     if self.fallback_model is None:
                         raise e
-                    model_res = self.fallback_model.forecast(**forecast_kwargs)
+                    model_res = self.fallback_model.forecast(**model_kwargs)
                 model_name = repr(model)
                 for k, v in model_res.items():
                     if k == "mean":
