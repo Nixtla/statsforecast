@@ -13,6 +13,8 @@ import pickle
 import re
 import reprlib
 import warnings
+from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -940,7 +942,11 @@ class _StatsForecast:
             )
         else:
             res_fcsts = self._forecast_parallel(
-                h=h, fitted=fitted, X=X, level=level, target_col=target_col
+                h=h,
+                fitted=fitted,
+                X=X,
+                level=level,
+                target_col=target_col,
             )
         if fitted:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
@@ -1241,42 +1247,84 @@ class _StatsForecast:
             cols = cols[0]
         return fm, fcsts, cols
 
+    def _forecast_serie(self, **forecast_kwargs):
+        forecast_res = {}
+        fitted_res = {}
+        with threadpool_limits(limits=1):
+            for model in self.models:
+                if "level" not in inspect.signature(model.forecast).parameters:
+                    forecast_kwargs.pop("level", None)
+                try:
+                    model_res = model.forecast(**forecast_kwargs)
+                except Exception as e:
+                    if self.fallback_model is None:
+                        raise e
+                    model_res = self.fallback_model.forecast(**forecast_kwargs)
+                model_name = repr(model)
+                for k, v in model_res.items():
+                    if k == "mean":
+                        forecast_res[model_name] = v
+                    elif k.startswith(("lo", "hi")):
+                        col_name = f"{model_name}-{k}"
+                        forecast_res[col_name] = v
+                    elif k == "fitted":
+                        fitted_res[model_name] = v
+                    elif k.startswith(("fitted-lo", "fitted-hi")):
+                        col_name = f'{model_name}-{k.replace("fitted-", "")}'
+                        fitted_res[col_name] = v
+        return forecast_res, fitted_res
+
     def _forecast_parallel(self, h, fitted, X, level, target_col):
-        # create elements for each core
-        gas, Xs = self._get_gas_Xs(X=X)
-        Pool, pool_kwargs = self._get_pool()
-        # compute parallel forecasts
-        result = {}
-        with Pool(self.n_jobs, **pool_kwargs) as executor:
-            futures = []
-            for ga, X_ in zip(gas, Xs):
-                future = executor.apply_async(
-                    ga._single_threaded_forecast,
-                    tuple(),
-                    dict(
-                        models=self.models,
-                        h=h,
-                        fallback_model=self.fallback_model,
-                        fitted=fitted,
-                        X=X_,
-                        level=level,
-                        verbose=self.verbose,
-                        target_col=target_col,
-                    ),
+        n_series = self.ga.n_groups
+        forecast_res = defaultdict(
+            lambda: np.empty(n_series * h, dtype=self.ga.data.dtype)
+        )
+        fitted_res = defaultdict(
+            lambda: np.empty(self.ga.data.shape[0], dtype=self.ga.data.dtype)
+        )
+        fitted_res[target_col] = self.ga.data[:, 0]
+        future2pos = {}
+        with ProcessPoolExecutor(self.n_jobs) as executor:
+            for i, serie in enumerate(self.ga):
+                y_train = serie[:, 0]
+                X_train = serie[:, 1:] if serie.shape[1] > 1 else None
+                if X is None:
+                    X_future = None
+                else:
+                    X_future = X[i]
+                future = executor.submit(
+                    self._forecast_serie,
+                    h=h,
+                    y=y_train,
+                    X=X_train,
+                    X_future=X_future,
+                    fitted=fitted,
+                    level=level,
                 )
-                futures.append(future)
-            out = [f.get() for f in futures]
-            fcsts = [d["forecasts"] for d in out]
-            fcsts = np.vstack(fcsts)
-            cols = out[0]["cols"]
-            result["forecasts"] = fcsts
-            result["cols"] = cols
-            if fitted:
-                result["fitted"] = {}
-                fitted_vals = [d["fitted"]["values"] for d in out]
-                result["fitted"]["values"] = np.vstack(fitted_vals)
-                result["fitted"]["cols"] = out[0]["fitted"]["cols"]
-        return result
+                future2pos[future] = i
+            iterable = tqdm(
+                as_completed(future2pos),
+                disable=not self.verbose,
+                total=n_series,
+                desc="Forecast",
+            )
+            for future in iterable:
+                i = future2pos[future]
+                fcst_idxs = slice(i * h, (i + 1) * h)
+                serie_idxs = slice(self.ga.indptr[i], self.ga.indptr[i + 1])
+                serie_fcst, serie_fitted = future.result()
+                for k, v in serie_fcst.items():
+                    forecast_res[k][fcst_idxs] = v
+                for k, v in serie_fitted.items():
+                    fitted_res[k][serie_idxs] = v
+        return {
+            "cols": list(forecast_res.keys()),
+            "forecasts": np.hstack([v[:, None] for v in forecast_res.values()]),
+            "fitted": {
+                "cols": list(fitted_res.keys()),
+                "values": np.hstack([v[:, None] for v in fitted_res.values()]),
+            },
+        }
 
     def _cross_validation_parallel(
         self, h, test_size, step_size, input_size, fitted, level, refit, target_col
