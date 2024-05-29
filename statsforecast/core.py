@@ -1276,9 +1276,7 @@ class _StatsForecast:
 
     def _forecast_parallel(self, h, fitted, X, level, target_col):
         n_series = self.ga.n_groups
-        forecast_res = defaultdict(
-            lambda: np.empty(n_series * h, dtype=self.ga.data.dtype)
-        )
+        forecast_res = defaultdict(lambda: np.empty(n_series * h, dtype=np.float32))
         fitted_res = defaultdict(
             lambda: np.empty(self.ga.data.shape[0], dtype=self.ga.data.dtype)
         )
