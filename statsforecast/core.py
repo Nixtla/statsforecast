@@ -12,6 +12,7 @@ import os
 import pickle
 import re
 import reprlib
+import time
 import warnings
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -169,6 +170,7 @@ class GroupedArray(BaseGroupedArray):
         iterable = tqdm(
             enumerate(self), disable=(not verbose), total=len(self), desc="Forecast"
         )
+        times = {repr(m): 0.0 for m in models}
         for i, grp in iterable:
             y_train = grp[:, 0] if grp.ndim == 2 else grp
             X_train = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
@@ -183,6 +185,7 @@ class GroupedArray(BaseGroupedArray):
                 kwargs = {}
                 if has_level:
                     kwargs["level"] = level
+                start = time.perf_counter()
                 try:
                     res_i = model.forecast(
                         h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs
@@ -199,6 +202,7 @@ class GroupedArray(BaseGroupedArray):
                         )
                     else:
                         raise error
+                times[repr(model)] += time.perf_counter() - start
                 cols_m = [
                     key
                     for key in res_i.keys()
@@ -233,7 +237,7 @@ class GroupedArray(BaseGroupedArray):
                         (cuts[i_model] + 1) : (cuts[i_model + 1] + 1),
                     ] = fitted_i
                     cols_fitted += cols_m_fitted
-        result = {"forecasts": fcsts, "cols": cols}
+        result = {"forecasts": fcsts, "cols": cols, "times": times}
         if fitted:
             result["fitted"] = {"values": fitted_vals}
             result["fitted"]["cols"] = [target_col] + cols_fitted
@@ -954,6 +958,7 @@ class _StatsForecast:
         cols = res_fcsts["cols"]
         fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
+        self.forecast_times_ = res_fcsts["times"]
         return fcsts_df
 
     forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
@@ -1250,12 +1255,14 @@ class _StatsForecast:
     def _forecast_serie(self, level, **forecast_kwargs):
         forecast_res = {}
         fitted_res = {}
+        times = {}
         with threadpool_limits(limits=1):
             for model in self.models:
                 if "level" in inspect.signature(model.forecast).parameters and level:
                     model_kwargs = {**forecast_kwargs, "level": level}
                 else:
                     model_kwargs = forecast_kwargs
+                start = time.perf_counter()
                 try:
                     model_res = model.forecast(**model_kwargs)
                 except Exception as e:
@@ -1263,6 +1270,7 @@ class _StatsForecast:
                         raise e
                     model_res = self.fallback_model.forecast(**model_kwargs)
                 model_name = repr(model)
+                times[model_name] = time.perf_counter() - start
                 for k, v in model_res.items():
                     if k == "mean":
                         forecast_res[model_name] = v
@@ -1274,7 +1282,7 @@ class _StatsForecast:
                     elif k.startswith(("fitted-lo", "fitted-hi")):
                         col_name = f'{model_name}-{k.replace("fitted-", "")}'
                         fitted_res[col_name] = v
-        return forecast_res, fitted_res
+        return forecast_res, fitted_res, times
 
     def _forecast_parallel(self, h, fitted, X, level, target_col):
         n_series = self.ga.n_groups
@@ -1284,6 +1292,7 @@ class _StatsForecast:
         )
         fitted_res[target_col] = self.ga.data[:, 0]
         future2pos = {}
+        times = {repr(m): 0.0 for m in self.models}
         with ProcessPoolExecutor(self.n_jobs) as executor:
             for i, serie in enumerate(self.ga):
                 y_train = serie[:, 0]
@@ -1312,11 +1321,13 @@ class _StatsForecast:
                 i = future2pos[future]
                 fcst_idxs = slice(i * h, (i + 1) * h)
                 serie_idxs = slice(self.ga.indptr[i], self.ga.indptr[i + 1])
-                serie_fcst, serie_fitted = future.result()
+                serie_fcst, serie_fitted, serie_times = future.result()
                 for k, v in serie_fcst.items():
                     forecast_res[k][fcst_idxs] = v
                 for k, v in serie_fitted.items():
                     fitted_res[k][serie_idxs] = v
+                for model_name, model_time in serie_times.items():
+                    times[model_name] += model_time
         return {
             "cols": list(forecast_res.keys()),
             "forecasts": np.hstack([v[:, None] for v in forecast_res.values()]),
@@ -1324,6 +1335,7 @@ class _StatsForecast:
                 "cols": list(fitted_res.keys()),
                 "values": np.hstack([v[:, None] for v in fitted_res.values()]),
             },
+            "times": times,
         }
 
     def _cross_validation_parallel(
