@@ -94,7 +94,7 @@ class GroupedArray(BaseGroupedArray):
             models=models, attr=attr, h=h, X=X, level=level
         )
         out = np.full(
-            (self.n_groups * h, cuts[-1]), fill_value=np.nan, dtype=np.float32
+            (self.n_groups * h, cuts[-1]), fill_value=np.nan, dtype=self.data.dtype
         )
         return out, cuts, has_level_models
 
@@ -161,7 +161,7 @@ class GroupedArray(BaseGroupedArray):
             # for the moment we dont return levels for fitted values in
             # forecast mode
             fitted_vals = np.full(
-                (self.data.shape[0], 1 + cuts[-1]), np.nan, dtype=np.float32
+                (self.data.shape[0], 1 + cuts[-1]), np.nan, dtype=self.data.dtype
             )
             if self.data.ndim == 1:
                 fitted_vals[:, 0] = self.data
@@ -267,11 +267,13 @@ class GroupedArray(BaseGroupedArray):
         )
         # first column of out is the actual y
         out = np.full(
-            (self.n_groups, n_windows, h, 1 + cuts[-1]), np.nan, dtype=np.float32
+            (self.n_groups, n_windows, h, 1 + cuts[-1]), np.nan, dtype=self.data.dtype
         )
         if fitted:
             fitted_vals = np.full(
-                (self.data.shape[0], n_windows, n_models + 1), np.nan, dtype=np.float32
+                (self.data.shape[0], n_windows, n_models + 1),
+                np.nan,
+                dtype=self.data.dtype,
             )
             fitted_idxs = np.full((self.data.shape[0], n_windows), False, dtype=bool)
             last_fitted_idxs = np.full_like(fitted_idxs, False, dtype=bool)
@@ -1286,7 +1288,9 @@ class _StatsForecast:
 
     def _forecast_parallel(self, h, fitted, X, level, target_col):
         n_series = self.ga.n_groups
-        forecast_res = defaultdict(lambda: np.empty(n_series * h, dtype=np.float32))
+        forecast_res = defaultdict(
+            lambda: np.empty(n_series * h, dtype=self.ga.data.dtype)
+        )
         fitted_res = defaultdict(
             lambda: np.empty(self.ga.data.shape[0], dtype=self.ga.data.dtype)
         )

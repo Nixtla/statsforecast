@@ -138,7 +138,7 @@ class _TS:
                 f"Prediction intervals settings require at least {2 * h + 1:,} samples, serie has {n_samples:,}."
             )
         test_size = n_windows * h
-        cs = np.empty((n_windows, h), dtype=np.float32)
+        cs = np.empty((n_windows, h), dtype=y.dtype)
         for i_window in range(n_windows):
             train_end = n_samples - test_size + i_window * h
             y_train = y[:train_end]
@@ -1739,7 +1739,7 @@ def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray
     smoothed = x[0]
     n = x.size
     mse = 0.0
-    fitted = np.full(n, np.nan, np.float32)
+    fitted = np.full(n, np.nan, dtype=x.dtype)
 
     for i in range(1, n):
         smoothed = (alpha * x[i - 1] + (1 - alpha) * smoothed).item()
@@ -1772,12 +1772,12 @@ def _demand(x: np.ndarray) -> np.ndarray:
 def _intervals(x: np.ndarray) -> np.ndarray:
     r"""Compute the intervals between non zero elements of a vector."""
     nonzero_idxs = np.where(x != 0)[0]
-    return np.diff(nonzero_idxs + 1, prepend=0)
+    return np.diff(nonzero_idxs + 1, prepend=0).astype(x.dtype)
 
 
 def _probability(x: np.ndarray) -> np.ndarray:
     r"""Compute the element probabilities of being non zero."""
-    return (x != 0).astype(np.int32)
+    return (x != 0).astype(x.dtype)
 
 
 def _optimized_ses_forecast(
@@ -2149,9 +2149,9 @@ def _seasonal_exponential_smoothing(
 ) -> Dict[str, np.ndarray]:
     n = y.size
     if n < season_length:
-        return {"mean": np.full(h, np.nan, np.float32)}
-    season_vals = np.empty(season_length, np.float32)
-    fitted_vals = np.full(y.size, np.nan, np.float32)
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
+    season_vals = np.empty(season_length, dtype=y.dtype)
+    fitted_vals = np.full_like(y, np.nan)
     for i in range(season_length):
         init_idx = i + n % season_length
         season_vals[i], fitted_vals[init_idx::season_length] = _ses_forecast(
@@ -2347,9 +2347,9 @@ def _seasonal_ses_optimized(
 ):
     n = y.size
     if n < season_length:
-        return {"mean": np.full(h, np.nan, np.float32)}
-    season_vals = np.empty(season_length, np.float32)
-    fitted_vals = np.full(y.size, np.nan, np.float32)
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
+    season_vals = np.empty(season_length, dtype=y.dtype)
+    fitted_vals = np.full_like(y, np.nan)
     for i in range(season_length):
         init_idx = i + n % season_length
         season_vals[i], fitted_vals[init_idx::season_length] = _optimized_ses_forecast(
@@ -3017,15 +3017,15 @@ def _random_walk_with_drift(
     fitted: bool,  # fitted values
 ) -> Dict[str, np.ndarray]:
     slope = (y[-1] - y[0]) / (y.size - 1)
-    mean = slope * (1 + np.arange(h, dtype=np.float32)) + y[-1]
+    mean = slope * (1 + np.arange(h, dtype=y.dtype)) + y[-1]
     fcst = {
-        "mean": mean.astype(np.float32, copy=False),
-        "slope": np.array([slope], dtype=np.float32),
-        "last_y": np.array([y[-1]], dtype=np.float32),
+        "mean": mean,
+        "slope": np.array([slope], dtype=y.dtype),
+        "last_y": np.array([y[-1]], dtype=y.dtype),
     }
     if fitted:
-        fitted_vals = np.full(y.size, np.nan, dtype=np.float32)
-        fitted_vals[1:] = (slope + y[:-1]).astype(np.float32)
+        fitted_vals = np.full_like(y, np.nan)
+        fitted_vals[1:] = slope + y[:-1]
         fcst["fitted"] = fitted_vals
     return fcst
 
@@ -3111,7 +3111,7 @@ class RandomWalkWithDrift(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        hrange = np.arange(h, dtype=np.float32)
+        hrange = np.arange(h, dtype=self.model_["last_y"].dtype)
         mean = self.model_["slope"] * (1 + hrange) + self.model_["last_y"]
         res = {"mean": mean}
 
@@ -3401,7 +3401,7 @@ def _window_average(
     if fitted:
         raise NotImplementedError("return fitted")
     if y.size < window_size:
-        return {"mean": np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
     wavg = y[-window_size:].mean()
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
@@ -3574,7 +3574,7 @@ def _seasonal_window_average(
         raise NotImplementedError("return fitted")
     min_samples = season_length * window_size
     if y.size < min_samples:
-        return {"mean": np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
     season_avgs = y[-min_samples:].reshape(window_size, season_length).mean(axis=0)
     out = _repeat_val_seas(season_vals=season_avgs, h=h)
     return {"mean": out}
@@ -3804,9 +3804,9 @@ def _adida(
     fitted: bool,  # fitted values
 ):
     if (y == 0).all():
-        res = {"mean": np.zeros(h, dtype=np.float32)}
+        res = {"mean": np.zeros(h, dtype=y.dtype)}
         if fitted:
-            res["fitted"] = np.zeros(y.size, dtype=np.float32)
+            res["fitted"] = np.zeros_like(y)
             res["fitted"][0] = np.nan
         return res
     y = _ensure_float(y)
@@ -4573,16 +4573,16 @@ def _imapa(
     fitted: bool,  # fitted values
 ):
     if (y == 0).all():
-        res = {"mean": np.zeros(h, dtype=np.float32)}
+        res = {"mean": np.zeros(h, dtype=y.dtype)}
         if fitted:
-            res["fitted"] = np.zeros(y.size, dtype=np.float32)
+            res["fitted"] = np.zeros(y.size, dtype=y.dtype)
             res["fitted"][0] = np.nan
         return res
     y = _ensure_float(y)
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean().item()
     max_aggregation_level = round(mean_interval)
-    forecasts = np.empty(max_aggregation_level, np.float32)
+    forecasts = np.empty(max_aggregation_level, dtype=y.dtype)
     for aggregation_level in range(1, max_aggregation_level + 1):
         lost_remainder_data = len(y) % aggregation_level
         y_cut = y[lost_remainder_data:]
@@ -4772,9 +4772,9 @@ def _tsb(
     alpha_p: float,
 ) -> Dict[str, np.ndarray]:
     if (y == 0).all():
-        res = {"mean": np.zeros(h, dtype=np.float32)}
+        res = {"mean": np.zeros(h, dtype=y.dtype)}
         if fitted:
-            res["fitted"] = np.zeros(y.size, dtype=np.float32)
+            res["fitted"] = np.zeros_like(y)
             res["fitted"][0] = np.nan
         return res
     y = _ensure_float(y)
@@ -6633,6 +6633,7 @@ class ConstantModel(_TS):
             Constant fitted model.
         """
         self.n_y = len(y)
+        self._dtype = y.dtype
         return self
 
     def predict(
@@ -6657,7 +6658,7 @@ class ConstantModel(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = np.full(h, self.constant, dtype=np.float32)
+        mean = np.full(h, self.constant, dtype=self._dtype)
         res = {"mean": mean}
 
         if level is not None:
@@ -6680,7 +6681,7 @@ class ConstantModel(_TS):
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        fitted = np.full(self.n_y, self.constant, dtype=np.float32)
+        fitted = np.full(self.n_y, self.constant, dtype=self._dtype)
         res = {"fitted": fitted}
         if level is not None:
             for lv in sorted(level):
@@ -6724,11 +6725,11 @@ class ConstantModel(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = np.full(h, self.constant, dtype=np.float32)
+        mean = np.full(h, self.constant, dtype=y.dtype)
         res = {"mean": mean}
 
         if fitted:
-            fitted_vals = np.full(self.n_y, self.constant, dtype=np.float32)
+            fitted_vals = np.full_like(y, self.constant)
             res["fitted"] = fitted_vals
 
         if level is not None:
