@@ -15,9 +15,11 @@ def _data_as_double_ptr(x):
     x = np.asarray(x, dtype=np.float64)
     return x.ctypes.data_as(ctypes.POINTER(ctypes.c_double))
 
+
 def _data_as_int_ptr(x):
     x = np.asarray(x, dtype=np.intc)
     return x.ctypes.data_as(ctypes.POINTER(ctypes.c_int))
+
 
 if sys.version_info < (3, 10):
     from importlib_resources import files
@@ -33,3 +35,4 @@ else:
 
 _LIB = ctypes.CDLL(
     str(files("statsforecast") / "lib" / _prefix / f"libstatsforecast.{_extension}")
+)
