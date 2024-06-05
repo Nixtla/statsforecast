@@ -39,7 +39,10 @@ def generate_metrics(path: Path) -> str:
         row = row.map(fmt.format)
         row[best] = '**' + row[best] + '**'
         formatted[metric] = row
-    return pd.DataFrame(formatted).T.to_markdown()
+    out_cols = [c for c in summary.columns if c != 'AutoARIMA']
+    if 'AutoARIMA' in summary.columns:
+        out_cols.append('AutoARIMA')
+    return pd.DataFrame(formatted).T[out_cols].to_markdown()
 
 
 def generate_times(path: Path) -> str:
