@@ -1,8 +1,5 @@
 #include <algorithm>
 #include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <stdexcept>
 #include <vector>
 
 #include "arima.h"
@@ -18,32 +15,27 @@ void partrans(int p, const double *raw, double *newv) {
   }
 }
 
-struct Trarma {
-  std::vector<double> phi;
-  std::vector<double> theta;
-};
-
-Trarma arima_transpar(const double *params_in, const int *arma, bool trans) {
+void arima_transpar(const double *params_in, const int *arma, bool trans,
+                    double *phi, double *theta) {
   int mp = arma[0], mq = arma[1], msp = arma[2], msq = arma[3], ns = arma[4];
   int p = mp + ns * msp;
   int q = mq + ns * msq;
-  std::vector<double> phi(p, 0.0);
-  std::vector<double> theta(q, 0.0);
-  std::vector<double> params(params_in, params_in + mp + mq + msp + msq);
+  double *params = new double[mp + mq + msp + msq];
+  std::copy(params_in, params_in + mp + mq + msp + msq, params);
   if (trans) {
     if (mp > 0) {
-      partrans(mp, params_in, params.data());
+      partrans(mp, params_in, params);
     }
     int v = mp + mq;
     if (msp > 0) {
-      partrans(msp, params_in + v, params.data() + v);
+      partrans(msp, params_in + v, params + v);
     }
   }
   if (ns > 0) {
-    std::copy(params.begin(), params.begin() + mp, phi.begin());
-    std::fill(phi.begin() + mp, phi.begin() + p, 0.0);
-    std::copy(params.begin() + mp, params.begin() + mp + mq, theta.begin());
-    std::fill(theta.begin() + mq, theta.begin() + q, 0.0);
+    std::copy(params, params + mp, phi);
+    std::fill(phi + mp, phi + p, 0.0);
+    std::copy(params + mp, params + mp + mq, theta);
+    std::fill(theta + mq, theta + q, 0.0);
     for (int j = 0; j < msp; ++j) {
       phi[(j + 1) * ns - 1] += params[j + mp + mq];
       for (int i = 0; i < mp; ++i) {
@@ -57,14 +49,14 @@ Trarma arima_transpar(const double *params_in, const int *arma, bool trans) {
       }
     }
   } else {
-    std::copy(params.begin(), params.begin() + mp, phi.begin());
-    std::copy(params.begin() + mp, params.begin() + mp + mq, theta.begin());
+    std::copy(params, params + mp, phi);
+    std::copy(params + mp, params + mp + mq, theta);
   }
-  return {phi, theta};
+  delete[] params;
 }
 
 double arima_css(const double *y, int n, const int *arma, const double *phi,
-                 int p, const double *theta, int q) {
+                 int p, const double *theta, int q, double *resid) {
   int nu = 0;
   double ssq = 0.0;
   int ncond = arma[0] + arma[5] + arma[4] * (arma[2] + arma[6]);
@@ -80,7 +72,6 @@ double arima_css(const double *y, int n, const int *arma, const double *phi,
       w[l] -= w[l - ns];
     }
   }
-  std::vector<double> resid(n);
 
   for (int l = ncond; l < n; ++l) {
     double tmp = w[l];
@@ -100,43 +91,6 @@ double arima_css(const double *y, int n, const int *arma, const double *phi,
     }
   }
   return ssq / nu;
-}
-
-void PrintVector(const std::string &name, const std::vector<double> &x) {
-  std::cout << name << ": " << std::fixed;
-  for (const auto v : x) {
-    std::cout << std::setprecision(3) << v << " ";
-  }
-  std::cout << std::endl;
-}
-
-double arma_css_op(const double *p, const double *y, int n, const double *coef,
-                   const int *arma, const bool *mask) {
-  int narma = arma[0] + arma[1] + arma[2] + arma[3];
-  std::vector<double> par(coef, coef + narma);
-  for (int i = 0; i < narma; ++i) {
-    if (mask[i]) {
-      par[i] = p[i];
-    }
-  }
-  Trarma trarma = arima_transpar(par.data(), arma, false);
-#ifdef DEBUG
-  PrintVector("phi", trarma.phi);
-  PrintVector("theta", trarma.theta);
-#endif
-  double res = arima_css(y, n, arma, trarma.phi.data(), trarma.phi.size(),
-                         trarma.theta.data(), trarma.theta.size());
-  if (!std::isfinite(res)) {
-    return std::numeric_limits<double>::max();
-  }
-  if (res <= 0) {
-    return -std::numeric_limits<double>::infinity();
-  }
-#ifdef DEBUG
-  PrintVector("par", par);
-  std::cout << "res: " << 0.5 * std::log(res) << std::endl;
-#endif
-  return 0.5 * std::log(res);
 }
 
 void arima_like(const double *y, int n, const double *phi, int p,
@@ -477,31 +431,6 @@ void getQ0(const double *phi, int p, const double *theta, int q, double *res) {
   }
 }
 
-void upARIMA(const double *phi, int p, const double *theta, int q, int d,
-             double *Pn, double *T, double *a) {
-  int r = std::max(p, q + 1);
-  int rd = r + d;
-  if (p > 0) {
-    for (int i = 0; i < p; ++i) {
-      T[i * rd] = phi[i];
-    }
-  }
-  if (r > 1) {
-    auto res = new double[r * r]();
-    getQ0(phi, p, theta, q, res);
-    for (int i = 0; i < r; ++i) {
-      std::copy(res + i * r, res + (i + 1) * r, Pn + i * rd);
-    }
-    delete[] res;
-  } else {
-    Pn[0] = 1.0;
-    if (p > 0) {
-      Pn[0] /= (1 - phi[0] * phi[0]);
-    }
-  }
-  std::fill(a, a + rd, 0.0);
-}
-
 void arima_gradtrans(const double *x, int n, const int *arma, double *out) {
   double eps = 1e-3;
   int mp = arma[0], mq = arma[1], msp = arma[2];
@@ -538,38 +467,6 @@ void arima_gradtrans(const double *x, int n, const int *arma, double *out) {
   delete[] w3;
 }
 
-double armafn(const double *p, const double *y, int n, const double *delta,
-              int d, const double *coef, const int *arma, const bool *mask,
-              bool trans, double *P, double *Pn, double *a, double *T) {
-  int narma = arma[0] + arma[1] + arma[2] + arma[3];
-  std::vector<double> par(coef, coef + narma);
-  for (int i = 0; i < narma; ++i) {
-    if (mask[i]) {
-      par[i] = p[i];
-    }
-  }
-  Trarma trarma = arima_transpar(par.data(), arma, trans);
-  upARIMA(trarma.phi.data(), trarma.phi.size(), trarma.theta.data(),
-          trarma.theta.size(), d, Pn, T, a);
-  int r = std::max(trarma.phi.size(), trarma.theta.size() + 1);
-  int rd = r + d;
-  double rsResid;
-  double ssq = 0.0;
-  double sumlog = 0.0;
-  int nu = 0;
-  arima_like(y, n, trarma.phi.data(), trarma.phi.size(), trarma.theta.data(),
-             trarma.theta.size(), delta, d, a, rd, P, Pn, 0, false, &ssq,
-             &sumlog, &nu, &rsResid);
-  if (nu == 0) {
-    return std::numeric_limits<double>::infinity();
-  }
-  double s2 = ssq / nu;
-  if (s2 <= 0) {
-    return std::numeric_limits<double>::quiet_NaN();
-  }
-  return 0.5 * (std::log(s2) + sumlog / nu);
-}
-
 void arima_undopars(const double *x, const int *arma, double *out) {
   int mp = arma[0], mq = arma[1], msp = arma[2];
   if (mp > 0) {
@@ -578,14 +475,6 @@ void arima_undopars(const double *x, const int *arma, double *out) {
   int v = mp + mq;
   if (msp > 0) {
     partrans(msp, x + v, out + v);
-  }
-}
-
-void tsconv(const double *a, int na, const double *b, int nb, double *out) {
-  for (int i = 0; i < na; ++i) {
-    for (int j = 0; j < nb; ++j) {
-      out[i + j] += a[i] * b[j];
-    }
   }
 }
 
