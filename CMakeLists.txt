@@ -23,7 +23,7 @@ else()
     set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/statsforecast/lib)
 endif()
 
-include_directories(include external/eigen external/LBFGSpp/include)
+include_directories(include)
 file(GLOB SOURCES src/*.cpp)
 add_library(statsforecast SHARED ${SOURCES})
 if(MSVC)

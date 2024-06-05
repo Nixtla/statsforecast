@@ -1,22 +1,13 @@
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
 
-#include <Eigen/Core>
-#include <LBFGS.h>
-
 #include "arima.h"
 
-using Eigen::MatrixXd;
-using Eigen::VectorXd;
-using namespace LBFGSpp;
-
 void partrans(int p, const double *raw, double *newv) {
-  if (p > 100) {
-    throw std::invalid_argument("can only transform 100 pars in arima0");
-  }
   std::transform(raw, raw + p, newv, [](double x) { return std::tanh(x); });
   std::vector<double> work(newv, newv + p);
   for (int j = 1; j < p; ++j) {
@@ -62,7 +53,7 @@ Trarma arima_transpar(const double *params_in, const int *arma, bool trans) {
     for (int j = 0; j < msq; ++j) {
       theta[(j + 1) * ns - 1] += params[j + mp + mq + msp];
       for (int i = 0; i < mq; ++i) {
-        theta[(j + 1) * ns + i] -= params[i + mp] * params[j + mp + mq + msp];
+        theta[(j + 1) * ns + i] += params[i + mp] * params[j + mp + mq + msp];
       }
     }
   } else {
@@ -111,6 +102,14 @@ double arima_css(const double *y, int n, const int *arma, const double *phi,
   return ssq / nu;
 }
 
+void PrintVector(const std::string &name, const std::vector<double> &x) {
+  std::cout << name << ": " << std::fixed;
+  for (const auto v : x) {
+    std::cout << std::setprecision(3) << v << " ";
+  }
+  std::cout << std::endl;
+}
+
 double arma_css_op(const double *p, const double *y, int n, const double *coef,
                    const int *arma, const bool *mask) {
   int narma = arma[0] + arma[1] + arma[2] + arma[3];
@@ -121,6 +120,10 @@ double arma_css_op(const double *p, const double *y, int n, const double *coef,
     }
   }
   Trarma trarma = arima_transpar(par.data(), arma, false);
+#ifdef DEBUG
+  PrintVector("phi", trarma.phi);
+  PrintVector("theta", trarma.theta);
+#endif
   double res = arima_css(y, n, arma, trarma.phi.data(), trarma.phi.size(),
                          trarma.theta.data(), trarma.theta.size());
   if (!std::isfinite(res)) {
@@ -129,6 +132,10 @@ double arma_css_op(const double *p, const double *y, int n, const double *coef,
   if (res <= 0) {
     return -std::numeric_limits<double>::infinity();
   }
+#ifdef DEBUG
+  PrintVector("par", par);
+  std::cout << "res: " << 0.5 * std::log(res) << std::endl;
+#endif
   return 0.5 * std::log(res);
 }
 
@@ -495,10 +502,9 @@ void upARIMA(const double *phi, int p, const double *theta, int q, int d,
   std::fill(a, a + rd, 0.0);
 }
 
-MatrixXd arima_gradtrans(const double *x, int n, const int *arma) {
+void arima_gradtrans(const double *x, int n, const int *arma, double *out) {
   double eps = 1e-3;
   int mp = arma[0], mq = arma[1], msp = arma[2];
-  MatrixXd A = MatrixXd::Identity(n, n);
   double *w1 = new double[100];
   double *w2 = new double[100];
   double *w3 = new double[100];
@@ -509,7 +515,7 @@ MatrixXd arima_gradtrans(const double *x, int n, const int *arma) {
       w1[i] += eps;
       partrans(mp, w1, w3);
       for (int j = 0; j < mp; ++j) {
-        A(i, j) = (w3[j] - w2[j]) / eps;
+        out[i * n + j] = (w3[j] - w2[j]) / eps;
       }
       w1[i] -= eps;
     }
@@ -522,7 +528,7 @@ MatrixXd arima_gradtrans(const double *x, int n, const int *arma) {
       w1[i] += eps;
       partrans(msp, w1, w3);
       for (int j = 0; j < msp; ++j) {
-        A(i + v, j + v) = (w3[j] - w2[j]) / eps;
+        out[(i + v) * n + v + j] = (w3[j] - w2[j]) / eps;
       }
       w1[1] -= eps;
     }
@@ -530,7 +536,6 @@ MatrixXd arima_gradtrans(const double *x, int n, const int *arma) {
   delete[] w1;
   delete[] w2;
   delete[] w3;
-  return A;
 }
 
 double armafn(const double *p, const double *y, int n, const double *delta,
@@ -560,162 +565,41 @@ double armafn(const double *p, const double *y, int n, const double *delta,
   }
   double s2 = ssq / nu;
   if (s2 <= 0) {
-    return std::numeric_limits<double>::max();
+    return std::numeric_limits<double>::quiet_NaN();
   }
   return 0.5 * (std::log(s2) + sumlog / nu);
 }
 
-class ArmaCSSObjective {
-public:
-  ArmaCSSObjective(const double *y, int n, const double *coef, const int *arma,
-                   const bool *mask)
-      : y(y), n(n), coef(coef), arma(arma), mask(mask) {}
-  double operator()(const VectorXd &x, VectorXd &grad) {
-    double fx = f(x);
-    double h = 1e-3;
-    int narma = arma[0] + arma[1] + arma[2] + arma[3];
-    for (int i = 0; i < narma; ++i) {
-      if (mask[i]) {
-        VectorXd xh = x;
-        xh[i] += h;
-        double fp = f(xh);
-        xh[i] -= 2 * h;
-        double fm = f(xh);
-        grad[i] = (fp - fm) / (2 * h);
-      } else {
-        grad[i] = 0.0;
-      }
-    }
-    return fx;
+void arima_undopars(const double *x, const int *arma, double *out) {
+  int mp = arma[0], mq = arma[1], msp = arma[2];
+  if (mp > 0) {
+    partrans(mp, x, out);
   }
-
-private:
-  const double *y;
-  int n;
-  const double *coef;
-  const int *arma;
-  const bool *mask;
-  double f(const VectorXd &p) const {
-    return arma_css_op(p.data(), y, n, coef, arma, mask);
+  int v = mp + mq;
+  if (msp > 0) {
+    partrans(msp, x + v, out + v);
   }
-};
-
-OptimResult minimize_arma_css_op(const double *init, const double *coef,
-                                 const int *arma, const bool *mask,
-                                 const double *y, int n, double *out,
-                                 double *hess_inv) {
-  LBFGSParam<double> optim_params;
-  optim_params.epsilon = 1e-8;
-  // optim_params.epsilon_rel = 0.0;
-  optim_params.max_iterations = 100;
-  optim_params.linesearch = LBFGS_LINESEARCH_BACKTRACKING_WOLFE;
-  LBFGSSolver<double, LineSearchBacktracking> solver(optim_params);
-  ArmaCSSObjective fun(y, n, coef, arma, mask);
-  const int dim = arma[0] + arma[1] + arma[2] + arma[3];
-  VectorXd params = VectorXd::Map(init, dim);
-  double fx;
-  int niter = 0;
-  try {
-    niter = solver.minimize(fun, params, fx);
-  } catch (std::exception &ex) {
-    std::cout << ex.what() << std::endl;
-  }
-  MatrixXd A = arima_gradtrans(params.data(), dim, arma);
-  // TODO: mask A
-  for (int j = 0; j < dim; ++j) {
-    VectorXd v = A.col(j);
-    VectorXd res;
-    solver.m_bfgs.apply_Hv(v, 1.0, res);
-    std::copy(res.data(), res.data() + dim, hess_inv + j * dim);
-  }
-  std::copy(params.data(), params.data() + dim, out);
-  return {fx, niter};
 }
 
-class ArmaFnObjective {
-public:
-  ArmaFnObjective(const double *y, int n, const double *delta, int d,
-                  const double *coef, const int *arma, const bool *mask,
-                  bool trans, double *P, double *Pn, double *a, double *T)
-      : y(y), n(n), delta(delta), d(d), coef(coef), arma(arma), mask(mask),
-        trans(trans), P(P), Pn(Pn), a(a), T(T) {}
-  double operator()(const VectorXd &x, VectorXd &grad) {
-    double fx = f(x);
-    double h = 1e-3;
-    int narma = arma[0] + arma[1] + arma[2] + arma[3];
-    for (int i = 0; i < narma; ++i) {
-      if (mask[i]) {
-        VectorXd xh = x;
-        xh[i] += h;
-        double fp = f(xh);
-        xh[i] -= 2 * h;
-        double fm = f(xh);
-        grad[i] = (fp - fm) / (2 * h);
-      } else {
-        grad[i] = 0.0;
-      }
+void tsconv(const double *a, int na, const double *b, int nb, double *out) {
+  for (int i = 0; i < na; ++i) {
+    for (int j = 0; j < nb; ++j) {
+      out[i + j] += a[i] * b[j];
     }
-    return fx;
   }
+}
 
-private:
-  const double *y;
-  int n;
-  const double *delta;
-  int d;
-  const double *coef;
-  const int *arma;
-  const bool *mask;
-  bool trans;
-  double *P;
-  double *Pn;
-  double *a;
-  double *T;
-  double f(const VectorXd &p) const {
-    return armafn(p.data(), y, n, delta, d, coef, arma, mask, trans, P, Pn, a,
-                  T);
+void invpartrans(int p, const double *phi, double *out) {
+  std::copy(phi, phi + p, out);
+  std::vector<double> work(phi, phi + p);
+  for (int j = p - 1; j > 0; --j) {
+    double a = out[j];
+    for (int k = 0; k < j; ++k) {
+      work[k] = (out[k] + a * out[j - k - 1]) / (1 - a * a);
+      out[k] = work[k];
+    }
   }
-};
-
-OptimResult minimize_armafn(const double *init, const double *coef,
-                            const int *arma, const double *delta, int d,
-                            const bool *mask, const double *y, int n,
-                            bool trans, double *out, double *hess_inv) {
-  LBFGSParam<double> optim_params;
-  optim_params.epsilon = 1e-8;
-  // optim_params.epsilon_rel = 0.0;
-  optim_params.max_iterations = 100;
-  // optim_params.linesearch = LBFGS_LINESEARCH_BACKTRACKING_WOLFE;
-  // LBFGSSolver<double, LineSearchBacktracking> solver(optim_params);
-  LBFGSSolver<double> solver(optim_params);
-  int mp = arma[0], mq = arma[1], msp = arma[2], msq = arma[3], ns = arma[4];
-  int p = mp + ns * msp;
-  int q = mq + ns * msq;
-  int r = std::max(p, q + 1);
-  int rd = r + d;
-  std::vector<double> P(rd * rd);
-  std::vector<double> Pn(rd * rd);
-  std::vector<double> a(rd);
-  std::vector<double> T(rd * rd);
-  ArmaFnObjective fun(y, n, delta, d, coef, arma, mask, trans, P.data(),
-                      Pn.data(), a.data(), T.data());
-  const int dim = arma[0] + arma[1] + arma[2] + arma[3];
-  VectorXd params = VectorXd::Map(init, dim);
-  double fx;
-  int nit = 0;
-  try {
-    nit = solver.minimize(fun, params, fx);
-  } catch (std::exception &ex) {
-    std::cout << ex.what() << std::endl;
+  for (int j = 0; j < p; ++j) {
+    out[j] = std::atanh(out[j]);
   }
-  MatrixXd A = arima_gradtrans(params.data(), dim, arma);
-  // TODO: mask A
-  for (int j = 0; j < dim; ++j) {
-    VectorXd v = A.col(j);
-    VectorXd res;
-    solver.m_bfgs.apply_Hv(v, 1.0, res);
-    std::copy(res.data(), res.data() + dim, hess_inv + j * dim);
-  }
-  std::copy(params.data(), params.data() + dim, out);
-  return {fx, nit};
 }

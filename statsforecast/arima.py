@@ -32,21 +32,12 @@ from .mstl import mstl
 from .utils import CACHE, NOGIL
 
 
-class _COptimResult(ctypes.Structure):
-    _fields_ = [
-        ("fun", ctypes.c_double),
-        ("nit", ctypes.c_int),
-    ]
-
-
 CURRENT = False
 
 
 # %% ../nbs/src/arima.ipynb 6
 _LIB.arma_css_op.restype = ctypes.c_double
 _LIB.armafn.restype = ctypes.c_double
-_LIB.minimize_arma_css_op.restype = _COptimResult
-_LIB.minimize_armafn.restype = _COptimResult
 
 
 def _data_as_void_ptr(x):
@@ -677,7 +668,8 @@ def arima(
     optim_method="BFGS",
     kappa=1e6,
     tol=1e-8,
-    optim_control={"maxiter": 100, "disp": True},
+    # optim_control={"maxiter": 100, "disp": True},
+    optim_control={"maxiter": 100},
 ):
     SSG = SSinit == "Gardner1980"
     x = x.copy()
@@ -943,6 +935,7 @@ def arima(
             return sys.float_info.max
         if res <= 0.0:
             return -math.inf
+        # print(f"{p=}, res={0.5 * math.log(res):.3f}")
         return 0.5 * math.log(res)
 
     coef = np.array(fixed)
@@ -980,20 +973,6 @@ def arima(
                 start = time.perf_counter()
 
                 if not CURRENT:
-                    # out = np.empty_like(coef)
-                    # hess_inv = np.empty((len(coef), len(coef)))
-                    # res = _LIB.minimize_arma_css_op(
-                    #     _data_as_void_ptr(init[mask]),
-                    #     _data_as_void_ptr(coef),
-                    #     _data_as_void_ptr(np.array(arma, dtype=np.intc)),
-                    #     _data_as_void_ptr(mask),
-                    #     _data_as_void_ptr(x),
-                    #     ctypes.c_int(x.size),
-                    #     _data_as_void_ptr(out),
-                    #     _data_as_void_ptr(hess_inv),
-                    # )
-                    # res = OptimResult(True, 0, out, res.fun, hess_inv)
-
                     arr_arma = np.array(arma, dtype=np.intc)
 
                     def objective_fn(p):
@@ -1023,10 +1002,9 @@ def arima(
                         options=optim_control,
                     )
                 fx = arma_css_op(res.x, x)
-                print(f"{arma=}")
-                print(
-                    f"arm_css_op: optim time: {1000 * (time.perf_counter() - start):.2f}ms. {res.x=}. {fx=:.2f}."
-                )
+                # print(
+                #     f"{arma=}\narm_css_op: optim time: {1000 * (time.perf_counter() - start):.2f}ms. {res.x=}. {fx=:.2f}."
+                # )
                 # print(f'optim res: {res}')
                 # import pdb; pdb.set_trace()
                 # only update the initial parameters if they're valid
@@ -1061,27 +1039,7 @@ def arima(
                 np.array([]),
             )
         else:
-            import time
-
-            start = time.perf_counter()
             if not CURRENT:
-                # out = np.empty_like(coef)
-                # hess_inv = np.empty((len(coef), len(coef)))
-                # res = _LIB.minimize_armafn(
-                #     _data_as_void_ptr(init[mask]),
-                #     _data_as_void_ptr(coef),
-                #     _data_as_void_ptr(np.array(arma, dtype=np.intc)),
-                #     _data_as_void_ptr(mod["delta"]),
-                #     ctypes.c_int(mod["delta"].size),
-                #     _data_as_void_ptr(mask),
-                #     _data_as_void_ptr(x),
-                #     ctypes.c_int(x.size),
-                #     ctypes.c_bool(transform_pars),
-                #     _data_as_void_ptr(out),
-                #     _data_as_void_ptr(hess_inv),
-                # )
-                # res = OptimResult(True, 0, out, res.fun, hess_inv)
-
                 arr_arma = np.array(arma, dtype=np.intc)
 
                 def objective_fn(p):
@@ -1120,10 +1078,6 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-            fx = armafn(res.x, x, transform_pars)
-            print(
-                f"armafn: Optim time: {1000 * (time.perf_counter() - start):.2f}ms. {res.x=}. {fx=:.2f}"
-            )
         coef[mask] = res.x
         if transform_pars:
             if arma[1] > 0:
