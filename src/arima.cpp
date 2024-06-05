@@ -20,8 +20,9 @@ void arima_transpar(const double *params_in, const int *arma, bool trans,
   int mp = arma[0], mq = arma[1], msp = arma[2], msq = arma[3], ns = arma[4];
   int p = mp + ns * msp;
   int q = mq + ns * msq;
-  double *params = new double[mp + mq + msp + msq];
-  std::copy(params_in, params_in + mp + mq + msp + msq, params);
+  int n = mp + mq + msp + msq;
+  double *params = new double[n];
+  std::copy(params_in, params_in + n, params);
   if (trans) {
     if (mp > 0) {
       partrans(mp, params_in, params);
@@ -485,8 +486,8 @@ void invpartrans(int p, const double *phi, double *out) {
     double a = out[j];
     for (int k = 0; k < j; ++k) {
       work[k] = (out[k] + a * out[j - k - 1]) / (1 - a * a);
-      out[k] = work[k];
     }
+    std::copy(work.begin(), work.begin() + j, out);
   }
   for (int j = 0; j < p; ++j) {
     out[j] = std::atanh(out[j]);
