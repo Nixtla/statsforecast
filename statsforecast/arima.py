@@ -564,7 +564,7 @@ def arima(
                 # only update the initial parameters if they're valid
                 candidate = init.copy()
                 candidate[mask] = res.x
-                phi, _ = arima_transpar(candidate, arma, False)
+                phi, _ = arima_transpar(candidate, arma, transform_pars)
                 if np.logical_and(phi > -math.pi / 2, phi < math.pi / 2).all():
                     init = candidate
             if arma[0] > 0:
@@ -575,13 +575,16 @@ def arima(
                     raise ValueError("non-stationary seasonal AR part from CSS")
             ncond = 0
         if transform_pars:
-            init = ARIMA_invtrans(init, arma)
-            if arma[1] > 0:
-                ind = arma[0] + np.arange(arma[1])
-                init[ind] = maInvert(init[ind])
-            if arma[3] > 0:
-                ind = np.sum(arma[:3]) + np.arange(arma[3])
-                init[ind] = maInvert(init[ind])
+            candidate = ARIMA_invtrans(init, arma)
+            phi, _ = arima_transpar(candidate, arma, transform_pars)
+            if np.logical_and(phi > -math.pi / 2, phi < math.pi / 2).all():
+                init = candidate
+                if arma[1] > 0:
+                    ind = arma[0] + np.arange(arma[1])
+                    init[ind] = maInvert(init[ind])
+                if arma[3] > 0:
+                    ind = np.sum(arma[:3]) + np.arange(arma[3])
+                    init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         if no_optim:
