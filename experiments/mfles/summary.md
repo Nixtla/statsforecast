@@ -11,11 +11,11 @@
 ## Times
 | model                 |   CPU time (min) |
 |:----------------------|-----------------:|
-| SeasonalNaive         |                2 |
-| DynamicOptimizedTheta |            1,892 |
-| AutoMFLES             |            8,863 |
-| AutoETS               |           26,698 |
-| AutoTBATS             |          386,467 |
+| SeasonalNaive         |                0 |
+| DynamicOptimizedTheta |               32 |
+| AutoMFLES             |              148 |
+| AutoETS               |              445 |
+| AutoTBATS             |            6,441 |
 # Hourly
 ## Metrics
 |       | AutoARIMA   | AutoETS   | AutoMFLES   | AutoTBATS   | DynamicOptimizedTheta   | SeasonalNaive   |
@@ -30,11 +30,11 @@
 | model                 |   CPU time (min) |
 |:----------------------|-----------------:|
 | SeasonalNaive         |                0 |
-| DynamicOptimizedTheta |               74 |
-| AutoMFLES             |              413 |
-| AutoETS               |            1,012 |
-| AutoTBATS             |           19,677 |
-| AutoARIMA             |           73,959 |
+| DynamicOptimizedTheta |                1 |
+| AutoMFLES             |                7 |
+| AutoETS               |               17 |
+| AutoTBATS             |              328 |
+| AutoARIMA             |            1,233 |
 # Weekly
 ## Metrics
 |       | AutoARIMA   | AutoETS   | AutoMFLES   | AutoTBATS   | DynamicOptimizedTheta   | SeasonalNaive   |
@@ -49,8 +49,8 @@
 | model                 |   CPU time (min) |
 |:----------------------|-----------------:|
 | SeasonalNaive         |                0 |
-| DynamicOptimizedTheta |              329 |
-| AutoMFLES             |            1,065 |
-| AutoETS               |            1,640 |
-| AutoTBATS             |            8,008 |
-| AutoARIMA             |          232,806 |
+| DynamicOptimizedTheta |                5 |
+| AutoMFLES             |               18 |
+| AutoETS               |               27 |
+| AutoTBATS             |              133 |
+| AutoARIMA             |            3,880 |

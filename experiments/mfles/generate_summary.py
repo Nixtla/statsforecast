@@ -44,6 +44,7 @@ def generate_metrics(path: Path) -> str:
 
 def generate_times(path: Path) -> str:
     df = pd.read_csv(path / 'times.csv')
+    df['time'] /= 60
     df = df.sort_values('time')
     df = df.rename(columns={'time': 'CPU time (min)'})
     return df.to_markdown(index=False, floatfmt=',.0f')
