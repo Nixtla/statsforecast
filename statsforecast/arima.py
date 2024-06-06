@@ -5,7 +5,6 @@ __all__ = ['predict_arima', 'arima_string', 'forecast_arima', 'fitted_arima', 'a
            'ARIMASummary', 'AutoARIMA']
 
 # %% ../nbs/src/arima.ipynb 5
-import ctypes
 import math
 import warnings
 from collections import namedtuple
@@ -19,33 +18,32 @@ from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
 
-from ._lib import _LIB, _data_as_double_ptr, _data_as_int_ptr
+import _arima
 from .mstl import mstl
 from .utils import CACHE, NOGIL
 
 # %% ../nbs/src/arima.ipynb 7
-_LIB.arima_css.restype = ctypes.c_double
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
 # %% ../nbs/src/arima.ipynb 8
 def arima_gradtrans(x, arma):
     n = x.size
-    out = np.identity(n)
-    _LIB.arima_gradtrans(
-        _data_as_double_ptr(x),
-        ctypes.c_int(n),
-        _data_as_int_ptr(arma),
-        _data_as_double_ptr(out),
+    out = np.identity(n, dtype=np.float64)
+    _arima.arima_gradtrans(
+        x,
+        np.asarray(arma, dtype=np.intc),
+        out,
     )
     return out
 
 # %% ../nbs/src/arima.ipynb 10
 def arima_undopars(x, arma):
+    x = np.asarray(x, dtype=np.float64)
     res = x.copy()
-    _LIB.arima_undopars(
-        _data_as_double_ptr(x),
-        _data_as_int_ptr(arma),
-        _data_as_double_ptr(res),
+    _arima.arima_undopars(
+        x,
+        np.asarray(arma, dtype=np.intc),
+        res,
     )
     return res
 
@@ -54,18 +52,10 @@ def ARIMA_invtrans(x, arma):
     mp, mq, msp = arma[:3]
     y = x.copy()
     if mp > 0:
-        _LIB.invpartrans(
-            ctypes.c_int(mp),
-            _data_as_double_ptr(x),
-            _data_as_double_ptr(y),
-        )
+        _arima.invpartrans(mp, x, y)
     v = mp + mq
     if msp > 0:
-        _LIB.invpartrans(
-            ctypes.c_int(msp),
-            _data_as_double_ptr(x[v:]),
-            _data_as_double_ptr(y[v:]),
-        )
+        _arima.invpartrans(msp, x[v:], y[v:])
     return y
 
 # %% ../nbs/src/arima.ipynb 14
@@ -73,15 +63,9 @@ def getQ0(phi, theta):
     p = len(phi)
     q = len(theta)
     r = max(p, q + 1)
-    res = np.zeros((r, r))
-    _LIB.getQ0(
-        _data_as_double_ptr(phi),
-        ctypes.c_int(p),
-        _data_as_double_ptr(theta),
-        ctypes.c_int(q),
-        _data_as_double_ptr(res),
-    )
-    return res
+    res = np.zeros(r * r, dtype=np.float64)
+    _arima.getQ0(phi, theta, res)
+    return res.reshape(r, r)
 
 # %% ../nbs/src/arima.ipynb 16
 def arima_transpar(params_in, arma, trans):
@@ -89,29 +73,26 @@ def arima_transpar(params_in, arma, trans):
     mp, mq, msp, msq, ns = arma[:5]
     p = mp + ns * msp
     q = mq + ns * msq
-    phi = np.zeros(p)
-    theta = np.zeros(q)
-    _LIB.arima_transpar(
-        _data_as_double_ptr(params_in),
-        _data_as_int_ptr(arma),
-        ctypes.c_bool(trans),
-        _data_as_double_ptr(phi),
-        _data_as_double_ptr(theta),
+    phi = np.zeros(p, dtype=np.float64)
+    theta = np.zeros(q, dtype=np.float64)
+    _arima.arima_transpar(
+        params_in,
+        np.asarray(arma, dtype=np.intc),
+        trans,
+        phi,
+        theta,
     )
     return phi, theta
 
 # %% ../nbs/src/arima.ipynb 19
 def arima_css(y, arma, phi, theta, ncond):
     resid = np.empty(y.size)
-    mse = _LIB.arima_css(
-        _data_as_double_ptr(y),
-        ctypes.c_int(y.size),
-        _data_as_int_ptr(arma),
-        _data_as_double_ptr(phi),
-        ctypes.c_int(phi.size),
-        _data_as_double_ptr(theta),
-        ctypes.c_int(theta.size),
-        _data_as_double_ptr(resid),
+    mse = _arima.arima_css(
+        y,
+        np.asarray(arma, dtype=np.intc),
+        phi,
+        theta,
+        resid,
     )
     return mse, resid
 
@@ -174,37 +155,25 @@ def make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps):
 
 # %% ../nbs/src/arima.ipynb 23
 def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
-    n = y.size
-    ssq = ctypes.c_double(0)
-    sumlog = ctypes.c_double(0)
-    nu = ctypes.c_int(0)
     if use_resid:
-        rsResid = np.empty(n)
+        rsResid = np.empty_like(y)
     else:
         rsResid = np.empty(0)
-    _LIB.arima_like(
-        _data_as_double_ptr(y),
-        ctypes.c_int(n),
-        _data_as_double_ptr(phi),
-        ctypes.c_int(phi.size),
-        _data_as_double_ptr(theta),
-        ctypes.c_int(theta.size),
-        _data_as_double_ptr(delta),
-        ctypes.c_int(delta.size),
-        _data_as_double_ptr(a),
-        ctypes.c_int(a.size),
-        _data_as_double_ptr(P),
-        _data_as_double_ptr(Pn),
-        ctypes.c_int(up),
-        ctypes.c_bool(use_resid),
-        ctypes.byref(ssq),
-        ctypes.byref(sumlog),
-        ctypes.byref(nu),
-        _data_as_double_ptr(rsResid),
+    ssq, sumlog, nu = _arima.arima_like(
+        y,
+        phi,
+        theta,
+        delta,
+        a,
+        P.ravel(),
+        Pn.ravel(),
+        up,
+        use_resid,
+        rsResid,
     )
     if not use_resid:
         rsResid = None
-    return ssq.value, sumlog.value, nu.value, rsResid
+    return ssq, sumlog, nu, rsResid
 
 # %% ../nbs/src/arima.ipynb 25
 def diff(x, lag, differences):
