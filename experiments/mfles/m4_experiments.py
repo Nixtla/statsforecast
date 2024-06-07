@@ -28,6 +28,7 @@ if __name__ == '__main__':
 
     # data
     seasonality_overrides = {
+        "Daily": [7],
         "Hourly": [24, 24*7],
         "Weekly": [52],
     }

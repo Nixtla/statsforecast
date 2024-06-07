@@ -9,8 +9,10 @@ from utilsforecast.losses import smape, mape, rmse, mae, mase
 def generate_metrics(path: Path) -> str:
     seasonalities = {
         'hourly': 24,
+        'daily': 7,
         'weekly': 52,
         'monthly': 12,
+        'quarterly': 4,
         'yearly': 1,
     }
     fmts = {
