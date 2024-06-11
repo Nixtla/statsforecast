@@ -1,3 +1,4 @@
+import sys
 from pkg_resources import parse_version
 from configparser import ConfigParser
 import setuptools
@@ -42,7 +43,8 @@ plotly_requirements = cfg['plotly_requirements'].split()
 polars_requirements = cfg['polars_requirements'].split()
 dev_requirements = cfg['dev_requirements'].split()
 dev_requirements.extend(dask_requirements)
-dev_requirements.extend(ray_requirements)
+if sys.version_info < (3, 12):
+    dev_requirements.extend(ray_requirements)
 dev_requirements.extend(spark_requirements)
 dev_requirements.extend(plotly_requirements)
 dev_requirements.extend(polars_requirements)
