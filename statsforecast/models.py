@@ -6,7 +6,8 @@ __all__ = ['AutoARIMA', 'AutoETS', 'ETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'Auto
            'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
            'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
            'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'TBATS', 'AutoTBATS', 'Theta', 'OptimizedTheta',
-           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'ConstantModel', 'ZeroModel', 'NaNModel']
+           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'MFLES', 'AutoMFLES',
+           'ConstantModel', 'ZeroModel', 'NaNModel']
 
 # %% ../nbs/src/core/models.ipynb 5
 import warnings
@@ -21,9 +22,10 @@ from scipy.special import inv_boxcox
 from statsforecast.arima import (
     Arima,
     auto_arima_f,
-    forecast_arima,
     fitted_arima,
+    forecast_arima,
     forward_arima,
+    is_constant,
 )
 from .ces import auto_ces, forecast_ces, forward_ces
 from statsforecast.ets import (
@@ -33,6 +35,7 @@ from statsforecast.ets import (
     forecast_ets,
     forward_ets,
 )
+from .mfles import MFLES as _MFLES
 from .mstl import mstl
 from .theta import auto_theta, forecast_theta, forward_theta
 from .garch import garch_model, garch_forecast
@@ -71,7 +74,7 @@ def _add_conformal_distribution_intervals(
     cs: np.ndarray,
     level: List[Union[int, float]],
 ) -> Dict:
-    """
+    r"""
     Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
     `level` should be already sorted. This strategy creates forecasts paths
     based on errors and calculate quantiles using those paths.
@@ -115,6 +118,9 @@ class _TS:
         b = type(self).__new__(type(self))
         b.__dict__.update(self.__dict__)
         return b
+
+    def __repr__(self):
+        return self.alias
 
     def _conformity_scores(
         self,
@@ -167,7 +173,7 @@ class _TS:
 
 # %% ../nbs/src/core/models.ipynb 17
 class AutoARIMA(_TS):
-    """AutoARIMA model.
+    r"""AutoARIMA model.
 
     Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average)
     model using an information criterion. Default is Akaike Information Criterion (AICc).
@@ -324,15 +330,12 @@ class AutoARIMA(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the AutoARIMA model.
+        r"""Fit the AutoARIMA model.
 
         Fit an AutoARIMA to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -395,7 +398,7 @@ class AutoARIMA(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted AutoArima.
+        r"""Predict with fitted AutoArima.
 
         Parameters
         ----------
@@ -428,7 +431,7 @@ class AutoARIMA(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted AutoArima insample predictions.
+        r"""Access fitted AutoArima insample predictions.
 
         Parameters
         ----------
@@ -456,7 +459,7 @@ class AutoARIMA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient AutoARIMA predictions.
+        r"""Memory Efficient AutoARIMA predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -547,7 +550,7 @@ class AutoARIMA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted ARIMA model to a new time series.
+        r"""Apply fitted ARIMA model to a new time series.
 
         Parameters
         ----------
@@ -595,7 +598,7 @@ class AutoARIMA(_TS):
 
 # %% ../nbs/src/core/models.ipynb 33
 class AutoETS(_TS):
-    """Automatic Exponential Smoothing model.
+    r"""Automatic Exponential Smoothing model.
 
     Automatically selects the best ETS (Error, Trend, Seasonality)
     model using an information criterion. Default is Akaike Information Criterion (AICc), while particular models are estimated using maximum likelihood.
@@ -658,15 +661,12 @@ class AutoETS(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the Exponential Smoothing model.
+        r"""Fit the Exponential Smoothing model.
 
         Fit an Exponential Smoothing model to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -693,7 +693,7 @@ class AutoETS(_TS):
     def predict(
         self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
     ):
-        """Predict with fitted Exponential Smoothing.
+        r"""Predict with fitted Exponential Smoothing.
 
         Parameters
         ----------
@@ -725,7 +725,7 @@ class AutoETS(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted Exponential Smoothing insample predictions.
+        r"""Access fitted Exponential Smoothing insample predictions.
 
         Parameters
         ----------
@@ -753,7 +753,7 @@ class AutoETS(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient Exponential Smoothing predictions.
+        r"""Memory Efficient Exponential Smoothing predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -812,7 +812,7 @@ class AutoETS(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted Exponential Smoothing model to a new time series.
+        r"""Apply fitted Exponential Smoothing model to a new time series.
 
         Parameters
         ----------
@@ -887,12 +887,9 @@ class ETS(AutoETS):
             prediction_intervals=prediction_intervals,
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 53
 class AutoCES(_TS):
-    """Complex Exponential Smoothing model.
+    r"""Complex Exponential Smoothing model.
 
     Automatically selects the best Complex Exponential Smoothing
     model using an information criterion. Default is Akaike Information Criterion (AICc), while particular
@@ -936,15 +933,12 @@ class AutoCES(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the Complex Exponential Smoothing model.
+        r"""Fit the Complex Exponential Smoothing model.
 
         Fit the Complex Exponential Smoothing model to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -961,6 +955,12 @@ class AutoCES(_TS):
         self :
             Complex Exponential Smoothing fitted model.
         """
+        if is_constant(y):
+            model = Naive(
+                alias=self.alias, prediction_intervals=self.prediction_intervals
+            )
+            model.fit(y=y, X=X)
+            return model
         self.model_ = auto_ces(y, m=self.season_length, model=self.model)
         self.model_["actual_residuals"] = y - self.model_["fitted"]
         self._store_cs(y=y, X=X)
@@ -969,7 +969,7 @@ class AutoCES(_TS):
     def predict(
         self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
     ):
-        """Predict with fitted Exponential Smoothing.
+        r"""Predict with fitted Exponential Smoothing.
 
         Parameters
         ----------
@@ -1001,7 +1001,7 @@ class AutoCES(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted Exponential Smoothing insample predictions.
+        r"""Access fitted Exponential Smoothing insample predictions.
 
         Parameters
         ----------
@@ -1029,7 +1029,7 @@ class AutoCES(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient Complex Exponential Smoothing predictions.
+        r"""Memory Efficient Complex Exponential Smoothing predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -1055,6 +1055,13 @@ class AutoCES(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        if is_constant(y):
+            model = Naive(
+                alias=self.alias, prediction_intervals=self.prediction_intervals
+            )
+            return model.forecast(
+                y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
+            )
         mod = auto_ces(y, m=self.season_length, model=self.model)
         fcst = forecast_ces(mod, h, level=level)
         keys = ["mean"]
@@ -1086,7 +1093,7 @@ class AutoCES(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted Complex Exponential Smoothing to a new time series.
+        r"""Apply fitted Complex Exponential Smoothing to a new time series.
 
         Parameters
         ----------
@@ -1134,7 +1141,7 @@ class AutoCES(_TS):
 
 # %% ../nbs/src/core/models.ipynb 71
 class AutoTheta(_TS):
-    """AutoTheta model.
+    r"""AutoTheta model.
 
     Automatically selects the best Theta (Standard Theta Model ('STM'),
     Optimized Theta Model ('OTM'), Dynamic Standard Theta Model ('DSTM'),
@@ -1174,15 +1181,12 @@ class AutoTheta(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the AutoTheta model.
+        r"""Fit the AutoTheta model.
 
         Fit an AutoTheta model to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -1215,7 +1219,7 @@ class AutoTheta(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted AutoTheta.
+        r"""Predict with fitted AutoTheta.
 
         Parameters
         ----------
@@ -1237,7 +1241,7 @@ class AutoTheta(_TS):
         return fcst
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted AutoTheta insample predictions.
+        r"""Access fitted AutoTheta insample predictions.
 
         Parameters
         ----------
@@ -1264,7 +1268,7 @@ class AutoTheta(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient AutoTheta predictions.
+        r"""Memory Efficient AutoTheta predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -1316,7 +1320,7 @@ class AutoTheta(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted AutoTheta to a new time series.
+        r"""Apply fitted AutoTheta to a new time series.
 
         Parameters
         ----------
@@ -1354,7 +1358,7 @@ class AutoTheta(_TS):
 
 # %% ../nbs/src/core/models.ipynb 87
 class ARIMA(_TS):
-    """ARIMA model.
+    r"""ARIMA model.
 
     AutoRegressive Integrated Moving Average model.
 
@@ -1432,15 +1436,12 @@ class ARIMA(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """
+        r"""
         Fit the model to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
 
@@ -1479,7 +1480,7 @@ class ARIMA(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted model.
+        r"""Predict with fitted model.
 
         Parameters
         ----------
@@ -1512,7 +1513,7 @@ class ARIMA(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted insample predictions.
+        r"""Access fitted insample predictions.
 
         Parameters
         ----------
@@ -1540,7 +1541,7 @@ class ARIMA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory efficient predictions.
+        r"""Memory efficient predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -1609,7 +1610,7 @@ class ARIMA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted model to a new time series.
+        r"""Apply fitted model to a new time series.
 
         Parameters
         ----------
@@ -1657,7 +1658,7 @@ class ARIMA(_TS):
 
 # %% ../nbs/src/core/models.ipynb 102
 class AutoRegressive(ARIMA):
-    """Simple Autoregressive model.
+    r"""Simple Autoregressive model.
 
     Parameters
     ----------
@@ -1727,13 +1728,10 @@ class AutoRegressive(ARIMA):
             prediction_intervals=prediction_intervals,
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 117
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
-    """Perform simple exponential smoothing on a series.
+    r"""Perform simple exponential smoothing on a series.
 
     This function returns the one step ahead prediction
     as well as the mean squared error of the fit.
@@ -1755,37 +1753,37 @@ def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray
 
 
 def _ses_mse(alpha: float, x: np.ndarray) -> float:
-    """Compute the mean squared error of a simple exponential smoothing fit."""
+    r"""Compute the mean squared error of a simple exponential smoothing fit."""
     _, mse, _ = _ses_fcst_mse(x, alpha)
     return mse
 
 
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
-    """One step ahead forecast with simple exponential smoothing."""
+    r"""One step ahead forecast with simple exponential smoothing."""
     forecast, _, fitted = _ses_fcst_mse(x, alpha)
     return forecast, fitted
 
 
 def _demand(x: np.ndarray) -> np.ndarray:
-    """Extract the positive elements of a vector."""
+    r"""Extract the positive elements of a vector."""
     return x[x > 0]
 
 
 def _intervals(x: np.ndarray) -> np.ndarray:
-    """Compute the intervals between non zero elements of a vector."""
+    r"""Compute the intervals between non zero elements of a vector."""
     nonzero_idxs = np.where(x != 0)[0]
     return np.diff(nonzero_idxs + 1, prepend=0)
 
 
 def _probability(x: np.ndarray) -> np.ndarray:
-    """Compute the element probabilities of being non zero."""
+    r"""Compute the element probabilities of being non zero."""
     return (x != 0).astype(np.int32)
 
 
 def _optimized_ses_forecast(
     x: np.ndarray, bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
 ) -> Tuple[float, np.ndarray]:
-    """Searches for the optimal alpha and computes SES one step forecast."""
+    r"""Searches for the optimal alpha and computes SES one step forecast."""
     alpha = minimize(
         fun=_ses_mse, x0=(0,), args=(x,), bounds=bounds, method="L-BFGS-B"
     ).x[0]
@@ -1794,7 +1792,7 @@ def _optimized_ses_forecast(
 
 
 def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
-    """Splits an array into chunks and returns the sum of each chunk.
+    r"""Splits an array into chunks and returns the sum of each chunk.
 
     Incomplete chunks are discarded"""
     n_chunks = array.size // chunk_size
@@ -1816,13 +1814,13 @@ def _ses(
 
 # %% ../nbs/src/core/models.ipynb 119
 class SimpleExponentialSmoothing(_TS):
-    """SimpleExponentialSmoothing model.
+    r"""SimpleExponentialSmoothing model.
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
     Suitable for data with no clear trend or seasonality.
-    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1}$
+    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
 
-    The rate $0 \leq \\alpha \leq 1$ at which the weights decrease is called the smoothing parameter. When $\\alpha = 1$, SES is equal to the naive method.
+    The rate $0 \leq \alpha \leq 1$ at which the weights decrease is called the smoothing parameter. When $\alpha = 1$, SES is equal to the naive method.
 
     References
     ----------
@@ -1851,15 +1849,12 @@ class SimpleExponentialSmoothing(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the SimpleExponentialSmoothing model.
+        r"""Fit the SimpleExponentialSmoothing model.
 
         Fit an SimpleExponentialSmoothing to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -1887,7 +1882,7 @@ class SimpleExponentialSmoothing(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted SimpleExponentialSmoothing.
+        r"""Predict with fitted SimpleExponentialSmoothing.
 
         Parameters
         ----------
@@ -1915,7 +1910,7 @@ class SimpleExponentialSmoothing(_TS):
         return res
 
     def predict_in_sample(self):
-        """Access fitted SimpleExponentialSmoothing insample predictions.
+        r"""Access fitted SimpleExponentialSmoothing insample predictions.
 
         Parameters
         ----------
@@ -1940,7 +1935,7 @@ class SimpleExponentialSmoothing(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient SimpleExponentialSmoothing predictions.
+        r"""Memory Efficient SimpleExponentialSmoothing predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -1992,13 +1987,13 @@ def _ses_optimized(
 
 # %% ../nbs/src/core/models.ipynb 132
 class SimpleExponentialSmoothingOptimized(_TS):
-    """SimpleExponentialSmoothing model.
+    r"""SimpleExponentialSmoothing model.
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
     Suitable for data with no clear trend or seasonality.
-    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1}$
+    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
 
-    The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
+    The smoothing parameter $\alpha^*$ is optimized by square error minimization.
 
     References
     ----------
@@ -2010,8 +2005,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         Custom name of the model.
     prediction_intervals : Optional[ConformalIntervals]
         Information to compute conformal prediction intervals.
-        By default, the model will compute the native prediction
-        intervals.
+        This is required for generating future prediction intervals.
     """
 
     def __init__(
@@ -2023,15 +2017,12 @@ class SimpleExponentialSmoothingOptimized(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the SimpleExponentialSmoothingOptimized model.
+        r"""Fit the SimpleExponentialSmoothingOptimized model.
 
         Fit an SimpleExponentialSmoothingOptimized to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -2059,7 +2050,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted SimpleExponentialSmoothingOptimized.
+        r"""Predict with fitted SimpleExponentialSmoothingOptimized.
 
         Parameters
         ----------
@@ -2083,11 +2074,11 @@ class SimpleExponentialSmoothingOptimized(_TS):
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
-            raise Exception("You must pass `prediction_intervals` to " "compute them.")
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
     def predict_in_sample(self):
-        """Access fitted SimpleExponentialSmoothingOptimized insample predictions.
+        r"""Access fitted SimpleExponentialSmoothingOptimized insample predictions.
 
         Parameters
         ----------
@@ -2111,7 +2102,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient SimpleExponentialSmoothingOptimized predictions.
+        r"""Memory Efficient SimpleExponentialSmoothingOptimized predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -2174,17 +2165,17 @@ def _seasonal_exponential_smoothing(
 
 # %% ../nbs/src/core/models.ipynb 145
 class SeasonalExponentialSmoothing(_TS):
-    """SeasonalExponentialSmoothing model.
+    r"""SeasonalExponentialSmoothing model.
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
     Suitable for data with no clear trend or seasonality.
     Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
-    $\hat{y}_{t+1,s} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1,s}$
+    $\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
 
     Notes
     -----
     This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
-    And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
+    And a single seasonal smoothing parameter $\alpha$ is shared across seasons.
 
     References
     ----------
@@ -2201,8 +2192,7 @@ class SeasonalExponentialSmoothing(_TS):
         Custom name of the model.
     prediction_intervals : Optional[ConformalIntervals]
         Information to compute conformal prediction intervals.
-        By default, the model will compute the native prediction
-        intervals.
+        This is required for generating future prediction intervals.
     """
 
     def __init__(
@@ -2218,15 +2208,12 @@ class SeasonalExponentialSmoothing(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the SeasonalExponentialSmoothing model.
+        r"""Fit the SeasonalExponentialSmoothing model.
 
         Fit an SeasonalExponentialSmoothing to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -2260,7 +2247,7 @@ class SeasonalExponentialSmoothing(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted SeasonalExponentialSmoothing.
+        r"""Predict with fitted SeasonalExponentialSmoothing.
 
         Parameters
         ----------
@@ -2288,7 +2275,7 @@ class SeasonalExponentialSmoothing(_TS):
         return res
 
     def predict_in_sample(self):
-        """Access fitted SeasonalExponentialSmoothing insample predictions.
+        r"""Access fitted SeasonalExponentialSmoothing insample predictions.
 
         Parameters
         ----------
@@ -2312,7 +2299,7 @@ class SeasonalExponentialSmoothing(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient SeasonalExponentialSmoothing predictions.
+        r"""Memory Efficient SeasonalExponentialSmoothing predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -2376,25 +2363,26 @@ def _seasonal_ses_optimized(
 
 # %% ../nbs/src/core/models.ipynb 161
 class SeasonalExponentialSmoothingOptimized(_TS):
+
     def __init__(
         self,
         season_length: int,
         alias: str = "SeasESOpt",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """SeasonalExponentialSmoothingOptimized model.
+        r"""SeasonalExponentialSmoothingOptimized model.
 
         Uses a weighted average of all past observations where the weights decrease exponentially into the past.
         Suitable for data with no clear trend or seasonality.
         Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
-        $\hat{y}_{t+1,s} = \\alpha y_t + (1-\\alpha) \hat{y}_{t-1,s}$
+        $\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
 
-        The smoothing parameter $\\alpha^*$ is optimized by square error minimization.
+        The smoothing parameter $\alpha^*$ is optimized by square error minimization.
 
         Notes
         -----
         This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
-        And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
+        And a single seasonal smoothing parameter $\alpha$ is shared across seasons.
 
         References
         ----------
@@ -2409,23 +2397,19 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
+            This is required for generating future prediction intervals.
         """
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the SeasonalExponentialSmoothingOptimized model.
+        r"""Fit the SeasonalExponentialSmoothingOptimized model.
 
         Fit an SeasonalExponentialSmoothingOptimized to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -2458,7 +2442,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted SeasonalExponentialSmoothingOptimized.
+        r"""Predict with fitted SeasonalExponentialSmoothingOptimized.
 
         Parameters
         ----------
@@ -2486,7 +2470,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         return res
 
     def predict_in_sample(self):
-        """Access fitted SeasonalExponentialSmoothingOptimized insample predictions.
+        r"""Access fitted SeasonalExponentialSmoothingOptimized insample predictions.
 
         Parameters
         ----------
@@ -2510,7 +2494,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
+        r"""Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -2551,7 +2535,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
 
 # %% ../nbs/src/core/models.ipynb 174
 class Holt(AutoETS):
-    """Holt's method.
+    r"""Holt's method.
 
     Also known as double exponential smoothing, Holt's method is an extension of exponential smoothing for series with a trend.
     This implementation returns the corresponding `ETS` model with additive (A) or multiplicative (M) errors (so either 'AAN' or 'MAN').
@@ -2581,6 +2565,7 @@ class Holt(AutoETS):
         alias: str = "Holt",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+
         self.season_length = season_length
         self.error_type = error_type
         self.alias = alias
@@ -2590,12 +2575,9 @@ class Holt(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 188
 class HoltWinters(AutoETS):
-    """Holt-Winters' method.
+    r"""Holt-Winters' method.
 
     Also known as triple exponential smoothing, Holt-Winters' method is an extension of exponential smoothing for series that contain both trend and seasonality.
     This implementation returns the corresponding `ETS` model with additive (A) or multiplicative (M) errors (so either 'AAA' or 'MAM').
@@ -2633,9 +2615,6 @@ class HoltWinters(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 203
 def _historic_average(
     y: np.ndarray,  # time series
@@ -2650,16 +2629,17 @@ def _historic_average(
 
 # %% ../nbs/src/core/models.ipynb 204
 class HistoricAverage(_TS):
+
     def __init__(
         self,
         alias: str = "HistoricAverage",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """HistoricAverage model.
+        r"""HistoricAverage model.
 
         Also known as mean method. Uses a simple average of all past observations.
         Assuming there are $t$ observations, the one-step forecast is given by:
-        $$\hat{y}_{t+1} = \\frac{1}{t} \sum_{j=1}^t y_j$$
+        $$\hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j$$
 
         References
         ----------
@@ -2677,15 +2657,12 @@ class HistoricAverage(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the HistoricAverage model.
+        r"""Fit the HistoricAverage model.
 
         Fit an HistoricAverage to a time series (numpy array) `y`.
 
@@ -2700,7 +2677,7 @@ class HistoricAverage(_TS):
         -------
         self
             HistoricAverage fitted model.
-        """
+        r"""
         mod = _historic_average(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
@@ -2716,7 +2693,7 @@ class HistoricAverage(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted HistoricAverage.
+        r"""Predict with fitted HistoricAverage.
 
         Parameters
         ----------
@@ -2749,7 +2726,7 @@ class HistoricAverage(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted HistoricAverage insample predictions.
+        r"""Access fitted HistoricAverage insample predictions.
 
         Parameters
         ----------
@@ -2777,7 +2754,7 @@ class HistoricAverage(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient HistoricAverage predictions.
+        r"""Memory Efficient HistoricAverage predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -2828,12 +2805,13 @@ class HistoricAverage(_TS):
 
 # %% ../nbs/src/core/models.ipynb 217
 class Naive(_TS):
+
     def __init__(
         self,
         alias: str = "Naive",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """Naive model.
+        r"""Naive model.
 
         All forecasts have the value of the last observation:
         $\hat{y}_{t+1} = y_t$ for all $t$
@@ -2854,15 +2832,12 @@ class Naive(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the Naive model.
+        r"""Fit the Naive model.
 
         Fit an Naive to a time series (numpy.array) `y`.
 
@@ -2893,7 +2868,7 @@ class Naive(_TS):
         X: Optional[np.ndarray] = None,  # exogenous regressors
         level: Optional[List[int]] = None,  # confidence level
     ):
-        """Predict with fitted Naive.
+        r"""Predict with fitted Naive.
 
         Parameters
         ----------
@@ -2926,7 +2901,7 @@ class Naive(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted Naive insample predictions.
+        r"""Access fitted Naive insample predictions.
 
         Parameters
         ----------
@@ -2952,7 +2927,7 @@ class Naive(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient Naive predictions.
+        r"""Memory Efficient Naive predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -3008,7 +2983,7 @@ class Naive(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted model to an new/updated series.
+        r"""Apply fitted model to an new/updated series.
 
         Parameters
         ----------
@@ -3056,17 +3031,18 @@ def _random_walk_with_drift(
 
 # %% ../nbs/src/core/models.ipynb 234
 class RandomWalkWithDrift(_TS):
+
     def __init__(
         self,
         alias: str = "RWD",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """RandomWalkWithDrift model.
+        r"""RandomWalkWithDrift model.
 
         A variation of the naive method allows the forecasts to change over time.
         The amout of change, called drift, is the average change seen in the historical data.
 
-        $$\hat{y}_{t+1} = y_t+\\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \\frac{y_t-y_1}{t-1}$$
+        $$\hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-y_1}{t-1}$$
 
         From the previous equation, we can see that this is equivalent to extrapolating a line between
         the first and the last observation.
@@ -3087,15 +3063,12 @@ class RandomWalkWithDrift(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the RandomWalkWithDrift model.
+        r"""Fit the RandomWalkWithDrift model.
 
         Fit an RandomWalkWithDrift to a time series (numpy array) `y`.
 
@@ -3108,7 +3081,7 @@ class RandomWalkWithDrift(_TS):
         -------
         self :
             RandomWalkWithDrift fitted model.
-        """
+        r"""
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
@@ -3122,7 +3095,7 @@ class RandomWalkWithDrift(_TS):
     def predict(
         self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
     ):
-        """Predict with fitted RandomWalkWithDrift.
+        r"""Predict with fitted RandomWalkWithDrift.
 
         Parameters
         ----------
@@ -3156,7 +3129,7 @@ class RandomWalkWithDrift(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted RandomWalkWithDrift insample predictions.
+        r"""Access fitted RandomWalkWithDrift insample predictions.
 
         Parameters
         ----------
@@ -3182,7 +3155,7 @@ class RandomWalkWithDrift(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient RandomWalkWithDrift predictions.
+        r"""Memory Efficient RandomWalkWithDrift predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -3234,13 +3207,14 @@ class RandomWalkWithDrift(_TS):
 
 # %% ../nbs/src/core/models.ipynb 249
 class SeasonalNaive(_TS):
+
     def __init__(
         self,
         season_length: int,
         alias: str = "SeasonalNaive",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """Seasonal naive model.
+        r"""Seasonal naive model.
 
         A method similar to the naive, but uses the last known observation of the same period (e.g. the same month of the previous year) in order to capture seasonal variations.
 
@@ -3263,15 +3237,12 @@ class SeasonalNaive(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the SeasonalNaive model.
+        r"""Fit the SeasonalNaive model.
 
         Fit an SeasonalNaive to a time series (numpy array) `y`.
 
@@ -3286,7 +3257,7 @@ class SeasonalNaive(_TS):
         -------
         self :
             SeasonalNaive fitted model.
-        """
+        r"""
         mod = _seasonal_naive(
             y=y,
             season_length=self.season_length,
@@ -3306,7 +3277,7 @@ class SeasonalNaive(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted Naive.
+        r"""Predict with fitted Naive.
 
         Parameters
         ----------
@@ -3339,7 +3310,7 @@ class SeasonalNaive(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted SeasonalNaive insample predictions.
+        r"""Access fitted SeasonalNaive insample predictions.
 
         Parameters
         ----------
@@ -3350,7 +3321,7 @@ class SeasonalNaive(_TS):
         -------
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
-        """
+        r"""
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
             level = sorted(level)
@@ -3366,7 +3337,7 @@ class SeasonalNaive(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient SeasonalNaive predictions.
+        r"""Memory Efficient SeasonalNaive predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -3437,13 +3408,14 @@ def _window_average(
 
 # %% ../nbs/src/core/models.ipynb 265
 class WindowAverage(_TS):
+
     def __init__(
         self,
         window_size: int,
         alias: str = "WindowAverage",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """WindowAverage model.
+        r"""WindowAverage model.
 
         Uses the average of the last $k$ observations, with $k$ the length of the window.
         Wider windows will capture global trends, while narrow windows will reveal local trends.
@@ -3462,23 +3434,19 @@ class WindowAverage(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
-        """
+            This is required for generating future prediction intervals.
+        r"""
         self.window_size = window_size
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the WindowAverage model.
+        r"""Fit the WindowAverage model.
 
         Fit an WindowAverage to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -3506,7 +3474,7 @@ class WindowAverage(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted WindowAverage.
+        r"""Predict with fitted WindowAverage.
 
         Parameters
         ----------
@@ -3534,7 +3502,7 @@ class WindowAverage(_TS):
         return res
 
     def predict_in_sample(self):
-        """Access fitted WindowAverage insample predictions.
+        r"""Access fitted WindowAverage insample predictions.
 
         Parameters
         ----------
@@ -3557,7 +3525,7 @@ class WindowAverage(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient WindowAverage predictions.
+        r"""Memory Efficient WindowAverage predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -3591,7 +3559,7 @@ class WindowAverage(_TS):
         if self.prediction_intervals is not None:
             res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
         else:
-            raise Exception("You must pass `prediction_intervals` to " "compute them.")
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
 # %% ../nbs/src/core/models.ipynb 276
@@ -3613,6 +3581,7 @@ def _seasonal_window_average(
 
 # %% ../nbs/src/core/models.ipynb 277
 class SeasonalWindowAverage(_TS):
+
     def __init__(
         self,
         season_length: int,
@@ -3620,7 +3589,7 @@ class SeasonalWindowAverage(_TS):
         alias: str = "SeasWA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """SeasonalWindowAverage model.
+        r"""SeasonalWindowAverage model.
 
         An average of the last $k$ observations of the same period, with $k$ the length of the window.
 
@@ -3638,24 +3607,20 @@ class SeasonalWindowAverage(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
-        """
+            This is required for generating future prediction intervals.
+        r"""
         self.season_length = season_length
         self.window_size = window_size
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the SeasonalWindowAverage model.
+        r"""Fit the SeasonalWindowAverage model.
 
         Fit an SeasonalWindowAverage to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
@@ -3671,7 +3636,7 @@ class SeasonalWindowAverage(_TS):
         -------
         self :
             SeasonalWindowAverage fitted model.
-        """
+        r"""
         mod = _seasonal_window_average(
             y=y,
             h=self.season_length,
@@ -3689,7 +3654,7 @@ class SeasonalWindowAverage(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted SeasonalWindowAverage.
+        r"""Predict with fitted SeasonalWindowAverage.
 
         Parameters
         ----------
@@ -3717,7 +3682,7 @@ class SeasonalWindowAverage(_TS):
         return res
 
     def predict_in_sample(self):
-        """Access fitted SeasonalWindowAverage insample predictions.
+        r"""Access fitted SeasonalWindowAverage insample predictions.
 
         Parameters
         ----------
@@ -3740,7 +3705,7 @@ class SeasonalWindowAverage(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient SeasonalWindowAverage predictions.
+        r"""Memory Efficient SeasonalWindowAverage predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -3766,7 +3731,7 @@ class SeasonalWindowAverage(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
+        r"""
         res = _seasonal_window_average(
             y=y,
             h=h,
@@ -3869,12 +3834,13 @@ def _adida(
 
 # %% ../nbs/src/core/models.ipynb 290
 class ADIDA(_TS):
+
     def __init__(
         self,
         alias: str = "ADIDA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """ADIDA model.
+        r"""ADIDA model.
 
         Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal aggregation to reduce the
         number of zero observations. Once the data has been agregated, it uses the optimized SES to
@@ -3897,20 +3863,17 @@ class ADIDA(_TS):
             Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
-        """
+        r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the ADIDA model.
+        r"""Fit the ADIDA model.
 
         Fit an ADIDA to a time series (numpy array) `y`.
 
@@ -3923,7 +3886,7 @@ class ADIDA(_TS):
         -------
         self :
             ADIDA fitted model.
-        """
+        r"""
         self.model_ = _adida(y=y, h=1, fitted=False)
         self._y = y
         self._store_cs(y=y, X=X)
@@ -3935,7 +3898,7 @@ class ADIDA(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted ADIDA.
+        r"""Predict with fitted ADIDA.
 
         Parameters
         ----------
@@ -3950,7 +3913,7 @@ class ADIDA(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
+        r"""
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         if level is None:
@@ -3966,7 +3929,7 @@ class ADIDA(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted ADIDA insample predictions.
+        r"""Access fitted ADIDA insample predictions.
 
         Parameters
         ----------
@@ -3994,7 +3957,7 @@ class ADIDA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient ADIDA predictions.
+        r"""Memory Efficient ADIDA predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -4066,17 +4029,18 @@ def _croston_classic(
 
 # %% ../nbs/src/core/models.ipynb 303
 class CrostonClassic(_TS):
+
     def __init__(
         self,
         alias: str = "CrostonClassic",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """CrostonClassic model.
+        r"""CrostonClassic model.
 
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
 
         where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter
         of both components is set equal to 0.1
@@ -4093,20 +4057,17 @@ class CrostonClassic(_TS):
             Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
-        """
+        r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the CrostonClassic model.
+        r"""Fit the CrostonClassic model.
 
         Fit an CrostonClassic to a time series (numpy array) `y`.
 
@@ -4119,7 +4080,7 @@ class CrostonClassic(_TS):
         -------
         self :
             CrostonClassic fitted model.
-        """
+        r"""
         self.model_ = _croston_classic(y=y, h=1, fitted=True)
         self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
@@ -4131,7 +4092,7 @@ class CrostonClassic(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted CrostonClassic.
+        r"""Predict with fitted CrostonClassic.
 
         Parameters
         ----------
@@ -4161,7 +4122,7 @@ class CrostonClassic(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted CrostonClassic insample predictions.
+        r"""Access fitted CrostonClassic insample predictions.
 
         Parameters
         ----------
@@ -4187,7 +4148,7 @@ class CrostonClassic(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient CrostonClassic predictions.
+        r"""Memory Efficient CrostonClassic predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -4212,7 +4173,7 @@ class CrostonClassic(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
+        r"""
         res = _croston_classic(y=y, h=h, fitted=fitted)
         if level is None:
             return res
@@ -4272,17 +4233,18 @@ def _croston_optimized(
 
 # %% ../nbs/src/core/models.ipynb 315
 class CrostonOptimized(_TS):
+
     def __init__(
         self,
         alias: str = "CrostonOptimized",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """CrostonOptimized model.
+        r"""CrostonOptimized model.
 
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method where the smooting paramater is optimally
         selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
@@ -4298,22 +4260,18 @@ class CrostonOptimized(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
-        """
+            This is required for generating future prediction intervals.
+        r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the CrostonOptimized model.
+        r"""Fit the CrostonOptimized model.
 
         Fit an CrostonOptimized to a time series (numpy array) `y`.
 
@@ -4326,7 +4284,7 @@ class CrostonOptimized(_TS):
         -------
         self :
             CrostonOptimized fitted model.
-        """
+        r"""
         self.model_ = _croston_optimized(y=y, h=1, fitted=False)
         self._y = y
         self._store_cs(y=y, X=X)
@@ -4338,7 +4296,7 @@ class CrostonOptimized(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted CrostonOptimized.
+        r"""Predict with fitted CrostonOptimized.
 
         Parameters
         ----------
@@ -4366,7 +4324,7 @@ class CrostonOptimized(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted CrostonOptimized insample predictions.
+        r"""Access fitted CrostonOptimized insample predictions.
 
         Parameters
         ----------
@@ -4394,7 +4352,7 @@ class CrostonOptimized(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient CrostonOptimized predictions.
+        r"""Memory Efficient CrostonOptimized predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -4417,7 +4375,7 @@ class CrostonOptimized(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
+        r"""
         res = _croston_optimized(y=y, h=h, fitted=fitted)
         res = dict(res)
         if level is None:
@@ -4446,21 +4404,22 @@ def _croston_sba(
 
 # %% ../nbs/src/core/models.ipynb 327
 class CrostonSBA(_TS):
+
     def __init__(
         self,
         alias: str = "CrostonSBA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """CrostonSBA model.
+        r"""CrostonSBA model.
 
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method that uses a debiasing factor, so that the
         forecast is given by:
-        $$\hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}$$
 
         References
         ----------
@@ -4474,20 +4433,17 @@ class CrostonSBA(_TS):
             Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
-        """
+        r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
-
-    def __repr__(self):
-        return self.alias
 
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the CrostonSBA model.
+        r"""Fit the CrostonSBA model.
 
         Fit an CrostonSBA to a time series (numpy array) `y`.
 
@@ -4512,7 +4468,7 @@ class CrostonSBA(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted CrostonSBA.
+        r"""Predict with fitted CrostonSBA.
 
         Parameters
         ----------
@@ -4542,7 +4498,7 @@ class CrostonSBA(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted CrostonSBA insample predictions.
+        r"""Access fitted CrostonSBA insample predictions.
 
         Parameters
         ----------
@@ -4568,7 +4524,7 @@ class CrostonSBA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient CrostonSBA predictions.
+        r"""Memory Efficient CrostonSBA predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -4593,7 +4549,7 @@ class CrostonSBA(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
+        r"""
         res = _croston_sba(y=y, h=h, fitted=fitted)
         if level is None:
             return res
@@ -4646,12 +4602,13 @@ def _imapa(
 
 # %% ../nbs/src/core/models.ipynb 339
 class IMAPA(_TS):
+
     def __init__(
         self,
         alias: str = "IMAPA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """IMAPA model.
+        r"""IMAPA model.
 
         Intermittent Multiple Aggregation Prediction Algorithm: Similar to ADIDA, but instead of
         using a single aggregation level, it considers multiple in order to capture different
@@ -4675,15 +4632,12 @@ class IMAPA(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the IMAPA model.
+        r"""Fit the IMAPA model.
 
         Fit an IMAPA to a time series (numpy array) `y`.
 
@@ -4708,7 +4662,7 @@ class IMAPA(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted IMAPA.
+        r"""Predict with fitted IMAPA.
 
         Parameters
         ----------
@@ -4739,7 +4693,7 @@ class IMAPA(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted IMAPA insample predictions.
+        r"""Access fitted IMAPA insample predictions.
 
         Parameters
         ----------
@@ -4767,7 +4721,7 @@ class IMAPA(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient IMAPA predictions.
+        r"""Memory Efficient IMAPA predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -4836,6 +4790,7 @@ def _tsb(
 
 # %% ../nbs/src/core/models.ipynb 351
 class TSB(_TS):
+
     def __init__(
         self,
         alpha_d: float,
@@ -4843,16 +4798,16 @@ class TSB(_TS):
         alias: str = "TSB",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-        """TSB model.
+        r"""TSB model.
 
         Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
         intervals with the demand probability $d_t$, which is defined as follows.
 
         $$
-        d_t = \\begin{cases}
-            1  & \\text{if demand occurs at time t} \\\
-            0  & \\text{otherwise.}
-        \\end{cases}
+        d_t = \begin{cases}
+            1  & \text{if demand occurs at time t} \\
+            0  & \text{otherwise.}
+        \end{cases}
         $$
 
         Hence, the forecast is given by
@@ -4876,8 +4831,7 @@ class TSB(_TS):
             Custom name of the model.
         prediction_intervals : Optional[ConformalIntervals]
             Information to compute conformal prediction intervals.
-            By default, the model will compute the native prediction
-            intervals.
+            This is required for generating future prediction intervals.
         """
         self.alpha_d = alpha_d
         self.alpha_p = alpha_p
@@ -4885,15 +4839,12 @@ class TSB(_TS):
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the TSB model.
+        r"""Fit the TSB model.
 
         Fit an TSB to a time series (numpy array) `y`.
 
@@ -4920,7 +4871,7 @@ class TSB(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted TSB.
+        r"""Predict with fitted TSB.
 
         Parameters
         ----------
@@ -4933,7 +4884,7 @@ class TSB(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        """
+        r"""
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
         if level is None:
@@ -4942,11 +4893,11 @@ class TSB(_TS):
         if self.prediction_intervals is not None:
             res = self._add_predict_conformal_intervals(res, level)
         else:
-            raise Exception("You must pass `prediction_intervals` to " "compute them.")
+            raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted TSB insample predictions.
+        r"""Access fitted TSB insample predictions.
 
         Parameters
         ----------
@@ -4972,7 +4923,7 @@ class TSB(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient TSB predictions.
+        r"""Memory Efficient TSB predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -5029,7 +4980,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
 
 # %% ../nbs/src/core/models.ipynb 364
 class MSTL(_TS):
-    """MSTL model.
+    r"""MSTL model.
 
     The MSTL (Multiple Seasonal-Trend decomposition using LOESS) decomposes the time series
     in multiple seasonalities using LOESS. Then forecasts the trend using
@@ -5064,6 +5015,7 @@ class MSTL(_TS):
         alias: str = "MSTL",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
+
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
             if trend_forecaster.model[2] != "N":
@@ -5093,15 +5045,12 @@ class MSTL(_TS):
             self.trend_forecaster.prediction_intervals = prediction_intervals
         self.stl_kwargs = dict() if stl_kwargs is None else stl_kwargs
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the MSTL model.
+        r"""Fit the MSTL model.
 
         Fit MSTL to a time series (numpy array) `y`.
 
@@ -5133,7 +5082,7 @@ class MSTL(_TS):
         X: Optional[np.ndarray] = None,
         level: Optional[List[int]] = None,
     ):
-        """Predict with fitted MSTL.
+        r"""Predict with fitted MSTL.
 
         Parameters
         ----------
@@ -5167,7 +5116,7 @@ class MSTL(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted MSTL insample predictions.
+        r"""Access fitted MSTL insample predictions.
 
         Parameters
         ----------
@@ -5193,7 +5142,7 @@ class MSTL(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient MSTL predictions.
+        r"""Memory Efficient MSTL predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -5257,7 +5206,7 @@ class MSTL(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply fitted MSTL model to a new time series.
+        r"""Apply fitted MSTL model to a new time series.
 
         Parameters
         ----------
@@ -5308,7 +5257,7 @@ class MSTL(_TS):
 
 # %% ../nbs/src/core/models.ipynb 380
 class TBATS(_TS):
-    """Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
+    r"""Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
 
     TBATS is an innovations state space model framework used for forecasting time series with multiple seasonalities. It uses a Box-Cox tranformation, ARMA errors, and a trigonometric representation of the seasonal patterns based on Fourier series.
 
@@ -5365,11 +5314,8 @@ class TBATS(_TS):
         self.use_arma_errors = use_arma_errors
         self.alias = alias
 
-    def __repr__(self):
-        return self.alias
-
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
-        """Fit TBATS model.
+        r"""Fit TBATS model.
 
         Fit TBATS model to a time series (numpy array) `y`.
 
@@ -5400,7 +5346,7 @@ class TBATS(_TS):
     def predict(
         self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
     ):
-        """Predict with fitted TBATS model.
+        r"""Predict with fitted TBATS model.
 
         Parameters
         ----------
@@ -5432,7 +5378,7 @@ class TBATS(_TS):
         return res_trans
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
-        """Access fitted TBATS model predictions.
+        r"""Access fitted TBATS model predictions.
 
         Parameters
         ----------
@@ -5468,7 +5414,7 @@ class TBATS(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient TBATS model.
+        r"""Memory Efficient TBATS model.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -5523,7 +5469,7 @@ class TBATS(_TS):
 
 # %% ../nbs/src/core/models.ipynb 388
 class AutoTBATS(TBATS):
-    """AutoTBATS model.
+    r"""AutoTBATS model.
 
     Automatically selects the best TBATS model from all feasible combinations of the parameters use_boxcox, use_trend, use_damped_trend, and use_arma_errors.
     Selection is made using the AIC.
@@ -5582,7 +5528,7 @@ class AutoTBATS(TBATS):
 
 # %% ../nbs/src/core/models.ipynb 398
 class Theta(AutoTheta):
-    """Standard Theta Method.
+    r"""Standard Theta Method.
 
     References
     ----------
@@ -5619,7 +5565,7 @@ class Theta(AutoTheta):
 
 # %% ../nbs/src/core/models.ipynb 412
 class OptimizedTheta(AutoTheta):
-    """Optimized Theta Method.
+    r"""Optimized Theta Method.
 
     References
     ----------
@@ -5656,7 +5602,7 @@ class OptimizedTheta(AutoTheta):
 
 # %% ../nbs/src/core/models.ipynb 426
 class DynamicTheta(AutoTheta):
-    """Dynamic Standard Theta Method.
+    r"""Dynamic Standard Theta Method.
 
     References
     ----------
@@ -5693,7 +5639,7 @@ class DynamicTheta(AutoTheta):
 
 # %% ../nbs/src/core/models.ipynb 440
 class DynamicOptimizedTheta(AutoTheta):
-    """Dynamic Optimized Theta Method.
+    r"""Dynamic Optimized Theta Method.
 
     References
     ----------
@@ -5730,7 +5676,7 @@ class DynamicOptimizedTheta(AutoTheta):
 
 # %% ../nbs/src/core/models.ipynb 455
 class GARCH(_TS):
-    """Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
+    r"""Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
     A method for modeling time series that exhibit non-constant volatility over time.
     The GARCH model assumes that at time $t$, $y_t$ is given by:
@@ -5786,11 +5732,8 @@ class GARCH(_TS):
             self.alias = alias + "(" + str(p) + ")"
         self.prediction_intervals = prediction_intervals
 
-    def __repr__(self):
-        return self.alias
-
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
-        """Fit GARCH model.
+        r"""Fit GARCH model.
 
         Fit GARCH model to a time series (numpy array) `y`.
 
@@ -5812,7 +5755,7 @@ class GARCH(_TS):
     def predict(
         self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
     ):
-        """Predict with fitted GARCH model.
+        r"""Predict with fitted GARCH model.
 
         Parameters
         ----------
@@ -5846,7 +5789,7 @@ class GARCH(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted GARCH model predictions.
+        r"""Access fitted GARCH model predictions.
 
         Parameters
         ----------
@@ -5874,7 +5817,7 @@ class GARCH(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient GARCH model.
+        r"""Memory Efficient GARCH model.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -5925,7 +5868,7 @@ class GARCH(_TS):
 
 # %% ../nbs/src/core/models.ipynb 468
 class ARCH(GARCH):
-    """Autoregressive Conditional Heteroskedasticity (ARCH) model.
+    r"""Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
     A particular case of the GARCH(p,q) model where $q=0$.
     It assumes that at time $t$, $y_t$ is given by:
@@ -5967,13 +5910,694 @@ class ARCH(GARCH):
         self.alias = alias
         super().__init__(p, q=0, alias=alias)
 
-    def __repr__(self):
-        return self.alias
-
 # %% ../nbs/src/core/models.ipynb 479
+class SklearnModel(_TS):
+    r"""scikit-learn model wrapper
+
+    Parameters
+    ----------
+    model : sklearn.base.BaseEstimator
+        scikit-learn estimator
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        This is required for generating future prediction intervals.
+    alias : str, optional (default=None)
+        Custom name of the model. If `None` will use the model's class.
+    """
+
+    def __init__(
+        self,
+        model,
+        prediction_intervals: Optional[ConformalIntervals] = None,
+        alias: Optional[str] = None,
+    ):
+        self.model = model
+        self.prediction_intervals = prediction_intervals
+        self.alias = alias if alias is not None else model.__class__.__name__
+
+    def fit(
+        self,
+        y: np.ndarray,
+        X: np.ndarray,
+    ) -> "SklearnModel":
+        r"""Fit the model.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like
+            Exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self : SklearnModel
+            Fitted SklearnModel object.
+        r"""
+        from sklearn.base import clone
+
+        self.model_ = {"model": clone(self.model)}
+        self.model_["model"].fit(X, y)
+        self._store_cs(y=y, X=X)
+        self.model_["fitted"] = self.model_["model"].predict(X)
+        residuals = y - self.model_["fitted"]
+        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: np.ndarray,
+        level: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        r"""Predict with fitted SklearnModel.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like
+            Exogenous of shape (h, n_x).
+        level: List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        r"""
+        res = {"mean": self.model_["model"].predict(X)}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
+        r"""Access fitted SklearnModel insample predictions.
+
+        Parameters
+        ----------
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray,
+        X_future: np.ndarray,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Memory Efficient SklearnModel predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        r"""
+        from sklearn.base import clone
+
+        model = clone(self.model)
+        model.fit(X, y)
+        res = {"mean": model.predict(X_future)}
+        if fitted:
+            res["fitted"] = model.predict(X)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
+
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: np.ndarray,
+        X_future: np.ndarray,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        r"""Apply fitted SklearnModel to a new/updated time series.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[float]
+            Confidence levels for prediction intervals.
+        fitted : bool
+            Whether or not returns insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.
+        """
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        res = {"mean": self.model_["model"].predict(X_future)}
+        if fitted:
+            res["fitted"] = self.model_["model"].predict(X)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                se = _calculate_sigma(y - res["fitted"], y.size)
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        return res
+
+# %% ../nbs/src/core/models.ipynb 489
+class MFLES(_TS):
+    r"""MFLES model.
+
+    A method to forecast time series based on Gradient Boosted Time Series Decomposition
+    which treats traditional decomposition as the base estimator in the boosting
+    process. Unlike normal gradient boosting, slight learning rates are applied at the
+    component level (trend/seasonality/exogenous).
+
+    The method derives its name from some of the underlying estimators that can
+    enter into the boosting procedure, specifically: a simple Median, Fourier
+    functions for seasonality, a simple/piecewise Linear trend, and Exponential
+    Smoothing.
+
+    Parameters
+    ----------
+    season_length : int or list of int, optional (default=None)
+        Number of observations per unit of time. Ex: 24 Hourly data.
+    fourier_order : int, optional (default=None)
+        How many fourier sin/cos pairs to create, the larger the number the more complex of a seasonal pattern can be fitted.
+        A lower number leads to smoother results.
+        This is auto-set based on seasonal_period.
+    max_rounds : int (default=50)
+        The max number of boosting rounds. The boosting will auto-stop but depending on other parameters such as rs_lr you may want more rounds.
+        Generally more rounds means a smoother fit.
+    ma : int, optional (default=None)
+        The moving average order to use, this is auto-set based on internal logic.
+        Passing 4 would fit a 4 period moving average on the residual component.
+    alpha : float (default=1.0)
+        The alpha which is used in fitting the underlying LASSO when using piecewise functions.
+    decay : float (default=-1.0)
+        Effects the slopes of the piecewise-linear basis function.
+    changepoints : boolean (default=True)
+        Whether to fit for changepoints if all other logic allows for it. If False, MFLES will not ever fit a piecewise trend.
+    n_changepoints : int or float (default=0.25)
+        Number (if int) or proportion (if float) of changepoint knots to place. The default of 0.25 will place 0.25 * (series length) number of knots.
+    seasonal_lr : float (default=0.9)
+        A shrinkage parameter (0 < seasonal_lr <= 1) which penalizes the seasonal fit.
+        A value of 0.9 will flatly multiply the seasonal fit by 0.9 each boosting round, this can be used to allow more signal to the exogenous component.
+    trend_lr : float (default=0.9)
+        A shrinkage parameter (0 < trend_lr <= 1) which penalizes the linear trend fit
+        A value of 0.9 will flatly multiply the linear fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or exogenous components.
+    exogenous_lr : float (default=1.0)
+        The shrinkage parameter (0 < exogenous_lr <= 1) which controls how much of the exogenous signal is carried to the next round.
+    residuals_lr : float (default=1.0)
+        A shrinkage parameter (0 < residuals_lr <= 1) which penalizes the residual smoothing.
+        A value of 0.9 will flatly multiply the residual fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or linear components.
+    cov_threshold : float (default=0.7)
+        The deseasonalized cov is used to auto-set some logic, lowering the cov_threshold will result in simpler and less complex residual smoothing.
+        If you pass something like 1000 then there will be no safeguards applied.
+    moving_medians : bool (default=False)
+        The default behavior is to fit an initial median to the time series. If True, then it will fit a median per seasonal period.
+    min_alpha : float (default=0.05)
+        The minimum alpha in the SES ensemble.
+    max_alpha : float (default=1.0)
+        The maximum alpha used in the SES ensemble.
+    trend_penalty : bool (default=True)
+        Whether to apply a simple penalty to the linear trend component, very useful for dealing with the potentially dangerous piecewise trend.
+    multiplicative : bool, optional (default=None)
+        Auto-set based on internal logic. If True, it will simply take the log of the time series.
+    smoother : bool (default=False)
+        If True, then a simple exponential ensemble will be used rather than auto settings.
+    robust : bool, optional (default=None)
+        If True then MFLES will fit using more reserved methods, i.e. not using piecewise trend or moving average residual smoother.
+        Auto-set based on internal logic.
+    verbose : bool (default=False)
+        Print debugging information.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        This is required for generating future prediction intervals.
+    alias : str (default='MFLES')
+        Custom name of the model.
+    """
+
+    def __init__(
+        self,
+        season_length: Optional[Union[int, List[int]]] = None,
+        fourier_order: Optional[int] = None,
+        max_rounds: int = 50,
+        ma: Optional[int] = None,
+        alpha: float = 1.0,
+        decay: float = -1.0,
+        changepoints: bool = True,
+        n_changepoints: Union[float, int] = 0.25,
+        seasonal_lr: float = 0.9,
+        trend_lr: float = 0.9,
+        exogenous_lr: float = 1.0,
+        residuals_lr: float = 1.0,
+        cov_threshold: float = 0.7,
+        moving_medians: bool = False,
+        min_alpha: float = 0.05,
+        max_alpha: float = 1.0,
+        trend_penalty: bool = True,
+        multiplicative: Optional[bool] = None,
+        smoother: bool = False,
+        robust: Optional[bool] = None,
+        verbose: bool = False,
+        prediction_intervals: Optional[ConformalIntervals] = None,
+        alias: str = "MFLES",
+    ):
+        try:
+            import sklearn  # noqa: F401
+        except ImportError:
+            raise ImportError("MFLES requires scikit-learn.") from None
+        self.season_length = season_length
+        self.fourier_order = fourier_order
+        self.max_rounds = max_rounds
+        self.ma = ma
+        self.alpha = alpha
+        self.decay = decay
+        self.changepoints = changepoints
+        self.n_changepoints = n_changepoints
+        self.seasonal_lr = seasonal_lr
+        self.trend_lr = trend_lr
+        self.exogenous_lr = exogenous_lr
+        self.residuals_lr = residuals_lr
+        self.cov_threshold = cov_threshold
+        self.moving_medians = moving_medians
+        self.min_alpha = min_alpha
+        self.max_alpha = max_alpha
+        self.trend_penalty = trend_penalty
+        self.multiplicative = multiplicative
+        self.smoother = smoother
+        self.robust = robust
+        self.verbose = verbose
+        self.prediction_intervals = prediction_intervals
+        self.alias = alias
+
+    def _fit(self, y: np.ndarray, X: Optional[np.ndarray]) -> Dict[str, Any]:
+        model = _MFLES(verbose=self.verbose, robust=self.robust)
+        fitted = model.fit(
+            y=y,
+            X=X,
+            seasonal_period=self.season_length,
+            fourier_order=self.fourier_order,
+            ma=self.ma,
+            alpha=self.alpha,
+            decay=self.decay,
+            n_changepoints=self.n_changepoints,
+            seasonal_lr=self.seasonal_lr,
+            linear_lr=self.trend_lr,
+            exogenous_lr=self.exogenous_lr,
+            rs_lr=self.residuals_lr,
+            cov_threshold=self.cov_threshold,
+            moving_medians=self.moving_medians,
+            max_rounds=self.max_rounds,
+            min_alpha=self.min_alpha,
+            max_alpha=self.max_alpha,
+            trend_penalty=self.trend_penalty,
+            multiplicative=self.multiplicative,
+            changepoints=self.changepoints,
+            smoother=self.smoother,
+        )
+        return {"model": model, "fitted": fitted}
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> "MFLES":
+        r"""Fit the model
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like, optional (default=None)
+            Exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self : MFLES
+            Fitted MFLES object.
+        """
+        self.model_ = self._fit(y=y, X=X)
+        self._store_cs(y=y, X=X)
+        residuals = y - self.model_["fitted"]
+        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        r"""Predict with fitted MFLES.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like, optional (default=None)
+            Exogenous of shape (h, n_x).
+        level: List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"mean": self.model_["model"].predict(forecast_horizon=h, X=X)}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
+        r"""Access fitted SklearnModel insample predictions.
+
+        Parameters
+        ----------
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Memory Efficient MFLES predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        model = self._fit(y=y, X=X)
+        res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
+        if fitted:
+            res["fitted"] = model["fitted"]
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
+
+# %% ../nbs/src/core/models.ipynb 497
+class AutoMFLES(_TS):
+    r"""AutoMFLES
+
+    Parameters
+    ----------
+    test_size : int
+        Forecast horizon used during cross validation.
+    season_length : int or list of int, optional (default=None)
+        Number of observations per unit of time. Ex: 24 Hourly data.
+    n_windows : int (default=2)
+        Number of windows used for cross validation.
+    config : dict, optional (default=None)
+        Mapping from parameter name (from the init arguments of MFLES) to a list of values to try.
+        If `None`, will use defaults.
+    step_size : int, optional (default=None)
+        Step size between each cross validation window. If `None` will be set to test_size.
+    metric : str (default='smape')
+        Metric used to select the best model. Possible options are: 'smape', 'mape', 'mse' and 'mae'.
+    verbose : bool (default=False)
+        Print debugging information.
+    prediction_intervals : Optional[ConformalIntervals]
+        Information to compute conformal prediction intervals.
+        This is required for generating future prediction intervals.
+    alias : str (default='AutoMFLES')
+        Custom name of the model.
+    """
+
+    def __init__(
+        self,
+        test_size: int,
+        season_length: Optional[Union[int, List[int]]] = None,
+        n_windows: int = 2,
+        config: Optional[Dict[str, Any]] = None,
+        step_size: Optional[int] = None,
+        metric: str = "smape",
+        verbose: bool = False,
+        prediction_intervals: Optional[ConformalIntervals] = None,
+        alias: str = "AutoMFLES",
+    ):
+        try:
+            import sklearn  # noqa: F401
+        except ImportError:
+            raise ImportError("MFLES requires scikit-learn.") from None
+        self.season_length = season_length
+        self.n_windows = n_windows
+        self.test_size = test_size
+        self.config = config
+        self.step_size = step_size if step_size is not None else test_size
+        self.metric = metric
+        self.verbose = verbose
+        self.prediction_intervals = prediction_intervals
+        self.alias = alias
+
+    def _fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> Dict[str, Any]:
+        model = _MFLES(verbose=self.verbose)
+        optim_params = model.optimize(
+            y=y,
+            X=X,
+            test_size=self.test_size,
+            n_steps=self.n_windows,
+            step_size=self.step_size,
+            seasonal_period=self.season_length,
+            metric=self.metric,
+            params=self.config,
+        )
+        # the seasonal_period may've been found during the optimization
+        seasonal_period = optim_params.pop("seasonal_period", self.season_length)
+        fitted = model.fit(
+            y=y,
+            X=X,
+            seasonal_period=seasonal_period,
+            **optim_params,
+        )
+        return {"model": model, "fitted": fitted}
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> "AutoMFLES":
+        r"""Fit the model
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        X : array-like, optional (default=None)
+            Exogenous of shape (t, n_x).
+
+        Returns
+        -------
+        self : AutoMFLES
+            Fitted AutoMFLES object.
+        r"""
+        self.model_ = self._fit(y=y, X=X)
+        self._store_cs(y=y, X=X)
+        residuals = y - self.model_["fitted"]
+        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+    ) -> Dict[str, Any]:
+        r"""Predict with fitted AutoMFLES.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        X : array-like, optional (default=None)
+            Exogenous of shape (h, n_x).
+        level: List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        r"""
+        res = {"mean": self.model_["model"].predict(forecast_horizon=h, X=X)}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            raise Exception("You must pass `prediction_intervals` to compute them.")
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
+        r"""Access fitted AutoMFLES insample predictions.
+
+        Parameters
+        ----------
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+        """
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ) -> Dict[str, Any]:
+        r"""Memory Efficient AutoMFLES predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Parameters
+        ----------
+        y : numpy.array
+            Clean time series of shape (t, ).
+        h : int
+            Forecast horizon.
+        X : array-like
+            Insample exogenous of shape (t, n_x).
+        X_future : array-like
+            Exogenous of shape (h, n_x).
+        level : List[int]
+            Confidence levels (0-100) for prediction intervals.
+        fitted : bool
+            Whether or not to return insample predictions.
+
+        Returns
+        -------
+        forecasts : dict
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        model = self._fit(y=y, X=X)
+        res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
+        if fitted:
+            res["fitted"] = model["fitted"]
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
+
+# %% ../nbs/src/core/models.ipynb 501
 class ConstantModel(_TS):
+
     def __init__(self, constant: float, alias: str = "ConstantModel"):
-        """Constant Model.
+        r"""Constant Model.
 
         Returns Constant values.
 
@@ -5987,15 +6611,12 @@ class ConstantModel(_TS):
         self.constant = constant
         self.alias = alias
 
-    def __repr__(self):
-        return self.alias
-
     def fit(
         self,
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ):
-        """Fit the Constant model.
+        r"""Fit the Constant model.
 
         Fit an Constant Model to a time series (numpy.array) `y`.
 
@@ -6020,7 +6641,7 @@ class ConstantModel(_TS):
         X: Optional[np.ndarray] = None,  # exogenous regressors
         level: Optional[List[int]] = None,  # confidence level
     ):
-        """Predict with fitted ConstantModel.
+        r"""Predict with fitted ConstantModel.
 
         Parameters
         ----------
@@ -6047,7 +6668,7 @@ class ConstantModel(_TS):
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
-        """Access fitted Constant Model insample predictions.
+        r"""Access fitted Constant Model insample predictions.
 
         Parameters
         ----------
@@ -6077,7 +6698,7 @@ class ConstantModel(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Memory Efficient Constant Model predictions.
+        r"""Memory Efficient Constant Model predictions.
 
         This method avoids memory burden due from object storage.
         It is analogous to `fit_predict` without storing information.
@@ -6128,7 +6749,7 @@ class ConstantModel(_TS):
         level: Optional[List[int]] = None,
         fitted: bool = False,
     ):
-        """Apply Constant model predictions to a new/updated time series.
+        r"""Apply Constant model predictions to a new/updated time series.
 
         Parameters
         ----------
@@ -6155,10 +6776,11 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../nbs/src/core/models.ipynb 493
+# %% ../nbs/src/core/models.ipynb 515
 class ZeroModel(ConstantModel):
+
     def __init__(self, alias: str = "ZeroModel"):
-        """Returns Zero forecasts.
+        r"""Returns Zero forecasts.
 
         Returns Zero values.
 
@@ -6169,10 +6791,11 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../nbs/src/core/models.ipynb 507
+# %% ../nbs/src/core/models.ipynb 529
 class NaNModel(ConstantModel):
+
     def __init__(self, alias: str = "NaNModel"):
-        """NaN Model.
+        r"""NaN Model.
 
         Returns NaN values.
 

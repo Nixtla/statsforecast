@@ -12,7 +12,10 @@ import os
 import pickle
 import re
 import reprlib
+import time
 import warnings
+from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -23,6 +26,7 @@ from fugue.execution.factory import (
     make_execution_engine,
     try_get_context_execution_engine,
 )
+from threadpoolctl import threadpool_limits
 from tqdm.autonotebook import tqdm
 from triad import conditional_dispatcher
 from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
@@ -41,6 +45,7 @@ logger = logging.getLogger(__name__)
 
 # %% ../nbs/src/core/core.ipynb 10
 class GroupedArray(BaseGroupedArray):
+
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
             return False
@@ -60,6 +65,7 @@ class GroupedArray(BaseGroupedArray):
                 except Exception as error:
                     if fallback_model is not None:
                         new_fallback_model = fallback_model.new()
+                        new_fallback_model.alias = model.alias
                         fm[i, i_model] = new_fallback_model.fit(y=y, X=X)
                     else:
                         raise error
@@ -164,6 +170,7 @@ class GroupedArray(BaseGroupedArray):
         iterable = tqdm(
             enumerate(self), disable=(not verbose), total=len(self), desc="Forecast"
         )
+        times = {repr(m): 0.0 for m in models}
         for i, grp in iterable:
             y_train = grp[:, 0] if grp.ndim == 2 else grp
             X_train = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
@@ -178,6 +185,7 @@ class GroupedArray(BaseGroupedArray):
                 kwargs = {}
                 if has_level:
                     kwargs["level"] = level
+                start = time.perf_counter()
                 try:
                     res_i = model.forecast(
                         h=h, y=y_train, X=X_train, X_future=X_f, fitted=fitted, **kwargs
@@ -194,6 +202,7 @@ class GroupedArray(BaseGroupedArray):
                         )
                     else:
                         raise error
+                times[repr(model)] += time.perf_counter() - start
                 cols_m = [
                     key
                     for key in res_i.keys()
@@ -216,9 +225,11 @@ class GroupedArray(BaseGroupedArray):
                     ]
                     fitted_i = np.vstack([res_i[key] for key in cols_m_fitted]).T
                     cols_m_fitted = [
-                        f"{repr(model)}"
-                        if col == "fitted"
-                        else f"{repr(model)}-{col.replace('fitted-', '')}"
+                        (
+                            f"{repr(model)}"
+                            if col == "fitted"
+                            else f"{repr(model)}-{col.replace('fitted-', '')}"
+                        )
                         for col in cols_m_fitted
                     ]
                     fitted_vals[
@@ -226,7 +237,7 @@ class GroupedArray(BaseGroupedArray):
                         (cuts[i_model] + 1) : (cuts[i_model + 1] + 1),
                     ] = fitted_i
                     cols_fitted += cols_m_fitted
-        result = {"forecasts": fcsts, "cols": cols}
+        result = {"forecasts": fcsts, "cols": cols, "times": times}
         if fitted:
             result["fitted"] = {"values": fitted_vals}
             result["fitted"]["cols"] = [target_col] + cols_fitted
@@ -385,6 +396,70 @@ class GroupedArray(BaseGroupedArray):
             for idxs in np.array_split(range(self.n_groups), n_chunks)
             if idxs.size
         ]
+
+    def _single_threaded_fit(self, models, fallback_model=None):
+        with threadpool_limits(limits=1):
+            return self.fit(models=models, fallback_model=fallback_model)
+
+    def _single_threaded_predict(self, fm, h, X=None, level=tuple()):
+        with threadpool_limits(limits=1):
+            return self.predict(fm=fm, h=h, X=X, level=level)
+
+    def _single_threaded_fit_predict(self, models, h, X=None, level=tuple()):
+        with threadpool_limits(limits=1):
+            return self.fit_predict(models=models, h=h, X=X, level=level)
+
+    def _single_threaded_forecast(
+        self,
+        models,
+        h,
+        fallback_model=None,
+        fitted=False,
+        X=None,
+        level=tuple(),
+        verbose=False,
+        target_col="y",
+    ):
+        with threadpool_limits(limits=1):
+            return self.forecast(
+                models=models,
+                h=h,
+                fallback_model=fallback_model,
+                fitted=fitted,
+                X=X,
+                level=level,
+                verbose=verbose,
+                target_col=target_col,
+            )
+
+    def _single_threaded_cross_validation(
+        self,
+        models,
+        h,
+        test_size,
+        fallback_model=None,
+        step_size=1,
+        input_size=None,
+        fitted=False,
+        level=tuple(),
+        refit=True,
+        verbose=False,
+        target_col="y",
+    ):
+        with threadpool_limits(limits=1):
+            return self.cross_validation(
+                models=models,
+                h=h,
+                test_size=test_size,
+                fallback_model=fallback_model,
+                step_size=step_size,
+                input_size=input_size,
+                fitted=fitted,
+                level=level,
+                refit=refit,
+                verbose=verbose,
+                target_col=target_col,
+            )
 
 # %% ../nbs/src/core/core.ipynb 24
 def _get_n_jobs(n_groups, n_jobs):
@@ -677,8 +752,7 @@ class _StatsForecast:
             raise ValueError(
                 f"Expected X to have shape {expected_shape}, but got {X.shape}"
             )
-        first_col = [c for c in X.columns if c not in (self.id_col, self.time_col)][0]
-        _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, first_col)
+        _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, None)
         return GroupedArray(data, indptr), level
 
     def _validate_exog(self, X_df: Optional[DataFrame] = None) -> None:
@@ -872,7 +946,11 @@ class _StatsForecast:
             )
         else:
             res_fcsts = self._forecast_parallel(
-                h=h, fitted=fitted, X=X, level=level, target_col=target_col
+                h=h,
+                fitted=fitted,
+                X=X,
+                level=level,
+                target_col=target_col,
             )
         if fitted:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
@@ -880,6 +958,7 @@ class _StatsForecast:
         cols = res_fcsts["cols"]
         fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
+        self.forecast_times_ = res_fcsts["times"]
         return fcsts_df
 
     forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
@@ -974,18 +1053,18 @@ class _StatsForecast:
             raise ValueError(
                 "You must specify `level` when using `prediction_intervals`"
             )
-        if not isinstance(refit, bool):
+        if refit != True:
             no_forward = [m for m in self.models if not hasattr(m, "forward")]
             if no_forward:
                 raise ValueError(
-                    "Can only use integer refit with models that implement the forward method. "
+                    "Can only use integer refit or refit=False with models that implement the forward method. "
                     f"The following models do not implement the forward method: {no_forward}."
                 )
             if self.fallback_model is not None and not hasattr(
                 self.fallback_model, "forward"
             ):
                 raise ValueError(
-                    "Can only use integer refit with a fallback model that implements the forward method."
+                    "Can only use integer refit or refit=False with a fallback model that implements the forward method."
                 )
         self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
@@ -1117,7 +1196,7 @@ class _StatsForecast:
             futures = []
             for ga in gas:
                 future = executor.apply_async(
-                    ga.fit, (self.models, self.fallback_model)
+                    ga._single_threaded_fit, (self.models, self.fallback_model)
                 )
                 futures.append(future)
             fm = np.vstack([f.get() for f in futures])
@@ -1143,13 +1222,8 @@ class _StatsForecast:
             futures = []
             for ga, fm, X_ in zip(gas, fms, Xs):
                 future = executor.apply_async(
-                    ga.predict,
-                    (
-                        fm,
-                        h,
-                        X_,
-                        level,
-                    ),
+                    ga._single_threaded_predict,
+                    (fm, h, X_, level),
                 )
                 futures.append(future)
             out = [f.get() for f in futures]
@@ -1167,13 +1241,8 @@ class _StatsForecast:
             futures = []
             for ga, X_ in zip(gas, Xs):
                 future = executor.apply_async(
-                    ga.fit_predict,
-                    (
-                        self.models,
-                        h,
-                        X_,
-                        level,
-                    ),
+                    ga._single_threaded_fit_predict,
+                    (self.models, h, X_, level),
                 )
                 futures.append(future)
             out = [f.get() for f in futures]
@@ -1183,42 +1252,91 @@ class _StatsForecast:
             cols = cols[0]
         return fm, fcsts, cols
 
+    def _forecast_serie(self, level, **forecast_kwargs):
+        forecast_res = {}
+        fitted_res = {}
+        times = {}
+        with threadpool_limits(limits=1):
+            for model in self.models:
+                if "level" in inspect.signature(model.forecast).parameters and level:
+                    model_kwargs = {**forecast_kwargs, "level": level}
+                else:
+                    model_kwargs = forecast_kwargs
+                start = time.perf_counter()
+                try:
+                    model_res = model.forecast(**model_kwargs)
+                except Exception as e:
+                    if self.fallback_model is None:
+                        raise e
+                    model_res = self.fallback_model.forecast(**model_kwargs)
+                model_name = repr(model)
+                times[model_name] = time.perf_counter() - start
+                for k, v in model_res.items():
+                    if k == "mean":
+                        forecast_res[model_name] = v
+                    elif k.startswith(("lo", "hi")):
+                        col_name = f"{model_name}-{k}"
+                        forecast_res[col_name] = v
+                    elif k == "fitted":
+                        fitted_res[model_name] = v
+                    elif k.startswith(("fitted-lo", "fitted-hi")):
+                        col_name = f'{model_name}-{k.replace("fitted-", "")}'
+                        fitted_res[col_name] = v
+        return forecast_res, fitted_res, times
+
     def _forecast_parallel(self, h, fitted, X, level, target_col):
-        # create elements for each core
-        gas, Xs = self._get_gas_Xs(X=X)
-        Pool, pool_kwargs = self._get_pool()
-        # compute parallel forecasts
-        result = {}
-        with Pool(self.n_jobs, **pool_kwargs) as executor:
-            futures = []
-            for ga, X_ in zip(gas, Xs):
-                future = executor.apply_async(
-                    ga.forecast,
-                    tuple(),
-                    dict(
-                        models=self.models,
-                        h=h,
-                        fallback_model=self.fallback_model,
-                        fitted=fitted,
-                        X=X_,
-                        level=level,
-                        verbose=self.verbose,
-                        target_col=target_col,
-                    ),
+        n_series = self.ga.n_groups
+        forecast_res = defaultdict(lambda: np.empty(n_series * h, dtype=np.float32))
+        fitted_res = defaultdict(
+            lambda: np.empty(self.ga.data.shape[0], dtype=self.ga.data.dtype)
+        )
+        fitted_res[target_col] = self.ga.data[:, 0]
+        future2pos = {}
+        times = {repr(m): 0.0 for m in self.models}
+        with ProcessPoolExecutor(self.n_jobs) as executor:
+            for i, serie in enumerate(self.ga):
+                y_train = serie[:, 0]
+                X_train = serie[:, 1:] if serie.shape[1] > 1 else None
+                if X is None:
+                    X_future = None
+                else:
+                    X_future = X[i]
+                future = executor.submit(
+                    self._forecast_serie,
+                    h=h,
+                    y=y_train,
+                    X=X_train,
+                    X_future=X_future,
+                    fitted=fitted,
+                    level=level,
                 )
-                futures.append(future)
-            out = [f.get() for f in futures]
-            fcsts = [d["forecasts"] for d in out]
-            fcsts = np.vstack(fcsts)
-            cols = out[0]["cols"]
-            result["forecasts"] = fcsts
-            result["cols"] = cols
-            if fitted:
-                result["fitted"] = {}
-                fitted_vals = [d["fitted"]["values"] for d in out]
-                result["fitted"]["values"] = np.vstack(fitted_vals)
-                result["fitted"]["cols"] = out[0]["fitted"]["cols"]
-        return result
+                future2pos[future] = i
+            iterable = tqdm(
+                as_completed(future2pos),
+                disable=not self.verbose,
+                total=n_series,
+                desc="Forecast",
+            )
+            for future in iterable:
+                i = future2pos[future]
+                fcst_idxs = slice(i * h, (i + 1) * h)
+                serie_idxs = slice(self.ga.indptr[i], self.ga.indptr[i + 1])
+                serie_fcst, serie_fitted, serie_times = future.result()
+                for k, v in serie_fcst.items():
+                    forecast_res[k][fcst_idxs] = v
+                for k, v in serie_fitted.items():
+                    fitted_res[k][serie_idxs] = v
+                for model_name, model_time in serie_times.items():
+                    times[model_name] += model_time
+        return {
+            "cols": list(forecast_res.keys()),
+            "forecasts": np.hstack([v[:, None] for v in forecast_res.values()]),
+            "fitted": {
+                "cols": list(fitted_res.keys()),
+                "values": np.hstack([v[:, None] for v in fitted_res.values()]),
+            },
+            "times": times,
+        }
 
     def _cross_validation_parallel(
         self, h, test_size, step_size, input_size, fitted, level, refit, target_col
@@ -1232,7 +1350,7 @@ class _StatsForecast:
             futures = []
             for ga in gas:
                 future = executor.apply_async(
-                    ga.cross_validation,
+                    ga._single_threaded_cross_validation,
                     tuple(),
                     dict(
                         models=self.models,

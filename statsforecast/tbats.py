@@ -15,7 +15,7 @@ from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from numba import njit
 from numpy.polynomial.polynomial import Polynomial
 from scipy.optimize import minimize
-from threadpoolctl import threadpool_limits
+
 from .arima import auto_arima_f
 from .utils import NOGIL, CACHE
 
@@ -987,21 +987,20 @@ def tbats_selection(
     combinations = [(b, t, a) for b, t, a in product(B, T, A)]
 
     mod = {"aic": np.inf}
-    with threadpool_limits(limits=1):
-        for boxcox_var, (trend, damped_trend), arma_errors in combinations:
-            new_mod = tbats_model(
-                y,
-                seasonal_periods,
-                k_vector,
-                boxcox_var,
-                bc_lower_bound,
-                bc_upper_bound,
-                trend,
-                damped_trend,
-                arma_errors,
-            )
-            if new_mod["aic"] < mod["aic"]:
-                mod = new_mod
+    for boxcox_var, (trend, damped_trend), arma_errors in combinations:
+        new_mod = tbats_model(
+            y,
+            seasonal_periods,
+            k_vector,
+            boxcox_var,
+            bc_lower_bound,
+            bc_upper_bound,
+            trend,
+            damped_trend,
+            arma_errors,
+        )
+        if new_mod["aic"] < mod["aic"]:
+            mod = new_mod
 
     return mod
 
