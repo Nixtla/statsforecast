@@ -1,29 +1,23 @@
 cmake_minimum_required(VERSION 3.25)
 project(statsforecast)
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif()
-set(CMAKE_CXX_STANDARD 17)
-
-if(APPLE)
-    set(CMAKE_SHARED_LIBRARY_SUFFIX ".so")
+set(DEV_MODULE Development.Module)
+find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if(UNIX)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fPIC -O3 -Wall -Wextra -Wpedantic")
-else()
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /Ob2 /Ot /Oy /W4")
-endif()
+# Detect the installed nanobind package and import it into CMake
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
+  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE NB_DIR)
+list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
+find_package(nanobind CONFIG REQUIRED)
 
-if(SKBUILD)
-    set(LIBRARY_OUTPUT_PATH ${SKBUILD_PLATLIB_DIR}/statsforecast/lib)
-else()
-    set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/statsforecast/lib)
-endif()
+include_directories("include/statsforecast")
+include_directories("external_libs/eigen")
 
-include_directories(include)
-add_library(statsforecast SHARED src/ets.cpp)
-if(MSVC)
-    set_target_properties(statsforecast PROPERTIES OUTPUT_NAME "libstatsforecast")
-endif()
+# modules
+file(GLOB SOURCES src/*.cpp)
+nanobind_add_module(_lib ${SOURCES})
