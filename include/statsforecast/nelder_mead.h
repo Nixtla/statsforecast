@@ -69,10 +69,7 @@ OptimResult NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
     auto second_worst_idx = order_f(n - 1);
 
     // calculate centroid as the col means removing the row with the max fval
-    VectorXd x_o = VectorXd::Zero(n);
-    for (Eigen::Index j = 0; j < order_f.size() - 1; ++j) {
-      x_o += simplex.row(order_f(j)) / n;
-    }
+    VectorXd x_o = (simplex.colwise().sum() - simplex.row(worst_idx)) / n;
 
     // Step2: Reflection, Compute reflected point
     VectorXd x_r = x_o + alpha * (x_o - simplex.row(worst_idx).transpose());

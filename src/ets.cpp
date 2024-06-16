@@ -58,7 +58,7 @@ Update(nb::DRef<VectorXd> s, double l, double b, double old_l, double old_b,
   l = q + alpha * (p - q);
   // new growth
   double r;
-  if (trend > Component::Nothing) {
+  if (trend != Component::Nothing) {
     if (trend == Component::Additive) {
       r = l - old_l;
     } else {
@@ -72,7 +72,7 @@ Update(nb::DRef<VectorXd> s, double l, double b, double old_l, double old_b,
   }
   // new seasonal
   double t;
-  if (season > Component::Nothing) {
+  if (season != Component::Nothing) {
     if (season == Component::Additive) {
       t = y - q;
     } else {
@@ -130,14 +130,14 @@ double Calc(nb::DRef<VectorXd> x, nb::DRef<VectorXd> e,
   m = std::max(m, 1);
   n_mse = std::min(n_mse, 30);
   int n_states =
-      m * (season > Component::Nothing) + (trend > Component::Nothing) + 1;
+      m * (season != Component::Nothing) + (trend != Component::Nothing) + 1;
 
   // copy initial state components
   double l = x(0);
-  double b = (trend > Component::Nothing) ? x(1) : 0.0;
-  VectorXd s(n_s);
-  if (season > Component::Nothing) {
-    s = x.segment(1 + (trend > Component::Nothing), m);
+  double b = (trend != Component::Nothing) ? x(1) : 0.0;
+  VectorXd s;
+  if (season != Component::Nothing) {
+    s = x.segment(1 + (trend != Component::Nothing), m);
   }
 
   a_mse.head(n_mse).setZero();
@@ -151,10 +151,10 @@ double Calc(nb::DRef<VectorXd> x, nb::DRef<VectorXd> e,
   for (Eigen::Index i = 0; i < n; ++i) {
     // copy previous state
     old_l = l;
-    if (trend > Component::Nothing) {
+    if (trend != Component::Nothing) {
       old_b = b;
     }
-    if (season > Component::Nothing) {
+    if (season != Component::Nothing) {
       old_s = s;
     }
     // one step forecast
@@ -185,11 +185,11 @@ double Calc(nb::DRef<VectorXd> x, nb::DRef<VectorXd> e,
 
     // store new state
     x(n_states * (i + 1)) = l;
-    if (trend > Component::Nothing) {
+    if (trend != Component::Nothing) {
       x(n_states * (i + 1) + 1) = b;
     }
-    if (season > Component::Nothing) {
-      x.segment(n_states * (i + 1) + 1 + (trend > Component::Nothing), m) =
+    if (season != Component::Nothing) {
+      x.segment(n_states * (i + 1) + 1 + (trend != Component::Nothing), m) =
           s.head(m);
     }
     lik += e(i) * e(i);

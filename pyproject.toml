@@ -82,7 +82,7 @@ sdist.exclude = [
 ]
 sdist.reproducible = true
 wheel.install-dir = "statsforecast"
-wheel.packages = ["python/statsforecast"]
+wheel.packages = ["statsforecast"]
 wheel.py-api = "py3"
 
 [tool.cibuildwheel]
