@@ -2101,7 +2101,7 @@ def auto_arima_f(
     if fit["ic"] < bestfit["ic"]:
         bestfit = fit
         p = q = P = Q = 0
-    k = 1
+    k = 2
     if max_p > 0 or max_P > 0:
         p_ = int(max_p > 0)
         P_ = int(m > 1 and max_P > 0)
@@ -2109,7 +2109,7 @@ def auto_arima_f(
             order=(p_, d, 0),
             seasonal={"order": (P_, D, 0), "period": m},
         )
-        results[k + 1] = (p_, d, 0, P_, D, 0, constant, fit["ic"])
+        results[k] = (p_, d, 0, P_, D, 0, constant, fit["ic"])
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             p = p_
@@ -2123,7 +2123,7 @@ def auto_arima_f(
             order=(0, d, q_),
             seasonal={"order": (0, D, Q_), "period": m},
         )
-        results[k + 1] = (0, d, q_, 0, D, Q_, constant, fit["ic"])
+        results[k] = (0, d, q_, 0, D, Q_, constant, fit["ic"])
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             p = P = 0
@@ -2136,14 +2136,13 @@ def auto_arima_f(
             seasonal={"order": (0, D, 0), "period": m},
             constant=False,
         )
-        results[k + 1] = (0, d, 0, 0, D, 0, 0, fit["ic"])
+        results[k] = (0, d, 0, 0, D, 0, 0, fit["ic"])
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             p = q = P = Q = 0
         k += 1
 
     def try_params(p, d, q, P, D, Q, constant, k, bestfit):
-        k += 1
         improved = False
         if k >= results.shape[0]:
             return k, bestfit, improved
@@ -2152,6 +2151,7 @@ def auto_arima_f(
             seasonal={"order": (P, D, Q), "period": m},
         )
         results[k] = (p, d, q, P, D, Q, constant, fit["ic"])
+        k += 1
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             improved = True
