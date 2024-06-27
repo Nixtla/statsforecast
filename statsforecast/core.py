@@ -27,7 +27,7 @@ from fugue.execution.factory import (
     try_get_context_execution_engine,
 )
 from threadpoolctl import threadpool_limits
-from tqdm.autonotebook import tqdm
+from tqdm.auto import tqdm
 from triad import conditional_dispatcher
 from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray

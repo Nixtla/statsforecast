@@ -3,7 +3,6 @@ channels:
   - conda-forge
 dependencies:
   - coreforecast>=0.0.7
-  - holidays<0.21 # zone info errors
   - jupyterlab
   - matplotlib
   - numba>=0.55.0

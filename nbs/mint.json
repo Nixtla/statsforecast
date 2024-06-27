@@ -101,6 +101,7 @@
         "docs/models/holt.html",
         "docs/models/holtwinters.html",
         "docs/models/imapa.html",
+        "docs/models/mfles.html",
         "docs/models/multipleseasonaltrend.html",
         "docs/models/optimizedtheta.html",
         "docs/models/seasonalexponentialsmoothing.html",

@@ -12,11 +12,4 @@ learning rates for each of the components in the process such as trend or
 seasonality or exogenous. By doing this we graduate from this 'psuedo' approach
 to full blown gradient boosting.
 
-## Some Benchmarks
-Average SMAPE from a few M4 datasets
-| Dataset    | AutoMFLES | AutoETS |
-| -------- | ------- | ------- |
-| Monthly  | 12.91    | 13.59* |
-| Hourly | 11.73     | 17.19 |
-| Weekly    | 8.18    | 8.64 |
-| Quarterly    | 10.72    | 10.25 |
+![Benchmarks](summary.md)
