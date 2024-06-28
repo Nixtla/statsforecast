@@ -77,3 +77,10 @@ with_estimate = train_df_pl.with_columns(estimate=pl.col('trend') + pl.col('seas
 assert smape(with_estimate, models=['estimate'])['estimate'].mean() < 0.1
 ```
 
+
+```python
+model = MSTL(season_length=[7, 28])
+train_df, X_df = mstl_decomposition(series, model, 'D', horizon)
+assert train_df.columns.intersection(X_df.columns).tolist() == ['unique_id', 'ds', 'trend', 'seasonal7', 'seasonal28']
+```
+
