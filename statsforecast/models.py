@@ -4962,7 +4962,7 @@ class TSB(_TS):
         return res
 
 # %% ../nbs/src/core/models.ipynb 363
-def _predict_mstl_seas(mstl_ob, h, season_length):
+def _predict_mstl_components(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
     seascomp = np.full((h, nseasons), np.nan)
@@ -4975,8 +4975,12 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
         seascomp[:, i] = np.tile(
             mstl_ob[colname].values[-mp:], trunc(1 + (h - 1) / mp)
         )[:h]
-    lastseas = seascomp.sum(axis=1)
-    return lastseas
+    return seascomp
+
+
+def _predict_mstl_seas(mstl_ob, h, season_length):
+    seascomp = _predict_mstl_components(mstl_ob, h, season_length)
+    return seascomp.sum(axis=1)
 
 # %% ../nbs/src/core/models.ipynb 364
 class MSTL(_TS):

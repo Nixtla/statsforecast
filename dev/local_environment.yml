@@ -21,7 +21,7 @@ dependencies:
     - datasetsforecast
     - nbdev
     - plotly-resampler
-    - polars
+    - polars[numpy]>=0.0.0rc0
     - supersmoother
     - tqdm
     - utilsforecast>=0.1.4
