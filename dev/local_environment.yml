@@ -6,7 +6,7 @@ dependencies:
   - jupyterlab
   - matplotlib
   - numba>=0.55.0
-  - numpy>=1.21.6,<2
+  - numpy>=1.21.6
   - pandas>=1.3.5
   - pip
   - prophet
@@ -21,7 +21,7 @@ dependencies:
     - datasetsforecast
     - nbdev
     - plotly-resampler
-    - polars
+    - polars[numpy]>=0.0.0rc0
     - supersmoother
     - tqdm
     - utilsforecast>=0.1.4
