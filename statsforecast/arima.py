@@ -1004,7 +1004,7 @@ def arima(
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
             sol = np.matmul(res.hess_inv, A) / n_used
-            var = np.dot(A, sol)
+            var = A.T @ sol
             coef = arima_undopars(coef, arma)
         else:
             var = None if no_optim else res.hess_inv / n_used
