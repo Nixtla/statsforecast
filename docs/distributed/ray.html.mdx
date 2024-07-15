@@ -71,9 +71,6 @@ sf.forecast(df=ray_series, h=horizon).take(5)
 
 ``` text
 2023-06-17 01:39:08,329 INFO bulk_executor.py:42 -- Executing DAG InputDataBuffer[Input] -> AllToAllOperator[Repartition]
-2023-06-17 01:39:09,554 INFO bulk_executor.py:42 -- Executing DAG InputDataBuffer[Input] -> AllToAllOperator[Repartition]
-2023-06-17 01:39:09,727 INFO bulk_executor.py:42 -- Executing DAG InputDataBuffer[Input] -> TaskPoolMapOperator[MapBatches(add_simple_key)]
-2023-06-17 01:39:11,134 INFO bulk_executor.py:42 -- Executing DAG InputDataBuffer[Input] -> AllToAllOperator[Sort] -> TaskPoolMapOperator[MapBatches(group_fn)]
 ```
 
 ``` text
@@ -81,11 +78,23 @@ Repartition 0:   0%|          | 0/4 [00:00<?, ?it/s]
 ```
 
 ``` text
+2023-06-17 01:39:09,554 INFO bulk_executor.py:42 -- Executing DAG InputDataBuffer[Input] -> AllToAllOperator[Repartition]
+```
+
+``` text
 Repartition 0:   0%|          | 0/16 [00:00<?, ?it/s]
 ```
 
 ``` text
+2023-06-17 01:39:09,727 INFO bulk_executor.py:42 -- Executing DAG InputDataBuffer[Input] -> TaskPoolMapOperator[MapBatches(add_simple_key)]
+```
+
+``` text
 MapBatches(add_simple_key) 0:   0%|          | 0/16 [00:00<?, ?it/s]
+```
+
+``` text
+2023-06-17 01:39:11,134 INFO bulk_executor.py:42 -- Executing DAG InputDataBuffer[Input] -> AllToAllOperator[Sort] -> TaskPoolMapOperator[MapBatches(group_fn)]
 ```
 
 ``` text

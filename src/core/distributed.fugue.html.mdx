@@ -82,11 +82,11 @@ This class uses [Fugue](https://github.com/fugue-project/fugue) backend
 capable of distributing computation on Spark, Dask and Ray without any
 rewrites.\*
 
-|                  | **Type** | **Default** | **Details**                               |
-|------------------|----------|-------------|-------------------------------------------|
-| engine           | Any      | None        | A selection between Spark, Dask, and Ray. |
-| conf             | Any      | None        | Engine configuration.                     |
-| transform_kwargs | Any      |             |                                           |
+|  | **Type** | **Default** | **Details** |
+|----|----|----|----|
+| engine | Any | None | A selection between Spark, Dask, and Ray. |
+| conf | Any | None | Engine configuration. |
+| transform_kwargs | Any |  |  |
 
 ------------------------------------------------------------------------
 
@@ -112,21 +112,21 @@ This method uses Fugue’s transform function, in combination with
 `core.StatsForecast`’s forecast to efficiently fit a list of
 StatsForecast models.\*
 
-|                      | **Type**     | **Details**                                                                                                                                                                                                                                                                    |
+|  | **Type** | **Details** |
 |--------|---------------------------|-------------------------------------|
-| df                   | AnyDataFrame | DataFrame with ids, times, targets and exogenous.                                                                                                                                                                                                                              |
-| freq                 | Union        | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer.                                                                                                                                                                                           |
-| models               | List         | List of instantiated objects models.StatsForecast.                                                                                                                                                                                                                             |
-| fallback_model       | Optional     | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast) and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
-| X_df                 | Optional     | DataFrame with ids, times and future exogenous.                                                                                                                                                                                                                                |
-| h                    | int          | Forecast horizon.                                                                                                                                                                                                                                                              |
-| level                | Optional     | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                                                                  |
-| fitted               | bool         | Store in-sample predictions.                                                                                                                                                                                                                                                   |
-| prediction_intervals | Optional     | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                                                                        |
-| id_col               | str          | Column that identifies each serie.                                                                                                                                                                                                                                             |
-| time_col             | str          | Column that identifies each timestep, its values can be timestamps or integers.                                                                                                                                                                                                |
-| target_col           | str          | Column that contains the target.                                                                                                                                                                                                                                               |
-| **Returns**          | **Any**      | **DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`**                                                                                                                                                                |
+| df | AnyDataFrame | DataFrame with ids, times, targets and exogenous. |
+| freq | Union | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. |
+| models | List | List of instantiated objects models.StatsForecast. |
+| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast) and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
+| X_df | Optional | DataFrame with ids, times and future exogenous. |
+| h | int | Forecast horizon. |
+| level | Optional | Confidence levels between 0 and 100 for prediction intervals. |
+| fitted | bool | Store in-sample predictions. |
+| prediction_intervals | Optional | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | Column that identifies each serie. |
+| time_col | str | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | Column that contains the target. |
+| **Returns** | **Any** | **DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`** |
 
 ------------------------------------------------------------------------
 
@@ -160,25 +160,25 @@ allow to overcome this evaluation technique high computational costs.
 Temporal cross-validation provides better model’s generalization
 measurements by increasing the test’s length and diversity.\*
 
-|                      | **Type**     | **Details**                                                                                                                                                                                                                                                                    |
+|  | **Type** | **Details** |
 |--------|---------------------------|-------------------------------------|
-| df                   | AnyDataFrame | DataFrame with ids, times, targets and exogenous.                                                                                                                                                                                                                              |
-| freq                 | Union        | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer.                                                                                                                                                                                           |
-| models               | List         | List of instantiated objects models.StatsForecast.                                                                                                                                                                                                                             |
-| fallback_model       | Optional     | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast) and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
-| h                    | int          | Forecast horizon.                                                                                                                                                                                                                                                              |
-| n_windows            | int          | Number of windows used for cross validation.                                                                                                                                                                                                                                   |
-| step_size            | int          | Step size between each window.                                                                                                                                                                                                                                                 |
-| test_size            | int          | Length of test size. If passed, set `n_windows=None`.                                                                                                                                                                                                                          |
-| input_size           | int          | Input size for each window, if not none rolled windows.                                                                                                                                                                                                                        |
-| level                | Optional     | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                                                                                  |
-| refit                | bool         | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows.                                                                                                                                                                              |
-| fitted               | bool         | Store in-sample predictions.                                                                                                                                                                                                                                                   |
-| prediction_intervals | Optional     | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                                                                                        |
-| id_col               | str          | Column that identifies each serie.                                                                                                                                                                                                                                             |
-| time_col             | str          | Column that identifies each timestep, its values can be timestamps or integers.                                                                                                                                                                                                |
-| target_col           | str          | Column that contains the target.                                                                                                                                                                                                                                               |
-| **Returns**          | **Any**      | **DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.**                                                                                                                                                              |
+| df | AnyDataFrame | DataFrame with ids, times, targets and exogenous. |
+| freq | Union | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. |
+| models | List | List of instantiated objects models.StatsForecast. |
+| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast) and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
+| h | int | Forecast horizon. |
+| n_windows | int | Number of windows used for cross validation. |
+| step_size | int | Step size between each window. |
+| test_size | int | Length of test size. If passed, set `n_windows=None`. |
+| input_size | int | Input size for each window, if not none rolled windows. |
+| level | Optional | Confidence levels between 0 and 100 for prediction intervals. |
+| refit | bool | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows. |
+| fitted | bool | Store in-sample predictions. |
+| prediction_intervals | Optional | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | Column that identifies each serie. |
+| time_col | str | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | Column that contains the target. |
+| **Returns** | **Any** | **DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.** |
 
 ## Dask Distributed Predictions
 

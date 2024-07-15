@@ -134,15 +134,15 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Fit `models` to a large set of time series from DataFrame `df` and store
 fitted models for later inspection.\*
 
-|                      | **Type**          | **Default** | **Details**                                                                                                                                                                                                  |
+|  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| df                   | Union             | None        | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
-| sort_df              | bool              | True        | Sort `df` by ids and times.                                                                                                                                                                                  |
-| prediction_intervals | Optional          | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                      |
-| id_col               | str               | unique_id   | Column that identifies each serie.                                                                                                                                                                           |
-| time_col             | str               | ds          | Column that identifies each timestep, its values can be timestamps or integers.                                                                                                                              |
-| target_col           | str               | y           | Column that contains the target.                                                                                                                                                                             |
-| **Returns**          | **StatsForecast** |             | **Returns with stored [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) fitted `models`.**                                                                          |
+| df | Union | None | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
+| sort_df | bool | True | Sort `df` by ids and times. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **StatsForecast** |  | **Returns with stored [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) fitted `models`.** |
 
 ------------------------------------------------------------------------
 
@@ -163,12 +163,12 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 Use stored fitted `models` to predict large set of time series from
 DataFrame `df`.\*
 
-|             | **Type**                       | **Default** | **Details**                                                                                                         |
+|  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| h           | int                            |             | Forecast horizon.                                                                                                   |
-| X_df        | Union                          | None        | DataFrame with ids, times and future exogenous.                                                                     |
-| level       | Optional                       | None        | Confidence levels between 0 and 100 for prediction intervals.                                                       |
-| **Returns** | **pandas or polars DataFrame** |             | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
+| h | int |  | Forecast horizon. |
+| X_df | Union | None | DataFrame with ids, times and future exogenous. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| **Returns** | **pandas or polars DataFrame** |  | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
 
 ------------------------------------------------------------------------
 
@@ -200,18 +200,18 @@ In contrast to
 [`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
 this method stores partial models outputs.\*
 
-|                      | **Type**  | **Default** | **Details**                                                                                                                                                                                                  |
+|  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| h                    | int       |             | Forecast horizon.                                                                                                                                                                                            |
-| df                   | Union     | None        | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
-| X_df                 | Union     | None        | DataFrame with ids, times and future exogenous.                                                                                                                                                              |
-| level                | Optional  | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                |
-| sort_df              | bool      | True        | Sort `df` by ids and times.                                                                                                                                                                                  |
-| prediction_intervals | Optional  | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                      |
-| id_col               | str       | unique_id   | Column that identifies each serie.                                                                                                                                                                           |
-| time_col             | str       | ds          | Column that identifies each timestep, its values can be timestamps or integers.                                                                                                                              |
-| target_col           | str       | y           | Column that contains the target.                                                                                                                                                                             |
-| **Returns**          | **Union** |             | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                          |
+| h | int |  | Forecast horizon. |
+| df | Union | None | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
+| X_df | Union | None | DataFrame with ids, times and future exogenous. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| sort_df | bool | True | Sort `df` by ids and times. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **Union** |  | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
 
 ------------------------------------------------------------------------
 
@@ -239,19 +239,19 @@ This method avoids memory burden due from object storage. It is
 analogous to Scikit-Learn `fit_predict` without storing information. It
 requires the forecast horizon `h` in advance.\*
 
-|                      | **Type**  | **Default** | **Details**                                                                                                         |
+|  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| h                    | int       |             | Forecast horizon.                                                                                                   |
-| df                   | Union     | None        | DataFrame with ids, times, targets and exogenous.                                                                   |
-| X_df                 | Union     | None        | DataFrame with ids, times and future exogenous.                                                                     |
-| level                | Optional  | None        | Confidence levels between 0 and 100 for prediction intervals.                                                       |
-| fitted               | bool      | False       | Store in-sample predictions.                                                                                        |
-| sort_df              | bool      | True        | Sort `df` by ids and times.                                                                                         |
-| prediction_intervals | Optional  | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                             |
-| id_col               | str       | unique_id   | Column that identifies each serie.                                                                                  |
-| time_col             | str       | ds          | Column that identifies each timestep, its values can be timestamps or integers.                                     |
-| target_col           | str       | y           | Column that contains the target.                                                                                    |
-| **Returns**          | **Union** |             | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
+| h | int |  | Forecast horizon. |
+| df | Union | None | DataFrame with ids, times, targets and exogenous. |
+| X_df | Union | None | DataFrame with ids, times and future exogenous. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| fitted | bool | False | Store in-sample predictions. |
+| sort_df | bool | True | Sort `df` by ids and times. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **Union** |  | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
 
 ```python
 # StatsForecast.forecast method usage example
@@ -350,23 +350,23 @@ technique high computational costs. Temporal cross-validation provides
 better model’s generalization measurements by increasing the test’s
 length and diversity.\*
 
-|                      | **Type**  | **Default** | **Details**                                                                                                                                                                                                  |
+|  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| h                    | int       |             | Forecast horizon.                                                                                                                                                                                            |
-| df                   | Union     | None        | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
-| n_windows            | int       | 1           | Number of windows used for cross validation.                                                                                                                                                                 |
-| step_size            | int       | 1           | Step size between each window.                                                                                                                                                                               |
-| test_size            | Optional  | None        | Length of test size. If passed, set `n_windows=None`.                                                                                                                                                        |
-| input_size           | Optional  | None        | Input size for each window, if not none rolled windows.                                                                                                                                                      |
-| level                | Optional  | None        | Confidence levels between 0 and 100 for prediction intervals.                                                                                                                                                |
-| fitted               | bool      | False       | Store in-sample predictions.                                                                                                                                                                                 |
-| refit                | Union     | True        | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows.                                                                                                            |
-| sort_df              | bool      | True        | Sort `df` by ids and times.                                                                                                                                                                                  |
-| prediction_intervals | Optional  | None        | Configuration to calibrate prediction intervals (Conformal Prediction).                                                                                                                                      |
-| id_col               | str       | unique_id   | Column that identifies each serie.                                                                                                                                                                           |
-| time_col             | str       | ds          | Column that identifies each timestep, its values can be timestamps or integers.                                                                                                                              |
-| target_col           | str       | y           | Column that contains the target.                                                                                                                                                                             |
-| **Returns**          | **Union** |             | **DataFrame with insample `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.**                                                                                 |
+| h | int |  | Forecast horizon. |
+| df | Union | None | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
+| n_windows | int | 1 | Number of windows used for cross validation. |
+| step_size | int | 1 | Step size between each window. |
+| test_size | Optional | None | Length of test size. If passed, set `n_windows=None`. |
+| input_size | Optional | None | Input size for each window, if not none rolled windows. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| fitted | bool | False | Store in-sample predictions. |
+| refit | Union | True | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows. |
+| sort_df | bool | True | Sort `df` by ids and times. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **Union** |  | **DataFrame with insample `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
 
 ```python
 # StatsForecast.crossvalidation method usage example
@@ -455,21 +455,21 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 *Plot forecasts and insample values.*
 
-|                     | **Type** | **Default** | **Details**                                                                                                                                                                                              |
+|  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| df                  | Union    |             | DataFrame with ids, times, targets and exogenous.                                                                                                                                                        |
-| forecasts_df        | Union    | None        | DataFrame ids, times and models.                                                                                                                                                                         |
-| unique_ids          | Union    | None        | ids to plot. If None, they’re selected randomly.                                                                                                                                                         |
-| plot_random         | bool     | True        | Select time series to plot randomly.                                                                                                                                                                     |
-| models              | Optional | None        | List of models to plot.                                                                                                                                                                                  |
-| level               | Optional | None        | List of prediction intervals to plot if paseed.                                                                                                                                                          |
-| max_insample_length | Optional | None        | Max number of train/insample observations to be plotted.                                                                                                                                                 |
-| plot_anomalies      | bool     | False       | Plot anomalies for each prediction interval.                                                                                                                                                             |
-| engine              | str      | matplotlib  | Library used to plot. ‘plotly’, ‘plotly-resampler’ or ‘matplotlib’.                                                                                                                                      |
-| id_col              | str      | unique_id   | Column that identifies each serie.                                                                                                                                                                       |
-| time_col            | str      | ds          | Column that identifies each timestep, its values can be timestamps or integers.                                                                                                                          |
-| target_col          | str      | y           | Column that contains the target.                                                                                                                                                                         |
-| resampler_kwargs    | Optional | None        | Kwargs to be passed to plotly-resampler constructor. <br/>For further custumization (“show_dash”) call the method,<br/>store the plotting object and add the extra arguments to<br/>its `show_dash` method. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
+| forecasts_df | Union | None | DataFrame ids, times and models. |
+| unique_ids | Union | None | ids to plot. If None, they’re selected randomly. |
+| plot_random | bool | True | Select time series to plot randomly. |
+| models | Optional | None | List of models to plot. |
+| level | Optional | None | List of prediction intervals to plot if paseed. |
+| max_insample_length | Optional | None | Max number of train/insample observations to be plotted. |
+| plot_anomalies | bool | False | Plot anomalies for each prediction interval. |
+| engine | str | matplotlib | Library used to plot. ‘plotly’, ‘plotly-resampler’ or ‘matplotlib’. |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| resampler_kwargs | Optional | None | Kwargs to be passed to plotly-resampler constructor. <br/>For further custumization (“show_dash”) call the method,<br/>store the plotting object and add the extra arguments to<br/>its `show_dash` method. |
 
 ------------------------------------------------------------------------
 
@@ -487,11 +487,11 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 *Function that will save StatsForecast class with certain settings to
 make it reproducible.*
 
-|          | **Type** | **Default** | **Details**                                                                                                           |
+|  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| path     | Union    | None        | Path of the file to be saved. If `None` will create one in the current <br/>directory using the current UTC timestamp. |
-| max_size | Optional | None        | StatsForecast object should not exceed this size.<br/>Available byte naming: \[‘B’, ‘KB’, ‘MB’, ‘GB’\]                 |
-| trim     | bool     | False       | Delete any attributes not needed for inference.                                                                       |
+| path | Union | None | Path of the file to be saved. If `None` will create one in the current <br/>directory using the current UTC timestamp. |
+| max_size | Optional | None | StatsForecast object should not exceed this size.<br/>Available byte naming: \[‘B’, ‘KB’, ‘MB’, ‘GB’\] |
+| trim | bool | False | Delete any attributes not needed for inference. |
 
 ------------------------------------------------------------------------
 

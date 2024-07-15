@@ -108,14 +108,14 @@ expected returns is fixed.
 
 ### Advantages and disadvantages of the Generalized Autoregressive Conditional Heteroskedasticity (GARCH) Model
 
-| Advantages                                                                                                                                                                                                         | Disadvantages                                                                                                                                                                                                              |
+| Advantages | Disadvantages |
 |--------------------------------|-----------------------------------------|
-| 1\. 1. Flexible model: The GARCH model is flexible and can fit different types of time series data with different volatility patterns.                                                                             | 1\. Requires a large amount of data: The GARCH model requires a large amount of data to accurately estimate the model parameters.                                                                                          |
-| 2\. Ability to model volatility: The GARCH model is capable of modeling the volatility and heteroscedasticity of a time series, which can improve the accuracy of forecasts.                                       | 2\. Sensitive to the model specification: The GARCH model is sensitive to the model specification and can be difficult to estimate if incorrectly specified.                                                               |
-| 3\. It incorporates past information: The GARCH model incorporates past information on the volatility of the time series, which makes it useful for predicting future volatility.                                  | 3\. It can be computationally expensive: The GARCH model can be computationally expensive, especially if more complex models are used.                                                                                     |
-| 4\. Allows the inclusion of exogenous variables: The GARCH model can be extended to include exogenous variables, which can improve the accuracy of the predictions.                                                | 4\. It does not consider extreme events: The GARCH model does not consider extreme or unexpected events in the time series, which can affect the accuracy of the predictions in situations of high volatility.             |
+| 1\. 1. Flexible model: The GARCH model is flexible and can fit different types of time series data with different volatility patterns. | 1\. Requires a large amount of data: The GARCH model requires a large amount of data to accurately estimate the model parameters. |
+| 2\. Ability to model volatility: The GARCH model is capable of modeling the volatility and heteroscedasticity of a time series, which can improve the accuracy of forecasts. | 2\. Sensitive to the model specification: The GARCH model is sensitive to the model specification and can be difficult to estimate if incorrectly specified. |
+| 3\. It incorporates past information: The GARCH model incorporates past information on the volatility of the time series, which makes it useful for predicting future volatility. | 3\. It can be computationally expensive: The GARCH model can be computationally expensive, especially if more complex models are used. |
+| 4\. Allows the inclusion of exogenous variables: The GARCH model can be extended to include exogenous variables, which can improve the accuracy of the predictions. | 4\. It does not consider extreme events: The GARCH model does not consider extreme or unexpected events in the time series, which can affect the accuracy of the predictions in situations of high volatility. |
 | 5\. The GARCH model makes it possible to model conditional heteroscedasticity, that is, the variation of the variance of a time series as a function of time and of the previous values of the time series itself. | 5\. The GARCH model assumes that the time series errors are normally distributed, which may not be true in practice. If the errors are not normally distributed, the model may produce inaccurate estimates of volatility. |
-| 6\. The GARCH model can be used to estimate the value at risk (VaR) and the conditional value at risk (CVaR) of an investment portfolio.                                                                           |                                                                                                                                                                                                                            |
+| 6\. The GARCH model can be used to estimate the value at risk (VaR) and the conditional value at risk (CVaR) of an investment portfolio. |  |
 
 ### The Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model can be applied in several fields
 
@@ -235,13 +235,13 @@ SP_500 = pd.read_csv(query_string)
 SP_500.head()
 ```
 
-|     | Date       | Open        | High        | Low         | Close       | Adj Close   | Volume     |
-|-----|------------|-------------|-------------|-------------|-------------|-------------|------------|
-| 0   | 2015-01-02 | 2058.899902 | 2072.360107 | 2046.040039 | 2058.199951 | 2058.199951 | 2708700000 |
-| 1   | 2015-01-05 | 2054.439941 | 2054.439941 | 2017.339966 | 2020.579956 | 2020.579956 | 3799120000 |
-| 2   | 2015-01-06 | 2022.150024 | 2030.250000 | 1992.439941 | 2002.609985 | 2002.609985 | 4460110000 |
-| 3   | 2015-01-07 | 2005.550049 | 2029.609985 | 2005.550049 | 2025.900024 | 2025.900024 | 3805480000 |
-| 4   | 2015-01-08 | 2030.609985 | 2064.080078 | 2030.609985 | 2062.139893 | 2062.139893 | 3934010000 |
+|  | Date | Open | High | Low | Close | Adj Close | Volume |
+|----|----|----|----|----|----|----|----|
+| 0 | 2015-01-02 | 2058.899902 | 2072.360107 | 2046.040039 | 2058.199951 | 2058.199951 | 2708700000 |
+| 1 | 2015-01-05 | 2054.439941 | 2054.439941 | 2017.339966 | 2020.579956 | 2020.579956 | 3799120000 |
+| 2 | 2015-01-06 | 2022.150024 | 2030.250000 | 1992.439941 | 2002.609985 | 2002.609985 | 4460110000 |
+| 3 | 2015-01-07 | 2005.550049 | 2029.609985 | 2005.550049 | 2025.900024 | 2025.900024 | 3805480000 |
+| 4 | 2015-01-08 | 2030.609985 | 2064.080078 | 2030.609985 | 2062.139893 | 2062.139893 | 3934010000 |
 
 ```python
 df=SP_500[["Date","Close"]]
@@ -717,16 +717,16 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds         | cutoff     | y         | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
-|-----------|------------|------------|-----------|------------|------------|------------|------------|------------|------------|------------|------------|------------|
-| unique_id |            |            |           |            |            |            |            |            |            |            |            |            |
-| 1         | 2023-01-03 | 2023-01-02 | -0.404962 | 1.906913   | 1.886413   | 1.908357   | 1.930915   | 1.913208   | 1.904380   | 1.903494   | 1.885897   | 1.873233   |
-| 1         | 2023-01-04 | 2023-01-02 | -1.202064 | -0.824837  | -0.838750  | -0.827394  | -0.824686  | -0.835927  | -0.822887  | -0.841358  | -0.833009  | -0.828155  |
-| 1         | 2023-01-05 | 2023-01-02 | 1.746133  | -0.665798  | -0.653746  | -0.666613  | -0.680718  | -0.663415  | -0.677103  | -0.649123  | -0.661879  | -0.665392  |
-| ...       | ...        | ...        | ...       | ...        | ...        | ...        | ...        | ...        | ...        | ...        | ...        | ...        |
-| 1         | 2023-05-29 | 2023-02-03 | 1.304909  | -0.389434  | -0.350367  | -0.313831  | -0.191451  | -0.192649  | -0.186990  | -0.184408  | -0.188771  | -0.185092  |
-| 1         | 2023-05-30 | 2023-02-03 | 0.001660  | -0.340987  | -0.296400  | -0.278776  | -0.158889  | -0.157296  | -0.160854  | -0.154074  | -0.156617  | -0.158255  |
-| 1         | 2023-05-31 | 2023-02-03 | -0.610862 | 0.316639   | 0.274853   | 0.248995   | 0.135092   | 0.134911   | 0.132532   | 0.135533   | 0.134844   | 0.133779   |
+|  | ds | cutoff | y | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
+|----|----|----|----|----|----|----|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |  |  |  |  |  |  |  |
+| 1 | 2023-01-03 | 2023-01-02 | -0.404962 | 1.906913 | 1.886413 | 1.908357 | 1.930915 | 1.913208 | 1.904380 | 1.903494 | 1.885897 | 1.873233 |
+| 1 | 2023-01-04 | 2023-01-02 | -1.202064 | -0.824837 | -0.838750 | -0.827394 | -0.824686 | -0.835927 | -0.822887 | -0.841358 | -0.833009 | -0.828155 |
+| 1 | 2023-01-05 | 2023-01-02 | 1.746133 | -0.665798 | -0.653746 | -0.666613 | -0.680718 | -0.663415 | -0.677103 | -0.649123 | -0.661879 | -0.665392 |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| 1 | 2023-05-29 | 2023-02-03 | 1.304909 | -0.389434 | -0.350367 | -0.313831 | -0.191451 | -0.192649 | -0.186990 | -0.184408 | -0.188771 | -0.185092 |
+| 1 | 2023-05-30 | 2023-02-03 | 0.001660 | -0.340987 | -0.296400 | -0.278776 | -0.158889 | -0.157296 | -0.160854 | -0.154074 | -0.156617 | -0.158255 |
+| 1 | 2023-05-31 | 2023-02-03 | -0.610862 | 0.316639 | 0.274853 | 0.248995 | 0.135092 | 0.134911 | 0.132532 | 0.135533 | 0.134844 | 0.133779 |
 
 ```python
 from datasetsforecast.losses import rmse
@@ -748,10 +748,10 @@ mae = rmse_cv.groupby('unique_id').mean()
 mae.style.highlight_min(color = 'red', axis = 1)
 ```
 
-|           | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
-|-----------|------------|------------|------------|------------|------------|------------|------------|------------|------------|
-| unique_id |            |            |            |            |            |            |            |            |            |
-| 1         | 1.598613   | 1.721620   | 1.547210   | 1.375646   | 1.442002   | 1.419195   | 1.373299   | 1.377253   | 1.374233   |
+|   | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
+|----|----|----|----|----|----|----|----|----|----|
+| unique_id |   |   |   |   |   |   |   |   |   |
+| 1 | 1.598613 | 1.721620 | 1.547210 | 1.375646 | 1.442002 | 1.419195 | 1.373299 | 1.377253 | 1.374233 |
 
 **Note:** This result can vary depending on the data and period you use
 to train and test the model, and the models you want to test. This is an
@@ -975,15 +975,15 @@ Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
 Y_hat1
 ```
 
-|     | ds         | unique_id | y         | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
-|-----|------------|-----------|-----------|------------|------------------|------------------|
-| 0   | 2023-06-01 | 1         | 0.985445  | 1.393380   | -0.048836        | 2.835595         |
-| 1   | 2023-06-02 | 1         | 1.453442  | -0.640599  | -2.789734        | 1.508536         |
-| 2   | 2023-06-05 | 1         | -0.200358 | -0.508753  | -2.327246        | 1.309740         |
-| ... | ...        | ...       | ...       | ...        | ...              | ...              |
-| 80  | 2023-09-26 | 1         | -1.473453 | NaN        | NaN              | NaN              |
-| 81  | 2023-09-27 | 1         | 0.022931  | NaN        | NaN              | NaN              |
-| 82  | 2023-09-28 | 1         | 0.589317  | NaN        | NaN              | NaN              |
+|  | ds | unique_id | y | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
+|----|----|----|----|----|----|----|
+| 0 | 2023-06-01 | 1 | 0.985445 | 1.393380 | -0.048836 | 2.835595 |
+| 1 | 2023-06-02 | 1 | 1.453442 | -0.640599 | -2.789734 | 1.508536 |
+| 2 | 2023-06-05 | 1 | -0.200358 | -0.508753 | -2.327246 | 1.309740 |
+| ... | ... | ... | ... | ... | ... | ... |
+| 80 | 2023-09-26 | 1 | -1.473453 | NaN | NaN | NaN |
+| 81 | 2023-09-27 | 1 | 0.022931 | NaN | NaN | NaN |
+| 82 | 2023-09-28 | 1 | 0.589317 | NaN | NaN | NaN |
 
 ```python
 fig, ax = plt.subplots(1, 1)
@@ -1042,16 +1042,16 @@ forecast_df = sf.predict(h=horizon, level=[80,95])
 forecast_df.head(10)
 ```
 
-|           | ds         | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-lo-80 | GARCH(1,1)-hi-80 | GARCH(1,1)-hi-95 |
-|-----------|------------|------------|------------------|------------------|------------------|------------------|
-| unique_id |            |            |                  |                  |                  |                  |
-| 1         | 2023-06-01 | 1.393380   | -0.048836        | 0.450365         | 2.336394         | 2.835595         |
-| 1         | 2023-06-02 | -0.640599  | -2.789734        | -2.045843        | 0.764645         | 1.508536         |
-| 1         | 2023-06-05 | -0.508753  | -2.327246        | -1.697802        | 0.680296         | 1.309740         |
-| ...       | ...        | ...        | ...              | ...              | ...              | ...              |
-| 1         | 2023-06-12 | -1.251548  | -6.549860        | -4.715928        | 2.212832         | 4.046764         |
-| 1         | 2023-06-13 | 0.479689   | -3.951083        | -2.417437        | 3.376815         | 4.910460         |
-| 1         | 2023-06-14 | -0.318133  | -3.508017        | -2.403886        | 1.767620         | 2.871751         |
+|  | ds | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-lo-80 | GARCH(1,1)-hi-80 | GARCH(1,1)-hi-95 |
+|----|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |  |
+| 1 | 2023-06-01 | 1.393380 | -0.048836 | 0.450365 | 2.336394 | 2.835595 |
+| 1 | 2023-06-02 | -0.640599 | -2.789734 | -2.045843 | 0.764645 | 1.508536 |
+| 1 | 2023-06-05 | -0.508753 | -2.327246 | -1.697802 | 0.680296 | 1.309740 |
+| ... | ... | ... | ... | ... | ... | ... |
+| 1 | 2023-06-12 | -1.251548 | -6.549860 | -4.715928 | 2.212832 | 4.046764 |
+| 1 | 2023-06-13 | 0.479689 | -3.951083 | -2.417437 | 3.376815 | 4.910460 |
+| 1 | 2023-06-14 | -0.318133 | -3.508017 | -2.403886 | 1.767620 | 2.871751 |
 
 We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
@@ -1062,16 +1062,16 @@ df_plot=pd.concat([df, forecast_df]).set_index('ds').tail(220)
 df_plot
 ```
 
-|            | unique_id | y         | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-lo-80 | GARCH(1,1)-hi-80 | GARCH(1,1)-hi-95 |
-|------------|-----------|-----------|------------|------------------|------------------|------------------|------------------|
-| ds         |           |           |            |                  |                  |                  |                  |
-| 2023-03-15 | 1         | -0.698088 | NaN        | NaN              | NaN              | NaN              | NaN              |
-| 2023-03-16 | 1         | 1.756201  | NaN        | NaN              | NaN              | NaN              | NaN              |
-| 2023-03-17 | 1         | -1.101946 | NaN        | NaN              | NaN              | NaN              | NaN              |
-| ...        | ...       | ...       | ...        | ...              | ...              | ...              | ...              |
-| 2023-09-21 | NaN       | NaN       | -0.199650  | -1.780158        | -1.233088        | 0.833789         | 1.380858         |
-| 2023-09-22 | NaN       | NaN       | -0.161219  | -1.425179        | -0.987678        | 0.665241         | 1.102742         |
-| 2023-09-25 | NaN       | NaN       | 0.136796   | -0.916991        | -0.552238        | 0.825831         | 1.190583         |
+|  | unique_id | y | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-lo-80 | GARCH(1,1)-hi-80 | GARCH(1,1)-hi-95 |
+|----|----|----|----|----|----|----|----|
+| ds |  |  |  |  |  |  |  |
+| 2023-03-15 | 1 | -0.698088 | NaN | NaN | NaN | NaN | NaN |
+| 2023-03-16 | 1 | 1.756201 | NaN | NaN | NaN | NaN | NaN |
+| 2023-03-17 | 1 | -1.101946 | NaN | NaN | NaN | NaN | NaN |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 2023-09-21 | NaN | NaN | -0.199650 | -1.780158 | -1.233088 | 0.833789 | 1.380858 |
+| 2023-09-22 | NaN | NaN | -0.161219 | -1.425179 | -0.987678 | 0.665241 | 1.102742 |
+| 2023-09-25 | NaN | NaN | 0.136796 | -0.916991 | -0.552238 | 0.825831 | 1.190583 |
 
 ```python
 def plot_forecasts(y_hist, y_true, y_pred, models):

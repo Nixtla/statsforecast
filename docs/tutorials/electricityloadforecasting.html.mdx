@@ -335,14 +335,14 @@ end = time()
 forecasts_test.head()
 ```
 
-|                 | ds                  | MSTL         | MSTL-lo-90   | MSTL-hi-90   | SeasonalNaive | SeasonalNaive-lo-90 | SeasonalNaive-hi-90 |
-|-----------------|---------------------|--------------|--------------|--------------|---------------|---------------------|---------------------|
-| unique_id       |                     |              |              |              |               |                     |                     |
-| PJM_Load_hourly | 2001-12-31 01:00:00 | 28345.212891 | 27973.572266 | 28716.853516 | 28326.0       | 23468.693359        | 33183.304688        |
-| PJM_Load_hourly | 2001-12-31 02:00:00 | 27567.455078 | 26917.085938 | 28217.824219 | 27362.0       | 22504.693359        | 32219.306641        |
-| PJM_Load_hourly | 2001-12-31 03:00:00 | 27260.001953 | 26372.138672 | 28147.865234 | 27108.0       | 22250.693359        | 31965.306641        |
-| PJM_Load_hourly | 2001-12-31 04:00:00 | 27328.125000 | 26236.410156 | 28419.839844 | 26865.0       | 22007.693359        | 31722.306641        |
-| PJM_Load_hourly | 2001-12-31 05:00:00 | 27640.673828 | 26370.773438 | 28910.572266 | 26808.0       | 21950.693359        | 31665.306641        |
+|  | ds | MSTL | MSTL-lo-90 | MSTL-hi-90 | SeasonalNaive | SeasonalNaive-lo-90 | SeasonalNaive-hi-90 |
+|----|----|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |  |  |
+| PJM_Load_hourly | 2001-12-31 01:00:00 | 28345.212891 | 27973.572266 | 28716.853516 | 28326.0 | 23468.693359 | 33183.304688 |
+| PJM_Load_hourly | 2001-12-31 02:00:00 | 27567.455078 | 26917.085938 | 28217.824219 | 27362.0 | 22504.693359 | 32219.306641 |
+| PJM_Load_hourly | 2001-12-31 03:00:00 | 27260.001953 | 26372.138672 | 28147.865234 | 27108.0 | 22250.693359 | 31965.306641 |
+| PJM_Load_hourly | 2001-12-31 04:00:00 | 27328.125000 | 26236.410156 | 28419.839844 | 26865.0 | 22007.693359 | 31722.306641 |
+| PJM_Load_hourly | 2001-12-31 05:00:00 | 27640.673828 | 26370.773438 | 28910.572266 | 26808.0 | 21950.693359 | 31665.306641 |
 
 ```python
 time_mstl = (end - init) / 60
@@ -450,13 +450,13 @@ forecast_prophet.head()
 23:41:56 - cmdstanpy - INFO - Chain [1] done processing
 ```
 
-|     | unique_id       | ds                  | Prophet      | Prophet-lo-90 | Prophet-hi-90 |
-|-----|-----------------|---------------------|--------------|---------------|---------------|
-| 0   | PJM_Load_hourly | 2001-12-31 01:00:00 | 25317.658386 | 20757.919539  | 30313.561582  |
-| 1   | PJM_Load_hourly | 2001-12-31 02:00:00 | 24024.188077 | 19304.093939  | 28667.495805  |
-| 2   | PJM_Load_hourly | 2001-12-31 03:00:00 | 23348.306824 | 18608.982825  | 28497.334752  |
-| 3   | PJM_Load_hourly | 2001-12-31 04:00:00 | 23356.150113 | 18721.142270  | 28136.888630  |
-| 4   | PJM_Load_hourly | 2001-12-31 05:00:00 | 24130.861217 | 19896.188455  | 28970.202276  |
+|  | unique_id | ds | Prophet | Prophet-lo-90 | Prophet-hi-90 |
+|----|----|----|----|----|----|
+| 0 | PJM_Load_hourly | 2001-12-31 01:00:00 | 25317.658386 | 20757.919539 | 30313.561582 |
+| 1 | PJM_Load_hourly | 2001-12-31 02:00:00 | 24024.188077 | 19304.093939 | 28667.495805 |
+| 2 | PJM_Load_hourly | 2001-12-31 03:00:00 | 23348.306824 | 18608.982825 | 28497.334752 |
+| 3 | PJM_Load_hourly | 2001-12-31 04:00:00 | 23356.150113 | 18721.142270 | 28136.888630 |
+| 4 | PJM_Load_hourly | 2001-12-31 05:00:00 | 24130.861217 | 19896.188455 | 28970.202276 |
 
 ```python
 time_prophet = (end - init) / 60
@@ -542,14 +542,6 @@ INFO - (NP.df_utils._infer_frequency) - Dataframe freq automatically defined as 
 INFO - (NP.config.init_data_params) - Setting normalization to global as only one dataframe provided for training.
 INFO - (NP.config.set_auto_batch_epoch) - Auto-set batch_size to 64
 INFO - (NP.config.set_auto_batch_epoch) - Auto-set epochs to 76
-INFO - (NP.df_utils._infer_frequency) - Major frequency H corresponds to 99.973% of the data.
-INFO - (NP.df_utils._infer_frequency) - Defined frequency is equal to major frequency - H
-INFO - (NP.df_utils.return_df_in_original_format) - Returning df with no ID column
-INFO - (NP.df_utils._infer_frequency) - Major frequency H corresponds to 95.833% of the data.
-INFO - (NP.df_utils._infer_frequency) - Defined frequency is equal to major frequency - H
-INFO - (NP.df_utils._infer_frequency) - Major frequency H corresponds to 95.833% of the data.
-INFO - (NP.df_utils._infer_frequency) - Defined frequency is equal to major frequency - H
-INFO - (NP.df_utils.return_df_in_original_format) - Returning df with no ID column
 ```
 
 ``` text
@@ -561,16 +553,30 @@ Training: 0it [00:00, ?it/s]
 ```
 
 ``` text
+INFO - (NP.df_utils._infer_frequency) - Major frequency H corresponds to 99.973% of the data.
+INFO - (NP.df_utils._infer_frequency) - Defined frequency is equal to major frequency - H
+INFO - (NP.df_utils.return_df_in_original_format) - Returning df with no ID column
+INFO - (NP.df_utils._infer_frequency) - Major frequency H corresponds to 95.833% of the data.
+INFO - (NP.df_utils._infer_frequency) - Defined frequency is equal to major frequency - H
+INFO - (NP.df_utils._infer_frequency) - Major frequency H corresponds to 95.833% of the data.
+INFO - (NP.df_utils._infer_frequency) - Defined frequency is equal to major frequency - H
+```
+
+``` text
 Predicting: 514it [00:00, ?it/s]
 ```
 
-|     | unique_id       | ds                  | NeuralProphet | NeuralProphet-lo-90 | NeuralProphet-hi-90 |
-|-----|-----------------|---------------------|---------------|---------------------|---------------------|
-| 0   | PJM_Load_hourly | 2001-12-31 01:00:00 | 25019.892578  | 22296.675781        | 27408.724609        |
-| 1   | PJM_Load_hourly | 2001-12-31 02:00:00 | 24128.816406  | 21439.851562        | 26551.615234        |
-| 2   | PJM_Load_hourly | 2001-12-31 03:00:00 | 23736.679688  | 20961.978516        | 26289.349609        |
-| 3   | PJM_Load_hourly | 2001-12-31 04:00:00 | 23476.744141  | 20731.619141        | 26050.443359        |
-| 4   | PJM_Load_hourly | 2001-12-31 05:00:00 | 23899.162109  | 21217.503906        | 26449.603516        |
+``` text
+INFO - (NP.df_utils.return_df_in_original_format) - Returning df with no ID column
+```
+
+|  | unique_id | ds | NeuralProphet | NeuralProphet-lo-90 | NeuralProphet-hi-90 |
+|----|----|----|----|----|----|
+| 0 | PJM_Load_hourly | 2001-12-31 01:00:00 | 25019.892578 | 22296.675781 | 27408.724609 |
+| 1 | PJM_Load_hourly | 2001-12-31 02:00:00 | 24128.816406 | 21439.851562 | 26551.615234 |
+| 2 | PJM_Load_hourly | 2001-12-31 03:00:00 | 23736.679688 | 20961.978516 | 26289.349609 |
+| 3 | PJM_Load_hourly | 2001-12-31 04:00:00 | 23476.744141 | 20731.619141 | 26050.443359 |
+| 4 | PJM_Load_hourly | 2001-12-31 05:00:00 | 23899.162109 | 21217.503906 | 26449.603516 |
 
 ```python
 time_np = (end - init) / 60

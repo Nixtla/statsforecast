@@ -22,12 +22,12 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 *Decompose the series into trend and seasonal using the MSTL model.*
 
-|             | **Type**  | **Details**                                                           |
+|  | **Type** | **Details** |
 |--------|---------------------------|-------------------------------------|
-| df          | Union     | DataFrame with columns \[`unique_id`, `ds`, `y`\].                    |
-| model       | MSTL      | Model to use for the decomposition.                                   |
-| freq        | str       | Frequency of the data (pandas alias)                                  |
-| h           | int       | Forecast horizon.                                                     |
+| df | Union | DataFrame with columns \[`unique_id`, `ds`, `y`\]. |
+| model | MSTL | Model to use for the decomposition. |
+| freq | str | Frequency of the data (pandas alias) |
+| h | int | Forecast horizon. |
 | **Returns** | **Tuple** | **Original dataframe with the ‘trend’ and ‘seasonal’ columns added.** |
 
 ```python

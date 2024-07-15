@@ -209,25 +209,25 @@ autoregressive and moving average models also apply to an ARIMA model.
 Many of the models we have already discussed are special cases of the
 ARIMA model, as shown in Table
 
-| Model                      | p d q | Differenced                                                                                                                       | Method                                     |
+| Model | p d q | Differenced | Method |
 |------------------|-------------|-------------------------|-----------------|
-| Arima(0,0,0)               | 0 0 0 | $y_t=Y_t$                                                                                                                         | White noise                                |
-| ARIMA (0,1,0)              | 0 1 0 | $y_t = Y_t - Y_{t-1}$                                                                                                             | Random walk                                |
-| ARIMA (0,2,0)              | 0 2 0 | $y_t = Y_t - 2Y_{t-1} + Y_{t-2}$                                                                                                  | Constant                                   |
-| ARIMA (1,0,0)              | 1 0 0 | $\hat Y_t = \mu + \Phi_1 Y_{t-1} + \epsilon$                                                                                      | AR(1): AR(1): First-order regression model |
-| ARIMA (2, 0, 0)            | 2 0 0 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1} + \Phi_2 Y_{t-2} + \epsilon$                                                                  | AR(2): Second-order regression model       |
-| ARIMA (1, 1, 0)            | 1 1 0 | $\hat Y_t = \mu + Y_{t-1} + \Phi_1 (Y_{t-1}- Y_{t-2})$                                                                            | Differenced first-order                    |
-| autoregressive model       |       |                                                                                                                                   |                                            |
-| ARIMA (0, 1, 1)            | 0 1 1 | $\hat Y_t = Y_{t-1} - \Phi_1 e^{t-1}$                                                                                             | Simple exponential                         |
-| smoothing                  |       |                                                                                                                                   |                                            |
-| ARIMA (0, 0, 1)            | 0 0 1 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1}$                                                                          | MA(1): First-order                         |
-| regression model           |       |                                                                                                                                   |                                            |
-| ARIMA (0, 0, 2)            | 0 0 2 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1} - \omega_2 \epsilon_{t-2}$                                                | MA(2): Second-order                        |
-| regression model           |       |                                                                                                                                   |                                            |
-| ARIMA (1, 0, 1)            | 1 0 1 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1}+ \epsilon_t - \omega_1 \epsilon_{t-1}$                                                        | ARMA model                                 |
-| ARIMA (1, 1, 1)            | 1 1 1 | $\Delta Y_t = \Phi_1 Y_{t-1} + \epsilon_t - \omega_1 \epsilon_{t-1}$                                                              | ARIMA model                                |
-| ARIMA (1, 1, 2)            | 1 1 2 | $\hat Y_t = Y_{t-1} + \Phi_1 (Y_{t-1} - Y_{t-2} )- \Theta_1 e_{t-1} - \Theta_1 e_{t-1}$ Damped-trend linear Exponential smoothing |                                            |
-| ARIMA (0, 2, 1) OR (0,2,2) | 0 2 1 | $\hat Y_t = 2 Y_{t-1} - Y_{t-2} - \Theta_1 e_{t-1} - \Theta_2 e_{t-2}$                                                            | Linear exponential smoothing               |
+| Arima(0,0,0) | 0 0 0 | $y_t=Y_t$ | White noise |
+| ARIMA (0,1,0) | 0 1 0 | $y_t = Y_t - Y_{t-1}$ | Random walk |
+| ARIMA (0,2,0) | 0 2 0 | $y_t = Y_t - 2Y_{t-1} + Y_{t-2}$ | Constant |
+| ARIMA (1,0,0) | 1 0 0 | $\hat Y_t = \mu + \Phi_1 Y_{t-1} + \epsilon$ | AR(1): AR(1): First-order regression model |
+| ARIMA (2, 0, 0) | 2 0 0 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1} + \Phi_2 Y_{t-2} + \epsilon$ | AR(2): Second-order regression model |
+| ARIMA (1, 1, 0) | 1 1 0 | $\hat Y_t = \mu + Y_{t-1} + \Phi_1 (Y_{t-1}- Y_{t-2})$ | Differenced first-order |
+| autoregressive model |  |  |  |
+| ARIMA (0, 1, 1) | 0 1 1 | $\hat Y_t = Y_{t-1} - \Phi_1 e^{t-1}$ | Simple exponential |
+| smoothing |  |  |  |
+| ARIMA (0, 0, 1) | 0 0 1 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1}$ | MA(1): First-order |
+| regression model |  |  |  |
+| ARIMA (0, 0, 2) | 0 0 2 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1} - \omega_2 \epsilon_{t-2}$ | MA(2): Second-order |
+| regression model |  |  |  |
+| ARIMA (1, 0, 1) | 1 0 1 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1}+ \epsilon_t - \omega_1 \epsilon_{t-1}$ | ARMA model |
+| ARIMA (1, 1, 1) | 1 1 1 | $\Delta Y_t = \Phi_1 Y_{t-1} + \epsilon_t - \omega_1 \epsilon_{t-1}$ | ARIMA model |
+| ARIMA (1, 1, 2) | 1 1 2 | $\hat Y_t = Y_{t-1} + \Phi_1 (Y_{t-1} - Y_{t-2} )- \Theta_1 e_{t-1} - \Theta_1 e_{t-1}$ Damped-trend linear Exponential smoothing |  |
+| ARIMA (0, 2, 1) OR (0,2,2) | 0 2 1 | $\hat Y_t = 2 Y_{t-1} - Y_{t-2} - \Theta_1 e_{t-1} - \Theta_2 e_{t-2}$ | Linear exponential smoothing |
 
 Once we start combining components in this way to form more complicated
 models, it is much easier to work with the backshift notation. For

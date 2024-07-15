@@ -81,21 +81,21 @@ autoregressive and moving average models also apply to an ARIMA model.
 Many of the models we have already discussed are special cases of the
 ARIMA model, as shown in Table
 
-| Model                      | p d q | Differenced                                                                             | Method                                       |
+| Model | p d q | Differenced | Method |
 |------------------|-------------|-------------------------|-----------------|
-| Arima(0,0,0)               | 0 0 0 | $y_t=Y_t$                                                                               | White noise                                  |
-| ARIMA (0,1,0)              | 0 1 0 | $y_t = Y_t - Y_{t-1}$                                                                   | Random walk                                  |
-| ARIMA (0,2,0)              | 0 2 0 | $y_t = Y_t - 2Y_{t-1} + Y_{t-2}$                                                        | Constant                                     |
-| ARIMA (1,0,0)              | 1 0 0 | $\hat Y_t = \mu + \Phi_1 Y_{t-1} + \epsilon$                                            | AR(1): AR(1): First-order regression model   |
-| ARIMA (2, 0, 0)            | 2 0 0 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1} + \Phi_2 Y_{t-2} + \epsilon$                        | AR(2): Second-order regression model         |
-| ARIMA (1, 1, 0)            | 1 1 0 | $\hat Y_t = \mu + Y_{t-1} + \Phi_1 (Y_{t-1}- Y_{t-2})$                                  | Differenced first-order autoregressive model |
-| ARIMA (0, 1, 1)            | 0 1 1 | $\hat Y_t = Y_{t-1} - \Phi_1 e^{t-1}$                                                   | Simple exponential smoothing                 |
-| ARIMA (0, 0, 1)            | 0 0 1 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1}$                                | MA(1): First-order regression model          |
-| ARIMA (0, 0, 2)            | 0 0 2 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1} - \omega_2 \epsilon_{t-2}$      | MA(2): Second-order regression model         |
-| ARIMA (1, 0, 1)            | 1 0 1 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1}+ \epsilon_t - \omega_1 \epsilon_{t-1}$              | ARMA model                                   |
-| ARIMA (1, 1, 1)            | 1 1 1 | $\Delta Y_t = \Phi_1 Y_{t-1} + \epsilon_t - \omega_1 \epsilon_{t-1}$                    | ARIMA model                                  |
-| ARIMA (1, 1, 2)            | 1 1 2 | $\hat Y_t = Y_{t-1} + \Phi_1 (Y_{t-1} - Y_{t-2} )- \Theta_1 e_{t-1} - \Theta_1 e_{t-1}$ | Damped-trend linear Exponential smoothing    |
-| ARIMA (0, 2, 1) OR (0,2,2) | 0 2 1 | $\hat Y_t = 2 Y_{t-1} - Y_{t-2} - \Theta_1 e_{t-1} - \Theta_2 e_{t-2}$                  | Linear exponential smoothing                 |
+| Arima(0,0,0) | 0 0 0 | $y_t=Y_t$ | White noise |
+| ARIMA (0,1,0) | 0 1 0 | $y_t = Y_t - Y_{t-1}$ | Random walk |
+| ARIMA (0,2,0) | 0 2 0 | $y_t = Y_t - 2Y_{t-1} + Y_{t-2}$ | Constant |
+| ARIMA (1,0,0) | 1 0 0 | $\hat Y_t = \mu + \Phi_1 Y_{t-1} + \epsilon$ | AR(1): AR(1): First-order regression model |
+| ARIMA (2, 0, 0) | 2 0 0 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1} + \Phi_2 Y_{t-2} + \epsilon$ | AR(2): Second-order regression model |
+| ARIMA (1, 1, 0) | 1 1 0 | $\hat Y_t = \mu + Y_{t-1} + \Phi_1 (Y_{t-1}- Y_{t-2})$ | Differenced first-order autoregressive model |
+| ARIMA (0, 1, 1) | 0 1 1 | $\hat Y_t = Y_{t-1} - \Phi_1 e^{t-1}$ | Simple exponential smoothing |
+| ARIMA (0, 0, 1) | 0 0 1 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1}$ | MA(1): First-order regression model |
+| ARIMA (0, 0, 2) | 0 0 2 | $\hat Y_t = \mu_0+ \epsilon_t - \omega_1 \epsilon_{t-1} - \omega_2 \epsilon_{t-2}$ | MA(2): Second-order regression model |
+| ARIMA (1, 0, 1) | 1 0 1 | $\hat Y_t = \Phi_0 + \Phi_1 Y_{t-1}+ \epsilon_t - \omega_1 \epsilon_{t-1}$ | ARMA model |
+| ARIMA (1, 1, 1) | 1 1 1 | $\Delta Y_t = \Phi_1 Y_{t-1} + \epsilon_t - \omega_1 \epsilon_{t-1}$ | ARIMA model |
+| ARIMA (1, 1, 2) | 1 1 2 | $\hat Y_t = Y_{t-1} + \Phi_1 (Y_{t-1} - Y_{t-2} )- \Theta_1 e_{t-1} - \Theta_1 e_{t-1}$ | Damped-trend linear Exponential smoothing |
+| ARIMA (0, 2, 1) OR (0,2,2) | 0 2 1 | $\hat Y_t = 2 Y_{t-1} - Y_{t-2} - \Theta_1 e_{t-1} - \Theta_2 e_{t-2}$ | Linear exponential smoothing |
 
 Once we start combining components in this way to form more complicated
 models, it is much easier to work with the backshift notation. For
@@ -152,12 +152,12 @@ and time, even compared with the original implementation in R.
 
 | dataset | metric | auto_arima_nixtla | auto_arima_pmdarima \[1\] | auto_arima_r | prophet |
 |:--------|:--------|---------------:|-----------------:|------------:|--------:|
-| Daily   | MASE   |          **3.26** |                      3.35 |         4.46 |   14.26 |
-| Daily   | time   |          **1.41** |                     27.61 |         1.81 |  514.33 |
-| Hourly  | MASE   |          **0.92** |                         — |         1.02 |    1.78 |
-| Hourly  | time   |         **12.92** |                         — |        23.95 |   17.27 |
-| Weekly  | MASE   |          **2.34** |                      2.47 |         2.58 |    7.29 |
-| Weekly  | time   |              0.42 |                      2.92 |     **0.22** |   19.82 |
+| Daily | MASE | **3.26** | 3.35 | 4.46 | 14.26 |
+| Daily | time | **1.41** | 27.61 | 1.81 | 514.33 |
+| Hourly | MASE | **0.92** | — | 1.02 | 1.78 |
+| Hourly | time | **12.92** | — | 23.95 | 17.27 |
+| Weekly | MASE | **2.34** | 2.47 | 2.58 | 7.29 |
+| Weekly | time | 0.42 | 2.92 | **0.22** | 19.82 |
 
 \[1\] The model `auto_arima` from `pmdarima` had a problem with Hourly
 data. An issue was opened.
@@ -771,16 +771,16 @@ forecast_df = sf.predict(h=12, level = [80, 95])
 forecast_df
 ```
 
-|           | ds         | AutoARIMA  | AutoARIMA-lo-95 | AutoARIMA-lo-80 | AutoARIMA-hi-80 | AutoARIMA-hi-95 |
-|-----------|------------|------------|-----------------|-----------------|-----------------|-----------------|
-| unique_id |            |            |                 |                 |                 |                 |
-| 1         | 2016-09-01 | 109.955437 | 102.116188      | 104.829628      | 115.081245      | 117.794685      |
-| 1         | 2016-10-01 | 121.920509 | 112.380608      | 115.682701      | 128.158310      | 131.460403      |
-| 1         | 2016-11-01 | 122.458389 | 112.200500      | 115.751114      | 129.165665      | 132.716278      |
-| ...       | ...        | ...        | ...             | ...             | ...             | ...             |
-| 1         | 2017-06-01 | 96.751160  | 85.873802       | 89.638840       | 103.863487      | 107.628525      |
-| 1         | 2017-07-01 | 97.451607  | 86.572372       | 90.338058       | 104.565147      | 108.330833      |
-| 1         | 2017-08-01 | 103.420616 | 92.540489       | 96.306480       | 110.534752      | 114.300743      |
+|  | ds | AutoARIMA | AutoARIMA-lo-95 | AutoARIMA-lo-80 | AutoARIMA-hi-80 | AutoARIMA-hi-95 |
+|----|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |  |
+| 1 | 2016-09-01 | 109.955437 | 102.116188 | 104.829628 | 115.081245 | 117.794685 |
+| 1 | 2016-10-01 | 121.920509 | 112.380608 | 115.682701 | 128.158310 | 131.460403 |
+| 1 | 2016-11-01 | 122.458389 | 112.200500 | 115.751114 | 129.165665 | 132.716278 |
+| ... | ... | ... | ... | ... | ... | ... |
+| 1 | 2017-06-01 | 96.751160 | 85.873802 | 89.638840 | 103.863487 | 107.628525 |
+| 1 | 2017-07-01 | 97.451607 | 86.572372 | 90.338058 | 104.565147 | 108.330833 |
+| 1 | 2017-08-01 | 103.420616 | 92.540489 | 96.306480 | 110.534752 | 114.300743 |
 
 We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
@@ -791,16 +791,16 @@ df_plot=pd.concat([df, forecast_df]).set_index('ds').tail(220)
 df_plot
 ```
 
-|            | y        | unique_id | AutoARIMA  | AutoARIMA-lo-95 | AutoARIMA-lo-80 | AutoARIMA-hi-80 | AutoARIMA-hi-95 |
-|------------|----------|-----------|------------|-----------------|-----------------|-----------------|-----------------|
-| ds         |          |           |            |                 |                 |                 |                 |
-| 2000-05-01 | 108.7202 | 1         | NaN        | NaN             | NaN             | NaN             | NaN             |
-| 2000-06-01 | 114.2071 | 1         | NaN        | NaN             | NaN             | NaN             | NaN             |
-| 2000-07-01 | 111.8737 | 1         | NaN        | NaN             | NaN             | NaN             | NaN             |
-| ...        | ...      | ...       | ...        | ...             | ...             | ...             | ...             |
-| 2017-06-01 | NaN      | NaN       | 96.751160  | 85.873802       | 89.638840       | 103.863487      | 107.628525      |
-| 2017-07-01 | NaN      | NaN       | 97.451607  | 86.572372       | 90.338058       | 104.565147      | 108.330833      |
-| 2017-08-01 | NaN      | NaN       | 103.420616 | 92.540489       | 96.306480       | 110.534752      | 114.300743      |
+|  | y | unique_id | AutoARIMA | AutoARIMA-lo-95 | AutoARIMA-lo-80 | AutoARIMA-hi-80 | AutoARIMA-hi-95 |
+|----|----|----|----|----|----|----|----|
+| ds |  |  |  |  |  |  |  |
+| 2000-05-01 | 108.7202 | 1 | NaN | NaN | NaN | NaN | NaN |
+| 2000-06-01 | 114.2071 | 1 | NaN | NaN | NaN | NaN | NaN |
+| 2000-07-01 | 111.8737 | 1 | NaN | NaN | NaN | NaN | NaN |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 2017-06-01 | NaN | NaN | 96.751160 | 85.873802 | 89.638840 | 103.863487 | 107.628525 |
+| 2017-07-01 | NaN | NaN | 97.451607 | 86.572372 | 90.338058 | 104.565147 | 108.330833 |
+| 2017-08-01 | NaN | NaN | 103.420616 | 92.540489 | 96.306480 | 110.534752 | 114.300743 |
 
 Now let’s visualize the result of our forecast and the historical data
 of our time series, also let’s draw the confidence interval that we have

@@ -91,13 +91,16 @@ print(f"\nMLflow run id:\n{run.info.run_id}")
 ``` text
 Metrics: 
 {'mae': 6.712853959225143, 'mape': 0.11719246764336884}
-
-MLflow run id:
-0319bbd664424fcd88d6c532e3ecac77
 ```
 
 ``` text
 2023/10/20 23:45:36 WARNING mlflow.utils.environment: Encountered an unexpected error while inferring pip requirements (model URI: /var/folders/w2/91_v34nx0xs2npnl3zsl9tmm0000gn/T/tmpt4686vpu/model/model.pkl, flavor: statsforecast), fall back to return ['statsforecast==1.6.0']. Set logging level to DEBUG to see the full traceback.
+```
+
+``` text
+
+MLflow run id:
+0319bbd664424fcd88d6c532e3ecac77
 ```
 
 ## Viewing Experiment
@@ -229,11 +232,11 @@ response = requests.post(url, json=json_data)
 pd.DataFrame(response.json()['predictions']).head()
 ```
 
-|     | ds                  | AutoARIMA  | AutoARIMA-lo-95 | AutoARIMA-lo-90 | AutoARIMA-hi-90 | AutoARIMA-hi-95 |
-|-----|---------------------|------------|-----------------|-----------------|-----------------|-----------------|
-| 0   | 2000-02-13T00:00:00 | 55.894432  | 42.131100       | 44.343880       | 67.444984       | 69.657768       |
-| 1   | 2000-02-14T00:00:00 | 97.818054  | 84.054718       | 86.267502       | 109.368607      | 111.581390      |
-| 2   | 2000-02-15T00:00:00 | 146.745422 | 132.982086      | 135.194870      | 158.295975      | 160.508759      |
-| 3   | 2000-02-16T00:00:00 | 188.888336 | 175.125015      | 177.337784      | 200.438904      | 202.651672      |
-| 4   | 2000-02-17T00:00:00 | 231.493637 | 217.730301      | 219.943085      | 243.044189      | 245.256973      |
+|  | ds | AutoARIMA | AutoARIMA-lo-95 | AutoARIMA-lo-90 | AutoARIMA-hi-90 | AutoARIMA-hi-95 |
+|----|----|----|----|----|----|----|
+| 0 | 2000-02-13T00:00:00 | 55.894432 | 42.131100 | 44.343880 | 67.444984 | 69.657768 |
+| 1 | 2000-02-14T00:00:00 | 97.818054 | 84.054718 | 86.267502 | 109.368607 | 111.581390 |
+| 2 | 2000-02-15T00:00:00 | 146.745422 | 132.982086 | 135.194870 | 158.295975 | 160.508759 |
+| 3 | 2000-02-16T00:00:00 | 188.888336 | 175.125015 | 177.337784 | 200.438904 | 202.651672 |
+| 4 | 2000-02-17T00:00:00 | 231.493637 | 217.730301 | 219.943085 | 243.044189 | 245.256973 |
 

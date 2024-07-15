@@ -188,11 +188,11 @@ models.
 
 ### Advantages and disadvantages of the Autoregressive Conditional Heteroskedasticity (ARCH) model:
 
-| Advantages                                                                                                                                           | Disadvantages                                                                                                                                                      |
+| Advantages | Disadvantages |
 |--------------------------------|-----------------------------------------|
-| \- The ARCH model is useful for modeling volatility in financial time series, which is important for investment decision making and risk management. | \- The ARCH model assumes that the forecast errors are independent and identically distributed, which may not be realistic in some cases.                          |
-| \- The ARCH model takes heteroscedasticity into account, which means that it can model time series with variances that change over time.             | \- The ARCH model can be difficult to fit to data with many parameters, which may require large amounts of data or advanced estimation techniques.                 |
-| \- The ARCH model is relatively easy to use and can be implemented with standard econometrics software.                                              | \- The ARCH model does not take into account the possible relationship between the mean and the variance of the time series, which may be important in some cases. |
+| \- The ARCH model is useful for modeling volatility in financial time series, which is important for investment decision making and risk management. | \- The ARCH model assumes that the forecast errors are independent and identically distributed, which may not be realistic in some cases. |
+| \- The ARCH model takes heteroscedasticity into account, which means that it can model time series with variances that change over time. | \- The ARCH model can be difficult to fit to data with many parameters, which may require large amounts of data or advanced estimation techniques. |
+| \- The ARCH model is relatively easy to use and can be implemented with standard econometrics software. | \- The ARCH model does not take into account the possible relationship between the mean and the variance of the time series, which may be important in some cases. |
 
 Note:
 
@@ -280,13 +280,13 @@ SP_500 = pd.read_csv(query_string)
 SP_500.head()
 ```
 
-|     | Date       | Open        | High        | Low         | Close       | Adj Close   | Volume     |
-|-----|------------|-------------|-------------|-------------|-------------|-------------|------------|
-| 0   | 2015-01-02 | 2058.899902 | 2072.360107 | 2046.040039 | 2058.199951 | 2058.199951 | 2708700000 |
-| 1   | 2015-01-05 | 2054.439941 | 2054.439941 | 2017.339966 | 2020.579956 | 2020.579956 | 3799120000 |
-| 2   | 2015-01-06 | 2022.150024 | 2030.250000 | 1992.439941 | 2002.609985 | 2002.609985 | 4460110000 |
-| 3   | 2015-01-07 | 2005.550049 | 2029.609985 | 2005.550049 | 2025.900024 | 2025.900024 | 3805480000 |
-| 4   | 2015-01-08 | 2030.609985 | 2064.080078 | 2030.609985 | 2062.139893 | 2062.139893 | 3934010000 |
+|  | Date | Open | High | Low | Close | Adj Close | Volume |
+|----|----|----|----|----|----|----|----|
+| 0 | 2015-01-02 | 2058.899902 | 2072.360107 | 2046.040039 | 2058.199951 | 2058.199951 | 2708700000 |
+| 1 | 2015-01-05 | 2054.439941 | 2054.439941 | 2017.339966 | 2020.579956 | 2020.579956 | 3799120000 |
+| 2 | 2015-01-06 | 2022.150024 | 2030.250000 | 1992.439941 | 2002.609985 | 2002.609985 | 4460110000 |
+| 3 | 2015-01-07 | 2005.550049 | 2029.609985 | 2005.550049 | 2025.900024 | 2025.900024 | 3805480000 |
+| 4 | 2015-01-08 | 2030.609985 | 2064.080078 | 2030.609985 | 2062.139893 | 2062.139893 | 3934010000 |
 
 ```python
 df=SP_500[["Date","Close"]]
@@ -938,16 +938,16 @@ forecast_df = sf.predict(h=horizon, level=[80,95])
 forecast_df
 ```
 
-|           | ds         | ARCH(2)   | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ARCH(2)-hi-80 | ARCH(2)-hi-95 |
-|-----------|------------|-----------|---------------|---------------|---------------|---------------|
-| unique_id |            |           |               |               |               |               |
-| 1         | 2023-05-25 | 1.681836  | -0.419322     | 0.307963      | 3.055710      | 3.782995      |
-| 1         | 2023-05-26 | -0.777028 | -3.939044     | -2.844559     | 1.290504      | 2.384989      |
-| 1         | 2023-05-29 | -0.677960 | -3.907244     | -2.789475     | 1.433555      | 2.551323      |
-| ...       | ...        | ...       | ...           | ...           | ...           | ...           |
-| 1         | 2023-09-20 | 0.136752  | -0.795371     | -0.472731     | 0.746235      | 1.068876      |
-| 1         | 2023-09-21 | 0.082173  | -0.852268     | -0.528825     | 0.693172      | 1.016615      |
-| 1         | 2023-09-22 | -0.450958 | -1.337117     | -1.030386     | 0.128471      | 0.435202      |
+|  | ds | ARCH(2) | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ARCH(2)-hi-80 | ARCH(2)-hi-95 |
+|----|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |  |
+| 1 | 2023-05-25 | 1.681836 | -0.419322 | 0.307963 | 3.055710 | 3.782995 |
+| 1 | 2023-05-26 | -0.777028 | -3.939044 | -2.844559 | 1.290504 | 2.384989 |
+| 1 | 2023-05-29 | -0.677960 | -3.907244 | -2.789475 | 1.433555 | 2.551323 |
+| ... | ... | ... | ... | ... | ... | ... |
+| 1 | 2023-09-20 | 0.136752 | -0.795371 | -0.472731 | 0.746235 | 1.068876 |
+| 1 | 2023-09-21 | 0.082173 | -0.852268 | -0.528825 | 0.693172 | 1.016615 |
+| 1 | 2023-09-22 | -0.450958 | -1.337117 | -1.030386 | 0.128471 | 0.435202 |
 
 We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
@@ -958,16 +958,16 @@ df_plot=pd.concat([df, forecast_df]).set_index('ds').tail(220)
 df_plot
 ```
 
-|            | unique_id | y         | ARCH(2)   | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ARCH(2)-hi-80 | ARCH(2)-hi-95 |
-|------------|-----------|-----------|-----------|---------------|---------------|---------------|---------------|
-| ds         |           |           |           |               |               |               |               |
-| 2023-03-21 | 1         | 1.298219  | NaN       | NaN           | NaN           | NaN           | NaN           |
-| 2023-03-22 | 1         | -1.646322 | NaN       | NaN           | NaN           | NaN           | NaN           |
-| 2023-03-23 | 1         | 0.298453  | NaN       | NaN           | NaN           | NaN           | NaN           |
-| ...        | ...       | ...       | ...       | ...           | ...           | ...           | ...           |
-| 2023-09-20 | NaN       | NaN       | 0.136752  | -0.795371     | -0.472731     | 0.746235      | 1.068876      |
-| 2023-09-21 | NaN       | NaN       | 0.082173  | -0.852268     | -0.528825     | 0.693172      | 1.016615      |
-| 2023-09-22 | NaN       | NaN       | -0.450958 | -1.337117     | -1.030386     | 0.128471      | 0.435202      |
+|  | unique_id | y | ARCH(2) | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ARCH(2)-hi-80 | ARCH(2)-hi-95 |
+|----|----|----|----|----|----|----|----|
+| ds |  |  |  |  |  |  |  |
+| 2023-03-21 | 1 | 1.298219 | NaN | NaN | NaN | NaN | NaN |
+| 2023-03-22 | 1 | -1.646322 | NaN | NaN | NaN | NaN | NaN |
+| 2023-03-23 | 1 | 0.298453 | NaN | NaN | NaN | NaN | NaN |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 2023-09-20 | NaN | NaN | 0.136752 | -0.795371 | -0.472731 | 0.746235 | 1.068876 |
+| 2023-09-21 | NaN | NaN | 0.082173 | -0.852268 | -0.528825 | 0.693172 | 1.016615 |
+| 2023-09-22 | NaN | NaN | -0.450958 | -1.337117 | -1.030386 | 0.128471 | 0.435202 |
 
 ```python
 def plot_forecasts(y_hist, y_true, y_pred, models):

@@ -195,23 +195,23 @@ equations.
 
 Table 1: Additive error ETS models
 
-|                       | Nonseasonal                                                                                                                                                                                | Additive                                                                                                                                                                                                                                    | Multiplicative                                                                                                                                                                                                                                                                                 |
+|  | Nonseasonal | Additive | Multiplicative |
 |--------|--------------------|--------------------|-------------------------|
-| No trend              | $\begin{aligned} &y_{t} = l_{t-1} + \epsilon_t \\  &l_t = l_{t-1} + \alpha \epsilon_t  \end{aligned}$                                                                                      | $\begin{aligned} &y_{t} = l_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \alpha \epsilon_t \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$                                                                                      | $\begin{aligned} &y_{t} = l_{t-1} s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1}}  \end{aligned}$                                                                                                           |
-| Additive              | $\begin{aligned} &y_{t} = l_{t-1} + b_{t-1} + \epsilon_t \\  &l_t = l_{t-1} + b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \epsilon_t  \end{aligned}$                            | $\begin{aligned}  &y_{t} = l_{t-1} + b_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \epsilon_t \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$                           | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1}) s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + b_{t-1}}  \end{aligned}$                     |
-| Additive damped       | $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + \epsilon_t \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\  &b_t = \phi b_{t-1} + \beta \epsilon_t  \end{aligned}$             | $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\  &b_t = \phi b_{t-1} + \beta \epsilon_t \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$             | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = \phi b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + \phi b_{t-1}}  \end{aligned}$ |
-| Multiplicative        | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}}  \end{aligned}$                | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}} \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$                | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}}  \end{aligned}$                      |
-| Multiplicative damped | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi + \epsilon_t \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \epsilon_t \\  &b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}}  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \epsilon_t \\  &b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}} \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}}  \end{aligned}$       |
+| No trend | $\begin{aligned} &y_{t} = l_{t-1} + \epsilon_t \\  &l_t = l_{t-1} + \alpha \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \alpha \epsilon_t \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1}}  \end{aligned}$ |
+| Additive | $\begin{aligned} &y_{t} = l_{t-1} + b_{t-1} + \epsilon_t \\  &l_t = l_{t-1} + b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \epsilon_t  \end{aligned}$ | $\begin{aligned}  &y_{t} = l_{t-1} + b_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \epsilon_t \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1}) s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + b_{t-1}}  \end{aligned}$ |
+| Additive damped | $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + \epsilon_t \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\  &b_t = \phi b_{t-1} + \beta \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} + \phi b_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \epsilon_t \\  &b_t = \phi b_{t-1} + \beta \epsilon_t \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = \phi b_{t-1} + \beta \frac{\epsilon_t}{s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} + \phi b_{t-1}}  \end{aligned}$ |
+| Multiplicative | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}}  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1} + \alpha \epsilon_t \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}} \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1} + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = b_{t-1} + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}}  \end{aligned}$ |
+| Multiplicative damped | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi + \epsilon_t \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \epsilon_t \\  &b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}}  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi + s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \epsilon_t \\  &b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}} \\  &s_t = s_{t-m} + \gamma \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi s_{t-m} + \epsilon_t \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \frac{\epsilon_t}{s_{t-m}} \\  &b_t = b_{t-1}^\phi + \beta \frac{\epsilon_t}{l_{t-1}s_{t-m}} \\  &s_t = s_{t-m} + \gamma \frac{\epsilon_t}{l_{t-1} b_{t-1}}  \end{aligned}$ |
 
 Table 2: Multiplicative error ETS models
 
-|                       | Nonseasonal                                                                                                                                                                                        | Additive                                                                                                                                                                                                                                                                       | Multiplicative                                                                                                                                                                                                                                                             |
+|  | Nonseasonal | Additive | Multiplicative |
 |-----------|----------------------|-----------------|-----------------------|
-| No trend              | $\begin{aligned} &y_{t} = l_{t-1}(1 + \epsilon_t) \\  &l_t = l_{t-1}(1 + \alpha \epsilon_t)  \end{aligned}$                                                                                        | $\begin{aligned} &y_{t} = (l_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$                                                                                                | $\begin{aligned} &y_{t} = l_{t-1} s_{t-m}(1 + \epsilon_t) \\  &l_t = l_{t-1}(1 + \alpha \epsilon_t) \\  &s_t = s_{t-m}(1 + \gamma \epsilon_t)  \end{aligned}$                                                                                                              |
-| Additive              | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1})(1 + \epsilon_t) \\  &l_t = (l_{t-1} + b_{t-1})(1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} + \beta \mu_{y,t} \epsilon_t  \end{aligned}$                | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} + b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &b_t = b_{t-1} + \beta \mu_{y,t} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$                            | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1}) s_{t-m}(1 + \epsilon_t) \\  &l_t = (l_{t-1} + b_{t-1})(1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} + \beta (l_{t-1} + b_{t-1}) \epsilon_t \\  &s_t = s_{t-m} (1 + \gamma \epsilon_t)  \end{aligned}$                           |
-| Additive damped       | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1})(1 + \epsilon_t) \\  &l_t = (l_{t-1} + \phi b_{t-1})(1 + \alpha \epsilon_t) \\  &b_t = \phi b_{t-1} + \beta \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &b_t = \phi b_{t-1} + \beta \mu_{y,t} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$             | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m}(1 + \epsilon_t) \\  &l_t = l_{t-1} + \phi b_{t-1} (1 + \alpha \epsilon_t) \\  &b_t = \phi b_{t-1} + \beta (l_{t-1} + \phi b_{t-1}) \epsilon_t \\  &s_t = s_{t-m}(1 + \gamma \epsilon_t)  \end{aligned}$         |
-| Multiplicative        | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1} (1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} (1 + \beta \epsilon_t)  \end{aligned}$                            | $\begin{aligned} &y_{t} = (l_{t-1} b_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &b_t = b_{t-1} + \beta \frac{\mu_{y,t}}{l_{t-1}} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$                | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} s_{t-m} (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1} (1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} (1 + \beta \epsilon_t) \\  &s_t = s_{t-m} (1 + \gamma \epsilon_t)  \end{aligned}$                                                 |
-| Multiplicative damped | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1}^\phi (1 + \alpha \epsilon_t) \\  &b_t = b_{t-1}^\phi (1 + \beta \epsilon_t)  \end{aligned}$             | $\begin{aligned} &y_{t} = (l_{t-1} b_{t-1}^\phi + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \mu_{y,t} \epsilon_t \\  &b_t = b_{t-1}^\phi + \beta \frac{\mu_{y,t}}{l_{t-1}} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi s_{t-m} (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1}^\phi \left(1 + \alpha \epsilon_t\right) \\  &b_t = b_{t-1}^\phi \left(1 + \beta \epsilon_t\right) \\  &s_t = s_{t-m} \left(1 + \gamma \epsilon_t\right)  \end{aligned}$ |
+| No trend | $\begin{aligned} &y_{t} = l_{t-1}(1 + \epsilon_t) \\  &l_t = l_{t-1}(1 + \alpha \epsilon_t)  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} s_{t-m}(1 + \epsilon_t) \\  &l_t = l_{t-1}(1 + \alpha \epsilon_t) \\  &s_t = s_{t-m}(1 + \gamma \epsilon_t)  \end{aligned}$ |
+| Additive | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1})(1 + \epsilon_t) \\  &l_t = (l_{t-1} + b_{t-1})(1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} + \beta \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} + b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &b_t = b_{t-1} + \beta \mu_{y,t} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + b_{t-1}) s_{t-m}(1 + \epsilon_t) \\  &l_t = (l_{t-1} + b_{t-1})(1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} + \beta (l_{t-1} + b_{t-1}) \epsilon_t \\  &s_t = s_{t-m} (1 + \gamma \epsilon_t)  \end{aligned}$ |
+| Additive damped | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1})(1 + \epsilon_t) \\  &l_t = (l_{t-1} + \phi b_{t-1})(1 + \alpha \epsilon_t) \\  &b_t = \phi b_{t-1} + \beta \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} + \phi b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &b_t = \phi b_{t-1} + \beta \mu_{y,t} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} + \phi b_{t-1}) s_{t-m}(1 + \epsilon_t) \\  &l_t = l_{t-1} + \phi b_{t-1} (1 + \alpha \epsilon_t) \\  &b_t = \phi b_{t-1} + \beta (l_{t-1} + \phi b_{t-1}) \epsilon_t \\  &s_t = s_{t-m}(1 + \gamma \epsilon_t)  \end{aligned}$ |
+| Multiplicative | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1} (1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} (1 + \beta \epsilon_t)  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} b_{t-1} + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1} + \alpha \mu_{y,t} \epsilon_t \\  &b_t = b_{t-1} + \beta \frac{\mu_{y,t}}{l_{t-1}} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1} s_{t-m} (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1} (1 + \alpha \epsilon_t) \\  &b_t = b_{t-1} (1 + \beta \epsilon_t) \\  &s_t = s_{t-m} (1 + \gamma \epsilon_t)  \end{aligned}$ |
+| Multiplicative damped | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1}^\phi (1 + \alpha \epsilon_t) \\  &b_t = b_{t-1}^\phi (1 + \beta \epsilon_t)  \end{aligned}$ | $\begin{aligned} &y_{t} = (l_{t-1} b_{t-1}^\phi + s_{t-m})(1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1}^\phi + \alpha \mu_{y,t} \epsilon_t \\  &b_t = b_{t-1}^\phi + \beta \frac{\mu_{y,t}}{l_{t-1}} \epsilon_t \\  &s_t = s_{t-m} + \gamma \mu_{y,t} \epsilon_t  \end{aligned}$ | $\begin{aligned} &y_{t} = l_{t-1} b_{t-1}^\phi s_{t-m} (1 + \epsilon_t) \\  &l_t = l_{t-1} b_{t-1}^\phi \left(1 + \alpha \epsilon_t\right) \\  &b_t = b_{t-1}^\phi \left(1 + \beta \epsilon_t\right) \\  &s_t = s_{t-m} \left(1 + \gamma \epsilon_t\right)  \end{aligned}$ |
 
 From a statistical point of view, formulae in Tables 1 and 2 correspond
 to the “true models”, they explain the models underlying potential data,
@@ -1127,16 +1127,16 @@ Adding 95% confidence interval with the forecast method
 sf.forecast(h=horizon, level=[95])
 ```
 
-|           | ds                  | Add           | Add-lo-95    | Add-hi-95     | Multi         | Multi-lo-95   | Multi-hi-95   |
-|-----------|---------------------|---------------|--------------|---------------|---------------|---------------|---------------|
-| unique_id |                     |               |              |               |               |               |               |
-| 1         | 2017-09-22 00:00:00 | 75020.843750  | 56622.953125 | 93418.734375  | 75016.414062  | 62760.343750  | 87272.476562  |
-| 1         | 2017-09-22 01:00:00 | 73714.437500  | 55310.503906 | 92118.367188  | 74739.921875  | 62483.855469  | 86995.992188  |
-| 1         | 2017-09-22 02:00:00 | 81196.570312  | 62786.074219 | 99607.062500  | 80907.437500  | 68651.367188  | 93163.500000  |
-| ...       | ...                 | ...           | ...          | ...           | ...           | ...           | ...           |
-| 1         | 2017-09-23 03:00:00 | 92962.234375  | 74304.234375 | 111620.242188 | 92432.453125  | 79563.328125  | 105301.585938 |
-| 1         | 2017-09-23 04:00:00 | 115738.320312 | 97069.117188 | 134407.531250 | 112928.710938 | 100059.578125 | 125797.835938 |
-| 1         | 2017-09-23 05:00:00 | 113103.835938 | 94423.414062 | 131784.265625 | 111366.179688 | 98497.054688  | 124235.304688 |
+|  | ds | Add | Add-lo-95 | Add-hi-95 | Multi | Multi-lo-95 | Multi-hi-95 |
+|----|----|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |  |  |
+| 1 | 2017-09-22 00:00:00 | 75020.843750 | 56622.953125 | 93418.734375 | 75016.414062 | 62760.343750 | 87272.476562 |
+| 1 | 2017-09-22 01:00:00 | 73714.437500 | 55310.503906 | 92118.367188 | 74739.921875 | 62483.855469 | 86995.992188 |
+| 1 | 2017-09-22 02:00:00 | 81196.570312 | 62786.074219 | 99607.062500 | 80907.437500 | 68651.367188 | 93163.500000 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 1 | 2017-09-23 03:00:00 | 92962.234375 | 74304.234375 | 111620.242188 | 92432.453125 | 79563.328125 | 105301.585938 |
+| 1 | 2017-09-23 04:00:00 | 115738.320312 | 97069.117188 | 134407.531250 | 112928.710938 | 100059.578125 | 125797.835938 |
+| 1 | 2017-09-23 05:00:00 | 113103.835938 | 94423.414062 | 131784.265625 | 111366.179688 | 98497.054688 | 124235.304688 |
 
 ```python
 Y_hat=Y_hat.reset_index()
@@ -1158,15 +1158,15 @@ Y_hat1 = pd.concat([df,Y_hat],  keys=['unique_id', 'ds'])
 Y_hat1
 ```
 
-|           |     | ds                  | y       | unique_id | Add           | Multi         |
-|-----------|-----|---------------------|---------|-----------|---------------|---------------|
-| unique_id | 0   | 2017-09-13 00:00:00 | 80115.0 | 1         | NaN           | NaN           |
-|           | 1   | 2017-09-13 01:00:00 | 79885.0 | 1         | NaN           | NaN           |
-|           | 2   | 2017-09-13 02:00:00 | 89325.0 | 1         | NaN           | NaN           |
-| ...       | ... | ...                 | ...     | ...       | ...           | ...           |
-| ds        | 27  | 2017-09-23 03:00:00 | NaN     | 1         | 92962.234375  | 92432.453125  |
-|           | 28  | 2017-09-23 04:00:00 | NaN     | 1         | 115738.320312 | 112928.710938 |
-|           | 29  | 2017-09-23 05:00:00 | NaN     | 1         | 113103.835938 | 111366.179688 |
+|  |  | ds | y | unique_id | Add | Multi |
+|----|----|----|----|----|----|----|
+| unique_id | 0 | 2017-09-13 00:00:00 | 80115.0 | 1 | NaN | NaN |
+|  | 1 | 2017-09-13 01:00:00 | 79885.0 | 1 | NaN | NaN |
+|  | 2 | 2017-09-13 02:00:00 | 89325.0 | 1 | NaN | NaN |
+| ... | ... | ... | ... | ... | ... | ... |
+| ds | 27 | 2017-09-23 03:00:00 | NaN | 1 | 92962.234375 | 92432.453125 |
+|  | 28 | 2017-09-23 04:00:00 | NaN | 1 | 115738.320312 | 112928.710938 |
+|  | 29 | 2017-09-23 05:00:00 | NaN | 1 | 113103.835938 | 111366.179688 |
 
 ```python
 fig, ax = plt.subplots(1, 1)
@@ -1225,16 +1225,16 @@ forecast_df = sf.predict(h=horizon, level=[80,95])
 forecast_df
 ```
 
-|           | ds                  | Add           | Add-lo-95    | Add-lo-80     | Add-hi-80     | Add-hi-95     | Multi         | Multi-lo-95   | Multi-lo-80   | Multi-hi-80   | Multi-hi-95   |
-|-----------|---------------------|---------------|--------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|
-| unique_id |                     |               |              |               |               |               |               |               |               |               |               |
-| 1         | 2017-09-22 00:00:00 | 75020.843750  | 56622.953125 | 62991.109375  | 87050.578125  | 93418.734375  | 75016.414062  | 62760.343750  | 67002.601562  | 83030.218750  | 87272.476562  |
-| 1         | 2017-09-22 01:00:00 | 73714.437500  | 55310.503906 | 61680.750000  | 85748.117188  | 92118.367188  | 74739.921875  | 62483.855469  | 66726.109375  | 82753.734375  | 86995.992188  |
-| 1         | 2017-09-22 02:00:00 | 81196.570312  | 62786.074219 | 69158.593750  | 93234.546875  | 99607.062500  | 80907.437500  | 68651.367188  | 72893.625000  | 88921.242188  | 93163.500000  |
-| ...       | ...                 | ...           | ...          | ...           | ...           | ...           | ...           | ...           | ...           | ...           | ...           |
-| 1         | 2017-09-23 03:00:00 | 92962.234375  | 74304.234375 | 80762.421875  | 105162.054688 | 111620.242188 | 92432.453125  | 79563.328125  | 84017.789062  | 100847.125000 | 105301.585938 |
-| 1         | 2017-09-23 04:00:00 | 115738.320312 | 97069.117188 | 103531.187500 | 127945.460938 | 134407.531250 | 112928.710938 | 100059.578125 | 104514.039062 | 121343.375000 | 125797.835938 |
-| 1         | 2017-09-23 05:00:00 | 113103.835938 | 94423.414062 | 100889.359375 | 125318.312500 | 131784.265625 | 111366.179688 | 98497.054688  | 102951.507812 | 119780.851562 | 124235.304688 |
+|  | ds | Add | Add-lo-95 | Add-lo-80 | Add-hi-80 | Add-hi-95 | Multi | Multi-lo-95 | Multi-lo-80 | Multi-hi-80 | Multi-hi-95 |
+|----|----|----|----|----|----|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |  |  |  |  |  |  |
+| 1 | 2017-09-22 00:00:00 | 75020.843750 | 56622.953125 | 62991.109375 | 87050.578125 | 93418.734375 | 75016.414062 | 62760.343750 | 67002.601562 | 83030.218750 | 87272.476562 |
+| 1 | 2017-09-22 01:00:00 | 73714.437500 | 55310.503906 | 61680.750000 | 85748.117188 | 92118.367188 | 74739.921875 | 62483.855469 | 66726.109375 | 82753.734375 | 86995.992188 |
+| 1 | 2017-09-22 02:00:00 | 81196.570312 | 62786.074219 | 69158.593750 | 93234.546875 | 99607.062500 | 80907.437500 | 68651.367188 | 72893.625000 | 88921.242188 | 93163.500000 |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| 1 | 2017-09-23 03:00:00 | 92962.234375 | 74304.234375 | 80762.421875 | 105162.054688 | 111620.242188 | 92432.453125 | 79563.328125 | 84017.789062 | 100847.125000 | 105301.585938 |
+| 1 | 2017-09-23 04:00:00 | 115738.320312 | 97069.117188 | 103531.187500 | 127945.460938 | 134407.531250 | 112928.710938 | 100059.578125 | 104514.039062 | 121343.375000 | 125797.835938 |
+| 1 | 2017-09-23 05:00:00 | 113103.835938 | 94423.414062 | 100889.359375 | 125318.312500 | 131784.265625 | 111366.179688 | 98497.054688 | 102951.507812 | 119780.851562 | 124235.304688 |
 
 We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
@@ -1244,32 +1244,32 @@ graphing.
 pd.concat([df, forecast_df]).set_index('ds')
 ```
 
-|                     | y       | unique_id | Add           | Add-lo-95    | Add-lo-80     | Add-hi-80     | Add-hi-95     | Multi         | Multi-lo-95   | Multi-lo-80   | Multi-hi-80   | Multi-hi-95   |
-|---------------------|---------|-----------|---------------|--------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|
-| ds                  |         |           |               |              |               |               |               |               |               |               |               |               |
-| 2017-09-13 00:00:00 | 80115.0 | 1         | NaN           | NaN          | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           |
-| 2017-09-13 01:00:00 | 79885.0 | 1         | NaN           | NaN          | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           |
-| 2017-09-13 02:00:00 | 89325.0 | 1         | NaN           | NaN          | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           |
-| ...                 | ...     | ...       | ...           | ...          | ...           | ...           | ...           | ...           | ...           | ...           | ...           | ...           |
-| 2017-09-23 03:00:00 | NaN     | NaN       | 92962.234375  | 74304.234375 | 80762.421875  | 105162.054688 | 111620.242188 | 92432.453125  | 79563.328125  | 84017.789062  | 100847.125000 | 105301.585938 |
-| 2017-09-23 04:00:00 | NaN     | NaN       | 115738.320312 | 97069.117188 | 103531.187500 | 127945.460938 | 134407.531250 | 112928.710938 | 100059.578125 | 104514.039062 | 121343.375000 | 125797.835938 |
-| 2017-09-23 05:00:00 | NaN     | NaN       | 113103.835938 | 94423.414062 | 100889.359375 | 125318.312500 | 131784.265625 | 111366.179688 | 98497.054688  | 102951.507812 | 119780.851562 | 124235.304688 |
+|  | y | unique_id | Add | Add-lo-95 | Add-lo-80 | Add-hi-80 | Add-hi-95 | Multi | Multi-lo-95 | Multi-lo-80 | Multi-hi-80 | Multi-hi-95 |
+|----|----|----|----|----|----|----|----|----|----|----|----|----|
+| ds |  |  |  |  |  |  |  |  |  |  |  |  |
+| 2017-09-13 00:00:00 | 80115.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| 2017-09-13 01:00:00 | 79885.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| 2017-09-13 02:00:00 | 89325.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| 2017-09-23 03:00:00 | NaN | NaN | 92962.234375 | 74304.234375 | 80762.421875 | 105162.054688 | 111620.242188 | 92432.453125 | 79563.328125 | 84017.789062 | 100847.125000 | 105301.585938 |
+| 2017-09-23 04:00:00 | NaN | NaN | 115738.320312 | 97069.117188 | 103531.187500 | 127945.460938 | 134407.531250 | 112928.710938 | 100059.578125 | 104514.039062 | 121343.375000 | 125797.835938 |
+| 2017-09-23 05:00:00 | NaN | NaN | 113103.835938 | 94423.414062 | 100889.359375 | 125318.312500 | 131784.265625 | 111366.179688 | 98497.054688 | 102951.507812 | 119780.851562 | 124235.304688 |
 
 ```python
 df_plot= pd.concat([df, forecast_df]).set_index('ds')
 df_plot
 ```
 
-|                     | y       | unique_id | Add           | Add-lo-95    | Add-lo-80     | Add-hi-80     | Add-hi-95     | Multi         | Multi-lo-95   | Multi-lo-80   | Multi-hi-80   | Multi-hi-95   |
-|---------------------|---------|-----------|---------------|--------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|
-| ds                  |         |           |               |              |               |               |               |               |               |               |               |               |
-| 2017-09-13 00:00:00 | 80115.0 | 1         | NaN           | NaN          | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           |
-| 2017-09-13 01:00:00 | 79885.0 | 1         | NaN           | NaN          | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           |
-| 2017-09-13 02:00:00 | 89325.0 | 1         | NaN           | NaN          | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           | NaN           |
-| ...                 | ...     | ...       | ...           | ...          | ...           | ...           | ...           | ...           | ...           | ...           | ...           | ...           |
-| 2017-09-23 03:00:00 | NaN     | NaN       | 92962.234375  | 74304.234375 | 80762.421875  | 105162.054688 | 111620.242188 | 92432.453125  | 79563.328125  | 84017.789062  | 100847.125000 | 105301.585938 |
-| 2017-09-23 04:00:00 | NaN     | NaN       | 115738.320312 | 97069.117188 | 103531.187500 | 127945.460938 | 134407.531250 | 112928.710938 | 100059.578125 | 104514.039062 | 121343.375000 | 125797.835938 |
-| 2017-09-23 05:00:00 | NaN     | NaN       | 113103.835938 | 94423.414062 | 100889.359375 | 125318.312500 | 131784.265625 | 111366.179688 | 98497.054688  | 102951.507812 | 119780.851562 | 124235.304688 |
+|  | y | unique_id | Add | Add-lo-95 | Add-lo-80 | Add-hi-80 | Add-hi-95 | Multi | Multi-lo-95 | Multi-lo-80 | Multi-hi-80 | Multi-hi-95 |
+|----|----|----|----|----|----|----|----|----|----|----|----|----|
+| ds |  |  |  |  |  |  |  |  |  |  |  |  |
+| 2017-09-13 00:00:00 | 80115.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| 2017-09-13 01:00:00 | 79885.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| 2017-09-13 02:00:00 | 89325.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| 2017-09-23 03:00:00 | NaN | NaN | 92962.234375 | 74304.234375 | 80762.421875 | 105162.054688 | 111620.242188 | 92432.453125 | 79563.328125 | 84017.789062 | 100847.125000 | 105301.585938 |
+| 2017-09-23 04:00:00 | NaN | NaN | 115738.320312 | 97069.117188 | 103531.187500 | 127945.460938 | 134407.531250 | 112928.710938 | 100059.578125 | 104514.039062 | 121343.375000 | 125797.835938 |
+| 2017-09-23 05:00:00 | NaN | NaN | 113103.835938 | 94423.414062 | 100889.359375 | 125318.312500 | 131784.265625 | 111366.179688 | 98497.054688 | 102951.507812 | 119780.851562 | 124235.304688 |
 
 Now let’s visualize the result of our forecast and the historical data
 of our time series, also let’s draw the confidence interval that we have
@@ -1392,16 +1392,16 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds                  | cutoff              | y        | Add           | Multi         |
-|-----------|---------------------|---------------------|----------|---------------|---------------|
-| unique_id |                     |                     |          |               |               |
-| 1         | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0  | 134578.328125 | 133820.109375 |
-| 1         | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0  | 133548.781250 | 133734.000000 |
-| 1         | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0  | 134798.656250 | 135216.046875 |
-| ...       | ...                 | ...                 | ...      | ...           | ...           |
-| 1         | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 103021.726562 | 103086.851562 |
-| 1         | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0  | 89544.054688  | 90028.406250  |
-| 1         | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0  | 78090.210938  | 78823.953125  |
+|  | ds | cutoff | y | Add | Multi |
+|----|----|----|----|----|----|
+| unique_id |  |  |  |  |  |
+| 1 | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0 | 134578.328125 | 133820.109375 |
+| 1 | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0 | 133548.781250 | 133734.000000 |
+| 1 | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0 | 134798.656250 | 135216.046875 |
+| ... | ... | ... | ... | ... | ... |
+| 1 | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 103021.726562 | 103086.851562 |
+| 1 | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0 | 89544.054688 | 90028.406250 |
+| 1 | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0 | 78090.210938 | 78823.953125 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
