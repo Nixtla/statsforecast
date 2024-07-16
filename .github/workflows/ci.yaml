@@ -34,7 +34,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install ".[dev]"
+        run: pip install uv && uv pip install ".[dev]" --system
 
       - name: Run local tests
         run: nbdev_test --skip_file_re '(models|distributed|ets|prophet).*.ipynb' --pause 1.0 --do_print --timing
@@ -57,14 +57,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install ".[all]"
+        run: pip install uv && uv pip install ".[all]" --system
 
       - name: Run tests
         run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
       - name: Run integration tests
         run: |
-          pip install ".[dev]" pytest
+          uv pip install pytest --system
           pytest --durations=0 action_files
 
   test-m3-performance:
