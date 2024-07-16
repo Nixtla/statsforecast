@@ -42,13 +42,15 @@ spark_requirements = cfg['spark_requirements'].split()
 plotly_requirements = cfg['plotly_requirements'].split()
 polars_requirements = cfg['polars_requirements'].split()
 dev_requirements = cfg['dev_requirements'].split()
-dev_requirements.extend(dask_requirements)
+all_requirements = [
+    *dask_requirements,
+    *spark_requirements,
+    *plotly_requirements,
+    *polars_requirements,
+    *dev_requirements,
+]
 if sys.version_info < (3, 12):
-    dev_requirements.extend(ray_requirements)
-dev_requirements.extend(spark_requirements)
-dev_requirements.extend(plotly_requirements)
-dev_requirements.extend(polars_requirements)
-dev_requirements = list(set(dev_requirements))
+    all_requirements.extend(ray_requirements)
 
 setuptools.setup(
     name = 'statsforecast',
@@ -69,6 +71,7 @@ setuptools.setup(
         'spark': spark_requirements,
         'plotly': plotly_requirements,
         'polars': polars_requirements,
+        'all': all_requirements,
     },
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
@@ -80,5 +83,3 @@ setuptools.setup(
         'nbdev': [f'{cfg.get("lib_path")}={cfg.get("lib_path")}._modidx:d']
     },
     **setup_cfg)
-
-
