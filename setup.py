@@ -46,7 +46,8 @@ all_requirements = [
     *dask_requirements,
     *spark_requirements,
     *plotly_requirements,
-    *polars_requirements
+    *polars_requirements,
+    *dev_requirements,
 ]
 if sys.version_info < (3, 12):
     all_requirements.extend(ray_requirements)

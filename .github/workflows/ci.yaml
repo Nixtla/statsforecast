@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-defaults:
-  run:
-    shell: bash -l {0}
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -34,7 +30,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install ".[dev]" --system
+        run: pip install uv && uv pip install --system ".[dev]"
 
       - name: Run local tests
         run: nbdev_test --skip_file_re '(models|distributed|ets|prophet).*.ipynb' --pause 1.0 --do_print --timing
@@ -57,14 +53,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install ".[all]" --system
+        run: pip install uv && uv pip install --system ".[all]"
 
       - name: Run tests
         run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
       - name: Run integration tests
         run: |
-          uv pip install pytest --system
+          uv pip install --system pytest
           pytest --durations=0 action_files
 
   test-m3-performance:
