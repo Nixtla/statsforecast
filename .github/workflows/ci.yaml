@@ -15,52 +15,26 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NIXTLA_NUMBA_CACHE: '1'
+  NIXTLA_NUMBA_CACHE: "1"
 
 jobs:
-  nb-sync:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-
-      - name: Set up python
-        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
-        with:
-          python-version: '3.10'
-
-      - name: Install nbdev
-        run: pip install nbdev
-
-      - name: Check if all notebooks are cleaned
-        run: |
-          echo "Check we are starting with clean git checkout"
-          if [ -n "$(git status -uno -s)" ]; then echo "git status is not clean"; false; fi
-          echo "Trying to strip out notebooks"
-          ./action_files/clean_nbs
-          echo "Check that strip out was unnecessary"
-          git status -s # display the status to see which nbs need cleaning up
-          if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks and running ./action_files/clean_nbs before committing"; false; fi
-
   run-local-tests:
     runs-on: windows-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Clone repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Set up environment
-        uses: mamba-org/setup-micromamba@f8b8a1e23a26f60a44c853292711bacfd3eac822 # v1.9.0
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
-          environment-file: dev/local_environment.yml
-          create-args: python=${{ matrix.python-version }}
-          cache-environment: true
+          python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install ./
+        run: pip install uv && uv pip install ".[dev]"
 
       - name: Run local tests
         run: nbdev_test --skip_file_re '(models|distributed|ets|prophet).*.ipynb' --pause 1.0 --do_print --timing
@@ -72,20 +46,18 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-13]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Clone repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Set up environment
-        uses: mamba-org/setup-micromamba@f8b8a1e23a26f60a44c853292711bacfd3eac822 # v1.9.0
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
-          environment-file: dev/environment.yml
-          create-args: python=${{ matrix.python-version }}
-          cache-environment: true
+          python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install ./
+        run: pip install uv && uv pip install ".[all]"
 
       - name: Run tests
         run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
@@ -97,21 +69,17 @@ jobs:
 
   test-m3-performance:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Clone repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Set up environment
-        uses: mamba-org/setup-micromamba@f8b8a1e23a26f60a44c853292711bacfd3eac822 # v1.9.0
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
-          environment-file: dev/environment.yml
-          create-args: python=3.10
-          cache-environment: true
+          python-version: "3.10"
 
       - name: Install library and extra deps
-        run: pip install ".[dev]" fire
+        run: pip install uv && uv pip install ".[dev]"
 
       - name: Run M3 experiment
         run: |
