@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting the problem!
+        Thank you for reporting the problem..
         Please make sure what you are reporting is a bug with reproducible steps. To ask questions
         or share ideas, please post on our [Slack community](https://join.slack.com/t/nixtlacommunity/shared_invite/zt-1h77esh5y-iL1m8N0F7qV1HmH~0KYeAQ) instead.
 
@@ -27,24 +27,24 @@ body:
     attributes:
       label: Versions / Dependencies
       description: Please specify the versions of the library, Python, OS, and other libraries that are used.
-      placeholder: >
-        Please specify the versions of dependencies.
+      value: |
+        <details><summary>Click to expand</summary>
+        Dependencies:
+
+        </details>
     validations:
       required: true
 
   - type: textarea
     attributes:
-      label: Reproduction script
+      label: Reproducible example
       description: >
-        Please provide a reproducible script. Providing a narrow reproduction (minimal / no external dependencies) will
-        help us triage and address issues in the timely manner!
-      placeholder: >
-        Please provide a short code snippet (less than 50 lines if possible) that can be copy-pasted to
-        reproduce the issue. The snippet should have **no external library dependencies**
-        (i.e., use fake or mock data / environments).
-
-        **NOTE**: If the code snippet cannot be run by itself, the issue will be marked as "needs-repro-script"
-        until the repro instruction is updated.
+        Please provide a reproducible script. Providing a simple way to reproduce the issue
+        (minimal / no external dependencies) will help us triage and address issues in the timely manner!
+      value: |
+        ```python
+        # paste your code here
+        ```
     validations:
       required: true
 
@@ -55,8 +55,8 @@ body:
         How does this issue affect your experience as user?
       multiple: false
       options:
-          - "Low: It annoys or frustrates me."
-          - "Medium: It is a significant difficulty but I can work around it."
-          - "High: It blocks me from completing my task."
+        - "Low: It annoys or frustrates me."
+        - "Medium: It is a significant difficulty but I can work around it."
+        - "High: It blocks me from completing my task."
     validations:
-        required: false
+      required: false
