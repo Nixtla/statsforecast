@@ -21,12 +21,14 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [38, 39, 310, 311, 312]
-        include:
-          - os-platform: [ubuntu-latest, manylinux_x86_64]
-          - os-platform: [ubuntu-latest, manylinux_aarch64]
-          - os-platform: [windows-latest, win_amd64]
-          - os-platform: [macos-12, macosx_x86_64]
-          - os-platform: [macos-14, macosx_arm64]
+        os-platform:
+          [
+            [ubuntu-latest, manylinux_x86_64],
+            [ubuntu-latest, manylinux_aarch64],
+            [windows-latest, win_amd64],
+            [macos-12, macosx_x86_64],
+            [macos-14, macosx_arm64],
+          ]
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
