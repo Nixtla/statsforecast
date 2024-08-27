@@ -2,12 +2,14 @@
 
 namespace py = pybind11;
 
-namespace ETS {
+namespace ets {
 void init(py::module_ &);
 }
-void init_optim(py::module_ &);
+namespace optim {
+void init(py::module_ &);
+}
 
 PYBIND11_MODULE(_lib, m) {
-  ETS::init(m);
-  init_optim(m);
+  ets::init(m);
+  optim::init(m);
 }

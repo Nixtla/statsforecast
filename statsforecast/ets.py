@@ -10,13 +10,10 @@ import numpy as np
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 import statsforecast._lib.ets as _ets
-from ._lib.optim import OptimResult as _OptimResult
 from .utils import _calculate_intervals
 
 # %% ../nbs/src/ets.ipynb 5
 # Global variables
-_TOL = 1.0e-10
-_NA = -99999.0
 _smalno = np.finfo(float).eps
 _PHI_LOWER = 0.8
 _PHI_UPPER = 0.98
@@ -71,8 +68,8 @@ def etssimulate(
             phi,
             1,
         )
-        if math.fabs(f[0] - _NA) < _TOL:
-            y[0] = _NA
+        if math.fabs(f[0] - _ets.NA) < _ets.TOL:
+            y[0] = _ets.NA
             return
         if error == _ets.Component.Additive:
             y[i] = f[0] + e[i]

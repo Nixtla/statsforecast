@@ -2,9 +2,10 @@
 
 #include "nelder_mead.h"
 
+namespace ets {
 namespace py = pybind11;
+using Eigen::VectorXd;
 
-namespace ETS {
 enum class Component {
   Nothing = 0,
   Additive = 1,
@@ -21,12 +22,11 @@ constexpr double HUGE_N = 1e10;
 constexpr double NA = -99999.0;
 constexpr double TOL = 1e-10;
 
-std::tuple<double, double> Update(Eigen::Ref<VectorXd> s, double l, double b,
-                                  double old_l, double old_b,
-                                  const Eigen::Ref<const VectorXd> &old_s,
-                                  int m, Component trend, Component season,
-                                  double alpha, double beta, double gamma,
-                                  double phi, double y) {
+template <typename Ref, typename CRef>
+std::tuple<double, double>
+Update(Ref s, double l, double b, double old_l, double old_b, CRef old_s, int m,
+       Component trend, Component season, double alpha, double beta,
+       double gamma, double phi, double y) {
   double q, phi_b;
   // new level
   if (trend == Component::Nothing) {
@@ -47,12 +47,12 @@ std::tuple<double, double> Update(Eigen::Ref<VectorXd> s, double l, double b,
   if (season == Component::Nothing) {
     p = y;
   } else if (season == Component::Additive) {
-    p = y - old_s(m - 1);
+    p = y - old_s[m - 1];
   } else {
-    if (std::abs(old_s(m - 1)) < TOL) {
+    if (std::abs(old_s[m - 1]) < TOL) {
       p = HUGE_N;
     } else {
-      p = y / old_s(m - 1);
+      p = y / old_s[m - 1];
     }
   }
   l = q + alpha * (p - q);
@@ -82,34 +82,34 @@ std::tuple<double, double> Update(Eigen::Ref<VectorXd> s, double l, double b,
         t = y / q;
       }
     }
-    s(0) = old_s(m - 1) + gamma * (t - old_s(m - 1));
+    s[0] = old_s[m - 1] + gamma * (t - old_s[m - 1]);
     std::copy(old_s.data(), old_s.data() + m - 1, s.data() + 1);
   }
   return {l, b};
 }
 
-void Forecast(Eigen::Ref<VectorXd> fcst, double l, double b,
-              const Eigen::Ref<const VectorXd> &s, int m, Component trend,
+template <typename Ref, typename CRef>
+void Forecast(Ref f, double l, double b, CRef s, int m, Component trend,
               Component season, double phi, int h) {
   double phistar = phi;
   for (int i = 0; i < h; ++i) {
     if (trend == Component::Nothing) {
-      fcst(i) = l;
+      f[i] = l;
     } else if (trend == Component::Additive) {
-      fcst(i) = l + phistar * b;
+      f[i] = l + phistar * b;
     } else if (b < 0) {
-      fcst(i) = std::numeric_limits<double>::quiet_NaN();
+      f[i] = std::numeric_limits<double>::quiet_NaN();
     } else {
-      fcst(i) = l * std::pow(b, phistar);
+      f[i] = l * std::pow(b, phistar);
     }
     int j = m - 1 - i;
     while (j < 0) {
       j += m;
     }
     if (season == Component::Additive) {
-      fcst(i) += s(j);
+      f[i] += s[j];
     } else if (season == Component::Multiplicative) {
-      fcst(i) *= s(j);
+      f[i] *= s[j];
     }
     if (i < h - 1) {
       if (std::abs(phi - 1.0) < TOL) {
@@ -121,9 +121,8 @@ void Forecast(Eigen::Ref<VectorXd> fcst, double l, double b,
   }
 }
 
-double Calc(Eigen::Ref<VectorXd> x, Eigen::Ref<VectorXd> e,
-            Eigen::Ref<VectorXd> a_mse, int n_mse,
-            const Eigen::Ref<const VectorXd> &y, Component error,
+template <typename Ref, typename CRef>
+double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
             Component trend, Component season, double alpha, double beta,
             double gamma, double phi, int m) {
   auto n = y.size();
@@ -134,17 +133,18 @@ double Calc(Eigen::Ref<VectorXd> x, Eigen::Ref<VectorXd> e,
       m * (season != Component::Nothing) + (trend != Component::Nothing) + 1;
 
   // copy initial state components
-  double l = x(0);
-  double b = (trend != Component::Nothing) ? x(1) : 0.0;
-  VectorXd s = VectorXd(n_s);
+  double l = x[0];
+  double b = (trend != Component::Nothing) ? x[1] : 0.0;
+  auto s = std::vector<double>(n_s);
   if (season != Component::Nothing) {
     std::copy(x.data() + 1 + (trend != Component::Nothing),
               x.data() + 1 + (trend != Component::Nothing) + m, s.data());
   }
+
   std::fill(a_mse.data(), a_mse.data() + n_mse, 0.0);
-  VectorXd denom = Eigen::Vector<double, 30>::Zero();
-  VectorXd f = Eigen::Vector<double, 30>::Zero();
-  VectorXd old_s = VectorXd::Zero(n_s);
+  auto old_s = std::vector<double>(n_s);
+  auto denom = std::vector<double>(30);
+  auto f = std::vector<double>(30);
   double old_b = 0.0;
   double lik = 0.0;
   double lik2 = 0.0;
@@ -156,46 +156,48 @@ double Calc(Eigen::Ref<VectorXd> x, Eigen::Ref<VectorXd> e,
       old_b = b;
     }
     if (season != Component::Nothing) {
-      old_s = s;
+      std::copy(s.begin(), s.begin() + m, old_s.begin());
     }
     // one step forecast
-    Forecast(f, old_l, old_b, old_s, m, trend, season, phi, n_mse);
-    if (std::abs(f(0) - NA) < TOL) {
+    Forecast<std::vector<double> &, const std::vector<double> &>(
+        f, old_l, old_b, old_s, m, trend, season, phi, n_mse);
+    if (std::abs(f[0] - NA) < TOL) {
       return NA;
     }
     if (error == Component::Additive) {
-      e(i) = y(i) - f(0);
+      e[i] = y[i] - f[0];
     } else {
-      if (std::abs(f(0)) < TOL) {
-        f_0 = f(0) + TOL;
+      if (std::abs(f[0]) < TOL) {
+        f_0 = f[0] + TOL;
       } else {
-        f_0 = f(0);
+        f_0 = f[0];
       }
-      e(i) = (y(i) - f(0)) / f_0;
+      e[i] = (y[i] - f[0]) / f_0;
     }
     for (Eigen::Index j = 0; j < n_mse; ++j) {
       if (i + j < y.size()) {
-        denom(j) += 1.0;
-        double tmp = y(i + j) - f(j);
-        a_mse(j) = (a_mse(j) * (denom(j) - 1.0) + tmp * tmp) / denom(j);
+        denom[j] += 1.0;
+        double tmp = y[i + j] - f[j];
+        a_mse[j] = (a_mse[j] * (denom[j] - 1.0) + tmp * tmp) / denom[j];
       }
     }
     // update state
-    std::tie(l, b) = Update(s, l, b, old_l, old_b, old_s, m, trend, season,
-                            alpha, beta, gamma, phi, y(i));
+    std::tie(l, b) = Update<std::vector<double> &, const std::vector<double> &>(
+        s, l, b, old_l, old_b, old_s, m, trend, season, alpha, beta, gamma, phi,
+        y[i]);
 
     // store new state
-    x(n_states * (i + 1)) = l;
+    x[n_states * (i + 1)] = l;
     if (trend != Component::Nothing) {
-      x(n_states * (i + 1) + 1) = b;
+      x[n_states * (i + 1) + 1] = b;
     }
     if (season != Component::Nothing) {
       std::copy(s.data(), s.data() + m,
                 x.data() + n_states * (i + 1) + 1 +
                     (trend != Component::Nothing));
     }
-    lik += e(i) * e(i);
-    val = std::abs(f(0));
+    lik += e[i] * e[i];
+    val = std::abs(f[0]);
     if (val > 0.0) {
       lik2 += std::log(val);
     } else {
@@ -248,10 +250,11 @@ double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
       return std::numeric_limits<double>::infinity();
     }
   }
-  VectorXd a_mse = Eigen::Vector<double, 30>::Zero();
+  VectorXd a_mse = VectorXd::Zero(30);
   VectorXd e = VectorXd::Zero(n);
-  double lik = Calc(state, e, a_mse, n_mse, y, error, trend, season, alpha,
-                    beta, gamma, phi, m);
+  double lik = Calc<VectorXd &, const VectorXd &>(state, e, a_mse, n_mse, y,
+                                                  error, trend, season, alpha,
+                                                  beta, gamma, phi, m);
   lik = std::max(lik, -1e10);
   if (std::isnan(lik) || std::abs(lik + 99999.0) < 1e-7) {
     lik = -std::numeric_limits<double>::infinity();
@@ -276,45 +279,49 @@ double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
   }
   return obj_val;
 }
-OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
-                     const Eigen::Ref<const VectorXd> &y, int n_state,
-                     Component error, Component trend, Component season,
-                     Criterion opt_crit, int n_mse, int m, bool opt_alpha,
-                     bool opt_beta, bool opt_gamma, bool opt_phi, double alpha,
-                     double beta, double gamma, double phi,
-                     const Eigen::Ref<const VectorXd> &lower,
-                     const Eigen::Ref<const VectorXd> &upper, double tol_std,
-                     int max_iter, bool adaptive) {
+optim::Result Optimize(const Eigen::Ref<const VectorXd> &x0,
+                       const Eigen::Ref<const VectorXd> &y, int n_state,
+                       Component error, Component trend, Component season,
+                       Criterion opt_crit, int n_mse, int m, bool opt_alpha,
+                       bool opt_beta, bool opt_gamma, bool opt_phi,
+                       double alpha, double beta, double gamma, double phi,
+                       const Eigen::Ref<const VectorXd> &lower,
+                       const Eigen::Ref<const VectorXd> &upper, double tol_std,
+                       int max_iter, bool adaptive) {
   double init_step = 0.05;
   double nm_alpha = 1.0;
   double nm_gamma = 2.0;
   double nm_rho = 0.5;
   double nm_sigma = 0.5;
   double zero_pert = 1.0e-4;
-  return NelderMead(ObjectiveFunction, x0, lower, upper, init_step, zero_pert,
-                    nm_alpha, nm_gamma, nm_rho, nm_sigma, max_iter, tol_std,
-                    adaptive, y, n_state, error, trend, season, opt_crit, n_mse,
-                    m, opt_alpha, opt_beta, opt_gamma, opt_phi, alpha, beta,
-                    gamma, phi);
+  return nm::NelderMead(ObjectiveFunction, x0, lower, upper, init_step,
+                        zero_pert, nm_alpha, nm_gamma, nm_rho, nm_sigma,
+                        max_iter, tol_std, adaptive, y, n_state, error, trend,
+                        season, opt_crit, n_mse, m, opt_alpha, opt_beta,
+                        opt_gamma, opt_phi, alpha, beta, gamma, phi);
 }
 
 void init(py::module_ &m) {
   py::module_ ets = m.def_submodule("ets");
-  ets.def("update", &Update);
-  ets.def("forecast", &Forecast);
-  ets.def("calc", &Calc);
-  ets.def("optimize", &Optimize);
+  ets.attr("HUGE_N") = HUGE_N;
+  ets.attr("NA") = NA;
+  ets.attr("TOL") = TOL;
   py::enum_<Component>(ets, "Component")
       .value("Nothing", Component::Nothing)
       .value("Additive", Component::Additive)
-      .value("Multiplicative", Component::Multiplicative)
-      .export_values();
+      .value("Multiplicative", Component::Multiplicative);
   py::enum_<Criterion>(ets, "Criterion")
       .value("Likelihood", Criterion::Likelihood)
       .value("MSE", Criterion::MSE)
       .value("AMSE", Criterion::AMSE)
       .value("Sigma", Criterion::Sigma)
-      .value("MAE", Criterion::MAE)
-      .export_values();
+      .value("MAE", Criterion::MAE);
+  ets.def("update",
+          &Update<Eigen::Ref<VectorXd>, const Eigen::Ref<const VectorXd> &>);
+  ets.def("forecast",
+          &Forecast<Eigen::Ref<VectorXd>, const Eigen::Ref<const VectorXd> &>);
+  ets.def("calc",
+          &Calc<Eigen::Ref<VectorXd>, const Eigen::Ref<const VectorXd> &>);
+  ets.def("optimize", &Optimize);
 }
-} // namespace ETS
+} // namespace ets

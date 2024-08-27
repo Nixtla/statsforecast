@@ -8,9 +8,9 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 if(SKBUILD)
-    set(LIBRARY_OUTPUT_PATH ${SKBUILD_PLATLIB_DIR}/statsforecast)
+  set(LIBRARY_OUTPUT_PATH ${SKBUILD_PLATLIB_DIR}/statsforecast)
 else()
-    set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/statsforecast)
+  set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/statsforecast)
 endif()
 
 find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
@@ -23,7 +23,7 @@ execute_process(
   COMMAND "${Python_EXECUTABLE}" -m pybind11 --includes
   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE pybind11_INCLUDES)
 
-include_directories("include/statsforecast" "external_libs/eigen/" ${pybind11_INCLUDES})
+include_directories("include/statsforecast" "external_libs/eigen" ${pybind11_INCLUDES})
 file(GLOB SOURCES src/*.cpp)
 pybind11_add_module(_lib ${SOURCES})
 install(TARGETS _lib DESTINATION .)

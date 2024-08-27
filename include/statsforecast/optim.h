@@ -2,8 +2,10 @@
 
 #include <pybind11/eigen.h>
 
-struct OptimResult {
+namespace optim {
+struct Result {
   Eigen::VectorXd x;
   double fun;
   int nit;
 };
+} // namespace optim

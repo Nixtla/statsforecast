@@ -2,13 +2,14 @@
 
 #include "optim.h"
 
+namespace optim {
 namespace py = pybind11;
-
-void init_optim(py::module_ &m) {
+void init(py::module_ &m) {
   py::module_ optim = m.def_submodule("optim");
-  py::class_<OptimResult>(optim, "OptimResult")
+  py::class_<optim::Result>(optim, "OptimResult")
       .def(py::init<>())
-      .def_readonly("x", &OptimResult::x)
-      .def_readonly("fun", &OptimResult::fun)
-      .def_readonly("nit", &OptimResult::nit);
+      .def_readonly("x", &optim::Result::x)
+      .def_readonly("fun", &optim::Result::fun)
+      .def_readonly("nit", &optim::Result::nit);
 }
+} // namespace optim

@@ -5,6 +5,7 @@
 
 #include "optim.h"
 
+namespace nm {
 using Eigen::VectorXd;
 using RowMajorMatrixXd =
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
@@ -26,11 +27,11 @@ Eigen::VectorX<Eigen::Index> ArgSort(const VectorXd &v) {
 }
 
 template <typename Func, typename... Args>
-OptimResult NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
-                       const VectorXd upper, double init_step, double zero_pert,
-                       double alpha, double gamma, double rho, double sigma,
-                       int max_iter, double tol_std, bool adaptive,
-                       Args &&...args) {
+optim::Result NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
+                         const VectorXd upper, double init_step,
+                         double zero_pert, double alpha, double gamma,
+                         double rho, double sigma, int max_iter, double tol_std,
+                         bool adaptive, Args &&...args) {
   auto x0 = Clamp(x, lower, upper);
   auto n = x0.size();
   if (adaptive) {
@@ -133,3 +134,4 @@ OptimResult NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
   }
   return {simplex.row(best_idx), f_simplex(best_idx), i + 1};
 }
+} // namespace nm
