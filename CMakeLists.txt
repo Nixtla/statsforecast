@@ -1,23 +1,29 @@
 cmake_minimum_required(VERSION 3.25)
 project(statsforecast)
 
-set(DEV_MODULE Development.Module)
-find_package(Python 3.8 COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
-if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Detect the installed nanobind package and import it into CMake
+if(SKBUILD)
+    set(LIBRARY_OUTPUT_PATH ${SKBUILD_PLATLIB_DIR}/statsforecast)
+else()
+    set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/statsforecast)
+endif()
+
+find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
+set(PYBIND11_FINDPYTHON ON)
 execute_process(
-  COMMAND "${Python_EXECUTABLE}" -m nanobind --cmake_dir
-  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE NB_DIR)
-list(APPEND CMAKE_PREFIX_PATH "${NB_DIR}")
-find_package(nanobind CONFIG REQUIRED)
+  COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
+  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE pybind11_DIR)
+find_package(pybind11 CONFIG REQUIRED)
+execute_process(
+  COMMAND "${Python_EXECUTABLE}" -m pybind11 --includes
+  OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE pybind11_INCLUDES)
 
-include_directories("include/statsforecast")
-include_directories("external_libs/eigen")
-
-# modules
+include_directories("include/statsforecast" "external_libs/eigen/" ${pybind11_INCLUDES})
 file(GLOB SOURCES src/*.cpp)
-nanobind_add_module(_lib ${SOURCES})
+pybind11_add_module(_lib ${SOURCES})
+install(TARGETS _lib DESTINATION .)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <nanobind/eigen/dense.h>
+#include <pybind11/eigen.h>
 
 struct OptimResult {
   Eigen::VectorXd x;

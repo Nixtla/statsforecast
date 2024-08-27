@@ -1,11 +1,9 @@
-#include <nanobind/eigen/dense.h>
-#include <nanobind/nanobind.h>
-#include <nanobind/stl/tuple.h>
-#include <numeric>
+#include <pybind11/pybind11.h>
 
 #include "nelder_mead.h"
 
-namespace nb = nanobind;
+namespace py = pybind11;
+
 namespace ETS {
 enum class Component {
   Nothing = 0,
@@ -23,10 +21,12 @@ constexpr double HUGE_N = 1e10;
 constexpr double NA = -99999.0;
 constexpr double TOL = 1e-10;
 
-std::tuple<double, double>
-Update(nb::DRef<VectorXd> s, double l, double b, double old_l, double old_b,
-       const nb::DRef<VectorXd> old_s, int m, Component trend, Component season,
-       double alpha, double beta, double gamma, double phi, double y) {
+std::tuple<double, double> Update(Eigen::Ref<VectorXd> s, double l, double b,
+                                  double old_l, double old_b,
+                                  const Eigen::Ref<const VectorXd> &old_s,
+                                  int m, Component trend, Component season,
+                                  double alpha, double beta, double gamma,
+                                  double phi, double y) {
   double q, phi_b;
   // new level
   if (trend == Component::Nothing) {
@@ -83,13 +83,13 @@ Update(nb::DRef<VectorXd> s, double l, double b, double old_l, double old_b,
       }
     }
     s(0) = old_s(m - 1) + gamma * (t - old_s(m - 1));
-    s.tail(m - 1) = old_s.head(m - 1);
+    std::copy(old_s.data(), old_s.data() + m - 1, s.data() + 1);
   }
   return {l, b};
 }
 
-void Forecast(nb::DRef<VectorXd> fcst, double l, double b,
-              const nb::DRef<VectorXd> s, int m, Component trend,
+void Forecast(Eigen::Ref<VectorXd> fcst, double l, double b,
+              const Eigen::Ref<const VectorXd> &s, int m, Component trend,
               Component season, double phi, int h) {
   double phistar = phi;
   for (int i = 0; i < h; ++i) {
@@ -121,10 +121,11 @@ void Forecast(nb::DRef<VectorXd> fcst, double l, double b,
   }
 }
 
-double Calc(nb::DRef<VectorXd> x, nb::DRef<VectorXd> e,
-            nb::DRef<VectorXd> a_mse, int n_mse, const nb::DRef<VectorXd> y,
-            Component error, Component trend, Component season, double alpha,
-            double beta, double gamma, double phi, int m) {
+double Calc(Eigen::Ref<VectorXd> x, Eigen::Ref<VectorXd> e,
+            Eigen::Ref<VectorXd> a_mse, int n_mse,
+            const Eigen::Ref<const VectorXd> &y, Component error,
+            Component trend, Component season, double alpha, double beta,
+            double gamma, double phi, int m) {
   auto n = y.size();
   int n_s = std::max(m, 24);
   m = std::max(m, 1);
@@ -135,14 +136,14 @@ double Calc(nb::DRef<VectorXd> x, nb::DRef<VectorXd> e,
   // copy initial state components
   double l = x(0);
   double b = (trend != Component::Nothing) ? x(1) : 0.0;
-  VectorXd s;
+  VectorXd s = VectorXd(n_s);
   if (season != Component::Nothing) {
-    s = x.segment(1 + (trend != Component::Nothing), m);
+    std::copy(x.data() + 1 + (trend != Component::Nothing),
+              x.data() + 1 + (trend != Component::Nothing) + m, s.data());
   }
-
-  a_mse.head(n_mse).setZero();
-  VectorXd denom = VectorXd::Zero(30);
-  VectorXd f = VectorXd::Zero(30);
+  std::fill(a_mse.data(), a_mse.data() + n_mse, 0.0);
+  VectorXd denom = Eigen::Vector<double, 30>::Zero();
+  VectorXd f = Eigen::Vector<double, 30>::Zero();
   VectorXd old_s = VectorXd::Zero(n_s);
   double old_b = 0.0;
   double lik = 0.0;
@@ -189,8 +190,9 @@ double Calc(nb::DRef<VectorXd> x, nb::DRef<VectorXd> e,
       x(n_states * (i + 1) + 1) = b;
     }
     if (season != Component::Nothing) {
-      x.segment(n_states * (i + 1) + 1 + (trend != Component::Nothing), m) =
-          s.head(m);
+      std::copy(s.data(), s.data() + m,
+                x.data() + n_states * (i + 1) + 1 +
+                    (trend != Component::Nothing));
     }
     lik += e(i) * e(i);
     val = std::abs(f(0));
@@ -211,8 +213,7 @@ double Calc(nb::DRef<VectorXd> x, nb::DRef<VectorXd> e,
   return lik;
 }
 
-double ObjectiveFunction(const nb::DRef<VectorXd> params,
-                         const nb::DRef<VectorXd> y, int n_state,
+double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
                          Component error, Component trend, Component season,
                          Criterion opt_crit, int n_mse, int m, bool opt_alpha,
                          bool opt_beta, bool opt_gamma, bool opt_phi,
@@ -234,7 +235,8 @@ double ObjectiveFunction(const nb::DRef<VectorXd> params,
   auto n = y.size();
   int p = n_state + (season != Component::Nothing);
   VectorXd state = VectorXd::Zero(p * (n + 1));
-  state.head(n_state) = params.tail(n_state);
+  std::copy(params.data() + n_params - n_state, params.data() + n_params,
+            state.data());
   if (season != Component::Nothing) {
     // add extra state
     int start = 1 + (trend != Component::Nothing);
@@ -246,7 +248,7 @@ double ObjectiveFunction(const nb::DRef<VectorXd> params,
       return std::numeric_limits<double>::infinity();
     }
   }
-  VectorXd a_mse = VectorXd::Zero(30);
+  VectorXd a_mse = Eigen::Vector<double, 30>::Zero();
   VectorXd e = VectorXd::Zero(n);
   double lik = Calc(state, e, a_mse, n_mse, y, error, trend, season, alpha,
                     beta, gamma, phi, m);
@@ -274,13 +276,14 @@ double ObjectiveFunction(const nb::DRef<VectorXd> params,
   }
   return obj_val;
 }
-OptimResult Optimize(const nb::DRef<VectorXd> x0, const nb::DRef<VectorXd> y,
-                     int n_state, Component error, Component trend,
-                     Component season, Criterion opt_crit, int n_mse, int m,
-                     bool opt_alpha, bool opt_beta, bool opt_gamma,
-                     bool opt_phi, double alpha, double beta, double gamma,
-                     double phi, const nb::DRef<VectorXd> lower,
-                     const nb::DRef<VectorXd> upper, double tol_std,
+OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
+                     const Eigen::Ref<const VectorXd> &y, int n_state,
+                     Component error, Component trend, Component season,
+                     Criterion opt_crit, int n_mse, int m, bool opt_alpha,
+                     bool opt_beta, bool opt_gamma, bool opt_phi, double alpha,
+                     double beta, double gamma, double phi,
+                     const Eigen::Ref<const VectorXd> &lower,
+                     const Eigen::Ref<const VectorXd> &upper, double tol_std,
                      int max_iter, bool adaptive) {
   double init_step = 0.05;
   double nm_alpha = 1.0;
@@ -294,24 +297,24 @@ OptimResult Optimize(const nb::DRef<VectorXd> x0, const nb::DRef<VectorXd> y,
                     m, opt_alpha, opt_beta, opt_gamma, opt_phi, alpha, beta,
                     gamma, phi);
 }
-} // namespace ETS
 
-void init_ets(nb::module_ &m) {
-  nb::module_ ets = m.def_submodule("ets");
-  ets.def("update", &ETS::Update);
-  ets.def("forecast", &ETS::Forecast);
-  ets.def("calc", &ETS::Calc);
-  ets.def("optimize", &ETS::Optimize);
-  nb::enum_<ETS::Component>(ets, "Component")
-      .value("Nothing", ETS::Component::Nothing)
-      .value("Additive", ETS::Component::Additive)
-      .value("Multiplicative", ETS::Component::Multiplicative)
+void init(py::module_ &m) {
+  py::module_ ets = m.def_submodule("ets");
+  ets.def("update", &Update);
+  ets.def("forecast", &Forecast);
+  ets.def("calc", &Calc);
+  ets.def("optimize", &Optimize);
+  py::enum_<Component>(ets, "Component")
+      .value("Nothing", Component::Nothing)
+      .value("Additive", Component::Additive)
+      .value("Multiplicative", Component::Multiplicative)
       .export_values();
-  nb::enum_<ETS::Criterion>(ets, "Criterion")
-      .value("Likelihood", ETS::Criterion::Likelihood)
-      .value("MSE", ETS::Criterion::MSE)
-      .value("AMSE", ETS::Criterion::AMSE)
-      .value("Sigma", ETS::Criterion::Sigma)
-      .value("MAE", ETS::Criterion::MAE)
+  py::enum_<Criterion>(ets, "Criterion")
+      .value("Likelihood", Criterion::Likelihood)
+      .value("MSE", Criterion::MSE)
+      .value("AMSE", Criterion::AMSE)
+      .value("Sigma", Criterion::Sigma)
+      .value("MAE", Criterion::MAE)
       .export_values();
 }
+} // namespace ETS

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <nanobind/eigen/dense.h>
 #include <numeric>
+#include <pybind11/eigen.h>
 
 #include "optim.h"
 
