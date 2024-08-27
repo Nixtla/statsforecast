@@ -73,7 +73,7 @@ cmake.verbose = true
 logging.level = "INFO"
 sdist.exclude = ["action_files", "dev", "experiments", "nbs", "settings.ini"]
 sdist.reproducible = true
-wheel.packages = ["statsforecast"]
+wheel.packages = ["python/statsforecast"]
 
 [tool.cibuildwheel]
 build-verbosity = 3
