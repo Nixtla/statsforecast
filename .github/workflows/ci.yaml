@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13]
+        os: [ubuntu-latest, macos-13, macos-14]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Clone repo
@@ -111,7 +111,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install --system ".[all]"
+        run: pip install uv && uv pip install --system --all-extras .
 
       - name: Run tests
         run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing

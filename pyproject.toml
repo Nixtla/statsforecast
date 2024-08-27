@@ -33,34 +33,27 @@ keywords = ["time-series", "forecasting", "arima", "ets"]
 
 [project.optional-dependencies]
 dask = ["fugue[dask]>=0.8.1"]
-plotly = ["plotly", "plotly-resampler"]
-polars = ["polars[numpy]"]
-ray = ["fugue[ray]>=0.8.1", "protobuf>=3.15.3,<4", "numpy<2", "ray<2.8"]
-spark = ["fugue[spark]>=0.8.1"]
 dev = [
     "black",
     "datasetsforecast",
     "fire",
-    "flake8",
-    "fugue[dask,ray,spark]>=0.8.1",
-    "mypy",
     "nbdev<2.3.26",
-    "nbformat",
     "nbdev_plotly",
+    "nbformat",
     "pandas[plot]",
-    "plotly",
-    "plotly-resampler",
     "pmdarima",
     "polars[numpy]",
     "pre-commit",
     "prophet",
-    "protobuf>=3.15.3,<4",
     "pyarrow",
-    "ray<2.8",
     "scikit-learn",
     "setuptools<70",
     "supersmoother",
 ]
+plotly = ["plotly", "plotly-resampler"]
+polars = ["polars[numpy]"]
+ray = ["fugue[ray]>=0.8.1", "protobuf>=3.15.3,<4", "numpy<2", "ray<2.8"]
+spark = ["fugue[spark]>=0.8.1"]
 
 [project.entry-points.nbdev]
 statsforecast = "statsforecast._modidx:d"
