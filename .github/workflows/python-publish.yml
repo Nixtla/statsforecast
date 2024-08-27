@@ -31,7 +31,7 @@ jobs:
         uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.platform-id }}
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           path: wheelhouse/*.whl
           retention-days: 1
@@ -51,7 +51,7 @@ jobs:
           python -m pip install build
           python -m build --sdist --outdir dist
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
           path: dist/*.tar.gz
 

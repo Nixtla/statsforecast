@@ -47,6 +47,7 @@ jobs:
 
       - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
+          name: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           path: wheelhouse/*.whl
           retention-days: 1
 
