@@ -15,16 +15,20 @@ def mstl(
     x: np.ndarray,  # time series
     period: Union[int, List[int]],  # season length
     blambda: Optional[float] = None,  # box-cox transform
-    iterate: int = 1,  # number of iterations
+    iterate: int = 2,  # number of iterations
     s_window: Optional[np.ndarray] = None,  # seasonal window
-    stl_kwargs: Optional[Dict] = dict(),
+    stl_kwargs: Dict = dict(),
 ):
     if s_window is None:
         s_window = 7 + 4 * np.arange(1, 7)
     origx = x
     n = len(x)
-    msts = [period] if isinstance(period, int) else period
-    iterate = 1
+    if isinstance(period, int):
+        msts = [period]
+    else:
+        msts = sorted(period)
+    if len(msts) == 1:
+        iterate = 1
     if x.ndim == 2:
         x = x[:, 0]
     if np.isnan(x).any():
@@ -37,6 +41,7 @@ def mstl(
             "`blambda` not implemented yet. "
             "Please rise an issue to include this feature."
         )
+    stl_kwargs = {"seasonal_deg": 0, **stl_kwargs}
     if msts[0] > 1:
         seas = np.zeros((len(msts), n))
         deseas = np.copy(x)

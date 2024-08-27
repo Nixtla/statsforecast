@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['mstl_decomposition']
 
-# %% ../nbs/src/feature_engineering.ipynb 2
+# %% ../nbs/src/feature_engineering.ipynb 3
 from typing import Tuple
 
 import pandas as pd
@@ -18,9 +18,9 @@ from utilsforecast.processing import (
 
 from . import StatsForecast
 from .core import _id_as_idx
-from .models import MSTL, _predict_mstl_seas
+from .models import MSTL, _predict_mstl_components
 
-# %% ../nbs/src/feature_engineering.ipynb 3
+# %% ../nbs/src/feature_engineering.ipynb 4
 def mstl_decomposition(
     df: DataFrame,
     model: MSTL,
@@ -61,14 +61,16 @@ def mstl_decomposition(
     train_features = []
     future_features = []
     df_constructor = type(df)
+    seas_cols = [c for c in sf.fitted_[0, 0].model_.columns if c.startswith("seasonal")]
     for fitted_model in sf.fitted_[:, 0]:
-        train_features.append(fitted_model.model_[["trend", "seasonal"]])
+        train_features.append(fitted_model.model_[["trend"] + seas_cols])
+        seas_comp = _predict_mstl_components(
+            fitted_model.model_, h, model.season_length
+        )
         future_df = df_constructor(
             {
                 "trend": fitted_model.trend_forecaster.predict(h)["mean"],
-                "seasonal": _predict_mstl_seas(
-                    fitted_model.model_, h, model.season_length
-                ),
+                **dict(zip(seas_cols, seas_comp.T)),
             }
         )
         future_features.append(future_df)

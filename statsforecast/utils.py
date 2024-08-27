@@ -4,11 +4,13 @@
 __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 # %% ../nbs/src/utils.ipynb 3
-from typing import Dict
+import inspect
 import math
 import os
 import warnings
 from collections import namedtuple
+from functools import wraps
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -252,7 +254,9 @@ AirPassengers = np.array(
 AirPassengersDF = pd.DataFrame(
     {
         "unique_id": np.ones(len(AirPassengers)),
-        "ds": pd.date_range(start="1949-01-01", periods=len(AirPassengers), freq="M"),
+        "ds": pd.date_range(
+            start="1949-01-01", periods=len(AirPassengers), freq=pd.offsets.MonthEnd()
+        ),
         "y": AirPassengers,
     }
 )
@@ -299,6 +303,12 @@ def _naive(
         fitted_vals[1:] = np.roll(y, 1)[1:]
         fcst["fitted"] = fitted_vals
     return fcst
+
+
+def _ensure_float(x: np.ndarray) -> np.ndarray:
+    if x.dtype not in (np.float32, np.float64):
+        x = x.astype(np.float32)
+    return x
 
 # %% ../nbs/src/utils.ipynb 20
 # Functions used for calculating prediction intervals
@@ -350,3 +360,34 @@ class ConformalIntervals:
         self.n_windows = n_windows
         self.h = h
         self.method = method
+
+# %% ../nbs/src/utils.ipynb 22
+def _old_kw_to_pos(old_names, new_positions):
+    def decorator(f):
+        @wraps(f)
+        def inner(*args, **kwargs):
+            arg_names = inspect.getfullargspec(f).args
+            new_args = list(args)
+            for old_name, pos in zip(old_names, new_positions):
+                if old_name in kwargs:
+                    new_name = arg_names[pos]
+                    warnings.warn(
+                        f"`{old_name}` has been deprecated, please use `{new_name}` instead.",
+                        FutureWarning,
+                    )
+                    if len(new_args) > pos:
+                        new_args = [
+                            *new_args[:pos],
+                            kwargs[old_name],
+                            *new_args[pos + 1 :],
+                        ]
+                    else:
+                        new_args = list(new_args)
+                        for i in range(len(new_args), pos):
+                            new_args.append(kwargs.pop(arg_names[i]))
+                        new_args.append(kwargs.pop(old_name))
+            return f(*new_args, **kwargs)
+
+        return inner
+
+    return decorator

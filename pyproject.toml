@@ -1,18 +1,19 @@
 [project]
 name = "statsforecast"
-version = "1.7.1.99"
+version = "1.7.6.99"
 requires-python = ">=3.8"
 dependencies = [
     "cloudpickle",
+    "coreforecast>=0.0.12",
     "fugue>=0.8.1",
-    "importlib-resources ; python_version < '3.10'",
     "numba>=0.55.0",
     "numpy>=1.21.6",
     "pandas>=1.3.5",
     "scipy>=1.7.3",
     "statsmodels>=0.13.2",
+    "threadpoolctl",
     "tqdm",
-    "utilsforecast>=0.0.24",
+    "utilsforecast>=0.1.4",
 ]
 license = { text = "Apache-2.0" }
 classifiers = [
@@ -23,6 +24,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 description = "Time series forecasting suite using statistical models"
 authors = [{ name = "Nixtla", email = "business@nixtla.io" }]
@@ -30,29 +32,33 @@ readme = "README.md"
 keywords = ["time-series", "forecasting", "arima", "ets"]
 
 [project.optional-dependencies]
-dask = ["fugue[dask]>=0.8.1", "protobuf>=3.15.3,<4", "ray<2.8"]
+dask = ["fugue[dask]>=0.8.1"]
 plotly = ["plotly", "plotly-resampler"]
-polars = ["polars"]
-ray = ["fugue[ray]>=0.8.1"]
+polars = ["polars[numpy]"]
+ray = ["fugue[ray]>=0.8.1", "protobuf>=3.15.3,<4", "numpy<2", "ray<2.8"]
 spark = ["fugue[spark]>=0.8.1"]
 dev = [
     "black",
     "datasetsforecast",
+    "fire",
     "flake8",
     "fugue[dask,ray,spark]>=0.8.1",
     "mypy",
     "nbdev",
+    "nbformat",
     "nbdev_plotly",
     "pandas[plot]",
     "plotly",
     "plotly-resampler",
     "pmdarima",
-    "polars",
+    "polars[numpy]",
+    "pre-commit",
     "prophet",
     "protobuf>=3.15.3,<4",
     "pyarrow",
     "ray<2.8",
     "scikit-learn",
+    "setuptools<70",
     "supersmoother",
 ]
 
@@ -76,6 +82,13 @@ sdist.reproducible = true
 wheel.packages = ["statsforecast"]
 
 [tool.cibuildwheel]
-archs = "all"
 build-verbosity = 3
-test-skip = "*"
+test-command = "python -c 'import statsforecast._lib'"
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+lint.select = ["F"]
+
+[tool.mypy]
+ignore_missing_imports = true

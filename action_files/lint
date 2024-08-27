@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-flake8 --select=F python/statsforecast || exit -1
-mypy python/statsforecast || exit -1

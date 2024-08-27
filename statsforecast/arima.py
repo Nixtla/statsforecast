@@ -890,8 +890,13 @@ def arima(
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
 
         res, resid = arima_css(x, arma, phi, theta, ncond)
+        if math.isinf(res):
+            import sys
 
-        return 0.5 * np.log(res)
+            return sys.float_info.max
+        if res <= 0.0:
+            return -math.inf
+        return 0.5 * math.log(res)
 
     coef = np.array(fixed)
     # parscale definition, think about it, scipy doesn't use it
@@ -999,7 +1004,7 @@ def arima(
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
             sol = np.matmul(res.hess_inv, A) / n_used
-            var = np.dot(A, sol)
+            var = A.T @ sol
             coef = arima_undopars(coef, arma)
         else:
             var = None if no_optim else res.hess_inv / n_used
@@ -1244,7 +1249,10 @@ def myarima(
             fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
         if not math.isnan(fit["aic"]):
             fit["bic"] = fit["aic"] + npar * (math.log(nstar) - 2)
-            fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
+            if nstar - npar - 1 != 0:
+                fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
+            else:
+                fit["aicc"] = math.inf
             fit["ic"] = fit[ic]
         else:
             fit["ic"] = fit["aic"] = fit["bic"] = fit["aicc"] = math.inf
@@ -1688,7 +1696,7 @@ def fitted_arima(model, h=1):
 def seas_heuristic(x, period):
     # nperiods = period > 1
     season = math.nan
-    stlfit = mstl(x, period, stl_kwargs={"seasonal_deg": 0})
+    stlfit = mstl(x, period)
     remainder = stlfit["remainder"]
     seasonal = stlfit.get("seasonal", None)
     vare = np.var(remainder, ddof=1)
@@ -2050,8 +2058,8 @@ def auto_arima_f(
             method=method,
             xreg=xreg,
             offset=offset,
-            allowdrift=allowdrift,
-            allowmean=allowmean,
+            allow_drift=allowdrift,
+            allow_mean=allowmean,
             period=m,
         )
         bestfit["lambda"] = blambda
@@ -2093,7 +2101,7 @@ def auto_arima_f(
     if fit["ic"] < bestfit["ic"]:
         bestfit = fit
         p = q = P = Q = 0
-    k = 1
+    k = 2
     if max_p > 0 or max_P > 0:
         p_ = int(max_p > 0)
         P_ = int(m > 1 and max_P > 0)
@@ -2101,7 +2109,7 @@ def auto_arima_f(
             order=(p_, d, 0),
             seasonal={"order": (P_, D, 0), "period": m},
         )
-        results[k + 1] = (p_, d, 0, P_, D, 0, constant, fit["ic"])
+        results[k] = (p_, d, 0, P_, D, 0, constant, fit["ic"])
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             p = p_
@@ -2115,7 +2123,7 @@ def auto_arima_f(
             order=(0, d, q_),
             seasonal={"order": (0, D, Q_), "period": m},
         )
-        results[k + 1] = (0, d, q_, 0, D, Q_, constant, fit["ic"])
+        results[k] = (0, d, q_, 0, D, Q_, constant, fit["ic"])
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             p = P = 0
@@ -2128,14 +2136,13 @@ def auto_arima_f(
             seasonal={"order": (0, D, 0), "period": m},
             constant=False,
         )
-        results[k + 1] = (0, d, 0, 0, D, 0, 0, fit["ic"])
+        results[k] = (0, d, 0, 0, D, 0, 0, fit["ic"])
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             p = q = P = Q = 0
         k += 1
 
     def try_params(p, d, q, P, D, Q, constant, k, bestfit):
-        k += 1
         improved = False
         if k >= results.shape[0]:
             return k, bestfit, improved
@@ -2144,6 +2151,7 @@ def auto_arima_f(
             seasonal={"order": (P, D, Q), "period": m},
         )
         results[k] = (p, d, q, P, D, Q, constant, fit["ic"])
+        k += 1
         if fit["ic"] < bestfit["ic"]:
             bestfit = fit
             improved = True

@@ -1,0 +1,17 @@
+name: exp_tbats
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - fire
+  - pip
+  - python=3.10
+  - r-base
+  - r-data.table
+  - r-forecast
+  - r-parallel 
+  - r-tidyverse
+  - pip:
+    - statsforecast
+    - utilsforecast
+    - tbats 
