@@ -24,7 +24,7 @@ jobs:
       - name: Build docs
         run: |
           set -ux
-          pip install uv && uv pip install --system --all-extras .
+          pip install uv && uv pip install --system ".[all]"
           mkdir nbs/_extensions
           cp -r docs-scripts/mintlify/ nbs/_extensions/
           python docs-scripts/update-quarto.py
