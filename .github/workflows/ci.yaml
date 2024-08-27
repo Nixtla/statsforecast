@@ -45,6 +45,11 @@ jobs:
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
 
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          path: wheelhouse/*.whl
+          retention-days: 1
+
   publish-nightly-wheels:
     if: github.event_name == 'push'
     needs: [build_wheels]
@@ -73,6 +78,7 @@ jobs:
           aws s3 sync dist s3://nixtla-packages/statsforecast/
 
   run-local-tests:
+    needs: [build_wheels]
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -90,12 +96,22 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install --system ".[dev,plotly]"
+        run: pip install uv && uv pip install --system -r pyproject.toml --extra dev --extra plotly
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: artifact
+          path: dist
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run local tests
         run: nbdev_test --skip_file_re '(models|distributed|ets|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
   run-tests:
+    needs: [build_wheels]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
@@ -115,7 +131,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install --system ".[all]"
+        run: pip install uv && uv pip install --system -r pyproject.toml --all-extras
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: artifact
+          path: dist
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run tests
         run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
@@ -126,6 +151,7 @@ jobs:
           pytest --durations=0 action_files
 
   test-m3-performance:
+    needs: [build_wheels]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
@@ -136,8 +162,17 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install library and extra deps
-        run: pip install uv && uv pip install --system ".[dev]"
+      - name: Install pip requirements
+        run: pip install uv && uv pip install --system -r pyproject.toml --extra dev
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: artifact
+          path: dist
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run M3 experiment
         run: |
