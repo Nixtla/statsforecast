@@ -76,6 +76,7 @@ sdist.reproducible = true
 wheel.packages = ["python/statsforecast"]
 
 [tool.cibuildwheel]
+archs = "all"
 build-verbosity = 3
 test-command = "python -c 'import statsforecast._lib'"
 
