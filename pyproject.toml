@@ -44,7 +44,7 @@ dev = [
     "flake8",
     "fugue[dask,ray,spark]>=0.8.1",
     "mypy",
-    "nbdev",
+    "nbdev<2.3.26",
     "nbformat",
     "nbdev_plotly",
     "pandas[plot]",

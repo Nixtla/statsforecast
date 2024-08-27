@@ -15,7 +15,7 @@ env:
 
 jobs:
   build_wheels:
-    name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.platform-id }}
+    name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
     runs-on: ${{ matrix.os-platform[0] }}
     strategy:
       fail-fast: false
@@ -29,6 +29,8 @@ jobs:
           - os-platform: [macos-14, macosx_arm64]
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
 
       - name: Set up QEMU
         if: matrix.os-platform[1] == 'manylinux_aarch64'
@@ -39,7 +41,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
         env:
-          CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.platform-id }}
+          CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
 
   publish-nightly-wheels:
     if: github.event_name == 'push'
@@ -100,6 +102,8 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
 
       - name: Set up environment
         uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
