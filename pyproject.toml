@@ -32,10 +32,6 @@ readme = "README.md"
 keywords = ["time-series", "forecasting", "arima", "ets"]
 
 [project.optional-dependencies]
-all = [
-    "statsforecast[dask,dev,plotly,polars,ray,spark] ; python_version < '3.12'",
-    "statsforecast[dask,dev,plotly,polars,spark] ; python_version >= '3.12'",
-]
 dask = ["fugue[dask]>=0.8.1"]
 dev = [
     "black",
@@ -55,7 +51,12 @@ dev = [
 ]
 plotly = ["nbdev_plotly", "plotly", "plotly-resampler"]
 polars = ["polars[numpy]"]
-ray = ["fugue[ray]>=0.8.1", "protobuf>=3.15.3,<4", "numpy<2", "ray<2.8"]
+ray = [
+    "fugue[ray]>=0.8.1 ; python_version < '3.12'",
+    "protobuf>=3.15.3,<4 ; python_version < '3.12'",
+    "numpy<2 ; python_version < '3.12'",
+    "ray<2.8 ; python_version < '3.12'",
+]
 spark = ["fugue[spark]>=0.8.1"]
 
 [project.entry-points.nbdev]

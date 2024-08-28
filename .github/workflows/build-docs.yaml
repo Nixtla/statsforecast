@@ -26,7 +26,7 @@ jobs:
       - name: Build docs
         run: |
           set -ux
-          pip install uv && uv pip install --system ".[all]"
+          pip install uv && uv pip install --system r -r pyproject.toml --all-extras
           uv pip install --system .
           mkdir nbs/_extensions
           cp -r docs-scripts/mintlify/ nbs/_extensions/
