@@ -10,7 +10,7 @@ import numpy as np
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 import statsforecast._lib.ets as _ets
-from .utils import _calculate_intervals
+from .utils import _calculate_intervals, results
 
 # %% ../../nbs/src/ets.ipynb 5
 # Global variables
@@ -477,7 +477,7 @@ def optimize_ets_target_fn(
         beta = 0.0
     if seasontype == "N":
         gamma = 0.0
-    return _ets.optimize(
+    opt_res = _ets.optimize(
         x0,
         y,
         nstate,
@@ -501,6 +501,7 @@ def optimize_ets_target_fn(
         1_000,
         True,
     )
+    return results(*opt_res, None)
 
 # %% ../../nbs/src/ets.ipynb 26
 def etsmodel(

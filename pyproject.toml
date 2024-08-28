@@ -32,6 +32,10 @@ readme = "README.md"
 keywords = ["time-series", "forecasting", "arima", "ets"]
 
 [project.optional-dependencies]
+all = [
+    "statsforecast[dask,dev,plotly,polars,ray,spark] ; python_version < '3.12'",
+    "statsforecast[dask,dev,plotly,polars,spark] ; python_version >= '3.12'",
+]
 dask = ["fugue[dask]>=0.8.1"]
 dev = [
     "black",

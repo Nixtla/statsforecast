@@ -10,7 +10,7 @@ endif()
 if(SKBUILD)
   set(LIBRARY_OUTPUT_PATH ${SKBUILD_PLATLIB_DIR}/statsforecast)
 else()
-  set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/statsforecast)
+  set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/python/statsforecast)
 endif()
 
 find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)

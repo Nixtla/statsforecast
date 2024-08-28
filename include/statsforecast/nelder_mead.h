@@ -3,8 +3,6 @@
 #include <numeric>
 #include <pybind11/eigen.h>
 
-#include "optim.h"
-
 namespace nm {
 using Eigen::VectorXd;
 using RowMajorMatrixXd =
@@ -27,7 +25,7 @@ Eigen::VectorX<Eigen::Index> ArgSort(const VectorXd &v) {
 }
 
 template <typename Func, typename... Args>
-optim::Result NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
+std::tuple<VectorXd, double, int> NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
                          const VectorXd upper, double init_step,
                          double zero_pert, double alpha, double gamma,
                          double rho, double sigma, int max_iter, double tol_std,
