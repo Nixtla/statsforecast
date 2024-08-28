@@ -9,7 +9,7 @@ import math
 import numpy as np
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-import statsforecast._lib.ets as _ets
+from ._lib import ets as _ets
 from .utils import _calculate_intervals, results
 
 # %% ../../nbs/src/ets.ipynb 5
