@@ -142,6 +142,17 @@ def _get_conformal_method(method: str):
 class _TS:
     uses_exog = False
 
+    def __init__(self, step=None):
+        r"""
+
+        Parameters
+        ----------
+        step : int
+            Step used when computing conformal prediction intervals. If step==None, the model will use the forecast
+            horizon. Default is None.
+        """
+        self.step = step
+
     def new(self):
         b = type(self).__new__(type(self))
         b.__dict__.update(self.__dict__)
@@ -161,17 +172,25 @@ class _TS:
         n_samples = y.size
         # use as many windows as possible for short series
         # subtract 1 for the training set
-        n_windows = min(n_windows, (n_samples - 1) // h)
+        step = h if self.step is None else self.step
+        n_windows = min(n_windows, (n_samples - 1 - h)//step)
         if n_windows < 2:
             raise ValueError(
                 f"Prediction intervals settings require at least {2 * h + 1:,} samples, serie has {n_samples:,}."
             )
-        test_size = n_windows * h
+
         cs = np.empty((n_windows, h), dtype=np.float32)
-        for i_window in range(n_windows):
-            train_end = n_samples - test_size + i_window * h
+
+        training_points = np.arange(n_samples - n_windows * step - h, n_samples -h, step)
+
+        for i_window, train_end in enumerate(training_points):
             y_train = y[:train_end]
-            y_test = y[train_end : train_end + h]
+            y_test = y[train_end: train_end + h]
+
+        #for i_window in range(n_windows):
+            #    train_end = n_samples - test_size + i_window * h
+            #y_train = y[:train_end]
+            #y_test = y[train_end : train_end + h]
             if X is not None:
                 X_train = X[:train_end]
                 X_test = X[train_end : train_end + h]
@@ -324,6 +343,7 @@ class AutoARIMA(_TS):
         season_length: int = 1,
         alias: str = "AutoARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.d = d
         self.D = D
@@ -358,6 +378,7 @@ class AutoARIMA(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -677,6 +698,7 @@ class AutoETS(_TS):
         phi: Optional[float] = None,
         alias: str = "AutoETS",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.season_length = season_length
         self.model = model
@@ -689,6 +711,7 @@ class AutoETS(_TS):
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -956,11 +979,13 @@ class AutoCES(_TS):
         model: str = "Z",
         alias: str = "CES",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.season_length = season_length
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -1203,12 +1228,14 @@ class AutoTheta(_TS):
         model: Optional[str] = None,
         alias: str = "AutoTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -1451,6 +1478,7 @@ class ARIMA(_TS):
         fixed: Optional[dict] = None,
         alias: str = "ARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.order = order
         self.season_length = season_length
@@ -1464,6 +1492,7 @@ class ARIMA(_TS):
         self.fixed = fixed
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -1872,10 +1901,12 @@ class SimpleExponentialSmoothing(_TS):
         alpha: float,
         alias: str = "SES",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -2041,9 +2072,11 @@ class SimpleExponentialSmoothingOptimized(_TS):
         self,
         alias: str = "SESOpt",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -2230,11 +2263,13 @@ class SeasonalExponentialSmoothing(_TS):
         alpha: float,
         alias: str = "SeasonalES",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.season_length = season_length
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -2398,6 +2433,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         season_length: int,
         alias: str = "SeasESOpt",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""SeasonalExponentialSmoothingOptimized model.
 
@@ -2431,6 +2467,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -2663,6 +2700,7 @@ class HistoricAverage(_TS):
         self,
         alias: str = "HistoricAverage",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""HistoricAverage model.
 
@@ -2685,6 +2723,7 @@ class HistoricAverage(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -2839,6 +2878,7 @@ class Naive(_TS):
         self,
         alias: str = "Naive",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""Naive model.
 
@@ -2860,6 +2900,7 @@ class Naive(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -3065,6 +3106,7 @@ class RandomWalkWithDrift(_TS):
         self,
         alias: str = "RWD",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""RandomWalkWithDrift model.
 
@@ -3091,6 +3133,7 @@ class RandomWalkWithDrift(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -3242,6 +3285,7 @@ class SeasonalNaive(_TS):
         season_length: int,
         alias: str = "SeasonalNaive",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""Seasonal naive model.
 
@@ -3265,6 +3309,7 @@ class SeasonalNaive(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(
         self,
@@ -3443,6 +3488,7 @@ class WindowAverage(_TS):
         window_size: int,
         alias: str = "WindowAverage",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""WindowAverage model.
 
@@ -3468,6 +3514,7 @@ class WindowAverage(_TS):
         self.window_size = window_size
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -3617,6 +3664,7 @@ class SeasonalWindowAverage(_TS):
         window_size: int,
         alias: str = "SeasWA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""SeasonalWindowAverage model.
 
@@ -3642,6 +3690,7 @@ class SeasonalWindowAverage(_TS):
         self.window_size = window_size
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -3868,6 +3917,7 @@ class ADIDA(_TS):
         self,
         alias: str = "ADIDA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""ADIDA model.
 
@@ -3895,6 +3945,7 @@ class ADIDA(_TS):
         r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4063,6 +4114,7 @@ class CrostonClassic(_TS):
         self,
         alias: str = "CrostonClassic",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""CrostonClassic model.
 
@@ -4089,6 +4141,7 @@ class CrostonClassic(_TS):
         r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4267,6 +4320,7 @@ class CrostonOptimized(_TS):
         self,
         alias: str = "CrostonOptimized",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""CrostonOptimized model.
 
@@ -4293,6 +4347,7 @@ class CrostonOptimized(_TS):
         r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4438,6 +4493,7 @@ class CrostonSBA(_TS):
         self,
         alias: str = "CrostonSBA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""CrostonSBA model.
 
@@ -4465,6 +4521,7 @@ class CrostonSBA(_TS):
         r"""
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4636,6 +4693,7 @@ class IMAPA(_TS):
         self,
         alias: str = "IMAPA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""IMAPA model.
 
@@ -4659,6 +4717,7 @@ class IMAPA(_TS):
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4826,6 +4885,7 @@ class TSB(_TS):
         alpha_p: float,
         alias: str = "TSB",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         r"""TSB model.
 
@@ -4866,6 +4926,7 @@ class TSB(_TS):
         self.alpha_p = alpha_p
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.only_conformal_intervals = True
 
     def fit(
@@ -5047,6 +5108,7 @@ class MSTL(_TS):
         stl_kwargs: Optional[Dict] = None,
         alias: str = "MSTL",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
 
         # check ETS model doesnt have seasonality
@@ -5070,6 +5132,7 @@ class MSTL(_TS):
         self.season_length = season_length
         self.trend_forecaster = trend_forecaster
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.alias = alias
 
         if self.trend_forecaster.prediction_intervals is None and (
@@ -5333,6 +5396,7 @@ class TBATS(_TS):
         use_damped_trend: Optional[bool] = False,
         use_arma_errors: bool = False,
         alias: str = "TBATS",
+        step: Optional[int] = None,
         *,
         seasonal_periods=None,  # noqa: ARG002
     ):
@@ -5346,6 +5410,7 @@ class TBATS(_TS):
         self.use_damped_trend = use_damped_trend
         self.use_arma_errors = use_arma_errors
         self.alias = alias
+        super().__init__(step=step)
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         r"""Fit TBATS model.
@@ -5756,6 +5821,7 @@ class GARCH(_TS):
         q: int = 1,
         alias: str = "GARCH",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        step: Optional[int] = None,
     ):
         self.p = p
         self.q = q
@@ -5764,6 +5830,7 @@ class GARCH(_TS):
         else:
             self.alias = alias + "(" + str(p) + ")"
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         r"""Fit GARCH model.
@@ -5963,9 +6030,11 @@ class SklearnModel(_TS):
         model,
         prediction_intervals: Optional[ConformalIntervals] = None,
         alias: Optional[str] = None,
+        step: Optional[int] = None,
     ):
         self.model = model
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.alias = alias if alias is not None else model.__class__.__name__
 
     def fit(
@@ -6248,6 +6317,7 @@ class MFLES(_TS):
         verbose: bool = False,
         prediction_intervals: Optional[ConformalIntervals] = None,
         alias: str = "MFLES",
+        step: Optional[int] = None,
     ):
         try:
             import sklearn  # noqa: F401
@@ -6275,6 +6345,7 @@ class MFLES(_TS):
         self.robust = robust
         self.verbose = verbose
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.alias = alias
 
     def _fit(self, y: np.ndarray, X: Optional[np.ndarray]) -> Dict[str, Any]:
@@ -6466,6 +6537,7 @@ class AutoMFLES(_TS):
         verbose: bool = False,
         prediction_intervals: Optional[ConformalIntervals] = None,
         alias: str = "AutoMFLES",
+        step: Optional[int] = None,
     ):
         try:
             import sklearn  # noqa: F401
@@ -6479,6 +6551,7 @@ class AutoMFLES(_TS):
         self.metric = metric
         self.verbose = verbose
         self.prediction_intervals = prediction_intervals
+        super().__init__(step=step)
         self.alias = alias
 
     def _fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> Dict[str, Any]:
@@ -6629,7 +6702,7 @@ class AutoMFLES(_TS):
 # %% ../nbs/src/core/models.ipynb 501
 class ConstantModel(_TS):
 
-    def __init__(self, constant: float, alias: str = "ConstantModel"):
+    def __init__(self, constant: float, alias: str = "ConstantModel", step=None):
         r"""Constant Model.
 
         Returns Constant values.
@@ -6643,6 +6716,7 @@ class ConstantModel(_TS):
         """
         self.constant = constant
         self.alias = alias
+        super().__init__(step=step)
 
     def fit(
         self,
