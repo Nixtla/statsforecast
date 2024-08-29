@@ -113,7 +113,7 @@ jobs:
         run: pip install --no-index --find-links dist statsforecast
 
       - name: Run local tests
-        run: nbdev_test --skip_file_re '(models|distributed|ets|prophet).*.ipynb' --pause 1.0 --do_print --timing
+        run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
   run-tests:
     needs: [build_wheels]
