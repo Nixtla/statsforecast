@@ -1,0 +1,27 @@
+## Include List
+
+include README.md
+include LICENSE
+include settings.ini
+
+
+recursive-include python/statsforecast *
+recursive-include include/statsforecast *
+recursive-include external_libs *
+
+## Exclude List
+
+exclude CONTRIBUTING.md
+exclude Makefile
+exclude environment.yml
+
+exclude .gitconfig
+exclude .gitignore
+exclude .gitmodules
+
+recursive-exclude .github *
+recursive-exclude docs *
+recursive-exclude examples *
+recursive-exclude experiments *
+recursive-exclude nbs *
+recursive-exclude tests *

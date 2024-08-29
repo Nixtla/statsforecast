@@ -81,10 +81,12 @@ jobs:
 
   run-local-tests:
     needs: [build_wheels]
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
+        os: [macos-13, macos-14, windows-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Clone repo
@@ -115,12 +117,11 @@ jobs:
 
   run-tests:
     needs: [build_wheels]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Clone repo
