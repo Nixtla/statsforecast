@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
 archs = "all"
-build-verbosity = 3
+build-verbosity = 1
 test-skip = "*"
 
 [tool.ruff]
