@@ -6,20 +6,24 @@ on:
 
 jobs:
   build_wheels:
-    name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.platform-id }}
+    name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
     runs-on: ${{ matrix.os-platform[0] }}
     strategy:
       fail-fast: false
       matrix:
         python-version: [38, 39, 310, 311, 312]
-        include:
-          - os-platform: [ubuntu-latest, manylinux_x86_64]
-          - os-platform: [ubuntu-latest, manylinux_aarch64]
-          - os-platform: [windows-latest, win_amd64]
-          - os-platform: [macos-12, macosx_x86_64]
-          - os-platform: [macos-14, macosx_arm64]
+        os-platform:
+          [
+            [ubuntu-latest, manylinux_x86_64],
+            [ubuntu-latest, manylinux_aarch64],
+            [windows-latest, win_amd64],
+            [macos-12, macosx_x86_64],
+            [macos-14, macosx_arm64],
+          ]
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
 
       - name: Set up QEMU
         if: matrix.os-platform[1] == 'manylinux_aarch64'
@@ -30,9 +34,11 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
         env:
-          CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.platform-id }}
+          CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+
       - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
+          name: artifact-cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           path: wheelhouse/*.whl
           retention-days: 1
 
