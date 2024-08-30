@@ -97,11 +97,39 @@ def _add_conformal_distribution_intervals(
         fcst[col] = quantiles[i]
     return fcst
 
+def _add_naive_error_intervals(
+    fcst: Dict,
+    cs: np.ndarray,
+    level: List[Union[int, float]],
+) -> Dict:
+    r"""
+    Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
+    `level` should be already sorted. This strategy creates forecasts paths
+    based on errors and calculate quantiles using those paths.
+    """
+    alphas = [100 - lv for lv in level]
+    cuts = [alpha / 200 for alpha in reversed(alphas)]
+    cuts.extend(1 - alpha / 200 for alpha in alphas)
+    mean = fcst["mean"].reshape(1, -1)
+    scores = mean + cs
+    quantiles = np.quantile(
+        scores,
+        cuts,
+        axis=0,
+    )
+    quantiles = quantiles.reshape(len(cuts), -1)
+    lo_cols = [f"lo-{lv}" for lv in reversed(level)]
+    hi_cols = [f"hi-{lv}" for lv in level]
+    out_cols = lo_cols + hi_cols
+    for i, col in enumerate(out_cols):
+        fcst[col] = quantiles[i]
+    return fcst
+
 # %% ../nbs/src/core/models.ipynb 11
 def _get_conformal_method(method: str):
     available_methods = {
         "conformal_distribution": _add_conformal_distribution_intervals,
-        # "conformal_error": _add_conformal_error_intervals,
+        "naive_error": _add_naive_error_intervals,
     }
     if method not in available_methods.keys():
         raise ValueError(
@@ -127,6 +155,7 @@ class _TS:
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ) -> np.ndarray:
+        error = self._conformal_method == _add_naive_error_intervals
         n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
         n_samples = y.size
@@ -150,7 +179,7 @@ class _TS:
                 X_train = None
                 X_test = None
             fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_test)  # type: ignore[attr-defined]
-            cs[i_window] = np.abs(fcst_window["mean"] - y_test)
+            cs[i_window] = fcst_window["mean"] - y_test if error else np.abs(fcst_window["mean"] - y_test)
         return cs
 
     @property
