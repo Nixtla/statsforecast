@@ -14,38 +14,85 @@ env:
   NIXTLA_NUMBA_CACHE: "1"
 
 jobs:
-  run-local-tests:
-    runs-on: windows-latest
+  build_wheels:
+    name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+    runs-on: ${{ matrix.os-platform[0] }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: [38, 39, 310, 311, 312]
+        os-platform:
+          [
+            [ubuntu-latest, manylinux_x86_64],
+            [ubuntu-latest, manylinux_aarch64],
+            [windows-latest, win_amd64],
+            [macos-12, macosx_x86_64],
+            [macos-14, macosx_arm64],
+          ]
     steps:
-      - name: Clone repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-
-      - name: Set up environment
-        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          python-version: ${{ matrix.python-version }}
+          submodules: "true"
 
-      - name: Install pip requirements
-        run: pip install uv && uv pip install --system ".[dev,plotly]"
+      - name: Set up QEMU
+        if: matrix.os-platform[1] == 'manylinux_aarch64'
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+        with:
+          platforms: arm64
 
-      - name: Run local tests
-        run: nbdev_test --skip_file_re '(models|distributed|ets|prophet).*.ipynb' --pause 1.0 --do_print --timing
+      - name: Build wheels
+        uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
+        env:
+          CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
 
-  run-tests:
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          name: artifact-cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+          path: wheelhouse/*.whl
+          retention-days: 1
+
+  publish-nightly-wheels:
+    if: github.event_name == 'push'
+    needs: [build_wheels]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_NIXTLA_PACKAGES }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_NIXTLA_PACKAGES }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+        with:
+          python-version: "3.10"
+
+      - name: Publish wheels
+        run: |
+          pip install awscli beautifulsoup4
+          aws s3 cp s3://nixtla-packages/statsforecast/index.html .
+          python action_files/update_index.py
+          aws s3 sync dist s3://nixtla-packages/statsforecast/
+
+  run-local-tests:
+    needs: [build_wheels]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13]
+        os: [macos-13, macos-14, windows-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Clone repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
 
       - name: Set up environment
         uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
@@ -53,7 +100,52 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install uv && uv pip install --system ".[all]"
+        run: pip install uv && uv pip install --system -r setup.py --extra dev --extra plotly
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
+
+      - name: Run local tests
+        run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
+
+  run-tests:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
+
+      - name: Set up environment
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pip requirements
+        run: pip install uv && uv pip install --system -r setup.py --extra all
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run tests
         run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
@@ -64,6 +156,7 @@ jobs:
           pytest --durations=0 action_files
 
   test-m3-performance:
+    needs: [build_wheels]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
@@ -74,8 +167,18 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install library and extra deps
-        run: pip install uv && uv pip install --system ".[dev]"
+      - name: Install pip requirements
+        run: pip install uv && uv pip install --system -r setup.py --extra dev
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run M3 experiment
         run: |
