@@ -336,7 +336,7 @@ class ConformalIntervals:
             raise ValueError(
                 "You need at least two windows to compute conformal intervals"
             )
-        allowed_methods = ["conformal_distribution", "naive_error"]
+        allowed_methods = ["conformal_distribution"]
         if method not in allowed_methods:
             raise ValueError(f"method must be one of {allowed_methods}")
         self.n_windows = n_windows
