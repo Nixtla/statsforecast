@@ -9,13 +9,13 @@ You can install the *released version* of
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 from the [Python package index](https://pypi.org) with:
 
-```python
+```shell
 pip install statsforecast
 ```
 
 or
 
-```python
+```shell
 conda install -c conda-forge statsforecast
 ```
 
@@ -30,31 +30,7 @@ conda install -c conda-forge statsforecast
 > [conda
 > environment](https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html).
 
-#### User our env (optional)
-
-If you don’t have a Conda environment and need tools like Numba, Pandas,
-NumPy, Jupyter, StatsModels, and Nbdev you can use ours by following
-these steps:
-
-1.  Clone the StatsForecast repo:
-
-```bash
-$ git clone https://github.com/Nixtla/statsforecast.git && cd statsforecast
-```
-
-1.  Create the environment using the `environment.yml` file:
-
-```bash
-$ conda env create -f environment.yml
-```
-
-1.  Activate the environment:
-
-```bash
-$ conda activate statsforecast
-```
-
-## Extras
+#### Extras
 
 The following features can also be installed by specifying the extra
 inside the install command,
@@ -65,4 +41,16 @@ e.g. `pip install 'statsforecast[extra1,extra2]'`
 -   **dask**: perform distributed forecasting with dask.
 -   **spark**: perform distributed forecasting with spark.
 -   **ray**: perform distributed forecasting with ray.
+
+#### Development version
+
+If you want to try out a new feature that hasn’t made it into a release
+yet you have the following options:
+
+-   Install from our nightly wheels:
+    `pip install --extra-index-url=http://nixtla-packages.s3-website.us-east-2.amazonaws.com --trusted-host nixtla-packages.s3-website.us-east-2.amazonaws.com statsforecast`
+-   Install from github:
+    `pip install git+https://github.com/Nixtla/statsforecast`. This
+    requires that you have a C++ compiler installed, so we encourage you
+    to try the previous option first.
 

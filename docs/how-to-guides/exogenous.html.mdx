@@ -261,8 +261,7 @@ sf = StatsForecast(
 ```
 
 Now we’re ready to generate the forecast. To do this, we’ll use the
-[`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
-method, which takes the following arguments.
+`forecast` method, which takes the following arguments.
 
 -   `h`: An integer that represents the forecast horizon. In this case,
     we’ll forecast the next 28 days.
@@ -328,13 +327,10 @@ The MAE with exogenous regressors is 11.42
 
 To check whether the exogenous regressors were useful or not, we need to
 generate the forecast again, now without them. To do this, we simple
-pass the dataframe wihtout exogenous variables to the
-[`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
-method. Notice that the data only includes `unique_id`, `ds`, and `y`.
-The
-[`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
-method no longer requieres the future values of the exogenous regressors
-`X_df`.
+pass the dataframe wihtout exogenous variables to the `forecast` method.
+Notice that the data only includes `unique_id`, `ds`, and `y`. The
+`forecast` method no longer requieres the future values of the exogenous
+regressors `X_df`.
 
 ```python
 # univariate model 

@@ -283,9 +283,8 @@ sf = StatsForecast(
 > should take around 5 seconds. The second time -once Numba compiled
 > your settings- it should take less than 0.2s.
 
-The
-[`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
-method takes two arguments: forecasts next `h` (horizon) and `level`.
+The `forecast` method takes two arguments: forecasts next `h` (horizon)
+and `level`.
 
 -   `h` (int): represents the forecast h steps into the future. In this
     case, 12 months ahead.
@@ -304,12 +303,11 @@ remove the AutoModels like ARIMA and Theta)
 
 > **Note**
 >
-> The
-> [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast)
-> method is compatible with distributed clusters, so it does not store
-> any model parameters. If you want to store parameters for every model
-> you can use the `fit` and `predict` methods. However, those methods
-> are not defined for distrubed engines like Spark, Ray or Dask.
+> The `forecast` method is compatible with distributed clusters, so it
+> does not store any model parameters. If you want to store parameters
+> for every model you can use the `fit` and `predict` methods. However,
+> those methods are not defined for distrubed engines like Spark, Ray or
+> Dask.
 
 ```python
 forecasts_df = sf.forecast(df=Y_df, h=48, level=[90])

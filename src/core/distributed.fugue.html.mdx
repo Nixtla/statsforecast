@@ -117,7 +117,7 @@ StatsForecast models.\*
 | df | AnyDataFrame | DataFrame with ids, times, targets and exogenous. |
 | freq | Union | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. |
 | models | List | List of instantiated objects models.StatsForecast. |
-| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast) and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
+| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the `forecast` and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
 | X_df | Optional | DataFrame with ids, times and future exogenous. |
 | h | int | Forecast horizon. |
 | level | Optional | Confidence levels between 0 and 100 for prediction intervals. |
@@ -165,7 +165,7 @@ measurements by increasing the test’s length and diversity.\*
 | df | AnyDataFrame | DataFrame with ids, times, targets and exogenous. |
 | freq | Union | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. |
 | models | List | List of instantiated objects models.StatsForecast. |
-| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the [`forecast`](https://Nixtla.github.io/statsforecast/src/ets.html#forecast) and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
+| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the `forecast` and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
 | h | int | Forecast horizon. |
 | n_windows | int | Number of windows used for cross validation. |
 | step_size | int | Step size between each window. |
