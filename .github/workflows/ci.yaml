@@ -6,112 +6,179 @@ on:
   pull_request:
     branches: [main]
 
-defaults:
-  run:
-    shell: bash -l {0}
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  NIXTLA_NUMBA_CACHE: '1'
+  NIXTLA_NUMBA_CACHE: "1"
 
 jobs:
-  nb-sync:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@v2
-
-      - name: Set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install nbdev
-        run: pip install nbdev
-
-      - name: Check if all notebooks are cleaned
-        run: |
-          echo "Check we are starting with clean git checkout"
-          if [ -n "$(git status -uno -s)" ]; then echo "git status is not clean"; false; fi
-          echo "Trying to strip out notebooks"
-          ./action_files/clean_nbs
-          echo "Check that strip out was unnecessary"
-          git status -s # display the status to see which nbs need cleaning up
-          if [ -n "$(git status -uno -s)" ]; then echo -e "!!! Detected unstripped out notebooks\n!!!Remember to run nbdev_install_git_hooks and running ./action_files/clean_nbs before committing"; false; fi
-
-  run-local-tests:
-    runs-on: windows-latest
+  build_wheels:
+    name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+    runs-on: ${{ matrix.os-platform[0] }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: [38, 39, 310, 311, 312]
+        os-platform:
+          [
+            [ubuntu-latest, manylinux_x86_64],
+            [ubuntu-latest, manylinux_aarch64],
+            [windows-latest, win_amd64],
+            [macos-12, macosx_x86_64],
+            [macos-14, macosx_arm64],
+          ]
     steps:
-      - name: Clone repo
-        uses: actions/checkout@v3
-
-      - name: Set up environment
-        uses: mamba-org/setup-micromamba@v1
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          environment-file: dev/local_environment.yml
-          create-args: python=${{ matrix.python-version }}
-          cache-environment: true
+          submodules: "true"
 
-      - name: Install pip requirements
-        run: pip install ./
+      - name: Set up QEMU
+        if: matrix.os-platform[1] == 'manylinux_aarch64'
+        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+        with:
+          platforms: arm64
 
-      - name: Run local tests
-        run: nbdev_test --skip_file_re '(models|distributed|ets).*.ipynb' --pause 1.0 --do_print --timing
+      - name: Build wheels
+        uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
+        env:
+          CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
 
-  run-tests:
+      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
+        with:
+          name: artifact-cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+          path: wheelhouse/*.whl
+          retention-days: 1
+
+  publish-nightly-wheels:
+    if: github.event_name == 'push'
+    needs: [build_wheels]
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_NIXTLA_PACKAGES }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_NIXTLA_PACKAGES }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+        with:
+          python-version: "3.10"
+
+      - name: Publish wheels
+        run: |
+          pip install awscli beautifulsoup4
+          aws s3 cp s3://nixtla-packages/statsforecast/index.html .
+          python action_files/update_index.py
+          aws s3 sync dist s3://nixtla-packages/statsforecast/
+
+  run-local-tests:
+    needs: [build_wheels]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13]
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        os: [macos-13, macos-14, windows-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
 
       - name: Set up environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
-          environment-file: dev/environment.yml
-          create-args: python=${{ matrix.python-version }}
-          cache-environment: true
+          python-version: ${{ matrix.python-version }}
 
       - name: Install pip requirements
-        run: pip install ./
+        run: pip install uv && uv pip install --system -r setup.py --extra dev --extra plotly
 
-      - name: Run tests 
-        run: nbdev_test --skip_file_re '(distributed).*.ipynb' --pause 1.0 --do_print --timing
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
+
+      - name: Run local tests
+        run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
+
+  run-tests:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
+
+      - name: Set up environment
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pip requirements
+        run: pip install uv && uv pip install --system -r setup.py --extra all
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
+
+      - name: Run tests
+        run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
       - name: Run integration tests
         run: |
-          pip install ".[dev]" pytest
+          uv pip install --system pytest
           pytest --durations=0 action_files
 
   test-m3-performance:
+    needs: [build_wheels]
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
       - name: Clone repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Set up environment
-        uses: mamba-org/setup-micromamba@v1
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
-          environment-file: dev/environment.yml
-          create-args: python=3.10
-          cache-environment: true
+          python-version: "3.10"
 
-      - name: Install library and extra deps
-        run: pip install ".[dev]" fire
+      - name: Install pip requirements
+        run: pip install uv && uv pip install --system -r setup.py --extra dev
+
+      - name: Download wheels
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          path: dist
+          pattern: "artifact-*"
+          merge-multiple: true
+
+      - name: Install the library
+        run: pip install --no-index --find-links dist statsforecast
 
       - name: Run M3 experiment
         run: |

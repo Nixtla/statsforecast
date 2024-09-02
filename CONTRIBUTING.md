@@ -2,34 +2,33 @@
 
 > This document contains instructions for collaborating on the different libraries of Nixtla.
 
-Sometimes, diving into a new technology can be challenging and overwhelming. We've been there too, and we're more than ready to assist you with any issues you may encounter while following these steps. Don't hesitate to reach out to us on [Slack](https://join.slack.com/t/nixtlacommunity/shared_invite/zt-1pmhan9j5-F54XR20edHk0UtYAPcW4KQ). Just give fede a ping, and she'll be glad to assist you.
+Sometimes, diving into a new technology can be challenging and overwhelming. We've been there too, and we're more than ready to assist you with any issues you may encounter while following these steps. Don't hesitate to reach out to us on [Slack](https://join.slack.com/t/nixtlacommunity/shared_invite/zt-1pmhan9j5-F54XR20edHk0UtYAPcW4KQ). Just give Azul a ping, and she'll be glad to assist you.
 
 ## Table of Contents 📚
 
 1. [Prerequisites](#prerequisites)
 2. [Git `fork-and-pull` worklow](#git-fork-and-pull-worklow)
-3. [Set Up a Conda Environment](#set-up-a-conda-environment)
+3. [Set Up a Virtual Environment](#set-up-a-virtual-environment)
 4. [Install required libraries for development](#install-required-libraries-for-development)
 5. [Start editable mode](#start-editable-mode)
 6. [Set Up your Notebook based development environment](#set-up-your-notebook-based-development-environment)
 7. [Start Coding](#start-coding)
 8. [Example with Screen-shots](#example-with-screen-shots)
 
-## Prerequisites 
+## Prerequisites
 
-- *GitHub*: You should already have a GitHub account and a basic understanding of its functionalities. Alternatively check [this guide](https://docs.github.com/en/get-started).
-- *Python*: Python should be installed on your system. Alternatively check [this guide](https://www.python.org/downloads/). 
-- *conda*: You need to have conda installed, along with a good grasp of fundamental operations such as creating environments, and activating and deactivating them.  Alternatively check [this guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). 
+- **GitHub**: You should already have a GitHub account and a basic understanding of its functionalities. Alternatively check [this guide](https://docs.github.com/en/get-started).
+- **uv**: You need to have `uv` installed. You can refer to the [docs](https://docs.astral.sh/uv/getting-started/installation/) in order to install it.
 
 ## Git `fork-and-pull` worklow
 
-**1. Fork the Project:** 
+**1. Fork the Project:**
 Start by forking the Nixtla repository to your own GitHub account. This creates a personal copy of the project where you can make changes without affecting the main repository.
 
 **2. Clone the Forked Repository**
-Clone the forked repository to your local machine using `git clone https://github.com/<your-username>/nixtla.git`. This allows you to work with the code directly on your system. 
+Clone the forked repository to your local machine using `git clone --recursive https://github.com/<your-username>/statsforecast.git`. This allows you to work with the code directly on your system.
 
-**3. Create a Branch:** 
+**3. Create a Branch:**
 
 Branching in GitHub is a key strategy for effectively managing and isolating changes to your project. It allows you to segregate work on different features, fixes, and issues without interfering with the main, production-ready codebase.
 
@@ -43,33 +42,36 @@ Branching in GitHub is a key strategy for effectively managing and isolating cha
 
 After testing, branches are merged back into the main branch via a pull request, and then typically deleted to maintain a clean repository. You can read more about github and branching [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
 
-##  Set Up a Conda Environment
+##  Set Up a Virtual Environment
 
 > If you want to use Docker or Codespaces, let us know opening an issue and we will set you up.
 
-Next, you'll need to set up a [Conda](https://docs.conda.io/en/latest/) environment. Conda is an open-source package management and environment management system that runs on Windows, macOS, and Linux. It allows you to create separate environments containing files, packages, and dependencies that will not interact with each other.
+Next, you'll need to create a virtual environment. uv is an open-source package management and environment management system that runs on Windows, macOS, and Linux. It allows you to create isolated environments with the dependencies required for a specific project.
 
-First, ensure you have Anaconda or Miniconda installed on your system. Alternatively checkout these guides: [Anaconda](https://www.anaconda.com/), [Miniconda](https://docs.conda.io/en/latest/miniconda.html), and [Mamba](https://mamba.readthedocs.io/en/latest/).
+First, ensure you have uv installed on your system. Alternatively, refer to the [installation docs](https://docs.astral.sh/uv/getting-started/installation/).
 
-Then, you can create a new environment using `conda create -n nixtla-env python=3.10`. 
+Then, you can create a new environment using `uv venv`. This will use your default python interpreter, you can also define a specific python version (which will be downloaded if you don't have it already) by providing the `--python` flag. For example, `uv venv --python 3.12`.
 
-You can also use mamba for creating the environment (mamba is faster than Conda) using `mamba create -n nixtla-env python=3.10`. 
-
-Activate your new environment with `conda activate nixtla-env`. 
+Activate your new environment with `source .venv/bin/activate` for MacOS and Linux or `.\.venv\Scripts\activate` for Windows.
 
 ## Install required libraries for development
 
-The `environment.yml` file contains all the dependencies required for the project. To install these dependencies, use the `mamba` package manager, which offers faster package installation and environment resolution than Conda. If you haven't installed `mamba` yet, you can do so using `conda install mamba -c conda-forge`. Run the following command to install the dependencies:
+The `setup.py` file contains all the dependencies required for the project. To install these dependencies you can use `uv pip install -r setup.py --extra dev`
 
-```
-mamba env update -f environment.yml
-```
+### Setup pre-commit hooks
+
+We use [pre-commit](https://pre-commit.com/) to ease the development process, which run some checks before you make a commit to have a faster feedback loop.
+
+To setup the pre-commit hooks run: `pre-commit install`
 
 ## Start editable mode
 
-Install the library in editable mode using `pip install -e ".[dev]"`. 
+Install the library in editable mode using `uv pip install --no-build-isolation -e .` (this requires a C++ compiler).
 
-This means the package is linked directly to the source code, allowing any changes made to the source code to be immediately reflected in your Python environment without the need to reinstall the package. This is useful for testing changes during package development.
+By using the `-e` flag the package is linked directly to the source code, allowing any changes made to the source code to be immediately reflected in your Python environment without the need to reinstall the package. This is useful for testing changes during package development.
+
+### Re-compiling the shared library
+If you're working on the C++ code, you'll need to re-compile the shared library, which can be done with: `python setup.py build_ext --inplace` (this will compile it into the `build` directory and copy it to the python package location).
 
 ## Set Up your Notebook based development environment
 
@@ -98,7 +100,7 @@ Open a jupyter notebook using `jupyter lab` (or VS Code).
 2. **Commit Your Changes:** Add the changed files using `git add [your_modified_file_0.ipynb] [your_modified_file_1.ipynb]`, then commit these changes using `git commit -m "<type>: <Your descriptive commit message>"`. Please use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 
 
-3. **Push Your Changes:** 
+3. **Push Your Changes:**
 Push your changes to the remote repository on GitHub with `git push origin feature/your-feature-name`.
 
 4. **Open a Pull Request:** Open a pull request from your new branch on the Nixtla repository on GitHub. Provide a thorough description of your changes when creating the pull request.
@@ -107,7 +109,7 @@ Push your changes to the remote repository on GitHub with `git push origin featu
 
 Remember, contributing to open-source projects is a collaborative effort. Respect the work of others, welcome feedback, and always strive to improve. Happy coding!
 
-> Nixtla offers the possibility of assisting with stipends for computing infrastructure for our contributors. If you are interested, please join our [slack](https://nixtlacommunity.slack.com/join/shared_invite/zt-1pmhan9j5-F54XR20edHk0UtYAPcW4KQ#/shared-invite/email) and write to fede or Max.
+> Nixtla offers the possibility of assisting with stipends for computing infrastructure for our contributors. If you are interested, please join our [slack](https://nixtlacommunity.slack.com/join/shared_invite/zt-1pmhan9j5-F54XR20edHk0UtYAPcW4KQ#/shared-invite/email) and write to Azul or Max.
 
 You can find a detailed step by step buide with screen-shots below.
 
@@ -125,7 +127,7 @@ In that repository, you can make your changes and then request to have them adde
 
 ### 2. Clone the repository
 
-In this tutorial, we are using Mac (also compatible with other Linux distributions). If you are a collaborator of Nixtla, you can request an AWS instance to collaborate from there. If this is the case, please reach out to Max or Fede on [Slack](https://join.slack.com/t/nixtlacommunity/shared_invite/zt-1pmhan9j5-F54XR20edHk0UtYAPcW4KQ) to receive the appropriate access. We also use Visual Studio Code, which you can download from [here](https://code.visualstudio.com/download).
+In this tutorial, we are using Mac (also compatible with other Linux distributions). If you are a collaborator of Nixtla, you can request an AWS instance to collaborate from there. If this is the case, please reach out to Max or Azul on [Slack](https://join.slack.com/t/nixtlacommunity/shared_invite/zt-1pmhan9j5-F54XR20edHk0UtYAPcW4KQ) to receive the appropriate access. We also use Visual Studio Code, which you can download from [here](https://code.visualstudio.com/download).
 
 Once the repository is created, you need to clone it to your own computer. Simply copy the repository URL from GitHub as shown below:
 
@@ -147,42 +149,13 @@ You will end up with something like this:
 
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/ea4aed6f-2000-4ec8-a242-36b9dfd68d26)
 
-### 3. Create the Conda environment
-
-Open a terminal within Visual Studio Code, as shown in the image:
-
-<img width="1423" alt="image" src="https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/9b3ed42f-1a68-450c-bffd-a7cee40bb781">
-
-You can use conda but we highly recommend using Mamba to speed up the creation of the Conda environment. To install it, simply use `conda install mamba -c conda-forge` in the terminal you just opened:
-
-![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/08482b00-9434-46f0-9452-c3f4920eca6d)
-
-Create an empty environment named `mlforecast` with the following command: `mamba create -n mlforecast python=3.10`:
-![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/5e9032e8-3f5b-4a1c-93e7-3d390d5f73f1)
-
-Activate the newly created environment using `conda activate mlforecast`:
-
-![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/803ae2b7-8369-4a24-9b7c-9326d52c13ef)
-
-Install the libraries within the environment file `environment.yml` using `mamba env update -f environment.yml`:
-
-![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/e9672d58-b477-4963-9751-277c944a4d8a)
-
-Now install the library to make interactive changes and other additional dependencies using `pip install -e ".[dev]"`:
-
-![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/501c8223-862d-40a9-8f2d-ecdaceaeaedb)
-
-Finally, setup the pre-commit hooks, which will run some checks when you commit your changes: `pre-commit install`
-
-### 4. Make the changes you want.
+### 3. Make the changes you want.
 
 In this section, we assume that we want to increase the default number of windows used to create prediction intervals from 2 to 3. The first thing we need to do is create a specific branch for that change using `git checkout -b [new_branch]` like this:
 
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/7884f89a-ecc6-4200-8176-6a9b9f7c0aa2)
 
-Once created, open the notebook you want to modify. In this case, it's `nbs/utils.ipynb`, which contains the metadata for the prediction intervals. After opening it, click on the environment you want to use (top right) and select the `mlforecast` environment:
-
-![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/0a0a8285-9344-471e-b699-8bc13159e3a8)
+Once created, open the notebook you want to modify. In this case, it's `nbs/utils.ipynb`, which contains the metadata for the prediction intervals. After opening it, click on the environment you want to use (top right) and select the `.venv` environment.
 
 Next, execute the notebook and make the necessary changes. In this case, we want to modify the `PredictionIntervals` class:
 
@@ -209,7 +182,7 @@ Finally, push your changes using `git push`:
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/49c6851c-949b-4ca7-ac38-6b17ec103437)
 
 
-### 5. Create a pull request.
+### 4. Create a pull request.
 
 In GitHub, open your repository that contains your fork of the original repo. Once inside, you will see the changes you just pushed. Click on "Compare and pull request":
 

@@ -1,7 +1,9 @@
-from pkg_resources import parse_version
-from configparser import ConfigParser
+import glob
+import sys
+
 import setuptools
-assert parse_version(setuptools.__version__)>=parse_version('36.2')
+from configparser import ConfigParser
+from pybind11.setup_helpers import Pybind11Extension
 
 # note: all settings are in settings.ini; edit there, not here
 config = ConfigParser(delimiters=['='])
@@ -20,9 +22,16 @@ licenses = {
     'gpl3': ('GNU General Public License v3', 'OSI Approved :: GNU General Public License v3 (GPLv3)'),
     'bsd3': ('BSD License', 'OSI Approved :: BSD License'),
 }
-statuses = [ '1 - Planning', '2 - Pre-Alpha', '3 - Alpha',
-    '4 - Beta', '5 - Production/Stable', '6 - Mature', '7 - Inactive' ]
-py_versions = '3.6 3.7 3.8 3.9 3.10 3.11'.split()
+statuses = [
+    '1 - Planning',
+    '2 - Pre-Alpha',
+    '3 - Alpha',
+    '4 - Beta',
+    '5 - Production/Stable',
+    '6 - Mature',
+    '7 - Inactive'
+]
+py_versions = '3.6 3.7 3.8 3.9 3.10 3.11 3.12'.split()
 
 requirements = cfg.get('requirements','').split()
 if cfg.get('pip_requirements'): requirements += cfg.get('pip_requirements','').split()
@@ -34,12 +43,24 @@ spark_requirements = cfg['spark_requirements'].split()
 plotly_requirements = cfg['plotly_requirements'].split()
 polars_requirements = cfg['polars_requirements'].split()
 dev_requirements = cfg['dev_requirements'].split()
-dev_requirements.extend(dask_requirements)
-dev_requirements.extend(ray_requirements)
-dev_requirements.extend(spark_requirements)
-dev_requirements.extend(plotly_requirements)
-dev_requirements.extend(polars_requirements)
-dev_requirements = list(set(dev_requirements))
+all_requirements = [
+    *dask_requirements,
+    *spark_requirements,
+    *plotly_requirements,
+    *polars_requirements,
+    *dev_requirements,
+]
+if sys.version_info < (3, 12):
+    all_requirements.extend(ray_requirements)
+
+ext_modules = [
+    Pybind11Extension(
+        name="statsforecast._lib",
+        sources=glob.glob("src/*.cpp"),
+        include_dirs=["include/statsforecast", "external_libs/eigen"],
+        cxx_std=17,
+    )
+]
 
 setuptools.setup(
     name = 'statsforecast',
@@ -50,7 +71,8 @@ setuptools.setup(
         'Natural Language :: ' + cfg['language'].title(),
     ] + ['Programming Language :: Python :: '+o for o in py_versions[py_versions.index(min_python):]] + (['License :: ' + lic[1] ] if lic[1] else []),
     url = cfg['git_url'],
-    packages = setuptools.find_packages(),
+    package_dir={"": "python"},
+    packages = setuptools.find_packages(where="python"),
     include_package_data = True,
     install_requires = requirements,
     extras_require={
@@ -60,6 +82,7 @@ setuptools.setup(
         'spark': spark_requirements,
         'plotly': plotly_requirements,
         'polars': polars_requirements,
+        'all': all_requirements,
     },
     dependency_links = cfg.get('dep_links','').split(),
     python_requires  = '>=' + cfg['min_python'],
@@ -68,8 +91,8 @@ setuptools.setup(
     zip_safe = False,
     entry_points = {
         'console_scripts': cfg.get('console_scripts','').split(),
-        'nbdev': [f'{cfg.get("lib_path")}={cfg.get("lib_path")}._modidx:d']
+        'nbdev': ['statsforecast=statsforecast._modidx:d']
     },
-    **setup_cfg)
-
-
+    ext_modules=ext_modules,
+    **setup_cfg
+)
