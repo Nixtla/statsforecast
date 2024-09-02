@@ -18,34 +18,19 @@ from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
 
-import _arima
+from ._lib import arima as _arima
 from .mstl import mstl
-from .utils import CACHE, NOGIL
 
 # %% ../../nbs/src/arima.ipynb 7
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
 # %% ../../nbs/src/arima.ipynb 8
 def arima_gradtrans(x, arma):
-    n = x.size
-    out = np.identity(n, dtype=np.float64)
-    _arima.arima_gradtrans(
-        x,
-        np.asarray(arma, dtype=np.intc),
-        out,
-    )
-    return out
+    return _arima.arima_gradtrans(x, arma)
 
 # %% ../../nbs/src/arima.ipynb 10
 def arima_undopars(x, arma):
-    x = np.asarray(x, dtype=np.float64)
-    res = x.copy()
-    _arima.arima_undopars(
-        x,
-        np.asarray(arma, dtype=np.intc),
-        res,
-    )
-    return res
+    return _arima.arima_undopars(x, arma)
 
 # %% ../../nbs/src/arima.ipynb 12
 def ARIMA_invtrans(x, arma):
@@ -70,31 +55,11 @@ def getQ0(phi, theta):
 # %% ../../nbs/src/arima.ipynb 16
 def arima_transpar(params_in, arma, trans):
     # TODO check trans=True results
-    mp, mq, msp, msq, ns = arma[:5]
-    p = mp + ns * msp
-    q = mq + ns * msq
-    phi = np.zeros(p, dtype=np.float64)
-    theta = np.zeros(q, dtype=np.float64)
-    _arima.arima_transpar(
-        params_in,
-        np.asarray(arma, dtype=np.intc),
-        trans,
-        phi,
-        theta,
-    )
-    return phi, theta
+    return _arima.arima_transpar(params_in, arma, trans)
 
 # %% ../../nbs/src/arima.ipynb 19
-def arima_css(y, arma, phi, theta, ncond):
-    resid = np.empty(y.size)
-    mse = _arima.arima_css(
-        y,
-        np.asarray(arma, dtype=np.intc),
-        phi,
-        theta,
-        resid,
-    )
-    return mse, resid
+def arima_css(y, arma, phi, theta):
+    return _arima.arima_css(y, arma, phi, theta)
 
 # %% ../../nbs/src/arima.ipynb 21
 def make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps):
@@ -228,7 +193,7 @@ def arima(
     optim_control={"maxiter": 100},
 ):
     SSG = SSinit == "Gardner1980"
-    x = x.copy()
+    x = x.astype(np.float64, copy=True)
 
     def upARIMA(mod, phi, theta):
         p = len(phi)
@@ -483,7 +448,7 @@ def arima(
         if ncxreg > 0:
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
 
-        res, _ = arima_css(x, arma, phi, theta, ncond)
+        res, _ = arima_css(x, arma, phi, theta)
         if math.isinf(res):
             import sys
 
@@ -516,7 +481,7 @@ def arima(
         mod = make_arima(phi, theta, Delta, kappa)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
-        val = arima_css(x, arma, phi, theta, ncond)
+        val = arima_css(x, arma, phi, theta)
         sigma2 = val[0]
         var = None if no_optim else res.hess_inv / n_used
     else:
