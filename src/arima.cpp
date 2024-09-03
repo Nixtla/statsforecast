@@ -501,7 +501,9 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
   py::array_t<double> outv({n, n});
   auto out = outv.mutable_data();
   for (int i = 0; i < n; ++i) {
-    out[i * n + i] = 1.0;
+    for (int j = 0; j < n; ++j) {
+      out[i * n + j] = (i == j) ? 1.0 : 0.0;
+    }
   }
   if (mp > 0) {
     std::copy(x, x + mp, w1.begin());
