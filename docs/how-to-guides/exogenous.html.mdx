@@ -72,7 +72,7 @@ os.environ['NIXTLA_ID_AS_COL'] = '1'
 ## Load and explore the data
 
 In this example, we’ll use a single time series from the [M5
-Competition](https://www.sciencedirect.com/science/article/pii/s0169207021001187#:~:text=the%20objective%20of%20the%20m5,the%20uncertainty%20around%20these%20forecasts.)
+Competition](https://www.sciencedirect.com/science/article/pii/S0169207021001187#:~:text=The%20objective%20of%20the%20M5,the%20uncertainty%20around%20these%20forecasts.)
 dataset. This series represents the daily sales of a product in a
 Walmart store. The product-store combination that we’ll use in this
 notebook has `unique_id = FOODS_3_586_CA_3`. This time series was chosen
@@ -301,7 +301,7 @@ StatsForecast.plot(Y_ts, fcst, max_insample_length=28*2)
 
 We’ll merge the test set and the forecast to evaluate the accuracy using
 the [mean absolute
-error](https://en.wikipedia.org/wiki/mean_absolute_error) (MAE).
+error](https://en.wikipedia.org/wiki/Mean_absolute_error) (MAE).
 
 ```python
 res = Y_test.merge(fcst, how='left', on=['unique_id', 'ds'])

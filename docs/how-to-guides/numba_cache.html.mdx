@@ -8,7 +8,7 @@ title: Numba caching
 `statsforecast` makes heavy use of [numba](https://numba.pydata.org/) to
 speed up several critical functions that estimate model parameters. This
 comes at a cost though, which is that the functions have to be [JIT
-compiled](https://en.wikipedia.org/wiki/just-in-time_compilation) the
+compiled](https://en.wikipedia.org/wiki/Just-in-time_compilation) the
 first time they’re run, which can be expensive. Once a function has ben
 JIT compiled, subsequent calls are significantly faster. One problem is
 that this compilation is saved (by default) on a per-session basis.
@@ -26,7 +26,7 @@ directory, but you can override this with the `NUMBA_CACHE_DIR`
 environment variable to save it to a different path
 (e.g. `NUMBA_CACHE_DIR=numba_cache`), you can find more information in
 the
-[docs](https://numba.pydata.org/numba-doc/latest/reference/envvars.html#envvar-numba_cache_dir).
+[docs](https://numba.pydata.org/numba-doc/latest/reference/envvars.html#envvar-NUMBA_CACHE_DIR).
 
 If you want to have this enabled for all your sessions, we suggest
 adding `export NIXTLA_NUMBA_CACHE=1` to your profile files, such as
