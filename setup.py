@@ -3,7 +3,7 @@ import sys
 
 import setuptools
 from configparser import ConfigParser
-from pybind11.setup_helpers import ParallelCompile, Pybind11Extension
+from pybind11.setup_helpers import ParallelCompile, Pybind11Extension, naive_recompile
 
 # note: all settings are in settings.ini; edit there, not here
 config = ConfigParser(delimiters=['='])
@@ -61,7 +61,7 @@ ext_modules = [
         cxx_std=17,
     )
 ]
-ParallelCompile("CMAKE_BUILD_PARALLEL_LEVEL").install()
+ParallelCompile("CMAKE_BUILD_PARALLEL_LEVEL", needs_recompile=naive_recompile).install()
 
 setuptools.setup(
     name = 'statsforecast',

@@ -8,6 +8,9 @@
 
 namespace arima {
 namespace py = pybind11;
+using Eigen::all;
+using Eigen::MatrixXd;
+using Eigen::seqN;
 using Eigen::VectorXd;
 using Eigen::VectorXi;
 using RowMatrixXd =
@@ -118,9 +121,8 @@ std::tuple<double, VectorXd> arima_css(CRef<VectorXd> y, CRef<VectorXi> arma,
 
 std::tuple<double, double, int>
 arima_like(CRef<VectorXd> y, CRef<VectorXd> phi, CRef<VectorXd> theta,
-           CRef<VectorXd> delta, Ref<VectorXd> a, Ref<RowMatrixXd> P,
-           Ref<RowMatrixXd> Pnew, int up, bool use_resid,
-           Ref<VectorXd> rsResid) {
+           CRef<VectorXd> delta, Ref<VectorXd> a, Ref<MatrixXd> P,
+           Ref<MatrixXd> Pnew, int up, bool use_resid, Ref<VectorXd> rsResid) {
   int n = static_cast<int>(y.size());
   int d = static_cast<int>(delta.size());
   int rd = static_cast<int>(a.size());
@@ -131,34 +133,22 @@ arima_like(CRef<VectorXd> y, CRef<VectorXd> phi, CRef<VectorXd> theta,
   int nu = 0;
   int r = rd - d;
 
-  std::vector<double> anew(rd);
-  std::vector<double> M(rd);
-  RowMatrixXd mm;
+  VectorXd anew(rd);
+  VectorXd M(rd);
+  MatrixXd mm;
   if (d > 0) {
     mm.resize(rd, rd);
   }
   double tmp;
   for (int l = 0; l < n; ++l) {
-    for (int i = 0; i < r; ++i) {
-      if (i < r - 1) {
-        tmp = a[i + 1];
-      } else {
-        tmp = 0.0;
-      }
-      if (i < p) {
-        tmp += phi[i] * a[0];
-      }
-      anew[i] = tmp;
+    std::copy(a.begin() + 1, a.begin() + r, anew.begin());
+    anew[r - 1] = 0.0;
+    for (int i = 0; i < p; ++i) {
+      anew[i] += a[0] * phi[i];
     }
     if (d > 0) {
-      for (int i = r + 1; i < rd; ++i) {
-        anew[i] = a[i - 1];
-      }
-      tmp = a[0];
-      for (int i = 0; i < d; ++i) {
-        tmp += delta[i] * a[r + i];
-      }
-      anew[r] = tmp;
+      anew[r] = a[0] + delta.dot(a.segment(r, d));
+      std::copy(a.begin() + r, a.begin() + rd - 1, anew.begin() + r + 1);
     }
     if (l > up) {
       if (d == 0) {
@@ -204,18 +194,8 @@ arima_like(CRef<VectorXd> y, CRef<VectorXd> phi, CRef<VectorXd> theta,
             mm(j, i) = tmp;
           }
         }
-        for (int j = 0; j < rd; ++j) {
-          tmp = P(j, 0);
-          for (int k = 0; k < d; ++k) {
-            tmp += delta[k] * P(j, r + k);
-          }
-          mm(j, r) = tmp;
-        }
-        for (int i = 1; i < d; ++i) {
-          for (int j = 0; j < rd; ++j) {
-            mm(j, r + i) = P(j, r + i - 1);
-          }
-        }
+        mm(all, r) = P(all, 0) + P(all, seqN(r, d)) * delta;
+        mm(all, seqN(r + 1, d - 1)) = P(all, seqN(r, d - 1));
         for (int i = 0; i < r; ++i) {
           for (int j = 0; j < rd; ++j) {
             tmp = 0.0;
@@ -228,18 +208,10 @@ arima_like(CRef<VectorXd> y, CRef<VectorXd> phi, CRef<VectorXd> theta,
             Pnew(i, j) = tmp;
           }
         }
-        for (int j = 0; j < rd; ++j) {
-          tmp = mm(0, j);
-          for (int k = 0; k < d; ++k) {
-            tmp += delta[k] * mm(r + k, j);
-          }
-          Pnew(r, j) = tmp;
-        }
-        for (int i = 1; i < d; ++i) {
-          for (int j = 0; j < rd; ++j) {
-            Pnew(r + i, j) = mm(r + i - 1, j);
-          }
-        }
+
+        Pnew(r, all) = mm(0, all) + mm(seqN(r, d), all).transpose() * delta;
+        Pnew(seqN(r + 1, d - 1), all) = mm(seqN(r, d - 1), all);
+
         for (int i = 0; i < q + 1; ++i) {
           double vi;
           if (i == 0) {
@@ -258,21 +230,9 @@ arima_like(CRef<VectorXd> y, CRef<VectorXd> phi, CRef<VectorXd> theta,
       }
     }
     if (!std::isnan(y[l])) {
-      double resid = y[l] - anew[0];
-      for (int i = 0; i < d; ++i) {
-        resid -= delta[i] * anew[r + i];
-      }
-      for (int i = 0; i < rd; ++i) {
-        tmp = Pnew(0, i);
-        for (int j = 0; j < d; ++j) {
-          tmp += Pnew(r + j, i) * delta[j];
-        }
-        M[i] = tmp;
-      }
-      double gain = M[0];
-      for (int j = 0; j < d; ++j) {
-        gain += delta[j] * M[r + j];
-      }
+      double resid = y[l] - anew[0] - delta.dot(anew.segment(r, d));
+      M.array() = Pnew(0, all) + Pnew(seqN(r, d), all).transpose() * delta;
+      double gain = M[0] + delta.dot(M.segment(r, d));
       if (gain < 1e4) {
         nu++;
         if (gain == 0) {
@@ -289,20 +249,12 @@ arima_like(CRef<VectorXd> y, CRef<VectorXd> phi, CRef<VectorXd> theta,
           rsResid[l] = resid / std::sqrt(gain);
         }
       }
-      if (gain == 0) {
-        for (int i = 0; i < rd; ++i) {
-          a[i] = std::numeric_limits<double>::infinity();
-          for (int j = 0; j < rd; ++j) {
-            Pnew(j, i) = std::numeric_limits<double>::infinity();
-          }
-        }
+      if (gain > 0) {
+        a = anew + M * resid / gain;
+        P = Pnew - M * M.transpose() / gain;
       } else {
-        for (int i = 0; i < rd; ++i) {
-          a[i] = anew[i] + M[i] * resid / gain;
-          for (int j = 0; j < rd; ++j) {
-            P(j, i) = Pnew(j, i) - M[i] * M[j] / gain;
-          }
-        }
+        a.setConstant(std::numeric_limits<double>::infinity());
+        Pnew.setConstant(std::numeric_limits<double>::infinity());
       }
     } else {
       std::copy(anew.data(), anew.data(), a.data());
