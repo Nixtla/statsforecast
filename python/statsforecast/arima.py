@@ -305,14 +305,17 @@ def arima(
 
     # fixed
     # mask
-    arma = (
-        *order[::2],
-        *seasonal["order"][::2],
-        seasonal["period"],
-        order[1],
-        seasonal["order"][1],
+    arma = np.array(
+        [
+            *order[::2],
+            *seasonal["order"][::2],
+            seasonal["period"],
+            order[1],
+            seasonal["order"][1],
+        ],
+        dtype=np.intc,
     )
-    narma = sum(arma[:4])
+    narma = arma[:4].sum().item()
 
     # xtsp = init x, end x and frequency
     # tsp(x) = None
@@ -610,7 +613,7 @@ def arima(
         "mask": mask,
         "loglik": -0.5 * value,
         "aic": aic,
-        "arma": arma,
+        "arma": tuple(x.item() for x in arma),
         "residuals": resid,
         #'series': series,
         "code": res.status,
