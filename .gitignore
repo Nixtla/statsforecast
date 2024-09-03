@@ -25,3 +25,4 @@ nbs/.last_checked
 mlruns/
 .luarc.json
 *.so
+*.dll
