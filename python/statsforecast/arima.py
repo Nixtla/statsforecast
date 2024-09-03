@@ -93,8 +93,8 @@ def make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps):
     V = R * R.reshape(-1, 1)
     h = 0.0
     a = np.zeros(rd)
-    Pn = np.zeros((rd, rd), order="F")
-    P = np.zeros((rd, rd), order="F")
+    Pn = np.zeros((rd, rd))
+    P = np.zeros((rd, rd))
 
     if r > 1:
         Pn[:r, :r] = getQ0(phi, theta)
@@ -305,17 +305,14 @@ def arima(
 
     # fixed
     # mask
-    arma = np.array(
-        [
-            *order[::2],
-            *seasonal["order"][::2],
-            seasonal["period"],
-            order[1],
-            seasonal["order"][1],
-        ],
-        dtype=np.intc,
+    arma = (
+        *order[::2],
+        *seasonal["order"][::2],
+        seasonal["period"],
+        order[1],
+        seasonal["order"][1],
     )
-    narma = int(sum(arma[:4]))
+    narma = sum(arma[:4])
 
     # xtsp = init x, end x and frequency
     # tsp(x) = None
@@ -613,7 +610,7 @@ def arima(
         "mask": mask,
         "loglik": -0.5 * value,
         "aic": aic,
-        "arma": tuple(int(x) for x in arma),
+        "arma": arma,
         "residuals": resid,
         #'series': series,
         "code": res.status,
