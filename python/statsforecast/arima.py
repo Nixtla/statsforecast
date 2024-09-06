@@ -1687,6 +1687,7 @@ def auto_arima_f(
         fit = p_myarima(
             order=(p, d, q),
             seasonal={"order": (P, D, Q), "period": m},
+            constant=constant,
         )
         results[k] = (p, d, q, P, D, Q, constant, fit["ic"])
         k += 1
