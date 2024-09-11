@@ -53,16 +53,15 @@ def _forecast_serie(h, y, X, X_future, models, fallback_model, level, fitted):
     times = {}
     for model in models:
         start = time.perf_counter()
+        model_kwargs = dict(h=h, y=y, X=X, X_future=X_future, fitted=fitted)
+        if "level" in inspect.signature(model.forecast).parameters and level:
+            model_kwargs["level"] = level
         try:
-            model_res = model.forecast(
-                y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
-            )
+            model_res = model.forecast(**model_kwargs)
         except Exception as e:
             if fallback_model is None:
                 raise e
-            model_res = fallback_model.forecast(
-                y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
-            )
+            model_res = fallback_model.forecast(**model_kwargs)
         model_name = repr(model)
         times[model_name] = time.perf_counter() - start
         for k, v in model_res.items():
