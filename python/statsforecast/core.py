@@ -26,7 +26,7 @@ from fugue.execution.factory import (
     make_execution_engine,
     try_get_context_execution_engine,
 )
-from threadpoolctl import threadpool_limits
+from threadpoolctl import ThreadpoolController, threadpool_limits
 from tqdm.auto import tqdm
 from triad import conditional_dispatcher
 from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
@@ -42,6 +42,41 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 logger = logging.getLogger(__name__)
+
+_controller = ThreadpoolController()
+
+
+@_controller.wrap(limits=1)
+def _forecast_serie(h, y, X, X_future, models, fallback_model, level, fitted):
+    forecast_res = {}
+    fitted_res = {}
+    times = {}
+    for model in models:
+        start = time.perf_counter()
+        try:
+            model_res = model.forecast(
+                y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
+            )
+        except Exception as e:
+            if fallback_model is None:
+                raise e
+            model_res = fallback_model.forecast(
+                y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
+            )
+        model_name = repr(model)
+        times[model_name] = time.perf_counter() - start
+        for k, v in model_res.items():
+            if k == "mean":
+                forecast_res[model_name] = v
+            elif k.startswith(("lo", "hi")):
+                col_name = f"{model_name}-{k}"
+                forecast_res[col_name] = v
+            elif k == "fitted":
+                fitted_res[model_name] = v
+            elif k.startswith(("fitted-lo", "fitted-hi")):
+                col_name = f'{model_name}-{k.replace("fitted-", "")}'
+                fitted_res[col_name] = v
+    return forecast_res, fitted_res, times
 
 # %% ../../nbs/src/core/core.ipynb 10
 class GroupedArray(BaseGroupedArray):
@@ -1252,38 +1287,6 @@ class _StatsForecast:
             cols = cols[0]
         return fm, fcsts, cols
 
-    def _forecast_serie(self, level, **forecast_kwargs):
-        forecast_res = {}
-        fitted_res = {}
-        times = {}
-        with threadpool_limits(limits=1):
-            for model in self.models:
-                if "level" in inspect.signature(model.forecast).parameters and level:
-                    model_kwargs = {**forecast_kwargs, "level": level}
-                else:
-                    model_kwargs = forecast_kwargs
-                start = time.perf_counter()
-                try:
-                    model_res = model.forecast(**model_kwargs)
-                except Exception as e:
-                    if self.fallback_model is None:
-                        raise e
-                    model_res = self.fallback_model.forecast(**model_kwargs)
-                model_name = repr(model)
-                times[model_name] = time.perf_counter() - start
-                for k, v in model_res.items():
-                    if k == "mean":
-                        forecast_res[model_name] = v
-                    elif k.startswith(("lo", "hi")):
-                        col_name = f"{model_name}-{k}"
-                        forecast_res[col_name] = v
-                    elif k == "fitted":
-                        fitted_res[model_name] = v
-                    elif k.startswith(("fitted-lo", "fitted-hi")):
-                        col_name = f'{model_name}-{k.replace("fitted-", "")}'
-                        fitted_res[col_name] = v
-        return forecast_res, fitted_res, times
-
     def _forecast_parallel(self, h, fitted, X, level, target_col):
         n_series = self.ga.n_groups
         forecast_res = defaultdict(lambda: np.empty(n_series * h, dtype=np.float32))
@@ -1302,11 +1305,13 @@ class _StatsForecast:
                 else:
                     X_future = X[i]
                 future = executor.submit(
-                    self._forecast_serie,
+                    _forecast_serie,
                     h=h,
                     y=y_train,
                     X=X_train,
                     X_future=X_future,
+                    models=self.models,
+                    fallback_model=self.fallback_model,
                     fitted=fitted,
                     level=level,
                 )
