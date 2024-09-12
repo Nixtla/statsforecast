@@ -14,9 +14,10 @@ env:
   NIXTLA_NUMBA_CACHE: "1"
 
 jobs:
-  build_wheels:
-    name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+  run-tests:
+    name: Run tests for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
     runs-on: ${{ matrix.os-platform[0] }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -40,12 +41,29 @@ jobs:
         with:
           platforms: arm64
 
-      - name: Build wheels
+      - name: Build wheels and run all tests
+        if: matrix.os-platform[0] == 'ubuntu-latest'
         uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+          CIBW_TEST_COMMAND: >
+            pip install uv &&
+            uv pip install --system -r setup.py --extra all &&
+            nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing &&
+            pytest --durations=0 action_files
+
+      - name: Build wheels and run local tests
+        if: matrix.os-platform[0] != 'ubuntu-latest'
+        uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
+        env:
+          CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+          CIBW_TEST_COMMAND: >
+            pip install uv &&
+            uv pip install --system -r setup.py --extra dev --extra plotly
+            nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
       - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        if: github.event_name == 'push'
         with:
           name: artifact-cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           path: wheelhouse/*.whl
@@ -53,7 +71,7 @@ jobs:
 
   publish-nightly-wheels:
     if: github.event_name == 'push'
-    needs: [build_wheels]
+    needs: [run-tests]
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_NIXTLA_PACKAGES }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_NIXTLA_PACKAGES }}
@@ -79,106 +97,21 @@ jobs:
           python action_files/update_index.py
           aws s3 sync dist s3://nixtla-packages/statsforecast/
 
-  run-local-tests:
-    needs: [build_wheels]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-13, macos-14, windows-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          submodules: "true"
-
-      - name: Set up environment
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install pip requirements
-        run: pip install uv && uv pip install --system -r setup.py --extra dev --extra plotly
-
-      - name: Download wheels
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-        with:
-          path: dist
-          pattern: "artifact-*"
-          merge-multiple: true
-
-      - name: Install the library
-        run: pip install --no-index --find-links dist statsforecast
-
-      - name: Run local tests
-        run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
-
-  run-tests:
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          submodules: "true"
-
-      - name: Set up environment
-        uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install pip requirements
-        run: pip install uv && uv pip install --system -r setup.py --extra all
-
-      - name: Download wheels
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-        with:
-          path: dist
-          pattern: "artifact-*"
-          merge-multiple: true
-
-      - name: Install the library
-        run: pip install --no-index --find-links dist statsforecast
-
-      - name: Run tests
-        run: nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
-
-      - name: Run integration tests
-        run: |
-          uv pip install --system pytest
-          pytest --durations=0 action_files
-
   test-m3-performance:
-    needs: [build_wheels]
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          submodules: "true"
 
       - name: Set up environment
         uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.2.0
         with:
           python-version: "3.10"
 
-      - name: Install pip requirements
-        run: pip install uv && uv pip install --system -r setup.py --extra dev
-
-      - name: Download wheels
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-        with:
-          path: dist
-          pattern: "artifact-*"
-          merge-multiple: true
-
       - name: Install the library
-        run: pip install --no-index --find-links dist statsforecast
+        run: pip install uv && uv pip install --system ".[dev]"
 
       - name: Run M3 experiment
         run: |
