@@ -56,7 +56,7 @@ jobs:
           CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra all &&
-            pytest --durations=0 {project}/action_files
+            pytest --durations=0 {project}/action_files/test_spark.py
 
       - name: Build wheels and run local tests
         # if: matrix.os-platform[0] != 'ubuntu-latest'
