@@ -55,7 +55,7 @@ jobs:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_TEST_COMMAND: >
-            uv pip install --system -r {project}/setup.py --extra all &&
+            uv pip install -r {project}/setup.py --extra all &&
             nbdev_test --path {project}/nbs/ --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing &&
             pytest --durations=0 {project}/action_files
 
@@ -65,7 +65,7 @@ jobs:
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_COMMAND: >
-            uv pip install --system -r {project}/setup.py --extra dev --extra plotly &&
+            uv pip install -r {project}/setup.py --extra dev --extra plotly &&
             nbdev_test --path {project}/nbs/ --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
       - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
