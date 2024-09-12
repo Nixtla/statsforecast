@@ -274,13 +274,13 @@ def _seasonal_naive(
     season_length: int,  # season length
 ) -> Dict[str, np.ndarray]:
     n = y.size
-    season_vals = np.full(season_length, np.nan, np.float32)
+    season_vals = np.full(season_length, np.nan, dtype=y.dtype)
     season_samples = min(season_length, n)
     season_vals[:season_samples] = y[-season_samples:]
     out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
     if fitted:
-        fitted_vals = np.empty(n, dtype=np.float32)
+        fitted_vals = np.empty_like(y)
         fitted_vals[:season_length] = np.nan
         if n > season_length:
             fitted_vals[season_length:] = y[: n - season_length]
