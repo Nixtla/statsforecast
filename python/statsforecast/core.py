@@ -504,44 +504,11 @@ def _get_n_jobs(n_groups, n_jobs):
     return min(n_groups, actual_n_jobs)
 
 # %% ../../nbs/src/core/core.ipynb 27
-def _warn_df_constructor():
-    warnings.warn(
-        "The `df` argument of the StatsForecast constructor as well as reusing stored "
-        "dfs from other methods is deprecated and will raise an error in a future version. "
-        "Please provide the `df` argument to the corresponding method instead, e.g. fit/forecast.",
-        category=FutureWarning,
-    )
-
-
-def _maybe_warn_sort_df(sort_df):
-    if not sort_df:
-        warnings.warn(
-            "The `sort_df` argument is deprecated and will be removed in a future version. "
-            "You can leave it to its default value (True) to supress this warning",
-            category=FutureWarning,
-        )
-
-
-def _warn_id_as_idx():
-    warnings.warn(
-        "In a future version the predictions will have the id as a column. "
-        "You can set the `NIXTLA_ID_AS_COL` environment variable "
-        "to adopt the new behavior and to suppress this warning.",
-        category=FutureWarning,
-    )
-
-
-def _id_as_idx() -> bool:
-    return not bool(os.getenv("NIXTLA_ID_AS_COL", ""))
-
-# %% ../../nbs/src/core/core.ipynb 28
 _param_descriptions = {
     "freq": """freq : str or int
             Frequency of the data. Must be a valid pandas or polars offset alias, or an integer.""",
     "df": """df : pandas or polars DataFrame, optional (default=None)
             DataFrame with ids, times, targets and exogenous.""",
-    "sort_df": """sort_df : bool (default=True)
-            Sort `df` by ids and times.""",
     "fallback_model": """fallback_model : Any, optional (default=None)
             Any, optional (default=None)
             Model to be used if a model fails.
@@ -581,7 +548,7 @@ _param_descriptions = {
             If int, train the models every `refit` windows.""",
 }
 
-# %% ../../nbs/src/core/core.ipynb 29
+# %% ../../nbs/src/core/core.ipynb 28
 class _StatsForecast:
     """The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
     for large sets of time series. It operates on a DataFrame `df` with at least three columns
@@ -601,7 +568,6 @@ class _StatsForecast:
         freq: Union[str, int],
         n_jobs: int = 1,
         df: Optional[DataFrame] = None,
-        sort_df: bool = True,
         fallback_model: Optional[Any] = None,
         verbose: bool = False,
     ):
@@ -613,7 +579,6 @@ class _StatsForecast:
         {freq}
         {n_jobs}
         {df}
-        {sort_df}
         {fallback_model}
         {verbose}
         """
@@ -624,11 +589,6 @@ class _StatsForecast:
         self.n_jobs = n_jobs
         self.fallback_model = fallback_model
         self.verbose = verbose
-        if df is not None:
-            _warn_df_constructor()
-            self._prepare_fit(df=df, sort_df=sort_df)
-        else:
-            _maybe_warn_sort_df(sort_df)
 
     __init__.__doc__ = __init__.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
@@ -644,26 +604,12 @@ class _StatsForecast:
     def _prepare_fit(
         self,
         df: Optional[DataFrame],
-        sort_df: bool = True,
         id_col: str = "unique_id",
         time_col: str = "ds",
         target_col: str = "y",
     ) -> None:
-        if df is None:
-            if not hasattr(self, "ga"):
-                raise ValueError("You must provide the `df` argument.")
-            _warn_df_constructor()
-            return
         df = ensure_time_dtype(df, time_col)
         validate_freq(df[time_col], self.freq)
-        if isinstance(df, pd.DataFrame) and df.index.name == id_col:
-            warnings.warn(
-                "Passing unique_id as the index is deprecated. "
-                "Please provide it as a column instead.",
-                category=FutureWarning,
-            )
-            df = df.reset_index()
-        _maybe_warn_sort_df(sort_df)
         self.uids, last_times, data, indptr, sort_idxs = ufp.process_df(
             df, id_col, time_col, target_col
         )
@@ -716,7 +662,6 @@ class _StatsForecast:
     def fit(
         self,
         df: Optional[DataFrame] = None,
-        sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
         time_col: str = "ds",
@@ -731,7 +676,6 @@ class _StatsForecast:
         ----------
         {df}
             If None, the `StatsForecast` class should have been instantiated using `df`.
-        {sort_df}
         {prediction_intervals}
         {id_col}
         {time_col}
@@ -743,11 +687,7 @@ class _StatsForecast:
             Returns with stored `StatsForecast` fitted `models`.
         """
         self._prepare_fit(
-            df=df,
-            sort_df=sort_df,
-            id_col=id_col,
-            time_col=time_col,
-            target_col=target_col,
+            df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
@@ -767,11 +707,7 @@ class _StatsForecast:
         uids = ufp.repeat(self.uids, n=h)
         df = self.df_constructor({self.id_col: uids, self.time_col: dates})
         if isinstance(df, pd.DataFrame):
-            if _id_as_idx():
-                _warn_id_as_idx()
-                df = df.set_index(self.id_col)
-            else:
-                df = df.reset_index(drop=True)
+            df = df.reset_index(drop=True)
         return df
 
     def _parse_X_level(
@@ -855,7 +791,6 @@ class _StatsForecast:
         df: Optional[DataFrame] = None,
         X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
-        sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
         time_col: str = "ds",
@@ -876,7 +811,6 @@ class _StatsForecast:
             If None, the `StatsForecast` class should have been instantiated using `df`.
         {X_df}
         {level}
-        {sort_df}
         {prediction_intervals}
         {id_col}
         {time_col}
@@ -889,11 +823,7 @@ class _StatsForecast:
             predictions for all fitted `models`.
         """
         self._prepare_fit(
-            df=df,
-            sort_df=sort_df,
-            id_col=id_col,
-            time_col=time_col,
-            target_col=target_col,
+            df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
         self._validate_exog(X_df)
         if prediction_intervals is not None and level is None:
@@ -924,7 +854,6 @@ class _StatsForecast:
         X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
-        sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
         time_col: str = "ds",
@@ -943,7 +872,6 @@ class _StatsForecast:
         {X_df}
         {level}
         {fitted}
-        {sort_df}
         {prediction_intervals}
         {id_col}
         {time_col}
@@ -957,11 +885,7 @@ class _StatsForecast:
         """
         self.__dict__.pop("fcst_fitted_values_", None)
         self._prepare_fit(
-            df=df,
-            sort_df=sort_df,
-            id_col=id_col,
-            time_col=time_col,
-            target_col=target_col,
+            df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
         self._validate_exog(X_df)
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
@@ -1022,11 +946,7 @@ class _StatsForecast:
         )
         df[cols] = self.fcst_fitted_values_["values"]
         if isinstance(df, pd.DataFrame):
-            if _id_as_idx():
-                _warn_id_as_idx()
-                df = df.set_index(self.id_col)
-            else:
-                df = df.reset_index(drop=True)
+            df = df.reset_index(drop=True)
         return df
 
     def cross_validation(
@@ -1040,7 +960,6 @@ class _StatsForecast:
         level: Optional[List[int]] = None,
         fitted: bool = False,
         refit: Union[bool, int] = True,
-        sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
         time_col: str = "ds",
@@ -1067,7 +986,6 @@ class _StatsForecast:
         {level}
         {fitted}
         {refit}
-        {sort_df}
         {prediction_intervals}
         {id_col}
         {time_col}
@@ -1102,11 +1020,7 @@ class _StatsForecast:
                 )
         self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
-            df=df,
-            sort_df=sort_df,
-            id_col=id_col,
-            time_col=time_col,
-            target_col=target_col,
+            df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
         series_sizes = np.diff(self.ga.indptr)
         short_series = series_sizes <= test_size
@@ -1164,9 +1078,6 @@ class _StatsForecast:
         fcsts_df = ufp.assign_columns(
             fcsts_df, res_fcsts["cols"], res_fcsts["forecasts"]
         )
-        if isinstance(fcsts_df, pd.DataFrame) and _id_as_idx():
-            _warn_id_as_idx()
-            fcsts_df = fcsts_df.set_index(id_col)
         return fcsts_df
 
     cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
@@ -1210,11 +1121,7 @@ class _StatsForecast:
         df = ufp.assign_columns(df, self.cv_fitted_values_["cols"], fitted_vals[idxs])
         df = ufp.drop_index_if_pandas(df)
         if isinstance(df, pd.DataFrame):
-            if _id_as_idx():
-                _warn_id_as_idx()
-                df = df.set_index(self.id_col)
-            else:
-                df = df.reset_index(drop=True)
+            df = df.reset_index(drop=True)
         return df
 
     def _get_pool(self):
@@ -1438,22 +1345,8 @@ class _StatsForecast:
         from utilsforecast.plotting import plot_series
 
         df = ensure_time_dtype(df, time_col)
-        if isinstance(df, pd.DataFrame) and df.index.name == id_col:
-            warnings.warn(
-                "Passing the ids as the index is deprecated. "
-                "Please provide them as a column instead.",
-                category=FutureWarning,
-            )
-            df = df.reset_index()
         if forecasts_df is not None:
             forecasts_df = ensure_time_dtype(forecasts_df, time_col)
-        if isinstance(forecasts_df, pd.DataFrame) and forecasts_df.index.name == id_col:
-            warnings.warn(
-                "Passing the ids as the index is deprecated. "
-                "Please provide them as a column instead.",
-                category=FutureWarning,
-            )
-            forecasts_df = forecasts_df.reset_index()
         return plot_series(
             df=df,
             forecasts_df=forecasts_df,
@@ -1583,7 +1476,7 @@ class _StatsForecast:
 
 _StatsForecast.plot.__doc__ = _StatsForecast.plot.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
-# %% ../../nbs/src/core/core.ipynb 30
+# %% ../../nbs/src/core/core.ipynb 29
 class ParallelBackend:
     def forecast(
         self,
@@ -1664,7 +1557,7 @@ class ParallelBackend:
 def make_backend(obj: Any, *args: Any, **kwargs: Any) -> ParallelBackend:
     return ParallelBackend()
 
-# %% ../../nbs/src/core/core.ipynb 31
+# %% ../../nbs/src/core/core.ipynb 30
 class StatsForecast(_StatsForecast):
     def forecast(
         self,
@@ -1673,7 +1566,6 @@ class StatsForecast(_StatsForecast):
         X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
-        sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
         time_col: str = "ds",
@@ -1690,7 +1582,6 @@ class StatsForecast(_StatsForecast):
                 X_df=X_df,
                 level=level,
                 fitted=fitted,
-                sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
                 id_col=id_col,
                 time_col=time_col,
@@ -1732,7 +1623,6 @@ class StatsForecast(_StatsForecast):
         level: Optional[List[int]] = None,
         fitted: bool = False,
         refit: Union[bool, int] = True,
-        sort_df: bool = True,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
         time_col: str = "ds",
@@ -1749,7 +1639,6 @@ class StatsForecast(_StatsForecast):
                 level=level,
                 fitted=fitted,
                 refit=refit,
-                sort_df=sort_df,
                 prediction_intervals=prediction_intervals,
                 id_col=id_col,
                 time_col=time_col,
