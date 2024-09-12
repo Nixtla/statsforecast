@@ -19,7 +19,8 @@ jobs:
     runs-on: ${{ matrix.os-platform[0] }}
     timeout-minutes: 60
     env:
-      CIBW_BUILD_FRONTEND: "build[uv]"
+      CIBW_BUILD_FRONTEND: build[uv]
+      CIBW_ENVIRONMENT: NIXTLA_NUMBA_CACHE=1
     strategy:
       fail-fast: false
       matrix:
