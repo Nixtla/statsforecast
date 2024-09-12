@@ -43,6 +43,13 @@ jobs:
         with:
           platforms: arm64
 
+      - name: Set up Java
+        if: matrix.os-platform[1] == 'manylinux_x86_64'
+        uses: actions/setup-java@2dfa2011c5b2a0f1489bf9e433881c92c1631f88 # v4.3.0
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
       - name: Set up uv
         uses: astral-sh/setup-uv@d70817ce85e489f62dba96dc5d8f7a926e48bdd7 # v2.1.1
         with:
@@ -54,7 +61,6 @@ jobs:
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
-          CIBW_BEFORE_TEST: apt install default-jre
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra all &&
             pytest --durations=0 {project}/action_files
