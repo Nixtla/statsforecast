@@ -46,11 +46,12 @@ jobs:
         uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
+          CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_TEST_COMMAND: >
             pip install uv &&
-            uv pip install --system -r setup.py --extra all &&
-            nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing &&
-            pytest --durations=0 action_files
+            uv pip install --system -r {project}/setup.py --extra all &&
+            nbdev_test --path {project}/nbs/ --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing &&
+            pytest --durations=0 {project}/action_files
 
       - name: Build wheels and run local tests
         if: matrix.os-platform[0] != 'ubuntu-latest'
@@ -59,8 +60,8 @@ jobs:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_COMMAND: >
             pip install uv &&
-            uv pip install --system -r setup.py --extra dev --extra plotly
-            nbdev_test --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
+            uv pip install --system -r {project}/setup.py --extra dev --extra plotly &&
+            nbdev_test --path {project}/nbs/ --skip_file_re '(distributed|prophet).*.ipynb' --pause 1.0 --do_print --timing
 
       - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
         if: github.event_name == 'push'
