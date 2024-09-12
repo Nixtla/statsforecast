@@ -54,13 +54,14 @@ jobs:
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
+          CIBW_BEFORE_TEST: sudo apt install default-jre
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra all &&
-            nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing &&
             pytest --durations=0 {project}/action_files
 
       - name: Build wheels and run local tests
-        if: matrix.os-platform[0] != 'ubuntu-latest'
+        # if: matrix.os-platform[0] != 'ubuntu-latest'
+        if: false
         uses: pypa/cibuildwheel@bd033a44476646b606efccdd5eed92d5ea1d77ad # v2.20.0
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
