@@ -299,7 +299,7 @@ def _naive(
 ) -> Dict[str, np.ndarray]:
     fcst = {"mean": _repeat_val(val=y[-1], h=h)}
     if fitted:
-        fitted_vals = np.full(y.size, np.nan, dtype=y.dtype)
+        fitted_vals = np.full_like(y, np.nan)
         fitted_vals[1:] = np.roll(y, 1)[1:]
         fcst["fitted"] = fitted_vals
     return fcst
