@@ -49,9 +49,8 @@ all_requirements = [
     *plotly_requirements,
     *polars_requirements,
     *dev_requirements,
+    *ray_requirements,
 ]
-if sys.version_info < (3, 12):
-    all_requirements.extend(ray_requirements)
 
 ext_modules = [
     Pybind11Extension(
