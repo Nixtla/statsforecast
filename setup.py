@@ -50,8 +50,7 @@ all_requirements = [
     *polars_requirements,
     *dev_requirements,
 ]
-if sys.version_info < (3, 12):
-    all_requirements.extend(ray_requirements)
+all_requirements.extend(req + " ; python_version < '3.12'" for req in ray_requirements)
 
 ext_modules = [
     Pybind11Extension(
