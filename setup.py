@@ -40,7 +40,6 @@ dask_requirements = cfg['dask_requirements'].split()
 ray_requirements = [
     req + " ; python_version < '3.12'" for req in cfg['ray_requirements'].split()
 ]
-
 spark_requirements = cfg['spark_requirements'].split()
 plotly_requirements = cfg['plotly_requirements'].split()
 polars_requirements = cfg['polars_requirements'].split()
