@@ -1261,7 +1261,7 @@ class _StatsForecast:
         with ProcessPoolExecutor(self.n_jobs) as executor:
             future2pos = {
                 executor.submit(
-                    ga.forecast,
+                    ga._single_threaded_forecast,
                     h=h,
                     models=self.models,
                     fallback_model=self.fallback_model,
