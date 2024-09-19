@@ -1294,7 +1294,7 @@ class _StatsForecast:
         if fitted:
             result["fitted"] = {
                 "cols": results[0]["fitted"]["cols"],
-                "values": np.hstack([r["fitted"]["values"] for r in results]),
+                "values": np.vstack([r["fitted"]["values"] for r in results]),
             }
         return result
 
