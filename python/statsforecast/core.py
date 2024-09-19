@@ -14,7 +14,6 @@ import re
 import reprlib
 import time
 import warnings
-from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -26,7 +25,7 @@ from fugue.execution.factory import (
     make_execution_engine,
     try_get_context_execution_engine,
 )
-from threadpoolctl import ThreadpoolController, threadpool_limits
+from threadpoolctl import ThreadpoolController
 from tqdm.auto import tqdm
 from triad import conditional_dispatcher
 from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
@@ -42,40 +41,7 @@ if __name__ == "__main__":
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 logger = logging.getLogger(__name__)
-
 _controller = ThreadpoolController()
-
-
-@_controller.wrap(limits=1)
-def _forecast_serie(h, y, X, X_future, models, fallback_model, level, fitted):
-    forecast_res = {}
-    fitted_res = {}
-    times = {}
-    for model in models:
-        start = time.perf_counter()
-        model_kwargs = dict(h=h, y=y, X=X, X_future=X_future, fitted=fitted)
-        if "level" in inspect.signature(model.forecast).parameters and level:
-            model_kwargs["level"] = level
-        try:
-            model_res = model.forecast(**model_kwargs)
-        except Exception as e:
-            if fallback_model is None:
-                raise e
-            model_res = fallback_model.forecast(**model_kwargs)
-        model_name = repr(model)
-        times[model_name] = time.perf_counter() - start
-        for k, v in model_res.items():
-            if k == "mean":
-                forecast_res[model_name] = v
-            elif k.startswith(("lo", "hi")):
-                col_name = f"{model_name}-{k}"
-                forecast_res[col_name] = v
-            elif k == "fitted":
-                fitted_res[model_name] = v
-            elif k.startswith(("fitted-lo", "fitted-hi")):
-                col_name = f'{model_name}-{k.replace("fitted-", "")}'
-                fitted_res[col_name] = v
-    return forecast_res, fitted_res, times
 
 # %% ../../nbs/src/core/core.ipynb 10
 class GroupedArray(BaseGroupedArray):
@@ -433,18 +399,19 @@ class GroupedArray(BaseGroupedArray):
             if idxs.size
         ]
 
+    @_controller.wrap(limits=1)
     def _single_threaded_fit(self, models, fallback_model=None):
-        with threadpool_limits(limits=1):
-            return self.fit(models=models, fallback_model=fallback_model)
+        return self.fit(models=models, fallback_model=fallback_model)
 
+    @_controller.wrap(limits=1)
     def _single_threaded_predict(self, fm, h, X=None, level=tuple()):
-        with threadpool_limits(limits=1):
-            return self.predict(fm=fm, h=h, X=X, level=level)
+        return self.predict(fm=fm, h=h, X=X, level=level)
 
+    @_controller.wrap(limits=1)
     def _single_threaded_fit_predict(self, models, h, X=None, level=tuple()):
-        with threadpool_limits(limits=1):
-            return self.fit_predict(models=models, h=h, X=X, level=level)
+        return self.fit_predict(models=models, h=h, X=X, level=level)
 
+    @_controller.wrap(limits=1)
     def _single_threaded_forecast(
         self,
         models,
@@ -456,18 +423,18 @@ class GroupedArray(BaseGroupedArray):
         verbose=False,
         target_col="y",
     ):
-        with threadpool_limits(limits=1):
-            return self.forecast(
-                models=models,
-                h=h,
-                fallback_model=fallback_model,
-                fitted=fitted,
-                X=X,
-                level=level,
-                verbose=verbose,
-                target_col=target_col,
-            )
+        return self.forecast(
+            models=models,
+            h=h,
+            fallback_model=fallback_model,
+            fitted=fitted,
+            X=X,
+            level=level,
+            verbose=verbose,
+            target_col=target_col,
+        )
 
+    @_controller.wrap(limits=1)
     def _single_threaded_cross_validation(
         self,
         models,
@@ -482,20 +449,19 @@ class GroupedArray(BaseGroupedArray):
         verbose=False,
         target_col="y",
     ):
-        with threadpool_limits(limits=1):
-            return self.cross_validation(
-                models=models,
-                h=h,
-                test_size=test_size,
-                fallback_model=fallback_model,
-                step_size=step_size,
-                input_size=input_size,
-                fitted=fitted,
-                level=level,
-                refit=refit,
-                verbose=verbose,
-                target_col=target_col,
-            )
+        return self.cross_validation(
+            models=models,
+            h=h,
+            test_size=test_size,
+            fallback_model=fallback_model,
+            step_size=step_size,
+            input_size=input_size,
+            fitted=fitted,
+            level=level,
+            refit=refit,
+            verbose=verbose,
+            target_col=target_col,
+        )
 
 # %% ../../nbs/src/core/core.ipynb 24
 def _get_n_jobs(n_groups, n_jobs):
@@ -1238,10 +1204,11 @@ class _StatsForecast:
             fm = np.vstack([f.get() for f in futures])
         return fm
 
-    def _get_gas_Xs(self, X):
-        gas = self.ga.split(self.n_jobs)
+    def _get_gas_Xs(self, X, tasks_per_job=1):
+        n_chunks = min(tasks_per_job * self.n_jobs, self.ga.n_groups)
+        gas = self.ga.split(n_chunks)
         if X is not None:
-            Xs = X.split(self.n_jobs)
+            Xs = X.split(n_chunks)
         else:
             from itertools import repeat
 
@@ -1289,62 +1256,47 @@ class _StatsForecast:
         return fm, fcsts, cols
 
     def _forecast_parallel(self, h, fitted, X, level, target_col):
-        n_series = self.ga.n_groups
-        forecast_res = defaultdict(
-            lambda: np.empty(n_series * h, dtype=self.ga.data.dtype)
-        )
-        fitted_res = defaultdict(
-            lambda: np.empty(self.ga.data.shape[0], dtype=self.ga.data.dtype)
-        )
-        fitted_res[target_col] = self.ga.data[:, 0]
-        future2pos = {}
-        times = {repr(m): 0.0 for m in self.models}
+        gas, Xs = self._get_gas_Xs(X=X, tasks_per_job=100)
+        results = [None] * len(gas)
         with ProcessPoolExecutor(self.n_jobs) as executor:
-            for i, serie in enumerate(self.ga):
-                y_train = serie[:, 0]
-                X_train = serie[:, 1:] if serie.shape[1] > 1 else None
-                if X is None:
-                    X_future = None
-                else:
-                    X_future = X[i]
-                future = executor.submit(
-                    _forecast_serie,
+            future2pos = {
+                executor.submit(
+                    ga.forecast,
                     h=h,
-                    y=y_train,
-                    X=X_train,
-                    X_future=X_future,
                     models=self.models,
                     fallback_model=self.fallback_model,
                     fitted=fitted,
+                    X=X,
                     level=level,
-                )
-                future2pos[future] = i
+                    verbose=False,
+                    target_col=target_col,
+                ): i
+                for i, (ga, X) in enumerate(zip(gas, Xs))
+            }
             iterable = tqdm(
                 as_completed(future2pos),
                 disable=not self.verbose,
-                total=n_series,
+                total=len(future2pos),
                 desc="Forecast",
+                bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [Elapsed: {elapsed}{postfix}]",
             )
             for future in iterable:
                 i = future2pos[future]
-                fcst_idxs = slice(i * h, (i + 1) * h)
-                serie_idxs = slice(self.ga.indptr[i], self.ga.indptr[i + 1])
-                serie_fcst, serie_fitted, serie_times = future.result()
-                for k, v in serie_fcst.items():
-                    forecast_res[k][fcst_idxs] = v
-                for k, v in serie_fitted.items():
-                    fitted_res[k][serie_idxs] = v
-                for model_name, model_time in serie_times.items():
-                    times[model_name] += model_time
-        return {
-            "cols": list(forecast_res.keys()),
-            "forecasts": np.hstack([v[:, None] for v in forecast_res.values()]),
-            "fitted": {
-                "cols": list(fitted_res.keys()),
-                "values": np.hstack([v[:, None] for v in fitted_res.values()]),
+                results[i] = future.result()
+        result = {
+            "cols": results[0]["cols"],
+            "forecasts": np.vstack([r["forecasts"] for r in results]),
+            "times": {
+                m: sum(r["times"][m] for r in results)
+                for m in [repr(m) for m in self.models]
             },
-            "times": times,
         }
+        if fitted:
+            result["fitted"] = {
+                "cols": results[0]["fitted"]["cols"],
+                "values": np.hstack([r["fitted"]["values"] for r in results]),
+            }
+        return result
 
     def _cross_validation_parallel(
         self, h, test_size, step_size, input_size, fitted, level, refit, target_col
