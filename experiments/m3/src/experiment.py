@@ -1,6 +1,5 @@
 import os
 import time
-from functools import partial
 from multiprocessing import cpu_count
 os.environ['NIXTLA_NUMBA_RELEASE_GIL'] = '1'
 os.environ['NIXTLA_NUMBA_CACHE'] = '1'
@@ -11,8 +10,7 @@ import pandas as pd
 from statsforecast import StatsForecast
 from statsforecast.models import (
         AutoTheta, AutoETS, AutoCES,AutoARIMA,
-        Theta, OptimizedTheta, 
-        DynamicTheta, DynamicOptimizedTheta
+        DynamicOptimizedTheta
 )
 from statsforecast.utils import AirPassengers as ap
 
