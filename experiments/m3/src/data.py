@@ -1,5 +1,4 @@
 import fire
-import pandas as pd
 from datasetsforecast.m3 import M3, M3Info
 
 dict_datasets = {
