@@ -62,7 +62,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 >             truncate:Optional[bool]=None, test:str='kpss',
 >             test_kwargs:Optional[str]=None, seasonal_test:str='seas',
 >             seasonal_test_kwargs:Optional[Dict]=None,
->             allowdrift:bool=False, allowmean:bool=False,
+>             allowdrift:bool=True, allowmean:bool=True,
 >             blambda:Optional[float]=None, biasadj:bool=False,
 >             season_length:int=1, alias:str='AutoARIMA', prediction_interva
 >             ls:Optional[statsforecast.utils.ConformalIntervals]=None)
@@ -102,8 +102,8 @@ Information Criterion (AICc).\*
 | test_kwargs | Optional | None | Unit root test additional arguments. |
 | seasonal_test | str | seas | Selection method for seasonal differences. |
 | seasonal_test_kwargs | Optional | None | Seasonal unit root test arguments. |
-| allowdrift | bool | False | If True, drift models terms considered. |
-| allowmean | bool | False | If True, non-zero mean models considered. |
+| allowdrift | bool | True | If True, drift models terms considered. |
+| allowmean | bool | True | If True, non-zero mean models considered. |
 | blambda | Optional | None | Box-Cox transformation parameter. |
 | biasadj | bool | False | Use adjusted back-transformed mean Box-Cox. |
 | season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
