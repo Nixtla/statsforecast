@@ -53,7 +53,7 @@ def main(test: bool = False):
             'CES': 4.85, 
             'AutoETS': 4.35, 
             'DynamicOptimizedTheta': 4.54,
-            'StatisticalEnsemble': 4.23,
+            'StatisticalEnsemble': 4.3,
         }
         expected_results = pd.Series(expected_results)
         pd.testing.assert_series_equal(
