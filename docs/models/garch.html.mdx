@@ -223,16 +223,21 @@ Let’s pull the S&P500 stock data from the Yahoo Finance site.
 import pandas as pd
 import time
 from datetime import datetime
+import yfinance as yf
 
 ticker = '^GSPC'
 period1 = int(time.mktime(datetime(2015, 1, 1, 23, 59).timetuple()))
 period2 = int(time.mktime(datetime.now().timetuple()))
 interval = '1d' # 1d, 1m
 
-query_string = f'https://query1.finance.yahoo.com/v7/finance/download/{ticker}?period1={period1}&period2={period2}&interval={interval}&events=history&includeAdjustedClose=true'
+SP_500 = yf.download(ticker, start=period1, end=period2, interval=interval)
+SP_500 = SP_500.reset_index()
 
-SP_500 = pd.read_csv(query_string)
 SP_500.head()
+```
+
+``` text
+[*********************100%***********************]  1 of 1 completed
 ```
 
 |  | Date | Open | High | Low | Close | Adj Close | Volume |
@@ -278,17 +283,10 @@ print(df.dtypes)
 ```
 
 ``` text
-ds            object
-y            float64
-unique_id     object
+ds           datetime64[ns]
+y                   float64
+unique_id            object
 dtype: object
-```
-
-We can see that our time variable `(ds)` is in an object format, we need
-to convert to a date format
-
-```python
-df["ds"] = pd.to_datetime(df["ds"])
 ```
 
 ## Explore data with the plot method <a class="anchor" id="plotting"></a>
@@ -303,7 +301,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-8-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-7-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -427,7 +425,7 @@ fig = px.line(df, x=df["ds"], y="return",title="SP500 Return Chart",template = "
 fig.show()
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-12-output-2.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-11-output-2.png)
 
 ### Creating Squared Returns
 
@@ -469,7 +467,7 @@ fig.update_layout(height=600, width=800, title_text="Returns vs Squared Returns"
 fig.show()
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-14-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-13-output-1.png)
 
 ```python
 from scipy.stats import probplot, moment
@@ -504,7 +502,7 @@ def plot_correlogram(x, lags=None, title=None):
 plot_correlogram(df["return"], lags=30, title="Time Series Analysis plot \n")
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-16-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-15-output-1.png)
 
 ### Ljung-Box Test
 
@@ -580,7 +578,7 @@ sns.lineplot(test, x="ds", y="y", label="Test")
 plt.show()
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-21-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-20-output-1.png)
 
 ## Implementation of GARCH with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -861,7 +859,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-34-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-33-output-1.png)
 
 ### Forecast Method
 
@@ -997,7 +995,7 @@ ax.grid(True)
 plt.show()
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-41-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-40-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -1106,7 +1104,7 @@ def plot_forecasts(y_hist, y_true, y_pred, models):
 plot_forecasts(train, test, forecast_df, models=["GARCH(1,1)" ])
 ```
 
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-46-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-45-output-1.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
