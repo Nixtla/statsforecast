@@ -65,35 +65,29 @@ Install the necessary packages using `pip install statsforecast`
 pip install statsforecast -U
 ```
 
+
+```python
+import os
+```
+
+
+```python
+# this makes it so that the outputs of the predict methods have the id as a column
+os.environ['NIXTLA_ID_AS_COL'] = '1'
+```
+
 ## Load and explore the data
 
 For this example, we’ll use the hourly dataset of the [M4
 Competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128).
-We’ll first import the data from
-[datasetsforecast](https://github.com/Nixtla/datasetsforecast/tree/main/),
-which you can install using `pip install datasetsforecast`
 
 ```python
-pip install datasetsforecast -U
+import pandas as pd
 ```
 
 
 ```python
-from datasetsforecast.m4 import M4
-```
-
-The function to load the data is `M4.load`. It requieres the following
-two arguments:
-
--   `directory`: (str) The directory where the data will be downloaded.
--   `group`: (str). The group name, which can be `Yearly`, `Quarterly`,
-    `Monthly`, `Weekly`, `Daily` or `Hourly`.
-
-This function returns multiple outputs, but only the first one with the
-target series is needed.
-
-```python
-df_total, *_ = M4.load('./data', 'Hourly')
+df_total = pd.read_parquet('https://datasets-nixtla.s3.amazonaws.com/m4-hourly.parquet')
 df_total.head()
 ```
 
@@ -111,52 +105,44 @@ three columns: `unique_id`, `df` and `y`.
 
 -   `unique_id`: (string, int or category) A unique identifier for the
     series.
--   `ds`: (datestamp or int) A datestamp in format YYYY-MM-DD or
+-   `ds`: (timestamp or int) A timestamp in format YYYY-MM-DD or
     YYYY-MM-DD HH:MM:SS or an integer indexing time.
 -   `y`: (numeric) The measurement we wish to forecast.
-
-In this case, the `unique_id` and `y` columns already have the requiered
-format, but we need to change the data type of the `ds` column.
-
-```python
-df_total['ds'] = df_total['ds'].astype(int)
-```
 
 From this dataset, we’ll select the first 8 time series to reduce the
 total execution time. You can select any number you want by changing the
 value of `n_series`.
 
 ```python
-n_series = 8 
+n_series = 8
 uids = df_total['unique_id'].unique()[:n_series]
 df = df_total.query('unique_id in @uids')
 ```
 
-We can plot these series using the `plot` method from the StatsForecast
-class. This method has multiple parameters, and the required ones to
-generate the plots in this notebook are explained below.
+We can plot these series using the `plot_series` function from the
+`utilsforecast` package. This function has multiple parameters, and the
+required ones to generate the plots in this notebook are explained
+below.
 
 -   `df`: A pandas dataframe with columns \[unique_id, ds, y\].
 -   `forecasts_df`: A pandas dataframe with columns \[unique_id, ds\]
     and models.
--   `unique_ids`: (list\[str\]) A list with the ids of the time series
-    we want to plot.
--   `plot_random`: (bool = True) Plots the time series randomly.
--   `plot_anomalies`: (bool = False) Plots anomalies for each prediction
-    interval.
--   `engine`: (str = plotly). The library used to generate the plots. It
-    can also be matplotlib for static plots.
+-   `ids`: A list with the ids of the time series we want to plot.
+-   `level`: Prediction interval levels to plot.
+-   `plot_anomalies`: Whether or not to include the anomalies for each
+    prediction interval.
 
 ```python
 from statsforecast import StatsForecast
+from utilsforecast.plotting import plot_series
 ```
 
 
 ```python
-StatsForecast.plot(df, plot_random = False)
+plot_series(df)
 ```
 
-![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-9-output-2.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-9-output-1.png)
 
 ## Train model
 
@@ -170,7 +156,10 @@ seasonal periods: one every 24 hours (hourly) and one every 24\*7 hours
 
 ```python
 from statsforecast.models import MSTL
+```
 
+
+```python
 # Create a list of models and instantiation parameters 
 models = [MSTL(season_length = [24, 24*7])]
 ```
@@ -178,32 +167,30 @@ models = [MSTL(season_length = [24, 24*7])]
 To instantiate a new StatsForecast object, we need the following
 parameters:
 
--   `df`: The dataframe with the training data.
 -   `models`: The list of models defined in the previous step.
--   `freq`: A string indicating the frequency of the data. See [pandas’
-    available
+-   `freq`: A string or integer indicating the frequency of the data.
+    See [pandas’ available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 -   `n_jobs`: An integer that indicates the number of jobs used in
     parallel processing. Use -1 to select all cores.
 
 ```python
 sf = StatsForecast(
-    df = df, 
-    models = models, 
-    freq = 'H', 
-    n_jobs = -1
+    models=models, 
+    freq=1,
+    n_jobs=-1,
 )
 ```
 
 We’ll now predict the next 48 hours. To do this, we’ll use the
 `forecast` method, which requieres the following arguments:
 
--   `h`: (int) The forecasting horizon.
--   `level`: (list\[float\]) The confidence levels of the prediction
-    intervals
--   `fitted`: (bool = False) Returns insample predictions.
+-   `df`: The dataframe with the training data.
+-   `h`: The forecasting horizon.
+-   `level`: The confidence levels of the prediction intervals.
+-   `fitted`: Return insample predictions.
 
-It is important that we select a `level` and set `fitted = True` since
+It is important that we select a `level` and set `fitted=True` since
 we’ll need the insample forecasts and their prediction intervals to
 detect the anomalies.
 
@@ -211,26 +198,25 @@ detect the anomalies.
 horizon = 48
 levels = [99] 
 
-fcst = sf.forecast(h = 48, level = levels, fitted = True)
-fcst = fcst.reset_index()
+fcst = sf.forecast(df=df, h=48, level=levels, fitted=True)
 fcst.head()
 ```
 
 |     | unique_id | ds  | MSTL       | MSTL-lo-99 | MSTL-hi-99 |
 |-----|-----------|-----|------------|------------|------------|
-| 0   | H1        | 749 | 615.943970 | 597.662170 | 634.225708 |
-| 1   | H1        | 750 | 559.297791 | 531.316650 | 587.278931 |
-| 2   | H1        | 751 | 515.693542 | 479.151337 | 552.235718 |
-| 3   | H1        | 752 | 480.719269 | 436.241547 | 525.197021 |
-| 4   | H1        | 753 | 467.146484 | 415.199738 | 519.093262 |
+| 0   | H1        | 749 | 607.607223 | 587.173250 | 628.041196 |
+| 1   | H1        | 750 | 552.364253 | 521.069710 | 583.658796 |
+| 2   | H1        | 751 | 506.785334 | 465.894977 | 547.675691 |
+| 3   | H1        | 752 | 472.906141 | 423.114088 | 522.698195 |
+| 4   | H1        | 753 | 452.240231 | 394.064394 | 510.416067 |
 
-We can plot the forecasts using the `plot` method from before.
+We can plot the forecasts using the `plot_series` function from before.
 
 ```python
-StatsForecast.plot(df, fcst, plot_random = False)
+plot_series(df, fcst)
 ```
 
-![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-14-output-1.png)
 
 ## Recover insample forecasts and identify anomalies
 
@@ -240,51 +226,51 @@ level (here we selected 99%). Hence, we first need to recover the
 insample forecasts using the `forecast_fitted_values` method.
 
 ```python
-insample_forecasts = sf.forecast_fitted_values().reset_index()
+insample_forecasts = sf.forecast_fitted_values()
 insample_forecasts.head()
 ```
 
 |     | unique_id | ds  | y     | MSTL       | MSTL-lo-99 | MSTL-hi-99 |
 |-----|-----------|-----|-------|------------|------------|------------|
-| 0   | H1        | 1   | 605.0 | 604.924500 | 588.010376 | 621.838623 |
-| 1   | H1        | 2   | 586.0 | 585.221802 | 568.307678 | 602.135925 |
-| 2   | H1        | 3   | 586.0 | 589.740723 | 572.826599 | 606.654846 |
-| 3   | H1        | 4   | 559.0 | 557.778076 | 540.863953 | 574.692200 |
-| 4   | H1        | 5   | 511.0 | 506.747009 | 489.832886 | 523.661133 |
+| 0   | H1        | 1   | 605.0 | 605.098607 | 584.678408 | 625.518805 |
+| 1   | H1        | 2   | 586.0 | 588.496673 | 568.076474 | 608.916872 |
+| 2   | H1        | 3   | 586.0 | 585.586856 | 565.166657 | 606.007054 |
+| 3   | H1        | 4   | 559.0 | 554.012377 | 533.592178 | 574.432576 |
+| 4   | H1        | 5   | 511.0 | 510.153508 | 489.733309 | 530.573707 |
 
 We can now find all the observations above or below the 99% prediction
 interval for the insample forecasts.
 
 ```python
-anomalies = insample_forecasts.loc[(insample_forecasts['y'] >= insample_forecasts['MSTL-hi-99']) | (insample_forecasts['y'] <= insample_forecasts['MSTL-lo-99'])]
+anomalies = insample_forecasts[insample_forecasts['y'].between(insample_forecasts['MSTL-lo-99'], insample_forecasts['MSTL-hi-99'])]
 anomalies.head()
 ```
 
 |     | unique_id | ds  | y     | MSTL       | MSTL-lo-99 | MSTL-hi-99 |
 |-----|-----------|-----|-------|------------|------------|------------|
-| 168 | H1        | 169 | 813.0 | 779.849792 | 762.935669 | 796.763916 |
-| 279 | H1        | 280 | 692.0 | 672.638123 | 655.723999 | 689.552246 |
-| 289 | H1        | 290 | 770.0 | 792.015442 | 775.101318 | 808.929565 |
-| 308 | H1        | 309 | 844.0 | 867.809387 | 850.895203 | 884.723511 |
-| 336 | H1        | 337 | 853.0 | 822.427002 | 805.512878 | 839.341187 |
+| 0   | H1        | 1   | 605.0 | 605.098607 | 584.678408 | 625.518805 |
+| 1   | H1        | 2   | 586.0 | 588.496673 | 568.076474 | 608.916872 |
+| 2   | H1        | 3   | 586.0 | 585.586856 | 565.166657 | 606.007054 |
+| 3   | H1        | 4   | 559.0 | 554.012377 | 533.592178 | 574.432576 |
+| 4   | H1        | 5   | 511.0 | 510.153508 | 489.733309 | 530.573707 |
 
-We can plot the anomalies by adding the `plot_anomalies = True` argument
-to the `plot` method.
-
-```python
-StatsForecast.plot(insample_forecasts, plot_random = False, plot_anomalies = True)
-```
-
-![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-16-output-1.png)
-
-If we want to take a closer look, we can use the `unique_ids` argument
-to select one particular time series, for example, `H10`.
+We can plot the anomalies by setting the `level` and the
+`plot_anomalies` arguments of the `plot_series` function.
 
 ```python
-StatsForecast.plot(insample_forecasts, unique_ids = ['H10'], plot_anomalies = True)
+plot_series(forecasts_df=insample_forecasts, level=levels, plot_anomalies=True)
 ```
 
 ![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-17-output-1.png)
+
+If we want to take a closer look, we can use the `ids` argument to
+select one particular time series, for example, `H10`.
+
+```python
+plot_series(forecasts_df=insample_forecasts, level=[99], plot_anomalies=True, ids=['H10'])
+```
+
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-18-output-1.png)
 
 Here we identified the anomalies in the data using the MSTL model, but
 any [probabilistic
