@@ -45,7 +45,7 @@ jobs:
           platforms: arm64
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@f731690a1dacb2f6393acc910887b8cda1a97789 # v3.1.6
+        uses: astral-sh/setup-uv@f3bcaebff5eace81a1c062af9f9011aae482ca9d # v3.1.7
         with:
           version: "latest"
 
