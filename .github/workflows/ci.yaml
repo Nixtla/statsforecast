@@ -24,13 +24,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [38, 39, 310, 311, 312]
+        python-version: [39, 310, 311, 312]
         os-platform:
           [
             [ubuntu-latest, manylinux_x86_64],
             [ubuntu-latest, manylinux_aarch64],
             [windows-latest, win_amd64],
-            [macos-12, macosx_x86_64],
+            [macos-13, macosx_x86_64],
             [macos-14, macosx_arm64],
           ]
     steps:
