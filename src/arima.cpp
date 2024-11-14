@@ -102,50 +102,65 @@ arima_transpar(const py::array_t<double> params_inv,
 }
 
 std::tuple<double, py::array_t<double>>
-arima_css(const py::array_t<double> yv, const py::array_t<int> armav,
+arima_css(const py::array_t<double> yv, const py::array_t<uint32_t> armav,
           const py::array_t<double> phiv, const py::array_t<double> thetav) {
-  int n = static_cast<int>(yv.size());
-  int p = static_cast<int>(phiv.size());
-  int q = static_cast<int>(thetav.size());
-  auto y = yv.data();
-  auto arma = armav.data();
-  auto phi = phiv.data();
-  auto theta = thetav.data();
-  int ncond = arma[0] + arma[5] + arma[4] * (arma[2] + arma[6]);
-  int nu = 0;
+  assert(yv.ndim() == 1);
+  assert(armav.ndim() == 1);
+  assert(phiv.ndim() == 1);
+  assert(thetav.ndim() == 1);
+
+  // ssize_t to size_t is safe because the size of an array is non-negative
+  const size_t n = static_cast<size_t>(yv.size());
+  const size_t p = static_cast<size_t>(phiv.size());
+  const size_t q = static_cast<size_t>(thetav.size());
+
+  const auto y = make_cspan(yv);
+  const auto arma = make_cspan(armav);
+  const auto phi = make_cspan(phiv);
+  const auto theta = make_cspan(thetav);
+
+  const uint32_t ncond = arma[0] + arma[5] + arma[4] * (arma[2] + arma[6]);
+  uint32_t nu = 0;
   double ssq = 0.0;
 
-  auto residv = py::array_t<double>(n);
-  auto resid = residv.mutable_data();
-  auto w = std::vector<double>(y, y + yv.size());
-  for (int _ = 0; _ < arma[5]; ++_) {
-    for (int l = n - 1; l > 0; --l) {
+  py::array_t<double> residv(n);
+  const auto resid = make_span(residv);
+  std::vector<double> w(y.begin(), y.end());
+
+  for (size_t _ = 0; _ < arma[5]; ++_) {
+    for (size_t l = n - 1; l > 0; --l) {
       w[l] -= w[l - 1];
     }
   }
-  int ns = arma[4];
-  for (int _ = 0; _ < arma[6]; ++_) {
-    for (int l = n - 1; l >= ns; --l) {
+
+  const uint32_t ns = arma[4];
+  for (size_t _ = 0; _ < arma[6]; ++_) {
+    for (size_t l = n - 1; l >= ns; --l) {
       w[l] -= w[l - ns];
     }
   }
-  for (int l = ncond; l < n; ++l) {
+
+  for (size_t l = ncond; l < n; ++l) {
     double tmp = w[l];
-    for (int j = 0; j < p; ++j) {
+    for (size_t j = 0; j < p; ++j) {
       tmp -= phi[j] * w[l - j - 1];
     }
-    for (int j = 0; j < std::min(l - ncond, q); ++j) {
+
+    assert(l >= ncond);
+    for (size_t j = 0; j < std::min(static_cast<size_t>(l - ncond), q); ++j) {
       if (l - j - 1 < 0) {
         continue;
       }
       tmp -= theta[j] * resid[l - j - 1];
     }
+
     resid[l] = tmp;
     if (!std::isnan(tmp)) {
       nu++;
       ssq += tmp * tmp;
     }
   }
+
   return {ssq / nu, residv};
 }
 
