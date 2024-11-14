@@ -23,7 +23,7 @@ std::span<const T> make_cspan(const py::array_t<T> &array) {
 }
 } // namespace
 
-void partrans(const size_t p, const std::span<const double> rawv,
+void partrans(const uint32_t p, const std::span<const double> rawv,
               const std::span<double> newv) {
   assert(p <= rawv.size());
   assert(p <= newv.size());
@@ -42,25 +42,20 @@ void partrans(const size_t p, const std::span<const double> rawv,
 
 std::tuple<py::array_t<double>, py::array_t<double>>
 arima_transpar(const py::array_t<double> params_inv,
-               const py::array_t<int> armav, bool trans) {
+               const py::array_t<uint32_t> armav, bool trans) {
   assert(params_inv.ndim() == 1);
   assert(armav.ndim() == 1);
 
   const auto arma = make_cspan(armav);
   const auto params_in = make_cspan(params_inv);
 
-  const int mp = arma[0];
-  const int mq = arma[1];
-  const int msp = arma[2];
-  const int msq = arma[3];
-  const int ns = arma[4];
-  assert(mp >= 0);
-  assert(mq >= 0);
-  assert(msp >= 0);
-  assert(msq >= 0);
-  assert(ns >= 0);
-  const int p = mp + ns * msp;
-  const int q = mq + ns * msq;
+  const uint32_t mp = arma[0];
+  const uint32_t mq = arma[1];
+  const uint32_t msp = arma[2];
+  const uint32_t msq = arma[3];
+  const uint32_t ns = arma[4];
+  const uint32_t p = mp + ns * msp;
+  const uint32_t q = mq + ns * msq;
 
   std::vector<double> params(params_in.begin(), params_in.end());
 
@@ -73,7 +68,7 @@ arima_transpar(const py::array_t<double> params_inv,
     if (mp > 0) {
       partrans(mp, params_in, params);
     }
-    int v = mp + mq;
+    const uint32_t v = mp + mq;
     if (msp > 0) {
       partrans(msp, params_in.subspan(v), std::span(params).subspan(v));
     }
@@ -531,7 +526,7 @@ void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
 }
 
 py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
-                                    const py::array_t<int> armav) {
+                                    const py::array_t<uint32_t> armav) {
   assert(xv.ndim() == 1);
   assert(armav.ndim() == 1);
 
@@ -540,9 +535,9 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
   const auto x = make_cspan(xv);
   const size_t n = x.size();
 
-  const int mp = arma[0];
-  const int mq = arma[1];
-  const int msp = arma[2];
+  const uint32_t mp = arma[0];
+  const uint32_t mq = arma[1];
+  const uint32_t msp = arma[2];
 
   std::array<double, 100> w1;
   std::array<double, 100> w2;
@@ -592,19 +587,16 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
 }
 
 py::array_t<double> arima_undopars(const py::array_t<double> xv,
-                                   const py::array_t<int> armav) {
+                                   const py::array_t<uint32_t> armav) {
   assert(xv.ndim() == 1);
   assert(armav.ndim() == 1);
 
   const auto x = make_cspan(xv);
   const auto arma = make_cspan(armav);
 
-  const int mp = arma[0];
-  const int mq = arma[1];
-  const int msp = arma[2];
-  assert(mp >= 0);
-  assert(mq >= 0);
-  assert(msp >= 0);
+  const uint32_t mp = arma[0];
+  const uint32_t mq = arma[1];
+  const uint32_t msp = arma[2];
 
   py::array_t<double> outv(xv.size());
   const auto out = make_span(outv);
@@ -624,9 +616,8 @@ py::array_t<double> arima_undopars(const py::array_t<double> xv,
   return outv;
 }
 
-void invpartrans(const int p, const py::array_t<double> phiv,
+void invpartrans(const uint32_t p, const py::array_t<double> phiv,
                  py::array_t<double> outv) {
-  assert(p >= 0);
   assert(phiv.ndim() == 1);
   assert(outv.ndim() == 1);
   assert(p <= phiv.size());
