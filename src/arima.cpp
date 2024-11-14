@@ -23,64 +23,86 @@ std::span<const T> make_cspan(const py::array_t<T> &array) {
 }
 } // namespace
 
-void partrans(int p, const double *raw, double *newv) {
-  std::transform(raw, raw + p, newv, [](double x) { return std::tanh(x); });
-  std::vector<double> work(newv, newv + p);
-  for (int j = 1; j < p; ++j) {
-    for (int k = 0; k < j; ++k) {
+void partrans(const size_t p, const std::span<const double> rawv,
+              const std::span<double> newv) {
+  assert(p <= rawv.size());
+  assert(p <= newv.size());
+
+  std::transform(rawv.begin(), rawv.begin() + p, newv.begin(),
+                 [](double x) { return std::tanh(x); });
+
+  std::vector<double> work(newv.begin(), newv.begin() + p);
+  for (size_t j = 1; j < p; ++j) {
+    for (size_t k = 0; k < j; ++k) {
       work[k] -= newv[j] * newv[j - k - 1];
     }
-    std::copy(work.begin(), work.begin() + j, newv);
+    std::copy(work.begin(), work.begin() + j, newv.begin());
   }
 }
 
 std::tuple<py::array_t<double>, py::array_t<double>>
 arima_transpar(const py::array_t<double> params_inv,
                const py::array_t<int> armav, bool trans) {
-  auto arma = armav.data();
-  auto params_in = params_inv.data();
-  int mp = arma[0];
-  int mq = arma[1];
-  int msp = arma[2];
-  int msq = arma[3];
-  int ns = arma[4];
-  int p = mp + ns * msp;
-  int q = mq + ns * msq;
-  auto params = std::vector<double>(params_in, params_in + params_inv.size());
+  assert(params_inv.ndim() == 1);
+  assert(armav.ndim() == 1);
+
+  const auto arma = make_cspan(armav);
+  const auto params_in = make_cspan(params_inv);
+
+  const int mp = arma[0];
+  const int mq = arma[1];
+  const int msp = arma[2];
+  const int msq = arma[3];
+  const int ns = arma[4];
+  assert(mp >= 0);
+  assert(mq >= 0);
+  assert(msp >= 0);
+  assert(msq >= 0);
+  assert(ns >= 0);
+  const int p = mp + ns * msp;
+  const int q = mq + ns * msq;
+
+  std::vector<double> params(params_in.begin(), params_in.end());
+
   py::array_t<double> phiv(p);
   py::array_t<double> thetav(q);
-  auto phi = phiv.mutable_data();
-  auto theta = thetav.mutable_data();
+  const auto phi = make_span(phiv);
+  const auto theta = make_span(thetav);
+
   if (trans) {
     if (mp > 0) {
-      partrans(mp, params_in, params.data());
+      partrans(mp, params_in, params);
     }
     int v = mp + mq;
     if (msp > 0) {
-      partrans(msp, params_in + v, params.data() + v);
+      partrans(msp, params_in.subspan(v), std::span(params).subspan(v));
     }
   }
+
   if (ns > 0) {
-    std::copy(params.begin(), params.begin() + mp, phi);
-    std::fill(phi + mp, phi + p, 0.0);
-    std::copy(params.begin() + mp, params.begin() + mp + mq, theta);
-    std::fill(theta + mq, theta + q, 0.0);
-    for (int j = 0; j < msp; ++j) {
+    std::copy(params.begin(), params.begin() + mp, phi.begin());
+    std::fill(phi.begin() + mp, phi.begin() + p, 0.0);
+    std::copy(params.begin() + mp, params.begin() + mp + mq, theta.begin());
+    std::fill(theta.begin() + mq, theta.begin() + q, 0.0);
+
+    for (size_t j = 0; j < msp; ++j) {
       phi[(j + 1) * ns - 1] += params[j + mp + mq];
-      for (int i = 0; i < mp; ++i) {
+      for (size_t i = 0; i < mp; ++i) {
         phi[(j + 1) * ns + i] -= params[i] * params[j + mp + mq];
       }
     }
-    for (int j = 0; j < msq; ++j) {
+
+    for (size_t j = 0; j < msq; ++j) {
       theta[(j + 1) * ns - 1] += params[j + mp + mq + msp];
-      for (int i = 0; i < mq; ++i) {
+      for (size_t i = 0; i < mq; ++i) {
         theta[(j + 1) * ns + i] += params[i + mp] * params[j + mp + mq + msp];
       }
     }
   } else {
-    std::copy(params.begin(), params.begin() + mp, phi);
-    std::copy(params.begin() + mp, params.begin() + mp + mq, theta);
+    std::copy(params.begin(), params.begin() + mp, phi.begin());
+    std::copy(params.begin() + mp, params.begin() + mp + mq, theta.begin());
   }
+
   return {phiv, thetav};
 }
 
@@ -537,11 +559,11 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
 
   if (mp > 0) {
     std::copy(x.begin(), x.begin() + mp, w1.begin());
-    partrans(mp, w1.data(), w2.data());
+    partrans(mp, w1, w2);
 
     for (size_t i = 0; i < mp; ++i) {
       w1[i] += eps;
-      partrans(mp, w1.data(), w3.data());
+      partrans(mp, w1, w3);
 
       for (size_t j = 0; j < mp; ++j) {
         out[n * i + j] = (w3[j] - w2[j]) / eps;
@@ -553,11 +575,11 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
   if (msp > 0) {
     const size_t v = mp + mq;
     std::copy(x.begin() + v, x.begin() + v + msp, w1.begin());
-    partrans(msp, w1.data(), w2.data());
+    partrans(msp, w1, w2);
 
     for (size_t i = 0; i < msp; ++i) {
       w1[i] += eps;
-      partrans(msp, w1.data(), w3.data());
+      partrans(msp, w1, w3);
 
       for (size_t j = 0; j < msp; ++j) {
         out[n * (i + v) + j + v] = (w3[j] - w2[j]) / eps;
@@ -571,21 +593,34 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
 
 py::array_t<double> arima_undopars(const py::array_t<double> xv,
                                    const py::array_t<int> armav) {
-  auto x = xv.data();
-  auto arma = armav.data();
-  int mp = arma[0];
-  int mq = arma[1];
-  int msp = arma[2];
-  py::array_t<double> outv{xv.size()};
-  auto out = outv.mutable_data();
-  std::copy(xv.data(), xv.data() + xv.size(), out);
+  assert(xv.ndim() == 1);
+  assert(armav.ndim() == 1);
+
+  const auto x = make_cspan(xv);
+  const auto arma = make_cspan(armav);
+
+  const int mp = arma[0];
+  const int mq = arma[1];
+  const int msp = arma[2];
+  assert(mp >= 0);
+  assert(mq >= 0);
+  assert(msp >= 0);
+
+  py::array_t<double> outv(xv.size());
+  const auto out = make_span(outv);
+
+  std::copy(x.begin(), x.end(), out.begin());
+
   if (mp > 0) {
     partrans(mp, x, out);
   }
-  int v = mp + mq;
+
+  const size_t v = mp + mq;
+
   if (msp > 0) {
-    partrans(msp, x + v, out + v);
+    partrans(msp, x.subspan(v), out.subspan(v));
   }
+
   return outv;
 }
 
