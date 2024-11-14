@@ -447,34 +447,45 @@ void inclu2(const std::vector<double> &xnext, std::vector<double> &xrow,
 
 void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
            py::array_t<double> resv) {
-  auto phi = phiv.data();
-  auto theta = thetav.data();
-  auto res = resv.mutable_data();
-  int p = static_cast<int>(phiv.size());
-  int q = static_cast<int>(thetav.size());
-  int r = std::max(p, q + 1);
-  int np = r * (r + 1) / 2;
-  int nrbar = np * (np - 1) / 2;
-  int ind = 0;
+  assert(thetav.ndim() == 1);
+  assert(phiv.ndim() == 1);
+  assert(resv.ndim() == 1);
+
+  const auto phi = make_cspan(phiv);
+  const auto theta = make_cspan(thetav);
+  const auto res = make_span(resv);
+
+  const size_t p = phi.size();
+  const size_t q = theta.size();
+  const size_t r = std::max(p, q + 1);
+  const size_t np = r * (r + 1) / 2;
+  const size_t nrbar = np * (np - 1) / 2;
 
   std::vector<double> V(np);
-  for (int j = 0; j < r; ++j) {
-    double vj = 0.0;
-    if (j == 0) {
-      vj = 1.0;
-    } else if (j - 1 < q) {
-      vj = theta[j - 1];
-    }
-    for (int i = j; i < r; ++i) {
-      double vi = 0.0;
-      if (i == 0) {
-        vi = 1.0;
-      } else if (i - 1 < q) {
-        vi = theta[i - 1];
+
+  {
+    size_t ind = 0;
+
+    for (size_t j = 0; j < r; ++j) {
+      double vj = 0.0;
+      if (j == 0) {
+        vj = 1.0;
+      } else if (j - 1 < q) {
+        vj = theta[j - 1];
       }
-      V[ind++] = vi * vj;
+
+      for (size_t i = j; i < r; ++i) {
+        double vi = 0.0;
+        if (i == 0) {
+          vi = 1.0;
+        } else if (i - 1 < q) {
+          vi = theta[i - 1];
+        }
+        V[ind++] = vi * vj;
+      }
     }
   }
+
   if (r == 1) {
     if (p == 0) {
       res[0] = 1.0;
@@ -483,24 +494,31 @@ void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
     }
     return;
   }
+
   if (p > 0) {
     std::vector<double> rbar(nrbar);
     std::vector<double> thetab(np);
     std::vector<double> xnext(np);
     std::vector<double> xrow(np);
-    ind = 0;
-    int ind1 = -1;
-    int npr = np - r;
-    int npr1 = npr + 1;
-    int indj = npr;
-    int ind2 = npr - 1;
-    for (int j = 0; j < r; ++j) {
-      double phij = j < p ? phi[j] : 0.0;
+
+    size_t ind = 0;
+    ssize_t ind1 = -1;
+
+    const size_t npr = np - r;
+    const size_t npr1 = npr + 1;
+    size_t indj = npr;
+    size_t ind2 = npr - 1;
+
+    for (size_t j = 0; j < r; ++j) {
+      const double phij = j < p ? phi[j] : 0.0;
+      size_t indi = npr1 + j;
+
       xnext[indj++] = 0.0;
-      int indi = npr1 + j;
-      for (int i = j; i < r; ++i) {
-        double ynext = V[ind++];
-        double phii = i < p ? phi[i] : 0.0;
+
+      for (size_t i = j; i < r; ++i) {
+        const double ynext = V[ind++];
+        const double phii = i < p ? phi[i] : 0.0;
+
         if (j != r - 1) {
           xnext[indj] = -phii;
           if (i != r - 1) {
@@ -508,44 +526,54 @@ void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
             xnext[++ind1] = -1.0;
           }
         }
+
         xnext[npr] = -phii * phij;
+
         if (++ind2 >= np) {
           ind2 = 0;
         }
+
         xnext[ind2] += 1.0;
-        inclu2(xnext, xrow, ynext, std::span(res, resv.size()), rbar, thetab);
+        inclu2(xnext, xrow, ynext, res, rbar, thetab);
         xnext[ind2] = 0.0;
+
         if (i != r - 1) {
           xnext[indi++] = 0.0;
           xnext[ind1] = 0.0;
         }
       }
     }
-    int ithisr = nrbar - 1;
-    int im = np - 1;
-    for (int i = 0; i < np; ++i) {
+
+    size_t ithisr = nrbar - 1;
+    size_t im = np - 1;
+    for (size_t i = 0; i < np; ++i) {
+      size_t jm = np - 1;
       double bi = thetab[im];
-      int jm = np - 1;
-      for (int j = 0; j < i; ++j) {
+
+      for (size_t j = 0; j < i; ++j) {
         bi -= rbar[ithisr--] * res[jm--];
       }
+
       res[im--] = bi;
     }
+
     ind = npr;
-    for (int i = 0; i < r; ++i) {
+
+    for (size_t i = 0; i < r; ++i) {
       xnext[i] = res[ind++];
     }
+
     ind = np - 1;
     ind1 = npr - 1;
-    for (int i = 0; i < npr; ++i) {
+    for (size_t i = 0; i < npr; ++i) {
       res[ind--] = res[ind1--];
     }
-    std::copy(xnext.begin(), xnext.begin() + r, res);
+    std::copy(xnext.begin(), xnext.begin() + r, res.begin());
   } else {
-    int indn = np;
-    ind = np;
-    for (int i = 0; i < r; ++i) {
-      for (int j = 0; j < i + 1; ++j) {
+    size_t ind = np;
+    size_t indn = np;
+    for (size_t i = 0; i < r; ++i) {
+      for (size_t j = 0; j < i + 1; ++j) {
         --ind;
         res[ind] = V[ind];
         if (j != 0) {
@@ -554,15 +582,20 @@ void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
       }
     }
   }
-  ind = np;
-  for (int i = r - 1; i > 0; --i) {
-    for (int j = r - 1; j > i - 1; --j) {
-      res[r * i + j] = res[--ind];
+
+  {
+    size_t ind = np;
+
+    for (size_t i = r - 1; i > 0; --i) {
+      for (size_t j = r - 1; j > i - 1; --j) {
+        res[r * i + j] = res[--ind];
+      }
     }
-  }
-  for (int i = 0; i < r - 1; ++i) {
-    for (int j = i + 1; j < r; ++j) {
-      res[i + r * j] = res[j + r * i];
+
+    for (size_t i = 0; i < r - 1; ++i) {
+      for (size_t j = i + 1; j < r; ++j) {
+        res[i + r * j] = res[j + r * i];
+      }
     }
   }
 }
