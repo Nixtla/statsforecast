@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cmath>
+#include <span>
 #include <vector>
 
 #include <pybind11/numpy.h>
@@ -326,33 +328,43 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
   return {ssq, sumlog, nu};
 }
 
-void inclu2(int np, const double *xnext, double *xrow, double ynext, double *d,
-            double *rbar, double *thetab) {
-  std::copy(xnext, xnext + np, xrow);
-  int ithisr = 0;
-  for (int i = 0; i < np; ++i) {
+void inclu2(const std::vector<double> &xnext, std::vector<double> &xrow,
+            double ynext, std::span<double> d, std::vector<double> &rbar,
+            std::vector<double> &thetab) {
+  const size_t np = xnext.size();
+  assert(xrow.size() == np);
+  assert(thetab.size() == np);
+
+  std::copy(xnext.begin(), xnext.end(), xrow.begin());
+  size_t ithisr = 0;
+
+  for (size_t i = 0; i < np; ++i) {
     if (xrow[i] != 0.0) {
-      double xi = xrow[i];
-      double di = d[i];
-      double dpi = di + xi * xi;
+      const double xi = xrow[i];
+      const double di = d[i];
+      const double dpi = di + xi * xi;
       d[i] = dpi;
-      double cbar, sbar;
-      if (dpi == 0) {
-        cbar = std::numeric_limits<double>::infinity();
-        sbar = std::numeric_limits<double>::infinity();
-      } else {
-        cbar = di / dpi;
-        sbar = xi / dpi;
-      }
-      for (int k = i + 1; k < np; ++k) {
-        double xk = xrow[k];
-        double rbthis = rbar[ithisr];
+
+      const auto [cbar, sbar] = [dpi, di, xi]() -> std::pair<double, double> {
+        if (dpi == 0) {
+          return {std::numeric_limits<double>::infinity(),
+                  std::numeric_limits<double>::infinity()};
+        } else {
+          return {di / dpi, xi / dpi};
+        }
+      }();
+
+      for (size_t k = i + 1; k < np; ++k) {
+        const double xk = xrow[k];
+        const double rbthis = rbar[ithisr];
         xrow[k] = xk - xi * rbthis;
         rbar[ithisr++] = cbar * rbthis + sbar * xk;
       }
-      double xk = ynext;
+
+      const double xk = ynext;
       ynext = xk - xi * thetab[i];
       thetab[i] = cbar * thetab[i] + sbar * xk;
+
       if (di == 0.0) {
         return;
       }
@@ -430,8 +442,7 @@ void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
           ind2 = 0;
         }
         xnext[ind2] += 1.0;
-        inclu2(np, xnext.data(), xrow.data(), ynext, res, rbar.data(),
-               thetab.data());
+        inclu2(xnext, xrow, ynext, std::span(res, resv.size()), rbar, thetab);
         xnext[ind2] = 0.0;
         if (i != r - 1) {
           xnext[indi++] = 0.0;
