@@ -10,6 +10,18 @@
 
 namespace arima {
 namespace py = pybind11;
+namespace {
+template <typename T> std::span<T> make_span(py::array_t<T> &array) {
+  // ssize_t to size_t is safe because the size of an array is non-negative
+  return {array.mutable_data(), static_cast<size_t>(array.size())};
+}
+
+template <typename T>
+std::span<const T> make_cspan(const py::array_t<T> &array) {
+  // ssize_t to size_t is safe because the size of an array is non-negative
+  return {array.data(), static_cast<size_t>(array.size())};
+}
+} // namespace
 
 void partrans(int p, const double *raw, double *newv) {
   std::transform(raw, raw + p, newv, [](double x) { return std::tanh(x); });
@@ -502,10 +514,10 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
   assert(armav.ndim() == 1);
 
   constexpr double eps = 1e-3;
-  const std::span arma(armav.data(), armav.size());
-  const std::span x(xv.data(), xv.size());
-
+  const auto arma = make_cspan(armav);
+  const auto x = make_cspan(xv);
   const size_t n = x.size();
+
   const int mp = arma[0];
   const int mq = arma[1];
   const int msp = arma[2];
@@ -513,9 +525,10 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
   std::array<double, 100> w1;
   std::array<double, 100> w2;
   std::array<double, 100> w3;
+  assert(mp < 100);
 
   py::array_t<double> outv({n, n});
-  auto out = outv.mutable_data();
+  const auto out = make_span(outv);
   for (size_t i = 0; i < n; ++i) {
     for (size_t j = 0; j < n; ++j) {
       out[i * n + j] = (i == j) ? 1.0 : 0.0;
@@ -524,11 +537,11 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
 
   if (mp > 0) {
     std::copy(x.begin(), x.begin() + mp, w1.begin());
-    partrans(mp, w1, w2);
+    partrans(mp, w1.data(), w2.data());
 
     for (size_t i = 0; i < mp; ++i) {
       w1[i] += eps;
-      partrans(mp, w1, w3);
+      partrans(mp, w1.data(), w3.data());
 
       for (size_t j = 0; j < mp; ++j) {
         out[n * i + j] = (w3[j] - w2[j]) / eps;
@@ -576,20 +589,29 @@ py::array_t<double> arima_undopars(const py::array_t<double> xv,
   return outv;
 }
 
-void invpartrans(int p, const py::array_t<double> phiv,
+void invpartrans(const int p, const py::array_t<double> phiv,
                  py::array_t<double> outv) {
-  auto phi = phiv.data();
-  auto out = outv.mutable_data();
-  std::copy(phi, phi + p, out);
-  std::vector<double> work(phi, phi + p);
-  for (int j = p - 1; j > 0; --j) {
-    double a = out[j];
-    for (int k = 0; k < j; ++k) {
+  assert(p >= 0);
+  assert(phiv.ndim() == 1);
+  assert(outv.ndim() == 1);
+  assert(p <= phiv.size());
+  assert(p <= outv.size());
+
+  const auto phi = make_cspan(phiv);
+  const auto out = make_span(outv);
+
+  std::copy(phi.begin(), phi.begin() + p, out.begin());
+
+  std::vector<double> work(phi.begin(), phi.begin() + p);
+  for (size_t j = p - 1; j > 0; --j) {
+    const double a = out[j];
+    for (size_t k = 0; k < j; ++k) {
       work[k] = (out[k] + a * out[j - k - 1]) / (1 - a * a);
     }
-    std::copy(work.begin(), work.begin() + j, out);
+    std::copy(work.begin(), work.begin() + j, out.begin());
   }
-  for (int j = 0; j < p; ++j) {
+
+  for (size_t j = 0; j < p; ++j) {
     out[j] = std::atanh(out[j]);
   }
 }
