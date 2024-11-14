@@ -168,25 +168,34 @@ std::tuple<double, double, int>
 arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
            const py::array_t<double> thetav, const py::array_t<double> deltav,
            py::array_t<double> av, py::array_t<double> Pv,
-           py::array_t<double> Pnewv, int up, bool use_resid,
+           py::array_t<double> Pnewv, uint32_t up, bool use_resid,
            py::array_t<double> rsResidv) {
-  int n = static_cast<int>(yv.size());
-  int d = static_cast<int>(deltav.size());
-  int rd = static_cast<int>(av.size());
-  int p = static_cast<int>(phiv.size());
-  int q = static_cast<int>(thetav.size());
-  auto y = yv.data();
-  auto phi = phiv.data();
-  auto theta = thetav.data();
-  auto delta = deltav.data();
-  auto a = av.mutable_data();
-  auto P = Pv.mutable_data();
-  auto Pnew = Pnewv.mutable_data();
-  auto rsResid = rsResidv.mutable_data();
+  // ssize_t to size_t is safe because the size of an array is non-negative
+  const size_t n = static_cast<size_t>(yv.size());
+  const size_t d = static_cast<size_t>(deltav.size());
+  const size_t rd = static_cast<size_t>(av.size());
+  const size_t p = static_cast<size_t>(phiv.size());
+  const size_t q = static_cast<size_t>(thetav.size());
+
+  const auto y = make_cspan(yv);
+  const auto phi = make_cspan(phiv);
+  const auto theta = make_cspan(thetav);
+  const auto delta = make_cspan(deltav);
+  const auto a = make_span(av);
+  const auto P = make_span(Pv);
+  const auto Pnew = make_span(Pnewv);
+  const auto rsResid = make_span(rsResidv);
+
+  // asserts for copies at the end
+  assert(Pnew.size() >= rd * rd);
+  assert(P.size() >= Pnew.size());
+
   double ssq = 0.0;
   double sumlog = 0.0;
-  int nu = 0;
-  int r = rd - d;
+
+  assert(rd >= d);
+  const size_t r = rd - d;
+  uint32_t nu = 0;
 
   std::vector<double> anew(rd);
   std::vector<double> M(rd);
@@ -194,9 +203,10 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
   if (d > 0) {
     mm.resize(rd * rd);
   }
+
   double tmp;
-  for (int l = 0; l < n; ++l) {
-    for (int i = 0; i < r; ++i) {
+  for (size_t l = 0; l < n; ++l) {
+    for (size_t i = 0; i < r; ++i) {
       if (i < r - 1) {
         tmp = a[i + 1];
       } else {
@@ -207,26 +217,32 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
       }
       anew[i] = tmp;
     }
+
     if (d > 0) {
-      for (int i = r + 1; i < rd; ++i) {
+      for (size_t i = r + 1; i < rd; ++i) {
         anew[i] = a[i - 1];
       }
       tmp = a[0];
-      for (int i = 0; i < d; ++i) {
+      for (size_t i = 0; i < d; ++i) {
         tmp += delta[i] * a[r + i];
       }
       anew[r] = tmp;
     }
+
     if (l > up) {
       if (d == 0) {
-        for (int i = 0; i < r; ++i) {
-          double vi = 0.0;
-          if (i == 0) {
-            vi = 1.0;
-          } else if (i - 1 < q) {
-            vi = theta[i - 1];
-          }
-          for (int j = 0; j < r; ++j) {
+        for (size_t i = 0; i < r; ++i) {
+          const double vi = [&]() {
+            if (i == 0) {
+              return 1.0;
+            } else if (i - 1 < q) {
+              return theta[i - 1];
+            } else {
+              return 0.0;
+            }
+          }();
+
+          for (size_t j = 0; j < r; ++j) {
             tmp = 0.0;
             if (j == 0) {
               tmp = vi;
@@ -248,9 +264,10 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
             Pnew[i + r * j] = tmp;
           }
         }
+
       } else {
-        for (int i = 0; i < r; ++i) {
-          for (int j = 0; j < rd; ++j) {
+        for (size_t i = 0; i < r; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
             tmp = 0.0;
             if (i < p) {
               tmp += phi[i] * P[rd * j];
@@ -261,20 +278,23 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
             mm[i + rd * j] = tmp;
           }
         }
-        for (int j = 0; j < rd; ++j) {
+
+        for (size_t j = 0; j < rd; ++j) {
           tmp = P[rd * j];
-          for (int k = 0; k < d; ++k) {
+          for (size_t k = 0; k < d; ++k) {
             tmp += delta[k] * P[r + k + rd * j];
           }
           mm[r + rd * j] = tmp;
         }
-        for (int i = 1; i < d; ++i) {
-          for (int j = 0; j < rd; ++j) {
+
+        for (size_t i = 1; i < d; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
             mm[r + i + rd * j] = P[r + i - 1 + rd * j];
           }
         }
-        for (int i = 0; i < r; ++i) {
-          for (int j = 0; j < rd; ++j) {
+
+        for (size_t i = 0; i < r; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
             tmp = 0.0;
             if (i < p) {
               tmp += phi[i] * mm[j];
@@ -285,26 +305,24 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
             Pnew[j + rd * i] = tmp;
           }
         }
-        for (int j = 0; j < rd; ++j) {
+
+        for (size_t j = 0; j < rd; ++j) {
           tmp = mm[j];
-          for (int k = 0; k < d; ++k) {
+          for (size_t k = 0; k < d; ++k) {
             tmp += delta[k] * mm[rd * (r + k) + j];
           }
           Pnew[rd * r + j] = tmp;
         }
-        for (int i = 1; i < d; ++i) {
-          for (int j = 0; j < rd; ++j) {
+
+        for (size_t i = 1; i < d; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
             Pnew[rd * (r + i) + j] = mm[rd * (r + i - 1) + j];
           }
         }
-        for (int i = 0; i < q + 1; ++i) {
-          double vi;
-          if (i == 0) {
-            vi = 1.0;
-          } else {
-            vi = theta[i - 1];
-          }
-          for (int j = 0; j < q + 1; ++j) {
+
+        for (size_t i = 0; i < q + 1; ++i) {
+          const double vi = i == 0 ? 1.0 : theta[i - 1];
+          for (size_t j = 0; j < q + 1; ++j) {
             if (j == 0) {
               Pnew[i + rd * j] += vi;
             } else {
@@ -314,22 +332,26 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
         }
       }
     }
+
     if (!std::isnan(y[l])) {
       double resid = y[l] - anew[0];
-      for (int i = 0; i < d; ++i) {
+      for (size_t i = 0; i < d; ++i) {
         resid -= delta[i] * anew[r + i];
       }
-      for (int i = 0; i < rd; ++i) {
+
+      for (size_t i = 0; i < rd; ++i) {
         tmp = Pnew[i];
-        for (int j = 0; j < d; ++j) {
+        for (size_t j = 0; j < d; ++j) {
           tmp += Pnew[i + (r + j) * rd] * delta[j];
         }
         M[i] = tmp;
       }
+
       double gain = M[0];
       for (int j = 0; j < d; ++j) {
         gain += delta[j] * M[r + j];
       }
+
       if (gain < 1e4) {
         nu++;
         if (gain == 0) {
@@ -339,6 +361,7 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
         }
         sumlog += std::log(gain);
       }
+
       if (use_resid) {
         if (gain == 0) {
           rsResid[l] = std::numeric_limits<double>::infinity();
@@ -346,29 +369,33 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
           rsResid[l] = resid / std::sqrt(gain);
         }
       }
+
       if (gain == 0) {
-        for (int i = 0; i < rd; ++i) {
+        for (size_t i = 0; i < rd; ++i) {
           a[i] = std::numeric_limits<double>::infinity();
-          for (int j = 0; j < rd; ++j) {
+          for (size_t j = 0; j < rd; ++j) {
             Pnew[i + j * rd] = std::numeric_limits<double>::infinity();
           }
         }
+
       } else {
-        for (int i = 0; i < rd; ++i) {
+        for (size_t i = 0; i < rd; ++i) {
           a[i] = anew[i] + M[i] * resid / gain;
-          for (int j = 0; j < rd; ++j) {
+          for (size_t j = 0; j < rd; ++j) {
             P[i + j * rd] = Pnew[i + j * rd] - M[i] * M[j] / gain;
           }
         }
       }
+
     } else {
-      std::copy(anew.begin(), anew.end(), a);
-      std::copy(Pnew, Pnew + rd * rd, P);
+      std::copy(anew.begin(), anew.end(), a.begin());
+      std::copy(Pnew.begin(), Pnew.begin() + rd * rd, P.begin());
       if (use_resid) {
         rsResid[l] = std::numeric_limits<double>::quiet_NaN();
       }
     }
   }
+
   return {ssq, sumlog, nu};
 }
 
