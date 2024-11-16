@@ -313,7 +313,7 @@ def arima(
             order[1],
             seasonal["order"][1],
         ],
-        dtype=np.intc,
+        dtype=np.uint32,
     )
     narma = arma[:4].sum().item()
 
