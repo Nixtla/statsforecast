@@ -12,13 +12,13 @@ namespace arima {
 namespace py = pybind11;
 namespace {
 template <typename T> std::span<T> make_span(py::array_t<T> &array) {
-  // ssize_t to size_t is safe because the size of an array is non-negative
+  // py::ssize_t to size_t is safe because the size of an array is non-negative
   return {array.mutable_data(), static_cast<size_t>(array.size())};
 }
 
 template <typename T>
 std::span<const T> make_cspan(const py::array_t<T> &array) {
-  // ssize_t to size_t is safe because the size of an array is non-negative
+  // py::ssize_t to size_t is safe because the size of an array is non-negative
   return {array.data(), static_cast<size_t>(array.size())};
 }
 } // namespace
@@ -109,7 +109,7 @@ arima_css(const py::array_t<double> yv, const py::array_t<uint32_t> armav,
   assert(phiv.ndim() == 1);
   assert(thetav.ndim() == 1);
 
-  // ssize_t to size_t is safe because the size of an array is non-negative
+  // py::ssize_t to size_t is safe because the size of an array is non-negative
   const size_t n = static_cast<size_t>(yv.size());
   const size_t p = static_cast<size_t>(phiv.size());
   const size_t q = static_cast<size_t>(thetav.size());
@@ -170,7 +170,7 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
            py::array_t<double> av, py::array_t<double> Pv,
            py::array_t<double> Pnewv, uint32_t up, bool use_resid,
            py::array_t<double> rsResidv) {
-  // ssize_t to size_t is safe because the size of an array is non-negative
+  // py::ssize_t to size_t is safe because the size of an array is non-negative
   const size_t n = static_cast<size_t>(yv.size());
   const size_t d = static_cast<size_t>(deltav.size());
   const size_t rd = static_cast<size_t>(av.size());
@@ -502,7 +502,7 @@ void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
     std::vector<double> xrow(np);
 
     size_t ind = 0;
-    ssize_t ind1 = -1;
+    py::ssize_t ind1 = -1;
 
     const size_t npr = np - r;
     const size_t npr1 = npr + 1;
