@@ -348,7 +348,7 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
       }
 
       double gain = M[0];
-      for (int j = 0; j < d; ++j) {
+      for (size_t j = 0; j < d; ++j) {
         gain += delta[j] * M[r + j];
       }
 
