@@ -59,7 +59,7 @@ jobs:
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra all &&
             nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing &&
-            pytest --durations=0 {project}/action_files
+            pytest --durations=0 {project}/action_files -k "not efficiency"
 
       - name: Build wheels and run local tests
         if: matrix.os-platform[0] != 'ubuntu-latest'
@@ -126,3 +126,21 @@ jobs:
           python -m src.experiment
           python -m src.evaluation --test
         working-directory: ./experiments/m3
+
+  efficiency-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # 5.1.1
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install uv && uv pip install --system . pytest-codspeed pytest-xdist
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@ab07afd34cbbb7a1306e8d14b7cc44e029eee37a # 3.0.0
+        with:
+          token: ${{ secrets.CODESPEED_TOKEN }}
+          run: pytest action_files/test_efficiency.py --codspeed -n 2
