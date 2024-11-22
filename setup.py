@@ -58,7 +58,7 @@ ext_modules = [
         name="statsforecast._lib",
         sources=glob.glob("src/*.cpp"),
         include_dirs=["include/statsforecast", "external_libs/eigen"],
-        cxx_std=17,
+        cxx_std=20,
     )
 ]
 ParallelCompile("CMAKE_BUILD_PARALLEL_LEVEL", needs_recompile=naive_recompile).install()
