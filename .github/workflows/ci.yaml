@@ -68,7 +68,7 @@ jobs:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra dev --extra plotly &&
-            {project}/action_files/nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing
+            python {project}/action_files/nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing
 
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         if: github.event_name == 'push'
