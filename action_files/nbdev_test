@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+import time,os,sys,traceback,contextlib, inspect
+from fastcore.basics import *
+from fastcore.imports import *
+from fastcore.foundation import *
+from fastcore.parallel import *
+from fastcore.script import *
+from fastcore.meta import delegates
+
+from nbdev.config import *
+from nbdev.doclinks import *
+from nbdev.process import NBProcessor, nb_lang
+from nbdev.frontmatter import FrontmatterProc
+from nbdev.test import _keep_file, test_nb
+
+from execnb.nbio import *
+from execnb.shell import *
+
+
+@call_parse
+@delegates(nbglob_cli)
+def nbdev_test(
+    path:str=None,  # A notebook name or glob to test
+    flags:str='',  # Space separated list of test flags to run that are normally ignored
+    n_workers:int=None,  # Number of workers
+    timing:bool=False,  # Time each notebook to see which are slow
+    do_print:bool=False, # Print start and end of each notebook
+    pause:float=0.01,  # Pause time (in seconds) between notebooks to avoid race conditions
+    ignore_fname:str='.notest', # Filename that will result in siblings being ignored
+    **kwargs):
+    "Test in parallel notebooks matching `path`, passing along `flags`"
+    skip_flags = get_config().tst_flags.split()
+    force_flags = flags.split()
+    files = nbglob(path, as_path=True, **kwargs)
+    files = [f.absolute() for f in sorted(files) if _keep_file(f, ignore_fname)]
+    if len(files)==0: return print('No files were eligible for testing')
+
+    if n_workers is None: n_workers = 0 if len(files)==1 else min(num_cpus(), 8)
+    kw = {'method': 'spawn'}
+    wd_pth = get_config().nbs_path
+    with working_directory(wd_pth if (wd_pth and wd_pth.exists()) else os.getcwd()):
+        results = parallel(test_nb, files, skip_flags=skip_flags, force_flags=force_flags, n_workers=n_workers,
+                           basepath=get_config().config_path, pause=pause, do_print=do_print, **kw)
+    passed,times = zip(*results)
+    if all(passed): print("Success.")
+    else:
+        _fence = '='*50
+        failed = '\n\t'.join(f.name for p,f in zip(passed,files) if not p)
+        sys.stderr.write(f"\nnbdev Tests Failed On The Following Notebooks:\n{_fence}\n\t{failed}\n")
+        sys.exit(1)
+    if timing:
+        for i,t in sorted(enumerate(times), key=lambda o:o[1], reverse=True): print(f"{files[i].name}: {int(t)} secs")
