@@ -45,7 +45,6 @@ from statsforecast.utils import (
     _calculate_intervals,
     _ensure_float,
     _naive,
-    _old_kw_to_pos,
     _quantiles,
     _repeat_val,
     _repeat_val_seas,
@@ -5314,7 +5313,6 @@ class TBATS(_TS):
         Custom name of the model.
     """
 
-    @_old_kw_to_pos(["seasonal_periods"], [1])
     def __init__(
         self,
         season_length: Union[int, List[int]],
@@ -5325,8 +5323,6 @@ class TBATS(_TS):
         use_damped_trend: Optional[bool] = False,
         use_arma_errors: bool = False,
         alias: str = "TBATS",
-        *,
-        seasonal_periods=None,  # noqa: ARG002
     ):
         if isinstance(season_length, int):
             season_length = [season_length]
@@ -5528,7 +5524,6 @@ class AutoTBATS(TBATS):
         Custom name of the model.
     """
 
-    @_old_kw_to_pos(["seasonal_periods"], [1])
     def __init__(
         self,
         season_length: Union[int, List[int]],
@@ -5539,8 +5534,6 @@ class AutoTBATS(TBATS):
         use_damped_trend: Optional[bool] = None,
         use_arma_errors: bool = True,
         alias: str = "AutoTBATS",
-        *,
-        seasonal_periods=None  # noqa: ARG002
     ):
         super().__init__(
             season_length=season_length,

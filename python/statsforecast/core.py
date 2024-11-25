@@ -32,7 +32,7 @@ from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
 from utilsforecast.validation import ensure_time_dtype, validate_freq
 
-from .utils import ConformalIntervals
+from .utils import ConformalIntervals, _ensure_float
 
 # %% ../../nbs/src/core/core.ipynb 7
 if __name__ == "__main__":
@@ -45,6 +45,10 @@ _controller = ThreadpoolController()
 
 # %% ../../nbs/src/core/core.ipynb 10
 class GroupedArray(BaseGroupedArray):
+    def __init__(self, data: np.ndarray, indptr: np.ndarray):
+        self.data = _ensure_float(data)
+        self.indptr = indptr
+        self.n_groups = len(indptr) - 1
 
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
@@ -571,7 +575,7 @@ class _StatsForecast:
 
     def _prepare_fit(
         self,
-        df: Optional[DataFrame],
+        df: DataFrame,
         id_col: str = "unique_id",
         time_col: str = "ds",
         target_col: str = "y",

@@ -5,7 +5,6 @@ from functools import partial
 from pathlib import Path
 
 os.environ['NIXTLA_NUMBA_CACHE'] = '1'
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 
 import pandas as pd
 from datasetsforecast.m4 import M4, M4Info
