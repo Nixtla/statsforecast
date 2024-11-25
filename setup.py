@@ -1,5 +1,4 @@
 import glob
-import sys
 
 import setuptools
 from configparser import ConfigParser
@@ -38,7 +37,9 @@ if cfg.get('pip_requirements'): requirements += cfg.get('pip_requirements','').s
 min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dask_requirements = cfg['dask_requirements'].split()
-ray_requirements = cfg['ray_requirements'].split()
+ray_requirements = [
+    req + " ; python_version < '3.12'" for req in cfg['ray_requirements'].split()
+]
 spark_requirements = cfg['spark_requirements'].split()
 plotly_requirements = cfg['plotly_requirements'].split()
 polars_requirements = cfg['polars_requirements'].split()
@@ -49,16 +50,15 @@ all_requirements = [
     *plotly_requirements,
     *polars_requirements,
     *dev_requirements,
+    *ray_requirements,
 ]
-if sys.version_info < (3, 12):
-    all_requirements.extend(ray_requirements)
 
 ext_modules = [
     Pybind11Extension(
         name="statsforecast._lib",
         sources=glob.glob("src/*.cpp"),
         include_dirs=["include/statsforecast", "external_libs/eigen"],
-        cxx_std=17,
+        cxx_std=20,
     )
 ]
 ParallelCompile("CMAKE_BUILD_PARALLEL_LEVEL", needs_recompile=naive_recompile).install()

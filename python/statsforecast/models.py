@@ -9,7 +9,7 @@ __all__ = ['AutoARIMA', 'AutoETS', 'AutoCES', 'AutoTheta', 'ARIMA', 'AutoRegress
            'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'MFLES', 'AutoMFLES',
            'ConstantModel', 'ZeroModel', 'NaNModel']
 
-# %% ../../nbs/src/core/models.ipynb 5
+# %% ../../nbs/src/core/models.ipynb 4
 import warnings
 from math import trunc
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
@@ -55,7 +55,7 @@ from statsforecast.utils import (
     NOGIL,
 )
 
-# %% ../../nbs/src/core/models.ipynb 9
+# %% ../../nbs/src/core/models.ipynb 7
 def _add_fitted_pi(res, se, level):
     level = sorted(level)
     level = np.asarray(level)
@@ -68,7 +68,7 @@ def _add_fitted_pi(res, se, level):
     res = {**res, **lo, **hi}
     return res
 
-# %% ../../nbs/src/core/models.ipynb 10
+# %% ../../nbs/src/core/models.ipynb 8
 def _add_conformal_distribution_intervals(
     fcst: Dict,
     cs: np.ndarray,
@@ -97,7 +97,7 @@ def _add_conformal_distribution_intervals(
         fcst[col] = quantiles[i]
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 11
+# %% ../../nbs/src/core/models.ipynb 9
 def _get_conformal_method(method: str):
     available_methods = {
         "conformal_distribution": _add_conformal_distribution_intervals,
@@ -110,7 +110,7 @@ def _get_conformal_method(method: str):
         )
     return available_methods[method]
 
-# %% ../../nbs/src/core/models.ipynb 12
+# %% ../../nbs/src/core/models.ipynb 10
 class _TS:
     uses_exog = False
 
@@ -127,6 +127,7 @@ class _TS:
         y: np.ndarray,
         X: Optional[np.ndarray] = None,
     ) -> np.ndarray:
+        y = _ensure_float(y)
         n_windows = self.prediction_intervals.n_windows  # type: ignore[attr-defined]
         h = self.prediction_intervals.h  # type: ignore[attr-defined]
         n_samples = y.size
@@ -138,7 +139,7 @@ class _TS:
                 f"Prediction intervals settings require at least {2 * h + 1:,} samples, serie has {n_samples:,}."
             )
         test_size = n_windows * h
-        cs = np.empty((n_windows, h), dtype=np.float32)
+        cs = np.empty((n_windows, h), dtype=y.dtype)
         for i_window in range(n_windows):
             train_end = n_samples - test_size + i_window * h
             y_train = y[:train_end]
@@ -171,7 +172,7 @@ class _TS:
     def _add_predict_conformal_intervals(self, fcst, level):
         return self._add_conformal_intervals(fcst=fcst, y=None, X=None, level=level)
 
-# %% ../../nbs/src/core/models.ipynb 17
+# %% ../../nbs/src/core/models.ipynb 15
 class AutoARIMA(_TS):
     r"""AutoARIMA model.
 
@@ -288,8 +289,8 @@ class AutoARIMA(_TS):
         test_kwargs: Optional[str] = None,
         seasonal_test: str = "seas",
         seasonal_test_kwargs: Optional[Dict] = None,
-        allowdrift: bool = False,
-        allowmean: bool = False,
+        allowdrift: bool = True,
+        allowmean: bool = True,
         blambda: Optional[float] = None,
         biasadj: bool = False,
         season_length: int = 1,
@@ -352,6 +353,7 @@ class AutoARIMA(_TS):
         self :
             AutoARIMA fitted model.
         """
+        y = _ensure_float(y)
         with np.errstate(invalid="ignore"):
             self.model_ = auto_arima_f(
                 x=y,
@@ -485,6 +487,7 @@ class AutoARIMA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         with np.errstate(invalid="ignore"):
             mod = auto_arima_f(
                 x=y,
@@ -574,6 +577,7 @@ class AutoARIMA(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
+        y = _ensure_float(y)
         with np.errstate(invalid="ignore"):
             mod = forward_arima(self.model_, y=y, xreg=X, method=self.method)
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
@@ -596,7 +600,7 @@ class AutoARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 33
+# %% ../../nbs/src/core/models.ipynb 31
 class AutoETS(_TS):
     r"""Automatic Exponential Smoothing model.
 
@@ -683,6 +687,7 @@ class AutoETS(_TS):
         self :
             Exponential Smoothing fitted model.
         """
+        y = _ensure_float(y)
         self.model_ = ets_f(
             y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
         )
@@ -779,6 +784,7 @@ class AutoETS(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         mod = ets_f(
             y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
         )
@@ -836,6 +842,7 @@ class AutoETS(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
+        y = _ensure_float(y)
         mod = forward_ets(self.model_, y=y)
         fcst = forecast_ets(mod, h=h, level=level)
         keys = ["mean"]
@@ -858,7 +865,7 @@ class AutoETS(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 49
+# %% ../../nbs/src/core/models.ipynb 47
 class AutoCES(_TS):
     r"""Complex Exponential Smoothing model.
 
@@ -926,6 +933,7 @@ class AutoCES(_TS):
         self :
             Complex Exponential Smoothing fitted model.
         """
+        y = _ensure_float(y)
         if is_constant(y):
             model = Naive(
                 alias=self.alias, prediction_intervals=self.prediction_intervals
@@ -1026,6 +1034,7 @@ class AutoCES(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         if is_constant(y):
             model = Naive(
                 alias=self.alias, prediction_intervals=self.prediction_intervals
@@ -1088,6 +1097,7 @@ class AutoCES(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
+        y = _ensure_float(y)
         mod = forward_ces(self.model_, y=y)
         fcst = forecast_ces(mod, h, level=level)
         keys = ["mean"]
@@ -1110,7 +1120,7 @@ class AutoCES(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 67
+# %% ../../nbs/src/core/models.ipynb 65
 class AutoTheta(_TS):
     r"""AutoTheta model.
 
@@ -1174,6 +1184,7 @@ class AutoTheta(_TS):
         self :
             AutoTheta fitted model.
         """
+        y = _ensure_float(y)
         self.model_ = auto_theta(
             y=y,
             m=self.season_length,
@@ -1265,6 +1276,7 @@ class AutoTheta(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         mod = auto_theta(
             y=y,
             m=self.season_length,
@@ -1315,6 +1327,7 @@ class AutoTheta(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
+        y = _ensure_float(y)
         mod = forward_theta(self.model_, y=y)
         res = forecast_theta(mod, h, level=level)
         if self.prediction_intervals is not None:
@@ -1327,7 +1340,7 @@ class AutoTheta(_TS):
             res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 83
+# %% ../../nbs/src/core/models.ipynb 81
 class ARIMA(_TS):
     r"""ARIMA model.
 
@@ -1428,6 +1441,7 @@ class ARIMA(_TS):
         self :
             Fitted model.
         """
+        y = _ensure_float(y)
         with np.errstate(invalid="ignore"):
             self.model_ = Arima(
                 x=y,
@@ -1538,6 +1552,7 @@ class ARIMA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         with np.errstate(invalid="ignore"):
             mod = Arima(
                 x=y,
@@ -1605,6 +1620,7 @@ class ARIMA(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
+        y = _ensure_float(y)
         with np.errstate(invalid="ignore"):
             mod = forward_arima(self.model_, y=y, xreg=X, method=self.method)
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
@@ -1627,7 +1643,7 @@ class ARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 98
+# %% ../../nbs/src/core/models.ipynb 96
 class AutoRegressive(ARIMA):
     r"""Simple Autoregressive model.
 
@@ -1660,6 +1676,8 @@ class AutoRegressive(ARIMA):
         By default, the model will compute the native prediction
         intervals.
     """
+
+    uses_exog = True
 
     def __init__(
         self,
@@ -1699,7 +1717,7 @@ class AutoRegressive(ARIMA):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../../nbs/src/core/models.ipynb 113
+# %% ../../nbs/src/core/models.ipynb 111
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     r"""Perform simple exponential smoothing on a series.
@@ -1710,7 +1728,7 @@ def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray
     smoothed = x[0]
     n = x.size
     mse = 0.0
-    fitted = np.full(n, np.nan, np.float32)
+    fitted = np.full(n, np.nan, dtype=x.dtype)
 
     for i in range(1, n):
         smoothed = (alpha * x[i - 1] + (1 - alpha) * smoothed).item()
@@ -1743,12 +1761,12 @@ def _demand(x: np.ndarray) -> np.ndarray:
 def _intervals(x: np.ndarray) -> np.ndarray:
     r"""Compute the intervals between non zero elements of a vector."""
     nonzero_idxs = np.where(x != 0)[0]
-    return np.diff(nonzero_idxs + 1, prepend=0)
+    return np.diff(nonzero_idxs + 1, prepend=0).astype(x.dtype)
 
 
 def _probability(x: np.ndarray) -> np.ndarray:
     r"""Compute the element probabilities of being non zero."""
-    return (x != 0).astype(np.int32)
+    return (x != 0).astype(x.dtype)
 
 
 def _optimized_ses_forecast(
@@ -1770,7 +1788,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     n_elems = n_chunks * chunk_size
     return array[:n_elems].reshape(n_chunks, chunk_size).sum(axis=1)
 
-# %% ../../nbs/src/core/models.ipynb 114
+# %% ../../nbs/src/core/models.ipynb 112
 def _ses(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1783,7 +1801,7 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 115
+# %% ../../nbs/src/core/models.ipynb 113
 class SimpleExponentialSmoothing(_TS):
     r"""SimpleExponentialSmoothing model.
 
@@ -1842,6 +1860,7 @@ class SimpleExponentialSmoothing(_TS):
         self :
             SimpleExponentialSmoothing fitted model.
         """
+        y = _ensure_float(y)
         mod = _ses(y=y, alpha=self.alpha, h=1, fitted=True)
         self.model_ = dict(mod)
         self._store_cs(y=y, X=X)
@@ -1932,6 +1951,7 @@ class SimpleExponentialSmoothing(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         res = dict(res)
         if level is None:
@@ -1943,7 +1963,7 @@ class SimpleExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 127
+# %% ../../nbs/src/core/models.ipynb 125
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -1956,7 +1976,7 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 128
+# %% ../../nbs/src/core/models.ipynb 126
 class SimpleExponentialSmoothingOptimized(_TS):
     r"""SimpleExponentialSmoothing model.
 
@@ -2010,6 +2030,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         self :
             SimpleExponentialSmoothingOptimized fitted model.
         """
+        y = _ensure_float(y)
         mod = _ses_optimized(y=y, h=1, fitted=True)
         self.model_ = dict(mod)
         self._store_cs(y=y, X=X)
@@ -2099,6 +2120,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _ses_optimized(y=y, h=h, fitted=fitted)
         res = dict(res)
         if level is None:
@@ -2110,7 +2132,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 140
+# %% ../../nbs/src/core/models.ipynb 138
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2120,9 +2142,9 @@ def _seasonal_exponential_smoothing(
 ) -> Dict[str, np.ndarray]:
     n = y.size
     if n < season_length:
-        return {"mean": np.full(h, np.nan, np.float32)}
-    season_vals = np.empty(season_length, np.float32)
-    fitted_vals = np.full(y.size, np.nan, np.float32)
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
+    season_vals = np.empty(season_length, dtype=y.dtype)
+    fitted_vals = np.full_like(y, np.nan)
     for i in range(season_length):
         init_idx = i + n % season_length
         season_vals[i], fitted_vals[init_idx::season_length] = _ses_forecast(
@@ -2134,7 +2156,7 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 141
+# %% ../../nbs/src/core/models.ipynb 139
 class SeasonalExponentialSmoothing(_TS):
     r"""SeasonalExponentialSmoothing model.
 
@@ -2201,6 +2223,7 @@ class SeasonalExponentialSmoothing(_TS):
         self :
             SeasonalExponentialSmoothing fitted model.
         """
+        y = _ensure_float(y)
         mod = _seasonal_exponential_smoothing(
             y=y,
             season_length=self.season_length,
@@ -2296,6 +2319,7 @@ class SeasonalExponentialSmoothing(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _seasonal_exponential_smoothing(
             y=y, h=h, fitted=fitted, alpha=self.alpha, season_length=self.season_length
         )
@@ -2309,7 +2333,7 @@ class SeasonalExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 156
+# %% ../../nbs/src/core/models.ipynb 154
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2318,9 +2342,9 @@ def _seasonal_ses_optimized(
 ):
     n = y.size
     if n < season_length:
-        return {"mean": np.full(h, np.nan, np.float32)}
-    season_vals = np.empty(season_length, np.float32)
-    fitted_vals = np.full(y.size, np.nan, np.float32)
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
+    season_vals = np.empty(season_length, dtype=y.dtype)
+    fitted_vals = np.full_like(y, np.nan)
     for i in range(season_length):
         init_idx = i + n % season_length
         season_vals[i], fitted_vals[init_idx::season_length] = _optimized_ses_forecast(
@@ -2332,7 +2356,7 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 157
+# %% ../../nbs/src/core/models.ipynb 155
 class SeasonalExponentialSmoothingOptimized(_TS):
 
     def __init__(
@@ -2397,6 +2421,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self :
             SeasonalExponentialSmoothingOptimized fitted model.
         """
+        y = _ensure_float(y)
         mod = _seasonal_ses_optimized(
             y=y,
             season_length=self.season_length,
@@ -2491,6 +2516,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _seasonal_ses_optimized(
             y=y, h=h, fitted=fitted, season_length=self.season_length
         )
@@ -2504,7 +2530,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 170
+# %% ../../nbs/src/core/models.ipynb 168
 class Holt(AutoETS):
     r"""Holt's method.
 
@@ -2536,7 +2562,6 @@ class Holt(AutoETS):
         alias: str = "Holt",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-
         self.season_length = season_length
         self.error_type = error_type
         self.alias = alias
@@ -2546,7 +2571,7 @@ class Holt(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-# %% ../../nbs/src/core/models.ipynb 184
+# %% ../../nbs/src/core/models.ipynb 182
 class HoltWinters(AutoETS):
     r"""Holt-Winters' method.
 
@@ -2586,7 +2611,7 @@ class HoltWinters(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-# %% ../../nbs/src/core/models.ipynb 199
+# %% ../../nbs/src/core/models.ipynb 197
 def _historic_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2598,7 +2623,7 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 200
+# %% ../../nbs/src/core/models.ipynb 198
 class HistoricAverage(_TS):
 
     def __init__(
@@ -2649,6 +2674,7 @@ class HistoricAverage(_TS):
         self
             HistoricAverage fitted model.
         r"""
+        y = _ensure_float(y)
         mod = _historic_average(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
@@ -2751,6 +2777,7 @@ class HistoricAverage(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         out = _historic_average(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
 
@@ -2774,7 +2801,7 @@ class HistoricAverage(_TS):
 
         return res
 
-# %% ../../nbs/src/core/models.ipynb 213
+# %% ../../nbs/src/core/models.ipynb 211
 class Naive(_TS):
 
     def __init__(
@@ -2824,6 +2851,7 @@ class Naive(_TS):
         self:
             Naive fitted model.
         """
+        y = _ensure_float(y)
         mod = _naive(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
@@ -2924,6 +2952,7 @@ class Naive(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         out = _naive(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
         if fitted:
@@ -2976,31 +3005,32 @@ class Naive(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = self.forecast(
             y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
         )
         return res
 
-# %% ../../nbs/src/core/models.ipynb 229
+# %% ../../nbs/src/core/models.ipynb 227
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ) -> Dict[str, np.ndarray]:
     slope = (y[-1] - y[0]) / (y.size - 1)
-    mean = slope * (1 + np.arange(h, dtype=np.float32)) + y[-1]
+    mean = slope * (1 + np.arange(h, dtype=y.dtype)) + y[-1]
     fcst = {
-        "mean": mean.astype(np.float32, copy=False),
-        "slope": np.array([slope], dtype=np.float32),
-        "last_y": np.array([y[-1]], dtype=np.float32),
+        "mean": mean,
+        "slope": np.array([slope], dtype=y.dtype),
+        "last_y": np.array([y[-1]], dtype=y.dtype),
     }
     if fitted:
-        fitted_vals = np.full(y.size, np.nan, dtype=np.float32)
-        fitted_vals[1:] = (slope + y[:-1]).astype(np.float32)
+        fitted_vals = np.full_like(y, np.nan)
+        fitted_vals[1:] = slope + y[:-1]
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 230
+# %% ../../nbs/src/core/models.ipynb 228
 class RandomWalkWithDrift(_TS):
 
     def __init__(
@@ -3053,6 +3083,7 @@ class RandomWalkWithDrift(_TS):
         self :
             RandomWalkWithDrift fitted model.
         r"""
+        y = _ensure_float(y)
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
@@ -3082,7 +3113,7 @@ class RandomWalkWithDrift(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        hrange = np.arange(h, dtype=np.float32)
+        hrange = np.arange(h, dtype=self.model_["last_y"].dtype)
         mean = self.model_["slope"] * (1 + hrange) + self.model_["last_y"]
         res = {"mean": mean}
 
@@ -3152,6 +3183,7 @@ class RandomWalkWithDrift(_TS):
         forecasts: dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
 
@@ -3173,10 +3205,9 @@ class RandomWalkWithDrift(_TS):
                 residuals = y - out["fitted"]
                 sigma = _calculate_sigma(residuals, len(residuals) - 1)
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
-
         return res
 
-# %% ../../nbs/src/core/models.ipynb 245
+# %% ../../nbs/src/core/models.ipynb 243
 class SeasonalNaive(_TS):
 
     def __init__(
@@ -3229,6 +3260,7 @@ class SeasonalNaive(_TS):
         self :
             SeasonalNaive fitted model.
         r"""
+        y = _ensure_float(y)
         mod = _seasonal_naive(
             y=y,
             season_length=self.season_length,
@@ -3334,6 +3366,7 @@ class SeasonalNaive(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         out = _seasonal_naive(
             y=y,
             h=h,
@@ -3359,10 +3392,9 @@ class SeasonalNaive(_TS):
                 residuals = y - out["fitted"]
                 sigma = _calculate_sigma(residuals, len(y) - self.season_length)
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
-
         return res
 
-# %% ../../nbs/src/core/models.ipynb 260
+# %% ../../nbs/src/core/models.ipynb 258
 def _window_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3372,12 +3404,12 @@ def _window_average(
     if fitted:
         raise NotImplementedError("return fitted")
     if y.size < window_size:
-        return {"mean": np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
     wavg = y[-window_size:].mean()
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../../nbs/src/core/models.ipynb 261
+# %% ../../nbs/src/core/models.ipynb 259
 class WindowAverage(_TS):
 
     def __init__(
@@ -3434,6 +3466,7 @@ class WindowAverage(_TS):
         self :
             WindowAverage fitted model.
         """
+        y = _ensure_float(y)
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         self.model_ = dict(mod)
         self._store_cs(y=y, X=X)
@@ -3522,6 +3555,7 @@ class WindowAverage(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         res = dict(res)
         if level is None:
@@ -3533,7 +3567,7 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 272
+# %% ../../nbs/src/core/models.ipynb 270
 def _seasonal_window_average(
     y: np.ndarray,
     h: int,
@@ -3545,12 +3579,12 @@ def _seasonal_window_average(
         raise NotImplementedError("return fitted")
     min_samples = season_length * window_size
     if y.size < min_samples:
-        return {"mean": np.full(h, np.nan, np.float32)}
+        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
     season_avgs = y[-min_samples:].reshape(window_size, season_length).mean(axis=0)
     out = _repeat_val_seas(season_vals=season_avgs, h=h)
     return {"mean": out}
 
-# %% ../../nbs/src/core/models.ipynb 273
+# %% ../../nbs/src/core/models.ipynb 271
 class SeasonalWindowAverage(_TS):
 
     def __init__(
@@ -3607,7 +3641,8 @@ class SeasonalWindowAverage(_TS):
         -------
         self :
             SeasonalWindowAverage fitted model.
-        r"""
+        """
+        y = _ensure_float(y)
         mod = _seasonal_window_average(
             y=y,
             h=self.season_length,
@@ -3702,7 +3737,8 @@ class SeasonalWindowAverage(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        r"""
+        """
+        y = _ensure_float(y)
         res = _seasonal_window_average(
             y=y,
             h=h,
@@ -3720,7 +3756,7 @@ class SeasonalWindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 285
+# %% ../../nbs/src/core/models.ipynb 283
 def _chunk_forecast(y, aggregation_level):
     lost_remainder_data = len(y) % aggregation_level
     y_cut = y[lost_remainder_data:]
@@ -3775,9 +3811,9 @@ def _adida(
     fitted: bool,  # fitted values
 ):
     if (y == 0).all():
-        res = {"mean": np.zeros(h, dtype=np.float32)}
+        res = {"mean": np.zeros(h, dtype=y.dtype)}
         if fitted:
-            res["fitted"] = np.zeros(y.size, dtype=np.float32)
+            res["fitted"] = np.zeros_like(y)
             res["fitted"][0] = np.nan
         return res
     y = _ensure_float(y)
@@ -3803,7 +3839,7 @@ def _adida(
         res["fitted"] = np.append(np.nan, sums_fitted / fitted_aggregation_levels)
     return res
 
-# %% ../../nbs/src/core/models.ipynb 286
+# %% ../../nbs/src/core/models.ipynb 284
 class ADIDA(_TS):
 
     def __init__(
@@ -3857,7 +3893,8 @@ class ADIDA(_TS):
         -------
         self :
             ADIDA fitted model.
-        r"""
+        """
+        y = _ensure_float(y)
         self.model_ = _adida(y=y, h=1, fitted=False)
         self._y = y
         self._store_cs(y=y, X=X)
@@ -3884,7 +3921,7 @@ class ADIDA(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        r"""
+        """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
         if level is None:
@@ -3954,6 +3991,7 @@ class ADIDA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _adida(y=y, h=h, fitted=fitted)
         if level is None:
             return res
@@ -3970,7 +4008,7 @@ class ADIDA(_TS):
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 298
+# %% ../../nbs/src/core/models.ipynb 296
 def _croston_classic(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3998,7 +4036,7 @@ def _croston_classic(
         out["fitted"] = ydf / yif
     return out
 
-# %% ../../nbs/src/core/models.ipynb 299
+# %% ../../nbs/src/core/models.ipynb 297
 class CrostonClassic(_TS):
 
     def __init__(
@@ -4028,7 +4066,7 @@ class CrostonClassic(_TS):
             Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
-        r"""
+        """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.only_conformal_intervals = True
@@ -4051,7 +4089,8 @@ class CrostonClassic(_TS):
         -------
         self :
             CrostonClassic fitted model.
-        r"""
+        """
+        y = _ensure_float(y)
         self.model_ = _croston_classic(y=y, h=1, fitted=True)
         self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
@@ -4144,7 +4183,8 @@ class CrostonClassic(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        r"""
+        """
+        y = _ensure_float(y)
         res = _croston_classic(y=y, h=h, fitted=fitted)
         if level is None:
             return res
@@ -4160,7 +4200,7 @@ class CrostonClassic(_TS):
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 310
+# %% ../../nbs/src/core/models.ipynb 308
 def _croston_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4202,7 +4242,7 @@ def _croston_optimized(
         out["fitted"] = ydf / yif
     return out
 
-# %% ../../nbs/src/core/models.ipynb 311
+# %% ../../nbs/src/core/models.ipynb 309
 class CrostonOptimized(_TS):
 
     def __init__(
@@ -4255,7 +4295,8 @@ class CrostonOptimized(_TS):
         -------
         self :
             CrostonOptimized fitted model.
-        r"""
+        """
+        y = _ensure_float(y)
         self.model_ = _croston_optimized(y=y, h=1, fitted=False)
         self._y = y
         self._store_cs(y=y, X=X)
@@ -4346,7 +4387,8 @@ class CrostonOptimized(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        r"""
+        """
+        y = _ensure_float(y)
         res = _croston_optimized(y=y, h=h, fitted=fitted)
         res = dict(res)
         if level is None:
@@ -4361,7 +4403,7 @@ class CrostonOptimized(_TS):
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 322
+# %% ../../nbs/src/core/models.ipynb 320
 def _croston_sba(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4373,7 +4415,7 @@ def _croston_sba(
         out["fitted"] *= 0.95
     return out
 
-# %% ../../nbs/src/core/models.ipynb 323
+# %% ../../nbs/src/core/models.ipynb 321
 class CrostonSBA(_TS):
 
     def __init__(
@@ -4428,6 +4470,7 @@ class CrostonSBA(_TS):
         self :
             CrostonSBA fitted model.
         """
+        y = _ensure_float(y)
         self.model_ = _croston_sba(y=y, h=1, fitted=True)
         self.model_["sigma"] = _calculate_sigma(y - self.model_["fitted"], y.size)
         self._store_cs(y=y, X=X)
@@ -4520,7 +4563,8 @@ class CrostonSBA(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        r"""
+        """
+        y = _ensure_float(y)
         res = _croston_sba(y=y, h=h, fitted=fitted)
         if level is None:
             return res
@@ -4537,23 +4581,23 @@ class CrostonSBA(_TS):
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 334
+# %% ../../nbs/src/core/models.ipynb 332
 def _imapa(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
     if (y == 0).all():
-        res = {"mean": np.zeros(h, dtype=np.float32)}
+        res = {"mean": np.zeros(h, dtype=y.dtype)}
         if fitted:
-            res["fitted"] = np.zeros(y.size, dtype=np.float32)
+            res["fitted"] = np.zeros_like(y)
             res["fitted"][0] = np.nan
         return res
     y = _ensure_float(y)
     y_intervals = _intervals(y)
     mean_interval = y_intervals.mean().item()
     max_aggregation_level = round(mean_interval)
-    forecasts = np.empty(max_aggregation_level, np.float32)
+    forecasts = np.empty(max_aggregation_level, dtype=y.dtype)
     for aggregation_level in range(1, max_aggregation_level + 1):
         lost_remainder_data = len(y) % aggregation_level
         y_cut = y[lost_remainder_data:]
@@ -4571,7 +4615,7 @@ def _imapa(
         res["fitted"] = fitted_vals
     return res
 
-# %% ../../nbs/src/core/models.ipynb 335
+# %% ../../nbs/src/core/models.ipynb 333
 class IMAPA(_TS):
 
     def __init__(
@@ -4622,6 +4666,7 @@ class IMAPA(_TS):
         self :
             IMAPA fitted model.
         """
+        y = _ensure_float(y)
         self.model_ = _imapa(y=y, h=1, fitted=False)
         self._y = y
         self._store_cs(y=y, X=X)
@@ -4718,6 +4763,7 @@ class IMAPA(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _imapa(y=y, h=h, fitted=fitted)
         if level is None:
             return res
@@ -4734,7 +4780,7 @@ class IMAPA(_TS):
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 346
+# %% ../../nbs/src/core/models.ipynb 344
 def _tsb(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -4743,9 +4789,9 @@ def _tsb(
     alpha_p: float,
 ) -> Dict[str, np.ndarray]:
     if (y == 0).all():
-        res = {"mean": np.zeros(h, dtype=np.float32)}
+        res = {"mean": np.zeros(h, dtype=y.dtype)}
         if fitted:
-            res["fitted"] = np.zeros(y.size, dtype=np.float32)
+            res["fitted"] = np.zeros_like(y)
             res["fitted"][0] = np.nan
         return res
     y = _ensure_float(y)
@@ -4759,7 +4805,7 @@ def _tsb(
         res["fitted"] = ypft * ydft
     return res
 
-# %% ../../nbs/src/core/models.ipynb 347
+# %% ../../nbs/src/core/models.ipynb 345
 class TSB(_TS):
 
     def __init__(
@@ -4829,6 +4875,7 @@ class TSB(_TS):
         self :
             TSB fitted model.
         """
+        y = _ensure_float(y)
         self.model_ = _tsb(
             y=y, h=1, fitted=True, alpha_d=self.alpha_d, alpha_p=self.alpha_p
         )
@@ -4855,7 +4902,7 @@ class TSB(_TS):
         -------
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
-        r"""
+        """
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
         if level is None:
@@ -4918,6 +4965,7 @@ class TSB(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         res = _tsb(y=y, h=h, fitted=fitted, alpha_d=self.alpha_d, alpha_p=self.alpha_p)
         res = dict(res)
         if level is None:
@@ -4932,7 +4980,7 @@ class TSB(_TS):
             res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 359
+# %% ../../nbs/src/core/models.ipynb 357
 def _predict_mstl_components(mstl_ob, h, season_length):
     seasoncolumns = mstl_ob.filter(regex="seasonal*").columns
     nseasons = len(seasoncolumns)
@@ -4953,7 +5001,7 @@ def _predict_mstl_seas(mstl_ob, h, season_length):
     seascomp = _predict_mstl_components(mstl_ob, h, season_length)
     return seascomp.sum(axis=1)
 
-# %% ../../nbs/src/core/models.ipynb 360
+# %% ../../nbs/src/core/models.ipynb 358
 class MSTL(_TS):
     r"""MSTL model.
 
@@ -4990,7 +5038,6 @@ class MSTL(_TS):
         alias: str = "MSTL",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
-
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
             if trend_forecaster.model[2] != "N":
@@ -5041,6 +5088,7 @@ class MSTL(_TS):
         self :
             MSTL fitted model.
         """
+        y = _ensure_float(y)
         self.model_ = mstl(
             x=y,
             period=self.season_length,
@@ -5143,6 +5191,7 @@ class MSTL(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         model_ = mstl(
             x=y,
             period=self.season_length,
@@ -5205,6 +5254,7 @@ class MSTL(_TS):
         """
         if not hasattr(self.trend_forecaster, "model_"):
             raise Exception("You have to use the `fit` method first")
+        y = _ensure_float(y)
         model_ = mstl(
             x=y,
             period=self.season_length,
@@ -5230,7 +5280,7 @@ class MSTL(_TS):
         }
         return res
 
-# %% ../../nbs/src/core/models.ipynb 376
+# %% ../../nbs/src/core/models.ipynb 374
 class TBATS(_TS):
     r"""Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
 
@@ -5306,6 +5356,7 @@ class TBATS(_TS):
         self :
             TBATS model.
         """
+        y = _ensure_float(y)
         self.model_ = tbats_selection(
             y=y,
             seasonal_periods=self.season_length,
@@ -5411,6 +5462,7 @@ class TBATS(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         mod = tbats_selection(
             y=y,
             seasonal_periods=self.season_length,
@@ -5442,7 +5494,7 @@ class TBATS(_TS):
             res_trans = res
         return res_trans
 
-# %% ../../nbs/src/core/models.ipynb 384
+# %% ../../nbs/src/core/models.ipynb 382
 class AutoTBATS(TBATS):
     r"""AutoTBATS model.
 
@@ -5501,7 +5553,7 @@ class AutoTBATS(TBATS):
             alias=alias,
         )
 
-# %% ../../nbs/src/core/models.ipynb 394
+# %% ../../nbs/src/core/models.ipynb 392
 class Theta(AutoTheta):
     r"""Standard Theta Method.
 
@@ -5538,7 +5590,7 @@ class Theta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../../nbs/src/core/models.ipynb 408
+# %% ../../nbs/src/core/models.ipynb 406
 class OptimizedTheta(AutoTheta):
     r"""Optimized Theta Method.
 
@@ -5575,7 +5627,7 @@ class OptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../../nbs/src/core/models.ipynb 422
+# %% ../../nbs/src/core/models.ipynb 420
 class DynamicTheta(AutoTheta):
     r"""Dynamic Standard Theta Method.
 
@@ -5612,7 +5664,7 @@ class DynamicTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../../nbs/src/core/models.ipynb 436
+# %% ../../nbs/src/core/models.ipynb 434
 class DynamicOptimizedTheta(AutoTheta):
     r"""Dynamic Optimized Theta Method.
 
@@ -5649,7 +5701,7 @@ class DynamicOptimizedTheta(AutoTheta):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../../nbs/src/core/models.ipynb 451
+# %% ../../nbs/src/core/models.ipynb 449
 class GARCH(_TS):
     r"""Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
 
@@ -5722,6 +5774,7 @@ class GARCH(_TS):
         self :
             GARCH model.
         """
+        y = _ensure_float(y)
         self.model_ = garch_model(y, p=self.p, q=self.q)
         self.model_["actual_residuals"] = y - self.model_["fitted"]
         self._store_cs(y, X)
@@ -5814,6 +5867,7 @@ class GARCH(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         mod = garch_model(y, p=self.p, q=self.q)
         fcst = garch_forecast(mod, h)
         keys = ["mean", "sigma2"]
@@ -5841,7 +5895,7 @@ class GARCH(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 464
+# %% ../../nbs/src/core/models.ipynb 462
 class ARCH(GARCH):
     r"""Autoregressive Conditional Heteroskedasticity (ARCH) model.
 
@@ -5885,7 +5939,7 @@ class ARCH(GARCH):
         self.alias = alias
         super().__init__(p, q=0, alias=alias)
 
-# %% ../../nbs/src/core/models.ipynb 475
+# %% ../../nbs/src/core/models.ipynb 473
 class SklearnModel(_TS):
     r"""scikit-learn model wrapper
 
@@ -5899,6 +5953,8 @@ class SklearnModel(_TS):
     alias : str, optional (default=None)
         Custom name of the model. If `None` will use the model's class.
     """
+
+    uses_exog = True
 
     def __init__(
         self,
@@ -6091,7 +6147,7 @@ class SklearnModel(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 485
+# %% ../../nbs/src/core/models.ipynb 483
 class MFLES(_TS):
     r"""MFLES model.
 
@@ -6164,6 +6220,8 @@ class MFLES(_TS):
     alias : str (default='MFLES')
         Custom name of the model.
     """
+
+    uses_exog = True
 
     def __init__(
         self,
@@ -6261,6 +6319,7 @@ class MFLES(_TS):
         self : MFLES
             Fitted MFLES object.
         """
+        y = _ensure_float(y)
         self.model_ = self._fit(y=y, X=X)
         self._store_cs(y=y, X=X)
         residuals = y - self.model_["fitted"]
@@ -6353,6 +6412,7 @@ class MFLES(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         model = self._fit(y=y, X=X)
         res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
         if fitted:
@@ -6369,7 +6429,7 @@ class MFLES(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 493
+# %% ../../nbs/src/core/models.ipynb 491
 class AutoMFLES(_TS):
     r"""AutoMFLES
 
@@ -6459,7 +6519,8 @@ class AutoMFLES(_TS):
         -------
         self : AutoMFLES
             Fitted AutoMFLES object.
-        r"""
+        """
+        y = _ensure_float(y)
         self.model_ = self._fit(y=y, X=X)
         self._store_cs(y=y, X=X)
         residuals = y - self.model_["fitted"]
@@ -6552,6 +6613,7 @@ class AutoMFLES(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        y = _ensure_float(y)
         model = self._fit(y=y, X=X)
         res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
         if fitted:
@@ -6568,7 +6630,7 @@ class AutoMFLES(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 497
+# %% ../../nbs/src/core/models.ipynb 495
 class ConstantModel(_TS):
 
     def __init__(self, constant: float, alias: str = "ConstantModel"):
@@ -6607,7 +6669,9 @@ class ConstantModel(_TS):
         self:
             Constant fitted model.
         """
+        y = _ensure_float(y)
         self.n_y = len(y)
+        self._dtype = y.dtype
         return self
 
     def predict(
@@ -6632,7 +6696,7 @@ class ConstantModel(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = np.full(h, self.constant, dtype=np.float32)
+        mean = np.full(h, self.constant, dtype=self._dtype)
         res = {"mean": mean}
 
         if level is not None:
@@ -6655,7 +6719,7 @@ class ConstantModel(_TS):
         forecasts : dict
             Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        fitted = np.full(self.n_y, self.constant, dtype=np.float32)
+        fitted = np.full(self.n_y, self.constant, dtype=self._dtype)
         res = {"fitted": fitted}
         if level is not None:
             for lv in sorted(level):
@@ -6699,11 +6763,12 @@ class ConstantModel(_TS):
         forecasts : dict
             Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = np.full(h, self.constant, dtype=np.float32)
+        y = _ensure_float(y)
+        mean = np.full(h, self.constant, dtype=y.dtype)
         res = {"mean": mean}
 
         if fitted:
-            fitted_vals = np.full(self.n_y, self.constant, dtype=np.float32)
+            fitted_vals = np.full_like(y, self.constant)
             res["fitted"] = fitted_vals
 
         if level is not None:
@@ -6751,7 +6816,7 @@ class ConstantModel(_TS):
         )
         return res
 
-# %% ../../nbs/src/core/models.ipynb 511
+# %% ../../nbs/src/core/models.ipynb 509
 class ZeroModel(ConstantModel):
 
     def __init__(self, alias: str = "ZeroModel"):
@@ -6766,7 +6831,7 @@ class ZeroModel(ConstantModel):
         """
         super().__init__(constant=0, alias=alias)
 
-# %% ../../nbs/src/core/models.ipynb 525
+# %% ../../nbs/src/core/models.ipynb 523
 class NaNModel(ConstantModel):
 
     def __init__(self, alias: str = "NaNModel"):

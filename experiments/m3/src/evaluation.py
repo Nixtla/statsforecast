@@ -1,7 +1,6 @@
 from itertools import product
 
 import fire
-import numpy as np
 import pandas as pd
 from datasetsforecast.losses import mape, smape
 
@@ -50,11 +49,11 @@ def main(test: bool = False):
     time = evaluation.query('metric=="time"').T
     if test:
         expected_results = {
-            'AutoARIMA': 4.57,
+            'AutoARIMA': 4.46,
             'CES': 4.85, 
             'AutoETS': 4.35, 
             'DynamicOptimizedTheta': 4.54,
-            'StatisticalEnsemble': 4.23,
+            'StatisticalEnsemble': 4.3,
         }
         expected_results = pd.Series(expected_results)
         pd.testing.assert_series_equal(

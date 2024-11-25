@@ -194,7 +194,7 @@ See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBU
 
 ```bibtex
 @misc{garza2022statsforecast,
-    author={Federico Garza, Max Mergenthaler Canseco, Cristian Challú, Kin G. Olivares},
+    author={Azul Garza, Max Mergenthaler Canseco, Cristian Challú, Kin G. Olivares},
     title = {{StatsForecast}: Lightning fast forecasting with statistical and econometric models},
     year={2022},
     howpublished={{PyCon} Salt Lake City, Utah, US 2022},
@@ -212,7 +212,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/FedericoGarza"><img src="https://avatars.githubusercontent.com/u/10517170?v=4?s=100" width="100px;" alt="fede"/><br /><sub><b>fede</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=FedericoGarza" title="Code">💻</a> <a href="#maintenance-FedericoGarza" title="Maintenance">🚧</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AzulGarza"><img src="https://avatars.githubusercontent.com/u/10517170?v=4?s=100" width="100px;" alt="azul"/><br /><sub><b>azul</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=AzulGarza" title="Code">💻</a> <a href="#maintenance-AzulGarza" title="Maintenance">🚧</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/jmoralez"><img src="https://avatars.githubusercontent.com/u/8473587?v=4?s=100" width="100px;" alt="José Morales"/><br /><sub><b>José Morales</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=jmoralez" title="Code">💻</a> <a href="#maintenance-jmoralez" title="Maintenance">🚧</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/sugatoray/"><img src="https://avatars.githubusercontent.com/u/10201242?v=4?s=100" width="100px;" alt="Sugato Ray"/><br /><sub><b>Sugato Ray</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/commits?author=sugatoray" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://www.jefftackes.com"><img src="https://avatars.githubusercontent.com/u/9125316?v=4?s=100" width="100px;" alt="Jeff Tackes"/><br /><sub><b>Jeff Tackes</b></sub></a><br /><a href="https://github.com/Nixtla/statsforecast/issues?q=author%3Atackes" title="Bug reports">🐛</a></td>

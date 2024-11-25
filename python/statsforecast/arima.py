@@ -313,7 +313,7 @@ def arima(
             order[1],
             seasonal["order"][1],
         ],
-        dtype=np.intc,
+        dtype=np.int32,
     )
     narma = arma[:4].sum().item()
 
@@ -1446,7 +1446,7 @@ def auto_arima_f(
         else:
             if constant_columns.any():
                 xregg = xregg[:, ~constant_columns]
-            X = np.hstack([np.arange(1, xregg.shape[0] + 1).reshape(-1, 1), xregg])
+            X = np.hstack([np.ones([xregg.shape[0], 1]), xregg])
             X = X[~np.isnan(X).any(1)]
             _, sv, _ = np.linalg.svd(X)
             if sv.min() / sv.sum() < np.finfo(np.float64).eps:
