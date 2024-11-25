@@ -479,7 +479,7 @@ def _get_n_jobs(n_groups, n_jobs):
 _param_descriptions = {
     "freq": """freq : str or int
             Frequency of the data. Must be a valid pandas or polars offset alias, or an integer.""",
-    "df": """df : pandas or polars DataFrame, optional (default=None)
+    "df": """df : pandas or polars DataFrame
             DataFrame with ids, times, targets and exogenous.""",
     "fallback_model": """fallback_model : Any, optional (default=None)
             Any, optional (default=None)
@@ -539,7 +539,6 @@ class _StatsForecast:
         models: List[Any],
         freq: Union[str, int],
         n_jobs: int = 1,
-        df: Optional[DataFrame] = None,
         fallback_model: Optional[Any] = None,
         verbose: bool = False,
     ):
@@ -633,7 +632,7 @@ class _StatsForecast:
 
     def fit(
         self,
-        df: Optional[DataFrame] = None,
+        df: DataFrame,
         prediction_intervals: Optional[ConformalIntervals] = None,
         id_col: str = "unique_id",
         time_col: str = "ds",
@@ -647,7 +646,6 @@ class _StatsForecast:
         Parameters
         ----------
         {df}
-            If None, the `StatsForecast` class should have been instantiated using `df`.
         {prediction_intervals}
         {id_col}
         {time_col}
@@ -694,8 +692,8 @@ class _StatsForecast:
             raise ValueError(
                 f"Expected X to have shape {expected_shape}, but got {X.shape}"
             )
-        _, _, data, indptr, _ = ufp.process_df(X, self.id_col, self.time_col, None)
-        return GroupedArray(data, indptr), level
+        processed = ufp.process_df(X, self.id_col, self.time_col, None)
+        return GroupedArray(processed.data, processed.indptr), level
 
     def _validate_exog(self, X_df: Optional[DataFrame] = None) -> None:
         if not any(m.uses_exog for m in self.models) or not self._exog:
@@ -760,7 +758,7 @@ class _StatsForecast:
     def fit_predict(
         self,
         h: int,
-        df: Optional[DataFrame] = None,
+        df: DataFrame,
         X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         prediction_intervals: Optional[ConformalIntervals] = None,
@@ -780,7 +778,6 @@ class _StatsForecast:
         ----------
         {h}
         {df}
-            If None, the `StatsForecast` class should have been instantiated using `df`.
         {X_df}
         {level}
         {prediction_intervals}
@@ -822,7 +819,7 @@ class _StatsForecast:
     def forecast(
         self,
         h: int,
-        df: Optional[DataFrame] = None,
+        df: DataFrame,
         X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
@@ -924,7 +921,7 @@ class _StatsForecast:
     def cross_validation(
         self,
         h: int,
-        df: Optional[DataFrame] = None,
+        df: DataFrame,
         n_windows: int = 1,
         step_size: int = 1,
         test_size: Optional[int] = None,
@@ -950,7 +947,6 @@ class _StatsForecast:
         ----------
         {h}
         {df}
-            If None, the `StatsForecast` class should have been instantiated using `df`.
         {n_windows}
         {step_size}
         {test_size}
@@ -1522,7 +1518,7 @@ class StatsForecast(_StatsForecast):
     def forecast(
         self,
         h: int,
-        df: Any = None,
+        df: Any,
         X_df: Optional[DataFrame] = None,
         level: Optional[List[int]] = None,
         fitted: bool = False,
@@ -1575,7 +1571,7 @@ class StatsForecast(_StatsForecast):
     def cross_validation(
         self,
         h: int,
-        df: Any = None,
+        df: Any,
         n_windows: int = 1,
         step_size: int = 1,
         test_size: Optional[int] = None,
