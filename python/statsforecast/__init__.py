@@ -1,4 +1,4 @@
-__version__ = "1.7.8.99"
+__version__ = "2.0"
 __all__ = ["StatsForecast"]
 from .core import StatsForecast
 from .distributed import fugue  # noqa

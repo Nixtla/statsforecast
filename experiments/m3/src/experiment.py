@@ -25,14 +25,13 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
         AutoARIMA(season_length=seasonality),
         DynamicOptimizedTheta(season_length=seasonality),
     ]
-    
+
     start = time.time()
-    fcst = StatsForecast(df=train, models=models, freq=freq, n_jobs=cpu_count())
-    forecasts = fcst.forecast(h=horizon)
+    fcst = StatsForecast(models=models, freq=freq, n_jobs=cpu_count())
+    forecasts = fcst.forecast(df=train, h=horizon)
     end = time.time()
     print(end - start)
 
-    forecasts = forecasts.reset_index()
     forecasts['StatisticalEnsemble'] = forecasts.set_index(['unique_id', 'ds']).median(axis=1).values
     forecasts.to_csv(f'data/StatisticalEnsemble-forecasts-{dataset}-{group}.csv', index=False)
 

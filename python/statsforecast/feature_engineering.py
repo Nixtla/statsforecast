@@ -6,7 +6,6 @@ __all__ = ['mstl_decomposition']
 # %% ../../nbs/src/feature_engineering.ipynb 3
 from typing import Tuple
 
-import pandas as pd
 from utilsforecast.compat import DataFrame, pl, pl_DataFrame
 from utilsforecast.processing import (
     drop_index_if_pandas,
@@ -17,7 +16,6 @@ from utilsforecast.processing import (
 )
 
 from . import StatsForecast
-from .core import _id_as_idx
 from .models import MSTL, _predict_mstl_components
 
 # %% ../../nbs/src/feature_engineering.ipynb 4
@@ -56,8 +54,6 @@ def mstl_decomposition(
     sf = StatsForecast(models=[model], freq=freq)
     sf.fit(df=df)
     X_df = sf._make_future_df(h=h)
-    if isinstance(X_df, pd.DataFrame) and _id_as_idx():
-        X_df = X_df.reset_index()
     train_features = []
     future_features = []
     df_constructor = type(df)

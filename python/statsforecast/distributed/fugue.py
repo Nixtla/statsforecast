@@ -19,7 +19,6 @@ from triad import Schema
 from statsforecast.core import (
     _StatsForecast,
     ParallelBackend,
-    _id_as_idx,
     _param_descriptions,
     make_backend,
 )
@@ -118,8 +117,6 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if _id_as_idx():
-            result = result.reset_index()
         return model, result
 
     def _forecast_noX(
@@ -181,8 +178,6 @@ class FugueBackend(ParallelBackend):
             target_col=target_col,
         )
         fitted_vals = model.forecast_fitted_values()
-        if _id_as_idx():
-            fitted_vals = fitted_vals.reset_index()
         return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
 
     def _forecast_X(
@@ -246,8 +241,6 @@ class FugueBackend(ParallelBackend):
             target_col=target_col,
         )
         fitted_vals = model.forecast_fitted_values()
-        if _id_as_idx():
-            fitted_vals = fitted_vals.reset_index()
         return [[cloudpickle.dumps(result), cloudpickle.dumps(fitted_vals)]]
 
     def _get_output_schema(
@@ -451,8 +444,6 @@ class FugueBackend(ParallelBackend):
             time_col=time_col,
             target_col=target_col,
         )
-        if _id_as_idx():
-            result = result.reset_index()
         return result
 
     def cross_validation(

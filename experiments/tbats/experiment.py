@@ -3,7 +3,6 @@ import time
 from multiprocessing import cpu_count
 os.environ['NIXTLA_NUMBA_RELEASE_GIL'] = '1'
 os.environ['NIXTLA_NUMBA_CACHE'] = '1'
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 
 import fire
 import pandas as pd
