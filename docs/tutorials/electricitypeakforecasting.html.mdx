@@ -94,14 +94,14 @@ useful for basic EDA.
 
 ```python
 from statsforecast import StatsForecast
+```
 
+
+```python
 StatsForecast.plot(Y_df)
 ```
 
-``` text
-/Users/cchallu/NIXTLA/statsforecast/statsforecast/core.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
-  from tqdm.autonotebook import tqdm
-```
+![](/statsforecast/docs/tutorials/ElectricityPeakForecasting_files/figure-markdown_strict/cell-5-output-1.png)
 
 We observe that the time series exhibits seasonal patterns. Moreover,
 the time series contains `6,552` observations, so it is necessary to use
@@ -125,8 +125,11 @@ Import the
 class and the models you need.
 
 ```python
+from sklearn.linear_model import LinearRegression
+from utilsforecast.feature_engineering import trend
+
 from statsforecast import StatsForecast
-from statsforecast.models import MSTL, AutoARIMA
+from statsforecast.models import MSTL, SklearnModel
 ```
 
 First, instantiate the model and define the parameters. The electricity
@@ -136,24 +139,32 @@ seasonalities. See [this
 link](https://robjhyndman.com/hyndsight/seasonal-periods/) for a
 detailed explanation on how to set seasonal lengths. In this example we
 use the
-[`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima)
-model for the trend component, however, any StatsForecast model can be
-used. The complete list of models is available
-[here](https://nixtla.github.io/statsforecast/models.html).
+[`SklearnModel`](https://Nixtla.github.io/statsforecast/src/core/models.html#sklearnmodel)
+with a `LinearRegression` model for the trend component, however, any
+StatsForecast model can be used. The complete list of models is
+available [here](https://nixtla.github.io/statsforecast/models.html).
 
 ```python
-models = [MSTL(
-            season_length=[24, 24 * 7], # seasonalities of the time series 
-            trend_forecaster=AutoARIMA(nmodels=10) # model used to forecast trend
-            )
-          ]
+train, _ = trend(Y_df, freq='H')
+train.head()
 ```
 
-> **Tip**
->
-> The parameter `nmodels` of the AutoARIMA controls the number of models
-> considered in stepwise search. The default is 94, reduce it to
-> decrease training times!
+|     | unique_id | ds                  | y            | trend |
+|-----|-----------|---------------------|--------------|-------|
+| 0   | ERCOT     | 2021-01-01 00:00:00 | 43719.849616 | 1.0   |
+| 1   | ERCOT     | 2021-01-01 01:00:00 | 43321.050347 | 2.0   |
+| 2   | ERCOT     | 2021-01-01 02:00:00 | 43063.067063 | 3.0   |
+| 3   | ERCOT     | 2021-01-01 03:00:00 | 43090.059203 | 4.0   |
+| 4   | ERCOT     | 2021-01-01 04:00:00 | 43486.590073 | 5.0   |
+
+```python
+models = [
+    MSTL(
+        season_length=[24, 24 * 7], # seasonalities of the time series 
+        trend_forecaster=SklearnModel(LinearRegression()) # model used to forecast trend
+    )
+]
+```
 
 We fit the model by instantiating a
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
@@ -202,8 +213,8 @@ number of windows as 30 (one for each day). Finally, set the step size
 between windows as 24, to only produce one forecast per day.
 
 ```python
-crossvalidation_df = sf.cross_validation(
-    df=Y_df,
+cv_df = sf.cross_validation(
+    df=train,
     h=24,
     step_size=24,
     n_windows=30
@@ -212,17 +223,16 @@ crossvalidation_df = sf.cross_validation(
 
 
 ```python
-crossvalidation_df.head()
+cv_df.head()
 ```
 
-|           | ds                  | cutoff              | y            | MSTL         |
-|-----------|---------------------|---------------------|--------------|--------------|
-| unique_id |                     |                     |              |              |
-| ERCOT     | 2022-09-01 00:00:00 | 2022-08-31 23:00:00 | 45482.468750 | 47126.179688 |
-| ERCOT     | 2022-09-01 01:00:00 | 2022-08-31 23:00:00 | 43602.660156 | 45088.542969 |
-| ERCOT     | 2022-09-01 02:00:00 | 2022-08-31 23:00:00 | 42284.820312 | 43897.175781 |
-| ERCOT     | 2022-09-01 03:00:00 | 2022-08-31 23:00:00 | 41663.160156 | 43187.812500 |
-| ERCOT     | 2022-09-01 04:00:00 | 2022-08-31 23:00:00 | 41710.621094 | 43369.859375 |
+|  | unique_id | ds | cutoff | y | MSTL |
+|----|----|----|----|----|----|
+| 0 | ERCOT | 2022-09-01 00:00:00 | 2022-08-31 23:00:00 | 45482.471757 | 47413.944185 |
+| 1 | ERCOT | 2022-09-01 01:00:00 | 2022-08-31 23:00:00 | 43602.658043 | 45237.153285 |
+| 2 | ERCOT | 2022-09-01 02:00:00 | 2022-08-31 23:00:00 | 42284.817342 | 43816.390019 |
+| 3 | ERCOT | 2022-09-01 03:00:00 | 2022-08-31 23:00:00 | 41663.156771 | 42972.956286 |
+| 4 | ERCOT | 2022-09-01 04:00:00 | 2022-08-31 23:00:00 | 41710.621904 | 42909.899438 |
 
 > **Important**
 >
@@ -234,9 +244,9 @@ crossvalidation_df.head()
 
 ## Peak Detection
 
-Finally, we use the forecasts in `crossvaldation_df` to detect the daily
-hourly demand peaks. For each day, we set the detected peaks as the
-highest forecasts. In this case, we want to predict one peak (`npeaks`);
+Finally, we use the forecasts in `cv_df` to detect the daily hourly
+demand peaks. For each day, we set the detected peaks as the highest
+forecasts. In this case, we want to predict one peak (`npeaks`);
 depending on your setting and goals, this parameter might change. For
 example, the number of peaks can correspond to how many hours a battery
 can be discharged to reduce demand.
@@ -250,9 +260,9 @@ predicting the highest monthly load. Next, we filter the day in
 September with the highest hourly demand and predict the peak.
 
 ```python
-crossvalidation_df = crossvalidation_df.reset_index()[['ds','y','MSTL']]
-max_day = crossvalidation_df.iloc[crossvalidation_df['y'].argmax()].ds.day # Day with maximum load
-cv_df_day = crossvalidation_df.query('ds.dt.day == @max_day')
+cv_df = cv_df[['ds','y','MSTL']]
+max_day = cv_df.iloc[cv_df['y'].argmax()].ds.day # Day with maximum load
+cv_df_day = cv_df.query('ds.dt.day == @max_day')
 max_hour = cv_df_day['y'].argmax()
 peaks = cv_df_day['MSTL'].argsort().iloc[-npeaks:].values # Predicted peaks
 ```
@@ -277,7 +287,7 @@ plt.grid()
 plt.legend()
 ```
 
-![](/statsforecast/docs/tutorials/ElectricityPeakForecasting_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/tutorials/ElectricityPeakForecasting_files/figure-markdown_strict/cell-15-output-1.png)
 
 > **Important**
 >

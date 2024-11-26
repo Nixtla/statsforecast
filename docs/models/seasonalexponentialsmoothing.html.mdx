@@ -510,24 +510,6 @@ plt.show()
 
 ## Implementation of SeasonalExponentialSmoothing with StatsForecast <a class="anchor" id="implementation"></a>
 
-To also know more about the parameters of the functions of the
-`SeasonalExponentialSmoothing Model`, they are listed below. For more
-information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#seasonalsmooth).
-
-``` text
-alpha : float
-    Smoothing parameter.
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
-
 ### Load libraries
 
 ```python
@@ -568,16 +550,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=df,
-                   models=models,
-                   freq='H', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='h')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -593,55 +572,49 @@ result
 ```
 
 ``` text
-{'mean': array([ 72221.8  ,  73250.41 ,  81213.68 ,  95889.06 , 122141.46 ,
-        114311.9  , 105907.24 ,  97934.02 ,  98570.34 , 106042.58 ,
-        115734.17 , 133876.25 , 145319.06 , 141776.67 , 142775.06 ,
-        145288.16 , 150219.11 , 149963.72 , 154389.11 , 154027.47 ,
-        123923.64 , 102927.42 ,  93966.52 ,  79575.586], dtype=float32),
+{'mean': array([161567.6  , 163186.56 , 134410.94 , 106145.6  ,  93383.164,
+         79489.72 ,  79769.   ,  77651.984,  85288.33 ,  99665.31 ,
+        123067.336, 115759.51 , 103556.234, 100510.09 ,  97411.65 ,
+        107672.88 , 121150.84 , 140041.22 , 140075.19 , 140903.34 ,
+        142615.28 , 142360.75 , 142615.6  , 142658.62 ], dtype=float32),
  'fitted': array([       nan,        nan,        nan,        nan,        nan,
                nan,        nan,        nan,        nan,        nan,
                nan,        nan,        nan,        nan,        nan,
                nan,        nan,        nan,        nan,        nan,
-               nan,        nan,        nan,        nan,  80115.   ,
-         79885.   ,  89325.   , 101930.   , 121630.   , 116475.   ,
-        106495.   , 102795.   , 108055.   , 116125.   , 131030.   ,
-        149020.   , 157590.   , 150715.   , 149295.   , 150100.   ,
-        144780.   , 150690.   , 163840.   , 166235.   , 139520.   ,
-        105895.   ,  96780.   ,  82520.   ,  80123.   ,  76245.   ,
-         85949.   , 102050.   , 124434.   , 117719.   , 108679.   ,
-        102539.   , 103403.   , 115897.   , 130638.   , 145264.   ,
-        150694.   , 149463.   , 148291.   , 149068.   , 148820.   ,
-        150594.   , 152320.   , 153663.   , 131208.   , 104231.   ,
-         93096.   ,  82716.   ,  77076.6  ,  75353.   ,  83301.8  ,
-         91446.   , 119630.8  , 115695.8  , 110487.8  ,  99595.8  ,
-        104028.6  , 110111.4  , 127439.6  , 141400.8  , 152114.8  ,
-        146912.6  , 148074.2  , 148001.6  , 146364.   , 149546.8  ,
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan, 163840.   , 166235.   , 139520.   ,
+        105895.   ,  96780.   ,  82520.   ,  80125.   ,  75335.   ,
+         85105.   , 102080.   , 125135.   , 118030.   , 109225.   ,
+        102475.   , 102240.   , 115840.   , 130540.   , 144325.   ,
+        148970.   , 149150.   , 148040.   , 148810.   , 149830.   ,
+        150570.   , 152320.   , 153663.   , 131208.   , 104231.   ,
+         93096.   ,  82716.   ,  77077.   ,  75171.   ,  83133.   ,
+         91452.   , 119771.   , 115758.   , 110597.   ,  99583.   ,
+        103796.   , 110100.   , 127420.   , 141213.   , 151770.   ,
+        146850.   , 148024.   , 147950.   , 146566.   , 149542.   ,
         158244.   , 159600.6  , 134657.6  , 111202.2  ,  98779.2  ,
-         86635.2  ,  85683.32 ,  86146.6  ,  90540.36 , 101861.2  ,
-        116678.16 , 126299.16 , 135205.56 , 135471.16 , 135405.72 ,
-        128574.28 , 130479.92 , 142264.16 , 156322.95 , 151382.52 ,
-        152602.84 , 150556.31 , 149788.8  , 147857.36 , 153668.8  ,
+         86635.2  ,  85683.4  ,  86110.2  ,  90506.6  , 101862.4  ,
+        116706.2  , 126311.6  , 135227.4  , 135468.6  , 135359.2  ,
+        128572.   , 130476.   , 142226.6  , 156254.   , 151370.   ,
+        152592.8  , 150546.   , 149829.2  , 147856.4  , 153668.8  ,
         149420.12 , 127127.52 , 116580.44 ,  97115.84 ,  92215.04 ,
-         88384.664,  88705.32 ,  90568.07 ,  99004.24 , 113391.63 ,
-        128835.83 , 140165.11 , 149142.23 , 149145.14 , 138650.86 ,
-        144135.98 , 157340.83 , 164332.6  , 163700.5  , 161032.56 ,
-        155955.27 , 157201.77 , 157587.47 , 165409.77 , 165804.03 ,
-        139593.5  , 113680.086,  97299.17 ,  83783.01 ,  81284.93 ,
-         80421.06 ,  88549.62 ,  99632.85 , 121702.33 , 114827.164,
-        107585.02 , 107952.445, 107953.03 , 109782.17 , 124771.195,
-        140072.17 , 144962.52 , 146124.1  , 145982.52 , 147479.05 ,
-        147708.36 , 151845.5  , 162297.95 , 155892.81 , 135694.7  ,
-        108388.016,  95495.836,  80368.6  ,  78924.984,  75820.21 ,
-         83301.92 ,  98286.57 , 119816.47 , 113457.43 , 100621.01 ,
-         96790.49 ,  96518.61 , 105304.44 , 120754.24 , 136806.44 ,
-        146156.5  , 140556.81 , 146976.5  , 145443.81 , 150637.67 ,
-        155233.1  , 161567.6  , 163186.56 , 134410.94 , 106145.6  ,
-         93383.164,  79489.72 ,  79769.   ,  77652.04 ,  85288.38 ,
-         99665.31 , 123067.3  , 115759.484, 103556.2  , 100510.1  ,
-         97411.72 , 107672.89 , 121150.85 , 140041.28 , 140075.3  ,
-        140903.36 , 142615.3  , 142360.77 , 142615.53 , 142658.62 ,
-        149285.52 , 146577.31 , 126038.19 , 102317.12 ,  89212.63 ,
-         76737.945], dtype=float32)}
+         88384.68 ,  88698.04 ,  90561.32 ,  99004.48 , 113397.24 ,
+        128838.32 , 140169.48 , 149141.72 , 149135.84 , 138650.4  ,
+        144135.2  , 157333.31 , 164318.8  , 163698.   , 161030.56 ,
+        155953.2  , 157209.84 , 157587.28 , 165409.77 , 165804.03 ,
+        139593.5  , 113680.086,  97299.17 ,  83783.01 ,  81284.94 ,
+         80419.61 ,  88548.266,  99632.9  , 121703.445, 114827.664,
+        107585.9  , 107952.34 , 107951.17 , 109782.08 , 124771.04 ,
+        140070.66 , 144959.77 , 146123.6  , 145982.11 , 147478.64 ,
+        147709.97 , 151845.45 , 162297.95 , 155892.81 , 135694.7  ,
+        108388.016,  95495.836,  80368.6  ,  78924.984,  75819.92 ,
+         83301.66 ,  98286.58 , 119816.69 , 113457.53 , 100621.18 ,
+         96790.47 ,  96518.234, 105304.414, 120754.21 , 136806.12 ,
+        146155.95 , 140556.72 , 146976.42 , 145443.73 , 150638.   ,
+        155233.1  ], dtype=float32)}
 ```
 
 Let us now visualize the fitted values of our models.
@@ -663,9 +636,9 @@ fitted
 | 1   | NaN           | 2017-09-13 01:00:00 |
 | 2   | NaN           | 2017-09-13 02:00:00 |
 | ... | ...           | ...                 |
-| 213 | 102317.117188 | 2017-09-21 21:00:00 |
-| 214 | 89212.632812  | 2017-09-21 22:00:00 |
-| 215 | 76737.945312  | 2017-09-21 23:00:00 |
+| 183 | 145443.734375 | 2017-09-20 15:00:00 |
+| 184 | 150638.000000 | 2017-09-20 16:00:00 |
+| 185 | 155233.093750 | 2017-09-20 17:00:00 |
 
 ```python
 sns.lineplot(df, x="ds", y="y", label="Actual", linewidth=2)
@@ -699,83 +672,38 @@ uncertainty intervals. Depending on your computer, this step should take
 around 1min.
 
 ```python
-Y_hat = sf.forecast(horizon, fitted=True)
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
-|           | ds                  | SeasonalES    |
-|-----------|---------------------|---------------|
-| unique_id |                     |               |
-| 1         | 2017-09-22 00:00:00 | 72221.796875  |
-| 1         | 2017-09-22 01:00:00 | 73250.406250  |
-| 1         | 2017-09-22 02:00:00 | 81213.679688  |
-| ...       | ...                 | ...           |
-| 1         | 2017-09-23 03:00:00 | 95889.062500  |
-| 1         | 2017-09-23 04:00:00 | 122141.460938 |
-| 1         | 2017-09-23 05:00:00 | 114311.898438 |
+|     | unique_id | ds                  | SeasonalES    |
+|-----|-----------|---------------------|---------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 161567.593750 |
+| 1   | 1         | 2017-09-20 19:00:00 | 163186.562500 |
+| 2   | 1         | 2017-09-20 20:00:00 | 134410.937500 |
+| ... | ...       | ...                 | ...           |
+| 27  | 1         | 2017-09-21 21:00:00 | 106145.601562 |
+| 28  | 1         | 2017-09-21 22:00:00 | 93383.164062  |
+| 29  | 1         | 2017-09-21 23:00:00 | 79489.718750  |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds                  | y        | SeasonalES |
-|-----------|---------------------|----------|------------|
-| unique_id |                     |          |            |
-| 1         | 2017-09-13 00:00:00 | 80115.0  | NaN        |
-| 1         | 2017-09-13 01:00:00 | 79885.0  | NaN        |
-| 1         | 2017-09-13 02:00:00 | 89325.0  | NaN        |
-| 1         | 2017-09-13 03:00:00 | 101930.0 | NaN        |
-| 1         | 2017-09-13 04:00:00 | 121630.0 | NaN        |
+|     | unique_id | ds                  | y        | SeasonalES |
+|-----|-----------|---------------------|----------|------------|
+| 0   | 1         | 2017-09-13 00:00:00 | 80115.0  | NaN        |
+| 1   | 1         | 2017-09-13 01:00:00 | 79885.0  | NaN        |
+| 2   | 1         | 2017-09-13 02:00:00 | 89325.0  | NaN        |
+| 3   | 1         | 2017-09-13 03:00:00 | 101930.0 | NaN        |
+| 4   | 1         | 2017-09-13 04:00:00 | 121630.0 | NaN        |
 
 ```python
-StatsForecast.plot(values)
+sf.plot(train, Y_hat)
 ```
 
 ![](/statsforecast/docs/models/SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-25-output-1.png)
-
-```python
-Y_hat=Y_hat.reset_index()
-Y_hat
-```
-
-|     | unique_id | ds                  | SeasonalES    |
-|-----|-----------|---------------------|---------------|
-| 0   | 1         | 2017-09-22 00:00:00 | 72221.796875  |
-| 1   | 1         | 2017-09-22 01:00:00 | 73250.406250  |
-| 2   | 1         | 2017-09-22 02:00:00 | 81213.679688  |
-| ... | ...       | ...                 | ...           |
-| 27  | 1         | 2017-09-23 03:00:00 | 95889.062500  |
-| 28  | 1         | 2017-09-23 04:00:00 | 122141.460938 |
-| 29  | 1         | 2017-09-23 05:00:00 | 114311.898438 |
-
-```python
-Y_hat1= pd.concat([df,Y_hat])
-Y_hat1
-```
-
-|     | ds                  | y       | unique_id | SeasonalES    |
-|-----|---------------------|---------|-----------|---------------|
-| 0   | 2017-09-13 00:00:00 | 80115.0 | 1         | NaN           |
-| 1   | 2017-09-13 01:00:00 | 79885.0 | 1         | NaN           |
-| 2   | 2017-09-13 02:00:00 | 89325.0 | 1         | NaN           |
-| ... | ...                 | ...     | ...       | ...           |
-| 27  | 2017-09-23 03:00:00 | NaN     | 1         | 95889.062500  |
-| 28  | 2017-09-23 04:00:00 | NaN     | 1         | 122141.460938 |
-| 29  | 2017-09-23 05:00:00 | NaN     | 1         | 114311.898438 |
-
-```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([df,Y_hat]).set_index('ds')
-plot_df[['y', "SeasonalES"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel("Ads watched (hourly data)", fontsize=20)
-ax.set_xlabel('Hourly', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-```
-
-![](/statsforecast/docs/models/SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-28-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -798,48 +726,15 @@ forecast_df = sf.predict(h=horizon)
 forecast_df
 ```
 
-|           | ds                  | SeasonalES    |
-|-----------|---------------------|---------------|
-| unique_id |                     |               |
-| 1         | 2017-09-22 00:00:00 | 72221.796875  |
-| 1         | 2017-09-22 01:00:00 | 73250.406250  |
-| 1         | 2017-09-22 02:00:00 | 81213.679688  |
-| ...       | ...                 | ...           |
-| 1         | 2017-09-23 03:00:00 | 95889.062500  |
-| 1         | 2017-09-23 04:00:00 | 122141.460938 |
-| 1         | 2017-09-23 05:00:00 | 114311.898438 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-df_plot= pd.concat([df, forecast_df]).set_index('ds')
-df_plot
-```
-
-|                     | y       | unique_id | SeasonalES    |
-|---------------------|---------|-----------|---------------|
-| ds                  |         |           |               |
-| 2017-09-13 00:00:00 | 80115.0 | 1         | NaN           |
-| 2017-09-13 01:00:00 | 79885.0 | 1         | NaN           |
-| 2017-09-13 02:00:00 | 89325.0 | 1         | NaN           |
-| ...                 | ...     | ...       | ...           |
-| 2017-09-23 03:00:00 | NaN     | NaN       | 95889.062500  |
-| 2017-09-23 04:00:00 | NaN     | NaN       | 122141.460938 |
-| 2017-09-23 05:00:00 | NaN     | NaN       | 114311.898438 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series.
-
-```python
-sns.lineplot(df_plot,x="ds", y="y", label="Actual")
-sns.lineplot(df_plot, x="ds", y="SeasonalES", label="SeasonalES")
-plt.title("Ads watched (hourly data)")
-plt.show()
-```
-
-![](/statsforecast/docs/models/SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-31-output-1.png)
+|     | unique_id | ds                  | SeasonalES    |
+|-----|-----------|---------------------|---------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 161567.593750 |
+| 1   | 1         | 2017-09-20 19:00:00 | 163186.562500 |
+| 2   | 1         | 2017-09-20 20:00:00 | 134410.937500 |
+| ... | ...       | ...                 | ...           |
+| 27  | 1         | 2017-09-21 21:00:00 | 106145.601562 |
+| 28  | 1         | 2017-09-21 22:00:00 | 93383.164062  |
+| 29  | 1         | 2017-09-21 23:00:00 | 79489.718750  |
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -897,8 +792,7 @@ crossvalidation_df = sf.cross_validation(df=df,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier.
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -908,46 +802,45 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds                  | cutoff              | y        | SeasonalES    |
-|-----------|---------------------|---------------------|----------|---------------|
-| unique_id |                     |                     |          |               |
-| 1         | 2017-09-19 18:00:00 | 2017-09-19 17:00:00 | 161385.0 | 162297.953125 |
-| 1         | 2017-09-19 19:00:00 | 2017-09-19 17:00:00 | 165010.0 | 155892.812500 |
-| 1         | 2017-09-19 20:00:00 | 2017-09-19 17:00:00 | 134090.0 | 135694.703125 |
-| ...       | ...                 | ...                 | ...      | ...           |
-| 1         | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 106145.601562 |
-| 1         | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0  | 93383.164062  |
-| 1         | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0  | 79489.718750  |
+|     | unique_id | ds                  | cutoff              | y        | SeasonalES    |
+|-----|-----------|---------------------|---------------------|----------|---------------|
+| 0   | 1         | 2017-09-19 18:00:00 | 2017-09-19 17:00:00 | 161385.0 | 162297.953125 |
+| 1   | 1         | 2017-09-19 19:00:00 | 2017-09-19 17:00:00 | 165010.0 | 155892.812500 |
+| 2   | 1         | 2017-09-19 20:00:00 | 2017-09-19 17:00:00 | 134090.0 | 135694.703125 |
+| ... | ...       | ...                 | ...                 | ...      | ...           |
+| 87  | 1         | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 106145.601562 |
+| 88  | 1         | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0  | 93383.164062  |
+| 89  | 1         | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0  | 79489.718750  |
 
-## Evaluate Model <a class="anchor" id="evaluate"></a>
+## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-!pip install datasetsforecast
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-from datasetsforecast.losses import rmse
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, `Seasonal Exponential Smoothing Model`.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["SeasonalES"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  7127.6504
-```
+|     | unique_id | metric | SeasonalES  |
+|-----|-----------|--------|-------------|
+| 0   | 1         | mae    | 5728.207812 |
+| 1   | 1         | mape   | 0.049386    |
+| 2   | 1         | mase   | 0.707731    |
+| 3   | 1         | rmse   | 7290.840738 |
+| 4   | 1         | smape  | 0.024009    |
 
 ## Acknowledgements
 

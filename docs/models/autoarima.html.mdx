@@ -284,7 +284,7 @@ EDA.
 ```python
 from statsforecast import StatsForecast
 
-StatsForecast.plot(df, engine="matplotlib")
+StatsForecast.plot(df)
 ```
 
 ![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-8-output-1.png)
@@ -400,82 +400,6 @@ plt.show()
 
 # Implementation of AutoArima with StatsForecast <a class="anchor" id="implementation"></a>
 
-To also know more about the parameters of the functions of the
-`AutoARIMA Model`, they are listed below. For more information, visit
-the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#automatic-forecasting)
-
-``` text
-    d : Optional[int]
-        Order of first-differencing.
-    D : Optional[int]
-        Order of seasonal-differencing.
-    max_p : int
-        Max autorregresives p.
-    max_q : int
-        Max moving averages q.
-    max_P : int
-        Max seasonal autorregresives P.
-    max_Q : int
-        Max seasonal moving averages Q.
-    max_order : int
-        Max p+q+P+Q value if not stepwise selection.
-    max_d : int
-        Max non-seasonal differences.
-    max_D : int
-        Max seasonal differences.
-    start_p : int
-        Starting value of p in stepwise procedure.
-    start_q : int
-        Starting value of q in stepwise procedure.
-    start_P : int
-        Starting value of P in stepwise procedure.
-    start_Q : int
-        Starting value of Q in stepwise procedure.
-    stationary : bool
-        If True, restricts search to stationary models.
-    seasonal : bool
-        If False, restricts search to non-seasonal models.
-    ic : str
-        Information criterion to be used in model selection.
-    stepwise : bool
-        If True, will do stepwise selection (faster).
-    nmodels : int
-        Number of models considered in stepwise search.
-    trace : bool
-        If True, the searched ARIMA models is reported.
-    approximation : Optional[bool]
-        If True, conditional sums-of-squares estimation, final MLE.
-    method : Optional[str]
-        Fitting method between maximum likelihood or sums-of-squares.
-    truncate : Optional[int]
-        Observations truncated series used in model selection.
-    test : str
-        Unit root test to use. See `ndiffs` for details.
-    test_kwargs : Optional[str]
-        Unit root test additional arguments.
-    seasonal_test : str
-        Selection method for seasonal differences.
-    seasonal_test_kwargs : Optional[dict]
-        Seasonal unit root test arguments.
-    allowdrift : bool (default True)
-        If True, drift models terms considered.
-    allowmean : bool (default True)
-        If True, non-zero mean models considered.
-    blambda : Optional[float]
-        Box-Cox transformation parameter.
-    biasadj : bool
-        Use adjusted back-transformed mean Box-Cox.
-    season_length : int
-        Number of observations per unit of time. Ex: 24 Hourly data.
-    alias : str
-        Custom name of the model.
-    prediction_intervals : Optional[ConformalIntervals]
-        Information to compute conformal prediction intervals.
-        By default, the model will compute the native prediction
-        intervals.
-```
-
 ### Load libraries
 
 ```python
@@ -516,16 +440,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=Y_train_df,
-                   models=models,
-                   freq='MS', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='MS')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=Y_train_df)
 ```
 
 ``` text
@@ -541,15 +462,15 @@ arima_string(sf.fitted_[0,0].model_)
 ```
 
 ``` text
-'ARIMA(1,0,0)(0,1,2)[12]                   '
+'ARIMA(4,0,3)(0,1,1)[12]                   '
 ```
 
 The automation process gave us that the best model found is a model of
-the form `ARIMA(1,0,0)(0,1,2)[12]`, this means that our model contains
-$p=1$ , that is, it has a non-seasonal autogressive element, on the
+the form `ARIMA(4,0,3)(0,1,1)[12]`, this means that our model contains
+$p=4$ , that is, it has a non-seasonal autogressive element, on the
 other hand, our model contains a seasonal part, which has an order of
-$D=1$, that is, it has a seasonal differential, and $q=2$ that contains
-2 moving average element.
+$D=1$, that is, it has a seasonal differential, and $q=3$ that contains
+3 moving average element.
 
 To know the values of the terms of our model, we can use the following
 statement to know all the result of the model made.
@@ -562,7 +483,7 @@ print(result['arma'])
 
 ``` text
 dict_keys(['coef', 'sigma2', 'var_coef', 'mask', 'loglik', 'aic', 'arma', 'residuals', 'code', 'n_cond', 'nobs', 'model', 'bic', 'aicc', 'ic', 'xreg', 'x', 'lambda'])
-(1, 0, 0, 2, 12, 0, 1)
+(4, 3, 0, 1, 12, 0, 1)
 ```
 
 Let us now visualize the residuals of our models.
@@ -581,11 +502,11 @@ residual
 |-----|----------------|
 | 0   | 0.085694       |
 | 1   | 0.071820       |
-| 2   | 0.066023       |
+| 2   | 0.066022       |
 | ... | ...            |
-| 533 | 1.258873       |
-| 534 | 1.585062       |
-| 535 | -6.199166      |
+| 533 | 1.615486       |
+| 534 | -0.394285      |
+| 535 | -6.733548      |
 
 ```python
 fig, axs = plt.subplots(nrows=2, ncols=2)
@@ -650,70 +571,50 @@ and
 [`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
 
 ```python
-Y_hat_df = sf.forecast(horizon, fitted=True)
-
+Y_hat_df = sf.forecast(df=Y_train_df, h=horizon, fitted=True)
 Y_hat_df.head()
 ```
 
-|           | ds         | AutoARIMA  |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 2016-09-01 | 109.955437 |
-| 1         | 2016-10-01 | 121.920509 |
-| 1         | 2016-11-01 | 122.458389 |
-| 1         | 2016-12-01 | 120.562027 |
-| 1         | 2017-01-01 | 106.864670 |
+|     | unique_id | ds         | AutoARIMA  |
+|-----|-----------|------------|------------|
+| 0   | 1         | 2016-09-01 | 111.235874 |
+| 1   | 1         | 2016-10-01 | 124.948376 |
+| 2   | 1         | 2016-11-01 | 125.401639 |
+| 3   | 1         | 2016-12-01 | 123.854826 |
+| 4   | 1         | 2017-01-01 | 110.439451 |
 
 ```python
 values=sf.forecast_fitted_values()
 values
 ```
 
-|           | ds         | y          | AutoARIMA  |
-|-----------|------------|------------|------------|
-| unique_id |            |            |            |
-| 1         | 1972-01-01 | 85.694504  | 85.608803  |
-| 1         | 1972-02-01 | 71.820000  | 71.748177  |
-| 1         | 1972-03-01 | 66.022903  | 65.956879  |
-| ...       | ...        | ...        | ...        |
-| 1         | 2016-06-01 | 102.404404 | 101.145523 |
-| 1         | 2016-07-01 | 102.951202 | 101.366135 |
-| 1         | 2016-08-01 | 104.697701 | 110.896866 |
+|     | unique_id | ds         | y        | AutoARIMA  |
+|-----|-----------|------------|----------|------------|
+| 0   | 1         | 1972-01-01 | 85.6945  | 85.608806  |
+| 1   | 1         | 1972-02-01 | 71.8200  | 71.748180  |
+| 2   | 1         | 1972-03-01 | 66.0229  | 65.956878  |
+| ... | ...       | ...        | ...      | ...        |
+| 533 | 1         | 2016-06-01 | 102.4044 | 100.788914 |
+| 534 | 1         | 2016-07-01 | 102.9512 | 103.345485 |
+| 535 | 1         | 2016-08-01 | 104.6977 | 111.431248 |
 
 Adding 95% confidence interval with the forecast method
 
 ```python
-sf.forecast(h=12, level=[95])
+sf.forecast(df=Y_train_df, h=12, level=[95])
 ```
 
-|           | ds         | AutoARIMA  | AutoARIMA-lo-95 | AutoARIMA-hi-95 |
-|-----------|------------|------------|-----------------|-----------------|
-| unique_id |            |            |                 |                 |
-| 1         | 2016-09-01 | 109.955437 | 102.116188      | 117.794685      |
-| 1         | 2016-10-01 | 121.920509 | 112.380608      | 131.460403      |
-| 1         | 2016-11-01 | 122.458389 | 112.200500      | 132.716278      |
-| ...       | ...        | ...        | ...             | ...             |
-| 1         | 2017-06-01 | 96.751160  | 85.873802       | 107.628525      |
-| 1         | 2017-07-01 | 97.451607  | 86.572372       | 108.330833      |
-| 1         | 2017-08-01 | 103.420616 | 92.540489       | 114.300743      |
+|     | unique_id | ds         | AutoARIMA  | AutoARIMA-lo-95 | AutoARIMA-hi-95 |
+|-----|-----------|------------|------------|-----------------|-----------------|
+| 0   | 1         | 2016-09-01 | 111.235874 | 104.140621      | 118.331128      |
+| 1   | 1         | 2016-10-01 | 124.948376 | 116.244661      | 133.652090      |
+| 2   | 1         | 2016-11-01 | 125.401639 | 115.882093      | 134.921185      |
+| ... | ...       | ...        | ...        | ...             | ...             |
+| 9   | 1         | 2017-06-01 | 98.304446  | 85.884572       | 110.724320      |
+| 10  | 1         | 2017-07-01 | 99.630306  | 87.032356       | 112.228256      |
+| 11  | 1         | 2017-08-01 | 105.426708 | 92.639159       | 118.214258      |
 
 ```python
-Y_hat_df=Y_hat_df.reset_index()
-Y_hat_df
-```
-
-|     | unique_id | ds         | AutoARIMA  |
-|-----|-----------|------------|------------|
-| 0   | 1         | 2016-09-01 | 109.955437 |
-| 1   | 1         | 2016-10-01 | 121.920509 |
-| 2   | 1         | 2016-11-01 | 122.458389 |
-| ... | ...       | ...        | ...        |
-| 9   | 1         | 2017-06-01 | 96.751160  |
-| 10  | 1         | 2017-07-01 | 97.451607  |
-| 11  | 1         | 2017-08-01 | 103.420616 |
-
-```python
-Y_test_df['unique_id'] = Y_test_df['unique_id'].astype(int)
 Y_hat_df = Y_test_df.merge(Y_hat_df, how='left', on=['unique_id', 'ds'])
 
 fig, ax = plt.subplots(1, 1, figsize = (18, 7))
@@ -726,7 +627,7 @@ ax.legend(prop={'size': 15})
 ax.grid()
 ```
 
-![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-26-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-25-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -754,33 +655,30 @@ This step should take less than 1 second.
 sf.predict(h=12)
 ```
 
-|           | ds         | AutoARIMA  |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 2016-09-01 | 109.955437 |
-| 1         | 2016-10-01 | 121.920509 |
-| 1         | 2016-11-01 | 122.458389 |
-| ...       | ...        | ...        |
-| 1         | 2017-06-01 | 96.751160  |
-| 1         | 2017-07-01 | 97.451607  |
-| 1         | 2017-08-01 | 103.420616 |
+|     | unique_id | ds         | AutoARIMA  |
+|-----|-----------|------------|------------|
+| 0   | 1         | 2016-09-01 | 111.235874 |
+| 1   | 1         | 2016-10-01 | 124.948376 |
+| 2   | 1         | 2016-11-01 | 125.401639 |
+| ... | ...       | ...        | ...        |
+| 9   | 1         | 2017-06-01 | 98.304446  |
+| 10  | 1         | 2017-07-01 | 99.630306  |
+| 11  | 1         | 2017-08-01 | 105.426708 |
 
 ```python
 forecast_df = sf.predict(h=12, level = [80, 95]) 
-
 forecast_df
 ```
 
-|  | ds | AutoARIMA | AutoARIMA-lo-95 | AutoARIMA-lo-80 | AutoARIMA-hi-80 | AutoARIMA-hi-95 |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| 1 | 2016-09-01 | 109.955437 | 102.116188 | 104.829628 | 115.081245 | 117.794685 |
-| 1 | 2016-10-01 | 121.920509 | 112.380608 | 115.682701 | 128.158310 | 131.460403 |
-| 1 | 2016-11-01 | 122.458389 | 112.200500 | 115.751114 | 129.165665 | 132.716278 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1 | 2017-06-01 | 96.751160 | 85.873802 | 89.638840 | 103.863487 | 107.628525 |
-| 1 | 2017-07-01 | 97.451607 | 86.572372 | 90.338058 | 104.565147 | 108.330833 |
-| 1 | 2017-08-01 | 103.420616 | 92.540489 | 96.306480 | 110.534752 | 114.300743 |
+|  | unique_id | ds | AutoARIMA | AutoARIMA-lo-95 | AutoARIMA-lo-80 | AutoARIMA-hi-80 | AutoARIMA-hi-95 |
+|----|----|----|----|----|----|----|----|
+| 0 | 1 | 2016-09-01 | 111.235874 | 104.140621 | 106.596537 | 115.875211 | 118.331128 |
+| 1 | 1 | 2016-10-01 | 124.948376 | 116.244661 | 119.257323 | 130.639429 | 133.652090 |
+| 2 | 1 | 2016-11-01 | 125.401639 | 115.882093 | 119.177142 | 131.626136 | 134.921185 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 9 | 1 | 2017-06-01 | 98.304446 | 85.884572 | 90.183527 | 106.425365 | 110.724320 |
+| 10 | 1 | 2017-07-01 | 99.630306 | 87.032356 | 91.392949 | 107.867663 | 112.228256 |
+| 11 | 1 | 2017-08-01 | 105.426708 | 92.639159 | 97.065379 | 113.788038 | 118.214258 |
 
 We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
@@ -798,51 +696,19 @@ df_plot
 | 2000-06-01 | 114.2071 | 1 | NaN | NaN | NaN | NaN | NaN |
 | 2000-07-01 | 111.8737 | 1 | NaN | NaN | NaN | NaN | NaN |
 | ... | ... | ... | ... | ... | ... | ... | ... |
-| 2017-06-01 | NaN | NaN | 96.751160 | 85.873802 | 89.638840 | 103.863487 | 107.628525 |
-| 2017-07-01 | NaN | NaN | 97.451607 | 86.572372 | 90.338058 | 104.565147 | 108.330833 |
-| 2017-08-01 | NaN | NaN | 103.420616 | 92.540489 | 96.306480 | 110.534752 | 114.300743 |
+| 2017-06-01 | NaN | 1 | 98.304446 | 85.884572 | 90.183527 | 106.425365 | 110.724320 |
+| 2017-07-01 | NaN | 1 | 99.630306 | 87.032356 | 91.392949 | 107.867663 | 112.228256 |
+| 2017-08-01 | NaN | 1 | 105.426708 | 92.639159 | 97.065379 | 113.788038 | 118.214258 |
 
 Now let’s visualize the result of our forecast and the historical data
 of our time series, also let’s draw the confidence interval that we have
 obtained when making the prediction with 95% confidence.
 
 ```python
-fig, ax = plt.subplots(1, 1, figsize = (20, 8))
-
-plt.plot(df_plot['y'], 'k--', df_plot['AutoARIMA'], 'b-', linewidth=2 ,label="y")
-plt.plot(df_plot['AutoARIMA'], 'b-',  color="red", linewidth=2, label="AutoArima")
-
-# Specify graph features:
-ax.fill_between(df_plot.index, 
-                df_plot['AutoARIMA-lo-80'], 
-                df_plot['AutoARIMA-hi-80'],
-                alpha=.20,
-                color='lime',
-                label='AutoARIMA_level_80')
-ax.fill_between(df_plot.index, 
-                df_plot['AutoARIMA-lo-95'], 
-                df_plot['AutoARIMA-hi-95'],
-                alpha=.2,
-                color='white',
-                label='AutoARIMA_level_95')
-ax.set_title('', fontsize=20)
-ax.set_ylabel('Production', fontsize=15)
-ax.set_xlabel('Month', fontsize=15)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-plt.show()
+sf.plot(df, forecast_df, level=[95], max_insample_length=12 * 5)
 ```
 
-![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-30-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df, level=[95])
-```
-
-![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-31-output-1.png)
+![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-29-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -900,8 +766,7 @@ crossvalidation_df = sf.cross_validation(df=Y_train_df,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -911,80 +776,43 @@ following columns:
 crossvalidation_df.head()
 ```
 
-|           | ds         | cutoff     | y          | AutoARIMA  |
-|-----------|------------|------------|------------|------------|
-| unique_id |            |            |            |            |
-| 1         | 2011-09-01 | 2011-08-01 | 93.906197  | 104.758850 |
-| 1         | 2011-10-01 | 2011-08-01 | 116.763397 | 118.705879 |
-| 1         | 2011-11-01 | 2011-08-01 | 116.825798 | 116.834129 |
-| 1         | 2011-12-01 | 2011-08-01 | 114.956299 | 117.070084 |
-| 1         | 2012-01-01 | 2011-08-01 | 99.966202  | 103.552246 |
+|     | unique_id | ds         | cutoff     | y        | AutoARIMA  |
+|-----|-----------|------------|------------|----------|------------|
+| 0   | 1         | 2011-09-01 | 2011-08-01 | 93.9062  | 105.235606 |
+| 1   | 1         | 2011-10-01 | 2011-08-01 | 116.7634 | 118.739813 |
+| 2   | 1         | 2011-11-01 | 2011-08-01 | 116.8258 | 114.572924 |
+| 3   | 1         | 2011-12-01 | 2011-08-01 | 114.9563 | 114.991219 |
+| 4   | 1         | 2012-01-01 | 2011-08-01 | 99.9662  | 100.133142 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
-
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, AutoArima.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["AutoARIMA"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  5.5258384
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
 
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import mae, mape, mase, rmse, smape
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, model):
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=12)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    Y_test_df.merge(Y_hat_df),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=Y_train_df,
+)
 ```
 
-
-```python
-evaluate_performace(Y_train_df, Y_hat_df, model='AutoARIMA')
-```
-
-|           | mae     | mape     | mase     | rmse     | smape    |
-|-----------|---------|----------|----------|----------|----------|
-| AutoARIMA | 5.26042 | 4.794312 | 1.015379 | 6.021264 | 4.915602 |
+|     | unique_id | metric | AutoARIMA |
+|-----|-----------|--------|-----------|
+| 0   | 1         | mae    | 5.012894  |
+| 1   | 1         | mape   | 0.045046  |
+| 2   | 1         | mase   | 0.967601  |
+| 3   | 1         | rmse   | 5.680362  |
+| 4   | 1         | smape  | 0.022673  |
 
 ## Acknowledgements
 

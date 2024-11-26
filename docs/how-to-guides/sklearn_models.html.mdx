@@ -14,7 +14,6 @@ global model (as in mlforecast).
 ## Data setup
 
 ```python
-import os
 from functools import partial
 
 from datasetsforecast.m4 import M4, M4Info
@@ -25,13 +24,6 @@ from utilsforecast.plotting import plot_series
 from statsforecast import StatsForecast
 from statsforecast.models import SklearnModel
 from statsforecast.utils import ConformalIntervals
-```
-
-
-```python
-# this makes it so that the outputs of the predict methods have the id as a column 
-# instead of as the index
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 
@@ -100,5 +92,5 @@ preds = sf.forecast(
 plot_series(train, preds, level=[95], palette='tab20b', max_ids=4)
 ```
 
-![](/statsforecast/docs/how-to-guides/sklearn_models_files/figure-markdown_strict/cell-6-output-1.png)
+![](/statsforecast/docs/how-to-guides/sklearn_models_files/figure-markdown_strict/cell-5-output-1.png)
 

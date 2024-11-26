@@ -76,33 +76,32 @@ Yahoo! Finance using [yfinance](https://github.com/ranaroussi/yfinance).
 To install it, use `pip install yfinance`.
 
 ```python
-pip install yfinance
+# pip install yfinance
 ```
 
 We’ll also need `pandas` to deal with the dataframes.
 
 ```python
 import yfinance as yf
-import pandas as pd 
+import pandas as pd
+```
 
+
+```python
 tickers = ['SPY', 'MSFT', 'AAPL', 'GOOG', 'AMZN', 'TSLA', 'NVDA', 'META', 'NKE', 'NFLX'] 
-df = yf.download(tickers, start = '2018-01-01', end = '2022-12-31', interval='1mo') # use monthly prices
+df = yf.download(tickers, start = '2018-01-01', end = '2022-12-31', interval='1mo', progress=False) # use monthly prices
 df.head()
 ```
 
-``` text
-[*********************100%***********************]  10 of 10 completed
-```
-
-|  | Adj Close |  |  |  |  |  |  |  |  |  | ... | Volume |  |  |  |  |  |  |  |  |  |
+| Price | Adj Close |  |  |  |  |  |  |  |  |  | ... | Volume |  |  |  |  |  |  |  |  |  |
 |----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-|  | AAPL | AMZN | GOOG | META | MSFT | NFLX | NKE | NVDA | SPY | TSLA | ... | AAPL | AMZN | GOOG | META | MSFT | NFLX | NKE | NVDA | SPY | TSLA |
+| Ticker | AAPL | AMZN | GOOG | META | MSFT | NFLX | NKE | NVDA | SPY | TSLA | ... | AAPL | AMZN | GOOG | META | MSFT | NFLX | NKE | NVDA | SPY | TSLA |
 | Date |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| 2018-01-01 | 39.741604 | 72.544502 | 58.497002 | 186.889999 | 89.248772 | 270.299988 | 64.929787 | 60.830006 | 258.821686 | 23.620667 | ... | 2638717600 | 1927424000 | 574768000 | 495655700 | 574258400 | 238377600 | 157812200 | 1145621600 | 1985506700 | 1864072500 |
-| 2018-02-01 | 42.279007 | 75.622498 | 55.236500 | 178.320007 | 88.083969 | 291.380005 | 63.797192 | 59.889591 | 249.410812 | 22.870667 | ... | 3711577200 | 2755680000 | 847640000 | 516251600 | 725663300 | 184585800 | 160317000 | 1491552800 | 2923722000 | 1637850000 |
-| 2018-03-01 | 39.987053 | 72.366997 | 51.589500 | 159.789993 | 86.138298 | 295.350006 | 63.235649 | 57.348976 | 241.606750 | 17.742001 | ... | 2854910800 | 2608002000 | 907066000 | 996201700 | 750754800 | 263449400 | 174066700 | 1411844000 | 2323561800 | 2359027500 |
-| 2018-04-01 | 39.386456 | 78.306503 | 50.866501 | 172.000000 | 88.261810 | 312.459991 | 65.288467 | 55.692314 | 243.828018 | 19.593332 | ... | 2664617200 | 2598392000 | 834318000 | 750072700 | 668130700 | 262006000 | 158981900 | 1114400800 | 1998466500 | 2854662000 |
-| 2018-05-01 | 44.536777 | 81.481003 | 54.249500 | 191.779999 | 93.282692 | 351.600006 | 68.543846 | 62.450180 | 249.755264 | 18.982000 | ... | 2483905200 | 1432310000 | 636988000 | 401144100 | 509417900 | 142050800 | 129566300 | 1197824000 | 1606397200 | 2333671500 |
+| 2018-01-01 | 39.388084 | 72.544502 | 58.353695 | 186.328979 | 88.027702 | 270.299988 | 63.341862 | 6.078998 | 252.565216 | 23.620667 | ... | 2638717600 | 1927424000 | 574768000 | 495655700 | 574258400 | 238377600 | 157812200 | 11456216000 | 1985506700 | 1864072500 |
+| 2018-02-01 | 41.902908 | 75.622498 | 55.101181 | 177.784729 | 86.878807 | 291.380005 | 62.236938 | 5.985018 | 243.381882 | 22.870667 | ... | 3711577200 | 2755680000 | 847640000 | 516251600 | 725663300 | 184585800 | 160317000 | 14915528000 | 2923722000 | 1637850000 |
+| 2018-03-01 | 39.631344 | 72.366997 | 51.463116 | 159.310333 | 84.959763 | 295.350006 | 61.689133 | 5.731123 | 235.766373 | 17.742001 | ... | 2854910800 | 2608002000 | 907066000 | 996201700 | 750754800 | 263449400 | 174066700 | 14118440000 | 2323561800 | 2359027500 |
+| 2018-04-01 | 39.036106 | 78.306503 | 50.741886 | 171.483688 | 87.054207 | 312.459991 | 63.691761 | 5.565567 | 237.934006 | 19.593332 | ... | 2664617200 | 2598392000 | 834318000 | 750072700 | 668130700 | 262006000 | 158981900 | 11144008000 | 1998466500 | 2854662000 |
+| 2018-05-01 | 44.140598 | 81.481003 | 54.116600 | 191.204315 | 92.006393 | 351.600006 | 66.867508 | 6.240908 | 243.717957 | 18.982000 | ... | 2483905200 | 1432310000 | 636988000 | 401144100 | 509417900 | 142050800 | 129566300 | 11978240000 | 1606397200 | 2333671500 |
 
 The data downloaded includes different prices. We’ll use the [adjusted
 closing
@@ -122,13 +121,13 @@ df = df.reset_index()
 df.head()
 ```
 
-|  | Date | SPY | MSFT | AAPL | GOOG | AMZN | TSLA | NVDA | META | NKE | NFLX |
+| Ticker | Date | SPY | MSFT | AAPL | GOOG | AMZN | TSLA | NVDA | META | NKE | NFLX |
 |----|----|----|----|----|----|----|----|----|----|----|----|
-| 0 | 2018-01-01 | 258.821686 | 89.248772 | 39.741604 | 58.497002 | 72.544502 | 23.620667 | 60.830006 | 186.889999 | 64.929787 | 270.299988 |
-| 1 | 2018-02-01 | 249.410812 | 88.083969 | 42.279007 | 55.236500 | 75.622498 | 22.870667 | 59.889591 | 178.320007 | 63.797192 | 291.380005 |
-| 2 | 2018-03-01 | 241.606750 | 86.138298 | 39.987053 | 51.589500 | 72.366997 | 17.742001 | 57.348976 | 159.789993 | 63.235649 | 295.350006 |
-| 3 | 2018-04-01 | 243.828018 | 88.261810 | 39.386456 | 50.866501 | 78.306503 | 19.593332 | 55.692314 | 172.000000 | 65.288467 | 312.459991 |
-| 4 | 2018-05-01 | 249.755264 | 93.282692 | 44.536777 | 54.249500 | 81.481003 | 18.982000 | 62.450180 | 191.779999 | 68.543846 | 351.600006 |
+| 0 | 2018-01-01 | 252.565216 | 88.027702 | 39.388084 | 58.353695 | 72.544502 | 23.620667 | 6.078998 | 186.328979 | 63.341862 | 270.299988 |
+| 1 | 2018-02-01 | 243.381882 | 86.878807 | 41.902908 | 55.101181 | 75.622498 | 22.870667 | 5.985018 | 177.784729 | 62.236938 | 291.380005 |
+| 2 | 2018-03-01 | 235.766373 | 84.959763 | 39.631344 | 51.463116 | 72.366997 | 17.742001 | 5.731123 | 159.310333 | 61.689133 | 295.350006 |
+| 3 | 2018-04-01 | 237.934006 | 87.054207 | 39.036106 | 50.741886 | 78.306503 | 19.593332 | 5.565567 | 171.483688 | 63.691761 | 312.459991 |
+| 4 | 2018-05-01 | 243.717957 | 92.006393 | 44.140598 | 54.116600 | 81.481003 | 18.982000 | 6.240908 | 191.204315 | 66.867508 | 351.600006 |
 
 The input to StatsForecast is a dataframe in [long
 format](https://www.theanalysisfactor.com/wide-and-long-data/) with
@@ -145,18 +144,18 @@ dataframe called `price`.
 
 ```python
 prices = df.melt(id_vars = 'Date')
-prices = prices.rename(columns={'Date': 'ds', 'variable': 'unique_id', 'value': 'y'})
+prices = prices.rename(columns={'Date': 'ds', 'Ticker': 'unique_id', 'value': 'y'})
 prices = prices[['unique_id', 'ds', 'y']]
 prices
 ```
 
 |     | unique_id | ds         | y          |
 |-----|-----------|------------|------------|
-| 0   | SPY       | 2018-01-01 | 258.821686 |
-| 1   | SPY       | 2018-02-01 | 249.410812 |
-| 2   | SPY       | 2018-03-01 | 241.606750 |
-| 3   | SPY       | 2018-04-01 | 243.828018 |
-| 4   | SPY       | 2018-05-01 | 249.755264 |
+| 0   | SPY       | 2018-01-01 | 252.565216 |
+| 1   | SPY       | 2018-02-01 | 243.381882 |
+| 2   | SPY       | 2018-03-01 | 235.766373 |
+| 3   | SPY       | 2018-04-01 | 237.934006 |
+| 4   | SPY       | 2018-05-01 | 243.717957 |
 | ... | ...       | ...        | ...        |
 | 595 | NFLX      | 2022-08-01 | 223.559998 |
 | 596 | NFLX      | 2022-09-01 | 235.440002 |
@@ -171,16 +170,12 @@ class.
 from statsforecast import StatsForecast
 ```
 
-``` text
-/home/ubuntu/statsforecast/statsforecast/core.py:21: TqdmExperimentalWarning: Using `tqdm.autonotebook.tqdm` in notebook mode. Use `tqdm.tqdm` instead to force console mode (e.g. in jupyter console)
-  from tqdm.autonotebook import tqdm
-```
 
 ```python
 StatsForecast.plot(prices)
 ```
 
-![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-8-output-2.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-9-output-1.png)
 
 With the prices, we can compute the logarithmic returns of the S&P 500
 and the publicly traded companies. This is the variable we’re interested
@@ -227,7 +222,7 @@ returns
 StatsForecast.plot(returns)
 ```
 
-![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-10-output-1.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-11-output-1.png)
 
 From this plot, we can see that the returns seem suited for the GARCH
 framework, since large shocks *tend* to be followed by other large
@@ -278,7 +273,6 @@ parameters:
 
 ```python
 sf = StatsForecast(
-    df = returns, 
     models = models, 
     freq = 'MS',
     n_jobs = -1
@@ -308,7 +302,7 @@ For this particular example, we’ll use 4 windows of 3 months, or all the
 quarters in a year.
 
 ```python
-crossvalidation_df = sf.cross_validation(
+cv_df = sf.cross_validation(
     df = returns,
     h = 3,
     step_size = 3,
@@ -316,34 +310,32 @@ crossvalidation_df = sf.cross_validation(
   )
 ```
 
-The `crossvalidation_df` object ia a dataframe with the following
-columns:
+The `cv_df` object ia a dataframe with the following columns:
 
--   `unique_id`: index.
+-   `unique_id`: series identifier.
 -   `ds`: datestamp or temporal index
 -   `cutoff`: the last datestamp or temporal index for the `n_windows`.
 -   `y`: true value
 -   `"model"`: columns with the model’s name and fitted value.
 
 ```python
-crossvalidation_df = crossvalidation_df.reset_index()
-crossvalidation_df.rename(columns = {'y' : 'actual'}, inplace = True)
-crossvalidation_df.head()
+cv_df.rename(columns = {'y' : 'actual'}, inplace = True)
+cv_df.head()
 ```
 
 |  | unique_id | ds | cutoff | actual | ARCH(1) | ARCH(2) | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | Naive |
 |----|----|----|----|----|----|----|----|----|----|----|----|
-| 0 | AAPL | 2022-01-01 | 2021-12-01 | -0.015837 | 0.142416 | 0.144013 | 0.142951 | 0.226098 | 0.141690 | 0.144018 | 0.073061 |
-| 1 | AAPL | 2022-02-01 | 2021-12-01 | -0.056855 | -0.056896 | -0.057158 | -0.056387 | -0.087001 | -0.058787 | -0.057161 | 0.073061 |
-| 2 | AAPL | 2022-03-01 | 2021-12-01 | 0.057156 | -0.045899 | -0.046478 | -0.047512 | -0.073625 | -0.045714 | -0.046479 | 0.073061 |
-| 3 | AAPL | 2022-04-01 | 2022-03-01 | -0.102178 | 0.138661 | 0.140211 | 0.136213 | 0.136124 | 0.136127 | 0.136546 | 0.057156 |
-| 4 | AAPL | 2022-05-01 | 2022-03-01 | -0.057505 | -0.056013 | -0.056268 | -0.054599 | -0.057080 | -0.057085 | -0.053791 | 0.057156 |
+| 0 | AAPL | 2022-01-01 | 2021-12-01 | -0.015837 | 0.142421 | 0.144016 | 0.142954 | 0.141682 | 0.141682 | 0.144015 | 0.073061 |
+| 1 | AAPL | 2022-02-01 | 2021-12-01 | -0.056856 | -0.056893 | -0.057158 | -0.056388 | -0.058786 | -0.058785 | -0.057158 | 0.073061 |
+| 2 | AAPL | 2022-03-01 | 2021-12-01 | 0.057156 | -0.045901 | -0.046479 | -0.047513 | -0.045711 | -0.045711 | -0.046478 | 0.073061 |
+| 3 | AAPL | 2022-04-01 | 2022-03-01 | -0.102178 | 0.138650 | 0.140222 | 0.228138 | 0.136118 | 0.136132 | 0.140211 | 0.057156 |
+| 4 | AAPL | 2022-05-01 | 2022-03-01 | -0.057505 | -0.056007 | -0.056268 | -0.087833 | -0.057078 | -0.057085 | -0.056265 | 0.057156 |
 
 ```python
-StatsForecast.plot(returns, crossvalidation_df.drop(['cutoff', 'actual'], axis=1))
+StatsForecast.plot(returns, cv_df.drop(['cutoff', 'actual'], axis=1))
 ```
 
-![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-15-output-1.png)
+![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-16-output-1.png)
 
 A tutorial on cross-validation can be found
 [here](https://nixtla.github.io/statsforecast/examples/crossvalidation.html).
@@ -352,17 +344,10 @@ A tutorial on cross-validation can be found
 
 To compute the accuracy of the forecasts, we’ll use the mean average
 error (mae), which is the sum of the absolute errors divided by the
-number of forecasts. There’s an implementation of MAE on
-[datasetsforecast](https://github.com/Nixtla/datasetsforecast/tree/main/),
-so we’ll install it and then import the mae function.
+number of forecasts.
 
 ```python
-pip install datasetsforecast -U
-```
-
-
-```python
-from datasetsforecast.losses import mae
+from utilsforecast.losses import mae
 ```
 
 The MAE needs to be computed for every window and then it needs to be
@@ -370,39 +355,51 @@ averaged across all of them. To do this, we’ll create the following
 function.
 
 ```python
-def compute_cv_mae(crossvalidation_df):
-    """Compute MAE for all models generated"""
-    res = {}
-    for mod in models: 
-        res[mod] = mae(crossvalidation_df['actual'], crossvalidation_df[str(mod)])
-    return pd.Series(res)
+models = cv_df.columns.drop(['unique_id', 'ds', 'cutoff', 'actual'])
 ```
 
 
 ```python
-mae_cv = crossvalidation_df.groupby(['unique_id', 'cutoff']).apply(compute_cv_mae)
-
-mae = mae_cv.groupby('unique_id').mean()
-mae.style.highlight_min(color = 'lightblue', axis = 1)
+mae_cv = mae(cv_df, models=models, target_col='actual').set_index('unique_id')
+mae_cv
 ```
 
-|   | ARCH(1) | ARCH(2) | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | Naive |
+|  | ARCH(1) | ARCH(2) | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | Naive |
 |----|----|----|----|----|----|----|----|
-| unique_id |   |   |   |   |   |   |   |
-| AAPL | 0.068537 | 0.068927 | 0.068929 | 0.085630 | 0.072519 | 0.068556 | 0.110426 |
-| AMZN | 0.118612 | 0.126182 | 0.118858 | 0.125470 | 0.109913 | 0.109912 | 0.115189 |
-| GOOG | 0.093849 | 0.093752 | 0.099593 | 0.115136 | 0.094648 | 0.113645 | 0.083233 |
-| META | 0.198333 | 0.198891 | 0.199617 | 0.199712 | 0.199708 | 0.198890 | 0.185346 |
-| MSFT | 0.080022 | 0.097301 | 0.082183 | 0.072765 | 0.073006 | 0.080494 | 0.086951 |
-| NFLX | 0.159384 | 0.159523 | 0.219658 | 0.231798 | 0.230077 | 0.224103 | 0.167421 |
-| NKE | 0.107842 | 0.114263 | 0.103097 | 0.107180 | 0.107179 | 0.107019 | 0.160405 |
-| NVDA | 0.189462 | 0.207875 | 0.199004 | 0.196172 | 0.211928 | 0.211928 | 0.215289 |
-| SPY | 0.058513 | 0.065498 | 0.058700 | 0.057051 | 0.057051 | 0.058526 | 0.089012 |
-| TSLA | 0.192003 | 0.192620 | 0.190225 | 0.192353 | 0.191620 | 0.191418 | 0.218857 |
+| unique_id |  |  |  |  |  |  |  |
+| AAPL | 0.071773 | 0.068927 | 0.080182 | 0.075321 | 0.069187 | 0.068817 | 0.110426 |
+| AMZN | 0.127390 | 0.113613 | 0.118859 | 0.119930 | 0.109910 | 0.109910 | 0.115189 |
+| GOOG | 0.093849 | 0.093753 | 0.109662 | 0.101583 | 0.094648 | 0.103389 | 0.083233 |
+| META | 0.198334 | 0.198893 | 0.199615 | 0.199711 | 0.199712 | 0.198892 | 0.185346 |
+| MSFT | 0.082373 | 0.075055 | 0.072241 | 0.072765 | 0.073006 | 0.082066 | 0.086951 |
+| NFLX | 0.159386 | 0.159528 | 0.199623 | 0.232477 | 0.230075 | 0.230770 | 0.167421 |
+| NKE | 0.108337 | 0.098918 | 0.103366 | 0.110278 | 0.107179 | 0.102708 | 0.160404 |
+| NVDA | 0.189461 | 0.207871 | 0.198999 | 0.196170 | 0.211932 | 0.211940 | 0.215289 |
+| SPY | 0.058511 | 0.058583 | 0.058701 | 0.062492 | 0.057053 | 0.068192 | 0.089012 |
+| TSLA | 0.192003 | 0.192618 | 0.190225 | 0.192354 | 0.191620 | 0.191423 | 0.218857 |
+
+```python
+mae_cv.idxmin(axis=1)
+```
+
+``` text
+unique_id
+AAPL    GARCH(2,1)
+AMZN    GARCH(2,2)
+GOOG         Naive
+META         Naive
+MSFT    GARCH(1,1)
+NFLX       ARCH(1)
+NKE        ARCH(2)
+NVDA       ARCH(1)
+SPY     GARCH(2,2)
+TSLA    GARCH(1,1)
+dtype: object
+```
 
 Hence, the most accurate model to describe the logarithmic returns of
-Apple’s stock is an ARCH(1), for Amazon’s stock is a GARCH(2,1), and so
-on.
+Apple’s stock is an GARCH(2, 1), for Amazon’s stock is a GARCH(2,2), and
+so on.
 
 ## Forecast volatility
 
@@ -417,18 +414,17 @@ use the `forecast` method, which requieres the following arguments:
 ```python
 levels = [80, 95] # confidence levels for the prediction intervals 
 
-forecasts = sf.forecast(h=3, level=levels)
-forecasts = forecasts.reset_index()
+forecasts = sf.forecast(df=returns, h=3, level=levels)
 forecasts.head()
 ```
 
 |  | unique_id | ds | ARCH(1) | ARCH(1)-lo-95 | ARCH(1)-lo-80 | ARCH(1)-hi-80 | ARCH(1)-hi-95 | ARCH(2) | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ... | GARCH(2,1) | GARCH(2,1)-lo-95 | GARCH(2,1)-lo-80 | GARCH(2,1)-hi-80 | GARCH(2,1)-hi-95 | Naive | Naive-lo-80 | Naive-lo-95 | Naive-hi-80 | Naive-hi-95 |
 |----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| 0 | AAPL | 2023-01-01 | 0.150457 | 0.133641 | 0.139462 | 0.161452 | 0.167273 | 0.150166 | 0.133415 | 0.139213 | ... | 0.147610 | 0.131424 | 0.137027 | 0.158193 | 0.163795 | -0.128762 | -0.284463 | -0.366886 | 0.026939 | 0.109362 |
-| 1 | AAPL | 2023-02-01 | -0.056942 | -0.073923 | -0.068046 | -0.045839 | -0.039961 | -0.057209 | -0.074349 | -0.068417 | ... | -0.059511 | -0.078059 | -0.071639 | -0.047384 | -0.040964 | -0.128762 | -0.348956 | -0.465520 | 0.091433 | 0.207997 |
-| 2 | AAPL | 2023-03-01 | -0.048390 | -0.064842 | -0.059148 | -0.037633 | -0.031939 | -0.049279 | -0.066340 | -0.060435 | ... | -0.054537 | -0.075435 | -0.068201 | -0.040874 | -0.033640 | -0.128762 | -0.398444 | -0.541205 | 0.140920 | 0.283681 |
-| 3 | AMZN | 2023-01-01 | 0.152158 | 0.134960 | 0.140913 | 0.163404 | 0.169357 | 0.148659 | 0.132243 | 0.137925 | ... | 0.148597 | 0.132195 | 0.137872 | 0.159322 | 0.165000 | -0.139141 | -0.315716 | -0.409190 | 0.037435 | 0.130909 |
-| 4 | AMZN | 2023-02-01 | -0.057306 | -0.074504 | -0.068551 | -0.046060 | -0.040107 | -0.061187 | -0.080794 | -0.074007 | ... | -0.069302 | -0.094455 | -0.085749 | -0.052856 | -0.044150 | -0.139141 | -0.388856 | -0.521048 | 0.110575 | 0.242767 |
+| 0 | AAPL | 2023-01-01 | 0.150457 | 0.133641 | 0.139462 | 0.161453 | 0.167273 | 0.150158 | 0.133409 | 0.139206 | ... | 0.147602 | 0.131418 | 0.137020 | 0.158184 | 0.163786 | -0.128762 | -0.284462 | -0.366885 | 0.026939 | 0.109362 |
+| 1 | AAPL | 2023-02-01 | -0.056943 | -0.073924 | -0.068046 | -0.045839 | -0.039961 | -0.057207 | -0.074346 | -0.068414 | ... | -0.059512 | -0.078060 | -0.071640 | -0.047384 | -0.040964 | -0.128762 | -0.348956 | -0.465520 | 0.091433 | 0.207997 |
+| 2 | AAPL | 2023-03-01 | -0.048391 | -0.064843 | -0.059148 | -0.037633 | -0.031939 | -0.049282 | -0.066345 | -0.060439 | ... | -0.054539 | -0.075438 | -0.068204 | -0.040875 | -0.033641 | -0.128762 | -0.398443 | -0.541204 | 0.140920 | 0.283681 |
+| 3 | AMZN | 2023-01-01 | 0.152147 | 0.134952 | 0.140904 | 0.163391 | 0.169343 | 0.148658 | 0.132242 | 0.137924 | ... | 0.148599 | 0.132196 | 0.137873 | 0.159324 | 0.165001 | -0.139141 | -0.315716 | -0.409190 | 0.037435 | 0.130909 |
+| 4 | AMZN | 2023-02-01 | -0.057301 | -0.074497 | -0.068545 | -0.046058 | -0.040106 | -0.061187 | -0.080794 | -0.074007 | ... | -0.069303 | -0.094457 | -0.085750 | -0.052856 | -0.044150 | -0.139141 | -0.388856 | -0.521048 | 0.110575 | 0.242767 |
 
 With the results of the previous section, we can choose the best model
 for the S&P 500 and the companies selected. Some of the plots are shown
@@ -442,22 +438,10 @@ method:
     selected by cross-validation.
 
 ```python
-StatsForecast.plot(returns, forecasts, level=levels, unique_ids = ['AAPL'], models = ['GARCH(2,1)'])
-```
-
-![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-21-output-1.png)
-
-```python
-StatsForecast.plot(returns, forecasts, level=levels, unique_ids = ['MSFT'], models = ['ARCH(2)'])
+StatsForecast.plot(returns, forecasts, max_insample_length=20)
 ```
 
 ![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-22-output-1.png)
-
-```python
-StatsForecast.plot(returns, forecasts, level=levels, unique_ids = ['NFLX'], models = ['ARCH(1)'])
-```
-
-![](/statsforecast/docs/tutorials/GARCH_tutorial_files/figure-markdown_strict/cell-23-output-1.png)
 
 ## References
 

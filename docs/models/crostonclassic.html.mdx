@@ -578,16 +578,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=df,
-                   models=models,
-                   freq='H', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='h')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -603,7 +600,10 @@ result
 ```
 
 ``` text
-{'mean': array([23.606695], dtype=float32)}
+{'mean': array([27.41841685]),
+ 'fitted': array([     nan,  0.     ,  5.     , ..., 30.61961, 30.61961, 30.61961],
+       dtype=float32),
+ 'sigma': np.float32(49.5709)}
 ```
 
 ### Forecast Method
@@ -628,64 +628,25 @@ uncertainty intervals. Depending on your computer, this step should take
 around 1min.
 
 ```python
-Y_hat = sf.forecast(horizon)
-Y_hat
-```
-
-|           | ds                  | CrostonClassic |
-|-----------|---------------------|----------------|
-| unique_id |                     |                |
-| 1         | 2023-02-21 16:00:00 | 23.606695      |
-| 1         | 2023-02-21 17:00:00 | 23.606695      |
-| 1         | 2023-02-21 18:00:00 | 23.606695      |
-| ...       | ...                 | ...            |
-| 1         | 2023-03-14 09:00:00 | 23.606695      |
-| 1         | 2023-03-14 10:00:00 | 23.606695      |
-| 1         | 2023-03-14 11:00:00 | 23.606695      |
-
-```python
-Y_hat=Y_hat.reset_index()
+Y_hat = sf.forecast(df=train, h=horizon)
 Y_hat
 ```
 
 |     | unique_id | ds                  | CrostonClassic |
 |-----|-----------|---------------------|----------------|
-| 0   | 1         | 2023-02-21 16:00:00 | 23.606695      |
-| 1   | 1         | 2023-02-21 17:00:00 | 23.606695      |
-| 2   | 1         | 2023-02-21 18:00:00 | 23.606695      |
+| 0   | 1         | 2023-01-31 20:00:00 | 27.418417      |
+| 1   | 1         | 2023-01-31 21:00:00 | 27.418417      |
+| 2   | 1         | 2023-01-31 22:00:00 | 27.418417      |
 | ... | ...       | ...                 | ...            |
-| 497 | 1         | 2023-03-14 09:00:00 | 23.606695      |
-| 498 | 1         | 2023-03-14 10:00:00 | 23.606695      |
-| 499 | 1         | 2023-03-14 11:00:00 | 23.606695      |
+| 497 | 1         | 2023-02-21 13:00:00 | 27.418417      |
+| 498 | 1         | 2023-02-21 14:00:00 | 27.418417      |
+| 499 | 1         | 2023-02-21 15:00:00 | 27.418417      |
 
 ```python
-Y_hat1 = pd.concat([df,Y_hat])
-Y_hat1
+sf.plot(train, Y_hat, max_insample_length=500)
 ```
 
-|     | ds                  | y    | unique_id | CrostonClassic |
-|-----|---------------------|------|-----------|----------------|
-| 0   | 2022-01-01 00:00:00 | 0.0  | 1         | NaN            |
-| 1   | 2022-01-01 01:00:00 | 10.0 | 1         | NaN            |
-| 2   | 2022-01-01 02:00:00 | 0.0  | 1         | NaN            |
-| ... | ...                 | ...  | ...       | ...            |
-| 497 | 2023-03-14 09:00:00 | NaN  | 1         | 23.606695      |
-| 498 | 2023-03-14 10:00:00 | NaN  | 1         | 23.606695      |
-| 499 | 2023-03-14 11:00:00 | NaN  | 1         | 23.606695      |
-
-```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([df, Y_hat1]).set_index('ds')
-plot_df['y'].plot(ax=ax, linewidth=2)
-plot_df[ "CrostonClassic"].plot(ax=ax, linewidth=2, color="yellow")
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Store visit (Hourly data)', fontsize=20)
-ax.set_xlabel('Hourly', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-```
-
-![](/statsforecast/docs/models/CrostonClassic_files/figure-markdown_strict/cell-22-output-1.png)
+![](/statsforecast/docs/models/CrostonClassic_files/figure-markdown_strict/cell-20-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -708,78 +669,15 @@ forecast_df = sf.predict(h=horizon)
 forecast_df
 ```
 
-|           | ds                  | CrostonClassic |
-|-----------|---------------------|----------------|
-| unique_id |                     |                |
-| 1         | 2023-02-21 16:00:00 | 23.606695      |
-| 1         | 2023-02-21 17:00:00 | 23.606695      |
-| 1         | 2023-02-21 18:00:00 | 23.606695      |
-| ...       | ...                 | ...            |
-| 1         | 2023-03-14 09:00:00 | 23.606695      |
-| 1         | 2023-03-14 10:00:00 | 23.606695      |
-| 1         | 2023-03-14 11:00:00 | 23.606695      |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|                     | y    | unique_id | CrostonClassic |
-|---------------------|------|-----------|----------------|
-| ds                  |      |           |                |
-| 2022-01-01 00:00:00 | 0.0  | 1         | NaN            |
-| 2022-01-01 01:00:00 | 10.0 | 1         | NaN            |
-| 2022-01-01 02:00:00 | 0.0  | 1         | NaN            |
-| ...                 | ...  | ...       | ...            |
-| 2023-03-14 09:00:00 | NaN  | NaN       | 23.606695      |
-| 2023-03-14 10:00:00 | NaN  | NaN       | 23.606695      |
-| 2023-03-14 11:00:00 | NaN  | NaN       | 23.606695      |
-
-```python
-df_plot= pd.concat([df, forecast_df]).set_index('ds').tail(5000)
-df_plot
-```
-
-|                     | y    | unique_id | CrostonClassic |
-|---------------------|------|-----------|----------------|
-| ds                  |      |           |                |
-| 2022-08-18 04:00:00 | 0.0  | 1         | NaN            |
-| 2022-08-18 05:00:00 | 80.0 | 1         | NaN            |
-| 2022-08-18 06:00:00 | 0.0  | 1         | NaN            |
-| ...                 | ...  | ...       | ...            |
-| 2023-03-14 09:00:00 | NaN  | NaN       | 23.606695      |
-| 2023-03-14 10:00:00 | NaN  | NaN       | 23.606695      |
-| 2023-03-14 11:00:00 | NaN  | NaN       | 23.606695      |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series.
-
-```python
-plt.plot(df_plot['y'],label="Actual", linewidth=2.5)
-plt.plot(df_plot['CrostonClassic'], label="CrostonClassic", color="yellow") # '-', '--', '-.', ':',
-
-plt.title("Store visit (Hourly data)");
-plt.xlabel("Hourly")
-plt.ylabel("")
-```
-
-``` text
-Text(0, 0.5, '')
-```
-
-![](/statsforecast/docs/models/CrostonClassic_files/figure-markdown_strict/cell-26-output-2.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df)
-```
-
-![](/statsforecast/docs/models/CrostonClassic_files/figure-markdown_strict/cell-27-output-1.png)
+|     | unique_id | ds                  | CrostonClassic |
+|-----|-----------|---------------------|----------------|
+| 0   | 1         | 2023-01-31 20:00:00 | 27.418417      |
+| 1   | 1         | 2023-01-31 21:00:00 | 27.418417      |
+| 2   | 1         | 2023-01-31 22:00:00 | 27.418417      |
+| ... | ...       | ...                 | ...            |
+| 497 | 1         | 2023-02-21 13:00:00 | 27.418417      |
+| 498 | 1         | 2023-02-21 14:00:00 | 27.418417      |
+| 499 | 1         | 2023-02-21 15:00:00 | 27.418417      |
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -837,8 +735,7 @@ crossvalidation_df = sf.cross_validation(df=df,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    `crossvalidation_df.resetindex()`.
+-   `unique_id:` series identifier.
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the `n_windows`.
 -   `y:` true value
@@ -848,46 +745,45 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds                  | cutoff              | y    | CrostonClassic |
-|-----------|---------------------|---------------------|------|----------------|
-| unique_id |                     |                     |      |                |
-| 1         | 2023-01-23 12:00:00 | 2023-01-23 11:00:00 | 0.0  | 23.655830      |
-| 1         | 2023-01-23 13:00:00 | 2023-01-23 11:00:00 | 0.0  | 23.655830      |
-| 1         | 2023-01-23 14:00:00 | 2023-01-23 11:00:00 | 0.0  | 23.655830      |
-| ...       | ...                 | ...                 | ...  | ...            |
-| 1         | 2023-02-21 13:00:00 | 2023-01-31 19:00:00 | 60.0 | 27.418417      |
-| 1         | 2023-02-21 14:00:00 | 2023-01-31 19:00:00 | 20.0 | 27.418417      |
-| 1         | 2023-02-21 15:00:00 | 2023-01-31 19:00:00 | 20.0 | 27.418417      |
+|      | unique_id | ds                  | cutoff              | y    | CrostonClassic |
+|------|-----------|---------------------|---------------------|------|----------------|
+| 0    | 1         | 2023-01-23 12:00:00 | 2023-01-23 11:00:00 | 0.0  | 23.655830      |
+| 1    | 1         | 2023-01-23 13:00:00 | 2023-01-23 11:00:00 | 0.0  | 23.655830      |
+| 2    | 1         | 2023-01-23 14:00:00 | 2023-01-23 11:00:00 | 0.0  | 23.655830      |
+| ...  | ...       | ...                 | ...                 | ...  | ...            |
+| 2497 | 1         | 2023-02-21 13:00:00 | 2023-01-31 19:00:00 | 60.0 | 27.418417      |
+| 2498 | 1         | 2023-02-21 14:00:00 | 2023-01-31 19:00:00 | 20.0 | 27.418417      |
+| 2499 | 1         | 2023-02-21 15:00:00 | 2023-01-31 19:00:00 | 20.0 | 27.418417      |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-!pip install datasetsforecast
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-from datasetsforecast.losses import rmse
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, `Croston Classic Model`.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["CrostonClassic"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  48.08823
-```
+|     | unique_id | metric | CrostonClassic |
+|-----|-----------|--------|----------------|
+| 0   | 1         | mae    | 33.704756      |
+| 1   | 1         | mape   | 0.632593       |
+| 2   | 1         | mase   | 0.804074       |
+| 3   | 1         | rmse   | 45.262709      |
+| 4   | 1         | smape  | 0.767960       |
 
 ## Acknowledgements
 

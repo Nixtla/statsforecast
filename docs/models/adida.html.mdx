@@ -514,9 +514,8 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=df,
-                   models=models,
-                   freq='W', 
+sf = StatsForecast(models=models,
+                   freq='7d', 
                    n_jobs=-1)
 ```
 
@@ -525,7 +524,7 @@ sf = StatsForecast(df=df,
 Here, we call the `fit()` method to fit the model.
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -541,7 +540,7 @@ result
 ```
 
 ``` text
-{'mean': array([132.52887], dtype=float32)}
+{'mean': array([336.74736919])}
 ```
 
 ### Forecast Method
@@ -566,66 +565,25 @@ uncertainty intervals. Depending on your computer, this step should take
 around 1min.
 
 ```python
-Y_hat = sf.forecast(horizon)
+Y_hat = sf.forecast(df=train, h=horizon)
 Y_hat
 ```
 
-|           | ds         | ADIDA     |
-|-----------|------------|-----------|
-| unique_id |            |           |
-| 1         | 2023-01-01 | 132.52887 |
-| 1         | 2023-01-08 | 132.52887 |
-| 1         | 2023-01-15 | 132.52887 |
-| ...       | ...        | ...       |
-| 1         | 2023-06-04 | 132.52887 |
-| 1         | 2023-06-11 | 132.52887 |
-| 1         | 2023-06-18 | 132.52887 |
+|     | unique_id | ds         | ADIDA      |
+|-----|-----------|------------|------------|
+| 0   | 1         | 2022-07-11 | 336.747375 |
+| 1   | 1         | 2022-07-18 | 336.747375 |
+| 2   | 1         | 2022-07-25 | 336.747375 |
+| ... | ...       | ...        | ...        |
+| 22  | 1         | 2022-12-12 | 336.747375 |
+| 23  | 1         | 2022-12-19 | 336.747375 |
+| 24  | 1         | 2022-12-26 | 336.747375 |
 
 ```python
-Y_hat=Y_hat.reset_index()
-Y_hat
+sf.plot(train, Y_hat.merge(test))
 ```
 
-|     | unique_id | ds         | ADIDA     |
-|-----|-----------|------------|-----------|
-| 0   | 1         | 2023-01-01 | 132.52887 |
-| 1   | 1         | 2023-01-08 | 132.52887 |
-| 2   | 1         | 2023-01-15 | 132.52887 |
-| ... | ...       | ...        | ...       |
-| 22  | 1         | 2023-06-04 | 132.52887 |
-| 23  | 1         | 2023-06-11 | 132.52887 |
-| 24  | 1         | 2023-06-18 | 132.52887 |
-
-Merge the forecasts with the true values
-
-```python
-Y_hat1 = pd.concat([df,Y_hat],  keys=['unique_id', 'ds'])
-Y_hat1
-```
-
-|           |     | ds         | y    | unique_id | ADIDA     |
-|-----------|-----|------------|------|-----------|-----------|
-| unique_id | 0   | 2007-12-31 | 50.0 | 1         | NaN       |
-|           | 1   | 2008-01-07 | 62.0 | 1         | NaN       |
-|           | 2   | 2008-01-14 | 76.0 | 1         | NaN       |
-| ...       | ... | ...        | ...  | ...       | ...       |
-| ds        | 22  | 2023-06-04 | NaN  | 1         | 132.52887 |
-|           | 23  | 2023-06-11 | NaN  | 1         | 132.52887 |
-|           | 24  | 2023-06-18 | NaN  | 1         | 132.52887 |
-
-```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([df, Y_hat1]).set_index('ds').tail(300)
-plot_df['y'].plot(ax=ax, linewidth=2)
-plot_df[ "ADIDA"].plot(ax=ax, linewidth=2, color="yellow")
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Falciparum Malaria (Weekly data)', fontsize=20)
-ax.set_xlabel('Monthly [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-```
-
-![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-22-output-1.png)
+![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-20-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -645,80 +603,16 @@ This step should take less than 1 second.
 
 ```python
 forecast_df = sf.predict(h=horizon) 
-
 forecast_df.head()
 ```
 
-|           | ds         | ADIDA     |
-|-----------|------------|-----------|
-| unique_id |            |           |
-| 1         | 2023-01-01 | 132.52887 |
-| 1         | 2023-01-08 | 132.52887 |
-| 1         | 2023-01-15 | 132.52887 |
-| 1         | 2023-01-22 | 132.52887 |
-| 1         | 2023-01-29 | 132.52887 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|            | y    | unique_id | ADIDA     |
-|------------|------|-----------|-----------|
-| ds         |      |           |           |
-| 2007-12-31 | 50.0 | 1         | NaN       |
-| 2008-01-07 | 62.0 | 1         | NaN       |
-| 2008-01-14 | 76.0 | 1         | NaN       |
-| ...        | ...  | ...       | ...       |
-| 2023-06-04 | NaN  | NaN       | 132.52887 |
-| 2023-06-11 | NaN  | NaN       | 132.52887 |
-| 2023-06-18 | NaN  | NaN       | 132.52887 |
-
-```python
-df_plot= pd.concat([df, forecast_df]).set_index('ds').tail(200)
-df_plot
-```
-
-|            | y     | unique_id | ADIDA     |
-|------------|-------|-----------|-----------|
-| ds         |       |           |           |
-| 2019-08-26 | 191.0 | 1         | NaN       |
-| 2019-09-02 | 205.0 | 1         | NaN       |
-| 2019-09-09 | 200.0 | 1         | NaN       |
-| ...        | ...   | ...       | ...       |
-| 2023-06-04 | NaN   | NaN       | 132.52887 |
-| 2023-06-11 | NaN   | NaN       | 132.52887 |
-| 2023-06-18 | NaN   | NaN       | 132.52887 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series.
-
-```python
-plt.plot(df_plot['y'],label="Actual", linewidth=2.5)
-plt.plot(df_plot['ADIDA'], label="ADIDA", color="yellow") # '-', '--', '-.', ':',
-
-plt.title("Falciparum Malaria (Weekly data)");
-plt.xlabel("Weekly")
-plt.ylabel("")
-```
-
-``` text
-Text(0, 0.5, '')
-```
-
-![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-26-output-2.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df)
-```
-
-![](/statsforecast/docs/models/ADIDA_files/figure-markdown_strict/cell-27-output-1.png)
+|     | unique_id | ds         | ADIDA      |
+|-----|-----------|------------|------------|
+| 0   | 1         | 2022-07-11 | 336.747375 |
+| 1   | 1         | 2022-07-18 | 336.747375 |
+| 2   | 1         | 2022-07-25 | 336.747375 |
+| 3   | 1         | 2022-08-01 | 336.747375 |
+| 4   | 1         | 2022-08-08 | 336.747375 |
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -781,8 +675,7 @@ crossvalidation_df = sf.cross_validation(df=df,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    `crossvalidation_df.resetindex()`.
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the `n_windows`.
 -   `y:` true value
@@ -792,46 +685,45 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds         | cutoff     | y     | ADIDA      |
-|-----------|------------|------------|-------|------------|
-| unique_id |            |            |       |            |
-| 1         | 2020-03-22 | 2020-03-15 | 317.0 | 251.901505 |
-| 1         | 2020-03-29 | 2020-03-15 | 332.0 | 251.901505 |
-| 1         | 2020-04-05 | 2020-03-15 | 306.0 | 251.901505 |
-| ...       | ...        | ...        | ...   | ...        |
-| 1         | 2022-12-11 | 2022-07-03 | 151.0 | 336.747375 |
-| 1         | 2022-12-18 | 2022-07-03 | 97.0  | 336.747375 |
-| 1         | 2022-12-25 | 2022-07-03 | 42.0  | 336.747375 |
+|     | unique_id | ds         | cutoff     | y     | ADIDA      |
+|-----|-----------|------------|------------|-------|------------|
+| 0   | 1         | 2020-03-23 | 2020-03-16 | 317.0 | 251.901505 |
+| 1   | 1         | 2020-03-30 | 2020-03-16 | 332.0 | 251.901505 |
+| 2   | 1         | 2020-04-06 | 2020-03-16 | 306.0 | 251.901505 |
+| ... | ...       | ...        | ...        | ...   | ...        |
+| 122 | 1         | 2022-12-12 | 2022-07-04 | 151.0 | 336.747375 |
+| 123 | 1         | 2022-12-19 | 2022-07-04 | 97.0  | 336.747375 |
+| 124 | 1         | 2022-12-26 | 2022-07-04 | 42.0  | 336.747375 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-!pip install datasetsforecast
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-from datasetsforecast.losses import rmse
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, `ADIDA Model`.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["ADIDA"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  84.45186
-```
+|     | unique_id | metric | ADIDA      |
+|-----|-----------|--------|------------|
+| 0   | 1         | mae    | 114.527585 |
+| 1   | 1         | mape   | 0.820029   |
+| 2   | 1         | mase   | 0.874115   |
+| 3   | 1         | rmse   | 129.749320 |
+| 4   | 1         | smape  | 0.221878   |
 
 ## Acknowledgements
 

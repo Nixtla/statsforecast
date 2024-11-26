@@ -47,16 +47,7 @@ First, we’ll import the data:
 
 
 ```python
-import os
-
 import pandas as pd
-```
-
-
-```python
-# this makes it so that the outputs of the predict methods have the id as a column 
-# instead of as the index
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 
@@ -102,12 +93,14 @@ method and pass in the historical data frame.
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import AutoARIMA
+```
 
+
+```python
 sf = StatsForecast(
     models=[AutoARIMA(season_length = 12)],
-    freq='M',
+    freq='MS',
 )
-
 sf.fit(df)
 ```
 
@@ -138,11 +131,11 @@ forecast_df.tail()
 
 |     | unique_id     | ds         | AutoARIMA  | AutoARIMA-lo-90 | AutoARIMA-hi-90 |
 |-----|---------------|------------|------------|-----------------|-----------------|
-| 7   | AirPassengers | 1961-07-31 | 633.230774 | 589.562378      | 676.899170      |
-| 8   | AirPassengers | 1961-08-31 | 535.230774 | 489.082153      | 581.379456      |
-| 9   | AirPassengers | 1961-09-30 | 488.230804 | 439.728699      | 536.732910      |
-| 10  | AirPassengers | 1961-10-31 | 417.230804 | 366.484253      | 467.977356      |
-| 11  | AirPassengers | 1961-11-30 | 459.230804 | 406.334930      | 512.126648      |
+| 7   | AirPassengers | 1961-08-01 | 633.236389 | 590.009033      | 676.463745      |
+| 8   | AirPassengers | 1961-09-01 | 535.236389 | 489.558899      | 580.913940      |
+| 9   | AirPassengers | 1961-10-01 | 488.236389 | 440.233795      | 536.239014      |
+| 10  | AirPassengers | 1961-11-01 | 417.236389 | 367.016205      | 467.456604      |
+| 11  | AirPassengers | 1961-12-01 | 459.236389 | 406.892456      | 511.580322      |
 
 You can plot the forecast by calling the `StatsForecast.plot` method and
 passing in your forecast dataframe.

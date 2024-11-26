@@ -354,7 +354,7 @@ basic EDA.
 ```python
 from statsforecast import StatsForecast
 
-StatsForecast.plot(df, engine="matplotlib")
+StatsForecast.plot(df)
 ```
 
 ![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-7-output-1.png)
@@ -407,7 +407,7 @@ series may be different from the previous time series.
 The combination of the components in time series can be of two types: \*
 Additive \* Multiplicative
 
-###Additive time series
+### Additive time series
 
 If the components of the time series are added to make the time series.
 Then the time series is called the additive time series. By
@@ -470,38 +470,7 @@ train.shape, test.shape
 ((156, 3), (12, 3))
 ```
 
-Now let’s plot the training data and the test data.
-
-```python
-sns.lineplot(train,x="ds", y="y", label="Train", linestyle="--")
-sns.lineplot(test, x="ds", y="y", label="Test")
-plt.title("")
-plt.ylabel("Monthly Milk Production")
-plt.xlabel("Monthly")
-plt.show()
-```
-
-![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-13-output-1.png)
-
 ## Implementation of OptimizedTheta with StatsForecast <a class="anchor" id="implementation"></a>
-
-To also know more about the parameters of the functions of the
-`OptimizedTheta Model`, they are listed below. For more information,
-visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#optimizedtheta).
-
-``` text
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-decomposition_type : str
-    Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
 
 ### Load libraries
 
@@ -544,16 +513,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
-                   freq='MS', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='MS')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -571,7 +537,7 @@ print(result['fit'])
 
 ``` text
 dict_keys(['mse', 'amse', 'fit', 'residuals', 'm', 'states', 'par', 'n', 'modeltype', 'mean_y', 'decompose', 'decomposition_type', 'seas_forecast', 'fitted'])
-results(x=array([-83.14191626,   0.73681394,  12.45013763]), fn=10.448217519858634, nit=47, simplex=array([[-58.73988124,   0.7441127 ,  11.69842922],
+results(x=array([-83.14191626,   0.73681394,  12.45013763]), fn=10.448217519858636, nit=47, simplex=array([[-58.73988124,   0.7441127 ,  11.69842922],
        [-49.97233449,   0.73580297,  11.41787513],
        [-83.14191626,   0.73681394,  12.45013763],
        [-77.04867427,   0.73498431,  11.99254037]]))
@@ -619,7 +585,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-20-output-1.png)
+![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-19-output-1.png)
 
 ### Forecast Method
 
@@ -653,62 +619,7 @@ and
 [`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
 
 ```python
-Y_hat = sf.forecast(horizon, fitted=True)
-Y_hat
-```
-
-|           | ds         | OptimizedTheta |
-|-----------|------------|----------------|
-| unique_id |            |                |
-| 1         | 1975-01-01 | 839.682800     |
-| 1         | 1975-02-01 | 802.071838     |
-| 1         | 1975-03-01 | 896.117126     |
-| ...       | ...        | ...            |
-| 1         | 1975-10-01 | 824.135498     |
-| 1         | 1975-11-01 | 795.691162     |
-| 1         | 1975-12-01 | 833.316345     |
-
-Let’s visualize the fitted values
-
-```python
-values=sf.forecast_fitted_values()
-values.head()
-```
-
-|           | ds         | y     | OptimizedTheta |
-|-----------|------------|-------|----------------|
-| unique_id |            |       |                |
-| 1         | 1962-01-01 | 589.0 | 860.899414     |
-| 1         | 1962-02-01 | 561.0 | 675.671692     |
-| 1         | 1962-03-01 | 640.0 | 635.231934     |
-| 1         | 1962-04-01 | 656.0 | 614.731323     |
-| 1         | 1962-05-01 | 727.0 | 609.770752     |
-
-```python
-StatsForecast.plot(values)
-```
-
-![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-23-output-1.png)
-
-Adding 95% confidence interval with the forecast method
-
-```python
-sf.forecast(h=horizon, level=[95])
-```
-
-|  | ds | OptimizedTheta | OptimizedTheta-lo-95 | OptimizedTheta-hi-95 |
-|----|----|----|----|----|
-| unique_id |  |  |  |  |
-| 1 | 1975-01-01 | 839.682800 | 742.509583 | 955.414307 |
-| 1 | 1975-02-01 | 802.071838 | 643.581360 | 945.119263 |
-| 1 | 1975-03-01 | 896.117126 | 710.785217 | 1065.057495 |
-| ... | ... | ... | ... | ... |
-| 1 | 1975-10-01 | 824.135498 | 555.948975 | 1084.320312 |
-| 1 | 1975-11-01 | 795.691162 | 503.148010 | 1036.519531 |
-| 1 | 1975-12-01 | 833.316345 | 530.259949 | 1106.636963 |
-
-```python
-Y_hat=Y_hat.reset_index()
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
@@ -719,38 +630,51 @@ Y_hat
 | 2   | 1         | 1975-03-01 | 896.117126     |
 | ... | ...       | ...        | ...            |
 | 9   | 1         | 1975-10-01 | 824.135498     |
-| 10  | 1         | 1975-11-01 | 795.691162     |
+| 10  | 1         | 1975-11-01 | 795.691223     |
 | 11  | 1         | 1975-12-01 | 833.316345     |
 
-```python
-# Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
-Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
-Y_hat1
-```
-
-|     | ds         | y   | unique_id | OptimizedTheta |
-|-----|------------|-----|-----------|----------------|
-| 0   | 1975-01-01 | 834 | 1         | 839.682800     |
-| 1   | 1975-02-01 | 782 | 1         | 802.071838     |
-| 2   | 1975-03-01 | 892 | 1         | 896.117126     |
-| ... | ...        | ... | ...       | ...            |
-| 9   | 1975-10-01 | 827 | 1         | 824.135498     |
-| 10  | 1975-11-01 | 797 | 1         | 795.691162     |
-| 11  | 1975-12-01 | 843 | 1         | 833.316345     |
+Let’s visualize the fitted values
 
 ```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat1]).set_index('ds')
-plot_df[['y', "OptimizedTheta"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Monthly Milk Production', fontsize=20)
-ax.set_xlabel('Month [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
+values=sf.forecast_fitted_values()
+values.head()
 ```
 
-![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-27-output-1.png)
+|     | unique_id | ds         | y     | OptimizedTheta |
+|-----|-----------|------------|-------|----------------|
+| 0   | 1         | 1962-01-01 | 589.0 | 860.899414     |
+| 1   | 1         | 1962-02-01 | 561.0 | 675.671692     |
+| 2   | 1         | 1962-03-01 | 640.0 | 635.231934     |
+| 3   | 1         | 1962-04-01 | 656.0 | 614.731323     |
+| 4   | 1         | 1962-05-01 | 727.0 | 609.770752     |
+
+```python
+StatsForecast.plot(values)
+```
+
+![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-22-output-1.png)
+
+Adding 95% confidence interval with the forecast method
+
+```python
+sf.forecast(df=train, h=horizon, level=[95])
+```
+
+|  | unique_id | ds | OptimizedTheta | OptimizedTheta-lo-95 | OptimizedTheta-hi-95 |
+|----|----|----|----|----|----|
+| 0 | 1 | 1975-01-01 | 839.682800 | 742.509583 | 955.414307 |
+| 1 | 1 | 1975-02-01 | 802.071838 | 643.581360 | 945.119202 |
+| 2 | 1 | 1975-03-01 | 896.117126 | 710.785095 | 1065.057495 |
+| ... | ... | ... | ... | ... | ... |
+| 9 | 1 | 1975-10-01 | 824.135498 | 555.948669 | 1084.320190 |
+| 10 | 1 | 1975-11-01 | 795.691223 | 503.147858 | 1036.519531 |
+| 11 | 1 | 1975-12-01 | 833.316345 | 530.259705 | 1106.636597 |
+
+```python
+sf.plot(train, Y_hat)
+```
+
+![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-24-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -778,98 +702,36 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | OptimizedTheta |
-|-----------|------------|----------------|
-| unique_id |            |                |
-| 1         | 1975-01-01 | 839.682800     |
-| 1         | 1975-02-01 | 802.071838     |
-| 1         | 1975-03-01 | 896.117126     |
-| ...       | ...        | ...            |
-| 1         | 1975-10-01 | 824.135498     |
-| 1         | 1975-11-01 | 795.691162     |
-| 1         | 1975-12-01 | 833.316345     |
+|     | unique_id | ds         | OptimizedTheta |
+|-----|-----------|------------|----------------|
+| 0   | 1         | 1975-01-01 | 839.682800     |
+| 1   | 1         | 1975-02-01 | 802.071838     |
+| 2   | 1         | 1975-03-01 | 896.117126     |
+| ... | ...       | ...        | ...            |
+| 9   | 1         | 1975-10-01 | 824.135498     |
+| 10  | 1         | 1975-11-01 | 795.691223     |
+| 11  | 1         | 1975-12-01 | 833.316345     |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
 forecast_df
 ```
 
-|  | ds | OptimizedTheta | OptimizedTheta-lo-80 | OptimizedTheta-hi-80 | OptimizedTheta-lo-95 | OptimizedTheta-hi-95 |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| 1 | 1975-01-01 | 839.682800 | 766.665955 | 928.326233 | 742.509583 | 955.414307 |
-| 1 | 1975-02-01 | 802.071838 | 704.290100 | 899.335876 | 643.581360 | 945.119263 |
-| 1 | 1975-03-01 | 896.117126 | 761.334717 | 1007.408630 | 710.785217 | 1065.057495 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1 | 1975-10-01 | 824.135498 | 623.904114 | 996.567322 | 555.948975 | 1084.320312 |
-| 1 | 1975-11-01 | 795.691162 | 576.546753 | 975.490967 | 503.148010 | 1036.519531 |
-| 1 | 1975-12-01 | 833.316345 | 606.713989 | 1033.886230 | 530.259949 | 1106.636963 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|  | y | unique_id | OptimizedTheta | OptimizedTheta-lo-80 | OptimizedTheta-hi-80 | OptimizedTheta-lo-95 | OptimizedTheta-hi-95 |
+|  | unique_id | ds | OptimizedTheta | OptimizedTheta-lo-80 | OptimizedTheta-hi-80 | OptimizedTheta-lo-95 | OptimizedTheta-hi-95 |
 |----|----|----|----|----|----|----|----|
-| ds |  |  |  |  |  |  |  |
-| 1962-01-01 | 589.0 | 1 | NaN | NaN | NaN | NaN | NaN |
-| 1962-02-01 | 561.0 | 1 | NaN | NaN | NaN | NaN | NaN |
-| 1962-03-01 | 640.0 | 1 | NaN | NaN | NaN | NaN | NaN |
+| 0 | 1 | 1975-01-01 | 839.682800 | 766.665955 | 928.326172 | 742.509583 | 955.414307 |
+| 1 | 1 | 1975-02-01 | 802.071838 | 704.290039 | 899.335815 | 643.581360 | 945.119202 |
+| 2 | 1 | 1975-03-01 | 896.117126 | 761.334778 | 1007.408447 | 710.785095 | 1065.057495 |
 | ... | ... | ... | ... | ... | ... | ... | ... |
-| 1975-10-01 | NaN | NaN | 824.135498 | 623.904114 | 996.567322 | 555.948975 | 1084.320312 |
-| 1975-11-01 | NaN | NaN | 795.691162 | 576.546753 | 975.490967 | 503.148010 | 1036.519531 |
-| 1975-12-01 | NaN | NaN | 833.316345 | 606.713989 | 1033.886230 | 530.259949 | 1106.636963 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series, also let’s draw the confidence interval that we have
-obtained when making the prediction with 95% confidence.
+| 9 | 1 | 1975-10-01 | 824.135498 | 623.903992 | 996.567200 | 555.948669 | 1084.320190 |
+| 10 | 1 | 1975-11-01 | 795.691223 | 576.546570 | 975.490784 | 503.147858 | 1036.519531 |
+| 11 | 1 | 1975-12-01 | 833.316345 | 606.713623 | 1033.885742 | 530.259705 | 1106.636597 |
 
 ```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=3 , )
-    colors = ['green', "lime"]
-    ax.fill_between(df_plot.index, 
-                df_plot['OptimizedTheta-lo-80'], 
-                df_plot['OptimizedTheta-lo-80'],
-                alpha=.20,
-                color='orange',
-                label='OptimizedTheta_level_80')
-    ax.fill_between(df_plot.index, 
-                df_plot['OptimizedTheta-lo-95'], 
-                df_plot['OptimizedTheta-hi-95'],
-                alpha=.3,
-                color='lime',
-                label='OptimizedTheta_level_95')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel("Montly Mil Production", fontsize=20)
-    ax.set_xlabel('Month', fontsize=20)
-    ax.legend(prop={'size': 20})
-    ax.grid(True)
-    plt.show()
+sf.plot(train, test.merge(forecast_df), level=[80, 95])
 ```
 
-
-```python
-plot_forecasts(train, test, forecast_df, models=['OptimizedTheta'])
-```
-
-![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-32-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df, level=[95])
-```
-
-![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-33-output-1.png)
+![](/statsforecast/docs/models/OptimizedTheta_files/figure-markdown_strict/cell-27-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -938,83 +800,45 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds         | cutoff     | y     | OptimizedTheta |
-|-----------|------------|------------|-------|----------------|
-| unique_id |            |            |       |                |
-| 1         | 1972-01-01 | 1971-12-01 | 826.0 | 828.836365     |
-| 1         | 1972-02-01 | 1971-12-01 | 799.0 | 792.592346     |
-| 1         | 1972-03-01 | 1971-12-01 | 890.0 | 883.269592     |
-| ...       | ...        | ...        | ...   | ...            |
-| 1         | 1974-10-01 | 1973-12-01 | 812.0 | 812.183838     |
-| 1         | 1974-11-01 | 1973-12-01 | 773.0 | 783.898376     |
-| 1         | 1974-12-01 | 1973-12-01 | 813.0 | 821.124329     |
+|     | unique_id | ds         | cutoff     | y     | OptimizedTheta |
+|-----|-----------|------------|------------|-------|----------------|
+| 0   | 1         | 1972-01-01 | 1971-12-01 | 826.0 | 828.836365     |
+| 1   | 1         | 1972-02-01 | 1971-12-01 | 799.0 | 792.592346     |
+| 2   | 1         | 1972-03-01 | 1971-12-01 | 890.0 | 883.269592     |
+| ... | ...       | ...        | ...        | ...   | ...            |
+| 33  | 1         | 1974-10-01 | 1973-12-01 | 812.0 | 812.183838     |
+| 34  | 1         | 1974-11-01 | 1973-12-01 | 773.0 | 783.898376     |
+| 35  | 1         | 1974-12-01 | 1973-12-01 | 813.0 | 821.124329     |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, `Optimized Theta Model (OTM)`.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["OptimizedTheta"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  14.504839
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
-
 Now we are going to evaluate our model with the results of the
-predictions, we will use different types of metrics
-`MAE, MAPE, MASE, RMSE, SMAPE` to evaluate the `accuracy`.
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import (mae, mape, mase, rmse, smape)
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, y_pred, model):
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=12)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-
-```python
-evaluate_performace(train, test, Y_hat, model="OptimizedTheta")
-```
-
-|                | mae      | mape     | mase    | rmse     | smape    |
-|----------------|----------|----------|---------|----------|----------|
-| OptimizedTheta | 6.740209 | 0.782753 | 0.30312 | 8.701501 | 0.778689 |
+|     | unique_id | metric | OptimizedTheta |
+|-----|-----------|--------|----------------|
+| 0   | 1         | mae    | 6.740204       |
+| 1   | 1         | mape   | 0.007828       |
+| 2   | 1         | mase   | 0.303120       |
+| 3   | 1         | rmse   | 8.701501       |
+| 4   | 1         | smape  | 0.003893       |
 
 ## Acknowledgements
 

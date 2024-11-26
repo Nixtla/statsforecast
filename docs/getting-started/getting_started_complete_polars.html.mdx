@@ -173,10 +173,6 @@ for basic EDA.
 from statsforecast import StatsForecast
 ```
 
-``` text
-/hdd/github/statsforecast/statsforecast/core.py:26: TqdmExperimentalWarning: Using `tqdm.autonotebook.tqdm` in notebook mode. Use `tqdm.tqdm` instead to force console mode (e.g. in jupyter console)
-  from tqdm.autonotebook import tqdm
-```
 
 ```python
 StatsForecast.plot(Y_df)
@@ -298,7 +294,7 @@ sf = StatsForecast(
     freq=1, 
     n_jobs=-1,
     fallback_model=SeasonalNaive(season_length=7),
-    verbose=True
+    verbose=True,
 )
 ```
 
@@ -340,14 +336,18 @@ forecasts_df = sf.forecast(df=Y_df, h=48, level=[90])
 forecasts_df.head()
 ```
 
+``` text
+Forecast:   0%|          | 0/10 [Elapsed: 00:00]
+```
+
 | unique_id | ds | HoltWinters | HoltWinters-lo-90 | HoltWinters-hi-90 | CrostonClassic | CrostonClassic-lo-90 | CrostonClassic-hi-90 | SeasonalNaive | SeasonalNaive-lo-90 | SeasonalNaive-hi-90 | HistoricAverage | HistoricAverage-lo-90 | HistoricAverage-hi-90 | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-90 | DynamicOptimizedTheta-hi-90 |
 |----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| str | i64 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 | f32 |
-| "H1" | 749 | 829.0 | -246.367554 | 1904.367554 | 829.0 | -246.367554 | 1904.367554 | 635.0 | 537.471191 | 732.528809 | 660.982117 | 398.03775 | 923.926514 | 592.701843 | 577.677307 | 611.652649 |
-| "H1" | 750 | 807.0 | -268.367554 | 1882.367554 | 807.0 | -268.367554 | 1882.367554 | 572.0 | 474.471222 | 669.528809 | 660.982117 | 398.03775 | 923.926514 | 525.589111 | 505.449738 | 546.621826 |
-| "H1" | 751 | 785.0 | -290.367554 | 1860.367554 | 785.0 | -290.367554 | 1860.367554 | 532.0 | 434.471222 | 629.528809 | 660.982117 | 398.03775 | 923.926514 | 489.251801 | 462.072876 | 512.424133 |
-| "H1" | 752 | 756.0 | -319.367554 | 1831.367554 | 756.0 | -319.367554 | 1831.367554 | 493.0 | 395.471222 | 590.528809 | 660.982117 | 398.03775 | 923.926514 | 456.195038 | 430.554291 | 478.260956 |
-| "H1" | 753 | 719.0 | -356.367554 | 1794.367554 | 719.0 | -356.367554 | 1794.367554 | 477.0 | 379.471222 | 574.528809 | 660.982117 | 398.03775 | 923.926514 | 436.290527 | 411.051239 | 461.815948 |
+| str | i64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 | f64 |
+| "H1" | 749 | 829.0 | 422.549268 | 1235.450732 | 829.0 | 422.549268 | 1235.450732 | 635.0 | 566.036734 | 703.963266 | 660.982143 | 398.037761 | 923.926524 | 592.701851 | 577.67728 | 611.652639 |
+| "H1" | 750 | 807.0 | 400.549268 | 1213.450732 | 807.0 | 400.549268 | 1213.450732 | 572.0 | 503.036734 | 640.963266 | 660.982143 | 398.037761 | 923.926524 | 525.589116 | 505.449755 | 546.621805 |
+| "H1" | 751 | 785.0 | 378.549268 | 1191.450732 | 785.0 | 378.549268 | 1191.450732 | 532.0 | 463.036734 | 600.963266 | 660.982143 | 398.037761 | 923.926524 | 489.251814 | 462.072871 | 512.424116 |
+| "H1" | 752 | 756.0 | 349.549268 | 1162.450732 | 756.0 | 349.549268 | 1162.450732 | 493.0 | 424.036734 | 561.963266 | 660.982143 | 398.037761 | 923.926524 | 456.195032 | 430.554302 | 478.260963 |
+| "H1" | 753 | 719.0 | 312.549268 | 1125.450732 | 719.0 | 312.549268 | 1125.450732 | 477.0 | 408.036734 | 545.963266 | 660.982143 | 398.037761 | 923.926524 | 436.290514 | 411.051232 | 461.815932 |
 
 Plot the results of 8 randon series using the `StatsForecast.plot`
 method.
@@ -428,7 +428,7 @@ class takes the following arguments.
     want to evaluate.
 
 ```python
-crossvaldation_df = sf.cross_validation(
+cv_df = sf.cross_validation(
     df=Y_df,
     h=24,
     step_size=24,
@@ -436,11 +436,10 @@ crossvaldation_df = sf.cross_validation(
 )
 ```
 
-The crossvaldation_df object is a new data frame that includes the
-following columns:
+The `cv_df` object is a new data frame that includes the following
+columns:
 
--   `unique_id` index: (If you dont like working with index just run
-    `forecasts_cv_df.resetindex()`)
+-   `unique_id`: series identifier
 
 -   `ds`: datestamp or temporal index
 
@@ -453,52 +452,41 @@ following columns:
 -   `"model"`: columns with the model’s name and fitted value.
 
 ```python
-crossvaldation_df.head()
+cv_df.head()
 ```
 
 | unique_id | ds | cutoff | y | HoltWinters | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta |
 |----|----|----|----|----|----|----|----|----|
-| str | i64 | i64 | f32 | f32 | f32 | f32 | f32 | f32 |
-| "H1" | 701 | 700 | 619.0 | 847.0 | 742.668762 | 691.0 | 661.674988 | 612.767517 |
-| "H1" | 702 | 700 | 565.0 | 820.0 | 742.668762 | 618.0 | 661.674988 | 536.846252 |
-| "H1" | 703 | 700 | 532.0 | 790.0 | 742.668762 | 563.0 | 661.674988 | 497.82428 |
-| "H1" | 704 | 700 | 495.0 | 784.0 | 742.668762 | 529.0 | 661.674988 | 464.723236 |
-| "H1" | 705 | 700 | 481.0 | 752.0 | 742.668762 | 504.0 | 661.674988 | 440.972351 |
+| str | i64 | i64 | f64 | f64 | f64 | f64 | f64 | f64 |
+| "H1" | 701 | 700 | 619.0 | 847.0 | 742.668748 | 691.0 | 661.675 | 612.767504 |
+| "H1" | 702 | 700 | 565.0 | 820.0 | 742.668748 | 618.0 | 661.675 | 536.846278 |
+| "H1" | 703 | 700 | 532.0 | 790.0 | 742.668748 | 563.0 | 661.675 | 497.824286 |
+| "H1" | 704 | 700 | 495.0 | 784.0 | 742.668748 | 529.0 | 661.675 | 464.723219 |
+| "H1" | 705 | 700 | 481.0 | 752.0 | 742.668748 | 504.0 | 661.675 | 440.972336 |
 
 Next, we will evaluate the performance of every model for every series
 using common error metrics like Mean Absolute Error (MAE) or Mean Square
 Error (MSE) Define a utility function to evaluate different error
 metrics for the cross validation data frame.
 
-First import the desired error metrics from `datasetsforecast.losses`.
-Then define a utility function that takes a cross-validation data frame
-as a metric and returns an evaluation data frame with the average of the
+First import the desired error metrics from `utilsforecast.losses`. Then
+define a utility function that takes a cross-validation data frame as a
+metric and returns an evaluation data frame with the average of the
 error metric for every unique id and fitted model and all cutoffs.
 
 ```python
 from utilsforecast.losses import mse
-from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_cross_validation(df, metric):
+def evaluate_cv(df, metric):
     models = [c for c in df.columns if c not in ('unique_id', 'ds', 'cutoff', 'y')]
-    evals = []
-    # Calculate loss for every unique_id and cutoff.    
-    for cutoff in df['cutoff'].unique():
-        eval_ = evaluate(df.filter(pl.col('cutoff') == cutoff), metrics=[metric], models=models)
-        evals.append(eval_)
-    evals = pl.concat(evals).drop('metric')
-    # Calculate the mean of each 'unique_id' group
-    evals = evals.group_by(['unique_id'], maintain_order=True).mean() 
-
-    # For each row in evals (excluding 'unique_id'), find the model with the lowest value
-    best_model = [min(row, key=row.get) for row in evals.drop('unique_id').rows(named=True)]
-
-    # Add a 'best_model' column to evals dataframe with the best model for each 'unique_id'
-    evals = evals.with_columns(pl.Series(best_model).alias('best_model')).sort(by=['unique_id'])
-    return evals
+    evals = mse(cv_df, models=models)
+    pos2model = dict(enumerate(models))
+    return evals.with_columns(
+        best_model=pl.concat_list(models).list.arg_min().replace_strict(pos2model)
+    )
 ```
 
 > **Warning**
@@ -512,18 +500,18 @@ Create the data frame with the results of the evaluation of your
 cross-validation data frame using a Mean Squared Error metric.
 
 ```python
-evaluation_df = evaluate_cross_validation(crossvaldation_df, mse)
+evaluation_df = evaluate_cv(cv_df, mse)
 evaluation_df.head()
 ```
 
 | unique_id | HoltWinters | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta | best_model |
 |----|----|----|----|----|----|----|
-| str | f32 | f32 | f32 | f32 | f32 | str |
-| "H1" | 44888.019531 | 28038.734375 | 1422.666748 | 20927.666016 | 1296.333984 | "DynamicOptimiz… |
-| "H10" | 2812.916504 | 1483.483887 | 96.895828 | 1980.367676 | 379.621094 | "SeasonalNaive" |
-| "H100" | 121625.375 | 91945.140625 | 12019.0 | 78491.195312 | 21699.648438 | "SeasonalNaive" |
-| "H101" | 28453.394531 | 16183.631836 | 10944.458008 | 18208.404297 | 63698.070312 | "SeasonalNaive" |
-| "H102" | 232924.84375 | 132655.3125 | 12699.896484 | 309110.46875 | 31393.519531 | "SeasonalNaive" |
+| str | f64 | f64 | f64 | f64 | f64 | str |
+| "H1" | 44888.020833 | 28038.733985 | 1422.666667 | 20927.664488 | 1296.333977 | "DynamicOptimizedTheta" |
+| "H10" | 2812.916667 | 1483.483839 | 96.895833 | 1980.367543 | 379.621134 | "SeasonalNaive" |
+| "H100" | 121625.375 | 91945.139237 | 12019.0 | 78491.191439 | 21699.649325 | "SeasonalNaive" |
+| "H101" | 28453.395833 | 16183.63434 | 10944.458333 | 18208.4098 | 63698.077266 | "SeasonalNaive" |
+| "H102" | 232924.854167 | 132655.309136 | 12699.895833 | 309110.475212 | 31393.535274 | "SeasonalNaive" |
 
 Create a summary table with a model column and the number of series
 where that model performs best. In this case, the Arima and Seasonal
@@ -531,25 +519,14 @@ Naive are the best models for 10 series and the Theta model should be
 used for two.
 
 ```python
-select_cols = ['best_model', 'unique_id']
-
-summary_df = (
-    evaluation_df
-    .group_by('best_model')
-    .n_unique()
-    [select_cols]
-    .sort(by='unique_id')
-    .rename(dict(zip(select_cols, ["Model", "Nr. of unique_ids"])))
-)
-
-summary_df
+evaluation_df['best_model'].value_counts()
 ```
 
-| Model            | Nr. of unique_ids |
-|------------------|-------------------|
-| str              | u32               |
-| "DynamicOptimiz… | 4                 |
-| "SeasonalNaive"  | 6                 |
+| best_model              | count |
+|-------------------------|-------|
+| str                     | u32   |
+| "DynamicOptimizedTheta" | 4     |
+| "SeasonalNaive"         | 6     |
 
 You can further explore your results by plotting the unique_ids where a
 specific model wins.
@@ -569,58 +546,24 @@ the best possible forecast for every unique_id.
 
 ```python
 def get_best_model_forecast(forecasts_df, evaluation_df):
-    # Melt the 'forecasts_df' dataframe to long format, where each row represents
-    # a unique ID, a timestamp, a model, and that model's forecast.
-    df = (
-        forecasts_df
-        .melt(
-            id_vars=["unique_id", "ds"], 
-            value_vars=forecasts_df.columns[2:], 
-            variable_name="model", 
-            value_name="best_model_forecast"
-        )
-        # Join this dataframe with 'evaluation_df' on 'unique_id', attaching 
-        # the 'best_model' for each unique ID.
-        .join(
-            evaluation_df[['unique_id', 'best_model']],
-            on='unique_id',
-            how="left",
-        )
-    )
-
-    # Clean up the 'model' names by removing "-lo-90" and "-hi-90" from them,
-    # and store the cleaned names in a new column called 'clean_model'.
-    # Filter the dataframe to keep only the rows where 'clean_model' matches 'best_model'.
-    # After that, drop the 'clean_model' and 'best_model' columns, as they are no longer needed.
-    df = (
-        df
-        .with_columns(
-            pl.col('model').str.replace("-lo-90|-hi-90", "").alias("clean_model")
-        )
-        .filter(pl.col('clean_model') == pl.col('best_model'))
-        .drop('clean_model', 'best_model')
-    )
-
-    # Rename all the 'model' names to "best_model" for clarity, 
-    # because at this point the dataframe only contains forecasts from the best model for each unique ID.
-    # Then, reshape the dataframe back to wide format using the 'pivot()' method.
-    # The pivoted dataframe has one row per unique ID and timestamp, with a column for each 'model' 
-    # (in this case, all models are renamed to 'best_model'), and the value in each cell is the 'best_model_forecast'.
-    # The 'pivot()' method requires an aggregate function to apply if there are multiple values for the same index and column.
-    # Here, it uses 'first', meaning it keeps the first value if there are multiple.
-    # Finally, sort the dataframe by 'unique_id' and 'ds'.
-    return (
-        df
-        .with_columns(
-            pl.col('model').str.replace("[A-Za-z0-9]+", "best_model")
-        )
-        .pivot(
-            values='best_model_forecast',
-            index=['unique_id', 'ds'],
-            columns='model',
-            aggregate_function='first',
-        )
-        .sort(by=['unique_id', 'ds'])
+    models = {
+        c.replace('-lo-90', '').replace('-hi-90', '')
+        for c in forecasts_df.columns
+        if c not in ('unique_id', 'ds')
+    }
+    model2pos = {m: i for i, m in enumerate(models)}
+    with_best = forecasts_df.join(evaluation_df[['unique_id', 'best_model']], on='unique_id')
+    return with_best.select(
+        'unique_id',
+        'ds',
+        *[
+            (
+                pl.concat_list([f'{m}{suffix}' for m in models])
+                .list.get(pl.col('best_model').replace_strict(model2pos))
+                .alias(f'best_model{suffix}')
+            )
+            for suffix in ('', '-lo-90', '-hi-90')
+        ]
     )
 ```
 
@@ -634,12 +577,12 @@ prod_forecasts_df.head()
 
 | unique_id | ds  | best_model | best_model-lo-90 | best_model-hi-90 |
 |-----------|-----|------------|------------------|------------------|
-| str       | i64 | f32        | f32              | f32              |
-| "H1"      | 749 | 592.701843 | 577.677307       | 611.652649       |
-| "H1"      | 750 | 525.589111 | 505.449738       | 546.621826       |
-| "H1"      | 751 | 489.251801 | 462.072876       | 512.424133       |
-| "H1"      | 752 | 456.195038 | 430.554291       | 478.260956       |
-| "H1"      | 753 | 436.290527 | 411.051239       | 461.815948       |
+| str       | i64 | f64        | f64              | f64              |
+| "H1"      | 749 | 592.701851 | 577.67728        | 611.652639       |
+| "H1"      | 750 | 525.589116 | 505.449755       | 546.621805       |
+| "H1"      | 751 | 489.251814 | 462.072871       | 512.424116       |
+| "H1"      | 752 | 456.195032 | 430.554302       | 478.260963       |
+| "H1"      | 753 | 436.290514 | 411.051232       | 461.815932       |
 
 Plot the results.
 

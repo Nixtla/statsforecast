@@ -65,17 +65,6 @@ Install the necessary packages using `pip install statsforecast`
 pip install statsforecast -U
 ```
 
-
-```python
-import os
-```
-
-
-```python
-# this makes it so that the outputs of the predict methods have the id as a column
-os.environ['NIXTLA_ID_AS_COL'] = '1'
-```
-
 ## Load and explore the data
 
 For this example, we’ll use the hourly dataset of the [M4
@@ -142,7 +131,7 @@ from utilsforecast.plotting import plot_series
 plot_series(df)
 ```
 
-![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-9-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-7-output-1.png)
 
 ## Train model
 
@@ -216,7 +205,7 @@ We can plot the forecasts using the `plot_series` function from before.
 plot_series(df, fcst)
 ```
 
-![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-14-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-12-output-1.png)
 
 ## Recover insample forecasts and identify anomalies
 
@@ -261,7 +250,7 @@ We can plot the anomalies by setting the `level` and the
 plot_series(forecasts_df=insample_forecasts, level=levels, plot_anomalies=True)
 ```
 
-![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-17-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-15-output-1.png)
 
 If we want to take a closer look, we can use the `ids` argument to
 select one particular time series, for example, `H10`.
@@ -270,7 +259,7 @@ select one particular time series, for example, `H10`.
 plot_series(forecasts_df=insample_forecasts, level=[99], plot_anomalies=True, ids=['H10'])
 ```
 
-![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-18-output-1.png)
+![](/statsforecast/docs/tutorials/AnomalyDetection_files/figure-markdown_strict/cell-16-output-1.png)
 
 Here we identified the anomalies in the data using the MSTL model, but
 any [probabilistic

@@ -438,7 +438,7 @@ basic EDA.
 ```python
 from statsforecast import StatsForecast
 
-StatsForecast.plot(df, engine="matplotlib")
+StatsForecast.plot(df)
 ```
 
 ![](/statsforecast/docs/models/AutoTheta_files/figure-markdown_strict/cell-8-output-1.png)
@@ -496,22 +496,6 @@ plt.show()
 
 ## Implementation of AutoTheta with StatsForecast <a class="anchor" id="implementation"></a>
 
-To also know more about the parameters of the functions of the
-`AutoTheta Model`, they are listed below. For more information, visit
-the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#automatic-forecasting)
-
-``` text
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-decomposition_type : str
-    Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
-model : str
-    Controlling Theta Model. By default searchs the best model.
-alias : str
-    Custom name of the model.
-```
-
 ### Load libraries
 
 ```python
@@ -559,16 +543,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
-                   freq='MS', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='MS')
 ```
 
 ### Fit Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -737,18 +718,17 @@ result
          1.13025093e+02],
         [1.10946037e+02, 1.00561401e+02, 8.40569077e+01, 6.14692122e-02,
          1.14089775e+02]], dtype=float32),
- 'par': {'initial_smoothed': 41.527209666340006,
-  'alpha': 0.7664297044277077,
+ 'par': {'initial_smoothed': 41.52720966634,
+  'alpha': np.float64(0.7664297044277077),
   'theta': 2.0},
  'n': 536,
  'modeltype': 'STM',
- 'mean_y': 100.56138830499272,
- 'decompose': True,
+ 'mean_y': np.float64(100.56138830499272),
+ 'decompose': np.True_,
  'decomposition_type': 'additive',
- 'seas_forecast': {'mean': array([  0.08977811,  18.09442   ,  20.248487  ,  19.430647  ,
-           2.6400807 ,  -1.3090991 ,  -7.977731  , -12.3264065 ,
-         -12.027774  , -10.136967  , -11.4229355 ,  -5.3025    ],
-        dtype=float32)},
+ 'seas_forecast': {'mean': array([  0.08977811,  18.09442035,  20.24848682,  19.4306462 ,
+           2.64008067,  -1.30909907,  -7.97773123, -12.32640613,
+         -12.02777406, -10.1369666 , -11.42293515,  -5.30249992])},
  'fitted': array([ 83.58639526,  83.20941162,  75.51429749,  74.38491058,
          76.33631897,  76.90467072,  77.60909271,  79.82932281,
          77.03206635,  75.4719696 ,  85.744133  ,  85.47103882,
@@ -960,35 +940,32 @@ and
 
 ```python
 # Prediction
-Y_hat = sf.forecast(horizon, fitted=True)
-
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
-|           | ds         | AutoTheta  |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 2016-09-01 | 111.075912 |
-| 1         | 2016-10-01 | 129.111282 |
-| 1         | 2016-11-01 | 131.296082 |
-| ...       | ...        | ...        |
-| 1         | 2017-06-01 | 101.125748 |
-| 1         | 2017-07-01 | 99.870514  |
-| 1         | 2017-08-01 | 106.021683 |
+|     | unique_id | ds         | AutoTheta  |
+|-----|-----------|------------|------------|
+| 0   | 1         | 2016-09-01 | 111.075916 |
+| 1   | 1         | 2016-10-01 | 129.111289 |
+| 2   | 1         | 2016-11-01 | 131.296087 |
+| ... | ...       | ...        | ...        |
+| 9   | 1         | 2017-06-01 | 101.125752 |
+| 10  | 1         | 2017-07-01 | 99.870514  |
+| 11  | 1         | 2017-08-01 | 106.021681 |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds         | y         | AutoTheta |
-|-----------|------------|-----------|-----------|
-| unique_id |            |           |           |
-| 1         | 1972-01-01 | 85.694504 | 83.586395 |
-| 1         | 1972-02-01 | 71.820000 | 83.209412 |
-| 1         | 1972-03-01 | 66.022903 | 75.514297 |
-| 1         | 1972-04-01 | 64.564499 | 74.384911 |
-| 1         | 1972-05-01 | 65.010002 | 76.336319 |
+|     | unique_id | ds         | y       | AutoTheta |
+|-----|-----------|------------|---------|-----------|
+| 0   | 1         | 1972-01-01 | 85.6945 | 83.586395 |
+| 1   | 1         | 1972-02-01 | 71.8200 | 83.209412 |
+| 2   | 1         | 1972-03-01 | 66.0229 | 75.514297 |
+| 3   | 1         | 1972-04-01 | 64.5645 | 74.384911 |
+| 4   | 1         | 1972-05-01 | 65.0100 | 76.336319 |
 
 ```python
 StatsForecast.plot(values)
@@ -999,64 +976,40 @@ StatsForecast.plot(values)
 Adding 95% confidence interval with the forecast method
 
 ```python
-sf.forecast(h=horizon, level=[95])
+sf.forecast(df=train, h=horizon, level=[95])
 ```
 
-|           | ds         | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
-|-----------|------------|------------|-----------------|-----------------|
-| unique_id |            |            |                 |                 |
-| 1         | 2016-09-01 | 111.075912 | 90.148819       | 135.999680      |
-| 1         | 2016-10-01 | 129.111282 | 94.811134       | 160.372803      |
-| 1         | 2016-11-01 | 131.296082 | 90.598457       | 168.251602      |
-| ...       | ...        | ...        | ...             | ...             |
-| 1         | 2017-06-01 | 101.125748 | 41.213715       | 159.133316      |
-| 1         | 2017-07-01 | 99.870514  | 35.173969       | 152.843002      |
-| 1         | 2017-08-01 | 106.021683 | 38.784256       | 166.021072      |
-
-```python
-Y_hat=Y_hat.reset_index()
-Y_hat
-```
-
-|     | unique_id | ds         | AutoTheta  |
-|-----|-----------|------------|------------|
-| 0   | 1         | 2016-09-01 | 111.075912 |
-| 1   | 1         | 2016-10-01 | 129.111282 |
-| 2   | 1         | 2016-11-01 | 131.296082 |
-| ... | ...       | ...        | ...        |
-| 9   | 1         | 2017-06-01 | 101.125748 |
-| 10  | 1         | 2017-07-01 | 99.870514  |
-| 11  | 1         | 2017-08-01 | 106.021683 |
+|     | unique_id | ds         | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
+|-----|-----------|------------|------------|-----------------|-----------------|
+| 0   | 1         | 2016-09-01 | 111.075916 | 90.148822       | 135.999675      |
+| 1   | 1         | 2016-10-01 | 129.111289 | 94.811133       | 160.372802      |
+| 2   | 1         | 2016-11-01 | 131.296087 | 90.598455       | 168.251600      |
+| ... | ...       | ...        | ...        | ...             | ...             |
+| 9   | 1         | 2017-06-01 | 101.125752 | 41.213688       | 159.133373      |
+| 10  | 1         | 2017-07-01 | 99.870514  | 35.173966       | 152.843041      |
+| 11  | 1         | 2017-08-01 | 106.021681 | 38.784242       | 166.021093      |
 
 ```python
 # Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
 Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
 Y_hat1
 ```
 
 |     | ds         | y        | unique_id | AutoTheta  |
 |-----|------------|----------|-----------|------------|
-| 0   | 2016-09-01 | 109.3191 | 1         | 111.075912 |
-| 1   | 2016-10-01 | 119.0502 | 1         | 129.111282 |
-| 2   | 2016-11-01 | 116.8431 | 1         | 131.296082 |
+| 0   | 2016-09-01 | 109.3191 | 1         | 111.075916 |
+| 1   | 2016-10-01 | 119.0502 | 1         | 129.111289 |
+| 2   | 2016-11-01 | 116.8431 | 1         | 131.296087 |
 | ... | ...        | ...      | ...       | ...        |
-| 9   | 2017-06-01 | 104.2022 | 1         | 101.125748 |
+| 9   | 2017-06-01 | 104.2022 | 1         | 101.125752 |
 | 10  | 2017-07-01 | 102.5861 | 1         | 99.870514  |
-| 11  | 2017-08-01 | 114.0613 | 1         | 106.021683 |
+| 11  | 2017-08-01 | 114.0613 | 1         | 106.021681 |
 
 ```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat1]).set_index('ds')
-plot_df[['y', "AutoTheta"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Year ', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
+sf.plot(train, Y_hat1)
 ```
 
-![](/statsforecast/docs/models/AutoTheta_files/figure-markdown_strict/cell-26-output-1.png)
+![](/statsforecast/docs/models/AutoTheta_files/figure-markdown_strict/cell-25-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -1084,16 +1037,15 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | AutoTheta  |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 2016-09-01 | 111.075912 |
-| 1         | 2016-10-01 | 129.111282 |
-| 1         | 2016-11-01 | 131.296082 |
-| ...       | ...        | ...        |
-| 1         | 2017-06-01 | 101.125748 |
-| 1         | 2017-07-01 | 99.870514  |
-| 1         | 2017-08-01 | 106.021683 |
+|     | unique_id | ds         | AutoTheta  |
+|-----|-----------|------------|------------|
+| 0   | 1         | 2016-09-01 | 111.075916 |
+| 1   | 1         | 2016-10-01 | 129.111289 |
+| 2   | 1         | 2016-11-01 | 131.296087 |
+| ... | ...       | ...        | ...        |
+| 9   | 1         | 2017-06-01 | 101.125752 |
+| 10  | 1         | 2017-07-01 | 99.870514  |
+| 11  | 1         | 2017-08-01 | 106.021681 |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[95]) 
@@ -1101,76 +1053,21 @@ forecast_df = sf.predict(h=horizon, level=[95])
 forecast_df
 ```
 
-|           | ds         | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
-|-----------|------------|------------|-----------------|-----------------|
-| unique_id |            |            |                 |                 |
-| 1         | 2016-09-01 | 111.075912 | 90.148819       | 135.999680      |
-| 1         | 2016-10-01 | 129.111282 | 94.811134       | 160.372803      |
-| 1         | 2016-11-01 | 131.296082 | 90.598457       | 168.251602      |
-| ...       | ...        | ...        | ...             | ...             |
-| 1         | 2017-06-01 | 101.125748 | 41.213715       | 159.133316      |
-| 1         | 2017-07-01 | 99.870514  | 35.173969       | 152.843002      |
-| 1         | 2017-08-01 | 106.021683 | 38.784256       | 166.021072      |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
+|     | unique_id | ds         | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
+|-----|-----------|------------|------------|-----------------|-----------------|
+| 0   | 1         | 2016-09-01 | 111.075916 | 90.148822       | 135.999675      |
+| 1   | 1         | 2016-10-01 | 129.111289 | 94.811133       | 160.372802      |
+| 2   | 1         | 2016-11-01 | 131.296087 | 90.598455       | 168.251600      |
+| ... | ...       | ...        | ...        | ...             | ...             |
+| 9   | 1         | 2017-06-01 | 101.125752 | 41.213688       | 159.133373      |
+| 10  | 1         | 2017-07-01 | 99.870514  | 35.173966       | 152.843041      |
+| 11  | 1         | 2017-08-01 | 106.021681 | 38.784242       | 166.021093      |
 
 ```python
-pd.concat([df, forecast_df]).set_index('ds')
+sf.plot(train, test.merge(forecast_df), level=[95])
 ```
 
-|            | y       | unique_id | AutoTheta  | AutoTheta-lo-95 | AutoTheta-hi-95 |
-|------------|---------|-----------|------------|-----------------|-----------------|
-| ds         |         |           |            |                 |                 |
-| 1972-01-01 | 85.6945 | 1         | NaN        | NaN             | NaN             |
-| 1972-02-01 | 71.8200 | 1         | NaN        | NaN             | NaN             |
-| 1972-03-01 | 66.0229 | 1         | NaN        | NaN             | NaN             |
-| ...        | ...     | ...       | ...        | ...             | ...             |
-| 2017-06-01 | NaN     | NaN       | 101.125748 | 41.213715       | 159.133316      |
-| 2017-07-01 | NaN     | NaN       | 99.870514  | 35.173969       | 152.843002      |
-| 2017-08-01 | NaN     | NaN       | 106.021683 | 38.784256       | 166.021072      |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series, also let’s draw the confidence interval that we have
-obtained when making the prediction with 95% confidence.
-
-```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=2)
-    colors = ['orange', 'black', 'green']
-    for model, color in zip(models, colors):
-        ax.fill_between(df_plot.index, 
-                        df_plot[f'{model}-lo-95'], 
-                        df_plot[f'{model}-hi-95'],
-                        alpha=.35,
-                        color=color,
-                        label=f'{model}-level-95')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel('', fontsize=20)
-    ax.set_xlabel('Timestamp [t]', fontsize=20)
-    ax.legend(prop={'size': 15})
-    ax.grid(True)
-```
-
-
-```python
-plot_forecasts(train, test, forecast_df, models=['AutoTheta'])
-```
-
-![](/statsforecast/docs/models/AutoTheta_files/figure-markdown_strict/cell-31-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df, level=[95])
-```
-
-![](/statsforecast/docs/models/AutoTheta_files/figure-markdown_strict/cell-32-output-1.png)
+![](/statsforecast/docs/models/AutoTheta_files/figure-markdown_strict/cell-28-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -1228,8 +1125,7 @@ crossvalidation_df = sf.cross_validation(df=train,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier.
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -1239,83 +1135,45 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds         | cutoff     | y          | AutoTheta  |
-|-----------|------------|------------|------------|------------|
-| unique_id |            |            |            |            |
-| 1         | 2011-09-01 | 2011-08-01 | 93.906197  | 98.167465  |
-| 1         | 2011-10-01 | 2011-08-01 | 116.763397 | 116.969933 |
-| 1         | 2011-11-01 | 2011-08-01 | 116.825798 | 119.135147 |
-| ...       | ...        | ...        | ...        | ...        |
-| 1         | 2016-06-01 | 2015-08-01 | 102.404404 | 109.600456 |
-| 1         | 2016-07-01 | 2015-08-01 | 102.951202 | 108.260147 |
-| 1         | 2016-08-01 | 2015-08-01 | 104.697701 | 114.248260 |
+|     | unique_id | ds         | cutoff     | y        | AutoTheta  |
+|-----|-----------|------------|------------|----------|------------|
+| 0   | 1         | 2011-09-01 | 2011-08-01 | 93.9062  | 98.167467  |
+| 1   | 1         | 2011-10-01 | 2011-08-01 | 116.7634 | 116.969931 |
+| 2   | 1         | 2011-11-01 | 2011-08-01 | 116.8258 | 119.135143 |
+| ... | ...       | ...        | ...        | ...      | ...        |
+| 57  | 1         | 2016-06-01 | 2015-08-01 | 102.4044 | 109.600458 |
+| 58  | 1         | 2016-07-01 | 2015-08-01 | 102.9512 | 108.260148 |
+| 59  | 1         | 2016-08-01 | 2015-08-01 | 104.6977 | 114.248257 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, AutoTheta.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["AutoTheta"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  6.9269824
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
-
 Now we are going to evaluate our model with the results of the
-predictions, we will use different types of metrics
-`MAE, MAPE, MASE, RMSE, SMAPE` to evaluate the `accuracy`.
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import (mae, mape, mase, rmse, smape)
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, y_pred, model):
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=12)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-
-```python
-evaluate_performace(train, test, Y_hat, model="AutoTheta")
-```
-
-|           | mae      | mape     | mase     | rmse     | smape    |
-|-----------|----------|----------|----------|----------|----------|
-| AutoTheta | 6.281525 | 5.568355 | 1.212475 | 7.683672 | 5.479727 |
+|     | unique_id | metric | AutoTheta |
+|-----|-----------|--------|-----------|
+| 0   | 1         | mae    | 6.281526  |
+| 1   | 1         | mape   | 0.055684  |
+| 2   | 1         | mase   | 1.212475  |
+| 3   | 1         | rmse   | 7.683674  |
+| 4   | 1         | smape  | 0.027399  |
 
 ## Acknowledgements
 

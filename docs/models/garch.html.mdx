@@ -220,33 +220,31 @@ rcParams['figure.figsize'] = (18,7)
 Let’s pull the S&P500 stock data from the Yahoo Finance site.
 
 ```python
+import datetime
+
 import pandas as pd
 import time
-from datetime import datetime
 import yfinance as yf
 
 ticker = '^GSPC'
-period1 = int(time.mktime(datetime(2015, 1, 1, 23, 59).timetuple()))
-period2 = int(time.mktime(datetime.now().timetuple()))
+period1 = datetime.datetime(2015, 1, 1)
+period2 = datetime.datetime(2023, 9, 22)
 interval = '1d' # 1d, 1m
 
-SP_500 = yf.download(ticker, start=period1, end=period2, interval=interval)
+SP_500 = yf.download(ticker, start=period1, end=period2, interval=interval, progress=False)
 SP_500 = SP_500.reset_index()
 
 SP_500.head()
 ```
 
-``` text
-[*********************100%***********************]  1 of 1 completed
-```
-
-|  | Date | Open | High | Low | Close | Adj Close | Volume |
+| Price | Date | Adj Close | Close | High | Low | Open | Volume |
 |----|----|----|----|----|----|----|----|
-| 0 | 2015-01-02 | 2058.899902 | 2072.360107 | 2046.040039 | 2058.199951 | 2058.199951 | 2708700000 |
-| 1 | 2015-01-05 | 2054.439941 | 2054.439941 | 2017.339966 | 2020.579956 | 2020.579956 | 3799120000 |
-| 2 | 2015-01-06 | 2022.150024 | 2030.250000 | 1992.439941 | 2002.609985 | 2002.609985 | 4460110000 |
-| 3 | 2015-01-07 | 2005.550049 | 2029.609985 | 2005.550049 | 2025.900024 | 2025.900024 | 3805480000 |
-| 4 | 2015-01-08 | 2030.609985 | 2064.080078 | 2030.609985 | 2062.139893 | 2062.139893 | 3934010000 |
+| Ticker |  | ^GSPC | ^GSPC | ^GSPC | ^GSPC | ^GSPC | ^GSPC |
+| 0 | 2015-01-02 00:00:00+00:00 | 2058.199951 | 2058.199951 | 2072.360107 | 2046.040039 | 2058.899902 | 2708700000 |
+| 1 | 2015-01-05 00:00:00+00:00 | 2020.579956 | 2020.579956 | 2054.439941 | 2017.339966 | 2054.439941 | 3799120000 |
+| 2 | 2015-01-06 00:00:00+00:00 | 2002.609985 | 2002.609985 | 2030.250000 | 1992.439941 | 2022.150024 | 4460110000 |
+| 3 | 2015-01-07 00:00:00+00:00 | 2025.900024 | 2025.900024 | 2029.609985 | 2005.550049 | 2005.550049 | 3805480000 |
+| 4 | 2015-01-08 00:00:00+00:00 | 2062.139893 | 2062.139893 | 2064.080078 | 2030.609985 | 2030.609985 | 3934010000 |
 
 ```python
 df=SP_500[["Date","Close"]]
@@ -270,22 +268,22 @@ df.columns=["ds", "y", "unique_id"]
 df.head()
 ```
 
-|     | ds         | y           | unique_id |
-|-----|------------|-------------|-----------|
-| 0   | 2015-01-02 | 2058.199951 | 1         |
-| 1   | 2015-01-05 | 2020.579956 | 1         |
-| 2   | 2015-01-06 | 2002.609985 | 1         |
-| 3   | 2015-01-07 | 2025.900024 | 1         |
-| 4   | 2015-01-08 | 2062.139893 | 1         |
+|     | ds                        | y           | unique_id |
+|-----|---------------------------|-------------|-----------|
+| 0   | 2015-01-02 00:00:00+00:00 | 2058.199951 | 1         |
+| 1   | 2015-01-05 00:00:00+00:00 | 2020.579956 | 1         |
+| 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         |
+| 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         |
+| 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         |
 
 ```python
 print(df.dtypes)
 ```
 
 ``` text
-ds           datetime64[ns]
-y                   float64
-unique_id            object
+ds           datetime64[ns, UTC]
+y                        float64
+unique_id                 object
 dtype: object
 ```
 
@@ -411,13 +409,13 @@ df.dropna(inplace=True, how='any')
 df.head()
 ```
 
-|     | ds         | y           | unique_id | return    |
-|-----|------------|-------------|-----------|-----------|
-| 1   | 2015-01-05 | 2020.579956 | 1         | -1.827811 |
-| 2   | 2015-01-06 | 2002.609985 | 1         | -0.889347 |
-| 3   | 2015-01-07 | 2025.900024 | 1         | 1.162984  |
-| 4   | 2015-01-08 | 2062.139893 | 1         | 1.788828  |
-| 5   | 2015-01-09 | 2044.810059 | 1         | -0.840381 |
+|     | ds                        | y           | unique_id | return    |
+|-----|---------------------------|-------------|-----------|-----------|
+| 1   | 2015-01-05 00:00:00+00:00 | 2020.579956 | 1         | -1.827811 |
+| 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         | -0.889347 |
+| 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         | 1.162984  |
+| 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         | 1.788828  |
+| 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 |
 
 ```python
 import plotly.express as px
@@ -434,13 +432,13 @@ df['sq_return'] = df["return"].mul(df["return"])
 df.head()
 ```
 
-|     | ds         | y           | unique_id | return    | sq_return |
-|-----|------------|-------------|-----------|-----------|-----------|
-| 1   | 2015-01-05 | 2020.579956 | 1         | -1.827811 | 3.340891  |
-| 2   | 2015-01-06 | 2002.609985 | 1         | -0.889347 | 0.790938  |
-| 3   | 2015-01-07 | 2025.900024 | 1         | 1.162984  | 1.352532  |
-| 4   | 2015-01-08 | 2062.139893 | 1         | 1.788828  | 3.199906  |
-| 5   | 2015-01-09 | 2044.810059 | 1         | -0.840381 | 0.706240  |
+|     | ds                        | y           | unique_id | return    | sq_return |
+|-----|---------------------------|-------------|-----------|-----------|-----------|
+| 1   | 2015-01-05 00:00:00+00:00 | 2020.579956 | 1         | -1.827811 | 3.340891  |
+| 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         | -0.889347 | 0.790938  |
+| 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         | 1.162984  | 1.352532  |
+| 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         | 1.788828  | 3.199906  |
+| 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 | 0.706240  |
 
 ### Returns vs Squared Returns
 
@@ -567,37 +565,10 @@ train.shape, test.shape
 ```
 
 ``` text
-((2116, 3), (83, 3))
+((2116, 3), (78, 3))
 ```
-
-Now let’s plot the training data and the test data.
-
-```python
-sns.lineplot(train,x="ds", y="y", label="Train")
-sns.lineplot(test, x="ds", y="y", label="Test")
-plt.show()
-```
-
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-20-output-1.png)
 
 ## Implementation of GARCH with StatsForecast <a class="anchor" id="implementation"></a>
-
-To also know more about the parameters of the functions of the
-`GARCH Model`, they are listed below. For more information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#garch-model)
-
-``` text
-p : int
-    Number of lagged versions of the series.
-q: int
-    Number of lagged versions of the volatility.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
 
 ### Load libraries
 
@@ -647,10 +618,10 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
-                   freq='C', # custom business day frequency
-                   n_jobs=-1)
+sf = StatsForecast(
+    models=models,
+    freq='C', # custom business day frequency
+)
 ```
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
@@ -704,8 +675,7 @@ crossvalidation_df = sf.cross_validation(df=train,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -715,41 +685,38 @@ following columns:
 crossvalidation_df
 ```
 
-|  | ds | cutoff | y | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
-|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |  |  |  |  |  |  |
-| 1 | 2023-01-03 | 2023-01-02 | -0.404962 | 1.906913 | 1.886413 | 1.908357 | 1.930915 | 1.913208 | 1.904380 | 1.903494 | 1.885897 | 1.873233 |
-| 1 | 2023-01-04 | 2023-01-02 | -1.202064 | -0.824837 | -0.838750 | -0.827394 | -0.824686 | -0.835927 | -0.822887 | -0.841358 | -0.833009 | -0.828155 |
-| 1 | 2023-01-05 | 2023-01-02 | 1.746133 | -0.665798 | -0.653746 | -0.666613 | -0.680718 | -0.663415 | -0.677103 | -0.649123 | -0.661879 | -0.665392 |
-| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
-| 1 | 2023-05-29 | 2023-02-03 | 1.304909 | -0.389434 | -0.350367 | -0.313831 | -0.191451 | -0.192649 | -0.186990 | -0.184408 | -0.188771 | -0.185092 |
-| 1 | 2023-05-30 | 2023-02-03 | 0.001660 | -0.340987 | -0.296400 | -0.278776 | -0.158889 | -0.157296 | -0.160854 | -0.154074 | -0.156617 | -0.158255 |
-| 1 | 2023-05-31 | 2023-02-03 | -0.610862 | 0.316639 | 0.274853 | 0.248995 | 0.135092 | 0.134911 | 0.132532 | 0.135533 | 0.134844 | 0.133779 |
+|  | unique_id | ds | cutoff | y | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
+|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
+| 0 | 1 | 2023-01-04 00:00:00+00:00 | 2023-01-03 00:00:00+00:00 | 0.753897 | 1.678755 | 1.678412 | 1.680475 | 1.686649 | 1.719494 | 2.210902 | 1.702743 | 1.647114 | 1.637795 |
+| 1 | 1 | 2023-01-05 00:00:00+00:00 | 2023-01-03 00:00:00+00:00 | -1.164553 | -0.728069 | -0.745487 | -0.730648 | -0.722156 | -0.738119 | -0.824748 | -0.755277 | -0.740976 | -0.744150 |
+| 2 | 1 | 2023-01-06 00:00:00+00:00 | 2023-01-03 00:00:00+00:00 | 2.284078 | -0.589733 | -0.582982 | -0.590078 | -0.598076 | -0.587109 | -0.866347 | -0.571160 | -0.587807 | -0.584692 |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| 387 | 1 | 2023-05-26 00:00:00+00:00 | 2023-02-07 00:00:00+00:00 | 1.304909 | -1.697814 | -1.694747 | -1.702537 | -1.735631 | -1.729903 | -1.712997 | -1.663399 | -1.702160 | -1.687723 |
+| 388 | 1 | 2023-05-30 00:00:00+00:00 | 2023-02-07 00:00:00+00:00 | 0.001660 | -0.326945 | -0.337504 | -0.329686 | -0.330120 | -0.334717 | -0.327583 | -0.330260 | -0.338245 | -0.332412 |
+| 389 | 1 | 2023-05-31 00:00:00+00:00 | 2023-02-07 00:00:00+00:00 | -0.610862 | 0.807625 | 0.787054 | 0.807819 | 0.841536 | 0.811702 | 0.836159 | 0.772193 | 0.801933 | 0.804526 |
 
 ```python
-from datasetsforecast.losses import rmse
-
-def compute_cv_rmse(crossvalidation_df):
-    """Compute MAE for all models generated"""
-    res = {}
-    for mod in models: 
-        res[mod] = rmse(crossvalidation_df['actual'], crossvalidation_df[str(mod)])
-    return pd.Series(res)
+from utilsforecast.evaluation import evaluate
+from utilsforecast.losses import rmse
 ```
 
 
 ```python
-crossvalidation_df.rename(columns = {'y' : 'actual'}, inplace = True) # rename actual values 
-rmse_cv = crossvalidation_df.groupby(['unique_id', 'cutoff']).apply(compute_cv_rmse)
-
-mae = rmse_cv.groupby('unique_id').mean()
-mae.style.highlight_min(color = 'red', axis = 1)
+evals = evaluate(crossvalidation_df.drop(columns='cutoff'), metrics=[rmse], agg_fn='mean')
+evals
 ```
 
-|   | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
-|----|----|----|----|----|----|----|----|----|----|
-| unique_id |   |   |   |   |   |   |   |   |   |
-| 1 | 1.598613 | 1.721620 | 1.547210 | 1.375646 | 1.442002 | 1.419195 | 1.373299 | 1.377253 | 1.374233 |
+|  | metric | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
+|----|----|----|----|----|----|----|----|----|----|----|
+| 0 | rmse | 1.383143 | 1.526258 | 1.481056 | 1.389969 | 1.453538 | 1.539906 | 1.392352 | 1.515796 | 1.389061 |
+
+```python
+evals.drop(columns='metric').loc[0].idxmin()
+```
+
+``` text
+'GARCH(1,1)'
+```
 
 **Note:** This result can vary depending on the data and period you use
 to train and test the model, and the models you want to test. This is an
@@ -777,15 +744,14 @@ models = [GARCH(1,1)]
 
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
+sf = StatsForecast(models=models,
                    freq='C', # custom business day frequency
-                   n_jobs=-1)
+                  )
 ```
 
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -803,14 +769,14 @@ result
 ``` text
 {'p': 1,
  'q': 1,
- 'coeff': array([0.11715665, 0.261296  , 0.64151786]),
+ 'coeff': array([0.03745049, 0.18399111, 0.7890637 ]),
  'message': 'Optimization terminated successfully',
- 'y_vals': array([-0.61086244]),
- 'sigma2_vals': array([0.81241364]),
- 'fitted': array([        nan,  2.22688619, -0.75658963, ..., -0.20975516,
-         0.83589047,  0.1360351 ]),
- 'actual_residuals': array([        nan, -3.11623338,  1.91957389, ...,  1.51466384,
-        -0.83423013, -0.74689754])}
+ 'y_vals': array([-0.61086242]),
+ 'sigma2_vals': array([0.76298402]),
+ 'fitted': array([        nan,  2.14638896, -0.76426268, ..., -0.19747638,
+         0.76993462,  0.13183178]),
+ 'actual_residuals': array([        nan, -3.03573613,  1.92724695, ...,  1.50238505,
+        -0.7682743 , -0.7426942 ])}
 ```
 
 Let us now visualize the residuals of our models.
@@ -828,12 +794,12 @@ residual
 |      | residual Model |
 |------|----------------|
 | 0    | NaN            |
-| 1    | -3.116233      |
-| 2    | 1.919574       |
+| 1    | -3.035736      |
+| 2    | 1.927247       |
 | ...  | ...            |
-| 2113 | 1.514664       |
-| 2114 | -0.834230      |
-| 2115 | -0.746898      |
+| 2113 | 1.502385       |
+| 2114 | -0.768274      |
+| 2115 | -0.742694      |
 
 ```python
 from scipy import stats
@@ -893,109 +859,65 @@ and
 [`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
 
 ```python
-Y_hat = sf.forecast(horizon, fitted=True)
-
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat.head()
 ```
 
-|           | ds         | GARCH(1,1) |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 2023-06-01 | 1.393380   |
-| 1         | 2023-06-02 | -0.640599  |
-| 1         | 2023-06-05 | -0.508753  |
-| 1         | 2023-06-06 | -0.947621  |
-| 1         | 2023-06-07 | 0.798889   |
+|     | unique_id | ds                        | GARCH(1,1) |
+|-----|-----------|---------------------------|------------|
+| 0   | 1         | 2023-06-01 00:00:00+00:00 | 1.366914   |
+| 1   | 1         | 2023-06-02 00:00:00+00:00 | -0.593121  |
+| 2   | 1         | 2023-06-05 00:00:00+00:00 | -0.485200  |
+| 3   | 1         | 2023-06-06 00:00:00+00:00 | -0.927145  |
+| 4   | 1         | 2023-06-07 00:00:00+00:00 | 0.766640   |
 
 ```python
-Y_hat = sf.forecast(horizon, fitted=True, level=[95])
-
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True, level=[95])
 Y_hat.head()
 ```
 
-|           | ds         | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
-|-----------|------------|------------|------------------|------------------|
-| unique_id |            |            |                  |                  |
-| 1         | 2023-06-01 | 1.393380   | -0.048836        | 2.835595         |
-| 1         | 2023-06-02 | -0.640599  | -2.789734        | 1.508536         |
-| 1         | 2023-06-05 | -0.508753  | -2.327246        | 1.309740         |
-| 1         | 2023-06-06 | -0.947621  | -2.476394        | 0.581153         |
-| 1         | 2023-06-07 | 0.798889   | -0.871354        | 2.469133         |
+|  | unique_id | ds | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
+|----|----|----|----|----|----|
+| 0 | 1 | 2023-06-01 00:00:00+00:00 | 1.366914 | -0.021035 | 2.754863 |
+| 1 | 1 | 2023-06-02 00:00:00+00:00 | -0.593121 | -2.435497 | 1.249254 |
+| 2 | 1 | 2023-06-05 00:00:00+00:00 | -0.485200 | -2.139216 | 1.168815 |
+| 3 | 1 | 2023-06-06 00:00:00+00:00 | -0.927145 | -2.390566 | 0.536276 |
+| 4 | 1 | 2023-06-07 00:00:00+00:00 | 0.766640 | -0.771479 | 2.304759 |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds         | y         | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
-|-----------|------------|-----------|------------|------------------|------------------|
-| unique_id |            |           |            |                  |                  |
-| 1         | 2015-01-05 | -1.827811 | NaN        | NaN              | NaN              |
-| 1         | 2015-01-06 | -0.889347 | 2.226886   | -0.858147        | 5.311919         |
-| 1         | 2015-01-07 | 1.162984  | -0.756590  | -3.841623        | 2.328444         |
-| 1         | 2015-01-08 | 1.788828  | -0.636398  | -3.721431        | 2.448635         |
-| 1         | 2015-01-09 | -0.840381 | -1.472993  | -4.558026        | 1.612040         |
+|  | unique_id | ds | y | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
+|----|----|----|----|----|----|----|
+| 0 | 1 | 2015-01-05 00:00:00+00:00 | -1.827811 | NaN | NaN | NaN |
+| 1 | 1 | 2015-01-06 00:00:00+00:00 | -0.889347 | 2.146389 | -0.972874 | 5.265652 |
+| 2 | 1 | 2015-01-07 00:00:00+00:00 | 1.162984 | -0.764263 | -3.883526 | 2.355000 |
+| 3 | 1 | 2015-01-08 00:00:00+00:00 | 1.788828 | -0.650707 | -3.769970 | 2.468556 |
+| 4 | 1 | 2015-01-09 00:00:00+00:00 | -0.840381 | -1.449049 | -4.568312 | 1.670214 |
 
 Adding 95% confidence interval with the forecast method
 
 ```python
-sf.forecast(h=horizon, level=[95])
+sf.forecast(df=train, h=horizon, level=[95])
 ```
 
-|           | ds         | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
-|-----------|------------|------------|------------------|------------------|
-| unique_id |            |            |                  |                  |
-| 1         | 2023-06-01 | 1.393380   | -0.048836        | 2.835595         |
-| 1         | 2023-06-02 | -0.640599  | -2.789734        | 1.508536         |
-| 1         | 2023-06-05 | -0.508753  | -2.327246        | 1.309740         |
-| ...       | ...        | ...        | ...              | ...              |
-| 1         | 2023-09-21 | -0.199650  | -1.780158        | 1.380858         |
-| 1         | 2023-09-22 | -0.161219  | -1.425179        | 1.102742         |
-| 1         | 2023-09-25 | 0.136796   | -0.916991        | 1.190583         |
+|  | unique_id | ds | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
+|----|----|----|----|----|----|
+| 0 | 1 | 2023-06-01 00:00:00+00:00 | 1.366914 | -0.021035 | 2.754863 |
+| 1 | 1 | 2023-06-02 00:00:00+00:00 | -0.593121 | -2.435497 | 1.249254 |
+| 2 | 1 | 2023-06-05 00:00:00+00:00 | -0.485200 | -2.139216 | 1.168815 |
+| ... | ... | ... | ... | ... | ... |
+| 75 | 1 | 2023-09-14 00:00:00+00:00 | -1.686546 | -3.049859 | -0.323233 |
+| 76 | 1 | 2023-09-15 00:00:00+00:00 | -0.322556 | -2.497448 | 1.852335 |
+| 77 | 1 | 2023-09-18 00:00:00+00:00 | 0.799407 | -1.027642 | 2.626457 |
 
 ```python
-Y_hat=Y_hat.reset_index()
-Y_hat.head()
+sf.plot(train, Y_hat.merge(test), max_insample_length=200)
 ```
 
-|     | unique_id | ds         | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
-|-----|-----------|------------|------------|------------------|------------------|
-| 0   | 1         | 2023-06-01 | 1.393380   | -0.048836        | 2.835595         |
-| 1   | 1         | 2023-06-02 | -0.640599  | -2.789734        | 1.508536         |
-| 2   | 1         | 2023-06-05 | -0.508753  | -2.327246        | 1.309740         |
-| 3   | 1         | 2023-06-06 | -0.947621  | -2.476394        | 0.581153         |
-| 4   | 1         | 2023-06-07 | 0.798889   | -0.871354        | 2.469133         |
-
-```python
-# Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
-Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
-Y_hat1
-```
-
-|  | ds | unique_id | y | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-hi-95 |
-|----|----|----|----|----|----|----|
-| 0 | 2023-06-01 | 1 | 0.985445 | 1.393380 | -0.048836 | 2.835595 |
-| 1 | 2023-06-02 | 1 | 1.453442 | -0.640599 | -2.789734 | 1.508536 |
-| 2 | 2023-06-05 | 1 | -0.200358 | -0.508753 | -2.327246 | 1.309740 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 80 | 2023-09-26 | 1 | -1.473453 | NaN | NaN | NaN |
-| 81 | 2023-09-27 | 1 | 0.022931 | NaN | NaN | NaN |
-| 82 | 2023-09-28 | 1 | 0.589317 | NaN | NaN | NaN |
-
-```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat1]).set_index('ds').tail(200)
-plot_df[['y', "GARCH(1,1)"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Year ', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-plt.show()
-```
-
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-40-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-38-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -1023,139 +945,66 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | GARCH(1,1) |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 2023-06-01 | 1.393380   |
-| 1         | 2023-06-02 | -0.640599  |
-| 1         | 2023-06-05 | -0.508753  |
-| ...       | ...        | ...        |
-| 1         | 2023-09-21 | -0.199650  |
-| 1         | 2023-09-22 | -0.161219  |
-| 1         | 2023-09-25 | 0.136796   |
+|     | unique_id | ds                        | GARCH(1,1) |
+|-----|-----------|---------------------------|------------|
+| 0   | 1         | 2023-06-01 00:00:00+00:00 | 1.366914   |
+| 1   | 1         | 2023-06-02 00:00:00+00:00 | -0.593121  |
+| 2   | 1         | 2023-06-05 00:00:00+00:00 | -0.485200  |
+| ... | ...       | ...                       | ...        |
+| 75  | 1         | 2023-09-14 00:00:00+00:00 | -1.686546  |
+| 76  | 1         | 2023-09-15 00:00:00+00:00 | -0.322556  |
+| 77  | 1         | 2023-09-18 00:00:00+00:00 | 0.799407   |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
-
 forecast_df.head(10)
 ```
 
-|  | ds | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-lo-80 | GARCH(1,1)-hi-80 | GARCH(1,1)-hi-95 |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| 1 | 2023-06-01 | 1.393380 | -0.048836 | 0.450365 | 2.336394 | 2.835595 |
-| 1 | 2023-06-02 | -0.640599 | -2.789734 | -2.045843 | 0.764645 | 1.508536 |
-| 1 | 2023-06-05 | -0.508753 | -2.327246 | -1.697802 | 0.680296 | 1.309740 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1 | 2023-06-12 | -1.251548 | -6.549860 | -4.715928 | 2.212832 | 4.046764 |
-| 1 | 2023-06-13 | 0.479689 | -3.951083 | -2.417437 | 3.376815 | 4.910460 |
-| 1 | 2023-06-14 | -0.318133 | -3.508017 | -2.403886 | 1.767620 | 2.871751 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-df_plot=pd.concat([df, forecast_df]).set_index('ds').tail(220)
-df_plot
-```
-
-|  | unique_id | y | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-lo-80 | GARCH(1,1)-hi-80 | GARCH(1,1)-hi-95 |
+|  | unique_id | ds | GARCH(1,1) | GARCH(1,1)-lo-95 | GARCH(1,1)-lo-80 | GARCH(1,1)-hi-80 | GARCH(1,1)-hi-95 |
 |----|----|----|----|----|----|----|----|
-| ds |  |  |  |  |  |  |  |
-| 2023-03-15 | 1 | -0.698088 | NaN | NaN | NaN | NaN | NaN |
-| 2023-03-16 | 1 | 1.756201 | NaN | NaN | NaN | NaN | NaN |
-| 2023-03-17 | 1 | -1.101946 | NaN | NaN | NaN | NaN | NaN |
+| 0 | 1 | 2023-06-01 00:00:00+00:00 | 1.366914 | -0.021035 | 0.459383 | 2.274445 | 2.754863 |
+| 1 | 1 | 2023-06-02 00:00:00+00:00 | -0.593121 | -2.435497 | -1.797786 | 0.611543 | 1.249254 |
+| 2 | 1 | 2023-06-05 00:00:00+00:00 | -0.485200 | -2.139216 | -1.566703 | 0.596303 | 1.168815 |
 | ... | ... | ... | ... | ... | ... | ... | ... |
-| 2023-09-21 | NaN | NaN | -0.199650 | -1.780158 | -1.233088 | 0.833789 | 1.380858 |
-| 2023-09-22 | NaN | NaN | -0.161219 | -1.425179 | -0.987678 | 0.665241 | 1.102742 |
-| 2023-09-25 | NaN | NaN | 0.136796 | -0.916991 | -0.552238 | 0.825831 | 1.190583 |
+| 7 | 1 | 2023-06-12 00:00:00+00:00 | -1.051435 | -4.790880 | -3.496526 | 1.393657 | 2.688010 |
+| 8 | 1 | 2023-06-13 00:00:00+00:00 | 0.421605 | -3.001123 | -1.816396 | 2.659607 | 3.844333 |
+| 9 | 1 | 2023-06-14 00:00:00+00:00 | -0.300086 | -3.138338 | -2.155920 | 1.555747 | 2.538166 |
 
 ```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=2 )
-    colors = ['green']
-  # Specify graph features:
-    ax.fill_between(df_plot.index, 
-                df_plot['GARCH(1,1)-lo-80'], 
-                df_plot['GARCH(1,1)-hi-80'],
-                alpha=.20,
-                color='lime',
-                label='GARCH(1,1)_level_80')
-    ax.fill_between(df_plot.index, 
-                df_plot['GARCH(1,1)-lo-95'], 
-                df_plot['GARCH(1,1)-hi-95'],
-                alpha=.2,
-                color='white',
-                label='GARCH(1,1)_level_95')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel("Return", fontsize=20)
-    ax.set_xlabel('Month-Days', fontsize=20)
-    ax.legend(prop={'size': 15})
-    ax.grid(True)
-    plt.show()
+sf.plot(train, test.merge(forecast_df), level=[80, 95], max_insample_length=200)
 ```
 
-
-```python
-plot_forecasts(train, test, forecast_df, models=["GARCH(1,1)" ])
-```
-
-![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-45-output-1.png)
+![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-41-output-1.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case,
-    [`GARCH`](https://Nixtla.github.io/statsforecast/src/core/models.html#garch).
-
 Now we are going to evaluate our model with the results of the
-predictions, we will use different types of metrics
-`MAE, MAPE, MASE, RMSE, SMAPE` to evaluate the `accuracy`.
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import mae, mape, mase, rmse, smape
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, y_pred, model):
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name =='mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=7)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-
-```python
-evaluate_performace(train, test, Y_hat, model="GARCH(1,1)")
-```
-
-|            | mae      | mape       | mase | rmse     | smape      |
-|------------|----------|------------|------|----------|------------|
-| GARCH(1,1) | 0.886834 | 372.562147 | NaN  | 1.108626 | 136.528289 |
+|     | unique_id | metric | GARCH(1,1) |
+|-----|-----------|--------|------------|
+| 0   | 1         | mae    | 0.843296   |
+| 1   | 1         | mape   | 3.703305   |
+| 2   | 1         | mase   | 0.794905   |
+| 3   | 1         | rmse   | 1.048076   |
+| 4   | 1         | smape  | 0.709150   |
 
 ## Acknowledgements
 

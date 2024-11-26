@@ -271,7 +271,7 @@ basic EDA.
 ```python
 from statsforecast import StatsForecast
 
-StatsForecast.plot(df, )
+StatsForecast.plot(df)
 ```
 
 ![](/statsforecast/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-7-output-1.png)
@@ -402,24 +402,6 @@ plt.show()
 
 ## Implementation of DynamicOptimizedTheta with StatsForecast <a class="anchor" id="implementation"></a>
 
-To also know more about the parameters of the functions of the
-`DynamicOptimizedTheta Model`, they are listed below. For more
-information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#dynamicoptimizedtheta).
-
-``` text
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-decomposition_type : str
-    Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
-
 ### Load libraries
 
 ```python
@@ -462,16 +444,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
-                   freq='MS', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='MS')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -568,61 +547,7 @@ around 1min.
 
 ```python
 # Prediction
-Y_hat = sf.forecast(horizon, fitted=True)
-
-Y_hat
-```
-
-|           | ds         | DynamicOptimizedTheta |
-|-----------|------------|-----------------------|
-| unique_id |            |                       |
-| 1         | 1975-01-01 | 839.259705            |
-| 1         | 1975-02-01 | 801.399170            |
-| 1         | 1975-03-01 | 895.189148            |
-| ...       | ...        | ...                   |
-| 1         | 1975-10-01 | 821.271179            |
-| 1         | 1975-11-01 | 792.530396            |
-| 1         | 1975-12-01 | 829.854492            |
-
-```python
-values=sf.forecast_fitted_values()
-values.head()
-```
-
-|           | ds         | y     | DynamicOptimizedTheta |
-|-----------|------------|-------|-----------------------|
-| unique_id |            |       |                       |
-| 1         | 1962-01-01 | 589.0 | 607.247131            |
-| 1         | 1962-02-01 | 561.0 | 649.625732            |
-| 1         | 1962-03-01 | 640.0 | 637.135071            |
-| 1         | 1962-04-01 | 656.0 | 609.225830            |
-| 1         | 1962-05-01 | 727.0 | 604.995300            |
-
-```python
-StatsForecast.plot(values)
-```
-
-![](/statsforecast/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-23-output-1.png)
-
-Adding 95% confidence interval with the forecast method
-
-```python
-sf.forecast(h=horizon, level=[95])
-```
-
-|  | ds | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
-|----|----|----|----|----|
-| unique_id |  |  |  |  |
-| 1 | 1975-01-01 | 839.259705 | 741.963562 | 955.137634 |
-| 1 | 1975-02-01 | 801.399170 | 641.886230 | 946.029053 |
-| 1 | 1975-03-01 | 895.189148 | 707.210693 | 1066.337036 |
-| ... | ... | ... | ... | ... |
-| 1 | 1975-10-01 | 821.271179 | 546.113647 | 1088.162476 |
-| 1 | 1975-11-01 | 792.530396 | 494.657928 | 1037.432007 |
-| 1 | 1975-12-01 | 829.854492 | 519.697144 | 1108.181885 |
-
-```python
-Y_hat=Y_hat.reset_index()
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
@@ -633,38 +558,43 @@ Y_hat
 | 2   | 1         | 1975-03-01 | 895.189148            |
 | ... | ...       | ...        | ...                   |
 | 9   | 1         | 1975-10-01 | 821.271179            |
-| 10  | 1         | 1975-11-01 | 792.530396            |
+| 10  | 1         | 1975-11-01 | 792.530457            |
 | 11  | 1         | 1975-12-01 | 829.854492            |
 
 ```python
-# Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
-Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
-Y_hat1
+values=sf.forecast_fitted_values()
+values.head()
 ```
 
-|     | ds         | y   | unique_id | DynamicOptimizedTheta |
-|-----|------------|-----|-----------|-----------------------|
-| 0   | 1975-01-01 | 834 | 1         | 839.259705            |
-| 1   | 1975-02-01 | 782 | 1         | 801.399170            |
-| 2   | 1975-03-01 | 892 | 1         | 895.189148            |
-| ... | ...        | ... | ...       | ...                   |
-| 9   | 1975-10-01 | 827 | 1         | 821.271179            |
-| 10  | 1975-11-01 | 797 | 1         | 792.530396            |
-| 11  | 1975-12-01 | 843 | 1         | 829.854492            |
+|     | unique_id | ds         | y     | DynamicOptimizedTheta |
+|-----|-----------|------------|-------|-----------------------|
+| 0   | 1         | 1962-01-01 | 589.0 | 607.247131            |
+| 1   | 1         | 1962-02-01 | 561.0 | 649.625732            |
+| 2   | 1         | 1962-03-01 | 640.0 | 637.135071            |
+| 3   | 1         | 1962-04-01 | 656.0 | 609.225830            |
+| 4   | 1         | 1962-05-01 | 727.0 | 604.995300            |
 
 ```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat1]).set_index('ds')
-plot_df[['y', "DynamicOptimizedTheta"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Monthly Milk Production', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
+StatsForecast.plot(values)
 ```
 
-![](/statsforecast/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-27-output-1.png)
+![](/statsforecast/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-23-output-1.png)
+
+Adding 95% confidence interval with the forecast method
+
+```python
+sf.forecast(df=train, h=horizon, level=[95])
+```
+
+|  | unique_id | ds | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
+|----|----|----|----|----|----|
+| 0 | 1 | 1975-01-01 | 839.259705 | 741.963501 | 955.137634 |
+| 1 | 1 | 1975-02-01 | 801.399170 | 641.886292 | 946.029114 |
+| 2 | 1 | 1975-03-01 | 895.189148 | 707.210754 | 1066.337280 |
+| ... | ... | ... | ... | ... | ... |
+| 9 | 1 | 1975-10-01 | 821.271179 | 546.113586 | 1088.162842 |
+| 10 | 1 | 1975-11-01 | 792.530457 | 494.658173 | 1037.432129 |
+| 11 | 1 | 1975-12-01 | 829.854492 | 519.697021 | 1108.182007 |
 
 ### Predict method with confidence interval
 
@@ -692,89 +622,36 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | DynamicOptimizedTheta |
-|-----------|------------|-----------------------|
-| unique_id |            |                       |
-| 1         | 1975-01-01 | 839.259705            |
-| 1         | 1975-02-01 | 801.399170            |
-| 1         | 1975-03-01 | 895.189148            |
-| ...       | ...        | ...                   |
-| 1         | 1975-10-01 | 821.271179            |
-| 1         | 1975-11-01 | 792.530396            |
-| 1         | 1975-12-01 | 829.854492            |
+|     | unique_id | ds         | DynamicOptimizedTheta |
+|-----|-----------|------------|-----------------------|
+| 0   | 1         | 1975-01-01 | 839.259705            |
+| 1   | 1         | 1975-02-01 | 801.399170            |
+| 2   | 1         | 1975-03-01 | 895.189148            |
+| ... | ...       | ...        | ...                   |
+| 9   | 1         | 1975-10-01 | 821.271179            |
+| 10  | 1         | 1975-11-01 | 792.530457            |
+| 11  | 1         | 1975-12-01 | 829.854492            |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
 forecast_df
 ```
 
-|  | ds | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-80 | DynamicOptimizedTheta-hi-80 | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| 1 | 1975-01-01 | 839.259705 | 766.150513 | 928.015320 | 741.963562 | 955.137634 |
-| 1 | 1975-02-01 | 801.399170 | 702.992554 | 899.872864 | 641.886230 | 946.029053 |
-| 1 | 1975-03-01 | 895.189148 | 760.141418 | 1008.321960 | 707.210693 | 1066.337036 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1 | 1975-10-01 | 821.271179 | 617.415344 | 996.678284 | 546.113647 | 1088.162476 |
-| 1 | 1975-11-01 | 792.530396 | 568.329102 | 975.049255 | 494.657928 | 1037.432007 |
-| 1 | 1975-12-01 | 829.854492 | 598.124878 | 1035.452515 | 519.697144 | 1108.181885 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|  | y | unique_id | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-80 | DynamicOptimizedTheta-hi-80 | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
+|  | unique_id | ds | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-80 | DynamicOptimizedTheta-hi-80 | DynamicOptimizedTheta-lo-95 | DynamicOptimizedTheta-hi-95 |
 |----|----|----|----|----|----|----|----|
-| ds |  |  |  |  |  |  |  |
-| 1962-01-01 | 589.0 | 1 | NaN | NaN | NaN | NaN | NaN |
-| 1962-02-01 | 561.0 | 1 | NaN | NaN | NaN | NaN | NaN |
-| 1962-03-01 | 640.0 | 1 | NaN | NaN | NaN | NaN | NaN |
+| 0 | 1 | 1975-01-01 | 839.259705 | 766.150513 | 928.015259 | 741.963501 | 955.137634 |
+| 1 | 1 | 1975-02-01 | 801.399170 | 702.992554 | 899.872864 | 641.886292 | 946.029114 |
+| 2 | 1 | 1975-03-01 | 895.189148 | 760.141479 | 1008.321960 | 707.210754 | 1066.337280 |
 | ... | ... | ... | ... | ... | ... | ... | ... |
-| 1975-10-01 | NaN | NaN | 821.271179 | 617.415344 | 996.678284 | 546.113647 | 1088.162476 |
-| 1975-11-01 | NaN | NaN | 792.530396 | 568.329102 | 975.049255 | 494.657928 | 1037.432007 |
-| 1975-12-01 | NaN | NaN | 829.854492 | 598.124878 | 1035.452515 | 519.697144 | 1108.181885 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series, also let’s draw the confidence interval that we have
-obtained when making the prediction with 95% confidence.
+| 9 | 1 | 1975-10-01 | 821.271179 | 617.415405 | 996.678406 | 546.113586 | 1088.162842 |
+| 10 | 1 | 1975-11-01 | 792.530457 | 568.329285 | 975.049255 | 494.658173 | 1037.432129 |
+| 11 | 1 | 1975-12-01 | 829.854492 | 598.125183 | 1035.452637 | 519.697021 | 1108.182007 |
 
 ```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=3 , )
-    colors = ['green', "lime"]
-    ax.fill_between(df_plot.index, 
-                df_plot['DynamicOptimizedTheta-lo-80'], 
-                df_plot['DynamicOptimizedTheta-hi-80'],
-                alpha=.20,
-                color='orange',
-                label='DynamicOptimizedTheta_level_80')
-    ax.fill_between(df_plot.index, 
-                df_plot['DynamicOptimizedTheta-lo-95'], 
-                df_plot['DynamicOptimizedTheta-hi-95'],
-                alpha=.3,
-                color='lime',
-                label='DynamicOptimizedTheta_level_95')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel("Montly Mil Production", fontsize=20)
-    ax.set_xlabel('Month-Days', fontsize=20)
-    ax.legend(prop={'size': 20})
-    ax.grid(True)
-    plt.show()
+sf.plot(train, test.merge(forecast_df), level=[80, 95])
 ```
 
-
-```python
-plot_forecasts(train, test, forecast_df, models=['DynamicOptimizedTheta'])
-```
-
-![](/statsforecast/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-32-output-1.png)
+![](/statsforecast/docs/models/DynamicOptimizedTheta_files/figure-markdown_strict/cell-27-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -832,8 +709,7 @@ crossvalidation_df = sf.cross_validation(df=train,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -843,83 +719,45 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds         | cutoff     | y     | DynamicOptimizedTheta |
-|-----------|------------|------------|-------|-----------------------|
-| unique_id |            |            |       |                       |
-| 1         | 1972-01-01 | 1971-12-01 | 826.0 | 828.692017            |
-| 1         | 1972-02-01 | 1971-12-01 | 799.0 | 792.444092            |
-| 1         | 1972-03-01 | 1971-12-01 | 890.0 | 883.122620            |
-| ...       | ...        | ...        | ...   | ...                   |
-| 1         | 1974-10-01 | 1973-12-01 | 812.0 | 810.342834            |
-| 1         | 1974-11-01 | 1973-12-01 | 773.0 | 781.845703            |
-| 1         | 1974-12-01 | 1973-12-01 | 813.0 | 818.855103            |
+|     | unique_id | ds         | cutoff     | y     | DynamicOptimizedTheta |
+|-----|-----------|------------|------------|-------|-----------------------|
+| 0   | 1         | 1972-01-01 | 1971-12-01 | 826.0 | 828.692017            |
+| 1   | 1         | 1972-02-01 | 1971-12-01 | 799.0 | 792.444092            |
+| 2   | 1         | 1972-03-01 | 1971-12-01 | 890.0 | 883.122620            |
+| ... | ...       | ...        | ...        | ...   | ...                   |
+| 33  | 1         | 1974-10-01 | 1973-12-01 | 812.0 | 810.342834            |
+| 34  | 1         | 1974-11-01 | 1973-12-01 | 773.0 | 781.845703            |
+| 35  | 1         | 1974-12-01 | 1973-12-01 | 813.0 | 818.855103            |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, `Dynamic Optimized Theta Model`.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["DynamicOptimizedTheta"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  14.320624
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
-
 Now we are going to evaluate our model with the results of the
-predictions, we will use different types of metrics
-`MAE, MAPE, MASE, RMSE, SMAPE` to evaluate the `accuracy`.
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import (mae, mape, mase, rmse, smape)
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, y_pred, model):
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=12)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-
-```python
-evaluate_performace(train, test, Y_hat, model="DynamicOptimizedTheta")
-```
-
-|                       | mae      | mape     | mase     | rmse    | smape    |
-|-----------------------|----------|----------|----------|---------|----------|
-| DynamicOptimizedTheta | 6.861959 | 0.804529 | 0.308595 | 8.64746 | 0.801941 |
+|     | unique_id | metric | DynamicOptimizedTheta |
+|-----|-----------|--------|-----------------------|
+| 0   | 1         | mae    | 6.861954              |
+| 1   | 1         | mape   | 0.008045              |
+| 2   | 1         | mase   | 0.308595              |
+| 3   | 1         | rmse   | 8.647457              |
+| 4   | 1         | smape  | 0.004010              |
 
 ## Acknowledgements
 

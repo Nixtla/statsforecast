@@ -318,34 +318,7 @@ train.shape, test.shape
 ((186, 3), (30, 3))
 ```
 
-Now let’s plot the training data and the test data.
-
-```python
-sns.lineplot(train,x="ds", y="y", label="Train", linestyle="--")
-sns.lineplot(test, x="ds", y="y", label="Test")
-plt.title("Ads watched (hourly data)");
-plt.show()
-```
-
-![](/statsforecast/docs/models/SimpleExponentialSmoothing_files/figure-markdown_strict/cell-11-output-1.png)
-
 ## Implementation of SimpleExponentialSmoothing with StatsForecast <a class="anchor" id="implementation"></a>
-
-To also know more about the parameters of the functions of the
-`SimpleExponentialSmoothing Model`, they are listed below. For more
-information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#simplesmooth).
-
-``` text
-alpha : float
-    Smoothing parameter.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
 
 ### Load libraries
 
@@ -386,16 +359,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=df,
-                   models=models,
-                   freq='H', # hourly frequency
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='h')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -414,7 +384,7 @@ result01
 ```
 
 ``` text
-{'mean': array([120864.91], dtype=float32),
+{'mean': array([126112.90072589]),
  'fitted': array([       nan,  80115.   ,  80092.   ,  81015.3  ,  83106.77 ,
          86959.09 ,  89910.69 ,  91569.12 ,  92691.7  ,  94228.03 ,
          96417.73 ,  99878.96 , 104793.06 , 110072.76 , 114136.98 ,
@@ -452,13 +422,7 @@ result01
         114745.34 , 111849.305, 110665.375, 111986.836, 112421.66 ,
         111608.49 , 110591.64 , 109295.98 , 109192.875, 110398.59 ,
         113443.734, 115954.86 , 118458.375, 120765.04 , 122847.53 ,
-        124623.78 , 126112.9  , 128123.11 , 129553.3  , 128992.47 ,
-        126229.23 , 122423.3  , 117785.97 , 113040.875, 108951.79 ,
-        106076.11 , 104963.   , 106657.695, 107386.93 , 107297.734,
-        106296.96 , 105553.266, 105561.44 , 106443.3  , 109032.47 ,
-        112792.22 , 115712.5  , 118422.75 , 121182.47 , 124276.23 ,
-        127027.6  , 129891.34 , 132491.2  , 131581.6  , 128731.43 ,
-        125373.79 ], dtype=float32)}
+        124623.78 ], dtype=float32)}
 ```
 
 As we can see, the result obtained above has an output in a dictionary,
@@ -474,15 +438,15 @@ fitted["ds"]=df["ds"]
 fitted
 ```
 
-|     | fitted01      | fitted05      | fitted08      | ds                  |
-|-----|---------------|---------------|---------------|---------------------|
-| 0   | NaN           | NaN           | NaN           | 2017-09-13 00:00:00 |
-| 1   | 80115.000000  | 80115.000000  | 80115.000000  | 2017-09-13 01:00:00 |
-| 2   | 80092.000000  | 80000.000000  | 79931.000000  | 2017-09-13 02:00:00 |
-| ... | ...           | ...           | ...           | ...                 |
-| 213 | 131581.593750 | 138842.562500 | 129852.359375 | 2017-09-21 21:00:00 |
-| 214 | 128731.429688 | 120961.281250 | 108434.468750 | 2017-09-21 22:00:00 |
-| 215 | 125373.789062 | 108058.140625 | 97810.890625  | 2017-09-21 23:00:00 |
+|     | fitted01      | fitted05  | fitted08      | ds                  |
+|-----|---------------|-----------|---------------|---------------------|
+| 0   | NaN           | NaN       | NaN           | 2017-09-13 00:00:00 |
+| 1   | 80115.000000  | 80115.00  | 80115.000000  | 2017-09-13 01:00:00 |
+| 2   | 80092.000000  | 80000.00  | 79931.000000  | 2017-09-13 02:00:00 |
+| ... | ...           | ...       | ...           | ...                 |
+| 183 | 120765.039062 | 139195.00 | 141302.828125 | 2017-09-20 15:00:00 |
+| 184 | 122847.531250 | 140392.50 | 141532.562500 | 2017-09-20 16:00:00 |
+| 185 | 124623.781250 | 140501.25 | 140794.515625 | 2017-09-20 17:00:00 |
 
 ```python
 sns.lineplot(df, x="ds", y="y", label="Actual", linewidth=2)
@@ -493,7 +457,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](/statsforecast/docs/models/SimpleExponentialSmoothing_files/figure-markdown_strict/cell-18-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialSmoothing_files/figure-markdown_strict/cell-17-output-1.png)
 
 ### Forecast Method
 
@@ -518,51 +482,30 @@ around 1min.
 
 ```python
 # Prediction
-Y_hat = sf.forecast(h=horizon, fitted=True)
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat.head()
 ```
 
-|           | ds                  | SES01        | SES05        | SES08        |
-|-----------|---------------------|--------------|--------------|--------------|
-| unique_id |                     |              |              |              |
-| 1         | 2017-09-22 00:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-22 01:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-22 02:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-22 03:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-22 04:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
+|     | unique_id | ds                  | SES01         | SES05      | SES08        |
+|-----|-----------|---------------------|---------------|------------|--------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 1   | 1         | 2017-09-20 19:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 2   | 1         | 2017-09-20 20:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 3   | 1         | 2017-09-20 21:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 4   | 1         | 2017-09-20 22:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds                  | y        | SES01        | SES05    | SES08        |
-|-----------|---------------------|----------|--------------|----------|--------------|
-| unique_id |                     |          |              |          |              |
-| 1         | 2017-09-13 00:00:00 | 80115.0  | NaN          | NaN      | NaN          |
-| 1         | 2017-09-13 01:00:00 | 79885.0  | 80115.000000 | 80115.00 | 80115.000000 |
-| 1         | 2017-09-13 02:00:00 | 89325.0  | 80092.000000 | 80000.00 | 79931.000000 |
-| 1         | 2017-09-13 03:00:00 | 101930.0 | 81015.296875 | 84662.50 | 87446.203125 |
-| 1         | 2017-09-13 04:00:00 | 121630.0 | 83106.773438 | 93296.25 | 99033.242188 |
-
-```python
-StatsForecast.plot(values)
-```
-
-![](/statsforecast/docs/models/SimpleExponentialSmoothing_files/figure-markdown_strict/cell-21-output-1.png)
-
-```python
-Y_hat=Y_hat.reset_index()
-Y_hat.head()
-```
-
-|     | unique_id | ds                  | SES01        | SES05        | SES08        |
-|-----|-----------|---------------------|--------------|--------------|--------------|
-| 0   | 1         | 2017-09-22 00:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1   | 1         | 2017-09-22 01:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 2   | 1         | 2017-09-22 02:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 3   | 1         | 2017-09-22 03:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 4   | 1         | 2017-09-22 04:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
+|     | unique_id | ds                  | y        | SES01        | SES05    | SES08        |
+|-----|-----------|---------------------|----------|--------------|----------|--------------|
+| 0   | 1         | 2017-09-13 00:00:00 | 80115.0  | NaN          | NaN      | NaN          |
+| 1   | 1         | 2017-09-13 01:00:00 | 79885.0  | 80115.000000 | 80115.00 | 80115.000000 |
+| 2   | 1         | 2017-09-13 02:00:00 | 89325.0  | 80092.000000 | 80000.00 | 79931.000000 |
+| 3   | 1         | 2017-09-13 03:00:00 | 101930.0 | 81015.296875 | 84662.50 | 87446.203125 |
+| 4   | 1         | 2017-09-13 04:00:00 | 121630.0 | 83106.773438 | 93296.25 | 99033.242188 |
 
 ### Predict method
 
@@ -583,64 +526,21 @@ forecast_df = sf.predict(h=horizon)
 forecast_df
 ```
 
-|           | ds                  | SES01        | SES05        | SES08        |
-|-----------|---------------------|--------------|--------------|--------------|
-| unique_id |                     |              |              |              |
-| 1         | 2017-09-22 00:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-22 01:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-22 02:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| ...       | ...                 | ...          | ...          | ...          |
-| 1         | 2017-09-23 03:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-23 04:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-| 1         | 2017-09-23 05:00:00 | 120864.90625 | 94171.570312 | 83790.179688 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
+|     | unique_id | ds                  | SES01         | SES05      | SES08        |
+|-----|-----------|---------------------|---------------|------------|--------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 1   | 1         | 2017-09-20 19:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 2   | 1         | 2017-09-20 20:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| ... | ...       | ...                 | ...           | ...        | ...          |
+| 27  | 1         | 2017-09-21 21:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 28  | 1         | 2017-09-21 22:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
+| 29  | 1         | 2017-09-21 23:00:00 | 126112.898438 | 140008.125 | 139770.90625 |
 
 ```python
-df_plot=pd.concat([df, forecast_df]).set_index('ds')
-df_plot
+sf.plot(train, forecast_df)
 ```
 
-|                     | y       | unique_id | SES01        | SES05        | SES08        |
-|---------------------|---------|-----------|--------------|--------------|--------------|
-| ds                  |         |           |              |              |              |
-| 2017-09-13 00:00:00 | 80115.0 | 1         | NaN          | NaN          | NaN          |
-| 2017-09-13 01:00:00 | 79885.0 | 1         | NaN          | NaN          | NaN          |
-| 2017-09-13 02:00:00 | 89325.0 | 1         | NaN          | NaN          | NaN          |
-| ...                 | ...     | ...       | ...          | ...          | ...          |
-| 2017-09-23 03:00:00 | NaN     | NaN       | 120864.90625 | 94171.570312 | 83790.179688 |
-| 2017-09-23 04:00:00 | NaN     | NaN       | 120864.90625 | 94171.570312 | 83790.179688 |
-| 2017-09-23 05:00:00 | NaN     | NaN       | 120864.90625 | 94171.570312 | 83790.179688 |
-
-```python
-# Plot the data and the exponentially smoothed data
-plt.plot(df_plot['y'],label="Actual", linewidth=2.5)
-plt.plot(df_plot['SES01'], label="Predict-SES01")
-plt.plot(df_plot['SES05'], label="Predict-SES05")
-plt.plot(df_plot['SES08'], label="Predicti-SES08")
-sns.lineplot(fitted,x="ds", y="fitted01", label="Fitted01", linestyle="--", )  # '-', '--', '-.', ':',
-sns.lineplot(fitted, x="ds", y="fitted05", label="Fitted05", color="yellow", linestyle="-.",)
-sns.lineplot(fitted, x="ds", y="fitted08", label="Fitted08", color="fuchsia" ,linestyle=":")
-plt.title("Ads watched (hourly data)");
-plt.ylabel("")
-```
-
-``` text
-Text(0, 0.5, '')
-```
-
-![](/statsforecast/docs/models/SimpleExponentialSmoothing_files/figure-markdown_strict/cell-25-output-2.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df)
-```
-
-![](/statsforecast/docs/models/SimpleExponentialSmoothing_files/figure-markdown_strict/cell-26-output-1.png)
+![](/statsforecast/docs/models/SimpleExponentialSmoothing_files/figure-markdown_strict/cell-21-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -698,8 +598,7 @@ crossvalidation_df = sf.cross_validation(df=df,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    `crossvalidation_df.resetindex()`.
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the `n_windows`.
 -   `y:` true value
@@ -709,65 +608,45 @@ following columns:
 crossvalidation_df
 ```
 
-|  | ds | cutoff | y | SES01 | SES05 | SES08 |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| 1 | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0 | 118499.953125 | 109816.250 | 112747.695312 |
-| 1 | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0 | 118499.953125 | 109816.250 | 112747.695312 |
-| 1 | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0 | 118499.953125 | 109816.250 | 112747.695312 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1 | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 126112.898438 | 140008.125 | 139770.906250 |
-| 1 | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0 | 126112.898438 | 140008.125 | 139770.906250 |
-| 1 | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0 | 126112.898438 | 140008.125 | 139770.906250 |
+|  | unique_id | ds | cutoff | y | SES01 | SES05 | SES08 |
+|----|----|----|----|----|----|----|----|
+| 0 | 1 | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0 | 118499.953125 | 109816.250 | 112747.695312 |
+| 1 | 1 | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0 | 118499.953125 | 109816.250 | 112747.695312 |
+| 2 | 1 | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0 | 118499.953125 | 109816.250 | 112747.695312 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 87 | 1 | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 126112.898438 | 140008.125 | 139770.906250 |
+| 88 | 1 | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0 | 126112.898438 | 140008.125 | 139770.906250 |
+| 89 | 1 | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0 | 126112.898438 | 140008.125 | 139770.906250 |
 
-## Evaluate Model <a class="anchor" id="evaluate"></a>
+## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-!pip install datasetsforecast
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-from datasetsforecast.losses import rmse
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=24), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case,
-    `Simple Exponential Smoothing Model (SES)`.
-
-```python
-from datasetsforecast.losses import mse, mae, rmse
-
-def evaluate_cross_validation(df, metric):
-    models = df.drop(columns=['ds', 'cutoff', 'y']).columns.tolist()
-    evals = []
-    for model in models:
-        eval_ = df.groupby(['unique_id', 'cutoff']).apply(lambda x: metric(x['y'].values, x[model].values)).to_frame() # Calculate loss for every unique_id, model and cutoff.
-        eval_.columns = [model]
-        evals.append(eval_)
-    evals = pd.concat(evals, axis=1)
-    evals = evals.groupby(['unique_id']).mean(numeric_only=True) # Averages the error metrics for all cutoffs for every combination of model and unique_id
-    evals['best_model'] = evals.idxmin(axis=1)
-    return evals
-```
-
-
-```python
-evaluation_df = evaluate_cross_validation(crossvalidation_df, rmse)
-evaluation_df
-```
-
-|           | SES01        | SES05        | SES08   | best_model |
-|-----------|--------------|--------------|---------|------------|
-| unique_id |              |              |         |            |
-| 1         | 27676.533203 | 29132.158203 | 29308.0 | SES01      |
+|     | unique_id | metric | SES01        | SES05        | SES08        |
+|-----|-----------|--------|--------------|--------------|--------------|
+| 0   | 1         | mae    | 25173.939583 | 29390.875000 | 29311.802083 |
+| 1   | 1         | mape   | 0.255088     | 0.316440     | 0.315339     |
+| 2   | 1         | mase   | 3.110288     | 3.631298     | 3.621528     |
+| 3   | 1         | rmse   | 28923.395381 | 36184.340869 | 36027.710540 |
+| 4   | 1         | smape  | 0.109972     | 0.124803     | 0.124542     |
 
 ## Acknowledgements
 

@@ -446,36 +446,7 @@ train.shape, test.shape
 ((186, 3), (30, 3))
 ```
 
-Now let’s plot the training data and the test data.
-
-```python
-sns.lineplot(train,x="ds", y="y", label="Train", linestyle="--")
-sns.lineplot(test, x="ds", y="y", label="Test")
-plt.title("Ads watched (hourly data)");
-plt.show()
-```
-
-![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-15-output-1.png)
-
 ## Implementation of SeasonalExponentialSmoothingOptimized with StatsForecast <a class="anchor" id="implementation"></a>
-
-To also know more about the parameters of the functions of the
-`SeasonalExponentialSmoothingOptimized Model`, they are listed below.
-For more information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#seasonalsmooth).
-
-``` text
-alpha : float
-    Smoothing parameter.
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
 
 ### Load libraries
 
@@ -517,16 +488,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=df,
-                   models=models,
-                   freq='H', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='h')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -543,55 +511,49 @@ result
 ```
 
 ``` text
-{'mean': array([ 80116.2  ,  79812.98 ,  84372.74 ,  99043.75 , 121514.94 ,
-        116611.32 , 108388.39 , 103424.516, 108289.664, 116023.664,
-        121505.336, 139466.77 , 146281.33 , 149037.22 , 149215.86 ,
-        146367.08 , 148183.7  , 150684.8  , 157380.17 , 156142.53 ,
-        127853.48 , 103063.23 ,  94190.15 ,  82520.19 ], dtype=float32),
+{'mean': array([161532.05 , 161051.69 , 135531.64 , 105600.39 ,  96717.39 ,
+         82608.34 ,  80224.33 ,  78075.98 ,  85233.23 , 100179.336,
+        122245.62 , 118087.57 , 109614.81 , 104729.91 , 104895.02 ,
+        115862.96 , 130370.98 , 144231.89 , 149036.73 , 149072.73 ,
+        148110.77 , 148760.73 , 149767.53 , 150561.8  ], dtype=float32),
  'fitted': array([       nan,        nan,        nan,        nan,        nan,
                nan,        nan,        nan,        nan,        nan,
                nan,        nan,        nan,        nan,        nan,
                nan,        nan,        nan,        nan,        nan,
-               nan,        nan,        nan,        nan,  80115.   ,
-         79885.   ,  89325.   , 101930.   , 121630.   , 116475.   ,
-        106495.   , 102795.   , 108055.   , 116125.   , 131030.   ,
-        149020.   , 157590.   , 150715.   , 149295.   , 150100.   ,
-        144780.   , 150690.   , 163840.   , 166235.   , 139520.   ,
-        105895.   ,  96780.   ,  82520.   ,  80115.1  ,  79839.5  ,
-         87987.92 , 101954.1  , 121665.05 , 116490.55 , 106601.53 ,
-        102791.8  , 107996.85 , 116122.15 , 130866.836, 147694.23 ,
-        154525.55 , 150612.58 , 149282.45 , 149723.33 , 145698.03 ,
-        150688.8  , 160717.08 , 162397.19 , 135501.27 , 103835.8  ,
-         95715.3  ,  82522.45 ,  80077.1  ,  79792.41 ,  86293.46 ,
-         99839.95 , 121632.7  , 116477.55 , 106770.836, 102752.484,
-        107958.734, 116047.58 , 129459.34 , 145644.39 , 153794.8  ,
-        150328.69 , 149269.83 , 149142.73 , 145707.48 , 150674.77 ,
-        160501.92 , 162076.73 , 135508.52 , 112853.91 ,  96752.19 ,
-         82573.375,  80154.68 ,  79882.93 ,  88212.44 , 100583.016,
-        121575.77 , 116602.266, 108121.59 , 103169.36 , 108311.64 ,
-        116219.   , 130052.28 , 144750.84 , 155067.58 , 150470.8  ,
-        149314.48 , 149742.   , 146605.06 , 150642.36 , 158771.97 ,
-        158364.27 , 131538.7  , 117874.29 ,  96740.12 ,  82683.74 ,
-         80243.734,  79977.555,  88961.   , 100214.62 , 121485.71 ,
-        116730.945, 109420.42 , 103663.266, 108754.33 , 116468.516,
-        135878.83 , 149370.3  , 159073.2  , 151538.19 , 149452.73 ,
-        151950.38 , 148868.33 , 150736.14 , 160848.06 , 161181.45 ,
-        135859.64 , 113004.195,  96879.98 ,  82673.66 ,  80236.39 ,
-         79961.27 ,  88670.77 , 100146.4  , 121508.66 , 116676.89 ,
-        109030.95 , 103603.18 , 108643.336, 116329.48 , 130568.05 ,
-        145525.64 , 152335.23 , 150896.27 , 149380.4  , 150026.   ,
-        148226.   , 150732.88 , 160993.8  , 159284.78 , 135418.84 ,
-        107124.39 ,  96455.72 ,  82642.07 ,  80217.38 ,  79908.37 ,
-         86554.016,  99793.52 , 121487.02 , 116641.266, 108634.83 ,
-        103507.15 , 108493.5  , 116208.03 , 126965.76 , 142833.   ,
-        150244.78 , 150128.48 , 149358.84 , 148539.44 , 148797.55 ,
-        150786.34 , 161078.64 , 160682.95 , 134904.86 , 105600.39 ,
-         95623.21 ,  82608.34 ,  80215.01 ,  79890.38 ,  86310.35 ,
-         99828.305, 121510.95 , 116638.2  , 108465.28 , 103486.48 ,
-        108384.914, 116128.6  , 125062.48 , 142273.05 , 146089.02 ,
-        149530.4  , 149280.52 , 146510.22 , 147309.14 , 150673.64 ,
-        157855.16 , 156224.12 , 130665.7  , 101402.41 ,  93899.984,
-         82542.766], dtype=float32)}
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan,        nan,        nan,        nan,
+               nan,        nan, 163840.   , 166235.   , 139520.   ,
+        105895.   ,  96780.   ,  82520.   ,  80125.   ,  75335.   ,
+         85105.   , 102080.   , 125135.   , 118030.   , 109225.   ,
+        102475.   , 102240.   , 115840.   , 130540.   , 144325.   ,
+        148970.   , 149150.   , 148040.   , 148810.   , 149830.   ,
+        150570.   , 162030.27 , 163222.1  , 137347.33 , 103835.8  ,
+         96733.95 ,  82522.45 ,  80086.9  ,  75132.05 ,  85074.36 ,
+        100452.66 , 121044.03 , 118001.6  , 109242.15 , 102349.03 ,
+        102321.49 , 115768.25 , 130501.   , 144286.1  , 149005.   ,
+        149121.25 , 148039.8  , 148799.25 , 149789.2  , 150557.16 ,
+        161740.55 , 162812.36 , 136965.22 , 112853.91 ,  96768.61 ,
+         82573.375,  80164.38 ,  88707.87 ,  85164.8  , 100944.15 ,
+        117929.875, 118111.086, 109563.58 , 103815.7  , 104036.375,
+        115942.47 , 130508.39 , 144268.03 , 149088.7  , 149155.03 ,
+        148096.75 , 148823.2  , 149797.77 , 150525.92 , 160582.38 ,
+        159756.83 , 134514.39 , 117874.29 ,  96767.92 ,  82683.74 ,
+         80253.336,  89338.625,  85232.055, 100619.03 , 114659.62 ,
+        118224.67 , 109881.99 , 105514.21 , 106070.33 , 116194.74 ,
+        130678.805, 144436.45 , 149261.16 , 149331.28 , 148247.19 ,
+        148908.03 , 149890.33 , 150620.88 , 161557.95 , 161701.48 ,
+        136228.19 , 113004.195,  96773.695,  82673.66 ,  80245.91 ,
+         78459.88 ,  85267.016, 100517.48 , 120224.3  , 118155.68 ,
+        109777.57 , 105240.35 , 105717.734, 116058.445, 130571.32 ,
+        144349.64 , 149169.75 , 149255.28 , 148186.9  , 148872.55 ,
+        149844.78 , 150618.77 , 161553.17 , 160112.8  , 135912.81 ,
+        107124.39 ,  96756.41 ,  82642.07 ,  80226.8  ,  74707.9  ,
+         85226.28 , 100202.98 , 119687.805, 118105.27 , 109668.59 ,
+        104848.68 , 105212.516, 115939.71 , 130463.1  , 144266.05 ,
+        149142.61 , 149154.38 , 148177.3  , 148833.17 , 149860.03 ,
+        150673.38 ], dtype=float32)}
 ```
 
 Let us now visualize the fitted values of our models.
@@ -613,9 +575,9 @@ fitted
 | 1   | NaN           | 2017-09-13 01:00:00 |
 | 2   | NaN           | 2017-09-13 02:00:00 |
 | ... | ...           | ...                 |
-| 213 | 101402.406250 | 2017-09-21 21:00:00 |
-| 214 | 93899.984375  | 2017-09-21 22:00:00 |
-| 215 | 82542.765625  | 2017-09-21 23:00:00 |
+| 183 | 148833.171875 | 2017-09-20 15:00:00 |
+| 184 | 149860.031250 | 2017-09-20 16:00:00 |
+| 185 | 150673.375000 | 2017-09-20 17:00:00 |
 
 ```python
 sns.lineplot(df, x="ds", y="y", label="Actual", linewidth=2)
@@ -625,7 +587,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-22-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-21-output-1.png)
 
 ### Forecast Method
 
@@ -650,83 +612,38 @@ around 1min.
 
 ```python
 # Prediction
-Y_hat = sf.forecast(horizon, fitted=True)
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
-|           | ds                  | SeasESOpt     |
-|-----------|---------------------|---------------|
-| unique_id |                     |               |
-| 1         | 2017-09-22 00:00:00 | 80116.203125  |
-| 1         | 2017-09-22 01:00:00 | 79812.976562  |
-| 1         | 2017-09-22 02:00:00 | 84372.742188  |
-| ...       | ...                 | ...           |
-| 1         | 2017-09-23 03:00:00 | 99043.750000  |
-| 1         | 2017-09-23 04:00:00 | 121514.937500 |
-| 1         | 2017-09-23 05:00:00 | 116611.320312 |
+|     | unique_id | ds                  | SeasESOpt     |
+|-----|-----------|---------------------|---------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 161532.046875 |
+| 1   | 1         | 2017-09-20 19:00:00 | 161051.687500 |
+| 2   | 1         | 2017-09-20 20:00:00 | 135531.640625 |
+| ... | ...       | ...                 | ...           |
+| 27  | 1         | 2017-09-21 21:00:00 | 105600.390625 |
+| 28  | 1         | 2017-09-21 22:00:00 | 96717.390625  |
+| 29  | 1         | 2017-09-21 23:00:00 | 82608.343750  |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds                  | y        | SeasESOpt |
-|-----------|---------------------|----------|-----------|
-| unique_id |                     |          |           |
-| 1         | 2017-09-13 00:00:00 | 80115.0  | NaN       |
-| 1         | 2017-09-13 01:00:00 | 79885.0  | NaN       |
-| 1         | 2017-09-13 02:00:00 | 89325.0  | NaN       |
-| 1         | 2017-09-13 03:00:00 | 101930.0 | NaN       |
-| 1         | 2017-09-13 04:00:00 | 121630.0 | NaN       |
+|     | unique_id | ds                  | y        | SeasESOpt |
+|-----|-----------|---------------------|----------|-----------|
+| 0   | 1         | 2017-09-13 00:00:00 | 80115.0  | NaN       |
+| 1   | 1         | 2017-09-13 01:00:00 | 79885.0  | NaN       |
+| 2   | 1         | 2017-09-13 02:00:00 | 89325.0  | NaN       |
+| 3   | 1         | 2017-09-13 03:00:00 | 101930.0 | NaN       |
+| 4   | 1         | 2017-09-13 04:00:00 | 121630.0 | NaN       |
 
 ```python
-StatsForecast.plot(values)
+sf.plot(train, Y_hat)
 ```
 
-![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-25-output-1.png)
-
-```python
-Y_hat=Y_hat.reset_index()
-Y_hat
-```
-
-|     | unique_id | ds                  | SeasESOpt     |
-|-----|-----------|---------------------|---------------|
-| 0   | 1         | 2017-09-22 00:00:00 | 80116.203125  |
-| 1   | 1         | 2017-09-22 01:00:00 | 79812.976562  |
-| 2   | 1         | 2017-09-22 02:00:00 | 84372.742188  |
-| ... | ...       | ...                 | ...           |
-| 27  | 1         | 2017-09-23 03:00:00 | 99043.750000  |
-| 28  | 1         | 2017-09-23 04:00:00 | 121514.937500 |
-| 29  | 1         | 2017-09-23 05:00:00 | 116611.320312 |
-
-```python
-Y_hat1= pd.concat([df,Y_hat])
-Y_hat1
-```
-
-|     | ds                  | y       | unique_id | SeasESOpt     |
-|-----|---------------------|---------|-----------|---------------|
-| 0   | 2017-09-13 00:00:00 | 80115.0 | 1         | NaN           |
-| 1   | 2017-09-13 01:00:00 | 79885.0 | 1         | NaN           |
-| 2   | 2017-09-13 02:00:00 | 89325.0 | 1         | NaN           |
-| ... | ...                 | ...     | ...       | ...           |
-| 27  | 2017-09-23 03:00:00 | NaN     | 1         | 99043.750000  |
-| 28  | 2017-09-23 04:00:00 | NaN     | 1         | 121514.937500 |
-| 29  | 2017-09-23 05:00:00 | NaN     | 1         | 116611.320312 |
-
-```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([df,Y_hat]).set_index('ds')
-plot_df[['y', "SeasESOpt"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Ads watched (hourly data)', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-```
-
-![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-28-output-1.png)
+![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-24-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -749,56 +666,15 @@ forecast_df = sf.predict(h=horizon)
 forecast_df
 ```
 
-|           | ds                  | SeasESOpt     |
-|-----------|---------------------|---------------|
-| unique_id |                     |               |
-| 1         | 2017-09-22 00:00:00 | 80116.203125  |
-| 1         | 2017-09-22 01:00:00 | 79812.976562  |
-| 1         | 2017-09-22 02:00:00 | 84372.742188  |
-| ...       | ...                 | ...           |
-| 1         | 2017-09-23 03:00:00 | 99043.750000  |
-| 1         | 2017-09-23 04:00:00 | 121514.937500 |
-| 1         | 2017-09-23 05:00:00 | 116611.320312 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-df_plot= pd.concat([df, forecast_df]).set_index('ds')
-df_plot
-```
-
-|                     | y       | unique_id | SeasESOpt     |
-|---------------------|---------|-----------|---------------|
-| ds                  |         |           |               |
-| 2017-09-13 00:00:00 | 80115.0 | 1         | NaN           |
-| 2017-09-13 01:00:00 | 79885.0 | 1         | NaN           |
-| 2017-09-13 02:00:00 | 89325.0 | 1         | NaN           |
-| ...                 | ...     | ...       | ...           |
-| 2017-09-23 03:00:00 | NaN     | NaN       | 99043.750000  |
-| 2017-09-23 04:00:00 | NaN     | NaN       | 121514.937500 |
-| 2017-09-23 05:00:00 | NaN     | NaN       | 116611.320312 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series.
-
-```python
-sns.lineplot(df_plot,x="ds", y="y", label="Actual")
-sns.lineplot(df_plot, x="ds", y="SeasESOpt", label="SeasESOpt")
-plt.show()
-```
-
-![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-31-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df)
-```
-
-![](/statsforecast/docs/models/SeasonalExponentialSmoothingOptimized_files/figure-markdown_strict/cell-32-output-1.png)
+|     | unique_id | ds                  | SeasESOpt     |
+|-----|-----------|---------------------|---------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 161532.046875 |
+| 1   | 1         | 2017-09-20 19:00:00 | 161051.687500 |
+| 2   | 1         | 2017-09-20 20:00:00 | 135531.640625 |
+| ... | ...       | ...                 | ...           |
+| 27  | 1         | 2017-09-21 21:00:00 | 105600.390625 |
+| 28  | 1         | 2017-09-21 22:00:00 | 96717.390625  |
+| 29  | 1         | 2017-09-21 23:00:00 | 82608.343750  |
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -856,8 +732,7 @@ crossvalidation_df = sf.cross_validation(df=df,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    `crossvalidation_df.resetindex()`.
+-   `unique_id:` series identifier.
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the `n_windows`.
 -   `y:` true value
@@ -867,47 +742,45 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds                  | cutoff              | y        | SeasESOpt     |
-|-----------|---------------------|---------------------|----------|---------------|
-| unique_id |                     |                     |          |               |
-| 1         | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0  | 141401.750000 |
-| 1         | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0  | 152474.250000 |
-| 1         | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0  | 152482.796875 |
-| ...       | ...                 | ...                 | ...      | ...           |
-| 1         | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 105600.390625 |
-| 1         | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0  | 96717.390625  |
-| 1         | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0  | 82608.343750  |
+|     | unique_id | ds                  | cutoff              | y        | SeasESOpt     |
+|-----|-----------|---------------------|---------------------|----------|---------------|
+| 0   | 1         | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0  | 141401.750000 |
+| 1   | 1         | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0  | 152474.250000 |
+| 2   | 1         | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0  | 152482.796875 |
+| ... | ...       | ...                 | ...                 | ...      | ...           |
+| 87  | 1         | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 105600.390625 |
+| 88  | 1         | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0  | 96717.390625  |
+| 89  | 1         | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0  | 82608.343750  |
 
-## Evaluate Model <a class="anchor" id="evaluate"></a>
+## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-!pip install datasetsforecast
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-from datasetsforecast.losses import rmse
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case,
-    `Seasonal Exponential Smoothing Optimized Model`.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["SeasESOpt"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  16560.705
-```
+|     | unique_id | metric | SeasESOpt   |
+|-----|-----------|--------|-------------|
+| 0   | 1         | mae    | 6694.042188 |
+| 1   | 1         | mape   | 0.060392    |
+| 2   | 1         | mase   | 0.827062    |
+| 3   | 1         | rmse   | 8118.297509 |
+| 4   | 1         | smape  | 0.028961    |
 
 ## Acknowledgements
 

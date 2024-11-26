@@ -300,17 +300,12 @@ the admissible region is $0<\alpha<2$ and $0<\beta<4-2\alpha$.
 
 ## Model selection <a class="anchor" id="selection"></a>
 
-A great advantage of the
-[`ETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#ets)
-statistical framework is that information criteria can be used for model
-selection. The `AIC, AIC_c` and `BIC`, can be used here to determine
-which of the
-[`ETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#ets)
-models is most appropriate for a given time series.
+A great advantage of the `ETS` statistical framework is that information
+criteria can be used for model selection. The `AIC, AIC_c` and `BIC`,
+can be used here to determine which of the `ETS` models is most
+appropriate for a given time series.
 
-For
-[`ETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#ets)
-models, Akaike’s Information Criterion (`AIC)` is defined as
+For `ETS` models, Akaike’s Information Criterion (`AIC)` is defined as
 
 $$\text{AIC} = -2\log(L) + 2k,$$
 
@@ -580,213 +575,72 @@ plt.show()
 
 ## Implementation of AutoETS with StatsForecast<a class="anchor" id="implementation"></a>
 
-Automatically selects the best `ETS (Error, Trend, Seasonality)` model
-using an information criterion. Default is Akaike Information Criterion
-(AICc), while particular models are estimated using maximum likelihood.
-The state-space equations can be determined based on their $M$
-multiplicative $A$ additive, $Z$ optimized or $N$ ommited components.
-The model string parameter defines the ETS equations: $E$ in $[M,A,Z]$,
-$T$ in $[N,A,M,Z]$, and $S$ in $[N,A,M,Z]$.
-
-For example when `model=‘ANN’` (additive error, no trend, and no
-seasonality),
-[`ETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#ets)
-will explore only a simple exponential smoothing.
-
-If the component is selected as `‘Z’`, it operates as a placeholder to
-ask the
-[`AutoETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoets)
-model to figure out the best parameter.
-
-To also know more about the parameters of the functions of the
-`AutoETS Model`, they are listed below. For more information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#autoets)
-
-``` text
-model : str
-    Controlling state-space-equations.
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-damped : bool
-    A parameter that 'dampens' the trend.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals],
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
-
 ```python
+from statsforecast import StatsForecast
 from statsforecast.models import AutoETS
 ```
 
 ### Instantiate Model
 
 ```python
-autoets = AutoETS(model=["A","Z","N"],  alias="AutoETS", season_length=1)
+sf = StatsForecast(models=[AutoETS(model="AZN")], freq='YS')
 ```
 
 ### Fit the Model
 
 ```python
-autoets = autoets.fit(df["y"].values)
-autoets
+sf.fit(df=train)
 ```
 
 ``` text
-AutoETS
+StatsForecast(models=[AutoETS])
 ```
 
 ### Model Prediction
 
 ```python
-y_hat_dict = autoets.predict(h=6)
-y_hat_dict
+y_hat = sf.predict(h=6)
+y_hat
 ```
 
-``` text
-{'mean': array([83.56937105, 83.65696041, 83.74454977, 83.83213913, 83.91972848,
-        84.00731784])}
-```
-
-You can see that the result that has been extracted in the predictions
-or in any other method that we use from now on with the Arima model is a
-dictionary. To extract that result we can use the `.get()` function,
-which will help us to be able to extract the result of each part of the
-dictionary of each of the methods that we use.
+|     | unique_id | ds         | AutoETS   |
+|-----|-----------|------------|-----------|
+| 0   | 1         | 2014-01-01 | 82.952553 |
+| 1   | 1         | 2015-01-01 | 83.146150 |
+| 2   | 1         | 2016-01-01 | 83.339747 |
+| 3   | 1         | 2017-01-01 | 83.533344 |
+| 4   | 1         | 2018-01-01 | 83.726940 |
+| 5   | 1         | 2019-01-01 | 83.920537 |
 
 ```python
-forecast=pd.Series(pd.date_range("2014-01-01", freq="ys", periods=6))
-forecast=pd.DataFrame(forecast)
-forecast.columns=["ds"]
-forecast["hat"]=y_hat_dict.get("mean")
-forecast["unique_id"]="1"
-forecast
+sf.plot(train, y_hat)
 ```
 
-|     | ds         | hat       | unique_id |
-|-----|------------|-----------|-----------|
-| 0   | 2014-01-01 | 83.569371 | 1         |
-| 1   | 2015-01-01 | 83.656960 | 1         |
-| 2   | 2016-01-01 | 83.744550 | 1         |
-| 3   | 2017-01-01 | 83.832139 | 1         |
-| 4   | 2018-01-01 | 83.919728 | 1         |
-| 5   | 2019-01-01 | 84.007318 | 1         |
-
-```python
-sns.lineplot(train,x="ds", y="y", label="Train")
-sns.lineplot(test, x="ds", y="y", label="Test")
-sns.lineplot(forecast,x="ds", y="hat", label="Forecast",)
-plt.show()
-```
-
-![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-19-output-1.png)
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-18-output-1.png)
 
 Let’s add a confidence interval to our forecast.
 
 ```python
-y_hat_dict = autoets.predict(h=6, level=[80,90,95])
-y_hat_dict
+y_hat = sf.predict(h=6, level=[80,90,95])
+y_hat
 ```
 
-``` text
-{'mean': array([83.56937105, 83.65696041, 83.74454977, 83.83213913, 83.91972848,
-        84.00731784]),
- 'lo-95': array([83.09409059, 83.17958519, 83.25889648, 83.32836493, 83.3852606 ,
-        83.42814393]),
- 'lo-90': array([83.17050311, 83.2563345 , 83.33697668, 83.40935849, 83.4711889 ,
-        83.52125977]),
- 'lo-80': array([83.25860186, 83.34482153, 83.42699815, 83.50273888, 83.57025872,
-        83.62861638]),
- 'hi-80': array([83.88014025, 83.96909929, 84.06210139, 84.16153937, 84.26919825,
-        84.38601931]),
- 'hi-90': array([83.96823899, 84.05758633, 84.15212286, 84.25491976, 84.36826807,
-        84.49337591]),
- 'hi-95': array([84.04465152, 84.13433563, 84.23020306, 84.33591332, 84.45419637,
-        84.58649176])}
-```
-
-```python
-forecast["hat"]=y_hat_dict.get("mean")
-
-forecast["lo-80"]=y_hat_dict.get("lo-80")
-forecast["hi-80"]=y_hat_dict.get("hi-80")
-
-forecast["lo-90"]=y_hat_dict.get("lo-80")
-forecast["hi-90"]=y_hat_dict.get("hi-80")
-
-forecast["lo-95"]=y_hat_dict.get("lo-95")
-forecast["hi-95"]=y_hat_dict.get("hi-95")
-forecast
-```
-
-|  | ds | hat | unique_id | lo-80 | hi-80 | lo-90 | hi-90 | lo-95 | hi-95 |
+|  | unique_id | ds | AutoETS | AutoETS-lo-95 | AutoETS-lo-90 | AutoETS-lo-80 | AutoETS-hi-80 | AutoETS-hi-90 | AutoETS-hi-95 |
 |----|----|----|----|----|----|----|----|----|----|
-| 0 | 2014-01-01 | 83.569371 | 1 | 83.258602 | 83.880140 | 83.258602 | 83.880140 | 83.094091 | 84.044652 |
-| 1 | 2015-01-01 | 83.656960 | 1 | 83.344822 | 83.969099 | 83.344822 | 83.969099 | 83.179585 | 84.134336 |
-| 2 | 2016-01-01 | 83.744550 | 1 | 83.426998 | 84.062101 | 83.426998 | 84.062101 | 83.258896 | 84.230203 |
-| 3 | 2017-01-01 | 83.832139 | 1 | 83.502739 | 84.161539 | 83.502739 | 84.161539 | 83.328365 | 84.335913 |
-| 4 | 2018-01-01 | 83.919728 | 1 | 83.570259 | 84.269198 | 83.570259 | 84.269198 | 83.385261 | 84.454196 |
-| 5 | 2019-01-01 | 84.007318 | 1 | 83.628616 | 84.386019 | 83.628616 | 84.386019 | 83.428144 | 84.586492 |
+| 0 | 1 | 2014-01-01 | 82.952553 | 82.500416 | 82.573107 | 82.656916 | 83.248190 | 83.331999 | 83.404691 |
+| 1 | 1 | 2015-01-01 | 83.146150 | 82.693437 | 82.766221 | 82.850137 | 83.442163 | 83.526078 | 83.598863 |
+| 2 | 1 | 2016-01-01 | 83.339747 | 82.884744 | 82.957897 | 83.042237 | 83.637257 | 83.721597 | 83.794749 |
+| 3 | 1 | 2017-01-01 | 83.533344 | 83.073235 | 83.147208 | 83.232495 | 83.834192 | 83.919479 | 83.993452 |
+| 4 | 1 | 2018-01-01 | 83.726940 | 83.257894 | 83.333304 | 83.420247 | 84.033634 | 84.120577 | 84.195987 |
+| 5 | 1 | 2019-01-01 | 83.920537 | 83.437859 | 83.515461 | 83.604931 | 84.236144 | 84.325614 | 84.403216 |
 
 ```python
-df=df.set_index("ds")
-forecast=forecast.set_index("ds")
+sf.plot(train, y_hat, level=[95])
 ```
 
+![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-20-output-1.png)
 
-```python
-df['unique_id'] = df['unique_id'].astype(object)
-df_plot=df.merge(forecast, how='left', on=['unique_id', 'ds'])
-```
-
-
-```python
-fig, ax = plt.subplots()
-plt.plot_date(df_plot.index, df_plot["y"],label="Actual", linestyle="-")
-plt.plot_date(df_plot.index, df_plot["hat"],label="Forecas", linestyle="-")
-ax.fill_between(df_plot.index, 
-                df_plot['lo-80'], 
-                df_plot['hi-80'],
-                alpha=.35,
-                color='orange',
-                label='AutoETS-level-95')
-ax.set_title('', fontsize=22)
-ax.set_ylabel('', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=12)
-plt.legend(fontsize=12)
-ax.grid(True)
-
-plt.show()
-```
-
-![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-24-output-1.png)
-
-### AutoETS.predict_in_sample method
-
-Access fitted Exponential Smoothing insample predictions.
-
-```python
-autoets.predict_in_sample()
-```
-
-``` text
-{'fitted': array([69.11047128, 69.33779313, 69.60481978, 69.82902341, 69.99867608,
-        70.19782129, 70.39447403, 70.6410976 , 70.91730954, 71.18057737,
-        71.40921444, 71.65195408, 71.90923238, 72.18210689, 72.44032072,
-        72.72619326, 73.00461648, 73.28185885, 73.56688287, 73.86376672,
-        74.17369207, 74.4619337 , 74.74004938, 75.02518845, 75.27413727,
-        75.53397698, 75.78785822, 76.0401374 , 76.30927822, 76.58417332,
-        76.88118063, 77.18657633, 77.47625869, 77.76062769, 78.04136835,
-        78.31088961, 78.56725183, 78.81937322, 79.07197167, 79.31551239,
-        79.56929831, 79.84269161, 80.14276586, 80.45093604, 80.71510722,
-        80.98548038, 81.23680745, 81.49249391, 81.74269063, 81.96870832,
-        82.16354077, 82.34648092, 82.51452241, 82.65668891, 82.80204272,
-        82.97448067, 83.1064133 , 83.2513209 , 83.36754658, 83.4818162 ])}
-```
-
-### AutoETS.forecast method
+### Forecast method
 
 Memory Efficient Exponential Smoothing predictions.
 
@@ -795,127 +649,66 @@ analogous to fit_predict without storing information. It assumes you
 know the forecast horizon in advance.
 
 ```python
-autoets.forecast(y=train["y"].values, h=6, fitted=True)
+y_hat = sf.forecast(df=train, h=6, fitted=True)
+y_hat
 ```
 
-``` text
-{'mean': array([82.95334067, 83.14710962, 83.34087858, 83.53464753, 83.72841648,
-        83.92218543]),
- 'fitted': array([69.00631079, 69.23838078, 69.49672275, 69.73753749, 69.95373373,
-        70.18800832, 70.42142612, 70.68026343, 70.95296729, 71.21693197,
-        71.46051702, 71.70909162, 71.96257898, 72.22173709, 72.47104279,
-        72.73363157, 72.99184677, 73.25007587, 73.5140747 , 73.78708229,
-        74.07093074, 74.34832297, 74.62600899, 74.91319459, 75.18661412,
-        75.47027994, 75.75394823, 76.03846177, 76.33209228, 76.62765077,
-        76.93286853, 77.2399741 , 77.53597227, 77.82612695, 78.11104644,
-        78.38645253, 78.6510127 , 78.90909424, 79.16292255, 79.40732528,
-        79.65260623, 79.90420341, 80.16700064, 80.43291173, 80.67615301,
-        80.92469414, 81.16608469, 81.41337419, 81.66169821, 81.90113913,
-        82.12727338, 82.34886657, 82.56235691, 82.75957866])}
-```
+|     | unique_id | ds         | AutoETS   |
+|-----|-----------|------------|-----------|
+| 0   | 1         | 2014-01-01 | 82.952553 |
+| 1   | 1         | 2015-01-01 | 83.146150 |
+| 2   | 1         | 2016-01-01 | 83.339747 |
+| 3   | 1         | 2017-01-01 | 83.533344 |
+| 4   | 1         | 2018-01-01 | 83.726940 |
+| 5   | 1         | 2019-01-01 | 83.920537 |
+
+### In sample predictions
+
+Access fitted Exponential Smoothing insample predictions.
 
 ```python
-autoets.forecast(y=train["y"].values, h=6, fitted=True, level=[95])
+sf.forecast_fitted_values()
 ```
 
-``` text
-{'mean': array([82.95334067, 83.14710962, 83.34087858, 83.53464753, 83.72841648,
-        83.92218543]),
- 'fitted': array([69.00631079, 69.23838078, 69.49672275, 69.73753749, 69.95373373,
-        70.18800832, 70.42142612, 70.68026343, 70.95296729, 71.21693197,
-        71.46051702, 71.70909162, 71.96257898, 72.22173709, 72.47104279,
-        72.73363157, 72.99184677, 73.25007587, 73.5140747 , 73.78708229,
-        74.07093074, 74.34832297, 74.62600899, 74.91319459, 75.18661412,
-        75.47027994, 75.75394823, 76.03846177, 76.33209228, 76.62765077,
-        76.93286853, 77.2399741 , 77.53597227, 77.82612695, 78.11104644,
-        78.38645253, 78.6510127 , 78.90909424, 79.16292255, 79.40732528,
-        79.65260623, 79.90420341, 80.16700064, 80.43291173, 80.67615301,
-        80.92469414, 81.16608469, 81.41337419, 81.66169821, 81.90113913,
-        82.12727338, 82.34886657, 82.56235691, 82.75957866]),
- 'lo-95': array([82.50120336, 82.69439921, 82.88588753, 83.07456973, 83.2594347 ,
-        83.43962264]),
- 'hi-95': array([83.40547799, 83.59982004, 83.79586962, 83.99472532, 84.19739825,
-        84.40474821]),
- 'fitted-lo-95': array([68.5588109 , 68.79088089, 69.04922287, 69.2900376 , 69.50623384,
-        69.74050844, 69.97392623, 70.23276354, 70.5054674 , 70.76943209,
-        71.01301713, 71.26159173, 71.51507909, 71.7742372 , 72.0235429 ,
-        72.28613168, 72.54434688, 72.80257598, 73.06657481, 73.3395824 ,
-        73.62343085, 73.90082308, 74.1785091 , 74.4656947 , 74.73911423,
-        75.02278005, 75.30644834, 75.59096188, 75.88459239, 76.18015088,
-        76.48536864, 76.79247421, 77.08847238, 77.37862706, 77.66354655,
-        77.93895264, 78.20351282, 78.46159435, 78.71542266, 78.9598254 ,
-        79.20510634, 79.45670352, 79.71950075, 79.98541184, 80.22865312,
-        80.47719425, 80.7185848 , 80.96587431, 81.21419832, 81.45363924,
-        81.67977349, 81.90136668, 82.11485702, 82.31207877]),
- 'fitted-hi-95': array([69.45381068, 69.68588067, 69.94422264, 70.18503738, 70.40123361,
-        70.63550821, 70.86892601, 71.12776332, 71.40046717, 71.66443186,
-        71.90801691, 72.15659151, 72.41007887, 72.66923698, 72.91854267,
-        73.18113146, 73.43934666, 73.69757575, 73.96157459, 74.23458218,
-        74.51843063, 74.79582286, 75.07350887, 75.36069448, 75.634114  ,
-        75.91777983, 76.20144811, 76.48596166, 76.77959217, 77.07515066,
-        77.38036842, 77.68747399, 77.98347215, 78.27362683, 78.55854633,
-        78.83395242, 79.09851259, 79.35659413, 79.61042244, 79.85482517,
-        80.10010612, 80.35170329, 80.61450053, 80.88041162, 81.1236529 ,
-        81.37219402, 81.61358458, 81.86087408, 82.1091981 , 82.34863902,
-        82.57477327, 82.79636645, 83.0098568 , 83.20707854])}
-```
-
-### AutoETS.forward method
-
-```python
-autoets.forward(train["y"].values, h=6)
-```
-
-``` text
-{'mean': array([82.80204272, 82.94739245, 83.09274218, 83.23809191, 83.38344164,
-        83.52879137])}
-```
+|     | unique_id | ds         | y         | AutoETS   |
+|-----|-----------|------------|-----------|-----------|
+| 0   | 1         | 1960-01-01 | 69.123902 | 69.005305 |
+| 1   | 1         | 1961-01-01 | 69.760244 | 69.237346 |
+| 2   | 1         | 1962-01-01 | 69.149756 | 69.495763 |
+| ... | ...       | ...        | ...       | ...       |
+| 51  | 1         | 2011-01-01 | 82.187805 | 82.348633 |
+| 52  | 1         | 2012-01-01 | 82.239024 | 82.561938 |
+| 53  | 1         | 2013-01-01 | 82.690244 | 82.758963 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-The commonly used accuracy metrics to judge forecasts are:
-
-1.  Mean Absolute Percentage Error (MAPE)
-2.  Mean Error (ME)
-3.  Mean Absolute Error (MAE)
-4.  Mean Percentage Error (MPE)
-5.  Root Mean Squared Error (RMSE)
-6.  Correlation between the Actual and the Forecast (corr)
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from sklearn import metrics
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def model_evaluation(y_true, y_pred, model):
-    
-    def mean_absolute_percentage_error(y_true, y_pred): 
-        y_true, y_pred = np.array(y_true), np.array(y_pred)
-        return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
-    print (f'Model Evaluation: {model}')
-    print(f'MSE is : {metrics.mean_squared_error(y_true, y_pred)}')
-    print(f'MAE is : {metrics.mean_absolute_error(y_true, y_pred)}')
-    print(f'RMSE is : {np.sqrt(metrics.mean_squared_error(y_true, y_pred))}')
-    print(f'MAPE is : {mean_absolute_percentage_error(y_true, y_pred)}')
-    print(f'R2 is : {metrics.r2_score(y_true, y_pred)}')
-    print(f'corr is : {np.corrcoef(y_true, y_pred)[0,1]}',end='\n\n')
+evaluate(
+    y_hat.merge(test),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=1), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-
-```python
-model_evaluation(test["y"], forecast["hat"], "AutoETS")
-```
-
-``` text
-Model Evaluation: AutoETS
-MSE is : 0.5813708312500836
-MAE is : 0.7269623343638779
-RMSE is : 0.7624767742364902
-MAPE is : 0.87594467113361
-R2 is : -7.407128931524218
-corr is : 0.4910418089228463
-```
+|     | unique_id | metric | AutoETS  |
+|-----|-----------|--------|----------|
+| 0   | 1         | mae    | 0.421060 |
+| 1   | 1         | mape   | 0.005073 |
+| 2   | 1         | mase   | 1.340056 |
+| 3   | 1         | rmse   | 0.483558 |
+| 4   | 1         | smape  | 0.002528 |
 
 ## Acknowledgements
 

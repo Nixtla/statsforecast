@@ -712,40 +712,6 @@ plt.show()
 
 # Implementation of AutoRegressive with StatsForecast <a class="anchor" id="implementation"></a>
 
-To also know more about the parameters of the functions of the
-`AutoRegressive Model`, they are listed below. For more information,
-visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#autoregressive)
-
-``` text
-lags : int or list
-    Number of lags to include in the model.
-    If an int is passed then all lags up to `lags` are considered.
-    If a list, only the elements of the list are considered as lags.
-include_mean : bool (default=True)
-    Should the AutoRegressive model include a mean term?
-    The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions).
-include_drift : bool (default=False)
-    Should the AutoRegressive model include a linear drift term?
-    (i.e., a linear regression with AutoRegressive errors is fitted.)
-blambda : float, optional (default=None)
-    Box-Cox transformation parameter.
-biasadj : bool (default=False)
-    Use adjusted back-transformed mean Box-Cox.
-method : str (default='CSS-ML')
-    Fitting method: maximum likelihood or minimize conditional sum-of-squares.
-    The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
-fixed : dict, optional (default=None)
-    Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`.
-    For autoregressive terms use the `ar{i}` keys.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
-
 ### Load libraries
 
 ```python
@@ -800,16 +766,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
-                   freq='MS', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='MS')
 ```
 
 ### Fit Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -842,13 +805,13 @@ residual
 
 |     | residual Model |
 |-----|----------------|
-| 0   | -11990.435671  |
+| 0   | -11998.537347  |
 | 1   | NaN            |
 | 2   | NaN            |
 | ... | ...            |
-| 309 | -2717.643794   |
-| 310 | -1306.165240   |
-| 311 | -2712.663024   |
+| 309 | -2718.312961   |
+| 310 | -1306.795172   |
+| 311 | -2713.284999   |
 
 ```python
 fig, axs = plt.subplots(nrows=2, ncols=2)
@@ -907,100 +870,70 @@ and
 
 ```python
 # Prediction
-Y_hat = sf.forecast(horizon, fitted=True)
-
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
-|           | ds         | AutoRegressive |
-|-----------|------------|----------------|
-| unique_id |            |                |
-| 1         | 2012-01-01 | 15904.990234   |
-| 1         | 2012-02-01 | 13597.334961   |
-| 1         | 2012-03-01 | 15488.281250   |
-| ...       | ...        | ...            |
-| 1         | 2012-10-01 | 14086.938477   |
-| 1         | 2012-11-01 | 13273.106445   |
-| 1         | 2012-12-01 | 12497.278320   |
+|     | unique_id | ds         | AutoRegressive |
+|-----|-----------|------------|----------------|
+| 0   | 1         | 2012-01-01 | 15905.582031   |
+| 1   | 1         | 2012-02-01 | 13597.894531   |
+| 2   | 1         | 2012-03-01 | 15488.883789   |
+| ... | ...       | ...        | ...            |
+| 9   | 1         | 2012-10-01 | 14087.901367   |
+| 10  | 1         | 2012-11-01 | 13274.105469   |
+| 11  | 1         | 2012-12-01 | 12498.226562   |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds         | y       | AutoRegressive |
-|-----------|------------|---------|----------------|
-| unique_id |            |         |                |
-| 1         | 1986-01-01 | 9034.0  | 21024.435547   |
-| 1         | 1986-02-01 | 9596.0  | NaN            |
-| 1         | 1986-03-01 | 10558.0 | NaN            |
-| 1         | 1986-04-01 | 9002.0  | 129223.968750  |
-| 1         | 1986-05-01 | 9239.0  | 10019.207031   |
+|     | unique_id | ds         | y       | AutoRegressive |
+|-----|-----------|------------|---------|----------------|
+| 0   | 1         | 1986-01-01 | 9034.0  | 21032.537109   |
+| 1   | 1         | 1986-02-01 | 9596.0  | NaN            |
+| 2   | 1         | 1986-03-01 | 10558.0 | NaN            |
+| 3   | 1         | 1986-04-01 | 9002.0  | 126172.937500  |
+| 4   | 1         | 1986-05-01 | 9239.0  | 10020.040039   |
 
 Adding 95% confidence interval with the forecast method
 
 ```python
-sf.forecast(h=horizon, level=[95])
+sf.forecast(df=train, h=horizon, level=[95])
 ```
 
-|  | ds | AutoRegressive | AutoRegressive-lo-95 | AutoRegressive-hi-95 |
-|----|----|----|----|----|
-| unique_id |  |  |  |  |
-| 1 | 2012-01-01 | 15904.990234 | 1759.574219 | 30050.406250 |
-| 1 | 2012-02-01 | 13597.334961 | -548.080872 | 27742.751953 |
-| 1 | 2012-03-01 | 15488.281250 | 1342.864990 | 29633.697266 |
-| ... | ... | ... | ... | ... |
-| 1 | 2012-10-01 | 14086.938477 | -1445.719727 | 29619.597656 |
-| 1 | 2012-11-01 | 13273.106445 | -2283.256104 | 28829.470703 |
-| 1 | 2012-12-01 | 12497.278320 | -3072.115234 | 28066.671875 |
-
-```python
-Y_hat=Y_hat.reset_index()
-Y_hat
-```
-
-|     | unique_id | ds         | AutoRegressive |
-|-----|-----------|------------|----------------|
-| 0   | 1         | 2012-01-01 | 15904.990234   |
-| 1   | 1         | 2012-02-01 | 13597.334961   |
-| 2   | 1         | 2012-03-01 | 15488.281250   |
-| ... | ...       | ...        | ...            |
-| 9   | 1         | 2012-10-01 | 14086.938477   |
-| 10  | 1         | 2012-11-01 | 13273.106445   |
-| 11  | 1         | 2012-12-01 | 12497.278320   |
+|  | unique_id | ds | AutoRegressive | AutoRegressive-lo-95 | AutoRegressive-hi-95 |
+|----|----|----|----|----|----|
+| 0 | 1 | 2012-01-01 | 15905.582031 | 2119.586426 | 29691.578125 |
+| 1 | 1 | 2012-02-01 | 13597.894531 | -188.101135 | 27383.890625 |
+| 2 | 1 | 2012-03-01 | 15488.883789 | 1702.888062 | 29274.878906 |
+| ... | ... | ... | ... | ... | ... |
+| 9 | 1 | 2012-10-01 | 14087.901367 | -1050.068359 | 29225.871094 |
+| 10 | 1 | 2012-11-01 | 13274.105469 | -1886.973145 | 28435.183594 |
+| 11 | 1 | 2012-12-01 | 12498.226562 | -2675.547607 | 27672.001953 |
 
 ```python
 # Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
 Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
 Y_hat1
 ```
 
 |     | ds         | y     | unique_id | AutoRegressive |
 |-----|------------|-------|-----------|----------------|
-| 0   | 2012-01-01 | 13427 | 1         | 15904.990234   |
-| 1   | 2012-02-01 | 14447 | 1         | 13597.334961   |
-| 2   | 2012-03-01 | 14717 | 1         | 15488.281250   |
+| 0   | 2012-01-01 | 13427 | 1         | 15905.582031   |
+| 1   | 2012-02-01 | 14447 | 1         | 13597.894531   |
+| 2   | 2012-03-01 | 14717 | 1         | 15488.883789   |
 | ... | ...        | ...   | ...       | ...            |
-| 9   | 2012-10-01 | 13795 | 1         | 14086.938477   |
-| 10  | 2012-11-01 | 13352 | 1         | 13273.106445   |
-| 11  | 2012-12-01 | 12716 | 1         | 12497.278320   |
+| 9   | 2012-10-01 | 13795 | 1         | 14087.901367   |
+| 10  | 2012-11-01 | 13352 | 1         | 13274.105469   |
+| 11  | 2012-12-01 | 12716 | 1         | 12498.226562   |
 
 ```python
-# Merge the forecasts with the true values
-
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat1]).set_index('ds')
-plot_df[['y', "AutoRegressive"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Year ', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-plt.show()
+sf.plot(train, Y_hat1)
 ```
 
-![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-31-output-1.png)
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-30-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -1028,88 +961,36 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | AutoRegressive |
-|-----------|------------|----------------|
-| unique_id |            |                |
-| 1         | 2012-01-01 | 15904.990234   |
-| 1         | 2012-02-01 | 13597.334961   |
-| 1         | 2012-03-01 | 15488.281250   |
-| ...       | ...        | ...            |
-| 1         | 2012-10-01 | 14086.938477   |
-| 1         | 2012-11-01 | 13273.106445   |
-| 1         | 2012-12-01 | 12497.278320   |
+|     | unique_id | ds         | AutoRegressive |
+|-----|-----------|------------|----------------|
+| 0   | 1         | 2012-01-01 | 15905.582031   |
+| 1   | 1         | 2012-02-01 | 13597.894531   |
+| 2   | 1         | 2012-03-01 | 15488.883789   |
+| ... | ...       | ...        | ...            |
+| 9   | 1         | 2012-10-01 | 14087.901367   |
+| 10  | 1         | 2012-11-01 | 13274.105469   |
+| 11  | 1         | 2012-12-01 | 12498.226562   |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[95]) 
-
 forecast_df
 ```
 
-|  | ds | AutoRegressive | AutoRegressive-lo-95 | AutoRegressive-hi-95 |
-|----|----|----|----|----|
-| unique_id |  |  |  |  |
-| 1 | 2012-01-01 | 15904.990234 | 1759.574219 | 30050.406250 |
-| 1 | 2012-02-01 | 13597.334961 | -548.080872 | 27742.751953 |
-| 1 | 2012-03-01 | 15488.281250 | 1342.864990 | 29633.697266 |
-| ... | ... | ... | ... | ... |
-| 1 | 2012-10-01 | 14086.938477 | -1445.719727 | 29619.597656 |
-| 1 | 2012-11-01 | 13273.106445 | -2283.256104 | 28829.470703 |
-| 1 | 2012-12-01 | 12497.278320 | -3072.115234 | 28066.671875 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|  | y | unique_id | AutoRegressive | AutoRegressive-lo-95 | AutoRegressive-hi-95 |
+|  | unique_id | ds | AutoRegressive | AutoRegressive-lo-95 | AutoRegressive-hi-95 |
 |----|----|----|----|----|----|
-| ds |  |  |  |  |  |
-| 1986-01-01 | 9034.0 | 1 | NaN | NaN | NaN |
-| 1986-02-01 | 9596.0 | 1 | NaN | NaN | NaN |
-| 1986-03-01 | 10558.0 | 1 | NaN | NaN | NaN |
+| 0 | 1 | 2012-01-01 | 15905.582031 | 2119.586426 | 29691.578125 |
+| 1 | 1 | 2012-02-01 | 13597.894531 | -188.101135 | 27383.890625 |
+| 2 | 1 | 2012-03-01 | 15488.883789 | 1702.888062 | 29274.878906 |
 | ... | ... | ... | ... | ... | ... |
-| 2012-10-01 | NaN | NaN | 14086.938477 | -1445.719727 | 29619.597656 |
-| 2012-11-01 | NaN | NaN | 13273.106445 | -2283.256104 | 28829.470703 |
-| 2012-12-01 | NaN | NaN | 12497.278320 | -3072.115234 | 28066.671875 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series, also let’s draw the confidence interval that we have
-obtained when making the prediction with 95% confidence.
+| 9 | 1 | 2012-10-01 | 14087.901367 | -1050.068359 | 29225.871094 |
+| 10 | 1 | 2012-11-01 | 13274.105469 | -1886.973145 | 28435.183594 |
+| 11 | 1 | 2012-12-01 | 12498.226562 | -2675.547607 | 27672.001953 |
 
 ```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=2)
-    colors = ['orange', 'black', 'green']
-    for model, color in zip(models, colors):
-        ax.fill_between(df_plot.index, 
-                        df_plot[f'{model}-lo-95'], 
-                        df_plot[f'{model}-hi-95'],
-                        alpha=.35,
-                        color=color,
-                        label=f'{model}-level-90')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel('', fontsize=20)
-    ax.set_xlabel('Timestamp [t]', fontsize=20)
-    ax.legend(prop={'size': 15})
-    ax.grid(True)
-    plt.show()
+sf.plot(train, test.merge(forecast_df), level=[95])
 ```
 
-
-```python
-plot_forecasts(train, test, forecast_df, models=["AutoRegressive"])
-```
-
-![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-36-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-33-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -1167,8 +1048,7 @@ crossvalidation_df = sf.cross_validation(df=train,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -1178,19 +1058,23 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds         | cutoff     | y       | AutoRegressive |
-|-----------|------------|------------|---------|----------------|
-| unique_id |            |            |         |                |
-| 1         | 2009-01-01 | 2008-12-01 | 19262.0 | 24295.751953   |
-| 1         | 2009-02-01 | 2008-12-01 | 20658.0 | 23993.804688   |
-| 1         | 2009-03-01 | 2008-12-01 | 22660.0 | 21200.978516   |
-| ...       | ...        | ...        | ...     | ...            |
-| 1         | 2011-10-01 | 2010-12-01 | 12893.0 | 19350.546875   |
-| 1         | 2011-11-01 | 2010-12-01 | 11843.0 | 16900.646484   |
-| 1         | 2011-12-01 | 2010-12-01 | 11321.0 | 18160.392578   |
+|     | unique_id | ds         | cutoff     | y       | AutoRegressive |
+|-----|-----------|------------|------------|---------|----------------|
+| 0   | 1         | 2009-01-01 | 2008-12-01 | 19262.0 | 24295.837891   |
+| 1   | 1         | 2009-02-01 | 2008-12-01 | 20658.0 | 23993.947266   |
+| 2   | 1         | 2009-03-01 | 2008-12-01 | 22660.0 | 21201.121094   |
+| ... | ...       | ...        | ...        | ...     | ...            |
+| 57  | 1         | 2011-10-01 | 2010-12-01 | 12893.0 | 19349.708984   |
+| 58  | 1         | 2011-11-01 | 2010-12-01 | 11843.0 | 16899.849609   |
+| 59  | 1         | 2011-12-01 | 2010-12-01 | 11321.0 | 18159.574219   |
 
 We’ll now plot the forecast for each cutoff period. To make the plots
 clearer, we’ll rename the actual values in each period.
+
+```python
+from IPython.display import display
+```
+
 
 ```python
 crossvalidation_df.rename(columns = {'y' : 'actual'}, inplace = True) # rename actual values 
@@ -1199,76 +1083,49 @@ cutoff = crossvalidation_df['cutoff'].unique()
 
 for k in range(len(cutoff)): 
     cv = crossvalidation_df[crossvalidation_df['cutoff'] == cutoff[k]]
-    StatsForecast.plot(df, cv.loc[:, cv.columns != 'cutoff'])
+    display(StatsForecast.plot(df, cv.loc[:, cv.columns != 'cutoff']))
 ```
+
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-37-output-1.png)
+
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-37-output-2.png)
+
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-37-output-3.png)
+
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-37-output-4.png)
+
+![](/statsforecast/docs/models/AutoRegressive_files/figure-markdown_strict/cell-37-output-5.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
-
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case,
-    [`AutoRegressive`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoregressive).
-
-```python
-rmse = rmse(crossvalidation_df['actual'], crossvalidation_df["AutoRegressive"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  3566.5479
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
 
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import (mae, mape, mase, rmse, smape)
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, y_pred, model):
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=12)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+    agg_fn='mean',
+)
 ```
 
-
-```python
-evaluate_performace(train, test, Y_hat, model="AutoRegressive")
-```
-
-|                | mae        | mape     | mase     | rmse        | smape    |
-|----------------|------------|----------|----------|-------------|----------|
-| AutoRegressive | 961.773193 | 7.271437 | 0.601651 | 1194.660588 | 6.970027 |
+|     | metric | AutoRegressive |
+|-----|--------|----------------|
+| 0   | mae    | 962.023763     |
+| 1   | mape   | 0.072733       |
+| 2   | mase   | 0.601808       |
+| 3   | rmse   | 1195.013050    |
+| 4   | smape  | 0.034858       |
 
 ## Acknowledgements
 

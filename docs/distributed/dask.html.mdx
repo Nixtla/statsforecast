@@ -30,7 +30,10 @@ from statsforecast.models import (
     AutoETS,
 )
 from statsforecast.utils import generate_series
+```
 
+
+```python
 n_series = 4
 horizon = 7
 
@@ -43,36 +46,6 @@ sf = StatsForecast(
 sf.forecast(df=series, h=horizon).head()
 ```
 
-|           | ds         | AutoETS  |
-|-----------|------------|----------|
-| unique_id |            |          |
-| 0         | 2000-08-10 | 5.261609 |
-| 0         | 2000-08-11 | 6.196357 |
-| 0         | 2000-08-12 | 0.282309 |
-| 0         | 2000-08-13 | 1.264195 |
-| 0         | 2000-08-14 | 2.262453 |
-
-## Executing on Dask
-
-To run the forecasts distributed on Dask, just pass in a Dask DataFrame
-instead. Instead of having the `unique_id` as an index, it needs to be a
-column because Dask handles the index differently.
-
-```python
-import dask.dataframe as dd
-
-# Make unique_id a column
-series = series.reset_index()
-series['unique_id'] = series['unique_id'].astype(str)
-
-ddf = dd.from_pandas(series, npartitions=4)
-```
-
-
-```python
-sf.forecast(df=ddf, h=horizon).compute().head()
-```
-
 |     | unique_id | ds         | AutoETS  |
 |-----|-----------|------------|----------|
 | 0   | 0         | 2000-08-10 | 5.261609 |
@@ -80,4 +53,28 @@ sf.forecast(df=ddf, h=horizon).compute().head()
 | 2   | 0         | 2000-08-12 | 0.282309 |
 | 3   | 0         | 2000-08-13 | 1.264195 |
 | 4   | 0         | 2000-08-14 | 2.262453 |
+
+## Executing on Dask
+
+To run the forecasts distributed on Dask, just pass in a Dask DataFrame
+instead.
+
+```python
+import dask.dataframe as dd
+```
+
+
+```python
+series['unique_id'] = series['unique_id'].astype(str)
+ddf = dd.from_pandas(series, npartitions=4)
+sf.forecast(df=ddf, h=horizon).compute().head()
+```
+
+|     | unique_id | ds                  | AutoETS  |
+|-----|-----------|---------------------|----------|
+| 0   | 0         | 2000-08-10 00:00:00 | 5.261609 |
+| 1   | 0         | 2000-08-11 00:00:00 | 6.196357 |
+| 2   | 0         | 2000-08-12 00:00:00 | 0.282309 |
+| 3   | 0         | 2000-08-13 00:00:00 | 1.264195 |
+| 4   | 0         | 2000-08-14 00:00:00 | 2.262453 |
 

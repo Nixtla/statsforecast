@@ -18,15 +18,13 @@ are:
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1624"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1517"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast
 
 > ``` text
->  StatsForecast (models:List[Any], freq:Union[str,int], n_jobs:int=1, df:Un
->                 ion[pandas.core.frame.DataFrame,polars.dataframe.frame.Dat
->                 aFrame,NoneType]=None, sort_df:bool=True,
+>  StatsForecast (models:List[Any], freq:Union[str,int], n_jobs:int=1,
 >                 fallback_model:Optional[Any]=None, verbose:bool=False)
 > ```
 
@@ -84,17 +82,6 @@ panel_df.groupby('unique_id').tail(4)
 
 
 ```python
-if 'NIXTLA_ID_AS_COL' in os.environ:
-    del os.environ['NIXTLA_ID_AS_COL']
-```
-
-
-```python
-os.environ['NIXTLA_ID_AS_COL'] = '1'
-```
-
-
-```python
 # Declare list of instantiated StatsForecast estimators to be fitted
 # You can try other estimator's hyperparameters
 # You can try other methods from the `models.StatsForecast` collection
@@ -116,17 +103,18 @@ fcsts_df.groupby('unique_id').tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L684"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L633"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit
 
 > ``` text
->  StatsForecast.fit (df:Union[pandas.core.frame.DataFrame,polars.dataframe.
->                     frame.DataFrame,NoneType]=None, sort_df:bool=True, pre
->                     diction_intervals:Optional[statsforecast.utils.Conform
->                     alIntervals]=None, id_col:str='unique_id',
->                     time_col:str='ds', target_col:str='y')
+>  StatsForecast.fit
+>                     (df:Union[pandas.core.frame.DataFrame,polars.dataframe
+>                     .frame.DataFrame], prediction_intervals:Optional[stats
+>                     forecast.utils.ConformalIntervals]=None,
+>                     id_col:str='unique_id', time_col:str='ds',
+>                     target_col:str='y')
 > ```
 
 \*Fit statistical models.
@@ -136,8 +124,7 @@ fitted models for later inspection.\*
 
 |  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
-| df | Union | None | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
-| sort_df | bool | True | Sort `df` by ids and times. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
 | prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
 | id_col | str | unique_id | Column that identifies each serie. |
 | time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
@@ -147,7 +134,7 @@ fitted models for later inspection.\*
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L773"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L711"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## SatstForecast.predict
@@ -173,21 +160,21 @@ DataFrame `df`.\*
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L820"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L758"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.fit_predict
 
 > ``` text
->  StatsForecast.fit_predict (h:int, df:Union[pandas.core.frame.DataFrame,po
->                             lars.dataframe.frame.DataFrame,NoneType]=None,
->                             X_df:Union[pandas.core.frame.DataFrame,polars.
->                             dataframe.frame.DataFrame,NoneType]=None,
->                             level:Optional[List[int]]=None,
->                             sort_df:bool=True, prediction_intervals:Option
->                             al[statsforecast.utils.ConformalIntervals]=Non
->                             e, id_col:str='unique_id', time_col:str='ds',
->                             target_col:str='y')
+>  StatsForecast.fit_predict (h:int,
+>                             df:Union[pandas.core.frame.DataFrame,polars.da
+>                             taframe.frame.DataFrame], X_df:Union[pandas.co
+>                             re.frame.DataFrame,polars.dataframe.frame.Data
+>                             Frame,NoneType]=None,
+>                             level:Optional[List[int]]=None, prediction_int
+>                             ervals:Optional[statsforecast.utils.ConformalI
+>                             ntervals]=None, id_col:str='unique_id',
+>                             time_col:str='ds', target_col:str='y')
 > ```
 
 \*Fit and Predict with statistical models.
@@ -203,10 +190,9 @@ this method stores partial models outputs.\*
 |  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
 | h | int |  | Forecast horizon. |
-| df | Union | None | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
 | X_df | Union | None | DataFrame with ids, times and future exogenous. |
 | level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
-| sort_df | bool | True | Sort `df` by ids and times. |
 | prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
 | id_col | str | unique_id | Column that identifies each serie. |
 | time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
@@ -216,21 +202,21 @@ this method stores partial models outputs.\*
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L888"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L819"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast
 
 > ``` text
->  StatsForecast.forecast (h:int, df:Union[pandas.core.frame.DataFrame,polar
->                          s.dataframe.frame.DataFrame,NoneType]=None, X_df:
->                          Union[pandas.core.frame.DataFrame,polars.datafram
->                          e.frame.DataFrame,NoneType]=None,
->                          level:Optional[List[int]]=None,
->                          fitted:bool=False, sort_df:bool=True, prediction_
->                          intervals:Optional[statsforecast.utils.ConformalI
->                          ntervals]=None, id_col:str='unique_id',
->                          time_col:str='ds', target_col:str='y')
+>  StatsForecast.forecast (h:int,
+>                          df:Union[pandas.core.frame.DataFrame,polars.dataf
+>                          rame.frame.DataFrame], X_df:Union[pandas.core.fra
+>                          me.DataFrame,polars.dataframe.frame.DataFrame,Non
+>                          eType]=None, level:Optional[List[int]]=None,
+>                          fitted:bool=False, prediction_intervals:Optional[
+>                          statsforecast.utils.ConformalIntervals]=None,
+>                          id_col:str='unique_id', time_col:str='ds',
+>                          target_col:str='y')
 > ```
 
 \*Memory Efficient predictions.
@@ -242,11 +228,10 @@ requires the forecast horizon `h` in advance.\*
 |  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
 | h | int |  | Forecast horizon. |
-| df | Union | None | DataFrame with ids, times, targets and exogenous. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
 | X_df | Union | None | DataFrame with ids, times and future exogenous. |
 | level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
 | fitted | bool | False | Store in-sample predictions. |
-| sort_df | bool | True | Sort `df` by ids and times. |
 | prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
 | id_col | str | unique_id | Column that identifies each serie. |
 | time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
@@ -275,7 +260,7 @@ fcsts_df.groupby('unique_id').tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L968"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L893"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.forecast_fitted_values
@@ -317,24 +302,24 @@ insample_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1000"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L921"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation
 
 > ``` text
->  StatsForecast.cross_validation (h:int, df:Union[pandas.core.frame.DataFra
->                                  me,polars.dataframe.frame.DataFrame,NoneT
->                                  ype]=None, n_windows:int=1,
->                                  step_size:int=1,
+>  StatsForecast.cross_validation (h:int,
+>                                  df:Union[pandas.core.frame.DataFrame,pola
+>                                  rs.dataframe.frame.DataFrame],
+>                                  n_windows:int=1, step_size:int=1,
 >                                  test_size:Optional[int]=None,
 >                                  input_size:Optional[int]=None,
 >                                  level:Optional[List[int]]=None,
 >                                  fitted:bool=False,
->                                  refit:Union[bool,int]=True,
->                                  sort_df:bool=True, prediction_intervals:O
->                                  ptional[statsforecast.utils.ConformalInte
->                                  rvals]=None, id_col:str='unique_id',
+>                                  refit:Union[bool,int]=True, prediction_in
+>                                  tervals:Optional[statsforecast.utils.Conf
+>                                  ormalIntervals]=None,
+>                                  id_col:str='unique_id',
 >                                  time_col:str='ds', target_col:str='y')
 > ```
 
@@ -353,7 +338,7 @@ length and diversity.\*
 |  | **Type** | **Default** | **Details** |
 |------|------------------|-------------------------|-------------------------|
 | h | int |  | Forecast horizon. |
-| df | Union | None | DataFrame with ids, times, targets and exogenous.<br/>If None, the [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) class should have been instantiated using `df`. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
 | n_windows | int | 1 | Number of windows used for cross validation. |
 | step_size | int | 1 | Step size between each window. |
 | test_size | Optional | None | Length of test size. If passed, set `n_windows=None`. |
@@ -361,7 +346,6 @@ length and diversity.\*
 | level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
 | fitted | bool | False | Store in-sample predictions. |
 | refit | Union | True | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows. |
-| sort_df | bool | True | Sort `df` by ids and times. |
 | prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
 | id_col | str | unique_id | Column that identifies each serie. |
 | time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
@@ -390,7 +374,7 @@ rolled_fcsts_df.head(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1142"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1053"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.cross_validation_fitted_values
@@ -432,7 +416,7 @@ insample_rolled_fcsts_df.tail(4)
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1349"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1256"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.plot
@@ -474,7 +458,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1430"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1323"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.save
@@ -496,7 +480,7 @@ make it reproducible.*
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1517"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/core.py#L1410"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ## StatsForecast.load

@@ -265,36 +265,34 @@ rcParams['figure.figsize'] = (18,7)
 Let’s pull the S&P500 stock data from the Yahoo Finance site.
 
 ```python
+import datetime
+
 import pandas as pd
 import time
-from datetime import datetime
 import yfinance as yf
 
 ticker = '^GSPC'
-period1 = int(time.mktime(datetime(2015, 1, 1, 23, 59).timetuple()))
-period2 = int(time.mktime(datetime.now().timetuple()))
+period1 = datetime.datetime(2015, 1, 1)
+period2 = datetime.datetime(2023, 9, 22)
 interval = '1d' # 1d, 1m
 
-SP_500 = yf.download(ticker, start=period1, end=period2, interval=interval)
+SP_500 = yf.download(ticker, start=period1, end=period2, interval=interval, progress=False)
 SP_500 = SP_500.reset_index()
 
 SP_500.head()
 ```
 
-``` text
-[*********************100%***********************]  1 of 1 completed
-```
-
-|  | Date | Open | High | Low | Close | Adj Close | Volume |
+| Price | Date | Adj Close | Close | High | Low | Open | Volume |
 |----|----|----|----|----|----|----|----|
-| 0 | 2015-01-02 | 2058.899902 | 2072.360107 | 2046.040039 | 2058.199951 | 2058.199951 | 2708700000 |
-| 1 | 2015-01-05 | 2054.439941 | 2054.439941 | 2017.339966 | 2020.579956 | 2020.579956 | 3799120000 |
-| 2 | 2015-01-06 | 2022.150024 | 2030.250000 | 1992.439941 | 2002.609985 | 2002.609985 | 4460110000 |
-| 3 | 2015-01-07 | 2005.550049 | 2029.609985 | 2005.550049 | 2025.900024 | 2025.900024 | 3805480000 |
-| 4 | 2015-01-08 | 2030.609985 | 2064.080078 | 2030.609985 | 2062.139893 | 2062.139893 | 3934010000 |
+| Ticker |  | ^GSPC | ^GSPC | ^GSPC | ^GSPC | ^GSPC | ^GSPC |
+| 0 | 2015-01-02 00:00:00+00:00 | 2058.199951 | 2058.199951 | 2072.360107 | 2046.040039 | 2058.899902 | 2708700000 |
+| 1 | 2015-01-05 00:00:00+00:00 | 2020.579956 | 2020.579956 | 2054.439941 | 2017.339966 | 2054.439941 | 3799120000 |
+| 2 | 2015-01-06 00:00:00+00:00 | 2002.609985 | 2002.609985 | 2030.250000 | 1992.439941 | 2022.150024 | 4460110000 |
+| 3 | 2015-01-07 00:00:00+00:00 | 2025.900024 | 2025.900024 | 2029.609985 | 2005.550049 | 2005.550049 | 3805480000 |
+| 4 | 2015-01-08 00:00:00+00:00 | 2062.139893 | 2062.139893 | 2064.080078 | 2030.609985 | 2030.609985 | 3934010000 |
 
 ```python
-df=SP_500[["Date","Close"]]
+df=SP_500[["Date","Close"]].copy()
 ```
 
 The input to StatsForecast is always a data frame in long format with
@@ -315,13 +313,13 @@ df.columns=["ds", "y", "unique_id"]
 df.head()
 ```
 
-|     | ds         | y           | unique_id |
-|-----|------------|-------------|-----------|
-| 0   | 2015-01-02 | 2058.199951 | 1         |
-| 1   | 2015-01-05 | 2020.579956 | 1         |
-| 2   | 2015-01-06 | 2002.609985 | 1         |
-| 3   | 2015-01-07 | 2025.900024 | 1         |
-| 4   | 2015-01-08 | 2062.139893 | 1         |
+|     | ds                        | y           | unique_id |
+|-----|---------------------------|-------------|-----------|
+| 0   | 2015-01-02 00:00:00+00:00 | 2058.199951 | 1         |
+| 1   | 2015-01-05 00:00:00+00:00 | 2020.579956 | 1         |
+| 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         |
+| 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         |
+| 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         |
 
 ```python
 print(df.dtypes)
@@ -456,13 +454,13 @@ df.dropna(inplace=True, how='any')
 df.head()
 ```
 
-|     | ds         | y           | unique_id | return    |
-|-----|------------|-------------|-----------|-----------|
-| 1   | 2015-01-05 | 2020.579956 | 1         | -1.827811 |
-| 2   | 2015-01-06 | 2002.609985 | 1         | -0.889347 |
-| 3   | 2015-01-07 | 2025.900024 | 1         | 1.162984  |
-| 4   | 2015-01-08 | 2062.139893 | 1         | 1.788828  |
-| 5   | 2015-01-09 | 2044.810059 | 1         | -0.840381 |
+|     | ds                        | y           | unique_id | return    |
+|-----|---------------------------|-------------|-----------|-----------|
+| 1   | 2015-01-05 00:00:00+00:00 | 2020.579956 | 1         | -1.827811 |
+| 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         | -0.889347 |
+| 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         | 1.162984  |
+| 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         | 1.788828  |
+| 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 |
 
 ```python
 import plotly.express as px
@@ -479,13 +477,13 @@ df['sq_return'] = df["return"].mul(df["return"])
 df.head()
 ```
 
-|     | ds         | y           | unique_id | return    | sq_return |
-|-----|------------|-------------|-----------|-----------|-----------|
-| 1   | 2015-01-05 | 2020.579956 | 1         | -1.827811 | 3.340891  |
-| 2   | 2015-01-06 | 2002.609985 | 1         | -0.889347 | 0.790938  |
-| 3   | 2015-01-07 | 2025.900024 | 1         | 1.162984  | 1.352532  |
-| 4   | 2015-01-08 | 2062.139893 | 1         | 1.788828  | 3.199906  |
-| 5   | 2015-01-09 | 2044.810059 | 1         | -0.840381 | 0.706240  |
+|     | ds                        | y           | unique_id | return    | sq_return |
+|-----|---------------------------|-------------|-----------|-----------|-----------|
+| 1   | 2015-01-05 00:00:00+00:00 | 2020.579956 | 1         | -1.827811 | 3.340891  |
+| 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         | -0.889347 | 0.790938  |
+| 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         | 1.162984  | 1.352532  |
+| 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         | 1.788828  | 3.199906  |
+| 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 | 0.706240  |
 
 ### Returns vs Squared Returns
 
@@ -615,7 +613,7 @@ train.shape, test.shape
 ```
 
 ``` text
-((2112, 3), (87, 3))
+((2112, 3), (82, 3))
 ```
 
 Now let’s plot the training data and the test data.
@@ -663,7 +661,7 @@ master, Rob Hyndmann, can be useful.season_length.
 season_length = 7 # Daily data
 horizon = len(test) # number of predictions biasadj=True, include_drift=True,
 
-models = [ARCH(p=2,)]
+models = [ARCH(p=2)]
 ```
 
 We fit the models by instantiating a new StatsForecast object with the
@@ -685,16 +683,15 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
+sf = StatsForecast(models=models,
                    freq='C', # custom business day frequency
-                   n_jobs=-1)
+                   )
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -712,15 +709,15 @@ result
 ``` text
 {'p': 2,
  'q': 0,
- 'coeff': array([0.44320919, 0.34706759, 0.35171967]),
+ 'coeff': array([0.44321058, 0.34706751, 0.35172097]),
  'message': 'Optimization terminated successfully',
- 'y_vals': array([-1.12220268, -0.73186004]),
- 'sigma2_vals': array([1.38768694,        nan, 1.89277546, ..., 0.76423015, 0.45064543,
-        0.88036943]),
- 'fitted': array([        nan,         nan,  2.23474473, ..., -1.48032981,
-         1.10018826, -0.98050094]),
- 'actual_residuals': array([        nan,         nan, -1.07176046, ...,  1.4958333 ,
-        -2.22239094,  0.2486409 ])}
+ 'y_vals': array([-1.12220267, -0.73186003]),
+ 'sigma2_vals': array([1.38768694,        nan, 1.89278112, ..., 0.76423271, 0.45064684,
+        0.88037072]),
+ 'fitted': array([        nan,         nan,  2.23474807, ..., -1.48033228,
+         1.10018999, -0.98050166]),
+ 'actual_residuals': array([        nan,         nan, -1.07176381, ...,  1.49583575,
+        -2.22239266,  0.24864162])}
 ```
 
 Let us now visualize the residuals of our models.
@@ -739,11 +736,11 @@ residual
 |------|----------------|
 | 0    | NaN            |
 | 1    | NaN            |
-| 2    | -1.071760      |
+| 2    | -1.071764      |
 | ...  | ...            |
-| 2109 | 1.495833       |
-| 2110 | -2.222391      |
-| 2111 | 0.248641       |
+| 2109 | 1.495836       |
+| 2110 | -2.222393      |
+| 2111 | 0.248642       |
 
 ```python
 import scipy.stats as stats
@@ -799,84 +796,64 @@ uncertainty intervals. Depending on your computer, this step should take
 around 1min.
 
 ```python
-Y_hat = sf.forecast(horizon, fitted=True)
-
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
-|           | ds         | ARCH(2)   |
-|-----------|------------|-----------|
-| unique_id |            |           |
-| 1         | 2023-05-25 | 1.681836  |
-| 1         | 2023-05-26 | -0.777028 |
-| 1         | 2023-05-29 | -0.677960 |
-| ...       | ...        | ...       |
-| 1         | 2023-09-20 | 0.136752  |
-| 1         | 2023-09-21 | 0.082173  |
-| 1         | 2023-09-22 | -0.450958 |
+|     | unique_id | ds                        | ARCH(2)   |
+|-----|-----------|---------------------------|-----------|
+| 0   | 1         | 2023-05-25 00:00:00+00:00 | 1.681839  |
+| 1   | 1         | 2023-05-26 00:00:00+00:00 | -0.777029 |
+| 2   | 1         | 2023-05-29 00:00:00+00:00 | -0.677962 |
+| ... | ...       | ...                       | ...       |
+| 79  | 1         | 2023-09-13 00:00:00+00:00 | 0.695591  |
+| 80  | 1         | 2023-09-14 00:00:00+00:00 | -0.176075 |
+| 81  | 1         | 2023-09-15 00:00:00+00:00 | -0.158605 |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds         | y         | ARCH(2)   |
-|-----------|------------|-----------|-----------|
-| unique_id |            |           |           |
-| 1         | 2015-01-05 | -1.827811 | NaN       |
-| 1         | 2015-01-06 | -0.889347 | NaN       |
-| 1         | 2015-01-07 | 1.162984  | 2.234745  |
-| 1         | 2015-01-08 | 1.788828  | -0.667577 |
-| 1         | 2015-01-09 | -0.840381 | -0.752437 |
+|     | unique_id | ds                        | y         | ARCH(2)   |
+|-----|-----------|---------------------------|-----------|-----------|
+| 0   | 1         | 2015-01-05 00:00:00+00:00 | -1.827811 | NaN       |
+| 1   | 1         | 2015-01-06 00:00:00+00:00 | -0.889347 | NaN       |
+| 2   | 1         | 2015-01-07 00:00:00+00:00 | 1.162984  | 2.234748  |
+| 3   | 1         | 2015-01-08 00:00:00+00:00 | 1.788828  | -0.667577 |
+| 4   | 1         | 2015-01-09 00:00:00+00:00 | -0.840381 | -0.752438 |
 
 Adding 95% confidence interval with the forecast method
 
 ```python
-sf.forecast(h=horizon, level=[95])
+sf.forecast(df=train, h=horizon, level=[95])
 ```
 
-|           | ds         | ARCH(2)   | ARCH(2)-lo-95 | ARCH(2)-hi-95 |
-|-----------|------------|-----------|---------------|---------------|
-| unique_id |            |           |               |               |
-| 1         | 2023-05-25 | 1.681836  | -0.419322     | 3.782995      |
-| 1         | 2023-05-26 | -0.777028 | -3.939044     | 2.384989      |
-| 1         | 2023-05-29 | -0.677960 | -3.907244     | 2.551323      |
-| ...       | ...        | ...       | ...           | ...           |
-| 1         | 2023-09-20 | 0.136752  | -0.795371     | 1.068876      |
-| 1         | 2023-09-21 | 0.082173  | -0.852268     | 1.016615      |
-| 1         | 2023-09-22 | -0.450958 | -1.337117     | 0.435202      |
-
-```python
-Y_hat=Y_hat.reset_index()
-Y_hat
-```
-
-|     | unique_id | ds         | ARCH(2)   |
-|-----|-----------|------------|-----------|
-| 0   | 1         | 2023-05-25 | 1.681836  |
-| 1   | 1         | 2023-05-26 | -0.777028 |
-| 2   | 1         | 2023-05-29 | -0.677960 |
-| ... | ...       | ...        | ...       |
-| 84  | 1         | 2023-09-20 | 0.136752  |
-| 85  | 1         | 2023-09-21 | 0.082173  |
-| 86  | 1         | 2023-09-22 | -0.450958 |
+|     | unique_id | ds                        | ARCH(2)   | ARCH(2)-lo-95 | ARCH(2)-hi-95 |
+|-----|-----------|---------------------------|-----------|---------------|---------------|
+| 0   | 1         | 2023-05-25 00:00:00+00:00 | 1.681839  | -0.419326     | 3.783003      |
+| 1   | 1         | 2023-05-26 00:00:00+00:00 | -0.777029 | -3.939054     | 2.384996      |
+| 2   | 1         | 2023-05-29 00:00:00+00:00 | -0.677962 | -3.907262     | 2.551338      |
+| ... | ...       | ...                       | ...       | ...           | ...           |
+| 79  | 1         | 2023-09-13 00:00:00+00:00 | 0.695591  | -0.937585     | 2.328766      |
+| 80  | 1         | 2023-09-14 00:00:00+00:00 | -0.176075 | -1.405359     | 1.053210      |
+| 81  | 1         | 2023-09-15 00:00:00+00:00 | -0.158605 | -1.381915     | 1.064705      |
 
 ```python
 # Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
 Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
 Y_hat1
 ```
 
-|     | ds         | unique_id | y         | ARCH(2)   |
-|-----|------------|-----------|-----------|-----------|
-| 0   | 2023-05-25 | 1         | 0.875758  | 1.681836  |
-| 1   | 2023-05-26 | 1         | 1.304909  | -0.777028 |
-| 2   | 2023-05-30 | 1         | 0.001660  | -0.968701 |
-| ... | ...        | ...       | ...       | ...       |
-| 84  | 2023-09-26 | 1         | -1.473453 | NaN       |
-| 85  | 2023-09-27 | 1         | 0.022931  | NaN       |
-| 86  | 2023-09-28 | 1         | 0.589317  | NaN       |
+|     | ds                        | unique_id | y         | ARCH(2)   |
+|-----|---------------------------|-----------|-----------|-----------|
+| 0   | 2023-05-25 00:00:00+00:00 | 1         | 0.875758  | 1.681839  |
+| 1   | 2023-05-26 00:00:00+00:00 | 1         | 1.304909  | -0.777029 |
+| 2   | 2023-05-30 00:00:00+00:00 | 1         | 0.001660  | -0.968703 |
+| ... | ...                       | ...       | ...       | ...       |
+| 79  | 2023-09-19 00:00:00+00:00 | 1         | -0.215101 | NaN       |
+| 80  | 2023-09-20 00:00:00+00:00 | 1         | -0.939479 | NaN       |
+| 81  | 2023-09-21 00:00:00+00:00 | 1         | -1.640093 | NaN       |
 
 ```python
 # Merge the forecasts with the true values
@@ -892,7 +869,7 @@ ax.grid(True)
 plt.show()
 ```
 
-![](/statsforecast/docs/models/ARCH_files/figure-markdown_strict/cell-33-output-1.png)
+![](/statsforecast/docs/models/ARCH_files/figure-markdown_strict/cell-32-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -920,33 +897,30 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | ARCH(2)   |
-|-----------|------------|-----------|
-| unique_id |            |           |
-| 1         | 2023-05-25 | 1.681836  |
-| 1         | 2023-05-26 | -0.777028 |
-| 1         | 2023-05-29 | -0.677960 |
-| ...       | ...        | ...       |
-| 1         | 2023-09-20 | 0.136752  |
-| 1         | 2023-09-21 | 0.082173  |
-| 1         | 2023-09-22 | -0.450958 |
+|     | unique_id | ds                        | ARCH(2)   |
+|-----|-----------|---------------------------|-----------|
+| 0   | 1         | 2023-05-25 00:00:00+00:00 | 1.681839  |
+| 1   | 1         | 2023-05-26 00:00:00+00:00 | -0.777029 |
+| 2   | 1         | 2023-05-29 00:00:00+00:00 | -0.677962 |
+| ... | ...       | ...                       | ...       |
+| 79  | 1         | 2023-09-13 00:00:00+00:00 | 0.695591  |
+| 80  | 1         | 2023-09-14 00:00:00+00:00 | -0.176075 |
+| 81  | 1         | 2023-09-15 00:00:00+00:00 | -0.158605 |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
-
 forecast_df
 ```
 
-|  | ds | ARCH(2) | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ARCH(2)-hi-80 | ARCH(2)-hi-95 |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| 1 | 2023-05-25 | 1.681836 | -0.419322 | 0.307963 | 3.055710 | 3.782995 |
-| 1 | 2023-05-26 | -0.777028 | -3.939044 | -2.844559 | 1.290504 | 2.384989 |
-| 1 | 2023-05-29 | -0.677960 | -3.907244 | -2.789475 | 1.433555 | 2.551323 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1 | 2023-09-20 | 0.136752 | -0.795371 | -0.472731 | 0.746235 | 1.068876 |
-| 1 | 2023-09-21 | 0.082173 | -0.852268 | -0.528825 | 0.693172 | 1.016615 |
-| 1 | 2023-09-22 | -0.450958 | -1.337117 | -1.030386 | 0.128471 | 0.435202 |
+|  | unique_id | ds | ARCH(2) | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ARCH(2)-hi-80 | ARCH(2)-hi-95 |
+|----|----|----|----|----|----|----|----|
+| 0 | 1 | 2023-05-25 00:00:00+00:00 | 1.681839 | -0.419326 | 0.307961 | 3.055716 | 3.783003 |
+| 1 | 1 | 2023-05-26 00:00:00+00:00 | -0.777029 | -3.939054 | -2.844566 | 1.290508 | 2.384996 |
+| 2 | 1 | 2023-05-29 00:00:00+00:00 | -0.677962 | -3.907262 | -2.789488 | 1.433564 | 2.551338 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+| 79 | 1 | 2023-09-13 00:00:00+00:00 | 0.695591 | -0.937585 | -0.372285 | 1.763467 | 2.328766 |
+| 80 | 1 | 2023-09-14 00:00:00+00:00 | -0.176075 | -1.405359 | -0.979860 | 0.627711 | 1.053210 |
+| 81 | 1 | 2023-09-15 00:00:00+00:00 | -0.158605 | -1.381915 | -0.958485 | 0.641274 | 1.064705 |
 
 We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
@@ -960,48 +934,19 @@ df_plot
 |  | unique_id | y | ARCH(2) | ARCH(2)-lo-95 | ARCH(2)-lo-80 | ARCH(2)-hi-80 | ARCH(2)-hi-95 |
 |----|----|----|----|----|----|----|----|
 | ds |  |  |  |  |  |  |  |
-| 2023-03-21 | 1 | 1.298219 | NaN | NaN | NaN | NaN | NaN |
-| 2023-03-22 | 1 | -1.646322 | NaN | NaN | NaN | NaN | NaN |
-| 2023-03-23 | 1 | 0.298453 | NaN | NaN | NaN | NaN | NaN |
+| 2023-03-07 00:00:00+00:00 | 1 | -1.532692 | NaN | NaN | NaN | NaN | NaN |
+| 2023-03-08 00:00:00+00:00 | 1 | 0.141479 | NaN | NaN | NaN | NaN | NaN |
+| 2023-03-09 00:00:00+00:00 | 1 | -1.845936 | NaN | NaN | NaN | NaN | NaN |
 | ... | ... | ... | ... | ... | ... | ... | ... |
-| 2023-09-20 | NaN | NaN | 0.136752 | -0.795371 | -0.472731 | 0.746235 | 1.068876 |
-| 2023-09-21 | NaN | NaN | 0.082173 | -0.852268 | -0.528825 | 0.693172 | 1.016615 |
-| 2023-09-22 | NaN | NaN | -0.450958 | -1.337117 | -1.030386 | 0.128471 | 0.435202 |
+| 2023-09-13 00:00:00+00:00 | 1 | NaN | 0.695591 | -0.937585 | -0.372285 | 1.763467 | 2.328766 |
+| 2023-09-14 00:00:00+00:00 | 1 | NaN | -0.176075 | -1.405359 | -0.979860 | 0.627711 | 1.053210 |
+| 2023-09-15 00:00:00+00:00 | 1 | NaN | -0.158605 | -1.381915 | -0.958485 | 0.641274 | 1.064705 |
 
 ```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=2 )
-    colors = ['green']
-    # Specify graph features:
-    ax.fill_between(df_plot.index, 
-                df_plot['ARCH(2)-lo-80'], 
-                df_plot['ARCH(2)-hi-80'],
-                alpha=.20,
-                color='lime',
-                label='ARCH(2)_level_80')
-    ax.fill_between(df_plot.index, 
-                df_plot['ARCH(2)-lo-95'], 
-                df_plot['ARCH(2)-hi-95'],
-                alpha=.2,
-                color='white',
-                label='ARCH(2)_level_95')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel("Return", fontsize=20)
-    ax.set_xlabel('Month-Days', fontsize=20)
-    ax.legend(prop={'size': 15})
-    ax.grid(True)
-    plt.show()
+sf.plot(train, test.merge(forecast_df), level=[80, 95], max_insample_length=120)
 ```
 
-
-```python
-plot_forecasts(train, test, forecast_df, models=["ARCH(2)"])
-```
-
-![](/statsforecast/docs/models/ARCH_files/figure-markdown_strict/cell-38-output-1.png)
+![](/statsforecast/docs/models/ARCH_files/figure-markdown_strict/cell-36-output-1.png)
 
 Let’s plot the same graph using the plot function that comes in
 `Statsforecast`, as shown below.
@@ -1062,8 +1007,7 @@ crossvalidation_df = sf.cross_validation(df=train,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -1073,84 +1017,46 @@ following columns:
 crossvalidation_df
 ```
 
-|           | ds         | cutoff     | y         | ARCH(2)   |
-|-----------|------------|------------|-----------|-----------|
-| unique_id |            |            |           |           |
-| 1         | 2022-12-21 | 2022-12-20 | -0.605272 | 1.889850  |
-| 1         | 2022-12-22 | 2022-12-20 | -2.492167 | -0.850434 |
-| 1         | 2022-12-23 | 2022-12-20 | -1.113775 | -0.742012 |
-| ...       | ...        | ...        | ...       | ...       |
-| 1         | 2023-05-22 | 2023-01-23 | 0.015503  | 0.135570  |
-| 1         | 2023-05-23 | 2023-01-23 | -1.122203 | 0.081367  |
-| 1         | 2023-05-24 | 2023-01-23 | -0.731860 | -0.446374 |
+|  | unique_id | ds | cutoff | y | ARCH(2) |
+|----|----|----|----|----|----|
+| 0 | 1 | 2022-12-21 00:00:00+00:00 | 2022-12-20 00:00:00+00:00 | 1.486799 | 1.382105 |
+| 1 | 1 | 2022-12-22 00:00:00+00:00 | 2022-12-20 00:00:00+00:00 | -1.445170 | -0.651618 |
+| 2 | 1 | 2022-12-23 00:00:00+00:00 | 2022-12-20 00:00:00+00:00 | 0.586810 | -0.595213 |
+| ... | ... | ... | ... | ... | ... |
+| 407 | 1 | 2023-05-22 00:00:00+00:00 | 2023-01-26 00:00:00+00:00 | 0.015503 | 0.693070 |
+| 408 | 1 | 2023-05-23 00:00:00+00:00 | 2023-01-26 00:00:00+00:00 | -1.122203 | -0.176181 |
+| 409 | 1 | 2023-05-24 00:00:00+00:00 | 2023-01-26 00:00:00+00:00 | -0.731860 | -0.157522 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
-
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case,
-    [`ARCH`](https://Nixtla.github.io/statsforecast/src/core/models.html#arch).
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["ARCH(2)"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  1.3816124
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
 
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import mae, mape, mase, rmse, smape
+from functools import partial
+
+from utilsforecast.evaluation import evaluate
+from utilsforecast.losses import mae, mape, mase, rmse, smape
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, y_pred, model):
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=12)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    test.merge(Y_hat),
+    train_df=train,
+    metrics=[mae, mape, partial(mase, seasonality=5), rmse, smape],
+    agg_fn='mean',
+)
 ```
 
-
-```python
-evaluate_performace(train, test, Y_hat, model="ARCH(2)")
-```
-
-|         | mae      | mape        | mase | rmse     | smape      |
-|---------|----------|-------------|------|----------|------------|
-| ARCH(2) | 0.935485 | 1064.149021 | NaN  | 1.152612 | 138.403076 |
+|     | metric | ARCH(2)   |
+|-----|--------|-----------|
+| 0   | mae    | 0.949721  |
+| 1   | mape   | 11.789856 |
+| 2   | mase   | 0.875298  |
+| 3   | rmse   | 1.164914  |
+| 4   | smape  | 0.725702  |
 
 ## Acknowledgements
 

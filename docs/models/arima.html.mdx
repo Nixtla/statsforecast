@@ -716,110 +716,60 @@ Therefore, the model that we are going to test is the ARIMA(1,1,1)
 model.
 
 ```python
+from statsforecast import StatsForecast
 from statsforecast.models import ARIMA
-```
-
-To also know more about the parameters of the functions of the
-`ARIMA Model`, they are listed below. For more information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#arch-model)
-
-``` text
-order : tuple (default=(0, 0, 0))
-        A specification of the non-seasonal part of the ARIMA model: the three components (p, d, q) are the AR order, the degree of differencing, and the MA order.
-    season_length : int (default=1)
-        Number of observations per unit of time. Ex: 24 Hourly data.
-    seasonal_order : tuple (default=(0, 0, 0))
-        A specification of the seasonal part of the ARIMA model.
-        (P, D, Q) for the  AR order, the degree of differencing, the MA order.
-    include_mean : bool (default=True)
-        Should the ARIMA model include a mean term?
-        The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions).
-    include_drift : bool (default=False)
-        Should the ARIMA model include a linear drift term?
-        (i.e., a linear regression with ARIMA errors is fitted.)
-    include_constant : bool, optional (default=None)
-        If True, then includ_mean is set to be True for undifferenced series and include_drift is set to be True for differenced series.
-        Note that if there is more than one difference taken, no constant is included regardless of the value of this argument.
-        This is deliberate as otherwise quadratic and higher order polynomial trends would be induced.
-    blambda : float, optional (default=None)
-        Box-Cox transformation parameter.
-    biasadj : bool (default=False)
-        Use adjusted back-transformed mean Box-Cox.
-    method : str (default='CSS-ML')
-        Fitting method: maximum likelihood or minimize conditional sum-of-squares.
-        The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
-    fixed : dict, optional (default=None)
-        Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`.
-        For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`.
-        For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`.
-        For intercept and drift use the `intercept` and `drift` keys.
-        For exogenous variables use the `ex_{i}` keys.
-    alias : str
-        Custom name of the model.
-    prediction_intervals : Optional[ConformalIntervals]
-        Information to compute conformal prediction intervals.
-        By default, the model will compute the native prediction
-        intervals.
 ```
 
 ### Instantiate the model
 
 ```python
-arima = ARIMA(order=(1, 1, 1), season_length=1)
+sf = StatsForecast(models=[ARIMA(order=(1, 1, 1))], freq='YS')
 ```
 
 ### Fit the Model
 
 ```python
-arima = arima.fit(y=df["y"].values)
+sf.fit(df)
+```
+
+``` text
+StatsForecast(models=[ARIMA])
 ```
 
 ### Making the predictions
 
 ```python
-y_hat_dict = arima.predict(h=6,)
-y_hat_dict
+y_hat = sf.predict(h=6)
+y_hat
 ```
 
-``` text
-{'mean': array([83.20155301, 83.20016307, 83.20064702, 83.20047852, 83.20053719,
-        83.20051676])}
-```
+|     | unique_id | ds         | ARIMA     |
+|-----|-----------|------------|-----------|
+| 0   | 1         | 2020-01-01 | 83.206903 |
+| 1   | 1         | 2021-01-01 | 83.203508 |
+| 2   | 1         | 2022-01-01 | 83.204742 |
+| 3   | 1         | 2023-01-01 | 83.204293 |
+| 4   | 1         | 2024-01-01 | 83.204456 |
+| 5   | 1         | 2025-01-01 | 83.204397 |
 
 We can make the predictions by adding the confidence interval, for
 example with 95%.
 
 ```python
-y_hat_dict2 = arima.predict(h=6,level=[95])
-y_hat_dict2
+y_hat2 = sf.predict(h=6, level=[95])
+y_hat2
 ```
 
-``` text
-{'mean': array([83.20155301, 83.20016307, 83.20064702, 83.20047852, 83.20053719,
-        83.20051676]),
- 'lo-95': 0    82.399545
- 1    82.072363
- 2    81.820183
- 3    81.607471
- 4    81.420010
- 5    81.250474
- Name: 95%, dtype: float64,
- 'hi-95': 0    84.003561
- 1    84.327963
- 2    84.581111
- 3    84.793486
- 4    84.981064
- 5    85.150560
- Name: 95%, dtype: float64}
-```
+|     | unique_id | ds         | ARIMA     | ARIMA-lo-95 | ARIMA-hi-95 |
+|-----|-----------|------------|-----------|-------------|-------------|
+| 0   | 1         | 2020-01-01 | 83.206903 | 82.412336   | 84.001469   |
+| 1   | 1         | 2021-01-01 | 83.203508 | 82.094625   | 84.312391   |
+| 2   | 1         | 2022-01-01 | 83.204742 | 81.848344   | 84.561139   |
+| 3   | 1         | 2023-01-01 | 83.204293 | 81.640430   | 84.768156   |
+| 4   | 1         | 2024-01-01 | 83.204456 | 81.457145   | 84.951767   |
+| 5   | 1         | 2025-01-01 | 83.204397 | 81.291297   | 85.117497   |
 
-You can see that the result that has been extracted in the predictions
-or in any other method that we use from now on with the Arima model is a
-dictionary. To extract that result we can use the `.get()` function,
-which will help us to be able to extract the result of each part of the
-dictionary of each of the methods that we use.
-
-### ARIMA.forecast method
+### forecast method
 
 Memory efficient predictions.
 
@@ -828,94 +778,27 @@ analogous to fit_predict without storing information. It assumes you
 know the forecast horizon in advance.
 
 ```python
-Y_hat_df=arima.forecast(y=df["y"].values, h=6, fitted=True)
+Y_hat_df = sf.forecast(df=df, h=6, level=[95])
 Y_hat_df
 ```
 
-``` text
-{'mean': array([83.20155301, 83.20016307, 83.20064702, 83.20047852, 83.20053719,
-        83.20051676]),
- 'fitted': array([69.05477857, 69.12394817, 69.75299437, 69.15912019, 69.24378043,
-        70.30108758, 70.1768715 , 70.91580642, 70.95970624, 70.7809505 ,
-        70.81126886, 71.55054441, 71.80679168, 72.07233443, 72.0279183 ,
-        72.72583278, 72.65118662, 72.98674108, 73.36216446, 73.69027839,
-        74.00014861, 73.94469901, 74.34873167, 74.8111531 , 74.64339332,
-        75.37995777, 75.47302934, 75.76655702, 76.2158311 , 76.37025745,
-        76.81458465, 76.97067731, 77.01897755, 77.41515795, 77.71998951,
-        77.92034484, 78.16845267, 78.51873753, 78.82204435, 78.97468575,
-        79.41961419, 79.77564854, 80.12368405, 80.2291665 , 79.9857536 ,
-        80.77049462, 80.7862653 , 81.27613438, 81.43472012, 81.48459197,
-        81.63513184, 82.03254064, 82.18745311, 82.23856226, 82.68528462,
-        83.08738006, 82.55106033, 83.23355629, 82.95319957, 83.33949704])}
-```
-
-As the result of the predictions that we have generated is a dictionary,
-to make use of that result we are going to save it in `.DataFrame()`.
-First we are going to generate a range of dates, then we use the
-`.get()` function to extract the predictions and then we concatenate
-them and save them in a DataFrame.
-
-```python
-forecast=pd.Series(pd.date_range("2014-01-01", freq="ys", periods=6))
-forecast=pd.DataFrame(forecast)
-forecast.columns=["ds"]
-forecast
-```
-
-|     | ds         |
-|-----|------------|
-| 0   | 2014-01-01 |
-| 1   | 2015-01-01 |
-| 2   | 2016-01-01 |
-| 3   | 2017-01-01 |
-| 4   | 2018-01-01 |
-| 5   | 2019-01-01 |
-
-```python
-df=df.set_index("ds")
-```
-
-
-```python
-forecast["unique_id"]="1"
-forecast["hat"]=y_hat_dict.get("mean")
-forecast["lo-95"]=y_hat_dict2.get("lo-95")
-forecast["hi-95"]=y_hat_dict2.get("hi-95")
-forecast=forecast.set_index("ds")
-forecast
-```
-
-|            | unique_id | hat       | lo-95     | hi-95     |
-|------------|-----------|-----------|-----------|-----------|
-| ds         |           |           |           |           |
-| 2014-01-01 | 1         | 83.201553 | 82.399545 | 84.003561 |
-| 2015-01-01 | 1         | 83.200163 | 82.072363 | 84.327963 |
-| 2016-01-01 | 1         | 83.200647 | 81.820183 | 84.581111 |
-| 2017-01-01 | 1         | 83.200479 | 81.607471 | 84.793486 |
-| 2018-01-01 | 1         | 83.200537 | 81.420010 | 84.981064 |
-| 2019-01-01 | 1         | 83.200517 | 81.250474 | 85.150560 |
+|     | unique_id | ds         | ARIMA     | ARIMA-lo-95 | ARIMA-hi-95 |
+|-----|-----------|------------|-----------|-------------|-------------|
+| 0   | 1         | 2020-01-01 | 83.206903 | 82.412336   | 84.001469   |
+| 1   | 1         | 2021-01-01 | 83.203508 | 82.094625   | 84.312391   |
+| 2   | 1         | 2022-01-01 | 83.204742 | 81.848344   | 84.561139   |
+| 3   | 1         | 2023-01-01 | 83.204293 | 81.640430   | 84.768156   |
+| 4   | 1         | 2024-01-01 | 83.204456 | 81.457145   | 84.951767   |
+| 5   | 1         | 2025-01-01 | 83.204397 | 81.291297   | 85.117497   |
 
 Once the predictions have been generated we can perform a visualization
 to see the generated behavior of our model.
 
 ```python
-_, ax = plt.subplots(1, 1)
-df_plot = pd.concat([df, forecast])
-df_plot[['y', 'hat']].plot(ax=ax, linewidth=2)
-ax.fill_between(df_plot.index, 
-                df_plot['lo-95'], 
-                df_plot['hi-95'],
-                alpha=.35,
-                color='orange',
-                label='ARIMA-level-95')
-ax.set_title('', fontsize=22)
-ax.set_ylabel('', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=12)
-ax.legend(prop={'size': 15})
-ax.grid(True)
+sf.plot(df, Y_hat_df, level=[95])
 ```
 
-![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-28-output-1.png)
+![](/statsforecast/docs/models/ARIMA_files/figure-markdown_strict/cell-25-output-1.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
@@ -929,7 +812,6 @@ The commonly used accuracy metrics to judge forecasts are:
 6.  Correlation between the Actual and the Forecast (corr)
 
 ```python
-df.reset_index("ds", inplace=True)
 Y_train_df = df[df.ds<='2013-01-01'] 
 Y_test_df = df[df.ds>'2013-01-01'] 
 
@@ -941,40 +823,29 @@ Y_train_df.shape, Y_test_df.shape
 ```
 
 ```python
-from sklearn import metrics
-
-def model_evaluation(y_true, y_pred, Model):
-    
-    def mean_absolute_percentage_error(y_true, y_pred): 
-        y_true, y_pred = np.array(y_true), np.array(y_pred)
-        return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
-    print (f'Model Evaluation: {Model}')
-    print(f'MSE is : {metrics.mean_squared_error(y_true, y_pred)}')
-    print(f'MAE is : {metrics.mean_absolute_error(y_true, y_pred)}')
-    print(f'RMSE is : {np.sqrt(metrics.mean_squared_error(y_true, y_pred))}')
-    print(f'MAPE is : {mean_absolute_percentage_error(y_true, y_pred)}')
-    print(f'R2 is : {metrics.r2_score(y_true, y_pred)}')
-    print(f'corr is : {np.corrcoef(y_true, y_pred)[0,1]}',end='\n\n')
+Y_hat_df = sf.forecast(df=Y_train_df, h=len(Y_test_df))
 ```
 
 
 ```python
-model_evaluation(Y_test_df["y"], forecast["hat"], "Arima")
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
-``` text
-Model Evaluation: Arima
-MSE is : 0.08846533957222678
-MAE is : 0.20228704669491057
-RMSE is : 0.29743123503127034
-MAPE is : 0.24430769688205894
-R2 is : -0.2792859149048943
-corr is : 0.3634615475289058
+
+```python
+evaluate(
+    Y_test_df.merge(Y_hat_df),
+    metrics=[ufl.mse, ufl.mae, ufl.rmse, ufl.mape],
+)
 ```
 
--   Around 24.43% MAPE implies the model is about 75.57% accurate in
-    predicting the next 6 observations. Now we know how to build an
-    ARIMA model manually.
+|     | unique_id | metric | ARIMA    |
+|-----|-----------|--------|----------|
+| 0   | 1         | mse    | 0.184000 |
+| 1   | 1         | mae    | 0.397932 |
+| 2   | 1         | rmse   | 0.428952 |
+| 3   | 1         | mape   | 0.004785 |
 
 ## Acknowledgements
 

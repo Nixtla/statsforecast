@@ -93,16 +93,7 @@ Depending on your internet connection, this step should take around 10
 seconds.
 
 ```python
-import os
-
 import pandas as pd
-```
-
-
-```python
-# this makes it so that the outputs of the predict methods have the id as a column 
-# instead of as the index
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 
@@ -157,7 +148,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(Y_df)
 ```
 
-![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-7-output-1.png)
+![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-6-output-1.png)
 
 ## Train multiple models for many series
 
@@ -316,11 +307,11 @@ forecasts_df.head()
 
 |  | unique_id | ds | HoltWinters | HoltWinters-lo-90 | HoltWinters-hi-90 | CrostonClassic | CrostonClassic-lo-90 | CrostonClassic-hi-90 | SeasonalNaive | SeasonalNaive-lo-90 | SeasonalNaive-hi-90 | HistoricAverage | HistoricAverage-lo-90 | HistoricAverage-hi-90 | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-90 | DynamicOptimizedTheta-hi-90 |
 |----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| 0 | H1 | 749 | 829.0 | -246.367554 | 1904.367554 | 829.0 | -246.367554 | 1904.367554 | 635.0 | 537.471191 | 732.528809 | 660.982117 | 398.03775 | 923.926514 | 592.701843 | 577.677307 | 611.652649 |
-| 1 | H1 | 750 | 807.0 | -268.367554 | 1882.367554 | 807.0 | -268.367554 | 1882.367554 | 572.0 | 474.471222 | 669.528809 | 660.982117 | 398.03775 | 923.926514 | 525.589111 | 505.449738 | 546.621826 |
-| 2 | H1 | 751 | 785.0 | -290.367554 | 1860.367554 | 785.0 | -290.367554 | 1860.367554 | 532.0 | 434.471222 | 629.528809 | 660.982117 | 398.03775 | 923.926514 | 489.251801 | 462.072876 | 512.424133 |
-| 3 | H1 | 752 | 756.0 | -319.367554 | 1831.367554 | 756.0 | -319.367554 | 1831.367554 | 493.0 | 395.471222 | 590.528809 | 660.982117 | 398.03775 | 923.926514 | 456.195038 | 430.554291 | 478.260956 |
-| 4 | H1 | 753 | 719.0 | -356.367554 | 1794.367554 | 719.0 | -356.367554 | 1794.367554 | 477.0 | 379.471222 | 574.528809 | 660.982117 | 398.03775 | 923.926514 | 436.290527 | 411.051239 | 461.815948 |
+| 0 | H1 | 749 | 829.0 | 422.549268 | 1235.450732 | 829.0 | 422.549268 | 1235.450732 | 635.0 | 566.036734 | 703.963266 | 660.982143 | 398.037761 | 923.926524 | 592.701851 | 577.677280 | 611.652639 |
+| 1 | H1 | 750 | 807.0 | 400.549268 | 1213.450732 | 807.0 | 400.549268 | 1213.450732 | 572.0 | 503.036734 | 640.963266 | 660.982143 | 398.037761 | 923.926524 | 525.589116 | 505.449755 | 546.621805 |
+| 2 | H1 | 751 | 785.0 | 378.549268 | 1191.450732 | 785.0 | 378.549268 | 1191.450732 | 532.0 | 463.036734 | 600.963266 | 660.982143 | 398.037761 | 923.926524 | 489.251814 | 462.072871 | 512.424116 |
+| 3 | H1 | 752 | 756.0 | 349.549268 | 1162.450732 | 756.0 | 349.549268 | 1162.450732 | 493.0 | 424.036734 | 561.963266 | 660.982143 | 398.037761 | 923.926524 | 456.195032 | 430.554302 | 478.260963 |
+| 4 | H1 | 753 | 719.0 | 312.549268 | 1125.450732 | 719.0 | 312.549268 | 1125.450732 | 477.0 | 408.036734 | 545.963266 | 660.982143 | 398.037761 | 923.926524 | 436.290514 | 411.051232 | 461.815932 |
 
 Plot the results of 8 random series using the `StatsForecast.plot`
 method.
@@ -329,7 +320,7 @@ method.
 sf.plot(Y_df,forecasts_df)
 ```
 
-![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-12-output-1.png)
+![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-11-output-1.png)
 
 The `StatsForecast.plot` allows for further customization. For example,
 plot the results of the different models and unique ids.
@@ -339,14 +330,14 @@ plot the results of the different models and unique ids.
 sf.plot(Y_df, forecasts_df, models=["HoltWinters","DynamicOptimizedTheta"], unique_ids=["H10", "H105"], level=[90])
 ```
 
-![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-13-output-1.png)
+![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-12-output-1.png)
 
 ```python
 # Explore other models 
 sf.plot(Y_df, forecasts_df, models=["SeasonalNaive"], unique_ids=["H10", "H105"], level=[90])
 ```
 
-![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-14-output-1.png)
+![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-13-output-1.png)
 
 ## Evaluate the model’s performance
 
@@ -401,7 +392,7 @@ class takes the following arguments.
     want to evaluate.
 
 ```python
-crossvaldation_df = sf.cross_validation(
+cv_df = sf.cross_validation(
     df=Y_df,
     h=24,
     step_size=24,
@@ -409,8 +400,8 @@ crossvaldation_df = sf.cross_validation(
 )
 ```
 
-The crossvaldation_df object is a new data frame that includes the
-following columns:
+The `cv_df` object is a new data frame that includes the following
+columns:
 
 -   `unique_id`: series identifier
 
@@ -425,44 +416,37 @@ following columns:
 -   `"model"`: columns with the model’s name and fitted value.
 
 ```python
-crossvaldation_df.head()
+cv_df.head()
 ```
 
 |  | unique_id | ds | cutoff | y | HoltWinters | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta |
 |----|----|----|----|----|----|----|----|----|----|
-| 0 | H1 | 701 | 700 | 619.0 | 847.0 | 742.668762 | 691.0 | 661.674988 | 612.767517 |
-| 1 | H1 | 702 | 700 | 565.0 | 820.0 | 742.668762 | 618.0 | 661.674988 | 536.846252 |
-| 2 | H1 | 703 | 700 | 532.0 | 790.0 | 742.668762 | 563.0 | 661.674988 | 497.824280 |
-| 3 | H1 | 704 | 700 | 495.0 | 784.0 | 742.668762 | 529.0 | 661.674988 | 464.723236 |
-| 4 | H1 | 705 | 700 | 481.0 | 752.0 | 742.668762 | 504.0 | 661.674988 | 440.972351 |
+| 0 | H1 | 701 | 700 | 619.0 | 847.0 | 742.668748 | 691.0 | 661.675 | 612.767504 |
+| 1 | H1 | 702 | 700 | 565.0 | 820.0 | 742.668748 | 618.0 | 661.675 | 536.846278 |
+| 2 | H1 | 703 | 700 | 532.0 | 790.0 | 742.668748 | 563.0 | 661.675 | 497.824286 |
+| 3 | H1 | 704 | 700 | 495.0 | 784.0 | 742.668748 | 529.0 | 661.675 | 464.723219 |
+| 4 | H1 | 705 | 700 | 481.0 | 752.0 | 742.668748 | 504.0 | 661.675 | 440.972336 |
 
 Next, we will evaluate the performance of every model for every series
 using common error metrics like Mean Absolute Error (MAE) or Mean Square
 Error (MSE) Define a utility function to evaluate different error
 metrics for the cross validation data frame.
 
-First import the desired error metrics from `mlforecast.losses`. Then
+First import the desired error metrics from `utilsforecast.losses`. Then
 define a utility function that takes a cross-validation data frame as a
 metric and returns an evaluation data frame with the average of the
 error metric for every unique id and fitted model and all cutoffs.
 
 ```python
 from utilsforecast.losses import mse
-from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_cross_validation(df, metric):
-    models = df.drop(columns=['unique_id', 'ds', 'cutoff', 'y']).columns.tolist()
-    evals = []
-    # Calculate loss for every unique_id and cutoff.    
-    for cutoff in df['cutoff'].unique():
-        eval_ = evaluate(df[df['cutoff'] == cutoff], metrics=[metric], models=models)
-        evals.append(eval_)
-    evals = pd.concat(evals)
-    evals = evals.groupby('unique_id').mean(numeric_only=True) # Averages the error metrics for all cutoffs for every combination of model and unique_id
-    evals['best_model'] = evals.idxmin(axis=1)
+def evaluate_cv(df, metric):
+    models = df.columns.drop(['unique_id', 'ds', 'y', 'cutoff']).tolist()
+    evals = metric(df, models=models)
+    evals['best_model'] = evals[models].idxmin(axis=1)
     return evals
 ```
 
@@ -477,18 +461,17 @@ Create the data frame with the results of the evaluation of your
 cross-validation data frame using a Mean Squared Error metric.
 
 ```python
-evaluation_df = evaluate_cross_validation(crossvaldation_df, mse)
+evaluation_df = evaluate_cv(cv_df, mse)
 evaluation_df.head()
 ```
 
-|  | HoltWinters | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta | best_model |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| H1 | 44888.019531 | 28038.736328 | 1422.666748 | 20927.664062 | 1296.333984 | DynamicOptimizedTheta |
-| H10 | 2812.916504 | 1483.484131 | 96.895828 | 1980.367432 | 379.621124 | SeasonalNaive |
-| H100 | 121625.375000 | 91945.140625 | 12019.000000 | 78491.187500 | 21699.648438 | SeasonalNaive |
-| H101 | 28453.394531 | 16183.634766 | 10944.458008 | 18208.404297 | 63698.082031 | SeasonalNaive |
-| H102 | 232924.843750 | 132655.296875 | 12699.896484 | 309110.468750 | 31393.519531 | SeasonalNaive |
+|  | unique_id | HoltWinters | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta | best_model |
+|----|----|----|----|----|----|----|----|
+| 0 | H1 | 44888.020833 | 28038.733985 | 1422.666667 | 20927.664488 | 1296.333977 | DynamicOptimizedTheta |
+| 1 | H10 | 2812.916667 | 1483.483839 | 96.895833 | 1980.367543 | 379.621134 | SeasonalNaive |
+| 2 | H100 | 121625.375000 | 91945.139237 | 12019.000000 | 78491.191439 | 21699.649325 | SeasonalNaive |
+| 3 | H101 | 28453.395833 | 16183.634340 | 10944.458333 | 18208.409800 | 63698.077266 | SeasonalNaive |
+| 4 | H102 | 232924.854167 | 132655.309136 | 12699.895833 | 309110.475212 | 31393.535274 | SeasonalNaive |
 
 Create a summary table with a model column and the number of series
 where that model performs best. In this case, the Arima and Seasonal
@@ -496,19 +479,23 @@ Naive are the best models for 10 series and the Theta model should be
 used for two.
 
 ```python
-summary_df = evaluation_df.groupby('best_model').size().sort_values().to_frame()
-summary_df.reset_index().columns = ["Model", "Nr. of unique_ids"]
+evaluation_df['best_model'].value_counts().to_frame().reset_index()
 ```
+
+|     | best_model            | count |
+|-----|-----------------------|-------|
+| 0   | SeasonalNaive         | 6     |
+| 1   | DynamicOptimizedTheta | 4     |
 
 You can further explore your results by plotting the unique_ids where a
 specific model wins.
 
 ```python
-seasonal_ids = evaluation_df.query('best_model == "SeasonalNaive"').index
+seasonal_ids = evaluation_df.query('best_model == "SeasonalNaive"')['unique_id']
 sf.plot(Y_df,forecasts_df, unique_ids=seasonal_ids, models=["SeasonalNaive","DynamicOptimizedTheta"])
 ```
 
-![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-21-output-1.png)
+![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-20-output-1.png)
 
 ## Select the best model for every unique series
 
@@ -518,16 +505,11 @@ the best possible forecast for every unique_id.
 
 ```python
 def get_best_model_forecast(forecasts_df, evaluation_df):
-    df = forecasts_df.set_index(['unique_id', 'ds']).stack().to_frame().reset_index(level=2) # Wide to long 
-    df.columns = ['model', 'best_model_forecast'] 
-    df = df.join(evaluation_df[['best_model']])
-    df = df.query('model.str.replace("-lo-90|-hi-90", "", regex=True) == best_model').copy()
-    df.loc[:, 'model'] = [model.replace(bm, 'best_model') for model, bm in zip(df['model'], df['best_model'])]
-    df = df.drop(columns='best_model').set_index('model', append=True).unstack()
-    df.columns = df.columns.droplevel()
-    df.columns.name = None
-    df = df.reset_index()
-    return df
+    with_best = forecasts_df.merge(evaluation_df[['unique_id', 'best_model']])
+    res = with_best[['unique_id', 'ds']].copy()
+    for suffix in ('', '-lo-90', '-hi-90'):
+        res[f'best_model{suffix}'] = with_best.apply(lambda row: row[row['best_model'] + suffix], axis=1)
+    return res
 ```
 
 Create your production-ready data frame with the best forecast for every
@@ -538,13 +520,13 @@ prod_forecasts_df = get_best_model_forecast(forecasts_df, evaluation_df)
 prod_forecasts_df.head()
 ```
 
-|     | unique_id | ds  | best_model | best_model-hi-90 | best_model-lo-90 |
+|     | unique_id | ds  | best_model | best_model-lo-90 | best_model-hi-90 |
 |-----|-----------|-----|------------|------------------|------------------|
-| 0   | H1        | 749 | 592.701843 | 611.652649       | 577.677307       |
-| 1   | H1        | 750 | 525.589111 | 546.621826       | 505.449738       |
-| 2   | H1        | 751 | 489.251801 | 512.424133       | 462.072876       |
-| 3   | H1        | 752 | 456.195038 | 478.260956       | 430.554291       |
-| 4   | H1        | 753 | 436.290527 | 461.815948       | 411.051239       |
+| 0   | H1        | 749 | 592.701851 | 577.677280       | 611.652639       |
+| 1   | H1        | 750 | 525.589116 | 505.449755       | 546.621805       |
+| 2   | H1        | 751 | 489.251814 | 462.072871       | 512.424116       |
+| 3   | H1        | 752 | 456.195032 | 430.554302       | 478.260963       |
+| 4   | H1        | 753 | 436.290514 | 411.051232       | 461.815932       |
 
 Plot the results.
 
@@ -552,5 +534,5 @@ Plot the results.
 sf.plot(Y_df, prod_forecasts_df, level=[90])
 ```
 
-![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-24-output-1.png)
+![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-23-output-1.png)
 

@@ -491,7 +491,7 @@ basic EDA.
 ```python
 from statsforecast import StatsForecast
 
-StatsForecast.plot(df, engine="matplotlib")
+StatsForecast.plot(df)
 ```
 
 ![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-8-output-1.png)
@@ -611,30 +611,11 @@ plt.show()
 
 ## Implementation of AutoCES with StatsForecast <a class="anchor" id="implementation"></a>
 
-To also know more about the parameters of the functions of the
-`AutoCES Model`, they are listed below. For more information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#autoces)
-
-``` text
-model : str
-    Controlling state-space-equations.
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
-
 ### Load libraries
 
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import AutoCES
-
-from statsforecast.arima import arima_string
 ```
 
 ### Instantiate Model
@@ -686,16 +667,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
-                   freq='YS', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='YS')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -794,59 +772,7 @@ and
 
 ```python
 # Prediction
-Y_hat = sf.forecast(horizon, fitted=True)
-
-Y_hat
-```
-
-|           | ds         | CES       |
-|-----------|------------|-----------|
-| unique_id |            |           |
-| 1         | 2014-01-01 | 82.906075 |
-| 1         | 2015-01-01 | 83.166687 |
-| 1         | 2016-01-01 | 83.424744 |
-| 1         | 2017-01-01 | 83.685760 |
-| 1         | 2018-01-01 | 83.946213 |
-| 1         | 2019-01-01 | 84.208359 |
-
-```python
-values=sf.forecast_fitted_values()
-values.head()
-```
-
-|           | ds         | y         | CES       |
-|-----------|------------|-----------|-----------|
-| unique_id |            |           |           |
-| 1         | 1960-01-01 | 69.123901 | 69.851631 |
-| 1         | 1961-01-01 | 69.760246 | 69.615692 |
-| 1         | 1962-01-01 | 69.149757 | 69.911842 |
-| 1         | 1963-01-01 | 69.248047 | 69.657822 |
-| 1         | 1964-01-01 | 70.311707 | 69.601196 |
-
-```python
-StatsForecast.plot(values)
-```
-
-![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-23-output-1.png)
-
-Adding 95% confidence interval with the forecast method
-
-```python
-sf.forecast(h=horizon, level=[95])
-```
-
-|           | ds         | CES       | CES-lo-95 | CES-hi-95 |
-|-----------|------------|-----------|-----------|-----------|
-| unique_id |            |           |           |           |
-| 1         | 2014-01-01 | 82.906075 | 82.342484 | 83.454018 |
-| 1         | 2015-01-01 | 83.166687 | 82.604027 | 83.717270 |
-| 1         | 2016-01-01 | 83.424744 | 82.858574 | 83.975868 |
-| 1         | 2017-01-01 | 83.685760 | 83.118942 | 84.239578 |
-| 1         | 2018-01-01 | 83.946213 | 83.376907 | 84.501137 |
-| 1         | 2019-01-01 | 84.208359 | 83.637741 | 84.765411 |
-
-```python
-Y_hat=Y_hat.reset_index()
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
@@ -860,8 +786,41 @@ Y_hat
 | 5   | 1         | 2019-01-01 | 84.208359 |
 
 ```python
+values=sf.forecast_fitted_values()
+values.head()
+```
+
+|     | unique_id | ds         | y         | CES       |
+|-----|-----------|------------|-----------|-----------|
+| 0   | 1         | 1960-01-01 | 69.123902 | 69.851631 |
+| 1   | 1         | 1961-01-01 | 69.760244 | 69.615692 |
+| 2   | 1         | 1962-01-01 | 69.149756 | 69.911842 |
+| 3   | 1         | 1963-01-01 | 69.248049 | 69.657822 |
+| 4   | 1         | 1964-01-01 | 70.311707 | 69.601196 |
+
+```python
+StatsForecast.plot(values)
+```
+
+![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-23-output-1.png)
+
+Adding 95% confidence interval with the forecast method
+
+```python
+sf.forecast(df=train, h=horizon, level=[95])
+```
+
+|     | unique_id | ds         | CES       | CES-lo-95 | CES-hi-95 |
+|-----|-----------|------------|-----------|-----------|-----------|
+| 0   | 1         | 2014-01-01 | 82.906075 | 82.342483 | 83.454016 |
+| 1   | 1         | 2015-01-01 | 83.166687 | 82.604029 | 83.717271 |
+| 2   | 1         | 2016-01-01 | 83.424744 | 82.858573 | 83.975870 |
+| 3   | 1         | 2017-01-01 | 83.685760 | 83.118946 | 84.239582 |
+| 4   | 1         | 2018-01-01 | 83.946213 | 83.376905 | 84.501133 |
+| 5   | 1         | 2019-01-01 | 84.208359 | 83.637738 | 84.765408 |
+
+```python
 # Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
 Y_hat = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
 Y_hat
 ```
@@ -876,17 +835,10 @@ Y_hat
 | 5   | 2019-01-01 | 83.197561 | 1         | 84.208359 |
 
 ```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat]).set_index('ds')
-plot_df[['y', "CES"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Year ', fontsize=20)
-ax.set_xlabel('Timestamp [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
+sf.plot(train, Y_hat)
 ```
 
-![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-27-output-1.png)
+![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-26-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -914,91 +866,38 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | CES       |
-|-----------|------------|-----------|
-| unique_id |            |           |
-| 1         | 2014-01-01 | 82.906075 |
-| 1         | 2015-01-01 | 83.166687 |
-| 1         | 2016-01-01 | 83.424744 |
-| 1         | 2017-01-01 | 83.685760 |
-| 1         | 2018-01-01 | 83.946213 |
-| 1         | 2019-01-01 | 84.208359 |
+|     | unique_id | ds         | CES       |
+|-----|-----------|------------|-----------|
+| 0   | 1         | 2014-01-01 | 82.906075 |
+| 1   | 1         | 2015-01-01 | 83.166687 |
+| 2   | 1         | 2016-01-01 | 83.424744 |
+| 3   | 1         | 2017-01-01 | 83.685760 |
+| 4   | 1         | 2018-01-01 | 83.946213 |
+| 5   | 1         | 2019-01-01 | 84.208359 |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[95]) 
-
 forecast_df
 ```
 
-|           | ds         | CES       | CES-lo-95 | CES-hi-95 |
-|-----------|------------|-----------|-----------|-----------|
-| unique_id |            |           |           |           |
-| 1         | 2014-01-01 | 82.906075 | 82.342484 | 83.454018 |
-| 1         | 2015-01-01 | 83.166687 | 82.604027 | 83.717270 |
-| 1         | 2016-01-01 | 83.424744 | 82.858574 | 83.975868 |
-| 1         | 2017-01-01 | 83.685760 | 83.118942 | 84.239578 |
-| 1         | 2018-01-01 | 83.946213 | 83.376907 | 84.501137 |
-| 1         | 2019-01-01 | 84.208359 | 83.637741 | 84.765411 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|            | y         | unique_id | CES       | CES-lo-95 | CES-hi-95 |
-|------------|-----------|-----------|-----------|-----------|-----------|
-| ds         |           |           |           |           |           |
-| 1960-01-01 | 69.123902 | 1         | NaN       | NaN       | NaN       |
-| 1961-01-01 | 69.760244 | 1         | NaN       | NaN       | NaN       |
-| 1962-01-01 | 69.149756 | 1         | NaN       | NaN       | NaN       |
-| ...        | ...       | ...       | ...       | ...       | ...       |
-| 2017-01-01 | NaN       | NaN       | 83.685760 | 83.118942 | 84.239578 |
-| 2018-01-01 | NaN       | NaN       | 83.946213 | 83.376907 | 84.501137 |
-| 2019-01-01 | NaN       | NaN       | 84.208359 | 83.637741 | 84.765411 |
+|     | unique_id | ds         | CES       | CES-lo-95 | CES-hi-95 |
+|-----|-----------|------------|-----------|-----------|-----------|
+| 0   | 1         | 2014-01-01 | 82.906075 | 82.342483 | 83.454016 |
+| 1   | 1         | 2015-01-01 | 83.166687 | 82.604029 | 83.717271 |
+| 2   | 1         | 2016-01-01 | 83.424744 | 82.858573 | 83.975870 |
+| 3   | 1         | 2017-01-01 | 83.685760 | 83.118946 | 84.239582 |
+| 4   | 1         | 2018-01-01 | 83.946213 | 83.376905 | 84.501133 |
+| 5   | 1         | 2019-01-01 | 84.208359 | 83.637738 | 84.765408 |
 
 Now let’s visualize the result of our forecast and the historical data
 of our time series, also let’s draw the confidence interval that we have
 obtained when making the prediction with 95% confidence.
 
 ```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=2)
-    colors = ['orange', 'black', 'green']
-    for model, color in zip(models, colors):
-        ax.fill_between(df_plot.index, 
-                        df_plot[f'{model}-lo-95'], 
-                        df_plot[f'{model}-hi-95'],
-                        alpha=.35,
-                        color=color,
-                        label=f'{model}-level-90')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel('', fontsize=20)
-    ax.set_xlabel('Timestamp [t]', fontsize=20)
-    ax.legend(prop={'size': 15})
-    ax.grid(True)
+sf.plot(train, test.merge(forecast_df), level=[95])
 ```
 
-
-```python
-plot_forecasts(train, test, forecast_df, models=['CES'])
-```
-
-![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-32-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df, level=[95])
-```
-
-![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-33-output-1.png)
+![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-29-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -1056,8 +955,7 @@ crossvalidation_df = sf.cross_validation(df=train,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
@@ -1067,80 +965,43 @@ following columns:
 crossvalidation_df.head()
 ```
 
-|           | ds         | cutoff     | y         | CES       |
-|-----------|------------|------------|-----------|-----------|
-| unique_id |            |            |           |           |
-| 1         | 1984-01-01 | 1983-01-01 | 75.389511 | 74.952705 |
-| 1         | 1985-01-01 | 1983-01-01 | 75.470734 | 75.161736 |
-| 1         | 1986-01-01 | 1983-01-01 | 75.770729 | 75.377945 |
-| 1         | 1987-01-01 | 1983-01-01 | 76.219513 | 75.590378 |
-| 1         | 1988-01-01 | 1983-01-01 | 76.370735 | 75.806343 |
+|     | unique_id | ds         | cutoff     | y         | CES       |
+|-----|-----------|------------|------------|-----------|-----------|
+| 0   | 1         | 1984-01-01 | 1983-01-01 | 75.389512 | 74.952705 |
+| 1   | 1         | 1985-01-01 | 1983-01-01 | 75.470732 | 75.161736 |
+| 2   | 1         | 1986-01-01 | 1983-01-01 | 75.770732 | 75.377945 |
+| 3   | 1         | 1987-01-01 | 1983-01-01 | 76.219512 | 75.590378 |
+| 4   | 1         | 1988-01-01 | 1983-01-01 | 76.370732 | 75.806343 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
-
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, AutoCES.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["CES"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  0.40604722
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
 
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import (mae, mape, mase, rmse, smape)
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_hat, model):
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_hat['y'].values, 
-                                                y_hat[model].values, 
-                                                y_hist['y'].values, seasonality=24)
-        else:
-            evaluation[model][metric_name] = metric(y_hat['y'].values, y_hat[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    Y_hat,
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-
-```python
-evaluate_performace(train, Y_hat, model="CES")
-```
-
-|     | mae      | mape     | mase     | rmse     | smape    |
-|-----|----------|----------|----------|----------|----------|
-| CES | 0.556314 | 0.669916 | 0.087037 | 0.630183 | 0.667133 |
+|     | unique_id | metric | CES      |
+|-----|-----------|--------|----------|
+| 0   | 1         | mae    | 0.556314 |
+| 1   | 1         | mape   | 0.006699 |
+| 2   | 1         | mase   | 1.770512 |
+| 3   | 1         | rmse   | 0.630183 |
+| 4   | 1         | smape  | 0.003336 |
 
 ## Acknowledgements
 

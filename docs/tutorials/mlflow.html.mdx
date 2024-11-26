@@ -60,9 +60,9 @@ with mlflow.start_run() as run:
 
     models = [AutoARIMA(season_length=7)]
 
-    sf = StatsForecast(df=train_df, models=models, freq="D", n_jobs=-1)
+    sf = StatsForecast(models=models, freq="D", n_jobs=-1)
 
-    sf.fit()
+    sf.fit(df=train_df)
 
     # Evaluate model
     y_pred = sf.predict(h=HORIZON, X_df=X_test, level=LEVEL)["AutoARIMA"]

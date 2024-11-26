@@ -293,7 +293,7 @@ basic EDA.
 ```python
 from statsforecast import StatsForecast
 
-StatsForecast.plot(df, engine="matplotlib")
+StatsForecast.plot(df)
 ```
 
 ![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-7-output-1.png)
@@ -410,36 +410,7 @@ train.shape, test.shape
 ((156, 3), (12, 3))
 ```
 
-Now let’s plot the training data and the test data.
-
-```python
-sns.lineplot(train,x="ds", y="y", label="Train", linestyle="--")
-sns.lineplot(test, x="ds", y="y", label="Test")
-plt.title("Monthly Milk Production");
-plt.show()
-```
-
-![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-13-output-1.png)
-
 ## Implementation of StandardTheta with StatsForecast <a class="anchor" id="implementation"></a>
-
-To also know more about the parameters of the functions of the
-`StandardTheta Model`, they are listed below. For more information,
-visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#standard-theta-method).
-
-``` text
-season_length : int
-    Number of observations per unit of time. Ex: 24 Hourly data.
-decomposition_type : str
-    Sesonal decomposition type, 'multiplicative' (default) or 'additive'.
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
 
 ### Load libraries
 
@@ -482,16 +453,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=train,
-                   models=models,
-                   freq='MS', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='MS')
 ```
 
 ### Fit Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -509,7 +477,7 @@ print(result['fit'])
 
 ``` text
 dict_keys(['mse', 'amse', 'fit', 'residuals', 'm', 'states', 'par', 'n', 'modeltype', 'mean_y', 'decompose', 'decomposition_type', 'seas_forecast', 'fitted'])
-results(x=array([225.82002697,   0.76015625]), fn=10.638733596938769, nit=19, simplex=array([[241.83142594,   0.76274414],
+results(x=array([225.82002697,   0.76015625]), fn=10.638733596938778, nit=19, simplex=array([[241.83142594,   0.76274414],
        [225.82002697,   0.76015625],
        [212.41789302,   0.76391602]]))
 ```
@@ -556,7 +524,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-20-output-1.png)
+![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-19-output-1.png)
 
 ### Forecast Method
 
@@ -587,60 +555,7 @@ around 1min.
 
 ```python
 # Prediction
-Y_hat = sf.forecast(horizon, fitted=True)
-Y_hat
-```
-
-|           | ds         | Theta      |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 1975-01-01 | 838.559814 |
-| 1         | 1975-02-01 | 800.188232 |
-| 1         | 1975-03-01 | 893.472900 |
-| ...       | ...        | ...        |
-| 1         | 1975-10-01 | 816.166931 |
-| 1         | 1975-11-01 | 786.962036 |
-| 1         | 1975-12-01 | 823.826538 |
-
-```python
-values=sf.forecast_fitted_values()
-values.head()
-```
-
-|           | ds         | y     | Theta      |
-|-----------|------------|-------|------------|
-| unique_id |            |       |            |
-| 1         | 1962-01-01 | 589.0 | 606.596375 |
-| 1         | 1962-02-01 | 561.0 | 607.997192 |
-| 1         | 1962-03-01 | 640.0 | 616.906067 |
-| 1         | 1962-04-01 | 656.0 | 608.873047 |
-| 1         | 1962-05-01 | 727.0 | 607.395142 |
-
-```python
-StatsForecast.plot(values)
-```
-
-![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-23-output-1.png)
-
-Adding 95% confidence interval with the forecast method
-
-```python
-sf.forecast(h=horizon, level=[95])
-```
-
-|           | ds         | Theta      | Theta-lo-95 | Theta-hi-95 |
-|-----------|------------|------------|-------------|-------------|
-| unique_id |            |            |             |             |
-| 1         | 1975-01-01 | 838.559814 | 741.324280  | 954.365540  |
-| 1         | 1975-02-01 | 800.188232 | 640.785645  | 944.996887  |
-| 1         | 1975-03-01 | 893.472900 | 705.123901  | 1064.757324 |
-| ...       | ...        | ...        | ...         | ...         |
-| 1         | 1975-10-01 | 816.166931 | 539.706848  | 1083.791870 |
-| 1         | 1975-11-01 | 786.962036 | 487.946075  | 1032.028931 |
-| 1         | 1975-12-01 | 823.826538 | 512.674866  | 1101.965942 |
-
-```python
-Y_hat=Y_hat.reset_index()
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
@@ -655,34 +570,39 @@ Y_hat
 | 11  | 1         | 1975-12-01 | 823.826538 |
 
 ```python
-# Merge the forecasts with the true values
-test['unique_id'] = test['unique_id'].astype(int)
-Y_hat1 = test.merge(Y_hat, how='left', on=['unique_id', 'ds'])
-Y_hat1
+values=sf.forecast_fitted_values()
+values.head()
 ```
 
-|     | ds         | y   | unique_id | Theta      |
-|-----|------------|-----|-----------|------------|
-| 0   | 1975-01-01 | 834 | 1         | 838.559814 |
-| 1   | 1975-02-01 | 782 | 1         | 800.188232 |
-| 2   | 1975-03-01 | 892 | 1         | 893.472900 |
-| ... | ...        | ... | ...       | ...        |
-| 9   | 1975-10-01 | 827 | 1         | 816.166931 |
-| 10  | 1975-11-01 | 797 | 1         | 786.962036 |
-| 11  | 1975-12-01 | 843 | 1         | 823.826538 |
+|     | unique_id | ds         | y     | Theta      |
+|-----|-----------|------------|-------|------------|
+| 0   | 1         | 1962-01-01 | 589.0 | 606.596375 |
+| 1   | 1         | 1962-02-01 | 561.0 | 607.997192 |
+| 2   | 1         | 1962-03-01 | 640.0 | 616.906067 |
+| 3   | 1         | 1962-04-01 | 656.0 | 608.873047 |
+| 4   | 1         | 1962-05-01 | 727.0 | 607.395142 |
+
+Adding 95% confidence interval with the forecast method
 
 ```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat1]).set_index('ds')
-plot_df[['y', "Theta"]].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Monthly Milk Production ', fontsize=20)
-ax.set_xlabel('Monthly [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
+sf.forecast(df=train, h=horizon, level=[95])
 ```
 
-![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-27-output-1.png)
+|     | unique_id | ds         | Theta      | Theta-lo-95 | Theta-hi-95 |
+|-----|-----------|------------|------------|-------------|-------------|
+| 0   | 1         | 1975-01-01 | 838.559814 | 741.324280  | 954.365540  |
+| 1   | 1         | 1975-02-01 | 800.188232 | 640.785583  | 944.996887  |
+| 2   | 1         | 1975-03-01 | 893.472900 | 705.123901  | 1064.757324 |
+| ... | ...       | ...        | ...        | ...         | ...         |
+| 9   | 1         | 1975-10-01 | 816.166931 | 539.706665  | 1083.791626 |
+| 10  | 1         | 1975-11-01 | 786.962036 | 487.945831  | 1032.029053 |
+| 11  | 1         | 1975-12-01 | 823.826538 | 512.674500  | 1101.965576 |
+
+```python
+sf.plot(train, Y_hat)
+```
+
+![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-23-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -710,99 +630,36 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds         | Theta      |
-|-----------|------------|------------|
-| unique_id |            |            |
-| 1         | 1975-01-01 | 838.559814 |
-| 1         | 1975-02-01 | 800.188232 |
-| 1         | 1975-03-01 | 893.472900 |
-| ...       | ...        | ...        |
-| 1         | 1975-10-01 | 816.166931 |
-| 1         | 1975-11-01 | 786.962036 |
-| 1         | 1975-12-01 | 823.826538 |
+|     | unique_id | ds         | Theta      |
+|-----|-----------|------------|------------|
+| 0   | 1         | 1975-01-01 | 838.559814 |
+| 1   | 1         | 1975-02-01 | 800.188232 |
+| 2   | 1         | 1975-03-01 | 893.472900 |
+| ... | ...       | ...        | ...        |
+| 9   | 1         | 1975-10-01 | 816.166931 |
+| 10  | 1         | 1975-11-01 | 786.962036 |
+| 11  | 1         | 1975-12-01 | 823.826538 |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
-
 forecast_df
 ```
 
-|  | ds | Theta | Theta-lo-80 | Theta-hi-80 | Theta-lo-95 | Theta-hi-95 |
-|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |
-| 1 | 1975-01-01 | 838.559814 | 765.496155 | 927.260071 | 741.324280 | 954.365540 |
-| 1 | 1975-02-01 | 800.188232 | 701.729797 | 898.807434 | 640.785645 | 944.996887 |
-| 1 | 1975-03-01 | 893.472900 | 758.481018 | 1006.847656 | 705.123901 | 1064.757324 |
-| ... | ... | ... | ... | ... | ... | ... |
-| 1 | 1975-10-01 | 816.166931 | 611.404541 | 991.667419 | 539.706848 | 1083.791870 |
-| 1 | 1975-11-01 | 786.962036 | 561.990845 | 969.637634 | 487.946075 | 1032.028931 |
-| 1 | 1975-12-01 | 823.826538 | 591.283691 | 1029.491577 | 512.674866 | 1101.965942 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|  | y | unique_id | Theta | Theta-lo-80 | Theta-hi-80 | Theta-lo-95 | Theta-hi-95 |
+|  | unique_id | ds | Theta | Theta-lo-80 | Theta-hi-80 | Theta-lo-95 | Theta-hi-95 |
 |----|----|----|----|----|----|----|----|
-| ds |  |  |  |  |  |  |  |
-| 1962-01-01 | 589.0 | 1 | NaN | NaN | NaN | NaN | NaN |
-| 1962-02-01 | 561.0 | 1 | NaN | NaN | NaN | NaN | NaN |
-| 1962-03-01 | 640.0 | 1 | NaN | NaN | NaN | NaN | NaN |
+| 0 | 1 | 1975-01-01 | 838.559814 | 765.496094 | 927.260071 | 741.324280 | 954.365540 |
+| 1 | 1 | 1975-02-01 | 800.188232 | 701.729736 | 898.807434 | 640.785583 | 944.996887 |
+| 2 | 1 | 1975-03-01 | 893.472900 | 758.480957 | 1006.847595 | 705.123901 | 1064.757324 |
 | ... | ... | ... | ... | ... | ... | ... | ... |
-| 1975-10-01 | NaN | NaN | 816.166931 | 611.404541 | 991.667419 | 539.706848 | 1083.791870 |
-| 1975-11-01 | NaN | NaN | 786.962036 | 561.990845 | 969.637634 | 487.946075 | 1032.028931 |
-| 1975-12-01 | NaN | NaN | 823.826538 | 591.283691 | 1029.491577 | 512.674866 | 1101.965942 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series, also let’s draw the confidence interval that we have
-obtained when making the prediction with 95% confidence.
+| 9 | 1 | 1975-10-01 | 816.166931 | 611.404236 | 991.667175 | 539.706665 | 1083.791626 |
+| 10 | 1 | 1975-11-01 | 786.962036 | 561.990540 | 969.637634 | 487.945831 | 1032.029053 |
+| 11 | 1 | 1975-12-01 | 823.826538 | 591.283508 | 1029.491211 | 512.674500 | 1101.965576 |
 
 ```python
-def plot_forecasts(y_hist, y_true, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    df_plot = pd.concat([y_hist, y_true]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=2 )
-    colors = ['green']
-    ax.fill_between(df_plot.index, 
-                df_plot['Theta-lo-80'], 
-                df_plot['Theta-hi-80'],
-                alpha=.20,
-                color='lime',
-                label='Theta_level_80')
-    ax.fill_between(df_plot.index, 
-                df_plot['Theta-lo-95'], 
-                df_plot['Theta-hi-95'],
-                alpha=.2,
-                color='white',
-                label='Theta_level_95')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel("Return", fontsize=20)
-    ax.set_xlabel('Month-Days', fontsize=20)
-    ax.legend(prop={'size': 15})
-    ax.grid(True)
-    plt.show()
+sf.plot(train, test.merge(forecast_df), level=[80, 95])
 ```
 
-
-```python
-plot_forecasts(train, test, forecast_df, models=['Theta'])
-```
-
-![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-32-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df, level=[95])
-```
-
-![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-33-output-1.png)
+![](/statsforecast/docs/models/StandardTheta_files/figure-markdown_strict/cell-26-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -860,79 +717,41 @@ crossvalidation_df = sf.cross_validation(df=train,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    crossvalidation_df.resetindex()
+-   `unique_id:` series identifier
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
 -   `"model":` columns with the model’s name and fitted value.
 
-## Evaluate Model <a class="anchor" id="evaluate"></a>
-
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
-
-```python
-!pip install datasetsforecast
-```
-
-
-```python
-from datasetsforecast.losses import rmse
-```
-
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, Theta.
-
-```python
-rmse = rmse(crossvalidation_df['y'], crossvalidation_df["Theta"])
-print("RMSE using cross-validation: ", rmse)
-```
-
-``` text
-RMSE using cross-validation:  12.643162
-```
-
-As you have noticed, we have used the cross validation results to
-perform the evaluation of our model.
+## Model Evaluation <a class="anchor" id="evaluate"></a>
 
 Now we are going to evaluate our model with the results of the
-predictions, we will use different types of metrics
-`MAE, MAPE, MASE, RMSE, SMAPE` to evaluate the `accuracy`.
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-from datasetsforecast.losses import mae, mape, mase, rmse, smape
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-def evaluate_performace(y_hist, y_true, y_pred, model):
-    y_true = y_true.merge(y_pred, how='left', on=['unique_id', 'ds'])
-    evaluation = {}
-    evaluation[model] = {}
-    for metric in [mase, mae, mape, rmse, smape]:
-        metric_name = metric.__name__
-        if metric_name == 'mase':
-            evaluation[model][metric_name] = metric(y_true['y'].values, 
-                                                y_true[model].values, 
-                                                y_hist['y'].values, seasonality=12)
-        else:
-            evaluation[model][metric_name] = metric(y_true['y'].values, y_true[model].values)
-    return pd.DataFrame(evaluation).T
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-
-```python
-evaluate_performace(train, test, Y_hat, model="Theta")
-```
-
-|       | mae      | mape     | mase    | rmse     | smape    |
-|-------|----------|----------|---------|----------|----------|
-| Theta | 8.111287 | 0.964855 | 0.36478 | 9.730347 | 0.965874 |
+|     | unique_id | metric | Theta    |
+|-----|-----------|--------|----------|
+| 0   | 1         | mae    | 8.111287 |
+| 1   | 1         | mape   | 0.009649 |
+| 2   | 1         | mase   | 0.364780 |
+| 3   | 1         | rmse   | 9.730347 |
+| 4   | 1         | smape  | 0.004829 |
 
 ## Acknowledgements
 

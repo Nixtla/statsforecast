@@ -5,19 +5,12 @@ title: FugueBackend
 
 
 ```python
-import os
-
 from statsforecast.core import StatsForecast
 from statsforecast.models import ( 
     AutoARIMA,
     AutoETS,
 )
 from statsforecast.utils import generate_series
-```
-
-
-```python
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 
@@ -66,7 +59,7 @@ sf.cross_validation(df=sdf, h=horizon, step_size = 24,
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L58"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L57"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### FugueBackend
@@ -91,7 +84,7 @@ rewrites.\*
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L296"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L289"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### FugueBackend.forecast
@@ -131,7 +124,7 @@ StatsForecast models.\*
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L458"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py#L449"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 ### FugueBackend.cross_validation

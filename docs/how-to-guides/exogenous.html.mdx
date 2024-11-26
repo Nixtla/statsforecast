@@ -57,16 +57,7 @@ StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html
 
 
 ```python
-import os
-
 import pandas as pd
-```
-
-
-```python
-# this makes it so that the outputs of the predict methods have the id as a column 
-# instead of as the index
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 ## Load and explore the data
@@ -115,7 +106,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(Y_ts)
 ```
 
-![](/statsforecast/docs/how-to-guides/Exogenous_files/figure-markdown_strict/cell-7-output-1.png)
+![](/statsforecast/docs/how-to-guides/Exogenous_files/figure-markdown_strict/cell-6-output-1.png)
 
 The M5 Competition included several exogenous regressors. Here we’ll use
 the following two.
@@ -156,7 +147,7 @@ the forecast.
 StatsForecast.plot(Y_ts, X_ts, max_insample_length=0)
 ```
 
-![](/statsforecast/docs/how-to-guides/Exogenous_files/figure-markdown_strict/cell-10-output-1.png)
+![](/statsforecast/docs/how-to-guides/Exogenous_files/figure-markdown_strict/cell-9-output-1.png)
 
 From this plot, we can conclude that price has increased twice and that
 SNAP occurs at regular intervals.
@@ -295,7 +286,7 @@ above.
 StatsForecast.plot(Y_ts, fcst, max_insample_length=28*2)
 ```
 
-![](/statsforecast/docs/how-to-guides/Exogenous_files/figure-markdown_strict/cell-18-output-1.png)
+![](/statsforecast/docs/how-to-guides/Exogenous_files/figure-markdown_strict/cell-17-output-1.png)
 
 ## Evaluate results
 

@@ -15,7 +15,6 @@ function to extract those features for training and then use their
 future values for inference.
 
 ```python
-import os
 from functools import partial
 
 import pandas as pd
@@ -25,13 +24,6 @@ from statsforecast.feature_engineering import mstl_decomposition
 from statsforecast.models import ARIMA, MSTL
 from utilsforecast.evaluation import evaluate
 from utilsforecast.losses import smape, mase
-```
-
-
-```python
-# this makes it so that the outputs of the predict methods have the id as a column 
-# instead of as the index
-os.environ['NIXTLA_ID_AS_COL'] = '1'
 ```
 
 
@@ -75,11 +67,11 @@ transformed_df.head()
 
 |     | unique_id | ds  | y     | trend      | seasonal   |
 |-----|-----------|-----|-------|------------|------------|
-| 0   | H1        | 1   | 605.0 | 501.350550 | 124.683643 |
-| 1   | H1        | 2   | 586.0 | 506.424549 | 87.115039  |
-| 2   | H1        | 3   | 586.0 | 511.453736 | 79.479564  |
-| 3   | H1        | 4   | 559.0 | 516.434474 | 45.616992  |
-| 4   | H1        | 5   | 511.0 | 521.362991 | -10.940498 |
+| 0   | H1        | 1   | 605.0 | 502.872910 | 131.419934 |
+| 1   | H1        | 2   | 586.0 | 507.873456 | 93.100015  |
+| 2   | H1        | 3   | 586.0 | 512.822533 | 82.155386  |
+| 3   | H1        | 4   | 559.0 | 517.717481 | 42.412749  |
+| 4   | H1        | 5   | 511.0 | 522.555849 | -11.401890 |
 
 ```python
 X_df.head()
@@ -87,11 +79,11 @@ X_df.head()
 
 |     | unique_id | ds  | trend      | seasonal    |
 |-----|-----------|-----|------------|-------------|
-| 0   | H1        | 701 | 626.519191 | -22.738998  |
-| 1   | H1        | 702 | 627.423191 | -108.992314 |
-| 2   | H1        | 703 | 628.146391 | -148.675478 |
-| 3   | H1        | 704 | 628.724951 | -183.715284 |
-| 4   | H1        | 705 | 629.187799 | -208.038694 |
+| 0   | H1        | 701 | 643.801348 | -29.189627  |
+| 1   | H1        | 702 | 644.328207 | -99.680432  |
+| 2   | H1        | 703 | 644.749693 | -141.169014 |
+| 3   | H1        | 704 | 645.086883 | -173.325625 |
+| 4   | H1        | 705 | 645.356634 | -195.862530 |
 
 We can now train our ARIMA models and compute our forecasts.
 
@@ -106,11 +98,11 @@ preds.head()
 
 |     | unique_id | ds  | ARIMA      |
 |-----|-----------|-----|------------|
-| 0   | H1        | 701 | 597.716125 |
-| 1   | H1        | 702 | 513.244507 |
-| 2   | H1        | 703 | 475.042450 |
-| 3   | H1        | 704 | 441.217743 |
-| 4   | H1        | 705 | 417.895813 |
+| 0   | H1        | 701 | 612.737668 |
+| 1   | H1        | 702 | 542.851796 |
+| 2   | H1        | 703 | 501.931839 |
+| 3   | H1        | 704 | 470.248289 |
+| 4   | H1        | 705 | 448.115839 |
 
 We can now evaluate the performance.
 
@@ -131,7 +123,7 @@ compute_evaluation(preds)
 
 ``` text
 mase      1.0
-smape    3.7%
+smape    3.9%
 dtype: object
 ```
 

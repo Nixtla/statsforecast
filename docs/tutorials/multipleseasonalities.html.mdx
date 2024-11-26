@@ -82,26 +82,27 @@ step should take around 2s.
 
 ```python
 import pandas as pd
-df = pd.read_csv('https://raw.githubusercontent.com/jnagura/Energy-consumption-prediction-analysis/master/PJM_Load_hourly.csv')
+```
+
+
+```python
+df = pd.read_csv('https://raw.githubusercontent.com/panambY/Hourly_Energy_Consumption/master/data/PJM_Load_hourly.csv')
 df.columns = ['ds', 'y']
 df.insert(0, 'unique_id', 'PJM_Load_hourly')
+df = df.sort_values(['unique_id', 'ds']).reset_index(drop=True)
 df.tail()
 ```
 
 |       | unique_id       | ds                  | y       |
 |-------|-----------------|---------------------|---------|
-| 32891 | PJM_Load_hourly | 2001-01-01 20:00:00 | 35209.0 |
-| 32892 | PJM_Load_hourly | 2001-01-01 21:00:00 | 34791.0 |
-| 32893 | PJM_Load_hourly | 2001-01-01 22:00:00 | 33669.0 |
-| 32894 | PJM_Load_hourly | 2001-01-01 23:00:00 | 31809.0 |
-| 32895 | PJM_Load_hourly | 2001-01-02 00:00:00 | 29506.0 |
+| 32891 | PJM_Load_hourly | 2001-12-31 20:00:00 | 36392.0 |
+| 32892 | PJM_Load_hourly | 2001-12-31 21:00:00 | 35082.0 |
+| 32893 | PJM_Load_hourly | 2001-12-31 22:00:00 | 33890.0 |
+| 32894 | PJM_Load_hourly | 2001-12-31 23:00:00 | 32590.0 |
+| 32895 | PJM_Load_hourly | 2002-01-01 00:00:00 | 31569.0 |
 
 StatsForecast can handle unsorted data, however, for plotting purposes,
 it is convenient to sort the data frame.
-
-```python
-df = df.sort_values(['unique_id', 'ds']).reset_index(drop=True)
-```
 
 Plot the series using the `plot` method from the
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
@@ -111,19 +112,19 @@ that we have just one unique_id.
 
 > **Note**
 >
-> The `StatsForecast.plot` method uses Plotly as a default engine. You
-> can change to MatPlotLib by setting `engine="matplotlib"`.
+> The `StatsForecast.plot` method uses matplotlib as a default engine.
+> You can change to plotly by setting `engine="plotly"`.
 
 ```python
 from statsforecast import StatsForecast
+```
 
+
+```python
 StatsForecast.plot(df)
 ```
 
-``` text
-/Users/max.mergenthaler/Nixtla/statsforecast/statsforecast/core.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
-  from tqdm.autonotebook import tqdm
-```
+![](/statsforecast/docs/tutorials/MultipleSeasonalities_files/figure-markdown_strict/cell-5-output-1.png)
 
 The time series exhibits seasonal patterns. Moreover, the time series
 contains `32,896` observations, so it is necessary to use very
@@ -144,12 +145,9 @@ model. You can choose the non-seasonal model you want to use to forecast
 the trend component of the MSTL model. In this example, we will use an
 AutoARIMA.
 
-Import the
-[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
-class and the models you need.
+Import the models you need.
 
 ```python
-from statsforecast import StatsForecast
 from statsforecast.models import MSTL, AutoARIMA
 ```
 
@@ -190,7 +188,7 @@ method and pass in the historical data frame.
 ```python
 sf = StatsForecast(
     models=models, # model used to fit each time series 
-    freq='H', # frequency of the data
+    freq='h', # frequency of the data
 )
 ```
 
@@ -239,19 +237,19 @@ was decomposed.
 sf.fitted_[0, 0].model_
 ```
 
-|       | data    | trend        | seasonal24   | seasonal168 | remainder   |
-|-------|---------|--------------|--------------|-------------|-------------|
-| 0     | 22259.0 | 26183.898892 | -5215.124554 | 609.000432  | 681.225229  |
-| 1     | 21244.0 | 26181.599305 | -6255.673234 | 603.823918  | 714.250011  |
-| 2     | 20651.0 | 26179.294886 | -6905.329895 | 636.820423  | 740.214587  |
-| 3     | 20421.0 | 26176.985472 | -7073.420118 | 615.825999  | 701.608647  |
-| 4     | 20713.0 | 26174.670877 | -7062.395760 | 991.521912  | 609.202971  |
-| ...   | ...     | ...          | ...          | ...         | ...         |
-| 32891 | 36392.0 | 33123.552727 | 4387.149171  | -488.177882 | -630.524015 |
-| 32892 | 35082.0 | 33148.242575 | 3479.852929  | -682.928737 | -863.166767 |
-| 32893 | 33890.0 | 33172.926165 | 2307.808829  | -650.566775 | -940.168219 |
-| 32894 | 32590.0 | 33197.603322 | 748.587723   | -555.177849 | -801.013195 |
-| 32895 | 31569.0 | 33222.273902 | -967.124123  | -265.895357 | -420.254422 |
+|       | data    | trend        | seasonal24   | seasonal168 | remainder    |
+|-------|---------|--------------|--------------|-------------|--------------|
+| 0     | 22259.0 | 25899.808157 | -4720.213546 | 581.308595  | 498.096794   |
+| 1     | 21244.0 | 25900.349395 | -5433.168901 | 571.780657  | 205.038849   |
+| 2     | 20651.0 | 25900.875973 | -5829.135728 | 557.142643  | 22.117112    |
+| 3     | 20421.0 | 25901.387631 | -5704.092794 | 597.696957  | -373.991794  |
+| 4     | 20713.0 | 25901.884103 | -5023.324375 | 922.564854  | -1088.124582 |
+| ...   | ...     | ...          | ...          | ...         | ...          |
+| 32891 | 36392.0 | 33329.031577 | 4254.112720  | 917.258336  | -2108.402633 |
+| 32892 | 35082.0 | 33355.083576 | 3625.077164  | 721.689136  | -2619.849876 |
+| 32893 | 33890.0 | 33381.108409 | 2571.794472  | 549.661529  | -2612.564409 |
+| 32894 | 32590.0 | 33407.105839 | 796.356548   | 361.956280  | -1975.418667 |
+| 32895 | 31569.0 | 33433.075723 | -1260.860917 | 279.777069  | -882.991876  |
 
 We will use matplotlib, to visualize the different components of the
 series.
@@ -267,7 +265,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![](/statsforecast/docs/tutorials/MultipleSeasonalities_files/figure-markdown_strict/cell-11-output-1.png)
+![](/statsforecast/docs/tutorials/MultipleSeasonalities_files/figure-markdown_strict/cell-12-output-1.png)
 
 We observe a clear upward trend (orange line) and seasonality repeating
 every day (24H) and every week (168H).
@@ -301,14 +299,13 @@ forecasts = sf.predict(h=24, level=[90])
 forecasts.head()
 ```
 
-|                 | ds                  | MSTL         | MSTL-lo-90   | MSTL-hi-90   |
-|-----------------|---------------------|--------------|--------------|--------------|
-| unique_id       |                     |              |              |              |
-| PJM_Load_hourly | 2002-01-01 01:00:00 | 29956.744141 | 29585.187500 | 30328.298828 |
-| PJM_Load_hourly | 2002-01-01 02:00:00 | 29057.691406 | 28407.498047 | 29707.884766 |
-| PJM_Load_hourly | 2002-01-01 03:00:00 | 28654.699219 | 27767.101562 | 29542.298828 |
-| PJM_Load_hourly | 2002-01-01 04:00:00 | 28499.009766 | 27407.640625 | 29590.378906 |
-| PJM_Load_hourly | 2002-01-01 05:00:00 | 28821.716797 | 27552.236328 | 30091.197266 |
+|  | unique_id | ds | MSTL | MSTL-lo-90 | MSTL-hi-90 |
+|----|----|----|----|----|----|
+| 0 | PJM_Load_hourly | 2002-01-01 01:00:00 | 30215.608123 | 29842.185581 | 30589.030664 |
+| 1 | PJM_Load_hourly | 2002-01-01 02:00:00 | 29447.208519 | 28787.122830 | 30107.294207 |
+| 2 | PJM_Load_hourly | 2002-01-01 03:00:00 | 29132.786369 | 28221.353220 | 30044.219518 |
+| 3 | PJM_Load_hourly | 2002-01-01 04:00:00 | 29126.252713 | 27992.819671 | 30259.685756 |
+| 4 | PJM_Load_hourly | 2002-01-01 05:00:00 | 29604.606314 | 28273.426621 | 30935.786006 |
 
 You can plot the forecast by calling the `StatsForecast.plot` method and
 passing in your forecast dataframe.
@@ -316,6 +313,8 @@ passing in your forecast dataframe.
 ```python
 sf.plot(df, forecasts, max_insample_length=24 * 7)
 ```
+
+![](/statsforecast/docs/tutorials/MultipleSeasonalities_files/figure-markdown_strict/cell-14-output-1.png)
 
 ## Forecast in production
 
@@ -353,19 +352,17 @@ remove the AutoModels like ARIMA and Theta)
 > your settings- it should take less than 5s.
 
 ```python
-forecasts_df = sf.forecast(h=24, level=[90])
-
+forecasts_df = sf.forecast(df=df, h=24, level=[90])
 forecasts_df.head()
 ```
 
-|                 | ds                  | MSTL         | MSTL-lo-90   | MSTL-hi-90   |
-|-----------------|---------------------|--------------|--------------|--------------|
-| unique_id       |                     |              |              |              |
-| PJM_Load_hourly | 2002-01-01 01:00:00 | 29956.744141 | 29585.187500 | 30328.298828 |
-| PJM_Load_hourly | 2002-01-01 02:00:00 | 29057.691406 | 28407.498047 | 29707.884766 |
-| PJM_Load_hourly | 2002-01-01 03:00:00 | 28654.699219 | 27767.101562 | 29542.298828 |
-| PJM_Load_hourly | 2002-01-01 04:00:00 | 28499.009766 | 27407.640625 | 29590.378906 |
-| PJM_Load_hourly | 2002-01-01 05:00:00 | 28821.716797 | 27552.236328 | 30091.197266 |
+|  | unique_id | ds | MSTL | MSTL-lo-90 | MSTL-hi-90 |
+|----|----|----|----|----|----|
+| 0 | PJM_Load_hourly | 2002-01-01 01:00:00 | 30215.608123 | 29842.185581 | 30589.030664 |
+| 1 | PJM_Load_hourly | 2002-01-01 02:00:00 | 29447.208519 | 28787.122830 | 30107.294207 |
+| 2 | PJM_Load_hourly | 2002-01-01 03:00:00 | 29132.786369 | 28221.353220 | 30044.219518 |
+| 3 | PJM_Load_hourly | 2002-01-01 04:00:00 | 29126.252713 | 27992.819671 | 30259.685756 |
+| 4 | PJM_Load_hourly | 2002-01-01 05:00:00 | 29604.606314 | 28273.426621 | 30935.786006 |
 
 ## References
 

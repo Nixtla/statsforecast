@@ -729,23 +729,6 @@ plt.show()
 
 ## Implementation of Holt Method with StatsForecast <a class="anchor" id="implementation"></a>
 
-To also know more about the parameters of the functions of the
-`Holt Model`, they are listed below. For more information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#holts-method).
-
-``` text
-season_length : int
-    Number of observations per unit of time. Ex: 12 Monthly data.
-error_type : str
-    The type of error of the ETS model. Can be additive (A) or multiplicative (M).
-alias : str
-    Custom name of the model.
-prediction_intervals : Optional[ConformalIntervals]
-    Information to compute conformal prediction intervals.
-    By default, the model will compute the native prediction
-    intervals.
-```
-
 ### Load libraries
 
 ```python
@@ -787,16 +770,13 @@ Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
 ```python
-sf = StatsForecast(df=df,
-                   models=models,
-                   freq='H', 
-                   n_jobs=-1)
+sf = StatsForecast(models=models, freq='h')
 ```
 
 ### Fit the Model
 
 ```python
-sf.fit()
+sf.fit(df=train)
 ```
 
 ``` text
@@ -814,16 +794,7 @@ print(result['fit'])
 
 ``` text
 dict_keys(['loglik', 'aic', 'bic', 'aicc', 'mse', 'amse', 'fit', 'residuals', 'components', 'm', 'nstate', 'fitted', 'states', 'par', 'sigma2', 'n_params', 'method', 'actual_residuals'])
-results(x=array([ 9.99900000e-01,  1.00000000e-04,  7.99488495e+04, -4.74727943e+00]), fn=5213.773789117043, nit=72, simplex=array([[ 9.99900000e-01,  1.00000000e-04,  7.99083958e+04,
-         3.48822281e+00],
-       [ 9.99900000e-01,  1.00000000e-04,  7.99488495e+04,
-        -4.74727943e+00],
-       [ 9.99900000e-01,  1.00000000e-04,  8.02890214e+04,
-         7.41636110e+00],
-       [ 9.99900000e-01,  1.00000000e-04,  8.01679532e+04,
-        -1.60232330e+01],
-       [ 9.99900000e-01,  1.00000000e-04,  8.03170190e+04,
-        -3.36503173e+00]]))
+results(x=array([9.99900000e-01, 1.00000000e-04, 7.97982888e+04, 3.33340440e+02]), fn=4456.295090550272, nit=74, simplex=None)
 ```
 
 Let us now visualize the fitted values of our models.
@@ -840,13 +811,13 @@ residual
 
 |     | residual Model |
 |-----|----------------|
-| 0   | 170.897743     |
-| 1   | -225.252721    |
-| 2   | 9444.730190    |
+| 0   | -16.629196     |
+| 1   | -563.340440    |
+| 2   | 9106.661223    |
 | ... | ...            |
-| 213 | -20317.858920  |
-| 214 | -7924.609136   |
-| 215 | -14867.577350  |
+| 183 | -268.370897    |
+| 184 | -1313.391081   |
+| 185 | -1428.364244   |
 
 ```python
 import scipy.stats as stats
@@ -898,34 +869,32 @@ uncertainty intervals. Depending on your computer, this step should take
 around 1min.
 
 ```python
-Y_hat = sf.forecast(horizon, fitted=True)
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
 ```
 
-|           | ds                  | Add          | Multi         |
-|-----------|---------------------|--------------|---------------|
-| unique_id |                     |              |               |
-| 1         | 2017-09-22 00:00:00 | 80281.781250 | 81537.476562  |
-| 1         | 2017-09-22 01:00:00 | 80277.085938 | 82788.335938  |
-| 1         | 2017-09-22 02:00:00 | 80272.382812 | 84039.195312  |
-| ...       | ...                 | ...          | ...           |
-| 1         | 2017-09-23 03:00:00 | 80154.835938 | 115310.718750 |
-| 1         | 2017-09-23 04:00:00 | 80150.132812 | 116561.578125 |
-| 1         | 2017-09-23 05:00:00 | 80145.429688 | 117812.437500 |
+|     | unique_id | ds                  | Add           | Multi         |
+|-----|-----------|---------------------|---------------|---------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 139848.234375 | 141089.625000 |
+| 1   | 1         | 2017-09-20 19:00:00 | 140181.328125 | 142664.000000 |
+| 2   | 1         | 2017-09-20 20:00:00 | 140514.406250 | 144238.359375 |
+| ... | ...       | ...                 | ...           | ...           |
+| 27  | 1         | 2017-09-21 21:00:00 | 148841.671875 | 183597.453125 |
+| 28  | 1         | 2017-09-21 22:00:00 | 149174.750000 | 185171.812500 |
+| 29  | 1         | 2017-09-21 23:00:00 | 149507.843750 | 186746.187500 |
 
 ```python
 values=sf.forecast_fitted_values()
 values.head()
 ```
 
-|           | ds                  | y        | Add           | Multi         |
-|-----------|---------------------|----------|---------------|---------------|
-| unique_id |                     |          |               |               |
-| 1         | 2017-09-13 00:00:00 | 80115.0  | 79944.101562  | 79406.656250  |
-| 1         | 2017-09-13 01:00:00 | 79885.0  | 80110.250000  | 81393.054688  |
-| 1         | 2017-09-13 02:00:00 | 89325.0  | 79880.273438  | 81163.125000  |
-| 1         | 2017-09-13 03:00:00 | 101930.0 | 89320.250000  | 90602.976562  |
-| 1         | 2017-09-13 04:00:00 | 121630.0 | 101926.195312 | 103208.789062 |
+|     | unique_id | ds                  | y        | Add           | Multi         |
+|-----|-----------|---------------------|----------|---------------|---------------|
+| 0   | 1         | 2017-09-13 00:00:00 | 80115.0  | 80131.632812  | 79287.125000  |
+| 1   | 1         | 2017-09-13 01:00:00 | 79885.0  | 80448.343750  | 81712.710938  |
+| 2   | 1         | 2017-09-13 02:00:00 | 89325.0  | 80218.335938  | 81482.796875  |
+| 3   | 1         | 2017-09-13 03:00:00 | 101930.0 | 89658.281250  | 90922.609375  |
+| 4   | 1         | 2017-09-13 04:00:00 | 121630.0 | 102264.195312 | 103528.398438 |
 
 ```python
 StatsForecast.plot(values)
@@ -936,65 +905,24 @@ StatsForecast.plot(values)
 Adding 95% confidence interval with the forecast method
 
 ```python
-sf.forecast(h=horizon, level=[95])
+sf.forecast(df=train, h=horizon, level=[95])
 ```
 
-|  | ds | Add | Add-lo-95 | Add-hi-95 | Multi | Multi-lo-95 | Multi-hi-95 |
-|----|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |  |
-| 1 | 2017-09-22 00:00:00 | 80281.781250 | 56698.507812 | 103865.062500 | 81537.476562 | 65208.687500 | 97866.257812 |
-| 1 | 2017-09-22 01:00:00 | 80277.085938 | 46925.292969 | 113628.875000 | 82788.335938 | 59458.406250 | 106118.265625 |
-| 1 | 2017-09-22 02:00:00 | 80272.382812 | 39423.585938 | 121121.179688 | 84039.195312 | 55172.894531 | 112905.500000 |
-| ... | ... | ... | ... | ... | ... | ... | ... |
-| 1 | 2017-09-23 03:00:00 | 80154.835938 | -44792.613281 | 205102.281250 | 115310.718750 | 3485.836914 | 227135.593750 |
-| 1 | 2017-09-23 04:00:00 | 80150.132812 | -47015.281250 | 207315.546875 | 116561.578125 | 1745.947998 | 231377.203125 |
-| 1 | 2017-09-23 05:00:00 | 80145.429688 | -49200.355469 | 209491.218750 | 117812.437500 | 1.485114 | 235623.390625 |
+|  | unique_id | ds | Add | Add-lo-95 | Add-hi-95 | Multi | Multi-lo-95 | Multi-hi-95 |
+|----|----|----|----|----|----|----|----|----|
+| 0 | 1 | 2017-09-20 18:00:00 | 139848.234375 | 116559.250000 | 163137.218750 | 141089.625000 | 113501.140625 | 168678.125000 |
+| 1 | 1 | 2017-09-20 19:00:00 | 140181.328125 | 107245.734375 | 173116.906250 | 142664.000000 | 103333.265625 | 181994.718750 |
+| 2 | 1 | 2017-09-20 20:00:00 | 140514.406250 | 100175.375000 | 180853.453125 | 144238.359375 | 95679.804688 | 192796.921875 |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... |
+| 27 | 1 | 2017-09-21 21:00:00 | 148841.671875 | 25453.445312 | 272229.875000 | 183597.453125 | 4082.392090 | 363112.531250 |
+| 28 | 1 | 2017-09-21 22:00:00 | 149174.750000 | 23596.246094 | 274753.250000 | 185171.812500 | 1151.084961 | 369192.562500 |
+| 29 | 1 | 2017-09-21 23:00:00 | 149507.843750 | 21776.173828 | 277239.531250 | 186746.187500 | -1776.010254 | 375268.375000 |
 
 ```python
-Y_hat=Y_hat.reset_index()
-Y_hat
+sf.plot(train, Y_hat)
 ```
 
-|     | unique_id | ds                  | Add          | Multi         |
-|-----|-----------|---------------------|--------------|---------------|
-| 0   | 1         | 2017-09-22 00:00:00 | 80281.781250 | 81537.476562  |
-| 1   | 1         | 2017-09-22 01:00:00 | 80277.085938 | 82788.335938  |
-| 2   | 1         | 2017-09-22 02:00:00 | 80272.382812 | 84039.195312  |
-| ... | ...       | ...                 | ...          | ...           |
-| 27  | 1         | 2017-09-23 03:00:00 | 80154.835938 | 115310.718750 |
-| 28  | 1         | 2017-09-23 04:00:00 | 80150.132812 | 116561.578125 |
-| 29  | 1         | 2017-09-23 05:00:00 | 80145.429688 | 117812.437500 |
-
-```python
-# Merge the forecasts with the true values
-Y_hat1 = pd.concat([df,Y_hat],  keys=['unique_id', 'ds'])
-Y_hat1
-```
-
-|           |     | ds                  | y       | unique_id | Add          | Multi         |
-|-----------|-----|---------------------|---------|-----------|--------------|---------------|
-| unique_id | 0   | 2017-09-13 00:00:00 | 80115.0 | 1         | NaN          | NaN           |
-|           | 1   | 2017-09-13 01:00:00 | 79885.0 | 1         | NaN          | NaN           |
-|           | 2   | 2017-09-13 02:00:00 | 89325.0 | 1         | NaN          | NaN           |
-| ...       | ... | ...                 | ...     | ...       | ...          | ...           |
-| ds        | 27  | 2017-09-23 03:00:00 | NaN     | 1         | 80154.835938 | 115310.718750 |
-|           | 28  | 2017-09-23 04:00:00 | NaN     | 1         | 80150.132812 | 116561.578125 |
-|           | 29  | 2017-09-23 05:00:00 | NaN     | 1         | 80145.429688 | 117812.437500 |
-
-```python
-fig, ax = plt.subplots(1, 1)
-plot_df = pd.concat([train, Y_hat1]).set_index('ds').tail(300)
-plot_df['y'].plot(ax=ax, linewidth=2)
-plot_df[ "Add"].plot(ax=ax, linewidth=2)
-plot_df[ "Multi"].plot(ax=ax, linewidth=2)
-ax.set_title(' Forecast', fontsize=22)
-ax.set_ylabel('Ads watched (hourly data)', fontsize=20)
-ax.set_xlabel('Monthly [t]', fontsize=20)
-ax.legend(prop={'size': 15})
-ax.grid(True)
-```
-
-![](/statsforecast/docs/models/Holt_files/figure-markdown_strict/cell-29-output-1.png)
+![](/statsforecast/docs/models/Holt_files/figure-markdown_strict/cell-27-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -1022,114 +950,36 @@ This step should take less than 1 second.
 sf.predict(h=horizon)
 ```
 
-|           | ds                  | Add          | Multi         |
-|-----------|---------------------|--------------|---------------|
-| unique_id |                     |              |               |
-| 1         | 2017-09-22 00:00:00 | 80281.781250 | 81537.476562  |
-| 1         | 2017-09-22 01:00:00 | 80277.085938 | 82788.335938  |
-| 1         | 2017-09-22 02:00:00 | 80272.382812 | 84039.195312  |
-| ...       | ...                 | ...          | ...           |
-| 1         | 2017-09-23 03:00:00 | 80154.835938 | 115310.718750 |
-| 1         | 2017-09-23 04:00:00 | 80150.132812 | 116561.578125 |
-| 1         | 2017-09-23 05:00:00 | 80145.429688 | 117812.437500 |
+|     | unique_id | ds                  | Add           | Multi         |
+|-----|-----------|---------------------|---------------|---------------|
+| 0   | 1         | 2017-09-20 18:00:00 | 139848.234375 | 141089.625000 |
+| 1   | 1         | 2017-09-20 19:00:00 | 140181.328125 | 142664.000000 |
+| 2   | 1         | 2017-09-20 20:00:00 | 140514.406250 | 144238.359375 |
+| ... | ...       | ...                 | ...           | ...           |
+| 27  | 1         | 2017-09-21 21:00:00 | 148841.671875 | 183597.453125 |
+| 28  | 1         | 2017-09-21 22:00:00 | 149174.750000 | 185171.812500 |
+| 29  | 1         | 2017-09-21 23:00:00 | 149507.843750 | 186746.187500 |
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
-
 forecast_df
 ```
 
-|  | ds | Add | Add-lo-95 | Add-lo-80 | Add-hi-80 | Add-hi-95 | Multi | Multi-lo-95 | Multi-lo-80 | Multi-hi-80 | Multi-hi-95 |
-|----|----|----|----|----|----|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |  |  |  |  |  |  |
-| 1 | 2017-09-22 00:00:00 | 80281.781250 | 56698.507812 | 64861.507812 | 95702.062500 | 103865.062500 | 81537.476562 | 65208.687500 | 70860.656250 | 92214.289062 | 97866.257812 |
-| 1 | 2017-09-22 01:00:00 | 80277.085938 | 46925.292969 | 58469.519531 | 102084.648438 | 113628.875000 | 82788.335938 | 59458.406250 | 67533.710938 | 98042.953125 | 106118.265625 |
-| 1 | 2017-09-22 02:00:00 | 80272.382812 | 39423.585938 | 53562.789062 | 106981.976562 | 121121.179688 | 84039.195312 | 55172.894531 | 65164.535156 | 102913.851562 | 112905.500000 |
-| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
-| 1 | 2017-09-23 03:00:00 | 80154.835938 | -44792.613281 | -1543.909790 | 161853.578125 | 205102.281250 | 115310.718750 | 3485.836914 | 42192.359375 | 188429.078125 | 227135.593750 |
-| 1 | 2017-09-23 04:00:00 | 80150.132812 | -47015.281250 | -2998.863037 | 163299.125000 | 207315.546875 | 116561.578125 | 1745.947998 | 41487.671875 | 191635.484375 | 231377.203125 |
-| 1 | 2017-09-23 05:00:00 | 80145.429688 | -49200.355469 | -4429.233887 | 164720.093750 | 209491.218750 | 117812.437500 | 1.485114 | 40779.996094 | 194844.875000 | 235623.390625 |
-
-We can join the forecast result with the historical data using the
-pandas function `pd.concat()`, and then be able to use this result for
-graphing.
-
-```python
-pd.concat([df, forecast_df]).set_index('ds')
-```
-
-|  | y | unique_id | Add | Add-lo-95 | Add-lo-80 | Add-hi-80 | Add-hi-95 | Multi | Multi-lo-95 | Multi-lo-80 | Multi-hi-80 | Multi-hi-95 |
+|  | unique_id | ds | Add | Add-lo-95 | Add-lo-80 | Add-hi-80 | Add-hi-95 | Multi | Multi-lo-95 | Multi-lo-80 | Multi-hi-80 | Multi-hi-95 |
 |----|----|----|----|----|----|----|----|----|----|----|----|----|
-| ds |  |  |  |  |  |  |  |  |  |  |  |  |
-| 2017-09-13 00:00:00 | 80115.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
-| 2017-09-13 01:00:00 | 79885.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
-| 2017-09-13 02:00:00 | 89325.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| 0 | 1 | 2017-09-20 18:00:00 | 139848.234375 | 116559.250000 | 124620.390625 | 155076.078125 | 163137.218750 | 141089.625000 | 113501.140625 | 123050.484375 | 159128.781250 | 168678.125000 |
+| 1 | 1 | 2017-09-20 19:00:00 | 140181.328125 | 107245.734375 | 118645.898438 | 161716.750000 | 173116.906250 | 142664.000000 | 103333.265625 | 116947.015625 | 168380.984375 | 181994.718750 |
+| 2 | 1 | 2017-09-20 20:00:00 | 140514.406250 | 100175.375000 | 114138.132812 | 166890.687500 | 180853.453125 | 144238.359375 | 95679.804688 | 112487.625000 | 175989.093750 | 192796.921875 |
 | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
-| 2017-09-23 03:00:00 | NaN | NaN | 80154.835938 | -44792.613281 | -1543.909790 | 161853.578125 | 205102.281250 | 115310.718750 | 3485.836914 | 42192.359375 | 188429.078125 | 227135.593750 |
-| 2017-09-23 04:00:00 | NaN | NaN | 80150.132812 | -47015.281250 | -2998.863037 | 163299.125000 | 207315.546875 | 116561.578125 | 1745.947998 | 41487.671875 | 191635.484375 | 231377.203125 |
-| 2017-09-23 05:00:00 | NaN | NaN | 80145.429688 | -49200.355469 | -4429.233887 | 164720.093750 | 209491.218750 | 117812.437500 | 1.485114 | 40779.996094 | 194844.875000 | 235623.390625 |
+| 27 | 1 | 2017-09-21 21:00:00 | 148841.671875 | 25453.445312 | 68162.445312 | 229520.890625 | 272229.875000 | 183597.453125 | 4082.392090 | 66218.867188 | 300976.031250 | 363112.531250 |
+| 28 | 1 | 2017-09-21 22:00:00 | 149174.750000 | 23596.246094 | 67063.382812 | 231286.125000 | 274753.250000 | 185171.812500 | 1151.084961 | 64847.128906 | 305496.500000 | 369192.562500 |
+| 29 | 1 | 2017-09-21 23:00:00 | 149507.843750 | 21776.173828 | 65988.593750 | 233027.093750 | 277239.531250 | 186746.187500 | -1776.010254 | 63478.144531 | 310014.218750 | 375268.375000 |
 
 ```python
-df_plot= pd.concat([df, forecast_df]).set_index('ds')
-df_plot
+sf.plot(train, forecast_df, level=[80, 95])
 ```
 
-|  | y | unique_id | Add | Add-lo-95 | Add-lo-80 | Add-hi-80 | Add-hi-95 | Multi | Multi-lo-95 | Multi-lo-80 | Multi-hi-80 | Multi-hi-95 |
-|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| ds |  |  |  |  |  |  |  |  |  |  |  |  |
-| 2017-09-13 00:00:00 | 80115.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
-| 2017-09-13 01:00:00 | 79885.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
-| 2017-09-13 02:00:00 | 89325.0 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
-| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
-| 2017-09-23 03:00:00 | NaN | NaN | 80154.835938 | -44792.613281 | -1543.909790 | 161853.578125 | 205102.281250 | 115310.718750 | 3485.836914 | 42192.359375 | 188429.078125 | 227135.593750 |
-| 2017-09-23 04:00:00 | NaN | NaN | 80150.132812 | -47015.281250 | -2998.863037 | 163299.125000 | 207315.546875 | 116561.578125 | 1745.947998 | 41487.671875 | 191635.484375 | 231377.203125 |
-| 2017-09-23 05:00:00 | NaN | NaN | 80145.429688 | -49200.355469 | -4429.233887 | 164720.093750 | 209491.218750 | 117812.437500 | 1.485114 | 40779.996094 | 194844.875000 | 235623.390625 |
-
-Now let’s visualize the result of our forecast and the historical data
-of our time series, also let’s draw the confidence interval that we have
-obtained when making the prediction with 95% confidence.
-
-```python
-def plot_forecasts(y_hist, y_pred, models):
-    _, ax = plt.subplots(1, 1, figsize = (20, 7))
-    df_plot = pd.concat([y_hist, y_pred]).set_index('ds').tail(12*10)
-    df_plot[['y'] + models].plot(ax=ax, linewidth=3 , )
-    colors = ['green', "lime"]
-    ax.fill_between(df_plot.index, 
-                df_plot['Add-lo-80'], 
-                df_plot['Add-hi-80'],
-                alpha=.20,
-                color='fuchsia',
-                label='Holt_level_80')
-    ax.fill_between(df_plot.index, 
-                df_plot['Add-lo-95'], 
-                df_plot['Add-hi-95'],
-                alpha=.3,
-                color='lime',
-                label='Holt_level_95')
-    ax.set_title('', fontsize=22)
-    ax.set_ylabel("Ads watched (hourly data)", fontsize=20)
-    ax.set_xlabel('Hourly', fontsize=20)
-    ax.legend(prop={'size': 20})
-    ax.grid(True)
-    plt.show()
-```
-
-
-```python
-plot_forecasts(df, forecast_df, models=["Add"])
-```
-
-![](/statsforecast/docs/models/Holt_files/figure-markdown_strict/cell-35-output-1.png)
-
-Let’s plot the same graph using the plot function that comes in
-`Statsforecast`, as shown below.
-
-```python
-sf.plot(df, forecast_df)
-```
-
-![](/statsforecast/docs/models/Holt_files/figure-markdown_strict/cell-36-output-1.png)
+![](/statsforecast/docs/models/Holt_files/figure-markdown_strict/cell-30-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -1187,8 +1037,7 @@ crossvalidation_df = sf.cross_validation(df=df,
 The crossvaldation_df object is a new data frame that includes the
 following columns:
 
--   `unique_id:` index. If you dont like working with index just run
-    `crossvalidation_df.resetindex()`.
+-   `unique_id:` series identifier.
 -   `ds:` datestamp or temporal index
 -   `cutoff:` the last datestamp or temporal index for the `n_windows`.
 -   `y:` true value
@@ -1198,59 +1047,45 @@ following columns:
 crossvalidation_df
 ```
 
-|  | ds | cutoff | y | Add | Multi |
-|----|----|----|----|----|----|
-| unique_id |  |  |  |  |  |
-| 1 | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0 | 111573.328125 | 112901.664062 |
-| 1 | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0 | 111820.390625 | 114476.921875 |
-| 1 | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0 | 112067.453125 | 116052.179688 |
-| ... | ... | ... | ... | ... | ... |
-| 1 | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 148230.671875 | 183085.953125 |
-| 1 | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0 | 148541.937500 | 184642.046875 |
-| 1 | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0 | 148853.203125 | 186198.140625 |
+|  | unique_id | ds | cutoff | y | Add | Multi |
+|----|----|----|----|----|----|----|
+| 0 | 1 | 2017-09-18 06:00:00 | 2017-09-18 05:00:00 | 99440.0 | 111573.328125 | 112874.039062 |
+| 1 | 1 | 2017-09-18 07:00:00 | 2017-09-18 05:00:00 | 97655.0 | 111820.390625 | 114421.679688 |
+| 2 | 1 | 2017-09-18 08:00:00 | 2017-09-18 05:00:00 | 97655.0 | 112067.453125 | 115969.320312 |
+| ... | ... | ... | ... | ... | ... | ... |
+| 87 | 1 | 2017-09-21 21:00:00 | 2017-09-20 17:00:00 | 103080.0 | 148841.671875 | 183597.453125 |
+| 88 | 1 | 2017-09-21 22:00:00 | 2017-09-20 17:00:00 | 95155.0 | 149174.750000 | 185171.812500 |
+| 89 | 1 | 2017-09-21 23:00:00 | 2017-09-20 17:00:00 | 80285.0 | 149507.843750 | 186746.187500 |
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
-We can now compute the accuracy of the forecast using an appropiate
-accuracy metric. Here we’ll use the Root Mean Squared Error (RMSE). To
-do this, we first need to `install datasetsforecast`, a Python library
-developed **by Nixtla** that includes a function to compute the RMSE.
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
 
 ```python
-!pip install datasetsforecast
-```
+from functools import partial
 
-The function to compute the RMSE takes two arguments:
-
-1.  The actual values.
-2.  The forecasts, in this case, `Holt Model`.
-
-```python
-from datasetsforecast.losses import rmse
-
-def evaluate_cross_validation(df, metric):
-    models = df.drop(columns=['ds', 'cutoff', 'y']).columns.tolist()
-    evals = []
-    for model in models:
-        eval_ = df.groupby(['unique_id', 'cutoff']).apply(lambda x: metric(x['y'].values, x[model].values)).to_frame() # Calculate loss for every unique_id, model and cutoff.
-        eval_.columns = [model]
-        evals.append(eval_)
-    evals = pd.concat(evals, axis=1)
-    evals = evals.groupby(['unique_id']).mean(numeric_only=True) # Averages the error metrics for all cutoffs for every combination of model and unique_id
-    evals['best_model'] = evals.idxmin(axis=1)
-    return evals
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
 ```
 
 
 ```python
-evaluation_df = evaluate_cross_validation(crossvalidation_df, rmse)
-evaluation_df
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
 ```
 
-|           | Add          | Multi        | best_model |
-|-----------|--------------|--------------|------------|
-| unique_id |              |              |            |
-| 1         | 31882.099609 | 46589.265625 | Add        |
+|     | unique_id | metric | Add          | Multi        |
+|-----|-----------|--------|--------------|--------------|
+| 0   | 1         | mae    | 30905.751042 | 48210.098958 |
+| 1   | 1         | mape   | 0.336201     | 0.491980     |
+| 2   | 1         | mase   | 3.818464     | 5.956449     |
+| 3   | 1         | rmse   | 38929.522482 | 54653.132768 |
+| 4   | 1         | smape  | 0.129755     | 0.182024     |
 
 ## Acknowledgements
 

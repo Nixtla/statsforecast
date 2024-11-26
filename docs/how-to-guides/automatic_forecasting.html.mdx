@@ -43,6 +43,8 @@ Y_df = AirPassengersDF
 Import the core StatsForecast class and the models you want to use
 
 ```python
+import pandas as pd
+
 from statsforecast import StatsForecast
 from statsforecast.models import AutoARIMA, AutoETS, AutoTheta, AutoCES
 ```
@@ -67,7 +69,7 @@ models = [
 # and parallel computation on all CPU cores (n_jobs=-1)
 sf = StatsForecast(
     models=models, # models for forecasting
-    freq='M',  # frequency of the data
+    freq=pd.offsets.MonthEnd(),  # frequency of the timestamps
     n_jobs=1  # number of jobs to run in parallel, -1 means using all processors
 )
 ```
@@ -84,10 +86,9 @@ Y_hat_df = sf.forecast(df=Y_df, h=horizon) # forecast data
 Y_hat_df.head() # preview of forecasted data
 ```
 
-|           | ds         | AutoARIMA  | AutoETS    | AutoTheta  | CES       |
-|-----------|------------|------------|------------|------------|-----------|
-| unique_id |            |            |            |            |           |
-| 1.0       | 1961-01-31 | 444.300049 | 442.357178 | 442.940796 | 453.03418 |
+|     | unique_id | ds         | AutoARIMA  | AutoETS    | AutoTheta  | CES       |
+|-----|-----------|------------|------------|------------|------------|-----------|
+| 0   | 1.0       | 1961-01-31 | 444.309575 | 442.357169 | 442.940797 | 453.03418 |
 
 ## 4. b) Forecast with fit and predict
 
@@ -103,10 +104,9 @@ Y_hat_df = sf.predict(h=horizon) # Predict or forecast 'horizon' steps ahead usi
 Y_hat_df.head() # Preview the first few rows of the forecasted data
 ```
 
-|           | ds         | AutoARIMA  | AutoETS    | AutoTheta  | CES       |
-|-----------|------------|------------|------------|------------|-----------|
-| unique_id |            |            |            |            |           |
-| 1.0       | 1961-01-31 | 444.300049 | 442.357178 | 442.940796 | 453.03418 |
+|     | unique_id | ds         | AutoARIMA  | AutoETS    | AutoTheta  | CES       |
+|-----|-----------|------------|------------|------------|------------|-----------|
+| 0   | 1.0       | 1961-01-31 | 444.309575 | 442.357169 | 442.940797 | 453.03418 |
 
 ## References
 
