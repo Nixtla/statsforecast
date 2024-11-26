@@ -18,5 +18,7 @@ def check_nb(nb_path: str) -> None:
 
 if __name__ == "__main__":
     repo_root = Path(__file__).parents[1]
-    for nb_path in (repo_root / "nbs").glob("*.ipynb"):
+    for nb_path in (repo_root / "nbs").rglob("*.ipynb"):
+        if '.ipynb_checkpoints' in str(nb_path):
+            continue
         check_nb(str(nb_path))
