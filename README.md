@@ -47,10 +47,9 @@ from statsforecast.utils import AirPassengersDF
 
 df = AirPassengersDF
 sf = StatsForecast(
-    models = [AutoARIMA(season_length = 12)],
-    freq = 'M'
+    models=[AutoARIMA(season_length=12)],
+    freq='ME',
 )
-
 sf.fit(df)
 sf.predict(h=12, level=[95])
 ```
