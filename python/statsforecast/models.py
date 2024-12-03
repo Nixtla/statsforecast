@@ -1540,7 +1540,7 @@ class AutoMFLES(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 88
+# %% ../../nbs/src/core/models.ipynb 89
 class AutoTBATS(_TS):
     r"""AutoTBATS model.
 
@@ -1751,7 +1751,7 @@ class AutoTBATS(_TS):
             res_trans = res
         return res_trans
 
-# %% ../../nbs/src/core/models.ipynb 98
+# %% ../../nbs/src/core/models.ipynb 99
 class ARIMA(_TS):
     r"""ARIMA model.
 
@@ -2054,7 +2054,7 @@ class ARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 113
+# %% ../../nbs/src/core/models.ipynb 114
 class AutoRegressive(ARIMA):
     r"""Simple Autoregressive model.
 
@@ -2128,7 +2128,7 @@ class AutoRegressive(ARIMA):
             prediction_intervals=prediction_intervals,
         )
 
-# %% ../../nbs/src/core/models.ipynb 128
+# %% ../../nbs/src/core/models.ipynb 129
 @njit(nogil=NOGIL, cache=CACHE)
 def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
     r"""Perform simple exponential smoothing on a series.
@@ -2199,7 +2199,7 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     n_elems = n_chunks * chunk_size
     return array[:n_elems].reshape(n_chunks, chunk_size).sum(axis=1)
 
-# %% ../../nbs/src/core/models.ipynb 129
+# %% ../../nbs/src/core/models.ipynb 130
 def _ses(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2212,7 +2212,7 @@ def _ses(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 130
+# %% ../../nbs/src/core/models.ipynb 131
 class SimpleExponentialSmoothing(_TS):
     r"""SimpleExponentialSmoothing model.
 
@@ -2374,7 +2374,7 @@ class SimpleExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to " "compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 142
+# %% ../../nbs/src/core/models.ipynb 143
 def _ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2387,7 +2387,7 @@ def _ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 143
+# %% ../../nbs/src/core/models.ipynb 144
 class SimpleExponentialSmoothingOptimized(_TS):
     r"""SimpleExponentialSmoothing model.
 
@@ -2543,7 +2543,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 155
+# %% ../../nbs/src/core/models.ipynb 156
 def _seasonal_exponential_smoothing(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2567,7 +2567,7 @@ def _seasonal_exponential_smoothing(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 156
+# %% ../../nbs/src/core/models.ipynb 157
 class SeasonalExponentialSmoothing(_TS):
     r"""SeasonalExponentialSmoothing model.
 
@@ -2744,7 +2744,7 @@ class SeasonalExponentialSmoothing(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 171
+# %% ../../nbs/src/core/models.ipynb 172
 def _seasonal_ses_optimized(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -2767,7 +2767,7 @@ def _seasonal_ses_optimized(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 172
+# %% ../../nbs/src/core/models.ipynb 173
 class SeasonalExponentialSmoothingOptimized(_TS):
 
     def __init__(
@@ -2941,7 +2941,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 185
+# %% ../../nbs/src/core/models.ipynb 186
 class Holt(AutoETS):
     r"""Holt's method.
 
@@ -2982,7 +2982,7 @@ class Holt(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-# %% ../../nbs/src/core/models.ipynb 199
+# %% ../../nbs/src/core/models.ipynb 200
 class HoltWinters(AutoETS):
     r"""Holt-Winters' method.
 
@@ -3022,7 +3022,7 @@ class HoltWinters(AutoETS):
             season_length, model, alias=alias, prediction_intervals=prediction_intervals
         )
 
-# %% ../../nbs/src/core/models.ipynb 214
+# %% ../../nbs/src/core/models.ipynb 215
 def _historic_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3034,7 +3034,7 @@ def _historic_average(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 215
+# %% ../../nbs/src/core/models.ipynb 216
 class HistoricAverage(_TS):
 
     def __init__(
@@ -3212,7 +3212,7 @@ class HistoricAverage(_TS):
 
         return res
 
-# %% ../../nbs/src/core/models.ipynb 228
+# %% ../../nbs/src/core/models.ipynb 229
 class Naive(_TS):
 
     def __init__(
@@ -3422,7 +3422,7 @@ class Naive(_TS):
         )
         return res
 
-# %% ../../nbs/src/core/models.ipynb 244
+# %% ../../nbs/src/core/models.ipynb 245
 def _random_walk_with_drift(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3441,7 +3441,7 @@ def _random_walk_with_drift(
         fcst["fitted"] = fitted_vals
     return fcst
 
-# %% ../../nbs/src/core/models.ipynb 245
+# %% ../../nbs/src/core/models.ipynb 246
 class RandomWalkWithDrift(_TS):
 
     def __init__(
@@ -3618,7 +3618,7 @@ class RandomWalkWithDrift(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 260
+# %% ../../nbs/src/core/models.ipynb 261
 class SeasonalNaive(_TS):
 
     def __init__(
@@ -3804,7 +3804,7 @@ class SeasonalNaive(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
-# %% ../../nbs/src/core/models.ipynb 276
+# %% ../../nbs/src/core/models.ipynb 277
 def _window_average(
     y: np.ndarray,  # time series
     h: int,  # forecasting horizon
@@ -3819,7 +3819,7 @@ def _window_average(
     mean = _repeat_val(val=wavg, h=h)
     return {"mean": mean}
 
-# %% ../../nbs/src/core/models.ipynb 277
+# %% ../../nbs/src/core/models.ipynb 278
 class WindowAverage(_TS):
 
     def __init__(
@@ -3977,7 +3977,7 @@ class WindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 288
+# %% ../../nbs/src/core/models.ipynb 289
 def _seasonal_window_average(
     y: np.ndarray,
     h: int,
@@ -3994,7 +3994,7 @@ def _seasonal_window_average(
     out = _repeat_val_seas(season_vals=season_avgs, h=h)
     return {"mean": out}
 
-# %% ../../nbs/src/core/models.ipynb 289
+# %% ../../nbs/src/core/models.ipynb 290
 class SeasonalWindowAverage(_TS):
 
     def __init__(
@@ -4166,7 +4166,7 @@ class SeasonalWindowAverage(_TS):
             raise Exception("You must pass `prediction_intervals` to compute them.")
         return res
 
-# %% ../../nbs/src/core/models.ipynb 301
+# %% ../../nbs/src/core/models.ipynb 302
 def _chunk_forecast(y, aggregation_level):
     lost_remainder_data = len(y) % aggregation_level
     y_cut = y[lost_remainder_data:]
@@ -4249,7 +4249,7 @@ def _adida(
         res["fitted"] = np.append(np.nan, sums_fitted / fitted_aggregation_levels)
     return res
 
-# %% ../../nbs/src/core/models.ipynb 302
+# %% ../../nbs/src/core/models.ipynb 303
 class ADIDA(_TS):
 
     def __init__(
