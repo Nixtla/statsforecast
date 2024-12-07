@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <numeric>
 #include <ranges>
-#include <vector>
 
 #include "nelder_mead.h"
 
@@ -29,15 +28,8 @@ Eigen::Vector<double, 5> init_state(const Eigen::Ref<const VectorXd> &y,
     mu = y[0];
   } else {
     size_t n = y.size();
-    double y_mean = std::ranges::fold_left(y, double{}, std::plus{}) / n;
-    double weighted_avg =
-        (std::ranges::fold_left(y | std::views::enumerate |
-                                    std::views::transform([](const auto &pair) {
-                                      const auto &[index, value] = pair;
-                                      return value * (index + 1);
-                                    }),
-                                double{}, std::plus{})) /
-        n;
+    double y_mean = y.array().mean();
+    double weighted_avg = y.dot(VectorXd::LinSpaced(y.size(), 1, y.size())) / n;
     Bn = (6 * (2 * weighted_avg - (n + 1) * y_mean)) / (n * n - 1);
     An = y_mean - (n + 1) * Bn / 2;
     mu = initial_smoothed + (1 - 1 / theta) * (An + Bn);
@@ -107,15 +99,11 @@ double calc(const Eigen::Ref<const VectorXd> &y,
     }
     update(states, i, model_type, alpha, theta, y[i], false);
   }
-  auto abs_y =
-      y | std::views::transform([](const auto &val) { return std::abs(val); });
-  double mean_y = std::ranges::fold_left(abs_y, double{}, std::plus{}) / n;
-  if (std::abs(mean_y) < TOL) {
+  double mean_y = y.array().abs().mean();
+  if (mean_y < TOL) {
     mean_y = TOL;
   }
-  auto e_sq = e | std::views::drop(3) |
-              std::views::transform([](const auto &val) { return val * val; });
-  return std::ranges::fold_left(e_sq, double{}, std::plus{}) / mean_y;
+  return e.tail(e.size() - 3).array().square().sum() / mean_y;
 }
 
 std::tuple<VectorXd, VectorXd, RowMajorMatrixXd, double>
