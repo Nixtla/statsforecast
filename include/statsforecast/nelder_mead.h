@@ -8,15 +8,16 @@ using Eigen::VectorXd;
 using RowMajorMatrixXd =
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
-auto Clamp(const VectorXd &x, const VectorXd &lower, const VectorXd &upper) {
+inline auto Clamp(const VectorXd &x, const VectorXd &lower,
+                  const VectorXd &upper) {
   return x.cwiseMax(lower).cwiseMin(upper);
 }
 
-double StandardDeviation(const VectorXd &x) {
+inline double StandardDeviation(const VectorXd &x) {
   return std::sqrt((x.array() - x.mean()).square().mean());
 }
 
-Eigen::VectorX<Eigen::Index> ArgSort(const VectorXd &v) {
+inline Eigen::VectorX<Eigen::Index> ArgSort(const VectorXd &v) {
   Eigen::VectorX<Eigen::Index> indices(v.size());
   std::iota(indices.begin(), indices.end(), 0);
   std::sort(indices.begin(), indices.end(),
@@ -25,11 +26,11 @@ Eigen::VectorX<Eigen::Index> ArgSort(const VectorXd &v) {
 }
 
 template <typename Func, typename... Args>
-std::tuple<VectorXd, double, int> NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
-                         const VectorXd upper, double init_step,
-                         double zero_pert, double alpha, double gamma,
-                         double rho, double sigma, int max_iter, double tol_std,
-                         bool adaptive, Args &&...args) {
+std::tuple<VectorXd, double, int>
+NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
+           const VectorXd upper, double init_step, double zero_pert,
+           double alpha, double gamma, double rho, double sigma, int max_iter,
+           double tol_std, bool adaptive, Args &&...args) {
   auto x0 = Clamp(x, lower, upper);
   auto n = x0.size();
   if (adaptive) {
