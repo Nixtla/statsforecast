@@ -139,6 +139,7 @@ def thetamodel(
     theta: float,
     nmse: int,
 ):
+    y = y.astype(np.float64, copy=False)
     model_type = switch_theta(modeltype)
     # initial parameters
     par = initparamtheta(
