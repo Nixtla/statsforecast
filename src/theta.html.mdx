@@ -4,7 +4,21 @@ title: Theta Model
 ---
 
 
-## thetacalc
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/theta.py#L219"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+### forecast_theta
+
+> ``` text
+>  forecast_theta (obj, h, level=None)
+> ```
+
+```python
+forecast_theta(res, 12, level=[90, 80])
+```
 
 ------------------------------------------------------------------------
 
@@ -12,31 +26,22 @@ title: Theta Model
 href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/theta.py#L263"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
-### theta_target_fn
+### auto_theta
 
 > ``` text
->  theta_target_fn (optimal_param, init_level, init_alpha, init_theta,
->                   opt_level, opt_alpha, opt_theta, y, modeltype, nmse)
+>  auto_theta (y, m, model=None, initial_smoothed=None, alpha=None,
+>              theta=None, nmse=3, decomposition_type='multiplicative')
 > ```
 
 ------------------------------------------------------------------------
 
 <a
-href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/theta.py#L470"
+href="https://github.com/Nixtla/statsforecast/blob/main/statsforecast/theta.py#L363"
 target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
-### is_constant
+### forward_theta
 
 > ``` text
->  is_constant (x)
+>  forward_theta (fitted_model, y)
 > ```
-
-```python
-is_constant(ap)
-```
-
-
-```python
-forecast_theta(res, 12, level=[90, 80])
-```
 
