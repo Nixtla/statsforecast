@@ -53,11 +53,11 @@ arima_transpar(const py::array_t<double> params_inv,
   assert(arma[0] >= 0 && arma[1] >= 0 && arma[2] >= 0 && arma[3] >= 0 &&
          arma[4] >= 0 && arma[5] >= 0 && arma[6] >= 0);
 
-  const int32_t mp = arma[0];
-  const int32_t mq = arma[1];
-  const int32_t msp = arma[2];
-  const int32_t msq = arma[3];
-  const int32_t ns = arma[4];
+  const auto mp = static_cast<size_t>(arma[0]);
+  const auto mq = static_cast<size_t>(arma[1]);
+  const auto msp = static_cast<size_t>(arma[2]);
+  const auto msq = static_cast<size_t>(arma[3]);
+  const auto ns = static_cast<size_t>(arma[4]);
   const uint32_t p = mp + ns * msp;
   const uint32_t q = mq + ns * msq;
 
@@ -127,22 +127,26 @@ arima_css(const py::array_t<double> yv, const py::array_t<int32_t> armav,
   assert(arma[0] >= 0 && arma[1] >= 0 && arma[2] >= 0 && arma[3] >= 0 &&
          arma[4] >= 0 && arma[5] >= 0 && arma[6] >= 0);
 
-  const uint32_t ncond = arma[0] + arma[5] + arma[4] * (arma[2] + arma[6]);
+  const auto d = static_cast<size_t>(arma[5]);
+  const auto D = static_cast<size_t>(arma[6]);
+  const auto ncond =
+      static_cast<size_t>(arma[0] + arma[5] + arma[4] * (arma[2] + arma[6]));
   uint32_t nu = 0;
   double ssq = 0.0;
 
   py::array_t<double> residv(n);
   const auto resid = make_span(residv);
+  std::fill_n(resid.begin(), ncond, 0.0);
   std::vector<double> w(y.begin(), y.end());
 
-  for (size_t _ = 0; _ < arma[5]; ++_) {
+  for (size_t _ = 0; _ < d; ++_) {
     for (size_t l = n - 1; l > 0; --l) {
       w[l] -= w[l - 1];
     }
   }
 
-  const uint32_t ns = arma[4];
-  for (size_t _ = 0; _ < arma[6]; ++_) {
+  const auto ns = static_cast<size_t>(arma[4]);
+  for (size_t _ = 0; _ < D; ++_) {
     for (size_t l = n - 1; l >= ns; --l) {
       w[l] -= w[l - ns];
     }
@@ -622,9 +626,9 @@ py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
   assert(arma[0] >= 0 && arma[1] >= 0 && arma[2] >= 0 && arma[3] >= 0 &&
          arma[4] >= 0 && arma[5] >= 0 && arma[6] >= 0);
 
-  const int32_t mp = arma[0];
-  const int32_t mq = arma[1];
-  const int32_t msp = arma[2];
+  const auto mp = static_cast<size_t>(arma[0]);
+  const auto mq = static_cast<size_t>(arma[1]);
+  const auto msp = static_cast<size_t>(arma[2]);
 
   std::array<double, 100> w1;
   std::array<double, 100> w2;

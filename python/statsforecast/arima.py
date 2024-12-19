@@ -299,7 +299,7 @@ def arima(
     ):
         raise ValueError("order must be 3 non-negative integers")
 
-    if seasonal["period"] is None or seasonal["period"] == 0:
+    if seasonal["period"] is None or seasonal["period"] <= 0:
         warnings.warn("Setting seasonal period to 1")
         seasonal["period"] = 1
 
