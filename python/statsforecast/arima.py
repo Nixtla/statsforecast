@@ -784,7 +784,10 @@ def myarima(
             fit["xreg"] = xreg
         npar = fit["mask"].sum() + 1
         if method == "CSS":
-            fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
+            if fit["sigma2"] <= 0:
+                fit["aic"] = -math.inf
+            else:
+                fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
         if not math.isnan(fit["aic"]):
             fit["bic"] = fit["aic"] + npar * (math.log(nstar) - 2)
             if nstar - npar - 1 != 0:
