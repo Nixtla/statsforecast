@@ -45,7 +45,7 @@ jobs:
           platforms: arm64
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a # v4.2.0
+        uses: astral-sh/setup-uv@887a942a15af3a7626099df99e897a18d9e5ab3a # v5.1.0
         with:
           version: "latest"
 
@@ -70,7 +70,7 @@ jobs:
             uv pip install -r {project}/setup.py --extra dev --extra plotly &&
             python {project}/action_files/nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing
 
-      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+      - uses: actions/upload-artifact@6f51ac03b9356f520e9adb1b1b7802705f340c2b # v4.5.0
         if: github.event_name == 'push'
         with:
           name: artifact-cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
