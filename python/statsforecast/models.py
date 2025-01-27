@@ -12,11 +12,11 @@ __all__ = ['AutoARIMA', 'AutoETS', 'AutoCES', 'AutoTheta', 'AutoMFLES', 'AutoTBA
 # %% ../../nbs/src/core/models.ipynb 4
 import warnings
 from math import trunc
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from numba import njit
-from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
 from scipy.special import inv_boxcox
 
 from statsforecast.arima import (
@@ -2136,19 +2136,20 @@ def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray
     This function returns the one step ahead prediction
     as well as the mean squared error of the fit.
     """
-    smoothed = x[0]
-    n = x.size
+    n = len(x)
+    complement = 1 - alpha
+    fitted = np.empty_like(x)
+    fitted[0] = x[0]
     mse = 0.0
-    fitted = np.full(n, np.nan, dtype=x.dtype)
+    j = 0
 
     for i in range(1, n):
-        smoothed = (alpha * x[i - 1] + (1 - alpha) * smoothed).item()
-        error = x[i] - smoothed
-        mse += error * error
-        fitted[i] = smoothed
+        fitted[i] = alpha * x[j] + complement * fitted[j]
+        mse += (x[i] - fitted[i]) ** 2
+        j += 1
 
     mse /= n
-    forecast = alpha * x[-1] + (1 - alpha) * smoothed
+    forecast = alpha * x[j] + complement * fitted[j]
     return forecast, mse, fitted
 
 
@@ -2181,12 +2182,14 @@ def _probability(x: np.ndarray) -> np.ndarray:
 
 
 def _optimized_ses_forecast(
-    x: np.ndarray, bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
+    x: np.ndarray, bounds: Tuple[float, float] = (0.1, 0.3)
 ) -> Tuple[float, np.ndarray]:
     r"""Searches for the optimal alpha and computes SES one step forecast."""
-    alpha = minimize(
-        fun=_ses_mse, x0=(0,), args=(x,), bounds=bounds, method="L-BFGS-B"
-    ).x[0]
+    alpha = minimize_scalar(
+        fun=_ses_mse,
+        bounds=bounds,
+        args=(x,),
+    ).x
     forecast, fitted = _ses_forecast(x, alpha)
     return forecast, fitted
 
@@ -2380,7 +2383,7 @@ def _ses_optimized(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
-    fcst_, fitted_vals = _optimized_ses_forecast(y, [(0.01, 0.99)])
+    fcst_, fitted_vals = _optimized_ses_forecast(y, (0.01, 0.99))
     mean = _repeat_val(val=fcst_, h=h)
     fcst = {"mean": mean}
     if fitted:
@@ -2759,7 +2762,7 @@ def _seasonal_ses_optimized(
     for i in range(season_length):
         init_idx = i + n % season_length
         season_vals[i], fitted_vals[init_idx::season_length] = _optimized_ses_forecast(
-            y[init_idx::season_length], [(0.01, 0.99)]
+            y[init_idx::season_length], (0.01, 0.99)
         )
     out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
