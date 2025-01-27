@@ -13,6 +13,7 @@ models = [
     statsforecast.models.AutoTheta,
     statsforecast.models.TBATS,
     statsforecast.models.GARCH,
+    statsforecast.models.SimpleExponentialSmoothingOptimized,
 ]
 
 
