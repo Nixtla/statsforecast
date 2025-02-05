@@ -4176,7 +4176,7 @@ def _chunk_forecast(y, aggregation_level):
 
 
 @njit(nogil=NOGIL, cache=CACHE)
-def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.nda..rray:
+def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
     out = np.empty_like(y)
     out[0] = np.nan
     fitted_idx = 0
