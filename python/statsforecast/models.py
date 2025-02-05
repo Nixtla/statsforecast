@@ -4526,7 +4526,7 @@ class CrostonClassic(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions
+            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
