@@ -127,7 +127,7 @@ def optimize_theta_target_fn(
         modeltype,
         nmse,
     )
-    return results(*opt_res, None)  # type: ignore
+    return results(*opt_res)
 
 # %% ../../nbs/src/theta.ipynb 14
 def thetamodel(
