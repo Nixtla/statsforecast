@@ -501,7 +501,7 @@ def optimize_ets_target_fn(
         1_000,
         True,
     )
-    return results(*opt_res, None)
+    return results(*opt_res)
 
 # %% ../../nbs/src/ets.ipynb 26
 def etsmodel(
