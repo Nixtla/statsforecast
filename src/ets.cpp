@@ -279,15 +279,15 @@ double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
   }
   return obj_val;
 }
-std::tuple<VectorXd, double, int>
-Optimize(const Eigen::Ref<const VectorXd> &x0,
-         const Eigen::Ref<const VectorXd> &y, int n_state, Component error,
-         Component trend, Component season, Criterion opt_crit, int n_mse,
-         int m, bool opt_alpha, bool opt_beta, bool opt_gamma, bool opt_phi,
-         double alpha, double beta, double gamma, double phi,
-         const Eigen::Ref<const VectorXd> &lower,
-         const Eigen::Ref<const VectorXd> &upper, double tol_std, int max_iter,
-         bool adaptive) {
+nm::OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
+                         const Eigen::Ref<const VectorXd> &y, int n_state,
+                         Component error, Component trend, Component season,
+                         Criterion opt_crit, int n_mse, int m, bool opt_alpha,
+                         bool opt_beta, bool opt_gamma, bool opt_phi,
+                         double alpha, double beta, double gamma, double phi,
+                         const Eigen::Ref<const VectorXd> &lower,
+                         const Eigen::Ref<const VectorXd> &upper,
+                         double tol_std, int max_iter, bool adaptive) {
   double init_step = 0.05;
   double nm_alpha = 1.0;
   double nm_gamma = 2.0;
