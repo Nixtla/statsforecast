@@ -7,6 +7,7 @@ namespace nm {
 using Eigen::VectorXd;
 using RowMajorMatrixXd =
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+using OptimResult = std::tuple<VectorXd, double, int, RowMajorMatrixXd>;
 
 inline auto Clamp(const VectorXd &x, const VectorXd &lower,
                   const VectorXd &upper) {
@@ -26,11 +27,11 @@ inline Eigen::VectorX<Eigen::Index> ArgSort(const VectorXd &v) {
 }
 
 template <typename Func, typename... Args>
-std::tuple<VectorXd, double, int>
-NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
-           const VectorXd upper, double init_step, double zero_pert,
-           double alpha, double gamma, double rho, double sigma, int max_iter,
-           double tol_std, bool adaptive, Args &&...args) {
+OptimResult NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
+                       const VectorXd upper, double init_step, double zero_pert,
+                       double alpha, double gamma, double rho, double sigma,
+                       int max_iter, double tol_std, bool adaptive,
+                       Args &&...args) {
   auto x0 = Clamp(x, lower, upper);
   auto n = x0.size();
   if (adaptive) {
@@ -57,16 +58,16 @@ NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
   int i;
   Eigen::Index best_idx = 0;
   for (i = 0; i < max_iter; ++i) {
-    // check whether method should stop
-    if (StandardDeviation(f_simplex) < tol_std) {
-      break;
-    }
-
     // Step1: order of f_simplex
     Eigen::VectorX<Eigen::Index> order_f = ArgSort(f_simplex);
     best_idx = order_f(0);
     auto worst_idx = order_f(n);
     auto second_worst_idx = order_f(n - 1);
+
+    // check whether method should stop
+    if (StandardDeviation(f_simplex) < tol_std) {
+      break;
+    }
 
     // calculate centroid as the col means removing the row with the max fval
     VectorXd x_o = (simplex.colwise().sum() - simplex.row(worst_idx)) / n;
@@ -131,6 +132,6 @@ NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
       f_simplex(j) = F(simplex.row(j), std::forward<Args>(args)...);
     }
   }
-  return {simplex.row(best_idx), f_simplex(best_idx), i + 1};
+  return {simplex.row(best_idx), f_simplex(best_idx), i + 1, simplex};
 }
 } // namespace nm

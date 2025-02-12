@@ -4965,7 +4965,7 @@ class CrostonSBA(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
@@ -5162,7 +5162,7 @@ class IMAPA(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         fitted = _imapa(y=self._y, h=1, fitted=True)["fitted"]
         res = {"fitted": fitted}
@@ -5368,7 +5368,7 @@ class TSB(_TS):
         Returns
         -------
         forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+            Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:

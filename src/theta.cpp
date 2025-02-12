@@ -120,10 +120,10 @@ pegels_resid(const Eigen::Ref<const VectorXd> &y, ModelType model_type,
   return {amse, e, states, mse};
 }
 
-double theta_target_fn(const VectorXd &params, double init_level,
-                       double init_alpha, double init_theta, bool opt_level,
-                       bool opt_alpha, bool opt_theta, const VectorXd &y,
-                       ModelType model_type, size_t nmse) {
+double target_fn(const VectorXd &params, double init_level, double init_alpha,
+                 double init_theta, bool opt_level, bool opt_alpha,
+                 bool opt_theta, const VectorXd &y, ModelType model_type,
+                 size_t nmse) {
   RowMajorMatrixXd states = RowMajorMatrixXd::Zero(y.size(), 5);
   size_t j = 0;
   double level, alpha, theta;
@@ -152,13 +152,13 @@ double theta_target_fn(const VectorXd &params, double init_level,
   return mse;
 }
 
-std::tuple<VectorXd, double, int>
-optimize(const Eigen::Ref<const VectorXd> &x0,
-         const Eigen::Ref<const VectorXd> &lower,
-         const Eigen::Ref<const VectorXd> &upper, double init_level,
-         double init_alpha, double init_theta, bool opt_level, bool opt_alpha,
-         bool opt_theta, const Eigen::Ref<const VectorXd> &y,
-         ModelType model_type, size_t nmse) {
+nm::OptimResult optimize(const Eigen::Ref<const VectorXd> &x0,
+                         const Eigen::Ref<const VectorXd> &lower,
+                         const Eigen::Ref<const VectorXd> &upper,
+                         double init_level, double init_alpha,
+                         double init_theta, bool opt_level, bool opt_alpha,
+                         bool opt_theta, const Eigen::Ref<const VectorXd> &y,
+                         ModelType model_type, size_t nmse) {
   double init_step = 0.05;
   double zero_pert = 1e-4;
   double alpha = 1.0;
@@ -168,7 +168,7 @@ optimize(const Eigen::Ref<const VectorXd> &x0,
   int max_iter = 1'000;
   double tol_std = 1e-4;
   bool adaptive = true;
-  return nm::NelderMead(theta_target_fn, x0, lower, upper, init_step, zero_pert,
+  return nm::NelderMead(target_fn, x0, lower, upper, init_step, zero_pert,
                         alpha, gamma, rho, sigma, max_iter, tol_std, adaptive,
                         init_level, init_alpha, init_theta, opt_level,
                         opt_alpha, opt_theta, y, model_type, nmse);
