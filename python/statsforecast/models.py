@@ -15,7 +15,6 @@ from math import trunc
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from coreforecast.exponentially_weighted import exponentially_weighted_mean
 from numba import njit
 from scipy.optimize import minimize_scalar
 from scipy.special import inv_boxcox
@@ -2158,6 +2157,7 @@ def _ses_sse(alpha: float, x: np.ndarray) -> float:
     return sse
 
 
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     r"""Compute the one-step ahead forecast for a simple exponential smoothing fit.
 
@@ -2174,9 +2174,16 @@ def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
         One-step ahead forecast and in-sample fitted values.
 
     """
-    fitted = exponentially_weighted_mean(x, alpha)
-    forecast = fitted.item(-1)
-    fitted[1:] = fitted[:-1]
+    complement = 1 - alpha
+    fitted = np.empty_like(x)
+    fitted[0] = x[0]
+    j = 0
+
+    for i in range(1, len(x)):
+        fitted[i] = alpha * x[j] + complement * fitted[j]
+        j += 1
+
+    forecast = alpha * x[j] + complement * fitted[j]
     fitted[0] = np.nan
     return forecast, fitted
 
