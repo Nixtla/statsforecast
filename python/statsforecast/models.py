@@ -12,11 +12,11 @@ __all__ = ['AutoARIMA', 'AutoETS', 'AutoCES', 'AutoTheta', 'AutoMFLES', 'AutoTBA
 # %% ../../nbs/src/core/models.ipynb 4
 import warnings
 from math import trunc
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from numba import njit
-from scipy.optimize import minimize
+from scipy.optimize import minimize_scalar
 from scipy.special import inv_boxcox
 
 from statsforecast.arima import (
@@ -2130,37 +2130,61 @@ class AutoRegressive(ARIMA):
 
 # %% ../../nbs/src/core/models.ipynb 129
 @njit(nogil=NOGIL, cache=CACHE)
-def _ses_fcst_mse(x: np.ndarray, alpha: float) -> Tuple[float, float, np.ndarray]:
-    r"""Perform simple exponential smoothing on a series.
+def _ses_sse(alpha: float, x: np.ndarray) -> float:
+    r"""Compute the residual sum of squares for a simple exponential smoothing fit.
 
-    This function returns the one step ahead prediction
-    as well as the mean squared error of the fit.
+    Parameters
+    ----------
+    alpha : float
+        Smoothing parameter.
+    x : numpy.array
+        Clean time series of shape (n, ).
+
+    Returns
+    -------
+    sse : float
+        Residual sum of squares for the fit.
+
     """
-    smoothed = x[0]
-    n = x.size
-    mse = 0.0
-    fitted = np.full(n, np.nan, dtype=x.dtype)
+    complement = 1 - alpha
+    forecast = x[0]
+    sse = 0.0
 
-    for i in range(1, n):
-        smoothed = (alpha * x[i - 1] + (1 - alpha) * smoothed).item()
-        error = x[i] - smoothed
-        mse += error * error
-        fitted[i] = smoothed
+    for i in range(1, len(x)):
+        forecast = alpha * x[i - 1] + complement * forecast
+        sse += (x[i] - forecast) ** 2
 
-    mse /= n
-    forecast = alpha * x[-1] + (1 - alpha) * smoothed
-    return forecast, mse, fitted
+    return sse
 
 
-def _ses_mse(alpha: float, x: np.ndarray) -> float:
-    r"""Compute the mean squared error of a simple exponential smoothing fit."""
-    _, mse, _ = _ses_fcst_mse(x, alpha)
-    return mse
-
-
+@njit(nogil=NOGIL, cache=CACHE)
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
-    r"""One step ahead forecast with simple exponential smoothing."""
-    forecast, _, fitted = _ses_fcst_mse(x, alpha)
+    r"""Compute the one-step ahead forecast for a simple exponential smoothing fit.
+
+    Parameters
+    ----------
+    x : numpy.array
+        Clean time series of shape (n, ).
+    alpha : float
+        Smoothing parameter.
+
+    Returns
+    -------
+    tuple of (float, numpy.array)
+        One-step ahead forecast and in-sample fitted values.
+
+    """
+    complement = 1 - alpha
+    fitted = np.empty_like(x)
+    fitted[0] = x[0]
+    j = 0
+
+    for i in range(1, len(x)):
+        fitted[i] = alpha * x[j] + complement * fitted[j]
+        j += 1
+
+    forecast = alpha * x[j] + complement * fitted[j]
+    fitted[0] = np.nan
     return forecast, fitted
 
 
@@ -2181,12 +2205,28 @@ def _probability(x: np.ndarray) -> np.ndarray:
 
 
 def _optimized_ses_forecast(
-    x: np.ndarray, bounds: Sequence[Tuple[float, float]] = [(0.1, 0.3)]
+    x: np.ndarray, bounds: Tuple[float, float] = (0.1, 0.3)
 ) -> Tuple[float, np.ndarray]:
-    r"""Searches for the optimal alpha and computes SES one step forecast."""
-    alpha = minimize(
-        fun=_ses_mse, x0=(0,), args=(x,), bounds=bounds, method="L-BFGS-B"
-    ).x[0]
+    r"""Compute the one-step ahead forecast for an optimal simple exponential smoothing fit.
+
+    Parameters
+    ----------
+    x : numpy.array
+        Clean time series of shape (n, ).
+    bounds : tuple of (float, float)
+        Lower and upper optimisation bounds for alpha.
+
+    Returns
+    -------
+    tuple of (float, numpy.array)
+        One-step ahead forecast and in-sample fitted values.
+
+    """
+    alpha = minimize_scalar(
+        fun=_ses_sse,
+        bounds=bounds,
+        args=(x,),
+    ).x
     forecast, fitted = _ses_forecast(x, alpha)
     return forecast, fitted
 
@@ -2206,11 +2246,11 @@ def _ses(
     fitted: bool,  # fitted values
     alpha: float,  # smoothing parameter
 ) -> Dict[str, np.ndarray]:
-    fcst, _, fitted_vals = _ses_fcst_mse(y, alpha)
-    fcst = {"mean": _repeat_val(val=fcst, h=h)}
+    fcst, fitted_vals = _ses_forecast(y, alpha)
+    out = {"mean": _repeat_val(val=fcst, h=h)}
     if fitted:
-        fcst["fitted"] = fitted_vals
-    return fcst
+        out["fitted"] = fitted_vals
+    return out
 
 # %% ../../nbs/src/core/models.ipynb 131
 class SimpleExponentialSmoothing(_TS):
@@ -2380,7 +2420,7 @@ def _ses_optimized(
     h: int,  # forecasting horizon
     fitted: bool,  # fitted values
 ):
-    fcst_, fitted_vals = _optimized_ses_forecast(y, [(0.01, 0.99)])
+    fcst_, fitted_vals = _optimized_ses_forecast(y, (0.01, 0.99))
     mean = _repeat_val(val=fcst_, h=h)
     fcst = {"mean": mean}
     if fitted:
@@ -2759,7 +2799,7 @@ def _seasonal_ses_optimized(
     for i in range(season_length):
         init_idx = i + n % season_length
         season_vals[i], fitted_vals[init_idx::season_length] = _optimized_ses_forecast(
-            y[init_idx::season_length], [(0.01, 0.99)]
+            y[init_idx::season_length], (0.01, 0.99)
         )
     out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
