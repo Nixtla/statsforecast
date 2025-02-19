@@ -390,7 +390,8 @@ class FugueBackend(ParallelBackend):
             )
         return res
 
-    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+    if hasattr(forecast, "__doc__"):
+        forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def forecast_fitted_values(self):
         """Retrieve in-sample predictions"""
@@ -543,7 +544,8 @@ class FugueBackend(ParallelBackend):
             **self._transform_kwargs,
         )
 
-    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
+    if hasattr(cross_validation, "__doc__"):
+        cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
 
 @make_backend.candidate(lambda obj, *args, **kwargs: isinstance(obj, ExecutionEngine))
