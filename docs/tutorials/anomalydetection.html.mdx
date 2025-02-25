@@ -231,17 +231,17 @@ We can now find all the observations above or below the 99% prediction
 interval for the insample forecasts.
 
 ```python
-anomalies = insample_forecasts[insample_forecasts['y'].between(insample_forecasts['MSTL-lo-99'], insample_forecasts['MSTL-hi-99'])]
+anomalies = insample_forecasts[~insample_forecasts['y'].between(insample_forecasts['MSTL-lo-99'], insample_forecasts['MSTL-hi-99'])]
 anomalies.head()
 ```
 
 |     | unique_id | ds  | y     | MSTL       | MSTL-lo-99 | MSTL-hi-99 |
 |-----|-----------|-----|-------|------------|------------|------------|
-| 0   | H1        | 1   | 605.0 | 605.098607 | 584.678408 | 625.518805 |
-| 1   | H1        | 2   | 586.0 | 588.496673 | 568.076474 | 608.916872 |
-| 2   | H1        | 3   | 586.0 | 585.586856 | 565.166657 | 606.007054 |
-| 3   | H1        | 4   | 559.0 | 554.012377 | 533.592178 | 574.432576 |
-| 4   | H1        | 5   | 511.0 | 510.153508 | 489.733309 | 530.573707 |
+| 42  | H1        | 43  | 613.0 | 649.404871 | 628.984672 | 669.825069 |
+| 47  | H1        | 48  | 683.0 | 662.245526 | 641.825328 | 682.665725 |
+| 48  | H1        | 49  | 687.0 | 655.382320 | 634.962122 | 675.802519 |
+| 100 | H1        | 101 | 507.0 | 484.934230 | 464.514031 | 505.354428 |
+| 110 | H1        | 111 | 451.0 | 474.899006 | 454.478808 | 495.319205 |
 
 We can plot the anomalies by setting the `level` and the
 `plot_anomalies` arguments of the `plot_series` function.
