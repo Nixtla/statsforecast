@@ -45,7 +45,7 @@ jobs:
           platforms: arm64
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355 # v5.2.2
+        uses: astral-sh/setup-uv@1edb52594c857e2b5b13128931090f0640537287 # v5.3.0
         with:
           version: "latest"
 
@@ -70,7 +70,7 @@ jobs:
             uv pip install -r {project}/setup.py --extra dev --extra plotly &&
             python {project}/action_files/nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing
 
-      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         if: github.event_name == 'push'
         with:
           name: artifact-cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
@@ -142,7 +142,7 @@ jobs:
         run: pip install uv && uv pip install --system . pytest-codspeed pytest-xdist
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@1015f4f828ff74b7a950909897fe581d6ba868cc # 3.3.1
+        uses: CodSpeedHQ/action@63ae6025a0ffee97d7736a37c9192dbd6ed4e75f # 3.4.0
         with:
           token: ${{ secrets.CODESPEED_TOKEN }}
           run: pytest action_files/test_efficiency.py --codspeed -n 2
