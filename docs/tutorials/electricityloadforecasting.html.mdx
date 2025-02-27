@@ -148,7 +148,7 @@ class to create forecasts.
 ```python
 sf = StatsForecast(
     models=[mstl], # model used to fit each time series 
-    freq='H', # frequency of the data
+    freq='h', # frequency of the data
 )
 ```
 
@@ -299,7 +299,7 @@ models is as simple as adding them to the list of models to be fitted.
 ```python
 sf = StatsForecast(
     models=[mstl, SeasonalNaive(season_length=24)], # add SeasonalNaive model to the list
-    freq='H'
+    freq='h'
 )
 ```
 
