@@ -1367,8 +1367,6 @@ class AutoMFLES(_TS):
         Custom name of the model.
     """
 
-    uses_exog = True
-
     def __init__(
         self,
         test_size: int,
