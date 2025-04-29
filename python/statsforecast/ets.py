@@ -1032,16 +1032,16 @@ def _class3models(
         )
         Vh = exp1 + sigma * (exp2 + exp3 + exp4 + exp5)
 
-    if trend == "N":
-        Mh = (
-            F1 * np.matmul(Mh, np.transpose(F2))
-            + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
-        )
-    else:
-        Mh = (
-            np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
-            + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
-        )
+        if trend == "N":
+            Mh = (
+                F1 * np.matmul(Mh, np.transpose(F2))
+                + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
+            )
+        else:
+            Mh = (
+                np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
+                + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
+            )
 
     return var
 
