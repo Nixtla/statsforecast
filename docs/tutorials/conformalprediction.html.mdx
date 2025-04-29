@@ -75,6 +75,7 @@ StatsForecast](../getting-started/installation.html)
 
 Install the necessary packages using `pip install statsforecast`
 
+
 ```python
 pip install statsforecast -U
 ```
@@ -87,6 +88,7 @@ We first need to download the data from a URL and then load it as a
 `pandas` dataframe. Notice that we’ll load the train and the test data
 separately. We’ll also rename the `y` column of the test data as
 `y_test`.
+
 
 ```python
 import pandas as pd
@@ -111,6 +113,7 @@ Since the goal of this notebook is to generate prediction intervals,
 we’ll only use the first 8 series of the dataset to reduce the total
 computational time.
 
+
 ```python
 n_series = 8 
 uids = train['unique_id'].unique()[:n_series] # select first n_series of the dataset
@@ -133,6 +136,7 @@ below.
 -   `engine`: str = `matplotlib`. It can also be `plotly`. `plotly`
     generates interactive plots, while `matplotlib` generates static
     plots.
+
 
 ```python
 from utilsforecast.plotting import plot_series
@@ -167,6 +171,7 @@ to provide prediction intervals that don’t assume normality.
 To use these models, we first need to import them from
 `statsforecast.models` and then we need to instantiate them.
 
+
 ```python
 from statsforecast.models import SeasonalExponentialSmoothing, ADIDA, ARIMA
 from statsforecast.utils import ConformalIntervals
@@ -194,6 +199,7 @@ parameters:
 -   `n_jobs`: An integer that indicates the number of jobs used in
     parallel processing. Use -1 to select all cores.
 
+
 ```python
 sf = StatsForecast(models=models, freq=1, n_jobs=-1)
 ```
@@ -207,6 +213,7 @@ To do this, we’ll use the `forecast` method, which takes two arguments:
     prediction intervals. For example, `level=[95]` means that the range
     of values should include the actual future value with probability
     95%.
+
 
 ```python
 levels = [80, 90] # confidence levels of the prediction intervals 
@@ -233,6 +240,7 @@ a prediction interval. The 80% prediction interval does not cross the
 90% prediction interval, which is a sign that the intervals are
 calibrated.
 
+
 ```python
 plot_series(train, forecasts, level=levels, ids=['H105'], models=['SeasonalES'])
 ```
@@ -241,6 +249,7 @@ plot_series(train, forecasts, level=levels, ids=['H105'], models=['SeasonalES'])
 
 For weaker fitting models, the conformal prediction interval can be
 larger. A better model corresponds to a narrower interval.
+
 
 ```python
 plot_series(train, forecasts, level=levels, ids=['H105'], models=['ADIDA'])
@@ -253,6 +262,7 @@ but we can still use conformal prediction to generate the prediction
 interval. As mentioned earlier, this method has the benefit of not
 assuming normality.
 
+
 ```python
 plot_series(train, forecasts, level=levels, ids=['H105'], models=['ARIMA'])
 ```
@@ -264,6 +274,7 @@ plot_series(train, forecasts, level=levels, ids=['H105'], models=['ARIMA'])
 Alternatively, the prediction interval can be defined on the
 StatsForecast object. This will apply to all models that don’t have the
 `prediction_intervals` defined.
+
 
 ```python
 from statsforecast.models import SimpleExponentialSmoothing, ADIDA

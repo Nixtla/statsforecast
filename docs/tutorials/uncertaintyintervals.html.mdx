@@ -78,6 +78,7 @@ We first need to download the data from a URL and then load it as a
 separately. We’ll also rename the `y` column of the test data as
 `y_test`.
 
+
 ```python
 import pandas as pd
 ```
@@ -101,6 +102,7 @@ train.head()
 | 3   | H1        | 4   | 559.0 |
 | 4   | H1        | 5   | 511.0 |
 
+
 ```python
 test.head()
 ```
@@ -116,6 +118,7 @@ test.head()
 Since the goal of this notebook is to generate prediction intervals,
 we’ll only use the first 8 series of the dataset to reduce the total
 computational time.
+
 
 ```python
 n_series = 8 
@@ -139,6 +142,7 @@ generate the plots in this notebook are explained below.
 -   `engine`: str = `plotly`. It can also be `matplotlib`. `plotly`
     generates interactive plots, while `matplotlib` generates static
     plots.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -173,6 +177,7 @@ To use these models, we first need to import them from
 we’re working with hourly data, we need to set `seasonal_length=24` in
 the models that requiere this parameter.
 
+
 ```python
 from statsforecast.models import (
     AutoETS, 
@@ -206,6 +211,7 @@ parameters:
 -   `n_jobs`: An integer that indicates the number of jobs used in
     parallel processing. Use -1 to select all cores.
 
+
 ```python
 sf = StatsForecast( 
     models=models, 
@@ -224,6 +230,7 @@ arguments:
     prediction intervals. For example, `level=[95]` means that the range
     of values should include the actual future value with probability
     95%.
+
 
 ```python
 levels = [80, 90, 95, 99] # confidence levels of the prediction intervals 
@@ -244,6 +251,7 @@ We’ll now merge the forecasts and their prediction intervals with the
 test set. This will allow us generate the plots of each probabilistic
 model.
 
+
 ```python
 test = test.merge(forecasts, how='left', on=['unique_id', 'ds'])
 ```
@@ -256,6 +264,7 @@ specify the model and the levels that we want to plot.
 
 ### AutoETS
 
+
 ```python
 sf.plot(train, test, plot_random=False, models=['AutoETS'], level=levels)
 ```
@@ -263,6 +272,7 @@ sf.plot(train, test, plot_random=False, models=['AutoETS'], level=levels)
 ![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-15-output-1.png)
 
 ### Historic Average
+
 
 ```python
 sf.plot(train, test, plot_random=False, models=['HistoricAverage'], level=levels)
@@ -272,6 +282,7 @@ sf.plot(train, test, plot_random=False, models=['HistoricAverage'], level=levels
 
 ### Naive
 
+
 ```python
 sf.plot(train, test, plot_random=False, models=['Naive'], level=levels)
 ```
@@ -280,6 +291,7 @@ sf.plot(train, test, plot_random=False, models=['Naive'], level=levels)
 
 ### Random Walk with Drift
 
+
 ```python
 sf.plot(train, test, plot_random=False, models=['RWD'], level=levels)
 ```
@@ -287,6 +299,7 @@ sf.plot(train, test, plot_random=False, models=['RWD'], level=levels)
 ![](/statsforecast/docs/tutorials/UncertaintyIntervals_files/figure-markdown_strict/cell-18-output-1.png)
 
 ### Seasonal Naive
+
 
 ```python
 sf.plot(train, test, plot_random=False, models=['SeasonalNaive'], level=levels)

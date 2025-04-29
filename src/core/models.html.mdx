@@ -232,6 +232,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not returns insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import AutoARIMA
 from statsforecast.utils import AirPassengers as ap
@@ -408,6 +409,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import AutoETS
 from statsforecast.utils import AirPassengers as ap
@@ -580,6 +582,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not returns insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import AutoCES
 from statsforecast.utils import AirPassengers as ap
@@ -747,6 +750,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import AutoTheta
@@ -1177,6 +1181,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not returns insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import ARIMA
 from statsforecast.utils import AirPassengers as ap
@@ -1346,6 +1351,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not returns insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import AutoRegressive
 from statsforecast.utils import AirPassengers as ap
@@ -1489,6 +1495,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 *Access fitted SimpleExponentialSmoothing insample predictions.*
 
+
 ```python
 from statsforecast.models import SimpleExponentialSmoothing
 from statsforecast.utils import AirPassengers as ap
@@ -1631,6 +1638,7 @@ know the forecast horizon in advance.\*
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import SimpleExponentialSmoothingOptimized
 from statsforecast.utils import AirPassengers as ap
@@ -1646,6 +1654,7 @@ y_hat_dict
 ```
 
 ## SeasonalSmooth
+
 
 ```python
 plt.plot(np.concatenate([ap[6:], seas_es.forecast(ap[6:], h=12)['mean']]))
@@ -1773,6 +1782,7 @@ know the forecast horizon in advance.\*
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | fitted | bool | False | Whether or not returns insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import SeasonalExponentialSmoothing
@@ -1918,6 +1928,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 
 *Access fitted SeasonalExponentialSmoothingOptimized insample
 predictions.*
+
 
 ```python
 from statsforecast.models import SeasonalExponentialSmoothingOptimized
@@ -2081,6 +2092,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels for prediction intervals. |
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import Holt
@@ -2249,6 +2261,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import HoltWinters
 from statsforecast.utils import AirPassengers as ap
@@ -2386,6 +2399,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions.** |
 
+
 ```python
 from statsforecast.models import HistoricAverage
 from statsforecast.utils import AirPassengers as ap
@@ -2517,6 +2531,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 |------|------------------|-------------------------|-------------------------|
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions.** |
+
 
 ```python
 from statsforecast.models import Naive
@@ -2658,6 +2673,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import RandomWalkWithDrift
 from statsforecast.utils import AirPassengers as ap
@@ -2795,6 +2811,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import SeasonalNaive
 from statsforecast.utils import AirPassengers as ap
@@ -2916,6 +2933,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import WindowAverage
 from statsforecast.utils import AirPassengers as ap
@@ -3035,6 +3053,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | X | Optional | None | Optional insample exogenous of shape (t, n_x). |
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import SeasonalWindowAverage
@@ -3158,6 +3177,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import ADIDA
 from statsforecast.utils import AirPassengers as ap
@@ -3277,6 +3297,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | X | Optional | None | Optional exogenous of shape (h, n_x). |
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import CrostonClassic
@@ -3400,6 +3421,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import CrostonOptimized
 from statsforecast.utils import AirPassengers as ap
@@ -3520,6 +3542,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import CrostonSBA
 from statsforecast.utils import AirPassengers as ap
@@ -3635,6 +3658,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | X | Optional | None |  |
 | level | Optional | None |  |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import IMAPA
@@ -3767,6 +3791,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | X | Optional | None |  |
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import TSB
@@ -3933,6 +3958,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import MSTL
@@ -4384,6 +4410,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import Theta
 from statsforecast.utils import AirPassengers as ap
@@ -4548,6 +4575,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import OptimizedTheta
 from statsforecast.utils import AirPassengers as ap
@@ -4709,6 +4737,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import DynamicTheta
@@ -4875,6 +4904,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | fitted | bool | False | Whether or not to return insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import DynamicOptimizedTheta
@@ -5416,6 +5446,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not returns insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import ConstantModel
 from statsforecast.utils import AirPassengers as ap
@@ -5569,6 +5600,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | fitted | bool | False | Whether or not returns insample predictions. |
 | **Returns** | **dict** |  | **Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.** |
 
+
 ```python
 from statsforecast.models import ZeroModel
 from statsforecast.utils import AirPassengers as ap
@@ -5694,6 +5726,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 |------|------------------|-------------------------|-------------------------|
 | level | Optional | None | Confidence levels (0-100) for prediction intervals. |
 | **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
+
 
 ```python
 from statsforecast.models import NaNModel

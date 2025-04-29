@@ -383,6 +383,7 @@ models (Hyndman et al., 2008, p. 96).
 
 Next, we import plotting libraries and configure the plotting style.
 
+
 ```python
 import pandas as pd
 
@@ -423,6 +424,7 @@ rcParams['figure.figsize'] = (18,7)
 
 ### Read Data
 
+
 ```python
 df = pd.read_csv("https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/Esperanza_vida.csv", usecols=[1,2])
 df.head()
@@ -448,6 +450,7 @@ three columns: unique_id, ds and y:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 df["unique_id"]="1"
 df.columns=["ds", "y", "unique_id"]
@@ -465,6 +468,7 @@ df.head()
 Now, let’s now check the last few rows of our time series using the
 `.tail()` function.
 
+
 ```python
 print(df.dtypes)
 ```
@@ -478,6 +482,7 @@ dtype: object
 
 We need to convert the `ds` from `object` type to datetime.
 
+
 ```python
 df["ds"] = pd.to_datetime(df["ds"])
 ```
@@ -488,6 +493,7 @@ Plot some series using the plot method from the StatsForecast class.
 This method prints a random series from the dataset and is useful for
 basic EDA.
 
+
 ```python
 from statsforecast import StatsForecast
 
@@ -497,6 +503,7 @@ StatsForecast.plot(df)
 ![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
+
 
 ```python
 fig, axs = plt.subplots(nrows=1, ncols=2)
@@ -567,6 +574,7 @@ multiplicative time series can be represented as.
 
 $$y(t) = Level * Trend * seasonality * Noise$$
 
+
 ```python
 from statsmodels.tsa.seasonal import seasonal_decompose 
 a = seasonal_decompose(df["y"], model = "add", period=1)
@@ -585,6 +593,7 @@ Let’s divide our data into sets
 For the test data we will use the last 12 months to test and evaluate
 the performance of our model.
 
+
 ```python
 train = df[df.ds<='2013-01-01'] 
 test = df[df.ds>'2013-01-01']
@@ -601,6 +610,7 @@ train.shape, test.shape
 
 Now let’s plot the training data and the test data.
 
+
 ```python
 sns.lineplot(train,x="ds", y="y", label="Train")
 sns.lineplot(test, x="ds", y="y", label="Test")
@@ -612,6 +622,7 @@ plt.show()
 ## Implementation of AutoCES with StatsForecast <a class="anchor" id="implementation"></a>
 
 ### Load libraries
+
 
 ```python
 from statsforecast import StatsForecast
@@ -640,6 +651,7 @@ with real and complex seasonal parts).
 If the component is selected as $Z$, it operates as a placeholder to ask
 the AutoCES model to figure out the best parameter.
 
+
 ```python
 season_length = 1 # year data 
 horizon = len(test) # number of predictions
@@ -666,11 +678,13 @@ import them.
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
+
 ```python
 sf = StatsForecast(models=models, freq='YS')
 ```
 
 ### Fit the Model
+
 
 ```python
 sf.fit(df=train)
@@ -679,6 +693,7 @@ sf.fit(df=train)
 ``` text
 StatsForecast(models=[CES])
 ```
+
 
 ```python
 result=sf.fitted_[0,0].model_
@@ -700,6 +715,7 @@ to extract each element from the dictionary we are going to use the
 `.get()` function to extract the element and then we are going to save
 it in a `pd.DataFrame()`.
 
+
 ```python
 residual=pd.DataFrame(result.get("residuals"), columns=["residual Model"])
 residual
@@ -714,6 +730,7 @@ residual
 | 51  | -0.073258      |
 | 52  | -0.234578      |
 | 53  | 0.109990       |
+
 
 ```python
 fig, axs = plt.subplots(nrows=2, ncols=2)
@@ -770,6 +787,7 @@ remove the AutoModels like
 and
 [`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
 
+
 ```python
 # Prediction
 Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
@@ -785,6 +803,7 @@ Y_hat
 | 4   | 1         | 2018-01-01 | 83.946213 |
 | 5   | 1         | 2019-01-01 | 84.208359 |
 
+
 ```python
 values=sf.forecast_fitted_values()
 values.head()
@@ -798,6 +817,7 @@ values.head()
 | 3   | 1         | 1963-01-01 | 69.248049 | 69.657822 |
 | 4   | 1         | 1964-01-01 | 70.311707 | 69.601196 |
 
+
 ```python
 StatsForecast.plot(values)
 ```
@@ -805,6 +825,7 @@ StatsForecast.plot(values)
 ![](/statsforecast/docs/models/AutoCES_files/figure-markdown_strict/cell-23-output-1.png)
 
 Adding 95% confidence interval with the forecast method
+
 
 ```python
 sf.forecast(df=train, h=horizon, level=[95])
@@ -818,6 +839,7 @@ sf.forecast(df=train, h=horizon, level=[95])
 | 3   | 1         | 2017-01-01 | 83.685760 | 83.118946 | 84.239582 |
 | 4   | 1         | 2018-01-01 | 83.946213 | 83.376905 | 84.501133 |
 | 5   | 1         | 2019-01-01 | 84.208359 | 83.637738 | 84.765408 |
+
 
 ```python
 # Merge the forecasts with the true values
@@ -833,6 +855,7 @@ Y_hat
 | 3   | 2017-01-01 | 82.946341 | 1         | 83.685760 |
 | 4   | 2018-01-01 | 83.346341 | 1         | 83.946213 |
 | 5   | 2019-01-01 | 83.197561 | 1         | 84.208359 |
+
 
 ```python
 sf.plot(train, Y_hat)
@@ -862,6 +885,7 @@ uncertainty intervals.
 
 This step should take less than 1 second.
 
+
 ```python
 sf.predict(h=horizon)
 ```
@@ -874,6 +898,7 @@ sf.predict(h=horizon)
 | 3   | 1         | 2017-01-01 | 83.685760 |
 | 4   | 1         | 2018-01-01 | 83.946213 |
 | 5   | 1         | 2019-01-01 | 84.208359 |
+
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[95]) 
@@ -892,6 +917,7 @@ forecast_df
 Now let’s visualize the result of our forecast and the historical data
 of our time series, also let’s draw the confidence interval that we have
 obtained when making the prediction with 95% confidence.
+
 
 ```python
 sf.plot(train, test.merge(forecast_df), level=[95])
@@ -945,6 +971,7 @@ following arguments.
     other words: what number of forecasting processes in the past do you
     want to evaluate.
 
+
 ```python
 crossvalidation_df = sf.cross_validation(df=train,
                                          h=horizon,
@@ -960,6 +987,7 @@ following columns:
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
 -   `"model":` columns with the model’s name and fitted value.
+
 
 ```python
 crossvalidation_df.head()
@@ -978,6 +1006,7 @@ crossvalidation_df.head()
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
+
 
 ```python
 from functools import partial

@@ -50,6 +50,7 @@ We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
 StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html)
 
+
 ```python
 # uncomment the following line to install the library
 # %pip install statsforecast
@@ -77,6 +78,7 @@ We’ll load the following dataframes:
 -   `X_ts`: (pandas DataFrame) Exogenous time series with columns
     \[`unique_id`, `ds`, exogenous regressors\].
 
+
 ```python
 base_url = 'https://datasets-nixtla.s3.amazonaws.com'
 filters = [('unique_id', '=', 'FOODS_3_586_CA_3')]
@@ -96,6 +98,7 @@ generate the plots in this notebook are explained below.
 -   `engine`: str = `matplotlib`. It can also be `plotly`. `plotly`
     generates interactive plots, while `matplotlib` generates static
     plots.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -118,6 +121,7 @@ the following two.
     Nutrition Assitance Program, and it gives individuals and families
     money to help them purchase food products.
 
+
 ```python
 X_ts = X_ts[['unique_id', 'ds', 'sell_price', 'snap_CA']]
 X_ts.head()
@@ -134,6 +138,7 @@ X_ts.head()
 Here the `unique_id` is a category, but for the exogenous regressors it
 needs to be a string.
 
+
 ```python
 X_ts['unique_id'] = X_ts.unique_id.astype(str)
 ```
@@ -142,6 +147,7 @@ We can plot the exogenous regressors using `plotly`. We could use
 `statsforecast.plot`, but then one of the regressors must be renamed
 `y`, and the name must be changed back to the original before generating
 the forecast.
+
 
 ```python
 StatsForecast.plot(Y_ts, X_ts, max_insample_length=0)
@@ -157,6 +163,7 @@ SNAP occurs at regular intervals.
 In the M5 Competition, participants had to forecast sales for the last
 28 days in the dataset. We’ll use the same forecast horizon and create
 the train and test sets accordingly.
+
 
 ```python
 # Extract dates for train and test set 
@@ -174,6 +181,7 @@ X_test = X_ts.query('ds in @dtest')
 ## Add exogenous regressors
 
 The exogenous regressors need to be place after the target variable `y`.
+
 
 ```python
 train = Y_train.merge(X_ts, how = 'left', on = ['unique_id', 'ds']) 
@@ -193,6 +201,7 @@ train.head()
 We need to include the future values of the exogenous regressors so that
 we can produce the forecasts. Notice that we already have this
 information in `X_test`.
+
 
 ```python
 X_test.head()
@@ -222,6 +231,7 @@ exogenous regressors. To use this model, we first need to import it from
 `statsforecast.models` and then we need to instatiate it. Given that
 we’re working with daily data, we need to set `season_length = 7`.
 
+
 ```python
 from statsforecast.models import AutoARIMA
 ```
@@ -243,6 +253,7 @@ following parameters.
 -   `n_jobs`: An integer that indicates the number of jobs used in
     parallel processing. Use -1 to select all cores.
 
+
 ```python
 sf = StatsForecast(
     models=models, 
@@ -263,6 +274,7 @@ Now we’re ready to generate the forecast. To do this, we’ll use the
     of values should include the actual future value with probability
     95%.
 
+
 ```python
 horizon = 28
 level = [95]
@@ -282,6 +294,7 @@ fcst.head()
 We can plot the forecasts with the `statsforecast.plot` method described
 above.
 
+
 ```python
 StatsForecast.plot(Y_ts, fcst, max_insample_length=28*2)
 ```
@@ -293,6 +306,7 @@ StatsForecast.plot(Y_ts, fcst, max_insample_length=28*2)
 We’ll merge the test set and the forecast to evaluate the accuracy using
 the [mean absolute
 error](https://en.wikipedia.org/wiki/Mean_absolute_error) (MAE).
+
 
 ```python
 res = Y_test.merge(fcst, how='left', on=['unique_id', 'ds'])
@@ -306,6 +320,7 @@ res.head()
 | 2   | FOODS_3_586_CA_3 | 2016-05-25 | 40.0 | 68.140945 | 37.550083       | 98.731804       |
 | 3   | FOODS_3_586_CA_3 | 2016-05-26 | 72.0 | 65.485588 | 34.841637       | 96.129539       |
 | 4   | FOODS_3_586_CA_3 | 2016-05-27 | 69.0 | 64.961441 | 34.291973       | 95.630905       |
+
 
 ```python
 mae = abs(res['y']-res['AutoARIMA']).mean()
@@ -322,6 +337,7 @@ pass the dataframe wihtout exogenous variables to the `forecast` method.
 Notice that the data only includes `unique_id`, `ds`, and `y`. The
 `forecast` method no longer requieres the future values of the exogenous
 regressors `X_df`.
+
 
 ```python
 # univariate model 

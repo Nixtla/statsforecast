@@ -4,6 +4,7 @@ title: FugueBackend
 ---
 
 
+
 ```python
 from statsforecast.core import StatsForecast
 from statsforecast.models import ( 
@@ -183,6 +184,7 @@ To do it we instantiate the
 [`FugueBackend`](https://Nixtla.github.io/statsforecast/src/core/distributed.fugue.html#fuguebackend)
 class with a `DaskExecutionEngine`.
 
+
 ```python
 import dask.dataframe as dd
 from dask.distributed import Client
@@ -208,6 +210,7 @@ We have simply create the class to the usual
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 instantiation.
 
+
 ```python
 sf = StatsForecast(models=[Naive()], freq='D')
 ```
@@ -224,6 +227,7 @@ It receives as input a pandas.DataFrame with columns
 column should be of a format expected by Pandas. The `y` column must be
 numeric, and represents the measurement we wish to forecast. And the
 `unique_id` uniquely identifies the series in the panel data.
+
 
 ```python
 # Distributed predictions with FugueBackend.
@@ -244,6 +248,7 @@ For extremely fast distributed temporcal cross-validation we use
 method that operates like the original
 [StatsForecast.cross_validation](https://nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
 method.
+
 
 ```python
 # Distributed cross-validation with FugueBackend.

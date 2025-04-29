@@ -75,6 +75,7 @@ Additionally, we will install `s3fs` to read from the S3 Filesystem of
 AWS. (If you don’t want to use a cloud storage provider, you can read
 your files locally using pandas)
 
+
 ```python
 !pip install statsforecast s3fs
 ```
@@ -111,6 +112,7 @@ seconds.
 > library. To install it, run `! pip install s3fs`
 
 ### Read data
+
 
 ```python
 import pandas as pd
@@ -185,6 +187,7 @@ method and pass in the historical data frame.
     final forecasts. Ref:
     [`DynamicOptimizedTheta`](https://Nixtla.github.io/statsforecast/src/core/models.html#dynamicoptimizedtheta).
 
+
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import (
@@ -237,6 +240,7 @@ uncertainty intervals.
 > However, those methods are not defined for distrubed engines like
 > Spark, Ray or Dask.
 
+
 ```python
 from time import time
 ```
@@ -255,6 +259,7 @@ Statsforecast time M5 14.274124479293823
 
 Store the results for further evaluation.
 
+
 ```python
 forecasts_df['ThETS'] = forecasts_df[['DynamicOptimizedTheta', 'AutoETS']].clip(0).median(axis=1, numeric_only=True)
 forecasts_df.to_parquet('s3://m5-benchmarks/forecasts/statsforecast-m5.parquet')
@@ -271,6 +276,7 @@ datasets and evaluation utilities. The library will allow us to
 calculate the performance of the models using the original evaluation
 used in the competition.
 
+
 ```python
 !pip install datasetsforecast
 ```
@@ -283,6 +289,7 @@ from datasetsforecast.m5 import M5, M5Evaluation
 The following function will allow us to evaluate a specific model
 included in the input dataframe. The function is useful for evaluating
 different models.
+
 
 ```python
 from datasetsforecast.m5 import M5, M5Evaluation
@@ -299,6 +306,7 @@ def evaluate_forecasts(df, model, model_name):
 ```
 
 Now let’s read the forecasts generated for each solution.
+
 
 ```python
 ### Read Forecasts
@@ -317,6 +325,7 @@ amazonforecasts_df['ds'] = pd.to_datetime(amazonforecasts_df['ds']).dt.tz_locali
 
 Finally, let’s use our predefined function to compute the performance of
 each model.
+
 
 ```python
 ### Evaluate performances

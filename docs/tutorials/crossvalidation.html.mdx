@@ -50,6 +50,7 @@ StatsForecast]('https://nixtla.github.io/statsforecast/examples/installation.htm
 
 Install the necessary packages with `pip install statsforecast`
 
+
 ```python
 pip install statsforecast
 ```
@@ -63,6 +64,7 @@ from statsforecast import StatsForecast # required to instantiate StastForecast 
 
 As stated in the introduction, we’ll use the M4 Competition hourly
 dataset. We’ll first import the data from an URL using `pandas`.
+
 
 ```python
 import pandas as pd
@@ -103,12 +105,14 @@ only use one time series from the data, namely the one with
 `unique_id == 'H1'`. However, you can use as many as you want, with no
 additional changes to the code needed.
 
+
 ```python
 df = Y_df[Y_df['unique_id'] == 'H1'] # select time series
 ```
 
 We can plot the time series we’ll work with using `StatsForecast.plot`
 method.
+
 
 ```python
 StatsForecast.plot(df)
@@ -140,6 +144,7 @@ object has the following parameters:
 
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame `df`.
+
 
 ```python
 from statsforecast.models import AutoETS
@@ -177,6 +182,7 @@ method, which takes the following arguments:
 
 For this particular example, we’ll use 3 windows of 24 hours.
 
+
 ```python
 cv_df = sf.cross_validation(
     df = df,
@@ -195,6 +201,7 @@ columns:
 -   `y`: true value
 -   `"model"`: columns with the model’s name and fitted value.
 
+
 ```python
 cv_df.head()
 ```
@@ -209,6 +216,7 @@ cv_df.head()
 
 We’ll now plot the forecast for each cutoff period. To make the plots
 clearer, we’ll rename the actual values in each period.
+
 
 ```python
 from IPython.display import display
@@ -240,6 +248,7 @@ We can now compute the accuracy of the forecast using an appropiate
 accuracy metric. Here we’ll use the [Root Mean Squared Error
 (RMSE).](https://en.wikipedia.org/wiki/Root-mean-square_deviation).
 
+
 ```python
 from utilsforecast.losses import rmse
 ```
@@ -249,6 +258,7 @@ The function to compute the RMSE takes two arguments:
 1.  The actual values.  
 2.  The forecasts, in this case,
     [`AutoETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoets).
+
 
 ```python
 cv_rmse = rmse(cv_df, models=['AutoETS'], target_col='actual')['AutoETS'].item()

@@ -178,6 +178,7 @@ by Pandas, ideally ’YYYY-MM-DD’ for a date or ‘YYYY-MM-DD HH:MM:SS’ for
 a timestamp. The `y` column must be numeric, and represents the
 measurement we wish to forecast.
 
+
 ```python
 df = pd.read_csv('https://raw.githubusercontent.com/facebook/prophet/main/examples/example_wp_log_peyton_manning.csv')
 df.head()
@@ -189,6 +190,7 @@ Here we forecast with `Prophet` without external regressors. We first
 instantiate a new `Prophet` object, and define its forecasting procedure
 into its constructor. After that a classic sklearn `fit` and `predict`
 is used to obtain the predictions.
+
 
 ```python
 m = Prophet(daily_seasonality=False)
@@ -212,6 +214,7 @@ With the class
 you can simply substitute `Prophet` and you’ll be training an
 [`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima)
 model without changing anything in your forecasting pipeline.
+
 
 ```python
 m = AutoARIMAProphet(daily_seasonality=False)
@@ -247,6 +250,7 @@ include `lower_window=-1`,`upper_window=0`, or Black Friday in addition
 to Thanksgiving, you’d include `lower_window=0`,`upper_window=1`.
 
 Here we Peyton Manning’s playoff appearances dates:
+
 
 ```python
 playoffs = pd.DataFrame({
@@ -290,6 +294,7 @@ model with exogenous variables.
 
 You can enjoy your Prophet pipelines with the improved performance of a
 classic ARIMA.
+
 
 ```python
 m = AutoARIMAProphet(daily_seasonality=False,

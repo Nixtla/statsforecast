@@ -179,6 +179,7 @@ The following table summarizes the data details.
 
 Next, we import plotting libraries and configure the plotting style.
 
+
 ```python
 import numpy as np
 import pandas as pd
@@ -219,6 +220,7 @@ rcParams['figure.figsize'] = (18,7)
 
 ### Loading Data
 
+
 ```python
 df = pd.read_csv("https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/candy_production.csv")
 df.head()
@@ -244,6 +246,7 @@ three columns: unique_id, ds and y:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 df["unique_id"]="1"
 df.columns=["ds", "y", "unique_id"]
@@ -258,6 +261,7 @@ df.head()
 | 3   | 1972-04-01 | 64.5645 | 1         |
 | 4   | 1972-05-01 | 65.0100 | 1         |
 
+
 ```python
 print(df.dtypes)
 ```
@@ -271,6 +275,7 @@ dtype: object
 
 We need to convert `ds` from the `object` type to datetime.
 
+
 ```python
 df["ds"] = pd.to_datetime(df["ds"])
 ```
@@ -281,6 +286,7 @@ Plot a series using the plot method from the StatsForecast class. This
 method prints a random series from the dataset and is useful for basic
 EDA.
 
+
 ```python
 from statsforecast import StatsForecast
 
@@ -290,6 +296,7 @@ StatsForecast.plot(df)
 ![](/statsforecast/docs/models/AutoARIMA_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
+
 
 ```python
 fig, axs = plt.subplots(nrows=1, ncols=2)
@@ -358,6 +365,7 @@ multiplicative time series can be represented as.
 
 $$y(t) = Level * Trend * seasonality * Noise$$
 
+
 ```python
 from statsmodels.tsa.seasonal import seasonal_decompose 
 a = seasonal_decompose(df["y"], model = "add", period=12)
@@ -373,6 +381,7 @@ Let’s divide our data into sets 1. Data to train our `AutoArima` model
 
 For the test data we will use the last 12 months to test and evaluate
 the performance of our model.
+
 
 ```python
 Y_train_df = df[df.ds<='2016-08-01'] 
@@ -390,6 +399,7 @@ Y_train_df.shape, Y_test_df.shape
 
 Now let’s plot the training data and the test data.
 
+
 ```python
 sns.lineplot(Y_train_df,x="ds", y="y", label="Train")
 sns.lineplot(Y_test_df, x="ds", y="y", label="Test")
@@ -401,6 +411,7 @@ plt.show()
 # Implementation of AutoArima with StatsForecast <a class="anchor" id="implementation"></a>
 
 ### Load libraries
+
 
 ```python
 from statsforecast import StatsForecast
@@ -414,6 +425,7 @@ Import and instantiate the models. Setting the argument is sometimes
 tricky. This article on [Seasonal
 periods](https://robjhyndman.com/hyndsight/seasonal-periods/)) by the
 master, Rob Hyndmann, can be useful.season_length
+
 
 ```python
 season_length = 12 # Monthly data 
@@ -439,11 +451,13 @@ import them.
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
+
 ```python
 sf = StatsForecast(models=models, freq='MS')
 ```
 
 ### Fit the Model
+
 
 ```python
 sf.fit(df=Y_train_df)
@@ -456,6 +470,7 @@ StatsForecast(models=[AutoARIMA])
 Once we have entered our model, we can use the
 [`arima_string`](https://Nixtla.github.io/statsforecast/src/arima.html#arima_string)
 function to see the parameters that the model has found.
+
 
 ```python
 arima_string(sf.fitted_[0,0].model_)
@@ -475,6 +490,7 @@ $D=1$, that is, it has a seasonal differential, and $q=3$ that contains
 To know the values of the terms of our model, we can use the following
 statement to know all the result of the model made.
 
+
 ```python
 result=sf.fitted_[0,0].model_
 print(result.keys())
@@ -493,6 +509,7 @@ to extract each element from the dictionary we are going to use the
 `.get()` function to extract the element and then we are going to save
 it in a `pd.DataFrame()`.
 
+
 ```python
 residual=pd.DataFrame(result.get("residuals"), columns=["residual Model"])
 residual
@@ -507,6 +524,7 @@ residual
 | 533 | 1.615486       |
 | 534 | -0.394285      |
 | 535 | -6.733548      |
+
 
 ```python
 fig, axs = plt.subplots(nrows=2, ncols=2)
@@ -570,6 +588,7 @@ remove the AutoModels like
 and
 [`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
 
+
 ```python
 Y_hat_df = sf.forecast(df=Y_train_df, h=horizon, fitted=True)
 Y_hat_df.head()
@@ -582,6 +601,7 @@ Y_hat_df.head()
 | 2   | 1         | 2016-11-01 | 125.401639 |
 | 3   | 1         | 2016-12-01 | 123.854826 |
 | 4   | 1         | 2017-01-01 | 110.439451 |
+
 
 ```python
 values=sf.forecast_fitted_values()
@@ -600,6 +620,7 @@ values
 
 Adding 95% confidence interval with the forecast method
 
+
 ```python
 sf.forecast(df=Y_train_df, h=12, level=[95])
 ```
@@ -613,6 +634,7 @@ sf.forecast(df=Y_train_df, h=12, level=[95])
 | 9   | 1         | 2017-06-01 | 98.304446  | 85.884572       | 110.724320      |
 | 10  | 1         | 2017-07-01 | 99.630306  | 87.032356       | 112.228256      |
 | 11  | 1         | 2017-08-01 | 105.426708 | 92.639159       | 118.214258      |
+
 
 ```python
 Y_hat_df = Y_test_df.merge(Y_hat_df, how='left', on=['unique_id', 'ds'])
@@ -651,6 +673,7 @@ uncertainty intervals.
 
 This step should take less than 1 second.
 
+
 ```python
 sf.predict(h=12)
 ```
@@ -664,6 +687,7 @@ sf.predict(h=12)
 | 9   | 1         | 2017-06-01 | 98.304446  |
 | 10  | 1         | 2017-07-01 | 99.630306  |
 | 11  | 1         | 2017-08-01 | 105.426708 |
+
 
 ```python
 forecast_df = sf.predict(h=12, level = [80, 95]) 
@@ -684,6 +708,7 @@ We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
 graphing.
 
+
 ```python
 df_plot=pd.concat([df, forecast_df]).set_index('ds').tail(220)
 df_plot
@@ -703,6 +728,7 @@ df_plot
 Now let’s visualize the result of our forecast and the historical data
 of our time series, also let’s draw the confidence interval that we have
 obtained when making the prediction with 95% confidence.
+
 
 ```python
 sf.plot(df, forecast_df, level=[95], max_insample_length=12 * 5)
@@ -756,6 +782,7 @@ following arguments.
     other words: what number of forecasting processes in the past do you
     want to evaluate.
 
+
 ```python
 crossvalidation_df = sf.cross_validation(df=Y_train_df,
                                          h=12,
@@ -771,6 +798,7 @@ following columns:
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
 -   `"model":` columns with the model’s name and fitted value.
+
 
 ```python
 crossvalidation_df.head()
@@ -789,6 +817,7 @@ crossvalidation_df.head()
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
+
 
 ```python
 from functools import partial

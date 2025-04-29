@@ -148,6 +148,7 @@ stationarity of the series.
 
 Next, we import plotting libraries and configure the plotting style.
 
+
 ```python
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -206,6 +207,7 @@ three columns: unique_id, ds and y:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 df["unique_id"]="1"
 df.columns=["ds", "y", "unique_id"]
@@ -219,6 +221,7 @@ df.head()
 | 2   | 2022-01-01 02:00:00 | 0   | 1         |
 | 3   | 2022-01-01 03:00:00 | 0   | 1         |
 | 4   | 2022-01-01 04:00:00 | 100 | 1         |
+
 
 ```python
 print(df.dtypes)
@@ -234,6 +237,7 @@ dtype: object
 We can see that our time variable `(ds)` is in an object format, we need
 to convert to a date format
 
+
 ```python
 df["ds"] = pd.to_datetime(df["ds"])
 ```
@@ -243,6 +247,7 @@ df["ds"] = pd.to_datetime(df["ds"])
 Plot some series using the plot method from the StatsForecast class.
 This method prints a random series from the dataset and is useful for
 basic EDA.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -287,6 +292,7 @@ To analyze ACF and PACF charts:
     confidence intervals for the autocorrelation values. If an
     autocorrelation value is outside the confidence interval, it is
     likely to be significant.
+
 
 ```python
 fig, axs = plt.subplots(nrows=1, ncols=2)
@@ -355,6 +361,7 @@ multiplicative time series can be represented as.
 
 $$y(t) = Level * Trend * seasonality * Noise$$
 
+
 ```python
 from statsmodels.tsa.seasonal import seasonal_decompose
 from plotly.subplots import make_subplots
@@ -402,6 +409,7 @@ Let’s divide our data into sets 1. Data to train our
 For the test data we will use the last 500 Hours to test and evaluate
 the performance of our model.
 
+
 ```python
 train = df[df.ds<='2023-01-31 19:00:00'] 
 test = df[df.ds>'2023-01-31 19:00:00']
@@ -420,6 +428,7 @@ train.shape, test.shape
 
 ### Load libraries
 
+
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import CrostonSBA
@@ -431,6 +440,7 @@ Import and instantiate the models. Setting the argument is sometimes
 tricky. This article on [Seasonal
 periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
 master, Rob Hyndmann, can be useful for `season_length`.
+
 
 ```python
 season_length = 24 # Hourly data 
@@ -458,11 +468,13 @@ import them.
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
+
 ```python
 sf = StatsForecast(models=models, freq='h')
 ```
 
 ### Fit the Model
+
 
 ```python
 sf.fit(df=train)
@@ -474,6 +486,7 @@ StatsForecast(models=[CrostonSBA])
 
 Let’s see the results of our `Croston SBA Model`. We can observe it with
 the following instruction:
+
 
 ```python
 result=sf.fitted_[0,0].model_
@@ -512,6 +525,7 @@ remove the AutoModels like
 and
 [`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
 
+
 ```python
 Y_hat = sf.forecast(df=train, h=horizon)
 Y_hat
@@ -526,6 +540,7 @@ Y_hat
 | 497 | 1         | 2023-02-21 13:00:00 | 26.047497  |
 | 498 | 1         | 2023-02-21 14:00:00 | 26.047497  |
 | 499 | 1         | 2023-02-21 15:00:00 | 26.047497  |
+
 
 ```python
 sf.plot(train, Y_hat, max_insample_length=500)
@@ -548,6 +563,7 @@ the name of the model and the y hat values, as well as columns for the
 uncertainty intervals.
 
 This step should take less than 1 second.
+
 
 ```python
 forecast_df = sf.predict(h=horizon) 
@@ -610,6 +626,7 @@ following arguments.
     other words: what number of forecasting processes in the past do you
     want to evaluate.
 
+
 ```python
 crossvalidation_df = sf.cross_validation(df=df,
                                          h=horizon,
@@ -625,6 +642,7 @@ following columns:
 -   `cutoff:` the last datestamp or temporal index for the `n_windows`.
 -   `y:` true value
 -   `model:` columns with the model’s name and fitted value.
+
 
 ```python
 crossvalidation_df
@@ -645,6 +663,7 @@ crossvalidation_df
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
+
 
 ```python
 from functools import partial

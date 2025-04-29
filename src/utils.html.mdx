@@ -46,6 +46,7 @@ then each series gets static features with random values. If
 | seed | int | 0 | Random seed used for generating the data. |
 | **Returns** | **Union** |  | **Synthetic panel with columns \[`unique_id`, `ds`, `y`\] and exogenous.** |
 
+
 ```python
 synthetic_panel = generate_series(n_series=2)
 synthetic_panel.groupby('unique_id', observed=True).head(4)
@@ -59,6 +60,7 @@ airline passengers, 1949 to 1960.
 It has been used as a reference on several forecasting libraries, since
 it is a series that shows clear trends and seasonalities it offers a
 nice opportunity to quickly showcase a model’s predictions performance.
+
 
 ```python
 from statsforecast.utils import AirPassengersDF

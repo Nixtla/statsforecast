@@ -5,6 +5,7 @@ title: MLFlow
 ---
 
 
+
 ```python
 from statsforecast.utils import generate_series
 ```
@@ -26,11 +27,13 @@ series.head()
 For the next part, `mlflow` and `mlflavors` are needed. Install them
 with:
 
+
 ```bash
 pip install mlflow mlflavors
 ```
 
 ## Model Logging
+
 
 ```python
 import pandas as pd
@@ -108,6 +111,7 @@ MLflow run id:
 To view the newly created experiment and logged artifacts open the
 MLflow UI:
 
+
 ```bash
 mlflow ui
 ```
@@ -117,6 +121,7 @@ mlflow ui
 The `statsforecast` model can be loaded from the MLFlow registry using
 the `mlflow.statsforecast.load_model` function and used to generate
 predictions.
+
 
 ```python
 loaded_model = mlflavors.statsforecast.load_model(model_uri=model_uri)
@@ -139,6 +144,7 @@ results.head()
 is another interface for MLFlow models that has utilities for loading
 and saving models. This code is equivalent in making predictions as
 above.
+
 
 ```python
 loaded_pyfunc = mlflavors.statsforecast.pyfunc.load_model(model_uri=model_uri)
@@ -181,11 +187,13 @@ local REST API endpoint and subsequently requesting a prediction from
 the served model. To serve the model run the command below where you
 substitute the run id printed during execution training code.
 
+
 ```bash
 mlflow models serve -m runs:/<run_id>/model --env-manager local --host 127.0.0.1
 ```
 
 After running this, the code below can be ran to send a request.
+
 
 ```python
 HORIZON = 7

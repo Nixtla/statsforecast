@@ -44,12 +44,14 @@ The major relevant changes to note are:
 
 # **Let’s forecast**
 
+
 ```python
 # %pip install statsforecast
 ```
 
 Here, we will use the specific model object in Statsforecast and the
 infamous airline passengers dataset 😀:
+
 
 ```python
 import pandas as pd
@@ -116,6 +118,7 @@ they effect the output.
 First, let’s take a look at the default grid of parameters AutoMFLES
 will try:
 
+
 ```python
 config = {
     'seasonality_weights': [True, False],
@@ -141,6 +144,7 @@ config = {
 
 Now let’s see how to pass the config to AutoMFLES, since this is what we
 use under-the-hood the results will be the same!
+
 
 ```python
 season_length = [12]
@@ -173,6 +177,7 @@ plt.show()
 
 Just pass False for the smoother and adjust ma to be larger relative to
 your seasonality
+
 
 ```python
 season_length = [12]
@@ -210,6 +215,7 @@ seasonal_period list.
 This also reduces the number of configurations MFLES tries and therefore
 speeds up the fitting.
 
+
 ```python
 season_length = [12]
 
@@ -245,6 +251,7 @@ converges much quicker than that. At round 4 we start implementing
 smoothers as the trend piece so if you do not want that then set the
 max_rounds to 3! But, you probably want the smoothers!
 
+
 ```python
 season_length = [12]
 
@@ -277,6 +284,7 @@ You can also leverage estimator specific learning rates which are
 applied to individual estimators rather than the entire boosting round.
 Useful if you notice that the residual smoother is eating too much
 signal too quickly:
+
 
 ```python
 season_length = [12]
@@ -331,6 +339,7 @@ better to a certain point but this will depend on your data. Conversely,
 decreasing this to 1 means you are choosing parameters based on a single
 holdout set which may decrease accuracy.
 
+
 ```python
 season_length = [12]
 
@@ -351,6 +360,7 @@ plt.show()
 ![](/statsforecast/docs/models/MFLES_files/figure-markdown_strict/cell-10-output-1.png)
 
 And now trying with 3, notice the fit is different!
+
 
 ```python
 season_length = [12]
@@ -382,6 +392,7 @@ seasonality, forecast horizon, or some other bit of information. In our
 case, I will also pass 3 and 4 due to it being monthly data. Since this
 increases the number of parameters to try, it will also increase the
 computation time.
+
 
 ```python
 season_length = [12]
@@ -417,6 +428,7 @@ has some accuracy benefits but massive computation expenses. You can
 disable changepoints and generally see close accuracy but great speed
 gains:
 
+
 ```python
 season_length = [12]
 
@@ -451,6 +463,7 @@ Most time series will not have a significant shift in the seasonal
 signal, or at least not one that is worth the extra computation needed
 to fit for it. To speed things up a bit, you can disable this. Although,
 sometimes, disabling this will cause large degradation in accuracy.
+
 
 ```python
 season_length = [12]

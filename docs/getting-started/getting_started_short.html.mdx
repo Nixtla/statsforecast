@@ -40,6 +40,7 @@ instructions on [how to install StatsForecast](./installation.html).
 
 First, we’ll import the data:
 
+
 ```python
 # uncomment the following line to install the library
 # %pip install statsforecast
@@ -90,6 +91,7 @@ method and pass in the historical data frame.
 > should take around 5 seconds. The second time -once Numba compiled
 > your settings- it should take less than 0.2s.
 
+
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import AutoARIMA
@@ -124,6 +126,7 @@ The forecast object here is a new data frame that includes a column with
 the name of the model and the y hat values, as well as columns for the
 uncertainty intervals.
 
+
 ```python
 forecast_df = sf.predict(h=12, level=[90])
 forecast_df.tail()
@@ -139,6 +142,7 @@ forecast_df.tail()
 
 You can plot the forecast by calling the `StatsForecast.plot` method and
 passing in your forecast dataframe.
+
 
 ```python
 sf.plot(df, forecast_df, level=[90])

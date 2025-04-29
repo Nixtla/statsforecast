@@ -23,6 +23,7 @@ title: Automatic Time Series Forecasting
 Use pip to install statsforecast and load Air Passangers dataset as an
 example
 
+
 ```python
 # uncomment the following line to install the library
 # %pip install statsforecast
@@ -42,6 +43,7 @@ Y_df = AirPassengersDF
 
 Import the core StatsForecast class and the models you want to use
 
+
 ```python
 import pandas as pd
 
@@ -52,6 +54,7 @@ from statsforecast.models import AutoARIMA, AutoETS, AutoTheta, AutoCES
 ## 3. Instatiate the class
 
 Instantiate the StatsForecast class with the appropriate parameters
+
 
 ```python
 season_length = 12 # Define season length as 12 months for monthly data
@@ -79,6 +82,7 @@ sf = StatsForecast(
 The `.forecast` method is faster for distributed computing and does not
 save the fittted models
 
+
 ```python
 # Generate forecasts for the specified horizon using the sf object
 Y_hat_df = sf.forecast(df=Y_df, h=horizon) # forecast data
@@ -93,6 +97,7 @@ Y_hat_df.head() # preview of forecasted data
 ## 4. b) Forecast with fit and predict
 
 The `.fit` method saves the fitted models
+
 
 ```python
 sf.fit(df=Y_df) # Fit the models to the data using the fit method of the StatsForecast object

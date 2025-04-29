@@ -27,6 +27,7 @@ Before running on Spark, it’s recommended to test on a smaller Pandas
 dataset to make sure everything is working. This example also helps show
 the small differences when using Spark.
 
+
 ```python
 from statsforecast.core import StatsForecast
 from statsforecast.models import AutoARIMA, AutoETS
@@ -59,6 +60,7 @@ sf.forecast(df=series, h=horizon).head()
 
 To run the forecasts distributed on Spark, just pass in a Spark
 DataFrame instead.
+
 
 ```python
 from pyspark.sql import SparkSession

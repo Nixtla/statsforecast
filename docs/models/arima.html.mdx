@@ -285,6 +285,7 @@ Linear Combination of Lagged forecast errors (upto q lags)
 
 Next, we import plotting libraries and configure the plotting style.
 
+
 ```python
 import matplotlib.pyplot as plt
 
@@ -315,6 +316,7 @@ rcParams['figure.figsize'] = (18,7)
 
 ### Read data
 
+
 ```python
 import pandas as pd
 import numpy as np
@@ -343,6 +345,7 @@ three columns: unique_id, ds and y:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 df["unique_id"]="1"
 df.columns=["ds", "y", "unique_id"]
@@ -357,6 +360,7 @@ df.head()
 | 3   | 1963-01-01 | 69.248049 | 1         |
 | 4   | 1964-01-01 | 70.311707 | 1         |
 
+
 ```python
 print(df.dtypes)
 ```
@@ -370,6 +374,7 @@ dtype: object
 
 We need to convert `ds` from the `object` type to datetime.
 
+
 ```python
 df["ds"] = pd.to_datetime(df["ds"])
 ```
@@ -379,6 +384,7 @@ df["ds"] = pd.to_datetime(df["ds"])
 Plot a series using the plot method from the StatsForecast class. This
 method prints a random series from the dataset and is useful for basic
 EDA.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -390,6 +396,7 @@ StatsForecast.plot(df)
 
 Looking at the plot we can observe there is an upward trend over the
 period of time.
+
 
 ```python
 df["y"].plot(kind='kde',figsize = (16,5))
@@ -462,6 +469,7 @@ multiplicative time series can be represented as.
 
 $$y(t) = Level * Trend * seasonality * Noise$$
 
+
 ```python
 from statsmodels.tsa.seasonal import seasonal_decompose
 ```
@@ -500,6 +508,7 @@ In another term, the series doesn’t depend on time.
 ADF or t Statistic \< critical values: Reject the null hypothesis, time
 series is stationary. ADF or t Statistic \> critical values: Failed to
 reject the null hypothesis, time series is non-stationary.
+
 
 ```python
 from statsmodels.tsa.stattools import adfuller
@@ -560,6 +569,7 @@ Once we have made the copy of the time series, we are going to
 differentiate the time series, and then we will use the augmented Dickey
 Fuller test to investigate if our time series is stationary.
 
+
 ```python
 df1=df.copy()
 df1['y_diff'] = df['y'].diff()
@@ -577,6 +587,7 @@ df1.head()
 
 Let’s apply the Dickey Fuller test again to find out if our time series
 is already stationary.
+
 
 ```python
 Augmented_Dickey_Fuller_Test_func(df1["y_diff"],"Life expectancy")
@@ -602,6 +613,7 @@ stationary, the p-value is less than 5%.
 
 Now our time series is stationary, that is, we have only differentiated
 1 time, therefore, the order of our parameter $d=1$.
+
 
 ```python
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
@@ -651,6 +663,7 @@ $$Yt = \alpha0 + \alpha1 Y{t-1} + \alpha2 Y{t-2} + \alpha3 Y{t-3}$$
     we initially take the order of AR term to be equal to as many lags
     that crosses the significance limit in the PACF plot.
 
+
 ```python
 fig, axes = plt.subplots(1, 2)
 axes[0].plot(df1["y"].diff()); axes[0].set_title('1st Differencing')
@@ -675,6 +688,7 @@ plt.show()
     autocorrelation in the stationarized series.
 
 -   Let’s see the autocorrelation plot of the differenced series.
+
 
 ```python
 from statsmodels.graphics.tsaplots import plot_acf
@@ -715,6 +729,7 @@ with a differential with an order $d=1$
 Therefore, the model that we are going to test is the ARIMA(1,1,1)
 model.
 
+
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import ARIMA
@@ -722,11 +737,13 @@ from statsforecast.models import ARIMA
 
 ### Instantiate the model
 
+
 ```python
 sf = StatsForecast(models=[ARIMA(order=(1, 1, 1))], freq='YS')
 ```
 
 ### Fit the Model
+
 
 ```python
 sf.fit(df)
@@ -737,6 +754,7 @@ StatsForecast(models=[ARIMA])
 ```
 
 ### Making the predictions
+
 
 ```python
 y_hat = sf.predict(h=6)
@@ -754,6 +772,7 @@ y_hat
 
 We can make the predictions by adding the confidence interval, for
 example with 95%.
+
 
 ```python
 y_hat2 = sf.predict(h=6, level=[95])
@@ -777,6 +796,7 @@ This method avoids memory burden due from object storage. It is
 analogous to fit_predict without storing information. It assumes you
 know the forecast horizon in advance.
 
+
 ```python
 Y_hat_df = sf.forecast(df=df, h=6, level=[95])
 Y_hat_df
@@ -793,6 +813,7 @@ Y_hat_df
 
 Once the predictions have been generated we can perform a visualization
 to see the generated behavior of our model.
+
 
 ```python
 sf.plot(df, Y_hat_df, level=[95])
@@ -811,6 +832,7 @@ The commonly used accuracy metrics to judge forecasts are:
 5.  Root Mean Squared Error (RMSE)
 6.  Correlation between the Actual and the Forecast (corr)
 
+
 ```python
 Y_train_df = df[df.ds<='2013-01-01'] 
 Y_test_df = df[df.ds>'2013-01-01'] 
@@ -821,6 +843,7 @@ Y_train_df.shape, Y_test_df.shape
 ``` text
 ((54, 3), (6, 3))
 ```
+
 
 ```python
 Y_hat_df = sf.forecast(df=Y_train_df, h=len(Y_test_df))

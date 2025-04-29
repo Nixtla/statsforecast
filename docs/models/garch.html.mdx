@@ -186,6 +186,7 @@ especially in finance and economics.
 
 Next, we import plotting libraries and configure the plotting style.
 
+
 ```python
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf
@@ -219,6 +220,7 @@ rcParams['figure.figsize'] = (18,7)
 
 Let’s pull the S&P500 stock data from the Yahoo Finance site.
 
+
 ```python
 import datetime
 
@@ -246,6 +248,7 @@ SP_500.head()
 | 3 | 2015-01-07 00:00:00+00:00 | 2025.900024 | 2025.900024 | 2029.609985 | 2005.550049 | 2005.550049 | 3805480000 |
 | 4 | 2015-01-08 00:00:00+00:00 | 2062.139893 | 2062.139893 | 2064.080078 | 2030.609985 | 2030.609985 | 3934010000 |
 
+
 ```python
 df=SP_500[["Date","Close"]]
 ```
@@ -262,6 +265,7 @@ three columns: unique_id, ds and y:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 df["unique_id"]="1"
 df.columns=["ds", "y", "unique_id"]
@@ -275,6 +279,7 @@ df.head()
 | 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         |
 | 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         |
 | 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         |
+
 
 ```python
 print(df.dtypes)
@@ -292,6 +297,7 @@ dtype: object
 Plot a series using the plot method from the StatsForecast class. This
 method prints a random series from the dataset and is useful for basic
 EDA.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -329,6 +335,7 @@ reject the null hypothesis, time series is non-stationary.
 
 Let’s check if our series that we are analyzing is a stationary series.
 Let’s create a function to check, using the `Dickey Fuller` test
+
 
 ```python
 from statsmodels.tsa.stattools import adfuller
@@ -403,6 +410,7 @@ We can estimate the series of returns using the
 periods parameter whose default value is 1. If you want to calculate a
 30-day return, you must change the value to 30.
 
+
 ```python
 df['return'] = 100 * df["y"].pct_change()
 df.dropna(inplace=True, how='any')
@@ -417,6 +425,7 @@ df.head()
 | 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         | 1.788828  |
 | 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 |
 
+
 ```python
 import plotly.express as px
 fig = px.line(df, x=df["ds"], y="return",title="SP500 Return Chart",template = "plotly_dark")
@@ -426,6 +435,7 @@ fig.show()
 ![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-11-output-2.png)
 
 ### Creating Squared Returns
+
 
 ```python
 df['sq_return'] = df["return"].mul(df["return"])
@@ -441,6 +451,7 @@ df.head()
 | 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 | 0.706240  |
 
 ### Returns vs Squared Returns
+
 
 ```python
 from plotly.subplots import make_subplots
@@ -466,6 +477,7 @@ fig.show()
 ```
 
 ![](/statsforecast/docs/models/GARCH_files/figure-markdown_strict/cell-13-output-1.png)
+
 
 ```python
 from scipy.stats import probplot, moment
@@ -523,6 +535,7 @@ and Box-Pierce p-values.
 
 If $p<\alpha  (0.05)$ we reject the null hypothesis.
 
+
 ```python
 from statsmodels.stats.diagnostic import acorr_ljungbox
 
@@ -548,6 +561,7 @@ model 2. Data to test our model
 For the test data we will use the last 30 day to test and evaluate the
 performance of our model.
 
+
 ```python
 df=df[["ds","unique_id","return"]]
 df.columns=["ds", "unique_id", "y"]
@@ -572,6 +586,7 @@ train.shape, test.shape
 
 ### Load libraries
 
+
 ```python
 from statsforecast import StatsForecast 
 from statsforecast.models import GARCH
@@ -583,6 +598,7 @@ Import and instantiate the models. Setting the argument is sometimes
 tricky. This article on [Seasonal
 periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
 master, Rob Hyndmann, can be useful.season_length.
+
 
 ```python
 season_length = 7 # Dayly data 
@@ -616,6 +632,7 @@ import them.
 
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
+
 
 ```python
 sf = StatsForecast(
@@ -665,6 +682,7 @@ following arguments.
     other words: what number of forecasting processes in the past do you
     want to evaluate.
 
+
 ```python
 crossvalidation_df = sf.cross_validation(df=train,
                                          h=horizon,
@@ -681,6 +699,7 @@ following columns:
 -   `y:` true value
 -   `"model":` columns with the model’s name and fitted value.
 
+
 ```python
 crossvalidation_df
 ```
@@ -694,6 +713,7 @@ crossvalidation_df
 | 387 | 1 | 2023-05-26 00:00:00+00:00 | 2023-02-07 00:00:00+00:00 | 1.304909 | -1.697814 | -1.694747 | -1.702537 | -1.735631 | -1.729903 | -1.712997 | -1.663399 | -1.702160 | -1.687723 |
 | 388 | 1 | 2023-05-30 00:00:00+00:00 | 2023-02-07 00:00:00+00:00 | 0.001660 | -0.326945 | -0.337504 | -0.329686 | -0.330120 | -0.334717 | -0.327583 | -0.330260 | -0.338245 | -0.332412 |
 | 389 | 1 | 2023-05-31 00:00:00+00:00 | 2023-02-07 00:00:00+00:00 | -0.610862 | 0.807625 | 0.787054 | 0.807819 | 0.841536 | 0.811702 | 0.836159 | 0.772193 | 0.801933 | 0.804526 |
+
 
 ```python
 from utilsforecast.evaluation import evaluate
@@ -709,6 +729,7 @@ evals
 |  | metric | GARCH(1,1) | GARCH(1,2) | GARCH(2,2) | GARCH(2,1) | GARCH(3,1) | GARCH(3,2) | GARCH(3,3) | GARCH(1,3) | GARCH(2,3) |
 |----|----|----|----|----|----|----|----|----|----|----|
 | 0 | rmse | 1.383143 | 1.526258 | 1.481056 | 1.389969 | 1.453538 | 1.539906 | 1.392352 | 1.515796 | 1.389061 |
+
 
 ```python
 evals.drop(columns='metric').loc[0].idxmin()
@@ -734,6 +755,7 @@ best model, we are going to continue training our model, to then make
 the predictions.
 
 ### Fit the Model
+
 
 ```python
 season_length = 7 # Dayly data 
@@ -761,6 +783,7 @@ StatsForecast(models=[GARCH(1,1)])
 Let’s see the results of our Theta model. We can observe it with the
 following instruction:
 
+
 ```python
 result=sf.fitted_[0,0].model_
 result
@@ -786,6 +809,7 @@ to extract each element from the dictionary we are going to use the
 `.get()` function to extract the element and then we are going to save
 it in a `pd.DataFrame()`.
 
+
 ```python
 residual=pd.DataFrame(result.get("actual_residuals"), columns=["residual Model"])
 residual
@@ -800,6 +824,7 @@ residual
 | 2113 | 1.502385       |
 | 2114 | -0.768274      |
 | 2115 | -0.742694      |
+
 
 ```python
 from scipy import stats
@@ -858,6 +883,7 @@ remove the AutoModels like
 and
 [`Theta`](https://Nixtla.github.io/statsforecast/src/core/models.html#theta))
 
+
 ```python
 Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat.head()
@@ -871,6 +897,7 @@ Y_hat.head()
 | 3   | 1         | 2023-06-06 00:00:00+00:00 | -0.927145  |
 | 4   | 1         | 2023-06-07 00:00:00+00:00 | 0.766640   |
 
+
 ```python
 Y_hat = sf.forecast(df=train, h=horizon, fitted=True, level=[95])
 Y_hat.head()
@@ -883,6 +910,7 @@ Y_hat.head()
 | 2 | 1 | 2023-06-05 00:00:00+00:00 | -0.485200 | -2.139216 | 1.168815 |
 | 3 | 1 | 2023-06-06 00:00:00+00:00 | -0.927145 | -2.390566 | 0.536276 |
 | 4 | 1 | 2023-06-07 00:00:00+00:00 | 0.766640 | -0.771479 | 2.304759 |
+
 
 ```python
 values=sf.forecast_fitted_values()
@@ -899,6 +927,7 @@ values.head()
 
 Adding 95% confidence interval with the forecast method
 
+
 ```python
 sf.forecast(df=train, h=horizon, level=[95])
 ```
@@ -912,6 +941,7 @@ sf.forecast(df=train, h=horizon, level=[95])
 | 75 | 1 | 2023-09-14 00:00:00+00:00 | -1.686546 | -3.049859 | -0.323233 |
 | 76 | 1 | 2023-09-15 00:00:00+00:00 | -0.322556 | -2.497448 | 1.852335 |
 | 77 | 1 | 2023-09-18 00:00:00+00:00 | 0.799407 | -1.027642 | 2.626457 |
+
 
 ```python
 sf.plot(train, Y_hat.merge(test), max_insample_length=200)
@@ -941,6 +971,7 @@ uncertainty intervals.
 
 This step should take less than 1 second.
 
+
 ```python
 sf.predict(h=horizon)
 ```
@@ -954,6 +985,7 @@ sf.predict(h=horizon)
 | 75  | 1         | 2023-09-14 00:00:00+00:00 | -1.686546  |
 | 76  | 1         | 2023-09-15 00:00:00+00:00 | -0.322556  |
 | 77  | 1         | 2023-09-18 00:00:00+00:00 | 0.799407   |
+
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
@@ -970,6 +1002,7 @@ forecast_df.head(10)
 | 8 | 1 | 2023-06-13 00:00:00+00:00 | 0.421605 | -3.001123 | -1.816396 | 2.659607 | 3.844333 |
 | 9 | 1 | 2023-06-14 00:00:00+00:00 | -0.300086 | -3.138338 | -2.155920 | 1.555747 | 2.538166 |
 
+
 ```python
 sf.plot(train, test.merge(forecast_df), level=[80, 95], max_insample_length=200)
 ```
@@ -981,6 +1014,7 @@ sf.plot(train, test.merge(forecast_df), level=[80, 95], max_insample_length=200)
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
+
 
 ```python
 from functools import partial

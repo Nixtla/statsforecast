@@ -72,6 +72,7 @@ three columns: `unique_id`, `ds` and `y`:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 import numpy as np
 import pandas as pd
@@ -91,6 +92,7 @@ useful for basic EDA.
 >
 > The `StatsForecast.plot` method uses Plotly as a default engine. You
 > can change to MatPlotLib by setting `engine="matplotlib"`.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -124,6 +126,7 @@ Import the
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 class and the models you need.
 
+
 ```python
 from sklearn.linear_model import LinearRegression
 from utilsforecast.feature_engineering import trend
@@ -144,6 +147,7 @@ with a `LinearRegression` model for the trend component, however, any
 StatsForecast model can be used. The complete list of models is
 available [here](https://nixtla.github.io/statsforecast/models.html).
 
+
 ```python
 train, _ = trend(Y_df, freq='H')
 train.head()
@@ -156,6 +160,7 @@ train.head()
 | 2   | ERCOT     | 2021-01-01 02:00:00 | 43063.067063 | 3.0   |
 | 3   | ERCOT     | 2021-01-01 03:00:00 | 43090.059203 | 4.0   |
 | 4   | ERCOT     | 2021-01-01 04:00:00 | 43486.590073 | 5.0   |
+
 
 ```python
 models = [
@@ -176,6 +181,7 @@ object with the following required parameters:
 -   `freq`: a string indicating the frequency of the data. (See [panda’s
     available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).)
+
 
 ```python
 # Instantiate StatsForecast class as sf
@@ -211,6 +217,7 @@ daily forecasts set the forecasting horizon `h` as 24. In this example
 we are simulating deploying the pipeline during September, so set the
 number of windows as 30 (one for each day). Finally, set the step size
 between windows as 24, to only produce one forecast per day.
+
 
 ```python
 cv_df = sf.cross_validation(
@@ -251,6 +258,7 @@ depending on your setting and goals, this parameter might change. For
 example, the number of peaks can correspond to how many hours a battery
 can be discharged to reduce demand.
 
+
 ```python
 npeaks = 1 # Number of peaks
 ```
@@ -258,6 +266,7 @@ npeaks = 1 # Number of peaks
 For the ERCOT 4CP detection task we are interested in correctly
 predicting the highest monthly load. Next, we filter the day in
 September with the highest hourly demand and predict the peak.
+
 
 ```python
 cv_df = cv_df[['ds','y','MSTL']]
@@ -269,6 +278,7 @@ peaks = cv_df_day['MSTL'].argsort().iloc[-npeaks:].values # Predicted peaks
 
 In the following plot we see how the MSTL model is able to correctly
 detect the coincident peak for September 2022.
+
 
 ```python
 import matplotlib.pyplot as plt

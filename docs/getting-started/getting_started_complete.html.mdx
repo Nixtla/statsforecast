@@ -92,6 +92,7 @@ This data set already satisfies the requirements.
 Depending on your internet connection, this step should take around 10
 seconds.
 
+
 ```python
 import pandas as pd
 ```
@@ -121,6 +122,7 @@ processing infrastructure feel free to select more or less series.
 > Running this example with the complete dataset takes around 10 minutes
 > in a c5d.24xlarge (96 cores) instance from AWS.
 
+
 ```python
 uids = Y_df['unique_id'].unique()[:10] # Select 10 ids to make the example faster
 Y_df = Y_df.query('unique_id in @uids')
@@ -138,6 +140,7 @@ for basic EDA.
 >
 > The `StatsForecast.plot` method uses Plotly as a defaul engine. You
 > can change to MatPlotLib by setting `engine="matplotlib"`.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -216,6 +219,7 @@ is sometimes tricky. This article on [Seasonal
 periods](https://robjhyndman.com/hyndsight/seasonal-periods/)) by the
 master, Rob Hyndmann, can be useful.
 
+
 ```python
 from statsforecast.models import (
     HoltWinters,
@@ -256,6 +260,7 @@ object with the following parameters:
 
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
+
 
 ```python
 # Instantiate StatsForecast class as sf
@@ -300,6 +305,7 @@ remove the AutoModels like ARIMA and Theta)
 > those methods are not defined for distrubed engines like Spark, Ray or
 > Dask.
 
+
 ```python
 forecasts_df = sf.forecast(df=Y_df, h=48, level=[90])
 forecasts_df.head()
@@ -316,6 +322,7 @@ forecasts_df.head()
 Plot the results of 8 random series using the `StatsForecast.plot`
 method.
 
+
 ```python
 sf.plot(Y_df,forecasts_df)
 ```
@@ -325,12 +332,14 @@ sf.plot(Y_df,forecasts_df)
 The `StatsForecast.plot` allows for further customization. For example,
 plot the results of the different models and unique ids.
 
+
 ```python
 # Plot to unique_ids and some selected models
 sf.plot(Y_df, forecasts_df, models=["HoltWinters","DynamicOptimizedTheta"], unique_ids=["H10", "H105"], level=[90])
 ```
 
 ![](/statsforecast/docs/getting-started/2_Getting_Started_complete_files/figure-markdown_strict/cell-12-output-1.png)
+
 
 ```python
 # Explore other models 
@@ -391,6 +400,7 @@ class takes the following arguments.
     other words: what number of forecasting processes in the past do you
     want to evaluate.
 
+
 ```python
 cv_df = sf.cross_validation(
     df=Y_df,
@@ -415,6 +425,7 @@ columns:
 
 -   `"model"`: columns with the model’s name and fitted value.
 
+
 ```python
 cv_df.head()
 ```
@@ -436,6 +447,7 @@ First import the desired error metrics from `utilsforecast.losses`. Then
 define a utility function that takes a cross-validation data frame as a
 metric and returns an evaluation data frame with the average of the
 error metric for every unique id and fitted model and all cutoffs.
+
 
 ```python
 from utilsforecast.losses import mse
@@ -460,6 +472,7 @@ def evaluate_cv(df, metric):
 Create the data frame with the results of the evaluation of your
 cross-validation data frame using a Mean Squared Error metric.
 
+
 ```python
 evaluation_df = evaluate_cv(cv_df, mse)
 evaluation_df.head()
@@ -478,6 +491,7 @@ where that model performs best. In this case, the Arima and Seasonal
 Naive are the best models for 10 series and the Theta model should be
 used for two.
 
+
 ```python
 evaluation_df['best_model'].value_counts().to_frame().reset_index()
 ```
@@ -489,6 +503,7 @@ evaluation_df['best_model'].value_counts().to_frame().reset_index()
 
 You can further explore your results by plotting the unique_ids where a
 specific model wins.
+
 
 ```python
 seasonal_ids = evaluation_df.query('best_model == "SeasonalNaive"')['unique_id']
@@ -503,6 +518,7 @@ Define a utility function that takes your forecast’s data frame with the
 predictions and the evaluation data frame and returns a data frame with
 the best possible forecast for every unique_id.
 
+
 ```python
 def get_best_model_forecast(forecasts_df, evaluation_df):
     with_best = forecasts_df.merge(evaluation_df[['unique_id', 'best_model']])
@@ -514,6 +530,7 @@ def get_best_model_forecast(forecasts_df, evaluation_df):
 
 Create your production-ready data frame with the best forecast for every
 unique_id.
+
 
 ```python
 prod_forecasts_df = get_best_model_forecast(forecasts_df, evaluation_df)
@@ -529,6 +546,7 @@ prod_forecasts_df.head()
 | 4   | H1        | 753 | 436.290514 | 411.051232       | 461.815932       |
 
 Plot the results.
+
 
 ```python
 sf.plot(Y_df, prod_forecasts_df, level=[90])

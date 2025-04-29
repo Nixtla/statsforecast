@@ -231,6 +231,7 @@ the data being modeled.
 
 Next, we import plotting libraries and configure the plotting style.
 
+
 ```python
 import matplotlib.pyplot as plt
 from statsmodels.graphics.tsaplots import plot_acf
@@ -264,6 +265,7 @@ rcParams['figure.figsize'] = (18,7)
 
 Let’s pull the S&P500 stock data from the Yahoo Finance site.
 
+
 ```python
 import datetime
 
@@ -291,6 +293,7 @@ SP_500.head()
 | 3 | 2015-01-07 00:00:00+00:00 | 2025.900024 | 2025.900024 | 2029.609985 | 2005.550049 | 2005.550049 | 3805480000 |
 | 4 | 2015-01-08 00:00:00+00:00 | 2062.139893 | 2062.139893 | 2064.080078 | 2030.609985 | 2030.609985 | 3934010000 |
 
+
 ```python
 df=SP_500[["Date","Close"]].copy()
 ```
@@ -307,6 +310,7 @@ three columns: unique_id, ds and y:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 df["unique_id"]="1"
 df.columns=["ds", "y", "unique_id"]
@@ -320,6 +324,7 @@ df.head()
 | 2   | 2015-01-06 00:00:00+00:00 | 2002.609985 | 1         |
 | 3   | 2015-01-07 00:00:00+00:00 | 2025.900024 | 1         |
 | 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         |
+
 
 ```python
 print(df.dtypes)
@@ -337,6 +342,7 @@ dtype: object
 Plot a series using the plot method from the StatsForecast class. This
 method prints a random series from the dataset and is useful for basic
 EDA.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -374,6 +380,7 @@ reject the null hypothesis, time series is non-stationary.
 
 Let’s check if our series that we are analyzing is a stationary series.
 Let’s create a function to check, using the `Dickey Fuller` test
+
 
 ```python
 from statsmodels.tsa.stattools import adfuller
@@ -448,6 +455,7 @@ We can estimate the series of returns using the
 periods parameter whose default value is 1. If you want to calculate a
 30-day return, you must change the value to 30.
 
+
 ```python
 df['return'] = 100 * df["y"].pct_change()
 df.dropna(inplace=True, how='any')
@@ -462,6 +470,7 @@ df.head()
 | 4   | 2015-01-08 00:00:00+00:00 | 2062.139893 | 1         | 1.788828  |
 | 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 |
 
+
 ```python
 import plotly.express as px
 fig = px.line(df, x=df["ds"], y="return",title="SP500 Return Chart",template = "plotly_dark")
@@ -471,6 +480,7 @@ fig.show()
 ![](/statsforecast/docs/models/ARCH_files/figure-markdown_strict/cell-11-output-2.png)
 
 ### Creating Squared Returns
+
 
 ```python
 df['sq_return'] = df["return"].mul(df["return"])
@@ -486,6 +496,7 @@ df.head()
 | 5   | 2015-01-09 00:00:00+00:00 | 2044.810059 | 1         | -0.840381 | 0.706240  |
 
 ### Returns vs Squared Returns
+
 
 ```python
 from plotly.subplots import make_subplots
@@ -511,6 +522,7 @@ fig.show()
 ```
 
 ![](/statsforecast/docs/models/ARCH_files/figure-markdown_strict/cell-13-output-1.png)
+
 
 ```python
 from scipy.stats import probplot, moment
@@ -568,6 +580,7 @@ and Box-Pierce p-values.
 
 If $p<\alpha  (0.05)$ we reject the null hypothesis.
 
+
 ```python
 from statsmodels.stats.diagnostic import acorr_ljungbox
 
@@ -596,6 +609,7 @@ Let’s divide our data into sets
 For the test data we will use the last 30 day to test and evaluate the
 performance of our model.
 
+
 ```python
 df=df[["ds","unique_id","return"]]
 df.columns=["ds", "unique_id", "y"]
@@ -617,6 +631,7 @@ train.shape, test.shape
 ```
 
 Now let’s plot the training data and the test data.
+
 
 ```python
 sns.lineplot(train,x="ds", y="y", label="Train")
@@ -645,6 +660,7 @@ prediction_intervals : Optional[ConformalIntervals]
 
 ### Load libraries
 
+
 ```python
 from statsforecast import StatsForecast 
 from statsforecast.models import ARCH
@@ -656,6 +672,7 @@ Import and instantiate the models. Setting the argument is sometimes
 tricky. This article on [Seasonal
 periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
 master, Rob Hyndmann, can be useful.season_length.
+
 
 ```python
 season_length = 7 # Daily data
@@ -682,6 +699,7 @@ import them.
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
+
 ```python
 sf = StatsForecast(models=models,
                    freq='C', # custom business day frequency
@@ -689,6 +707,7 @@ sf = StatsForecast(models=models,
 ```
 
 ### Fit the Model
+
 
 ```python
 sf.fit(df=train)
@@ -700,6 +719,7 @@ StatsForecast(models=[ARCH(2)])
 
 Let’s see the results of our ARCH model. We can observe it with the
 following instruction:
+
 
 ```python
 result=sf.fitted_[0,0].model_
@@ -727,6 +747,7 @@ to extract each element from the dictionary we are going to use the
 `.get()` function to extract the element and then we are going to save
 it in a `pd.DataFrame()`.
 
+
 ```python
 residual=pd.DataFrame(result.get("actual_residuals"), columns=["residual Model"])
 residual
@@ -741,6 +762,7 @@ residual
 | 2109 | 1.495836       |
 | 2110 | -2.222393      |
 | 2111 | 0.248642       |
+
 
 ```python
 import scipy.stats as stats
@@ -795,6 +817,7 @@ the name of the model and the y hat values, as well as columns for the
 uncertainty intervals. Depending on your computer, this step should take
 around 1min.
 
+
 ```python
 Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
 Y_hat
@@ -809,6 +832,7 @@ Y_hat
 | 79  | 1         | 2023-09-13 00:00:00+00:00 | 0.695591  |
 | 80  | 1         | 2023-09-14 00:00:00+00:00 | -0.176075 |
 | 81  | 1         | 2023-09-15 00:00:00+00:00 | -0.158605 |
+
 
 ```python
 values=sf.forecast_fitted_values()
@@ -825,6 +849,7 @@ values.head()
 
 Adding 95% confidence interval with the forecast method
 
+
 ```python
 sf.forecast(df=train, h=horizon, level=[95])
 ```
@@ -838,6 +863,7 @@ sf.forecast(df=train, h=horizon, level=[95])
 | 79  | 1         | 2023-09-13 00:00:00+00:00 | 0.695591  | -0.937585     | 2.328766      |
 | 80  | 1         | 2023-09-14 00:00:00+00:00 | -0.176075 | -1.405359     | 1.053210      |
 | 81  | 1         | 2023-09-15 00:00:00+00:00 | -0.158605 | -1.381915     | 1.064705      |
+
 
 ```python
 # Merge the forecasts with the true values
@@ -854,6 +880,7 @@ Y_hat1
 | 79  | 2023-09-19 00:00:00+00:00 | 1         | -0.215101 | NaN       |
 | 80  | 2023-09-20 00:00:00+00:00 | 1         | -0.939479 | NaN       |
 | 81  | 2023-09-21 00:00:00+00:00 | 1         | -1.640093 | NaN       |
+
 
 ```python
 # Merge the forecasts with the true values
@@ -893,6 +920,7 @@ uncertainty intervals.
 
 This step should take less than 1 second.
 
+
 ```python
 sf.predict(h=horizon)
 ```
@@ -906,6 +934,7 @@ sf.predict(h=horizon)
 | 79  | 1         | 2023-09-13 00:00:00+00:00 | 0.695591  |
 | 80  | 1         | 2023-09-14 00:00:00+00:00 | -0.176075 |
 | 81  | 1         | 2023-09-15 00:00:00+00:00 | -0.158605 |
+
 
 ```python
 forecast_df = sf.predict(h=horizon, level=[80,95]) 
@@ -926,6 +955,7 @@ We can join the forecast result with the historical data using the
 pandas function `pd.concat()`, and then be able to use this result for
 graphing.
 
+
 ```python
 df_plot=pd.concat([df, forecast_df]).set_index('ds').tail(220)
 df_plot
@@ -941,6 +971,7 @@ df_plot
 | 2023-09-13 00:00:00+00:00 | 1 | NaN | 0.695591 | -0.937585 | -0.372285 | 1.763467 | 2.328766 |
 | 2023-09-14 00:00:00+00:00 | 1 | NaN | -0.176075 | -1.405359 | -0.979860 | 0.627711 | 1.053210 |
 | 2023-09-15 00:00:00+00:00 | 1 | NaN | -0.158605 | -1.381915 | -0.958485 | 0.641274 | 1.064705 |
+
 
 ```python
 sf.plot(train, test.merge(forecast_df), level=[80, 95], max_insample_length=120)
@@ -997,6 +1028,7 @@ following arguments.
     other words: what number of forecasting processes in the past do you
     want to evaluate.
 
+
 ```python
 crossvalidation_df = sf.cross_validation(df=train,
                                          h=horizon,
@@ -1012,6 +1044,7 @@ following columns:
 -   `cutoff:` the last datestamp or temporal index for the n_windows.
 -   `y:` true value
 -   `"model":` columns with the model’s name and fitted value.
+
 
 ```python
 crossvalidation_df
@@ -1032,6 +1065,7 @@ crossvalidation_df
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
+
 
 ```python
 from functools import partial

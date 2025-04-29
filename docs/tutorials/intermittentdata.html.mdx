@@ -46,6 +46,7 @@ StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html
 
 Install the necessary packages using `pip install statsforecast`
 
+
 ```python
 pip install statsforecast -U
 ```
@@ -57,6 +58,7 @@ Competition](https://www.sciencedirect.com/science/article/pii/S0169207021001187
 dataset. Each time series represents the unit sales of a particular
 product in a given Walmart store. At this level (product-store), most of
 the data is intermittent. We first need to import the data.
+
 
 ```python
 import pandas as pd
@@ -94,6 +96,7 @@ below.
 -   `engine`: The library used to generate the plots. It can also be
     `matplotlib` for static plots.
 
+
 ```python
 from utilsforecast.plotting import plot_series
 ```
@@ -110,6 +113,7 @@ complete history by removing `max_insample_length`. From these plots, we
 can confirm that the data is indeed intermittent since it has multiple
 periods with zero sales. In fact, in all cases but one, the median value
 is zero.
+
 
 ```python
 df.groupby('unique_id', observed=True)['y'].median()
@@ -134,6 +138,7 @@ Before training any model, we need to separate the data in a train and a
 test set. The M5 Competition used the last 28 days as test set, so we’ll
 do the same.
 
+
 ```python
 valid_start = df['ds'].unique()[-28]
 
@@ -157,6 +162,7 @@ In this notebook, we’ll use:
 
 To use these models, we first need to import them from
 `statsforecast.models` and then we need to instantiate them.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -186,6 +192,7 @@ parameters:
 -   `n_jobs`: An integer that indicates the number of jobs used in
     parallel processing. Use -1 to select all cores.
 
+
 ```python
 sf = StatsForecast(
     models=models, 
@@ -203,6 +210,7 @@ StatsForecast can only generate point-forecasts. If prediction intervals
 are needed, then a [probabilisitic
 model](https://nixtla.github.io/statsforecast/#models) should be used.
 
+
 ```python
 horizon = 28 
 forecasts = sf.forecast(df=train, h=horizon)
@@ -219,6 +227,7 @@ forecasts.head()
 
 Finally, we’ll merge the forecast with the actual values.
 
+
 ```python
 test = test.merge(forecasts, how='left', on=['unique_id', 'ds'])
 ```
@@ -226,6 +235,7 @@ test = test.merge(forecasts, how='left', on=['unique_id', 'ds'])
 ## Plot forecasts and compute accuracy
 
 We can generate plots using the `plot_series` function described above.
+
 
 ```python
 plot_series(train, test, plot_random=False, max_insample_length=100)
@@ -236,6 +246,7 @@ plot_series(train, test, plot_random=False, max_insample_length=100)
 To compute the accuracy of the forecasts, we’ll use the Mean Average
 Error (MAE), which is the sum of the absolute errors divided by the
 number of forecasts.
+
 
 ```python
 from utilsforecast.evaluation import evaluate

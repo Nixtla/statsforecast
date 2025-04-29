@@ -37,6 +37,7 @@ In this example we will use the following libraries:
 -   [`NeuralProphet`](https://github.com/ourownstory/neural_prophet).
     Deep Learning version of `Prophet`. Used as benchark.
 
+
 ```python
 # !pip install statsforecast "neuralprophet[live]" prophet
 ```
@@ -57,6 +58,7 @@ page](https://www.kaggle.com/datasets/robikscube/hourly-energy-consumption),
 > data comes from PJM’s website and are in megawatts (MW).
 
 Let’s take a look to the data.
+
 
 ```python
 import matplotlib.pyplot as plt
@@ -90,6 +92,7 @@ df.tail()
 | 32894 | PJM_Load_hourly | 2001-12-31 23:00:00 | 32590.0 |
 | 32895 | PJM_Load_hourly | 2002-01-01 00:00:00 | 31569.0 |
 
+
 ```python
 plot_series(df)
 ```
@@ -119,6 +122,7 @@ contains a fast implementation of the
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl)
 model. Also, the decomposition of the time series can be calculated.
 
+
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import MSTL, AutoARIMA, SeasonalNaive
@@ -134,6 +138,7 @@ the
 [`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima)
 model.
 
+
 ```python
 mstl = MSTL(
     season_length=[24, 24 * 7], # seasonalities of the time series 
@@ -144,6 +149,7 @@ mstl = MSTL(
 Once the model is instantiated, we have to instantiate the
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 class to create forecasts.
+
 
 ```python
 sf = StatsForecast(
@@ -156,6 +162,7 @@ sf = StatsForecast(
 
 Afer that, we just have to use the `fit` method to fit each model to
 each time series.
+
 
 ```python
 sf = sf.fit(df=df)
@@ -176,6 +183,7 @@ information of our model. The
 class generates a `model_` attribute that contains the way the series
 was decomposed.
 
+
 ```python
 sf.fitted_[0, 0].model_
 ```
@@ -195,6 +203,7 @@ sf.fitted_[0, 0].model_
 | 32895 | 31569.0 | 33433.075723 | -1260.860917 | 279.777069  | -882.991876  |
 
 Let’s look graphically at the different components of the time series.
+
 
 ```python
 sf.fitted_[0, 0].model_.tail(24 * 28).plot(subplots=True, grid=True)
@@ -222,6 +231,7 @@ parameter `level` that receives a list of levels of the prediction
 intervals we want to build. In this case we will only calculate the 90%
 forecast interval (`level=[90]`).
 
+
 ```python
 forecasts = sf.predict(h=24, level=[90])
 forecasts.head()
@@ -237,6 +247,7 @@ forecasts.head()
 
 Let’s look at our forecasts graphically.
 
+
 ```python
 plot_series(df, forecasts, level=[90], max_insample_length=24*7)
 ```
@@ -245,6 +256,7 @@ plot_series(df, forecasts, level=[90], max_insample_length=24*7)
 
 In the next section we will plot different models so it is convenient to
 reuse the previous code with the following function.
+
 
 ```python
 def plot_forecasts(y_hist, y_true, y_pred, models):
@@ -279,6 +291,7 @@ a training set and a test set. We will leave the last 24 observations
 (the last day) as the test set. So the model will train on `32,872`
 observations.
 
+
 ```python
 df_test = df.tail(24)
 df_train = df.drop(df_test.index)
@@ -296,6 +309,7 @@ model. Including
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 models is as simple as adding them to the list of models to be fitted.
 
+
 ```python
 sf = StatsForecast(
     models=[mstl, SeasonalNaive(season_length=24)], # add SeasonalNaive model to the list
@@ -305,12 +319,14 @@ sf = StatsForecast(
 
 To measure the fitting time we will use the `time` module.
 
+
 ```python
 from time import time
 ```
 
 To retrieve the forecasts of the test set we only have to do fit and
 predict as before.
+
 
 ```python
 init = time()
@@ -328,6 +344,7 @@ forecasts_test.head()
 | 3 | PJM_Load_hourly | 2001-12-31 04:00:00 | 27969.396560 | 26836.674164 | 29102.118956 | 26865.0 | 22007.555872 | 31722.444128 |
 | 4 | PJM_Load_hourly | 2001-12-31 05:00:00 | 28469.805588 | 27139.306401 | 29800.304775 | 26808.0 | 21950.555872 | 31665.444128 |
 
+
 ```python
 time_mstl = (end - init) / 60
 print(f'MSTL Time: {time_mstl:.2f} minutes')
@@ -341,6 +358,7 @@ Then we were able to generate forecasts for the next 24 hours. Now let’s
 look at the graphical comparison of the forecasts with the actual
 values.
 
+
 ```python
 plot_series(df_train, df_test.merge(forecasts_test), level=[90], max_insample_length=24*7)
 ```
@@ -349,6 +367,7 @@ plot_series(df_train, df_test.merge(forecasts_test), level=[90], max_insample_le
 
 Let’s look at those produced only by
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl).
+
 
 ```python
 plot_series(df_train, df_test.merge(forecasts_test), level=[90], max_insample_length=24*7, models=['MSTL'])
@@ -361,6 +380,7 @@ We note that
 produces very accurate forecasts that follow the behavior of the time
 series. Now let us calculate numerically the accuracy of the model. We
 will use the following metrics: `MAE`, `MAPE`, `MASE`, `RMSE`, `SMAPE`.
+
 
 ```python
 from functools import partial
@@ -385,6 +405,7 @@ eval_df
 | MSTL          | 0.587265 | 1219.321795 | 0.036052 | 1460.223279 | 0.017577 |
 | SeasonalNaive | 0.894653 | 1857.541667 | 0.056482 | 2201.384101 | 0.029343 |
 
+
 ```python
 1 - eval_df.loc['MSTL', 'mase'] / eval_df.loc['SeasonalNaive', 'mase']
 ```
@@ -407,6 +428,7 @@ seasonalities (weekly, daily yearly). We will use this model as a
 benchmark to see if the
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl)
 adds value for this time series.
+
 
 ```python
 from prophet import Prophet
@@ -442,6 +464,7 @@ forecast_prophet.head()
 | 3 | PJM_Load_hourly | 2001-12-31 04:00:00 | 23332.519871 | 18591.879190 | 28720.461289 |
 | 4 | PJM_Load_hourly | 2001-12-31 05:00:00 | 24107.126827 | 18934.471254 | 29116.352931 |
 
+
 ```python
 time_prophet = (end - init) / 60
 print(f'Prophet Time: {time_prophet:.2f} minutes')
@@ -450,6 +473,7 @@ print(f'Prophet Time: {time_prophet:.2f} minutes')
 ``` text
 Prophet Time: 0.41 minutes
 ```
+
 
 ```python
 times = pd.DataFrame({'model': ['MSTL', 'Prophet'], 'time (mins)': [time_mstl, time_prophet]})
@@ -466,6 +490,7 @@ predict pipeline is greater than
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl).
 Let’s look at the forecasts produced by `Prophet`.
 
+
 ```python
 forecasts_test = forecasts_test.merge(forecast_prophet, how='left', on=['unique_id', 'ds'])
 ```
@@ -480,6 +505,7 @@ plot_series(df_train, forecasts_test, max_insample_length=24*7, level=[90])
 We note that `Prophet` is able to capture the overall behavior of the
 time series. However, in some cases it produces forecasts well below the
 actual value. It also does not correctly adjust the valleys.
+
 
 ```python
 eval_df = evaluate(
@@ -496,6 +522,7 @@ eval_df
 | MSTL          | 0.587265 | 1219.321795 | 0.036052 | 1460.223279 | 0.017577 |
 | SeasonalNaive | 0.894653 | 1857.541667 | 0.056482 | 2201.384101 | 0.029343 |
 | Prophet       | 1.099551 | 2282.966977 | 0.073750 | 2721.817203 | 0.038633 |
+
 
 ```python
 1 - eval_df.loc['MSTL', 'mase'] / eval_df.loc['Prophet', 'mase']
@@ -517,6 +544,7 @@ model improves `Prophet`’s forecasts by 45% (`MASE`).
 `NeuralProphet` is the version of `Prophet` using deep learning. This
 model is also capable of handling different seasonalities so we will
 also use it as a benchmark.
+
 
 ```python
 from neuralprophet import NeuralProphet
@@ -587,6 +615,7 @@ INFO - (NP.df_utils.return_df_in_original_format) - Returning df with no ID colu
 | 3 | PJM_Load_hourly | 2001-12-31 04:00:00 | 23540.554688 | 20700.035156 | 26247.121094 |
 | 4 | PJM_Load_hourly | 2001-12-31 05:00:00 | 24016.589844 | 21298.316406 | 26748.933594 |
 
+
 ```python
 time_np = (end - init) / 60
 print(f'Prophet Time: {time_np:.2f} minutes')
@@ -595,6 +624,7 @@ print(f'Prophet Time: {time_np:.2f} minutes')
 ``` text
 Prophet Time: 1.98 minutes
 ```
+
 
 ```python
 times = pd.concat([times, pd.DataFrame({'model': ['NeuralProphet'], 'time (mins)': [time_np]})])
@@ -611,6 +641,7 @@ We observe that `NeuralProphet` requires a longer processing time than
 `Prophet` and
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl).
 
+
 ```python
 forecasts_test = forecasts_test.merge(forecast_np, how='left', on=['unique_id', 'ds'])
 ```
@@ -624,6 +655,7 @@ plot_series(df_train, forecasts_test, max_insample_length=24*7, level=[90])
 
 The forecasts graph shows that `NeuralProphet` generates very similar
 results to `Prophet`, as expected.
+
 
 ```python
 eval_df = evaluate(
@@ -641,6 +673,7 @@ eval_df
 | SeasonalNaive | 0.894653 | 1857.541667 | 0.056482 | 2201.384101 | 0.029343 |
 | Prophet       | 1.099551 | 2282.966977 | 0.073750 | 2721.817203 | 0.038633 |
 | NeuralProphet | 1.061160 | 2203.255941 | 0.071060 | 2593.708496 | 0.037108 |
+
 
 ```python
 1 - eval_df.loc['MSTL', 'mase'] / eval_df.loc['NeuralProphet', 'mase']

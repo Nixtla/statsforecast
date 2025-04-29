@@ -80,6 +80,7 @@ three columns: `unique_id`, `ds` and `y`:
 You will read the data with pandas and change the necessary names. This
 step should take around 2s.
 
+
 ```python
 import pandas as pd
 ```
@@ -115,6 +116,7 @@ that we have just one unique_id.
 > The `StatsForecast.plot` method uses matplotlib as a default engine.
 > You can change to plotly by setting `engine="plotly"`.
 
+
 ```python
 from statsforecast import StatsForecast
 ```
@@ -147,6 +149,7 @@ AutoARIMA.
 
 Import the models you need.
 
+
 ```python
 from statsforecast.models import MSTL, AutoARIMA
 ```
@@ -161,6 +164,7 @@ model. (You can also try with:
 [`AutoCES`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoces),
 and
 [`AutoETS`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoets))
+
 
 ```python
 # Create a list of models and instantiation parameters
@@ -184,6 +188,7 @@ object with the following required parameters:
 
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
+
 
 ```python
 sf = StatsForecast(
@@ -214,6 +219,7 @@ series](./getting_started_complete.html).
 > should take around 10 seconds. The second time -once Numba compiled
 > your settings- it should take less than 5s.
 
+
 ```python
 sf = sf.fit(df=df)
 ```
@@ -232,6 +238,7 @@ information of our model. The
 [`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl)
 class generates a `model_` attribute that contains the way the series
 was decomposed.
+
 
 ```python
 sf.fitted_[0, 0].model_
@@ -253,6 +260,7 @@ sf.fitted_[0, 0].model_
 
 We will use matplotlib, to visualize the different components of the
 series.
+
 
 ```python
 import matplotlib.pyplot as plt
@@ -294,6 +302,7 @@ uncertainty intervals.
 
 This step should take less than 1 second.
 
+
 ```python
 forecasts = sf.predict(h=24, level=[90])
 forecasts.head()
@@ -309,6 +318,7 @@ forecasts.head()
 
 You can plot the forecast by calling the `StatsForecast.plot` method and
 passing in your forecast dataframe.
+
 
 ```python
 sf.plot(df, forecasts, max_insample_length=24 * 7)
@@ -350,6 +360,7 @@ remove the AutoModels like ARIMA and Theta)
 > Numba. The first time you call the statsforecast class, the fit method
 > should take around 10 seconds. The second time -once Numba compiled
 > your settings- it should take less than 5s.
+
 
 ```python
 forecasts_df = sf.forecast(df=df, h=24, level=[90])

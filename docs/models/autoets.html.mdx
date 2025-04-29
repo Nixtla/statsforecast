@@ -343,6 +343,7 @@ only the six fully additive models will be applied.
 
 Next, we import plotting libraries and configure the plotting style.
 
+
 ```python
 import numpy as np
 import pandas as pd
@@ -382,6 +383,7 @@ rcParams['figure.figsize'] = (18,7)
 
 ### Read Data
 
+
 ```python
 df = pd.read_csv("https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/Esperanza_vida.csv", usecols=[1,2])
 df.head()
@@ -407,6 +409,7 @@ three columns: unique_id, ds and y:
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
 
+
 ```python
 df["unique_id"]="1"
 df.columns=["ds", "y", "unique_id"]
@@ -421,6 +424,7 @@ df.head()
 | 3   | 1963-01-01 | 69.248049 | 1         |
 | 4   | 1964-01-01 | 70.311707 | 1         |
 
+
 ```python
 print(df.dtypes)
 ```
@@ -434,6 +438,7 @@ dtype: object
 
 We need to convert the `ds` from `object` type to datetime.
 
+
 ```python
 df["ds"] = pd.to_datetime(df["ds"])
 ```
@@ -444,6 +449,7 @@ Plot some series using the plot method from the StatsForecast class.
 This method prints a random series from the dataset and is useful for
 basic EDA.
 
+
 ```python
 from statsforecast import StatsForecast
 
@@ -453,6 +459,7 @@ StatsForecast.plot(df)
 ![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-8-output-1.png)
 
 ## Autocorrelation plots
+
 
 ```python
 fig, axs = plt.subplots(nrows=1, ncols=2)
@@ -522,6 +529,7 @@ multiplicative time series can be represented as.
 
 $$y(t) = Level * Trend * seasonality * Noise$$
 
+
 ```python
 from statsmodels.tsa.seasonal import seasonal_decompose 
 a = seasonal_decompose(df["y"], model = "add", period=1)
@@ -551,6 +559,7 @@ Let’s divide our data into sets
 For the test data we will use the last 6 years to test and evaluate the
 performance of our model.
 
+
 ```python
 train = df[df.ds<='2013-01-01'] 
 test = df[df.ds>'2013-01-01']
@@ -565,6 +574,7 @@ train.shape, test.shape
 ((54, 3), (6, 3))
 ```
 
+
 ```python
 sns.lineplot(train,x="ds", y="y", label="Train")
 sns.lineplot(test, x="ds", y="y", label="Test")
@@ -575,6 +585,7 @@ plt.show()
 
 ## Implementation of AutoETS with StatsForecast<a class="anchor" id="implementation"></a>
 
+
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import AutoETS
@@ -582,11 +593,13 @@ from statsforecast.models import AutoETS
 
 ### Instantiate Model
 
+
 ```python
 sf = StatsForecast(models=[AutoETS(model="AZN")], freq='YS')
 ```
 
 ### Fit the Model
+
 
 ```python
 sf.fit(df=train)
@@ -597,6 +610,7 @@ StatsForecast(models=[AutoETS])
 ```
 
 ### Model Prediction
+
 
 ```python
 y_hat = sf.predict(h=6)
@@ -612,6 +626,7 @@ y_hat
 | 4   | 1         | 2018-01-01 | 83.726940 |
 | 5   | 1         | 2019-01-01 | 83.920537 |
 
+
 ```python
 sf.plot(train, y_hat)
 ```
@@ -619,6 +634,7 @@ sf.plot(train, y_hat)
 ![](/statsforecast/docs/models/AutoETS_files/figure-markdown_strict/cell-18-output-1.png)
 
 Let’s add a confidence interval to our forecast.
+
 
 ```python
 y_hat = sf.predict(h=6, level=[80,90,95])
@@ -634,6 +650,7 @@ y_hat
 | 4 | 1 | 2018-01-01 | 83.726940 | 83.257894 | 83.333304 | 83.420247 | 84.033634 | 84.120577 | 84.195987 |
 | 5 | 1 | 2019-01-01 | 83.920537 | 83.437859 | 83.515461 | 83.604931 | 84.236144 | 84.325614 | 84.403216 |
 
+
 ```python
 sf.plot(train, y_hat, level=[95])
 ```
@@ -647,6 +664,7 @@ Memory Efficient Exponential Smoothing predictions.
 This method avoids memory burden due from object storage. It is
 analogous to fit_predict without storing information. It assumes you
 know the forecast horizon in advance.
+
 
 ```python
 y_hat = sf.forecast(df=train, h=6, fitted=True)
@@ -665,6 +683,7 @@ y_hat
 ### In sample predictions
 
 Access fitted Exponential Smoothing insample predictions.
+
 
 ```python
 sf.forecast_fitted_values()
@@ -685,6 +704,7 @@ sf.forecast_fitted_values()
 Now we are going to evaluate our model with the results of the
 predictions, we will use different types of metrics MAE, MAPE, MASE,
 RMSE, SMAPE to evaluate the accuracy.
+
 
 ```python
 from functools import partial

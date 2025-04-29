@@ -129,6 +129,7 @@ is a simplified version to run the scenario with a one million time
 series. It is also updated for the recent StatsForecast v1.0.0 release,
 so it may look a bit different from the code in the previous benchmarks.
 
+
 ```python
 from time import time
 
@@ -171,6 +172,7 @@ for simplicity. The most important one is that `n_jobs=1`. This is
 because Spark or Dask will already serve as the parallelization layer,
 and having two stages of parallelism can cause resource deadlocks.
 
+
 ```python
 from fugue import transform
 
@@ -203,6 +205,7 @@ practice, the Fugue and Nixtla teams collaborated to add a more native
 `FugueBackend` to the StatsForecast library. Along with it is a utility
 `forecast()` function to simplify the forecasting interface. Below is an
 end-to-end example of running StatsForecast on one million time series.
+
 
 ```python
 from statsforecast.distributed.utils import forecast

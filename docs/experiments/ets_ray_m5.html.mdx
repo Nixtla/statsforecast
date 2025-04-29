@@ -20,6 +20,7 @@ m5.2xlarge (8 cores, 32 GB RAM).
 
 ## Installing StatsForecast Library
 
+
 ```python
 !pip install "statsforecast[ray]" neuralforecast s3fs pyarrow
 ```
@@ -39,6 +40,7 @@ from statsforecast.models import ETS
 The example uses the [M5
 dataset](https://github.com/Mcompetitions/M5-methods/blob/master/M5-Competitors-Guide.pdf).
 It consists of `30,490` bottom time series.
+
 
 ```python
 Y_df = pd.read_parquet('s3://m5-benchmarks/data/train/target.parquet')
@@ -67,6 +69,7 @@ Since the M5 dataset contains intermittent time series, we add a
 constant to avoid problems during the training phase. Later, we will
 substract the constant from the forecasts.
 
+
 ```python
 constant = 10
 Y_df['y'] += constant
@@ -78,6 +81,7 @@ Y_df['y'] += constant
 receives a list of models to fit each time series. Since we are dealing
 with Daily data, it would be benefitial to use 7 as seasonality. Observe
 that we need to pass the ray address to the `ray_address` argument.
+
 
 ```python
 fcst = StatsForecast(
@@ -112,6 +116,7 @@ to 18.23 minutes for Prophet and Spark.
 
 We remove the constant.
 
+
 ```python
 Y_hat['ETS'] -= constant
 ```
@@ -121,6 +126,7 @@ Y_hat['ETS'] -= constant
 The M5 competition used the weighted root mean squared scaled error. You
 can find details of the metric
 [here](https://github.com/Mcompetitions/M5-methods/blob/master/M5-Competitors-Guide.pdf).
+
 
 ```python
 Y_hat = Y_hat.reset_index().set_index(['unique_id', 'ds']).unstack()
@@ -136,6 +142,7 @@ Y_hat = S_df.merge(Y_hat, how='left', on=['unique_id'])
 ``` text
 100%|███████████████████████████████████████████████████████████| 50.2M/50.2M [00:00<00:00, 77.1MiB/s]
 ```
+
 
 ```python
 M5Evaluation.evaluate(y_hat=Y_hat, directory='./data')

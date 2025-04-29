@@ -14,6 +14,7 @@ This guide shows you how to use the
 function to extract those features for training and then use their
 future values for inference.
 
+
 ```python
 from functools import partial
 
@@ -47,6 +48,7 @@ you want to incorporate the trend and seasonal components from the MSTL
 model as external regressors. You can define the MSTL model to use and
 then provide it to the mstl_decomposition function.
 
+
 ```python
 freq = 1
 season_length = 24
@@ -61,6 +63,7 @@ This generates the dataframe that we should use for training (with the
 trend and seasonal columns added), as well as the dataframe we should
 use to forecast.
 
+
 ```python
 transformed_df.head()
 ```
@@ -72,6 +75,7 @@ transformed_df.head()
 | 2   | H1        | 3   | 586.0 | 512.822533 | 82.155386  |
 | 3   | H1        | 4   | 559.0 | 517.717481 | 42.412749  |
 | 4   | H1        | 5   | 511.0 | 522.555849 | -11.401890 |
+
 
 ```python
 X_df.head()
@@ -86,6 +90,7 @@ X_df.head()
 | 4   | H1        | 705 | 645.356634 | -195.862530 |
 
 We can now train our ARIMA models and compute our forecasts.
+
 
 ```python
 sf = StatsForecast(
@@ -105,6 +110,7 @@ preds.head()
 | 4   | H1        | 705 | 448.115839 |
 
 We can now evaluate the performance.
+
 
 ```python
 def compute_evaluation(preds):
@@ -128,6 +134,7 @@ dtype: object
 ```
 
 And compare this with just using the series values.
+
 
 ```python
 preds_noexog = sf.forecast(h=horizon, df=train)

@@ -64,6 +64,7 @@ StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html
 
 Install the necessary packages using `pip install statsforecast`
 
+
 ```python
 pip install statsforecast -U
 ```
@@ -75,11 +76,13 @@ and several publicly traded companies. The data can be downloaded from
 Yahoo! Finance using [yfinance](https://github.com/ranaroussi/yfinance).
 To install it, use `pip install yfinance`.
 
+
 ```python
 # pip install yfinance
 ```
 
 We’ll also need `pandas` to deal with the dataframes.
+
 
 ```python
 import yfinance as yf
@@ -114,6 +117,7 @@ Notice that the dataframe that `yfinance` returns has a
 [MultiIndex](https://pandas.pydata.org/docs/user_guide/advanced.html),
 so we need to select both the adjusted price and the tickers.
 
+
 ```python
 df = df.loc[:, (['Adj Close'], tickers)]
 df.columns = df.columns.droplevel() # drop MultiIndex
@@ -142,6 +146,7 @@ three columns: `unique_id`, `ds` and `y`:
 Hence, we need to reshape the data. We’ll do this by creating a new
 dataframe called `price`.
 
+
 ```python
 prices = df.melt(id_vars = 'Date')
 prices = prices.rename(columns={'Date': 'ds', 'Ticker': 'unique_id', 'value': 'y'})
@@ -166,6 +171,7 @@ prices
 We can plot this series using the `plot` method of the StatsForecast
 class.
 
+
 ```python
 from statsforecast import StatsForecast
 ```
@@ -187,6 +193,7 @@ $return_t = log \big( \frac{price_t}{price_{t-1}} \big)$
 We’ll compute the returns on the price dataframe and then we’ll create a
 return dataframe with StatsForecast’s format. To do this, we’ll need
 `numpy`.
+
 
 ```python
 import numpy as np 
@@ -218,6 +225,7 @@ returns
 > `scipy.optimize.minimize` might not terminate successfully. In this
 > case, rescale the data and then generate the GARCH or ARCH model.
 
+
 ```python
 StatsForecast.plot(returns)
 ```
@@ -241,6 +249,7 @@ $p$ and $q$. In the next section, we’ll determine which ones produce the
 most accurate model using cross-validation. We’ll also import the
 [Naive](https://nixtla.github.io/statsforecast/models.html#naive) model
 since we’ll use it as a baseline.
+
 
 ```python
 from statsforecast.models import (
@@ -270,6 +279,7 @@ parameters:
     [here](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 -   `n_jobs`: An integer that indicates the number of jobs used in
     parallel processing. Use -1 to select all cores.
+
 
 ```python
 sf = StatsForecast(
@@ -301,6 +311,7 @@ This method takes the following arguments:
 For this particular example, we’ll use 4 windows of 3 months, or all the
 quarters in a year.
 
+
 ```python
 cv_df = sf.cross_validation(
     df = returns,
@@ -318,6 +329,7 @@ The `cv_df` object ia a dataframe with the following columns:
 -   `y`: true value
 -   `"model"`: columns with the model’s name and fitted value.
 
+
 ```python
 cv_df.rename(columns = {'y' : 'actual'}, inplace = True)
 cv_df.head()
@@ -330,6 +342,7 @@ cv_df.head()
 | 2 | AAPL | 2022-03-01 | 2021-12-01 | 0.057156 | -0.045901 | -0.046479 | -0.047513 | -0.045711 | -0.045711 | -0.046478 | 0.073061 |
 | 3 | AAPL | 2022-04-01 | 2022-03-01 | -0.102178 | 0.138650 | 0.140222 | 0.228138 | 0.136118 | 0.136132 | 0.140211 | 0.057156 |
 | 4 | AAPL | 2022-05-01 | 2022-03-01 | -0.057505 | -0.056007 | -0.056268 | -0.087833 | -0.057078 | -0.057085 | -0.056265 | 0.057156 |
+
 
 ```python
 StatsForecast.plot(returns, cv_df.drop(['cutoff', 'actual'], axis=1))
@@ -346,6 +359,7 @@ To compute the accuracy of the forecasts, we’ll use the mean average
 error (mae), which is the sum of the absolute errors divided by the
 number of forecasts.
 
+
 ```python
 from utilsforecast.losses import mae
 ```
@@ -353,6 +367,7 @@ from utilsforecast.losses import mae
 The MAE needs to be computed for every window and then it needs to be
 averaged across all of them. To do this, we’ll create the following
 function.
+
 
 ```python
 models = cv_df.columns.drop(['unique_id', 'ds', 'cutoff', 'actual'])
@@ -377,6 +392,7 @@ mae_cv
 | NVDA | 0.189461 | 0.207871 | 0.198999 | 0.196170 | 0.211932 | 0.211940 | 0.215289 |
 | SPY | 0.058511 | 0.058583 | 0.058701 | 0.062492 | 0.057053 | 0.068192 | 0.089012 |
 | TSLA | 0.192003 | 0.192618 | 0.190225 | 0.192354 | 0.191620 | 0.191423 | 0.218857 |
+
 
 ```python
 mae_cv.idxmin(axis=1)
@@ -411,6 +427,7 @@ use the `forecast` method, which requieres the following arguments:
     intervals
 -   `fitted` : (bool = False) Returns insample predictions.
 
+
 ```python
 levels = [80, 95] # confidence levels for the prediction intervals 
 
@@ -436,6 +453,7 @@ method:
 -   `unique_ids`: (list\[str, int or category\]) The ids to plot.
 -   `models`: (list(str)). The model to plot. In this case, is the model
     selected by cross-validation.
+
 
 ```python
 StatsForecast.plot(returns, forecasts, max_insample_length=20)

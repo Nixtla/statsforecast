@@ -47,6 +47,7 @@ class offers parallelization utilities with Dask, Spark and Ray
 back-ends. See distributed computing example
 [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).\*
 
+
 ```python
 # StatsForecast's class usage example
 
@@ -238,6 +239,7 @@ requires the forecast horizon `h` in advance.\*
 | target_col | str | y | Column that contains the target. |
 | **Returns** | **Union** |  | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
 
+
 ```python
 # StatsForecast.forecast method usage example
 
@@ -279,6 +281,7 @@ them, you need to pass `fitted=True` to the
 method and then use the
 [`StatsForecast.forecast_fitted_values`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast_fitted_values)
 method.\*
+
 
 ```python
 # StatsForecast.forecast_fitted_values method usage example
@@ -352,6 +355,7 @@ length and diversity.\*
 | target_col | str | y | Column that contains the target. |
 | **Returns** | **Union** |  | **DataFrame with insample `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
 
+
 ```python
 # StatsForecast.crossvalidation method usage example
 
@@ -392,6 +396,7 @@ To get them, you need to pass `fitted=True` to the
 [`StatsForecast.cross_validation`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
 method and then use the `StatsForecast.cross_validation_fitted_values`
 method.\*
+
 
 ```python
 # StatsForecast.cross_validation_fitted_values method usage example
@@ -496,6 +501,7 @@ target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
 | path        | Union                 | Path to saved StatsForecast file.  |
 | **Returns** | **sf: StatsForecast** | **Previously saved StatsForecast** |
 
+
 ```python
 fcst = StatsForecast(
     models=[ADIDA(), SimpleExponentialSmoothing(0.1), 
@@ -514,6 +520,7 @@ The
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 class can also receive integers as datestamp, the following example
 shows how to do it.
+
 
 ```python
 # from statsforecast.core import StatsForecast
@@ -565,6 +572,7 @@ passed to the models that allow them. If you use them you must supply
 the future values to the
 [`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
 method.
+
 
 ```python
 class LinearRegression(_TS):
@@ -636,6 +644,7 @@ method to calculate prediction intervals. Not all models can calculate
 them at the moment, so we will only obtain the intervals of those models
 that have it implemented.
 
+
 ```python
 ap_df = pd.DataFrame({'ds': np.arange(ap.size), 'y': ap})
 ap_df['unique_id'] = 0
@@ -654,6 +663,7 @@ fcst.plot(ap_df, ap_ci, level=[80], engine="matplotlib")
 ## Conformal Prediction intervals
 
 You can also add conformal intervals using the following code.
+
 
 ```python
 from statsforecast.utils import ConformalIntervals
@@ -679,6 +689,7 @@ fcst.plot(ap_df, ap_ci, level=[80], engine="plotly")
 
 You can also compute conformal intervals for all the models that support
 them, using the following,
+
 
 ```python
 sf = StatsForecast(

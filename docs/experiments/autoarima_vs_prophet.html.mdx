@@ -25,6 +25,7 @@ using `numba`.
 
 ### Libraries
 
+
 ```python
 # !pip install statsforecast prophet statsmodels sklearn matplotlib pmdarima
 ```
@@ -54,6 +55,7 @@ from utilsforecast.plotting import plot_series
 
 #### Useful functions
 
+
 ```python
 def plot_autocorrelation_grid(df_train):
     fig, axes = plt.subplots(4, 2, figsize = (24, 14))
@@ -79,6 +81,7 @@ def plot_autocorrelation_grid(df_train):
 For testing purposes, we will use the Hourly dataset from the M4
 competition.
 
+
 ```python
 train = pd.read_csv('https://auto-arima-results.s3.amazonaws.com/M4-Hourly.csv')
 test = pd.read_csv('https://auto-arima-results.s3.amazonaws.com/M4-Hourly-test.csv').rename(columns={'y': 'y_test'})
@@ -86,6 +89,7 @@ test = pd.read_csv('https://auto-arima-results.s3.amazonaws.com/M4-Hourly-test.c
 
 In this example we will use a subset of the data to avoid waiting too
 long. You can modify the number of series if you want.
+
 
 ```python
 n_series = 16
@@ -106,6 +110,7 @@ no doubt that we observe seasonal periods. The autocorrelation function
 (`acf`) can help us to answer the question. Intuitively, we have to
 observe a decreasing correlation to opt for an AR model.
 
+
 ```python
 plot_autocorrelation_grid(train)
 ```
@@ -121,6 +126,7 @@ data.
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 receives a list of models to fit each time series. Since we are dealing
 with Hourly data, it would be benefitial to use 24 as seasonality.
+
 
 ```python
 ?AutoARIMA
@@ -254,6 +260,7 @@ As we see, we can pass `season_length` to
 [`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima),
 so the definition of our models would be,
 
+
 ```python
 models = [AutoARIMA(season_length=24, approximation=True)]
 ```
@@ -280,6 +287,7 @@ time_nixtla
 40.38660216331482
 ```
 
+
 ```python
 forecasts.head()
 ```
@@ -292,6 +300,7 @@ forecasts.head()
 | H1        | 703 | 510.414490 |
 | H1        | 704 | 481.046539 |
 | H1        | 705 | 460.893066 |
+
 
 ```python
 forecasts = forecasts.reset_index()
@@ -317,6 +326,7 @@ You can use the
 [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
 class to parallelize your own models. In this section we will use it to
 run the `auto_arima` model from `pmdarima`.
+
 
 ```python
 class PMDAutoARIMA(_TS):
@@ -364,6 +374,7 @@ time_pmdarima
 886.2768685817719
 ```
 
+
 ```python
 forecast_pmdarima.head()
 ```
@@ -376,6 +387,7 @@ forecast_pmdarima.head()
 | H1        | 703 | 543.504700 |
 | H1        | 704 | 517.539062 |
 | H1        | 705 | 502.829559 |
+
 
 ```python
 forecast_pmdarima = forecast_pmdarima.reset_index()
@@ -397,6 +409,7 @@ plot_series(train, test, plot_random=False)
 
 `Prophet` is designed to receive a pandas dataframe, so we cannot use
 `StatForecast`. Therefore, we need to parallize from scratch.
+
 
 ```python
 params_grid = {'seasonality_mode': ['multiplicative','additive'],
@@ -483,6 +496,7 @@ time_prophet
 120.7272641658783
 ```
 
+
 ```python
 forecast_prophet
 ```
@@ -500,6 +514,7 @@ forecast_prophet
 | 45  | H112      | 746 | 6129.306256 |
 | 46  | H112      | 747 | 6058.040672 |
 | 47  | H112      | 748 | 5991.982370 |
+
 
 ```python
 test = test.merge(forecast_prophet, how='left', on=['unique_id', 'ds'])
@@ -521,6 +536,7 @@ Since
 works with numba is useful to calculate the time for just one time
 series.
 
+
 ```python
 fcst = StatsForecast(df=train.query('unique_id == "H1"'), 
                      models=models, freq='H', 
@@ -540,6 +556,7 @@ time_nixtla_1
 ``` text
 18.752424716949463
 ```
+
 
 ```python
 times = pd.DataFrame({'n_series': np.arange(1, 414 + 1)})
@@ -563,6 +580,7 @@ times.tail(5)
 | 413      | 183016.173362 | 3116.272506 | 577.184630       |
 | 414      | 183459.311796 | 3123.817960 | 578.536766       |
 
+
 ```python
 fig, axes = plt.subplots(1, 2, figsize = (24, 7))
 (times/3600).plot(ax=axes[0], linewidth=4)
@@ -582,6 +600,7 @@ for ax in axes:
 
 ![](/statsforecast/docs/experiments/AutoArima_vs_Prophet_files/figure-markdown_strict/cell-35-output-1.png)
 
+
 ```python
 fig.savefig('computational-efficiency.png', dpi=300)
 ```
@@ -589,6 +608,7 @@ fig.savefig('computational-efficiency.png', dpi=300)
 ### Performance
 
 #### pmdarima (only two time series)
+
 
 ```python
 name_models = test.drop(columns=['unique_id', 'ds', 'y_test']).columns.tolist()
@@ -611,6 +631,7 @@ pd.DataFrame(eval_pmdarima).sort_values('mae')
 | 2   | prophet   | 39.201933 |
 
 #### Prophet
+
 
 ```python
 eval_prophet = []

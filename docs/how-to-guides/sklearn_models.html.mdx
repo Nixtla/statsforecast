@@ -13,6 +13,7 @@ global model (as in mlforecast).
 
 ## Data setup
 
+
 ```python
 from functools import partial
 
@@ -51,6 +52,7 @@ train.head()
 The utilsforecast library [provides some utilies for feature
 engineering](https://nixtlaverse.nixtla.io/utilsforecast/feature_engineering.html).
 
+
 ```python
 train_features, valid_features = pipeline(
     train,
@@ -73,6 +75,7 @@ train_features.head()
 | 4 | H1 | 5 | 511.0 | 265.0 | 0.258820 | 0.500002 | 0.707114 | 0.866027 | 0.965925 | 1.000000 | 0.965930 | 0.866022 | 0.707106 | 0.500005 | 0.965926 | 0.866024 | 0.707099 | 0.499997 | 0.258822 | -0.000021 | -0.258803 | -0.500006 | -0.707107 | -0.866022 |
 
 ## Forecasting
+
 
 ```python
 sf = StatsForecast(

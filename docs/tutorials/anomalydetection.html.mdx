@@ -61,6 +61,7 @@ StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html
 
 Install the necessary packages using `pip install statsforecast`
 
+
 ```python
 pip install statsforecast -U
 ```
@@ -69,6 +70,7 @@ pip install statsforecast -U
 
 For this example, we’ll use the hourly dataset of the [M4
 Competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128).
+
 
 ```python
 import pandas as pd
@@ -102,6 +104,7 @@ From this dataset, we’ll select the first 8 time series to reduce the
 total execution time. You can select any number you want by changing the
 value of `n_series`.
 
+
 ```python
 n_series = 8
 uids = df_total['unique_id'].unique()[:n_series]
@@ -120,6 +123,7 @@ below.
 -   `level`: Prediction interval levels to plot.
 -   `plot_anomalies`: Whether or not to include the anomalies for each
     prediction interval.
+
 
 ```python
 from statsforecast import StatsForecast
@@ -143,6 +147,7 @@ need to instantiate it. Since we’re using hourly data, we have two
 seasonal periods: one every 24 hours (hourly) and one every 24\*7 hours
 (daily). Hence, we need to set `season_length = [24, 24*7]`.
 
+
 ```python
 from statsforecast.models import MSTL
 ```
@@ -162,6 +167,7 @@ parameters:
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 -   `n_jobs`: An integer that indicates the number of jobs used in
     parallel processing. Use -1 to select all cores.
+
 
 ```python
 sf = StatsForecast(
@@ -183,6 +189,7 @@ It is important that we select a `level` and set `fitted=True` since
 we’ll need the insample forecasts and their prediction intervals to
 detect the anomalies.
 
+
 ```python
 horizon = 48
 levels = [99] 
@@ -201,6 +208,7 @@ fcst.head()
 
 We can plot the forecasts using the `plot_series` function from before.
 
+
 ```python
 plot_series(df, fcst)
 ```
@@ -213,6 +221,7 @@ In this example, an **anomaly** will be any observation outside the
 prediction interval of the insample forecasts for a given confidence
 level (here we selected 99%). Hence, we first need to recover the
 insample forecasts using the `forecast_fitted_values` method.
+
 
 ```python
 insample_forecasts = sf.forecast_fitted_values()
@@ -230,6 +239,7 @@ insample_forecasts.head()
 We can now find all the observations above or below the 99% prediction
 interval for the insample forecasts.
 
+
 ```python
 anomalies = insample_forecasts[~insample_forecasts['y'].between(insample_forecasts['MSTL-lo-99'], insample_forecasts['MSTL-hi-99'])]
 anomalies.head()
@@ -246,6 +256,7 @@ anomalies.head()
 We can plot the anomalies by setting the `level` and the
 `plot_anomalies` arguments of the `plot_series` function.
 
+
 ```python
 plot_series(forecasts_df=insample_forecasts, level=levels, plot_anomalies=True)
 ```
@@ -254,6 +265,7 @@ plot_series(forecasts_df=insample_forecasts, level=levels, plot_anomalies=True)
 
 If we want to take a closer look, we can use the `ids` argument to
 select one particular time series, for example, `H10`.
+
 
 ```python
 plot_series(forecasts_df=insample_forecasts, level=[99], plot_anomalies=True, ids=['H10'])
