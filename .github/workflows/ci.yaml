@@ -57,7 +57,7 @@ jobs:
           CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_BEFORE_TEST: >
             yum install -y java &&
-            export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+            export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) &&
             echo "JAVA_HOME is set to $JAVA_HOME"
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra all &&
