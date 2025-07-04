@@ -58,6 +58,7 @@ jobs:
           CIBW_BEFORE_TEST: >
             yum install -y java &&
             export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+            echo "JAVA_HOME is set to $JAVA_HOME"
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra all &&
             nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing &&
