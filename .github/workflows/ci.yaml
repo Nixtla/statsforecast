@@ -56,7 +56,10 @@ jobs:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_BEFORE_TEST: >
-            apt-get install -y default-jre
+            yum install -y java &&
+            export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) &&
+            export PATH=$PATH:$JAVA_HOME/bin &&
+            echo "JAVA_HOME is set to $JAVA_HOME"
           CIBW_TEST_COMMAND: >
             uv pip install -r {project}/setup.py --extra all &&
             nbdev_test --path {project}/nbs/ --skip_file_re "(distributed|prophet).*.ipynb" --pause 1.0 --do_print --timing &&
