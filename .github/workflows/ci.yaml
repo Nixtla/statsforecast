@@ -45,13 +45,13 @@ jobs:
           platforms: arm64
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v6.1.0
+        uses: astral-sh/setup-uv@bd01e18f51369d5a26f1651c3cb451d3417e3bba # v6.3.1
         with:
           version: "latest"
 
       - name: Build wheels and run all tests
         if: matrix.os-platform[0] == 'ubuntu-latest'
-        uses: pypa/cibuildwheel@5f22145df44122af0f5a201f93cf0207171beca7 # v3.0.0
+        uses: pypa/cibuildwheel@95d2f3a92fbf80abe066b09418bbf128a8923df2 # v3.0.1
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
@@ -64,7 +64,7 @@ jobs:
 
       - name: Build wheels and run local tests
         if: matrix.os-platform[0] != 'ubuntu-latest'
-        uses: pypa/cibuildwheel@5f22145df44122af0f5a201f93cf0207171beca7 # v3.0.0
+        uses: pypa/cibuildwheel@95d2f3a92fbf80abe066b09418bbf128a8923df2 # v3.0.1
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_COMMAND: >
@@ -143,7 +143,7 @@ jobs:
         run: pip install uv && uv pip install --system . pytest-codspeed pytest-xdist
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # 3.5.0
+        uses: CodSpeedHQ/action@ad71f92d9429aabfcf70738be9defdbbfc7b75e2 # 3.6.1
         with:
           token: ${{ secrets.CODESPEED_TOKEN }}
           run: pytest action_files/test_efficiency.py --codspeed -n 2
