@@ -30,7 +30,7 @@ statuses = [
     '6 - Mature',
     '7 - Inactive'
 ]
-py_versions = '3.9 3.10 3.11 3.12'.split()
+py_versions = '3.9 3.10 3.11 3.12 3.13'.split()
 
 requirements = cfg.get('requirements','').split()
 if cfg.get('pip_requirements'): requirements += cfg.get('pip_requirements','').split()
@@ -38,7 +38,7 @@ min_python = cfg['min_python']
 lic = licenses.get(cfg['license'].lower(), (cfg['license'], None))
 dask_requirements = cfg['dask_requirements'].split()
 ray_requirements = [
-    req + " ; python_version < '3.12'" for req in cfg['ray_requirements'].split()
+    req + " ; python_version < '3.13'" for req in cfg['ray_requirements'].split()
 ]
 spark_requirements = cfg['spark_requirements'].split()
 plotly_requirements = cfg['plotly_requirements'].split()
