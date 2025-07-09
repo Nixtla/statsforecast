@@ -11,7 +11,7 @@ mkdir -p ../tests
 
 tst_flags='datasets distributed matplotlib polars pyarrow scipy'
 
-nbs=$(ls ../nbs/src/*.ipynb)
+nbs=$(find ../nbs/src -type f -iname '*.ipynb')
 # echo "Available notebooks: $nbs"
 
 
