@@ -4,12 +4,12 @@ channels:
   - defaults
   - anaconda
 dependencies:
-  - python=3.7
-  - pip==20.3.3
-  - numpy==1.21.4
+  - python>=3.12
+  - pip
+  - numpy
   - prophet
   - numba
-  - r-base==3.6.3
+  - r-base
   - r-urca
   - r-tidyverse
   - r-future
