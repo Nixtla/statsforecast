@@ -1,12 +1,20 @@
 import fire
 import pandas as pd
-from neuralforecast.data.datasets.m3 import M3, M3Info
-from neuralforecast.data.datasets.m4 import M4, M4Info
-from neuralforecast.data.datasets.tourism import Tourism, TourismInfo
+from datasetsforecast.m3 import M3, M3Info
+from datasetsforecast.m4 import M4, M4Info
+from datasetsforecast.hierarchical import TourismLarge
 
+def CreateTourismInfo():
+
+    def __init__(self):
+        self.horizon = TourismLarge.horizon
+        self.freq = TourismLarge.freq
+        self.seasonality = TourismLarge.seasonality
+
+TourismInfo = CreateTourismInfo()
 
 dict_datasets = {
-    'Tourism': (Tourism, TourismInfo),
+    'Tourism': (TourismLarge, TourismInfo),
     'M3': (M3, M3Info),
     'M4': (M4, M4Info)
 }
