@@ -4,7 +4,7 @@ channels:
   - defaults
   - anaconda
 dependencies:
-  - python>=3.12
+  - python=3.12
   - pip
   - numpy
   - prophet
@@ -20,7 +20,7 @@ dependencies:
   - scikit-learn
   - pmdarima
   - fire
+  - statsforecast
   - pip:
-    - neuralforecast
-    - statsforecast
+    - datasetsforecast
     - jupyterlab

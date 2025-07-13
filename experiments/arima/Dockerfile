@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:latest
+FROM continuumio/miniconda3:24.4.0-0
 
 ADD ./environment.yml ./environment.yml
 
