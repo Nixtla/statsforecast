@@ -28,7 +28,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install uv && uv pip install --system ".[all]"
+        run: |
+          git submodule status
+          git submodule update --init --recursive
+          pip install uv && uv pip install --system ".[all]"
 
       - name: Run pytest
         run: pytest tests
