@@ -36,6 +36,8 @@ from statsforecast.models import (
     SimpleExponentialSmoothing,
     WindowAverage,
 )
+from statsforecast.utils import AirPassengers as ap
+from statsforecast.utils import AirPassengersDF as ap_df
 from statsforecast.utils import generate_series
 
 # warnings.filterwarnings("ignore", category=FutureWarning)
@@ -402,7 +404,7 @@ def panel_df():
 
 
 def assert_raises_with_message(func, expected_msg, *args, **kwargs):
-    with pytest.raises((ValueError, Exception)) as exc_info:
+    with pytest.raises((AssertionError, ValueError, Exception)) as exc_info:
         func(*args, **kwargs)
     assert expected_msg in str(exc_info.value)
 
@@ -622,71 +624,85 @@ class TestModels:
 # # StatsForecast.forecast method usage example
 
 # from statsforecast.core import StatsForecast
-from statsforecast.models import AutoARIMA, Naive
-from statsforecast.utils import AirPassengersDF as panel_df
 
 # Instantiate StatsForecast class
-fcst = StatsForecast(models=[AutoARIMA(), Naive()], freq="D", n_jobs=1)
+# fcst = StatsForecast(models=[AutoARIMA(), Naive()], freq="D", n_jobs=1)
 
 # Efficiently predict without storing memory
-fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True)
-fcsts_df.groupby("unique_id").tail(4)
-series = generate_series(100, n_static_features=2, equal_ends=False)
+# fcsts_df = fcst.forecast(df=ap_df, h=4, fitted=True)
+# fcsts_df.groupby("unique_id").tail(4)
 
-models = [
-    ADIDA(),
-    CrostonClassic(),
-    CrostonOptimized(),
-    CrostonSBA(),
-    HistoricAverage(),
-    IMAPA(),
-    Naive(),
-    RandomWalkWithDrift(),
-    SeasonalExponentialSmoothing(season_length=7, alpha=0.1),
-    SeasonalNaive(season_length=7),
-    SeasonalWindowAverage(season_length=7, window_size=4),
-    SimpleExponentialSmoothing(alpha=0.1),
-    TSB(alpha_d=0.1, alpha_p=0.3),
-    WindowAverage(window_size=4),
-]
 
-fcst = StatsForecast(models=models, freq="D", n_jobs=1, verbose=True)
+@pytest.fixture
+def series():
+    series = generate_series(100, n_static_features=2, equal_ends=False)
+    return series
 
-res = fcst.forecast(df=series, h=14)
-# test series without ds as datetime
-series_wo_dt = series.copy()
-series_wo_dt["ds"] = series_wo_dt["ds"].astype(str)
-fcst = StatsForecast(models=models, freq="D")
-fcsts_wo_dt = fcst.forecast(df=series_wo_dt, h=14)
-test_eq(res, fcsts_wo_dt)
-test_eq(res["unique_id"].unique(), fcst.uids.values)
-last_dates = series.groupby("unique_id")["ds"].max()
-test_eq(res.groupby("unique_id")["ds"].min().values, last_dates + pd.offsets.Day())
-test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offsets.Day())
-# # tests for monthly data
-# monthly_series = generate_series(
-#     10_000, freq="M", min_length=10, max_length=20, equal_ends=True
-# )
-# monthly_series
 
-# fcst = StatsForecast(models=[Naive()], freq="M")
-# monthly_res = fcst.forecast(df=monthly_series, h=4)
-# monthly_res
+def models_to_test():
+    models = [
+        ADIDA(),
+        CrostonClassic(),
+        CrostonOptimized(),
+        CrostonSBA(),
+        HistoricAverage(),
+        IMAPA(),
+        Naive(),
+        RandomWalkWithDrift(),
+        SeasonalExponentialSmoothing(season_length=7, alpha=0.1),
+        SeasonalNaive(season_length=7),
+        SeasonalWindowAverage(season_length=7, window_size=4),
+        SimpleExponentialSmoothing(alpha=0.1),
+        TSB(alpha_d=0.1, alpha_p=0.3),
+        WindowAverage(window_size=4),
+    ]
+    return models
 
-# last_dates = monthly_series.groupby("unique_id")["ds"].max()
-# test_eq(
-#     monthly_res.groupby("unique_id")["ds"].min().values,
-#     pd.Series(fcst.last_dates) + pd.offsets.MonthEnd(),
-# )
-# test_eq(
-#     monthly_res.groupby("unique_id")["ds"].max().values,
-#     pd.Series(fcst.last_dates) + 4 * pd.offsets.MonthEnd(),
-# )
-# show_doc(
-#     _StatsForecast.forecast_fitted_values,
-#     title_level=2,
-#     name="StatsForecast.forecast_fitted_values",
-# )
+
+@pytest.mark.parametrize("models", models_to_test())
+def test_series_without_ds_as_datetime(series, models):
+    fcst = StatsForecast(models=[models], freq="D", n_jobs=1, verbose=True)
+
+    res = fcst.forecast(df=series, h=14)
+    # test series without ds as datetime
+    series_wo_dt = series.copy()
+    series_wo_dt["ds"] = series_wo_dt["ds"].astype(str)
+    fcst = StatsForecast(models=[models], freq="D")
+    fcsts_wo_dt = fcst.forecast(df=series_wo_dt, h=14)
+    pd.testing.assert_frame_equal(res, fcsts_wo_dt)
+    np.testing.assert_array_equal(res["unique_id"].unique(), fcst.uids.values)
+    last_dates = series.groupby("unique_id", observed=True)["ds"].max()
+    np.testing.assert_array_equal(
+        res.groupby("unique_id", observed=True)["ds"].min().values,
+        last_dates + pd.offsets.Day(),
+    )
+    np.testing.assert_array_equal(
+        res.groupby("unique_id", observed=True)["ds"].max().values,
+        last_dates + 14 * pd.offsets.Day(),
+    )
+
+
+def test_for_monthly_data():
+    # tests for monthly data
+
+    monthly_series = generate_series(
+        10_000, freq="M", min_length=10, max_length=20, equal_ends=True
+    )
+
+    fcst = StatsForecast(models=[Naive()], freq="M")
+    monthly_res = fcst.forecast(df=monthly_series, h=4)
+
+    # last_dates = monthly_series.groupby("unique_id")["ds"].max()
+    np.testing.assert_array_equal(
+        monthly_res.groupby("unique_id", observed=True)["ds"].min().values,
+        pd.Series(fcst.last_dates) + pd.offsets.MonthEnd(),
+    )
+    np.testing.assert_array_equal(
+        monthly_res.groupby("unique_id", observed=True)["ds"].max().values,
+        pd.Series(fcst.last_dates) + 4 * pd.offsets.MonthEnd(),
+    )
+
+
 # # StatsForecast.forecast_fitted_values method usage example
 
 # # from statsforecast.core import StatsForecast
@@ -702,48 +718,49 @@ test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offset
 # insample_fcsts_df.tail(4)
 
 
-# # tests for fitted values
-# def test_fcst_fitted(series, n_jobs=1, str_ds=False):
-#     if str_ds:
-#         series = series.copy()
-#         series["ds"] = series["ds"].astype(str)
-#     fitted_fcst = StatsForecast(
-#         models=[Naive()],
-#         freq="D",
-#         n_jobs=n_jobs,
-#     )
-#     fitted_res = fitted_fcst.forecast(df=series, h=14, fitted=True)
-#     fitted = fitted_fcst.forecast_fitted_values()
-#     if str_ds:
-#         test_eq(pd.to_datetime(series["ds"]), fitted["ds"])
-#     else:
-#         test_eq(series["ds"], fitted["ds"])
-#     test_eq(series["y"], fitted["y"])
+def assert_fcst_fitted(series, n_jobs=1, str_ds=False):
+    # tests for fitted values
+    if str_ds:
+        series = series.copy()
+        series["ds"] = series["ds"].astype(str)
+    fitted_fcst = StatsForecast(
+        models=[Naive()],
+        freq="D",
+        n_jobs=n_jobs,
+    )
+    fitted_res = fitted_fcst.forecast(df=series, h=14, fitted=True)
+    fitted = fitted_fcst.forecast_fitted_values()
+    if str_ds:
+        np.testing.assert_array_equal(pd.to_datetime(series["ds"]), fitted["ds"])
+    else:
+        np.testing.assert_array_equal(series["ds"], fitted["ds"])
+    np.testing.assert_array_equal(series["y"], fitted["y"])
 
 
-# test_fcst_fitted(series)
-# test_fcst_fitted(series, str_ds=True)
+@pytest.mark.parametrize("str_ds", [True, False])
+def test_for_fitted_values(series, str_ds):
+    assert_fcst_fitted(series, str_ds=str_ds)
 
 
-# # tests for fallback model
-# def test_fcst_fallback_model(n_jobs=1):
-#     fitted_fcst = StatsForecast(
-#         models=[NullModel()], freq="D", n_jobs=n_jobs, fallback_model=Naive()
-#     )
-#     fitted_res = fitted_fcst.forecast(df=series, h=14, fitted=True)
-#     fitted = fitted_fcst.forecast_fitted_values()
-#     test_eq(series["ds"], fitted["ds"])
-#     test_eq(series["y"], fitted["y"])
-#     # test NullModel actualy fails
-#     fitted_fcst = StatsForecast(
-#         models=[NullModel()],
-#         freq="D",
-#         n_jobs=n_jobs,
-#     )
-#     test_fail(lambda: fitted_fcst.forecast(df=series, h=14))
+def test_fcst_fallback_model(series, n_jobs=1):
+    # tests for fallback model
+
+    fitted_fcst = StatsForecast(
+        models=[NullModel()], freq="D", n_jobs=n_jobs, fallback_model=Naive()
+    )
+    fitted_res = fitted_fcst.forecast(df=series, h=14, fitted=True)
+    fitted = fitted_fcst.forecast_fitted_values()
+    np.testing.assert_array_equal(series["ds"], fitted["ds"])
+    np.testing.assert_array_equal(series["y"], fitted["y"])
+    # test NullModel actualy fails
+    fitted_fcst = StatsForecast(
+        models=[NullModel()],
+        freq="D",
+        n_jobs=n_jobs,
+    )
+    assert_raises_with_message(fitted_fcst.forecast, "", df=series, h=14)
 
 
-# test_fcst_fallback_model()
 # show_doc(
 #     _StatsForecast.cross_validation,
 #     title_level=2,
@@ -761,200 +778,276 @@ test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offset
 # # Access insample predictions
 # rolled_fcsts_df = fcst.cross_validation(df=panel_df, h=14, n_windows=2)
 # rolled_fcsts_df.head(4)
-# # test for cross_validation
-# series_cv = pd.DataFrame(
-#     {
-#         "unique_id": np.array(10 * ["id_0"] + 100 * ["id_1"] + 20 * ["id_2"]),
-#         "ds": np.hstack(
-#             [
-#                 pd.date_range(end="2021-01-01", freq="D", periods=10),
-#                 pd.date_range(end="2022-01-01", freq="D", periods=100),
-#                 pd.date_range(end="2020-01-01", freq="D", periods=20),
-#             ]
-#         ),
-#         "y": np.hstack([np.arange(10.0), np.arange(100, 200), np.arange(20, 40)]),
-#     }
-# )
 
-# fcst = StatsForecast(
-#     models=[SumAhead(), Naive()],
-#     freq="D",
-#     verbose=True,
-# )
-# res_cv = fcst.cross_validation(
-#     df=series_cv, h=2, test_size=5, n_windows=None, level=(50, 60)
-# )
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-# n_windows = (
-#     fcst.cross_validation(df=series_cv, h=2, n_windows=2)
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 2 * 2)
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
+@pytest.fixture
+def series_cv1():
+    series_cv = pd.DataFrame(
+        {
+            "unique_id": np.array(10 * ["id_0"] + 100 * ["id_1"] + 20 * ["id_2"]),
+            "ds": np.hstack(
+                [
+                    pd.date_range(end="2021-01-01", freq="D", periods=10),
+                    pd.date_range(end="2022-01-01", freq="D", periods=100),
+                    pd.date_range(end="2020-01-01", freq="D", periods=20),
+                ]
+            ),
+            "y": np.hstack([np.arange(10.0), np.arange(100, 200), np.arange(20, 40)]),
+        }
+    )
+    return series_cv
 
-# n_windows = (
-#     fcst.cross_validation(df=series_cv, h=3, n_windows=3, step_size=3, fitted=True)
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 3 * 3)
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-# test_fail(
-#     lambda: fcst.cross_validation(df=series_cv, h=10),
-#     contains="The following series are too short for the cross validation settings: ['id_0']",
-# )
-# test_fail(
-#     lambda: fcst.cross_validation(df=series_cv, h=20),
-#     contains="The following series are too short for the cross validation settings: ['id_0', 'id_2']",
-# )
-# # test cross validation refit=False
-# fcst = StatsForecast(models=[SumAhead()], freq="D", verbose=True)
-# res_cv_wo_refit = fcst.cross_validation(
-#     df=series_cv,
-#     h=2,
-#     test_size=5,
-#     n_windows=None,
-#     level=(50, 60),
-#     refit=False,
-# )
-# test_fail(test_eq, args=(res_cv_wo_refit, res_cv))
-# cols_wo_refit = res_cv_wo_refit.columns
-# test_eq(
-#     res_cv_wo_refit.groupby("unique_id").head(1),
-#     res_cv[cols_wo_refit].groupby("unique_id").head(1),
-# )
+@pytest.fixture
+def series_cv2():
+    series_cv = pd.DataFrame(
+        {
+            "unique_id": np.hstack(
+                [np.zeros(10), np.zeros(100) + 1, np.zeros(20) + 2]
+            ).astype("int64"),
+            "ds": np.hstack(
+                [
+                    pd.date_range(end="2022-01-01", freq="D", periods=10),
+                    pd.date_range(end="2022-01-01", freq="D", periods=100),
+                    pd.date_range(end="2022-01-01", freq="D", periods=20),
+                ]
+            ),
+            "y": np.hstack([np.arange(10), np.arange(100, 200), np.arange(20, 40)]),
+        }
+    )
+    return series_cv
 
-# n_windows = (
-#     fcst.cross_validation(
-#         df=series_cv,
-#         h=2,
-#         n_windows=2,
-#         refit=False,
-#     )
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 2 * 2)
 
-# n_windows = (
-#     fcst.cross_validation(
-#         df=series_cv,
-#         h=3,
-#         n_windows=3,
-#         step_size=3,
-#         fitted=True,
-#         refit=False,
-#     )
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 3 * 3)
-# # test cross validation refit=False
-# fcst = StatsForecast(
-#     models=[
-#         DynamicOptimizedTheta(),
-#         AutoCES(),
-#         DynamicOptimizedTheta(season_length=7, alias="test"),
-#     ],
-#     freq="D",
-#     verbose=True,
-# )
-# res_cv_wo_refit = fcst.cross_validation(
-#     df=series_cv,
-#     h=2,
-#     test_size=5,
-#     n_windows=None,
-#     level=(50, 60),
-#     refit=False,
-# )
-# res_cv_w_refit = fcst.cross_validation(
-#     df=series_cv,
-#     h=2,
-#     test_size=5,
-#     n_windows=None,
-#     level=(50, 60),
-#     refit=True,
-# )
-# test_fail(test_eq, args=(res_cv_wo_refit, res_cv_w_refit))
-# test_eq(
-#     res_cv_wo_refit.groupby("unique_id").head(1),
-#     res_cv_w_refit.groupby("unique_id").head(1),
-# )
-# # test series without ds as datetime
-# series_cv_wo_dt = series_cv.copy()
-# series_cv_wo_dt["ds"] = series_cv_wo_dt["ds"].astype(str)
-# fcst = StatsForecast(models=[SumAhead(), Naive()], freq="D", verbose=False)
-# res_cv_wo_dt = fcst.cross_validation(
-#     df=series_cv_wo_dt,
-#     h=2,
-#     test_size=5,
-#     n_windows=None,
-#     level=(50, 60),
-# )
-# test_eq(res_cv, res_cv_wo_dt)
-# # test for equal ends cross_validation
-# series_cv = pd.DataFrame(
-#     {
-#         "unique_id": np.hstack(
-#             [np.zeros(10), np.zeros(100) + 1, np.zeros(20) + 2]
-#         ).astype("int64"),
-#         "ds": np.hstack(
-#             [
-#                 pd.date_range(end="2022-01-01", freq="D", periods=10),
-#                 pd.date_range(end="2022-01-01", freq="D", periods=100),
-#                 pd.date_range(end="2022-01-01", freq="D", periods=20),
-#             ]
-#         ),
-#         "y": np.hstack([np.arange(10), np.arange(100, 200), np.arange(20, 40)]),
-#     }
-# )
-# fcst = StatsForecast(
-#     models=[SumAhead()],
-#     freq="D",
-# )
-# res_cv = fcst.cross_validation(
-#     df=series_cv,
-#     h=2,
-#     test_size=5,
-#     n_windows=None,
-#     level=(50, 60),
-#     fitted=True,
-# )
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
+def test_for_cross_validation(series_cv1):
+    series_cv = series_cv1
+    # test for cross_validation
+    fcst = StatsForecast(
+        models=[SumAhead(), Naive()],
+        freq="D",
+        verbose=True,
+    )
+    res_cv = fcst.cross_validation(
+        df=series_cv, h=2, test_size=5, n_windows=None, level=(50, 60)
+    )
+    np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-# n_windows = (
-#     fcst.cross_validation(
-#         df=series_cv,
-#         h=2,
-#         n_windows=2,
-#     )
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 2 * 2)
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
+    n_windows = (
+        fcst.cross_validation(df=series_cv, h=2, n_windows=2)
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 2 * 2
+    np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-# n_windows = (
-#     fcst.cross_validation(
-#         df=series_cv,
-#         h=3,
-#         n_windows=3,
-#         step_size=3,
-#     )
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 3 * 3)
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
+    n_windows = (
+        fcst.cross_validation(df=series_cv, h=3, n_windows=3, step_size=3, fitted=True)
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 3 * 3
+    np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
+
+    assert_raises_with_message(
+        fcst.cross_validation,
+        "The following series are too short for the cross validation settings: ['id_0']",
+        df=series_cv,
+        h=10,
+    )
+    assert_raises_with_message(
+        fcst.cross_validation,
+        "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
+        df=series_cv,
+        h=20,
+    )
+
+
+def test_cross_validation_refit_false(series_cv1):
+    series_cv = series_cv1
+
+    # test cross validation refit=False with SumAhead
+    fcst = StatsForecast(models=[SumAhead()], freq="D", verbose=True)
+    res_cv = fcst.cross_validation(
+        df=series_cv,
+        h=2,
+        test_size=5,
+        n_windows=None,
+        level=(50, 60),
+        refit=True,
+    )
+    res_cv_wo_refit = fcst.cross_validation(
+        df=series_cv,
+        h=2,
+        test_size=5,
+        n_windows=None,
+        level=(50, 60),
+        refit=False,
+    )
+
+    # Results should be different
+    with pytest.raises((AssertionError, ValueError)):
+        pd.testing.assert_frame_equal(res_cv_wo_refit, res_cv)
+
+    # But first predictions should be equal
+    cols_wo_refit = res_cv_wo_refit.columns
+    pd.testing.assert_frame_equal(
+        res_cv_wo_refit.groupby("unique_id").head(1),
+        res_cv[cols_wo_refit].groupby("unique_id").head(1),
+    )
+
+    # Test n_windows with refit=False
+    n_windows = (
+        fcst.cross_validation(
+            df=series_cv,
+            h=2,
+            n_windows=2,
+            refit=False,
+        )
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 2 * 2
+
+    n_windows = (
+        fcst.cross_validation(
+            df=series_cv,
+            h=3,
+            n_windows=3,
+            step_size=3,
+            fitted=True,
+            refit=False,
+        )
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 3 * 3
+
+
+def test_cross_validation_refit_false_complex_models(series_cv):
+    # test cross validation refit=False with complex models
+    fcst = StatsForecast(
+        models=[
+            DynamicOptimizedTheta(),
+            AutoCES(),
+            DynamicOptimizedTheta(season_length=7, alias="test"),
+        ],
+        freq="D",
+        verbose=True,
+    )
+    res_cv_wo_refit = fcst.cross_validation(
+        df=series_cv,
+        h=2,
+        test_size=5,
+        n_windows=None,
+        level=(50, 60),
+        refit=False,
+    )
+    res_cv_w_refit = fcst.cross_validation(
+        df=series_cv,
+        h=2,
+        test_size=5,
+        n_windows=None,
+        level=(50, 60),
+        refit=True,
+    )
+
+    # Results should be different
+    with pytest.raises((AssertionError, ValueError)):
+        pd.testing.assert_frame_equal(res_cv_wo_refit, res_cv_w_refit)
+
+    # But first predictions should be equal
+    pd.testing.assert_frame_equal(
+        res_cv_wo_refit.groupby("unique_id").head(1),
+        res_cv_w_refit.groupby("unique_id").head(1),
+    )
+
+
+def test_cross_validation_string_dates(series_cv):
+    # test series without ds as datetime
+    series_cv_wo_dt = series_cv.copy()
+    series_cv_wo_dt["ds"] = series_cv_wo_dt["ds"].astype(str)
+    fcst = StatsForecast(models=[SumAhead(), Naive()], freq="D", verbose=False)
+
+    res_cv = fcst.cross_validation(
+        df=series_cv,
+        h=2,
+        test_size=5,
+        n_windows=None,
+        level=(50, 60),
+    )
+    res_cv_wo_dt = fcst.cross_validation(
+        df=series_cv_wo_dt,
+        h=2,
+        test_size=5,
+        n_windows=None,
+        level=(50, 60),
+    )
+    pd.testing.assert_frame_equal(res_cv, res_cv_wo_dt)
+
+
+def test_cross_validation_equal_ends():
+    # test for equal ends cross_validation
+    series_cv = pd.DataFrame(
+        {
+            "unique_id": np.hstack(
+                [np.zeros(10), np.zeros(100) + 1, np.zeros(20) + 2]
+            ).astype("int64"),
+            "ds": np.hstack(
+                [
+                    pd.date_range(end="2022-01-01", freq="D", periods=10),
+                    pd.date_range(end="2022-01-01", freq="D", periods=100),
+                    pd.date_range(end="2022-01-01", freq="D", periods=20),
+                ]
+            ),
+            "y": np.hstack([np.arange(10), np.arange(100, 200), np.arange(20, 40)]),
+        }
+    )
+
+    fcst = StatsForecast(
+        models=[SumAhead()],
+        freq="D",
+    )
+    res_cv = fcst.cross_validation(
+        df=series_cv,
+        h=2,
+        test_size=5,
+        n_windows=None,
+        level=(50, 60),
+        fitted=True,
+    )
+    assert 0.0 == np.mean(res_cv["y"] - res_cv["SumAhead"])
+
+    n_windows = (
+        fcst.cross_validation(
+            df=series_cv,
+            h=2,
+            n_windows=2,
+        )
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 2 * 2
+    assert 0.0 == np.mean(res_cv["y"] - res_cv["SumAhead"])
+
+    n_windows = (
+        fcst.cross_validation(
+            df=series_cv,
+            h=3,
+            n_windows=3,
+            step_size=3,
+        )
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 3 * 3
+    assert 0.0 == np.mean(res_cv["y"] - res_cv["SumAhead"])
+
+
 # show_doc(
 #     _StatsForecast.cross_validation_fitted_values,
 #     title_level=2,
@@ -966,8 +1059,16 @@ test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offset
 # from statsforecast.models import Naive
 # from statsforecast.utils import AirPassengersDF as panel_df
 
+
 # # Instantiate StatsForecast class
-# fcst = StatsForecast(models=[Naive()], freq="D", n_jobs=1)
+def test_naive_model(series):
+    fcst = StatsForecast(models=[Naive()], freq="D", n_jobs=1)
+    fcst.fit(df=series)
+    np.testing.assert_array_equal(fcst.predict(h=12), fcst.forecast(df=series, h=12))
+    np.testing.assert_array_equal(
+        fcst.fit_predict(df=series, h=12), fcst.forecast(df=series, h=12)
+    )
+
 
 # # Access insample predictions
 # rolled_fcsts_df = fcst.cross_validation(df=panel_df, h=12, n_windows=2, fitted=True)
@@ -975,131 +1076,146 @@ test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offset
 # insample_rolled_fcsts_df.tail(4)
 
 
-# # tests for fitted values cross_validation
-# def test_cv_fitted(series_cv, n_jobs=1, str_ds=False):
-#     if str_ds:
-#         series_cv = series_cv.copy()
-#         series_cv["ds"] = series_cv["ds"].astype(str)
-#     resids_fcst = StatsForecast(models=[SumAhead(), Naive()], freq="D", n_jobs=n_jobs)
-#     resids_res_cv = resids_fcst.cross_validation(
-#         df=series_cv, h=2, n_windows=4, fitted=True
-#     )
-#     resids_cv = resids_fcst.cross_validation_fitted_values()
-#     np.testing.assert_array_equal(
-#         resids_cv["cutoff"].unique(), resids_res_cv["cutoff"].unique()
-#     )
-#     if str_ds:
-#         series_cv["ds"] = pd.to_datetime(series_cv["ds"])
-#     for uid in resids_cv["unique_id"].unique():
-#         resids_uid = resids_cv[resids_cv["unique_id"].eq(uid)]
-#         for cutoff in resids_uid["cutoff"].unique():
-#             pd.testing.assert_frame_equal(
-#                 resids_uid.query("cutoff == @cutoff")[
-#                     ["unique_id", "ds", "y"]
-#                 ].reset_index(drop=True),
-#                 series_cv.query("ds <= @cutoff & unique_id == @uid")[
-#                     ["unique_id", "ds", "y"]
-#                 ].reset_index(drop=True),
-#                 check_dtype=False,
-#             )
+# tests for fitted values cross_validation
+def assert_cv_fitted(series_cv2, n_jobs=1, str_ds=False):
+    series_cv = series_cv2
+    if str_ds:
+        series_cv = series_cv.copy()
+        series_cv["ds"] = series_cv["ds"].astype(str)
+    resids_fcst = StatsForecast(models=[SumAhead(), Naive()], freq="D", n_jobs=n_jobs)
+    resids_res_cv = resids_fcst.cross_validation(
+        df=series_cv, h=2, n_windows=4, fitted=True
+    )
+    resids_cv = resids_fcst.cross_validation_fitted_values()
+    np.testing.assert_array_equal(
+        resids_cv["cutoff"].unique(), resids_res_cv["cutoff"].unique()
+    )
+    if str_ds:
+        series_cv["ds"] = pd.to_datetime(series_cv["ds"])
+    for uid in resids_cv["unique_id"].unique():
+        resids_uid = resids_cv[resids_cv["unique_id"].eq(uid)]
+        for cutoff in resids_uid["cutoff"].unique():
+            pd.testing.assert_frame_equal(
+                resids_uid.query("cutoff == @cutoff")[
+                    ["unique_id", "ds", "y"]
+                ].reset_index(drop=True),
+                series_cv.query("ds <= @cutoff & unique_id == @uid")[
+                    ["unique_id", "ds", "y"]
+                ].reset_index(drop=True),
+                check_dtype=False,
+            )
 
 
-# test_cv_fitted(series_cv)
-# test_cv_fitted(series_cv, str_ds=True)
+@pytest.mark.parametrize("str_ds", [True, False])
+def test_cv_fitted(series_cv2, str_ds):
+    assert_cv_fitted(series_cv2, str_ds=str_ds)
 
 
-# # tests for fallback model
-# def test_cv_fallback_model(n_jobs=1):
-#     fitted_fcst = StatsForecast(
-#         models=[NullModel()], freq="D", n_jobs=n_jobs, fallback_model=Naive()
-#     )
-#     fitted_res = fitted_fcst.cross_validation(df=series, h=2, n_windows=4, fitted=True)
-#     fitted = fitted_fcst.cross_validation_fitted_values()
-#     # test NullModel actualy fails
-#     fitted_fcst = StatsForecast(
-#         models=[NullModel()],
-#         freq="D",
-#         n_jobs=n_jobs,
-#     )
-#     test_fail(
-#         lambda: fitted_fcst.cross_validation(df=series, h=12, n_windows=4),
-#         contains="got an unexpected keyword argument",
-#     )
+# tests for fallback model
+def test_cv_fallback_model(series, n_jobs=1):
+    fitted_fcst = StatsForecast(
+        models=[NullModel()], freq="D", n_jobs=n_jobs, fallback_model=Naive()
+    )
+    fitted_res = fitted_fcst.cross_validation(df=series, h=2, n_windows=4, fitted=True)
+    fitted = fitted_fcst.cross_validation_fitted_values()
+    # test NullModel actualy fails
+    fitted_fcst = StatsForecast(
+        models=[NullModel()],
+        freq="D",
+        n_jobs=n_jobs,
+    )
+    (
+        assert_raises_with_message(
+            fitted_fcst.cross_validation,
+            "got an unexpected keyword argument",
+            df=series,
+            h=12,
+            n_windows=4,
+        ),
+    )
 
 
 # test_cv_fallback_model()
 # show_doc(_StatsForecast.plot, title_level=2, name="StatsForecast.plot")
 # show_doc(StatsForecast.save, title_level=2, name="StatsForecast.save")
 # show_doc(StatsForecast.load, title_level=2, name="StatsForecast.load")
-# fcst.fit(df=series)
-# test_eq(fcst.predict(h=12), fcst.forecast(df=series, h=12))
-# test_eq(fcst.fit_predict(df=series, h=12), fcst.forecast(df=series, h=12))
-# # test for conformal prediction
-# uids = series.index.unique()[:10]
-# series_subset = series.query("unique_id in @uids")[["unique_id", "ds", "y"]]
-# sf = StatsForecast(
-#     models=[SeasonalNaive(season_length=7)],
-#     freq="D",
-#     n_jobs=1,
-# )
-# sf = sf.fit(df=series_subset, prediction_intervals=ConformalIntervals(h=12))
-# test_eq(
-#     sf.predict(h=12, level=[80, 90]),
-#     sf.fit_predict(
-#         df=series_subset,
-#         h=12,
-#         level=[80, 90],
-#         prediction_intervals=ConformalIntervals(h=12),
-#     ),
-# )
-# test_eq(
-#     sf.predict(h=12, level=[80, 90]),
-#     sf.forecast(
-#         df=series_subset,
-#         h=12,
-#         level=[80, 90],
-#         prediction_intervals=ConformalIntervals(h=12),
-#     ),
-# )
 
-# # test errors/warnings are raised when level is not specified
-# intervals = ConformalIntervals(h=12)
-# sf2 = StatsForecast(
-#     models=[ADIDA()],
-#     freq="D",
-#     n_jobs=1,
-# )
-# sf2.fit(df=series_subset, prediction_intervals=intervals)
-# test_warns(lambda: sf2.predict(h=12))
-# test_fail(lambda: sf2.forecast(df=series_subset, h=12, prediction_intervals=intervals))
-# test_fail(
-#     lambda: sf2.fit_predict(df=series_subset, h=12, prediction_intervals=intervals)
-# )
-# test_fail(
-#     lambda: sf2.cross_validation(df=series_subset, h=12, prediction_intervals=intervals)
-# )
-# # test conformal cross validation
-# cv_conformal = sf.cross_validation(
-#     df=series_subset,
-#     h=12,
-#     n_windows=2,
-#     level=[80, 90],
-#     prediction_intervals=ConformalIntervals(h=12),
-# )
-# cv_no_conformal = sf.cross_validation(
-#     df=series_subset,
-#     h=12,
-#     n_windows=2,
-#     level=[80, 90],
-# )
-# test_eq(
-#     cv_conformal.columns,
-#     cv_no_conformal.columns,
-# )
-# test_eq(
-#     cv_conformal.filter(regex="ds|cutoff|y|AutoARIMA$"),
-#     cv_no_conformal.filter(regex="ds|cutoff|y|AutoARIMA$"),
-# )
+
+def test_conformal_prediction(series):
+    # test for conformal prediction
+    uids = series.index.unique()[:10]
+    series_subset = series.query("unique_id in @uids")[["unique_id", "ds", "y"]]
+    sf = StatsForecast(
+        models=[SeasonalNaive(season_length=7)],
+        freq="D",
+        n_jobs=1,
+    )
+    sf = sf.fit(df=series_subset, prediction_intervals=ConformalIntervals(h=12))
+    np.testing.assert_array_equal(
+        sf.predict(h=12, level=[80, 90]),
+        sf.fit_predict(
+            df=series_subset,
+            h=12,
+            level=[80, 90],
+            prediction_intervals=ConformalIntervals(h=12),
+        ),
+    )
+    np.testing.assert_array_equal(
+        sf.predict(h=12, level=[80, 90]),
+        sf.forecast(
+            df=series_subset,
+            h=12,
+            level=[80, 90],
+            prediction_intervals=ConformalIntervals(h=12),
+        ),
+    )
+
+    # test errors/warnings are raised when level is not specified
+    intervals = ConformalIntervals(h=12)
+    sf2 = StatsForecast(
+        models=[ADIDA()],
+        freq="D",
+        n_jobs=1,
+    )
+    sf2.fit(df=series_subset, prediction_intervals=intervals)
+    with pytest.warns():
+        sf2.predict(h=12)
+
+    # test_warns(lambda: )
+    assert_raises_with_message(
+        sf2.forecast, "", df=series_subset, h=12, prediction_intervals=intervals
+    )
+    assert_raises_with_message(
+        sf2.fit_predict, "", df=series_subset, h=12, prediction_intervals=intervals
+    )
+    assert_raises_with_message(
+        sf2.cross_validation, "", df=series_subset, h=12, prediction_intervals=intervals
+    )
+
+    # test conformal cross validation
+    cv_conformal = sf.cross_validation(
+        df=series_subset,
+        h=12,
+        n_windows=2,
+        level=[80, 90],
+        prediction_intervals=ConformalIntervals(h=12),
+    )
+    cv_no_conformal = sf.cross_validation(
+        df=series_subset,
+        h=12,
+        n_windows=2,
+        level=[80, 90],
+    )
+    np.testing.assert_array_equal(
+        cv_conformal.columns,
+        cv_no_conformal.columns,
+    )
+    np.testing.assert_array_equal(
+        cv_conformal.filter(regex="ds|cutoff|y|AutoARIMA$"),
+        cv_no_conformal.filter(regex="ds|cutoff|y|AutoARIMA$"),
+    )
+
+
 # fcst = StatsForecast(
 #     models=[
 #         ADIDA(),
@@ -1112,63 +1228,67 @@ test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offset
 # )
 # res = fcst.forecast(df=series, h=14)
 # # | eval: false
-# # tests for parallel processing
-# fcst = StatsForecast(
-#     models=[
-#         ADIDA(),
-#         SimpleExponentialSmoothing(0.1),
-#         HistoricAverage(),
-#         CrostonClassic(),
-#     ],
-#     freq="D",
-#     n_jobs=-1,
-# )
-# res = fcst.forecast(df=series, h=14)
-# res_cv = fcst.cross_validation(df=series, h=3, test_size=10, n_windows=None)
-# fcst = StatsForecast(
-#     models=[SumAhead()],
-#     freq="D",
-# )
-# res_cv = fcst.cross_validation(df=series_cv, h=2, test_size=5, n_windows=None)
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
+def test_parallel_processing(series, series_cv2):
+    series_cv = series_cv2
+    # tests for parallel processing
+    fcst = StatsForecast(
+        models=[
+            ADIDA(),
+            SimpleExponentialSmoothing(0.1),
+            HistoricAverage(),
+            CrostonClassic(),
+        ],
+        freq="D",
+        n_jobs=-1,
+    )
+    res = fcst.forecast(df=series, h=14)
+    res_cv = fcst.cross_validation(df=series, h=3, test_size=10, n_windows=None)
+    fcst = StatsForecast(
+        models=[SumAhead()],
+        freq="D",
+    )
+    res_cv = fcst.cross_validation(df=series_cv, h=2, test_size=5, n_windows=None)
+    np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-# test_fcst_fitted(series, n_jobs=-1)
-# test_cv_fitted(series_cv, n_jobs=-1)
-# test_fcst_fitted(series, n_jobs=-1, str_ds=True)
-# test_cv_fitted(series_cv, n_jobs=-1, str_ds=True)
-# # check n_windows argument
-# n_windows = (
-#     fcst.cross_validation(df=series_cv, h=2, n_windows=2)
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 2 * 2)
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
-# # check step_size argument
-# n_windows = (
-#     fcst.cross_validation(df=series_cv, h=3, n_windows=3, step_size=3)
-#     .groupby("unique_id")
-#     .size()
-#     .unique()
-# )
-# test_eq(n_windows, 3 * 3)
-# test_eq(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
-# # from statsforecast.core import StatsForecast
-# from statsforecast.models import HistoricAverage
-# from statsforecast.utils import AirPassengers as ap
+    assert_fcst_fitted(series)
+    assert_cv_fitted(series_cv, n_jobs=-1)
+    assert_fcst_fitted(series, n_jobs=-1, str_ds=True)
+    assert_cv_fitted(series_cv, n_jobs=-1, str_ds=True)
+    # check n_windows argument
+    n_windows = (
+        fcst.cross_validation(df=series_cv, h=2, n_windows=2)
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 2 * 2
+    np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-# int_ds_df = pd.DataFrame({"ds": np.arange(1, len(ap) + 1), "y": ap})
-# int_ds_df.insert(0, "unique_id", "AirPassengers")
-# int_ds_df.head()
-# int_ds_df.tail()
-# int_ds_df
-# fcst = StatsForecast(models=[HistoricAverage()], freq=1)
-# horizon = 7
-# forecast = fcst.forecast(df=int_ds_df, h=horizon)
-# forecast.head()
-# last_date = int_ds_df["ds"].max()
-# test_eq(forecast["ds"].values, np.arange(last_date + 1, last_date + 1 + horizon))
+    # check step_size argument
+    n_windows = (
+        fcst.cross_validation(df=series_cv, h=3, n_windows=3, step_size=3)
+        .groupby("unique_id")
+        .size()
+        .unique()
+    )
+    assert n_windows == 3 * 3
+    np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
+
+
+def test_integer_datestamp():
+    int_ds_df = pd.DataFrame({"ds": np.arange(1, len(ap) + 1), "y": ap})
+    int_ds_df.insert(0, "unique_id", "AirPassengers")
+
+    fcst = StatsForecast(models=[HistoricAverage()], freq=1)
+    horizon = 7
+    forecast = fcst.forecast(df=int_ds_df, h=horizon)
+
+    last_date = int_ds_df["ds"].max()
+    np.testing.assert_array_equal(
+        forecast["ds"].values, np.arange(last_date + 1, last_date + 1 + horizon)
+    )
+
+
 # int_ds_cv = fcst.cross_validation(df=int_ds_df, h=7, test_size=8, n_windows=None)
 # int_ds_cv
 
@@ -1219,57 +1339,56 @@ test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offset
 # xreg_res_cv = fcst.cross_validation(df=series_train, h=3, test_size=5, n_windows=None)
 
 
-# # the following cells contain tests for external regressors
-# class ReturnX(_TS):
-#     def __init__(self):
-#         pass
+# the following cells contain tests for external regressors
+class ReturnX(_TS):
+    def __init__(self):
+        pass
 
-#     def fit(self, y, X):
-#         return self
+    def fit(self, y, X):
+        return self
 
-#     def predict(self, h, X):
-#         mean = X
-#         return X
+    def predict(self, h, X):
+        mean = X
+        return X
 
-#     def __repr__(self):
-#         return "ReturnX"
+    def __repr__(self):
+        return "ReturnX"
 
-#     def forecast(self, y, h, X=None, X_future=None, fitted=False):
-#         return {"mean": X_future.flatten()}
+    def forecast(self, y, h, X=None, X_future=None, fitted=False):
+        return {"mean": X_future.flatten()}
 
-#     def new(self):
-#         b = type(self).__new__(type(self))
-#         b.__dict__.update(self.__dict__)
-#         return b
-
-
-# df = pd.DataFrame(
-#     {
-#         "unique_id": [0] * 10 + [1] * 10,
-#         "ds": np.hstack([np.arange(10), np.arange(10)]),
-#         "y": np.random.rand(20),
-#         "x": np.arange(20, dtype=np.float64),
-#     }
-# )
-# train_mask = df["ds"] < 6
-# train_df = df[train_mask]
-# test_df = df[~train_mask]
+    def new(self):
+        b = type(self).__new__(type(self))
+        b.__dict__.update(self.__dict__)
+        return b
 
 
-# def test_x_vars(n_jobs=1):
-#     fcst = StatsForecast(
-#         models=[ReturnX()],
-#         freq=1,
-#         n_jobs=n_jobs,
-#     )
-#     xreg = test_df.drop(columns="y")
-#     res = fcst.forecast(df=train_df, h=4, X_df=xreg)
-#     expected_res = xreg.rename(columns={"x": "ReturnX"})
-#     pd.testing.assert_frame_equal(
-#         res,
-#         expected_res.reset_index(drop=True),
-#         check_dtype=False,
-#     )
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_x_vars(n_jobs):
+    df = pd.DataFrame(
+        {
+            "unique_id": [0] * 10 + [1] * 10,
+            "ds": np.hstack([np.arange(10), np.arange(10)]),
+            "y": np.random.rand(20),
+            "x": np.arange(20, dtype=np.float64),
+        }
+    )
+    train_mask = df["ds"] < 6
+    train_df = df[train_mask]
+    test_df = df[~train_mask]
+    fcst = StatsForecast(
+        models=[ReturnX()],
+        freq=1,
+        n_jobs=n_jobs,
+    )
+    xreg = test_df.drop(columns="y")
+    res = fcst.forecast(df=train_df, h=4, X_df=xreg)
+    expected_res = xreg.rename(columns={"x": "ReturnX"})
+    pd.testing.assert_frame_equal(
+        res,
+        expected_res.reset_index(drop=True),
+        check_dtype=False,
+    )
 
 
 # test_x_vars(n_jobs=1)
@@ -1316,17 +1435,18 @@ test_eq(res.groupby("unique_id")["ds"].max().values, last_dates + 14 * pd.offset
 # fcst.plot(ap_df, ap_ci, level=[80], engine="matplotlib")
 
 
-# def test_conf_intervals(n_jobs=1):
-#     ap_df = pd.DataFrame(
-#         {"unique_id": [0] * ap.size, "ds": np.arange(ap.size), "y": ap}
-#     )
-#     fcst = StatsForecast(
-#         models=[SeasonalNaive(season_length=12), AutoARIMA(season_length=12)],
-#         freq=1,
-#         n_jobs=n_jobs,
-#     )
-#     ap_ci = fcst.forecast(df=ap_df, h=12, level=(80, 95))
-#     ap_ci.drop(columns="unique_id").set_index("ds").plot(marker=".", figsize=(10, 6))
+@pytest.mark.parametrize("n_jobs", [1, 101])
+def test_conf_intervals(n_jobs):
+    ap_df = pd.DataFrame(
+        {"unique_id": [0] * ap.size, "ds": np.arange(ap.size), "y": ap}
+    )
+    fcst = StatsForecast(
+        models=[SeasonalNaive(season_length=12), AutoARIMA(season_length=12)],
+        freq=1,
+        n_jobs=n_jobs,
+    )
+    ap_ci = fcst.forecast(df=ap_df, h=12, level=(80, 95))
+    ap_ci.drop(columns="unique_id").set_index("ds").plot(marker=".", figsize=(10, 6))
 
 
 # test_conf_intervals(n_jobs=1)
