@@ -1,10 +1,14 @@
-from nbdev.showdoc import add_docs, show_doc
+import numpy as np
+import pandas as pd
+from statsforecast.mstl import mstl
+from statsforecast.utils import AirPassengers as ap
+
 x = np.arange(1, 11)
 mstl(x, 12)
-from statsforecast.utils import AirPassengers as ap
+
 decomposition = mstl(ap, 12)
 decomposition.plot()
-decomposition_stl_trend = mstl(ap, 12, stl_kwargs={'trend': 27})
+decomposition_stl_trend = mstl(ap, 12, stl_kwargs={"trend": 27})
 decomposition_stl_trend.plot()
 decomposition_trend = mstl(ap, 1)
 decomposition_trend.plot()
@@ -31,5 +35,5 @@ timeseries = timeseries.set_index("ds").resample("H").sum()
 timeseries.head()
 
 # decomposition
-decomposition = mstl(timeseries['y'].values, [24, 24 * 7]).tail(24 * 7 * 4)
+decomposition = mstl(timeseries["y"].values, [24, 24 * 7]).tail(24 * 7 * 4)
 decomposition.plot()
