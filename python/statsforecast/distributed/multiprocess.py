@@ -31,10 +31,7 @@ class MultiprocessBackend(ParallelBackend):
 
     def forecast(self, df, models, freq, fallback_model=None, **kwargs: Any) -> Any:
         model = _StatsForecast(
-            models=models,
-            freq=freq,
-            fallback_model=fallback_model,
-            n_jobs=self.n_jobs,
+            models=models, freq=freq, fallback_model=fallback_model, n_jobs=self.n_jobs
         )
         return model.forecast(df=df, **kwargs)
 
@@ -42,9 +39,6 @@ class MultiprocessBackend(ParallelBackend):
         self, df, models, freq, fallback_model=None, **kwargs: Any
     ) -> Any:
         model = _StatsForecast(
-            models=models,
-            freq=freq,
-            fallback_model=fallback_model,
-            n_jobs=self.n_jobs,
+            models=models, freq=freq, fallback_model=fallback_model, n_jobs=self.n_jobs
         )
         return model.cross_validation(df=df, **kwargs)
