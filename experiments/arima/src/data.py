@@ -2,19 +2,17 @@ import fire
 import pandas as pd
 from datasetsforecast.m3 import M3, M3Info
 from datasetsforecast.m4 import M4, M4Info
-from datasetsforecast.hierarchical import TourismLarge
 
-def CreateTourismInfo():
+class M3Small:
+    def load(directory:str, group:str):
+        df, *_ = M3.load(directory, group)
+        sub_list = df.unique_id.drop_duplicates().to_list()[0:8]
+        df = df.query("unique_id.isin(@sub_list)")
+        return df, None, None
 
-    def __init__(self):
-        self.horizon = TourismLarge.horizon
-        self.freq = TourismLarge.freq
-        self.seasonality = TourismLarge.seasonality
-
-TourismInfo = CreateTourismInfo()
 
 dict_datasets = {
-    'Tourism': (TourismLarge, TourismInfo),
+    'M3Small': (M3Small, M3Info),
     'M3': (M3, M3Info),
     'M4': (M4, M4Info)
 }
