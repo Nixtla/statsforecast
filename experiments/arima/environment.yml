@@ -7,7 +7,7 @@ dependencies:
   - python=3.12
   - pip
   - numpy
-  - prophet
+  - prophet=1.1.6
   - numba
   - r-base
   - r-urca
@@ -18,9 +18,9 @@ dependencies:
   - r-furrr
   - tabulate
   - scikit-learn
-  - pmdarima
+  - pmdarima=2.0.4
   - fire
-  - statsforecast
+  - statsforecast=2.0.1
   - pip:
     - datasetsforecast
     - jupyterlab
