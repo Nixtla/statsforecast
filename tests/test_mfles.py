@@ -1,6 +1,6 @@
-%load_ext autoreload
-%autoreload 2
 import pandas as pd
+from statsforecast.mfles import MFLES
+
 url = "https://raw.githubusercontent.com/tidyverts/tsibbledata/master/data-raw/vic_elec/VIC2015/demand.csv"
 df = pd.read_csv(url)
 df["Date"] = df["Date"].apply(
