@@ -6,7 +6,7 @@ from datasetsforecast.m4 import M4, M4Info
 class M3Small:
     def load(directory:str, group:str):
         df, *_ = M3.load(directory, group)
-        sub_list = df.unique_id.drop_duplicates().to_list()[0:8]
+        sub_list = df.unique_id.drop_duplicates().to_list()[0:2]
         df = df.query("unique_id.isin(@sub_list)")
         return df, None, None
 
