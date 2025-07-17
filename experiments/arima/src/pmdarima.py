@@ -15,11 +15,16 @@ def fit_and_predict(index, ts, horizon, freq, seasonality):
     x = ts['y'].values
     mod = auto_arima(x, m=seasonality, with_intercept=False, error_action='ignore')
     forecast = mod.predict(horizon)
-    return forecast, index, ts
+    ds = pd.date_range(start=ts.ds.max(), periods=horizon + 1, freq=freq)[1:]
+    df = pd.DataFrame({
+            "unique_id": index,
+            "ds": ds,
+            "auto_arima_pmdarima": forecast,
+    })
+    return df
 
 def main(dataset: str, group: str) -> None:
     train, horizon, freq, seasonality = get_data('data', dataset, group)
-    print(train)
     partial_fit_and_predict = partial(
         fit_and_predict,
         horizon=horizon,
@@ -32,18 +37,8 @@ def main(dataset: str, group: str) -> None:
         results = pool.starmap(partial_fit_and_predict, train.groupby('unique_id'))
     end = time.time()
     print(end - start)
-
-    ds = pd.date_range(start=train.ds.max(), periods=horizon + 1, freq=freq)[1:]
-    preds = []
-    for pred in results:
-        preds.append(
-            pd.DataFrame({
-            "unique_id": pred[1],
-            "ds": ds,
-            "auto_arima_pmdarima": pred[0],
-        }))
     
-    forecasts = pd.concat(preds)
+    forecasts = pd.concat(results)
     forecasts.to_csv(f'data/pmdarima-forecasts-{dataset}-{group}.csv', index=False)
 
     time_df = pd.DataFrame({'time': [end - start], 'model': ['auto_arima_pmdarima']})
