@@ -59,10 +59,13 @@ To reproduce the main results, follow these steps:
 2. **Run Python Experiments**: You can now run all Python experiments for a specific model or all of them at once:
 
 - To run all `StatsForecast` experiments: make `run_tests_statsforecast`
+make run_module module="python -m src.statsforecast --dataset M3Small --group Yearly"
 
 - To run all `PMDARIMA` experiments: make `run_tests_pmdarima`
+make run_module module="python -m src.pmdarima --dataset M3Small --group Yearly"
 
 - To run all Prophet experiments: make run_tests_prophet
+make run_module module="python -m src.prophet --dataset M3Small --group Yearly"
 
 3. **Run R Experiments**:
 
