@@ -6,9 +6,14 @@ from multiprocessing import Pool, cpu_count
 import fire
 import numpy as np
 import pandas as pd
-from neuralforecast.losses.numpy import mape
+from sklearn.metrics import mean_absolute_percentage_error as mape
 from prophet import Prophet
 from sklearn.model_selection import ParameterGrid
+
+import logging
+logging.getLogger("prophet").setLevel(logging.ERROR)
+logging.getLogger("cmdstanpy").setLevel(logging.ERROR)
+
 
 from src.data import get_data
 
@@ -20,8 +25,7 @@ grid = ParameterGrid(params_grid)
 
 
 def fit_and_predict(index, ts, horizon, freq, seasonality): 
-
-    df = ts.drop('unique_id', 1)
+    df = ts.drop(columns='unique_id')
     df['ds'] = pd.date_range(start='1970-01-01', periods=ts.shape[0], freq=freq)
     df_val = df.tail(horizon)
     df_train = df.drop(df_val.index)
