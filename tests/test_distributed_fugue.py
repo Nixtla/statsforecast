@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import ray
+import ray.data
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
 from pyspark.sql import SparkSession
