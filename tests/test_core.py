@@ -926,7 +926,8 @@ def test_cross_validation_refit_false(series_cv1):
     assert n_windows == 3 * 3
 
 
-def test_cross_validation_refit_false_complex_models(series_cv):
+def test_cross_validation_refit_false_complex_models(series_cv2):
+    series_cv = series_cv2
     # test cross validation refit=False with complex models
     fcst = StatsForecast(
         models=[
@@ -965,7 +966,9 @@ def test_cross_validation_refit_false_complex_models(series_cv):
     )
 
 
-def test_cross_validation_string_dates(series_cv):
+def test_cross_validation_string_dates(series_cv2):
+    series_cv = series_cv2
+
     # test series without ds as datetime
     series_cv_wo_dt = series_cv.copy()
     series_cv_wo_dt["ds"] = series_cv_wo_dt["ds"].astype(str)
