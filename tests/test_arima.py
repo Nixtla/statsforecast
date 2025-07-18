@@ -405,146 +405,261 @@ def test_Arima_fixed_argument(method, drift_xreg):
     )
 
 
-# res_Arima_s = Arima(
-#     ap, order=(0, 1, 0), seasonal={"order": (2, 1, 0), "period": 12}, method="CSS-ML"
-# )
-# ## res_Arima_s = Arima(ap, order=(0, 1, 0), seasonal={'order': (2, 1, 0), 'period': 12}, method='CSS-ML')
-# (
-#     res_Arima_s["arma"],
-#     res_Arima_s["aic"],
-#     res_Arima_s["coef"],
-#     np.sqrt(np.diag(res_Arima_s["var_coef"])),
-# )
-for key in ["residuals", "arma"]:
-    assert Arima(ap, model=res_Arima_s, method="CSS-ML")[key], res_Arima_s[key])
-res_Arima = Arima(
-    ap, seasonal={"order": (0, 0, 0), "period": 12}, include_drift=True, method="CSS-ML"
-)
-# ## res_Arima = Arima(ap, seasonal={'order': (0, 0, 0), 'period': 12}, include_drift=True, method='CSS-ML')
-# (
-#     res_Arima["arma"],
-#     res_Arima["aic"],
-#     res_Arima["coef"],
-#     np.sqrt(np.diag(res_Arima["var_coef"])),
-# )
-# test_close(
-#     Arima(ap, model=res_Arima, method="CSS-ML")["residuals"], res_Arima["residuals"]
-# )
-# res_Arima_ex = Arima(
-#     ap,
-#     seasonal={"order": (0, 0, 0), "period": 12},
-#     include_drift=True,
-#     xreg=np.sqrt(drift),
-#     method="CSS-ML",
-# )
-# ## res_Arima_ex = Arima(ap, seasonal={'order': (0, 0, 0), 'period': 12}, include_drift=True, xreg=np.sqrt(drift), method='CSS-ML')
-# (
-#     res_Arima_ex["arma"],
-#     res_Arima_ex["aic"],
-#     res_Arima_ex["coef"],
-#     np.sqrt(np.diag(res_Arima_ex["var_coef"])),
-# )
-# test_close(
-#     Arima(ap, model=res_Arima_ex, method="CSS-ML", xreg=np.sqrt(drift))["residuals"],
-#     res_Arima_ex["residuals"],
-# )
-# arima_string(res_Arima_ex)
-# arima_string(res_Arima)
-# # test recursive window average
-# rec_window_av = Arima(
-#     ap,
-#     order=(2, 0, 0),
-#     include_mean=False,
-#     fixed={"ar1": 0.5, "ar2": 0.5},
-#     method="CSS-ML",
-# )
-# expected_fcsts = []
-# for i in range(4):
-#     mean = np.concatenate([ap, expected_fcsts])[-2:].mean()
-#     expected_fcsts.append(mean)
-# assert forecast_arima(rec_window_av, 4)["mean"], np.array(expected_fcsts))
-# fcst = forecast_arima(res_Arima_s, h=12)
-# assert fcst["lower"] is None
-# assert fcst["upper"] is None
-# fcst = forecast_arima(res_Arima_s, h=12, level=(80, 95))
-# assert fcst["lower"].columns.tolist() == ["80%", "95%"]
-# assert fcst["upper"].columns.tolist() == ["80%", "95%"]
-# fcst = forecast_arima(res_Arima_s, fan=True, h=10)
-# assert fcst["lower"].shape[1] == 17
-# assert fcst["upper"].shape[1] == 17
-# forecast_arima(res_Arima, h=10)["mean"]
-# forecast_arima(res_Arima_ex, xreg=np.sqrt(newdrift), h=10)["mean"]
-# fitted_res_Arima = fitted_arima(res_Arima)
-# assert len(fitted_res_Arima) == len(res_Arima["x"])
-# fitted_res_Arima_ex = fitted_arima(res_Arima_ex)
-# assert len(fitted_res_Arima_ex) == len(res_Arima_ex["x"])
-# fitted_res_Arima_s = fitted_arima(res_Arima_s)
-# assert len(fitted_res_Arima_s) == len(res_Arima_s["x"])
+def test_Arima_model_parameter():
+    """Test that Arima models can be reconstructed from existing model parameters."""
+    res_Arima_s = Arima(
+        ap,
+        order=(0, 1, 0),
+        seasonal={"order": (2, 1, 0), "period": 12},
+        method="CSS-ML",
+    )
+
+    for key in ["residuals", "arma"]:
+        np.testing.assert_array_equal(
+            Arima(ap, model=res_Arima_s, method="CSS-ML")[key], res_Arima_s[key]
+        )
+
+
+def test_Arima_drift():
+    """Test Arima model with drift parameter."""
+    res_Arima = Arima(
+        ap,
+        seasonal={"order": (0, 0, 0), "period": 12},
+        include_drift=True,
+        method="CSS-ML",
+    )
+    # Ensure the model was created successfully
+    assert res_Arima is not None
+
+
+def test_Arima_residuals_consistency():
+    """Test that Arima model residuals are consistent when reconstructed."""
+    res_Arima = Arima(
+        ap,
+        seasonal={"order": (0, 0, 0), "period": 12},
+        include_drift=True,
+        method="CSS-ML",
+    )
+
+    # Verify model properties exist
+    assert "arma" in res_Arima
+    assert "aic" in res_Arima
+    assert "coef" in res_Arima
+    assert "var_coef" in res_Arima
+
+    # Test residuals consistency
+    np.testing.assert_allclose(
+        Arima(ap, model=res_Arima, method="CSS-ML")["residuals"], res_Arima["residuals"]
+    )
+
+
+def test_Arima_with_exogenous_variables():
+    """Test Arima model with exogenous variables and residuals consistency."""
+    drift = np.arange(1, ap.size + 1).reshape(-1, 1)
+    res_Arima_ex = Arima(
+        ap,
+        seasonal={"order": (0, 0, 0), "period": 12},
+        include_drift=True,
+        xreg=np.sqrt(drift),
+        method="CSS-ML",
+    )
+
+    np.testing.assert_allclose(
+        Arima(ap, model=res_Arima_ex, method="CSS-ML", xreg=np.sqrt(drift))[
+            "residuals"
+        ],
+        res_Arima_ex["residuals"],
+    )
+
+
+def test_recursive_window_average():
+    """Test recursive window average forecasting with fixed AR parameters."""
+    rec_window_av = Arima(
+        ap,
+        order=(2, 0, 0),
+        include_mean=False,
+        fixed={"ar1": 0.5, "ar2": 0.5},
+        method="CSS-ML",
+    )
+    expected_fcsts = []
+    for i in range(4):
+        mean = np.concatenate([ap, expected_fcsts])[-2:].mean()
+        expected_fcsts.append(mean)
+
+    np.testing.assert_array_equal(
+        forecast_arima(rec_window_av, 4)["mean"], np.array(expected_fcsts)
+    )
+
+
+def test_forecast_arima_confidence_intervals():
+    """Test forecast_arima with different confidence interval configurations."""
+    res_Arima_s = Arima(
+        ap,
+        order=(0, 1, 0),
+        seasonal={"order": (2, 1, 0), "period": 12},
+        method="CSS-ML",
+    )
+
+    # Test default forecast (no intervals)
+    fcst = forecast_arima(res_Arima_s, h=12)
+    assert fcst["lower"] is None
+    assert fcst["upper"] is None
+
+    # Test specific confidence levels
+    fcst = forecast_arima(res_Arima_s, h=12, level=(80, 95))
+    assert fcst["lower"].columns.tolist() == ["80%", "95%"]
+    assert fcst["upper"].columns.tolist() == ["80%", "95%"]
+
+    # Test fan chart
+    fcst = forecast_arima(res_Arima_s, fan=True, h=10)
+    assert fcst["lower"].shape[1] == 17
+    assert fcst["upper"].shape[1] == 17
+
+
+def test_fitted_arima_lengths():
+    """Test that fitted_arima returns correct lengths for different models."""
+    # Create models for testing
+    res_Arima = Arima(
+        ap,
+        seasonal={"order": (0, 0, 0), "period": 12},
+        include_drift=True,
+        method="CSS-ML",
+    )
+
+    drift = np.arange(1, ap.size + 1).reshape(-1, 1)
+    res_Arima_ex = Arima(
+        ap,
+        seasonal={"order": (0, 0, 0), "period": 12},
+        include_drift=True,
+        xreg=np.sqrt(drift),
+        method="CSS-ML",
+    )
+
+    res_Arima_s = Arima(
+        ap,
+        order=(0, 1, 0),
+        seasonal={"order": (2, 1, 0), "period": 12},
+        method="CSS-ML",
+    )
+
+    # Test fitted lengths
+    fitted_res_Arima = fitted_arima(res_Arima)
+    assert len(fitted_res_Arima) == len(res_Arima["x"])
+
+    fitted_res_Arima_ex = fitted_arima(res_Arima_ex)
+    assert len(fitted_res_Arima_ex) == len(res_Arima_ex["x"])
+
+    fitted_res_Arima_s = fitted_arima(res_Arima_s)
+    assert len(fitted_res_Arima_s) == len(res_Arima_s["x"])
+
+
 # mstl(x, 12)
 # seas_heuristic(x, 12)
-# nsdiffs(ap, period=12)
-# almost_constant_x = np.hstack([np.full(42, 100), np.array([119, 525])])
-# assert nsdiffs(almost_constant_x, period=12) == 0
-# ndiffs(ap)
-# results = np.array([[0, 0, 0, 0, 1, 0, 1]])
-# assert not newmodel(*results[0], results)
-# assert newmodel(0, 1, 0, 0, 1, 0, 1, results)
-# assert math.isclose(
-#     auto_arima_f(np.arange(1, 3))["coef"]["intercept"],
-#     1.5,
-#     rel_tol=1e-3,
-# )
 
 
-# def test_forward(fitted_model, forecasts, xreg_train=None, xreg_test=None, y=ap):
-#     test_close(
-#         forecast_arima(
-#             model=forward_arima(fitted_model=fitted_model, y=y, xreg=xreg_train),
-#             h=len(forecasts),
-#             xreg=xreg_test,
-#         )["mean"],
-#         forecasts,
-#     )
+def test_nsdiffs_and_newmodel():
+    """Test nsdiffs function and newmodel function."""
+    # Test nsdiffs with seasonal period
+    assert nsdiffs(ap, period=12) >= 0
+
+    # Test nsdiffs with almost constant data
+    almost_constant_x = np.hstack([np.full(42, 100), np.array([119, 525])])
+    assert nsdiffs(almost_constant_x, period=12) == 0
+
+    # Test ndiffs
+    assert ndiffs(ap) >= 0
+
+    # Test newmodel function
+    results = np.array([[0, 0, 0, 0, 1, 0, 1]])
+    assert not newmodel(*results[0], results)
+    assert newmodel(0, 1, 0, 0, 1, 0, 1, results)
 
 
-# mod_simple = auto_arima_f(ap, period=12, method="CSS-ML")
-# mod_simple_forecasts = forecast_arima(mod_simple, 7)["mean"]
-# test_forward(mod_simple, mod_simple_forecasts)
-# mod_x_1 = auto_arima_f(ap, period=12, method="CSS-ML", xreg=np.sqrt(drift))
-# mod_x_1_forecasts = forecast_arima(mod_x_1, 7, xreg=np.sqrt(newdrift))["mean"]
-# test_forward(
-#     mod_x_1, mod_x_1_forecasts, xreg_train=np.sqrt(drift), xreg_test=np.sqrt(newdrift)
-# )
-# mod_x_2 = auto_arima_f(
-#     ap, period=12, method="CSS-ML", xreg=np.hstack([np.sqrt(drift), np.log(drift)])
-# )
-# mod_x_2_forecasts = forecast_arima(
-#     mod_x_2, 7, xreg=np.hstack([np.sqrt(newdrift), np.log(newdrift)])
-# )["mean"]
-# test_forward(
-#     mod_x_2,
-#     mod_x_2_forecasts,
-#     xreg_train=np.hstack([np.sqrt(drift), np.log(drift)]),
-#     xreg_test=np.hstack([np.sqrt(newdrift), np.log(newdrift)]),
-# )
-# mod = auto_arima_f(ap, period=12, method="CSS-ML", trace=True)
-# mod_forecasts = forecast_arima(mod, h=12)["mean"]
-# test_forward(mod, mod_forecasts)
-# drift_model = auto_arima_f(np.arange(1, 101))
-# drift_forecasts = forecast_arima(drift_model, 12)["mean"]
-# np.testing.assert_array_equal(drift_forecasts, np.arange(101, 101 + 12))
-# test_forward(drift_model, drift_forecasts, y=np.arange(1, 101))
-# forecast_arima(forward_arima(drift_model, y=ap), h=12)["mean"]
-# constant_model = auto_arima_f(np.array([1] * 36))
-# constant_model_forecasts = forecast_arima(constant_model, 12)["mean"]
-# test_forward(constant_model, constant_model_forecasts)
-# custom_model = Arima(
-#     ap, order=(2, 1, 3), seasonal={"order": (3, 2, 5), "period": 12}, method="CSS-ML"
-# )
-# custom_model_forecasts = forecast_arima(custom_model, h=12)["mean"]
-# test_forward(custom_model, custom_model_forecasts)
+def test_auto_arima_simple_cases():
+    """Test auto_arima_f with simple cases."""
+    assert math.isclose(
+        auto_arima_f(np.arange(1, 3))["coef"]["intercept"],
+        1.5,
+        rel_tol=1e-3,
+    )
+
+
+def assert_forward(fitted_model, forecasts, xreg_train=None, xreg_test=None, y=ap):
+    """Helper function to test forward_arima functionality."""
+    np.testing.assert_allclose(
+        forecast_arima(
+            model=forward_arima(fitted_model=fitted_model, y=y, xreg=xreg_train),
+            h=len(forecasts),
+            xreg=xreg_test,
+        )["mean"],
+        forecasts,
+    )
+
+
+def test_forward_arima_models():
+    """Test forward_arima functionality with various model configurations."""
+    drift = np.arange(1, ap.size + 1).reshape(-1, 1)
+    newdrift = np.arange(ap.size + 1, ap.size + 10 + 1).reshape(-1, 1)
+
+    # Simple model
+    mod_simple = auto_arima_f(ap, period=12, method="CSS-ML")
+    mod_simple_forecasts = forecast_arima(mod_simple, 7)["mean"]
+    assert_forward(mod_simple, mod_simple_forecasts)
+
+    # Model with single exogenous variable
+    mod_x_1 = auto_arima_f(ap, period=12, method="CSS-ML", xreg=np.sqrt(drift))
+    mod_x_1_forecasts = forecast_arima(mod_x_1, 7, xreg=np.sqrt(newdrift))["mean"]
+    assert_forward(
+        mod_x_1,
+        mod_x_1_forecasts,
+        xreg_train=np.sqrt(drift),
+        xreg_test=np.sqrt(newdrift),
+    )
+
+    # Model with multiple exogenous variables
+    mod_x_2 = auto_arima_f(
+        ap, period=12, method="CSS-ML", xreg=np.hstack([np.sqrt(drift), np.log(drift)])
+    )
+    mod_x_2_forecasts = forecast_arima(
+        mod_x_2, 7, xreg=np.hstack([np.sqrt(newdrift), np.log(newdrift)])
+    )["mean"]
+    assert_forward(
+        mod_x_2,
+        mod_x_2_forecasts,
+        xreg_train=np.hstack([np.sqrt(drift), np.log(drift)]),
+        xreg_test=np.hstack([np.sqrt(newdrift), np.log(newdrift)]),
+    )
+
+    # Model with trace enabled
+    mod = auto_arima_f(ap, period=12, method="CSS-ML", trace=True)
+    mod_forecasts = forecast_arima(mod, h=12)["mean"]
+    assert_forward(mod, mod_forecasts)
+
+    # Drift model
+    drift_model = auto_arima_f(np.arange(1, 101))
+    drift_forecasts = forecast_arima(drift_model, 12)["mean"]
+    np.testing.assert_array_equal(drift_forecasts, np.arange(101, 101 + 12))
+    assert_forward(drift_model, drift_forecasts, y=np.arange(1, 101))
+
+    # Constant model
+    constant_model = auto_arima_f(np.array([1] * 36))
+    constant_model_forecasts = forecast_arima(constant_model, 12)["mean"]
+    assert_forward(constant_model, constant_model_forecasts)
+
+    # Custom complex model
+    custom_model = Arima(
+        ap,
+        order=(2, 1, 3),
+        seasonal={"order": (3, 2, 5), "period": 12},
+        method="CSS-ML",
+    )
+    custom_model_forecasts = forecast_arima(custom_model, h=12)["mean"]
+    assert_forward(custom_model, custom_model_forecasts)
+
+
 # forecast_arima(forward_arima(custom_model, y=np.arange(1, 101)), h=12)["mean"]
-# print_statsforecast_ARIMA(mod)
+
+
 # model = AutoARIMA()
 # model = model.fit(ap)
 # model.predict(h=7)
@@ -563,18 +678,32 @@ res_Arima = Arima(
 # model_x.predict_in_sample()
 # model_x.predict_in_sample(level=(80, 90))
 # model_x.summary()
-# AutoARIMA().fit(np.array([1] * 36)).predict(20, level=80)
-# number = 4.0
-# preds = AutoARIMA().fit(np.array([number])).predict(3)
-# np.testing.assert_array_equal(preds["mean"], number)
-# test_close(
-#     AutoARIMA().fit(almost_constant_x).predict(1).loc[0, "mean"],
-#     almost_constant_x.mean(),
-# )
-# trend = np.arange(ap.size, dtype=np.float64)
-# model = auto_arima_f(
-#     ap,
-#     stepwise=False,
-#     xreg=trend.reshape(-1, 1),
-# )
-# np.testing.assert_equal(model["xreg"][:, 0], trend)
+
+
+def test_AutoARIMA_edge_cases():
+    """Test AutoARIMA with various edge cases and data types."""
+    # Test with constant array
+    AutoARIMA().fit(np.array([1] * 36)).predict(20, level=80)
+
+    # Test with single value
+    number = 4.0
+    preds = AutoARIMA().fit(np.array([number])).predict(3)
+    np.testing.assert_array_equal(preds["mean"], number)
+
+    # Test with almost constant data
+    almost_constant_x = np.hstack([np.full(42, 100), np.array([119, 525])])
+    np.testing.assert_allclose(
+        AutoARIMA().fit(almost_constant_x).predict(1).loc[0, "mean"],
+        almost_constant_x.mean(),
+    )
+
+
+def test_auto_arima_with_trend():
+    """Test auto_arima_f with trend (exogenous variables)."""
+    trend = np.arange(ap.size, dtype=np.float64)
+    model = auto_arima_f(
+        ap,
+        stepwise=False,
+        xreg=trend.reshape(-1, 1),
+    )
+    np.testing.assert_equal(model["xreg"][:, 0], trend)
