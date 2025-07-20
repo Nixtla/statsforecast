@@ -19,6 +19,9 @@ run_module: .require-module
 run_python:
 	docker run -it --rm ${DOCKER_PARAMETERS} ${IMAGE} python
 
+run_R:
+	docker run -it --rm ${DOCKER_PARAMETERS} ${IMAGE} R
+
 .PHONY: run_tests_statsforecast
 run_tests_statsforecast:
 	echo "Running StatsForecast Python experiments..."
@@ -48,7 +51,7 @@ run_tests_r: data_prep_r
 	@echo "\nRunning all R experiments..."
 	@for group in Daily Hourly Weekly; do \
 		echo "Running R experiment: group=$$group"; \
-		$(MAKE) run_module module="Rscript src/arima_r.R $$group"; \
+		$(MAKE) run_module module="Rscript src/arima_r.R --dataset M4 $$group"; \
 	done
 
 .PHONY: data_prep_r
