@@ -10,9 +10,17 @@ class M3Small:
         df = df.query("unique_id.isin(@sub_list)")
         return df, None, None
 
+class M4Small:
+    def load(directory:str, group:str):
+        df, *_ = M4.load(directory, group)
+        sub_list = df.unique_id.drop_duplicates().to_list()[0:2]
+        df = df.query("unique_id.isin(@sub_list)")
+        return df, None, None
+
 
 dict_datasets = {
     'M3Small': (M3Small, M3Info),
+    'M4Small': (M4Small, M4Info),
     'M3': (M3, M3Info),
     'M4': (M4, M4Info)
 }
