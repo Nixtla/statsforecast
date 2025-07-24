@@ -4,7 +4,9 @@ import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pytest
-import ray
+
+if not sys.version_info >= (3, 12):
+    import ray
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
 from pyspark.sql import SparkSession
