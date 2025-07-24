@@ -1,3 +1,5 @@
+import sys
+
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
@@ -207,7 +209,9 @@ def ray_df():
     return df
 
 
-@pytest.mark.skip(reason="Skip ray tests for now")
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+)
 def test_ray_cv_predictions(ray_df):
     df = ray_df
     # Distribute predictions.
@@ -241,7 +245,9 @@ def test_ray_cv_predictions(ray_df):
     #         return "Naive"
 
 
-@pytest.mark.skip(reason="Skip ray tests for now")
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+)
 def test_ray_cv_fallback_model(ray_df):
     df = ray_df
 
