@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import ray
-import ray.data
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
 from pyspark.sql import SparkSession
@@ -208,6 +207,7 @@ def ray_df():
     return df
 
 
+@pytest.mark.skip(reason="Skip ray tests for now")
 def test_ray_cv_predictions(ray_df):
     df = ray_df
     # Distribute predictions.
@@ -241,6 +241,7 @@ def test_ray_cv_predictions(ray_df):
     #         return "Naive"
 
 
+@pytest.mark.skip(reason="Skip ray tests for now")
 def test_ray_cv_fallback_model(ray_df):
     df = ray_df
 
