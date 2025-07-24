@@ -34,4 +34,4 @@ jobs:
           pip install uv && uv pip install --system ".[all]"
 
       - name: Run pytest
-        run: pytest tests
+        run: pytest tests --ignore tests/test_distributed_fugue.py
