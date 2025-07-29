@@ -36,7 +36,6 @@ def main(dataset: str, group: str) -> None:
     with Pool(cpu_count()) as pool:
         results = pool.starmap(partial_fit_and_predict, train.groupby('unique_id'))
     end = time.time()
-    print(end - start)
     
     forecasts = pd.concat(results)
     forecasts.to_csv(f'data/pmdarima-forecasts-{dataset}-{group}.csv', index=False)
