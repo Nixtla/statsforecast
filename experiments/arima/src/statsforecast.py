@@ -23,7 +23,6 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
     fcst.last_dates = pd.DatetimeIndex(fcst.last_dates)
     forecasts = fcst.predict(horizon)
     end = time.time()
-    print(end - start)
 
     forecasts.columns = ['unique_id', 'ds', 'auto_arima_nixtla']
     forecasts.to_csv(f'data/statsforecast-forecasts-{dataset}-{group}.csv', index=False)
