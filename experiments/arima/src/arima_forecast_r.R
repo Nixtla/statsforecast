@@ -45,7 +45,7 @@ end <- Sys.time()
 
 forecasts |> 
   write_csv(
-    str_glue('data/forecast-arima-r-forecast-{args[2]}-{args[3]}.csv')
+    str_glue('data/forecast-arima-r-forecasts-{args[2]}-{args[3]}.csv')
   )
 
 tibble(time=difftime(end, start, units="secs"), model='auto_arima_r') |>
