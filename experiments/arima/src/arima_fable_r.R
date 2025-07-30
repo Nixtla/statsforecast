@@ -36,14 +36,11 @@ forecasts <- df |>
     model(arima = ARIMA(y)) |>
     forecast(h = horizon) |>
     as_tibble() |>
-    select(unique_id, ds, arima_fable =.mean)
+    select(unique_id, ds, fable_arima_r =.mean)
 end <- Sys.time()
 
-forecasts %>% 
-  write.table(
-    str_glue('data/arima-r-forecasts-{args[2]}-{args[3]}.txt'),
-    row.name=F, col.name=F
-  )
+forecasts |>
+  write_csv(str_glue('data/fable-arima-r-forecasts-{args[2]}-{args[3]}.csv'))
 
-tibble(time=difftime(end, start, units="secs"), model='auto_arima_fable_r') %>%
+tibble(time=difftime(end, start, units="secs"), model='auto_arima_fable_r') |>
   write_csv(str_glue('data/fable-arima-r-time-{args[2]}-{args[3]}.csv'))

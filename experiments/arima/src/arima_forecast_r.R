@@ -27,25 +27,26 @@ split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
 dflist <- split_tibble(df, 'unique_id')
 
 forecast_each_table <- function(data_frame){
-  data_frame |>
-  pull(y) |>
-  ts(frequency=seasonality) |>
-  auto.arima(allowdrift=FALSE, allowmean=FALSE, approximation=FALSE) |>
-  forecast(horizon) |>
-  (\(.) .$mean)()
+  preds <- data_frame |>
+    pull(y) |>
+    ts(frequency=seasonality) |>
+    auto.arima(allowdrift=FALSE, allowmean=FALSE, approximation=FALSE) |>
+    forecast(horizon) 
+  
+  tibble(forecast_arima_r=preds$mean)
 }
 
 start <- Sys.time() 
-forecasts <- dflist %>%
-  future_map(forecast_each_table) %>%
-  reduce(rbind)
+forecasts <- dflist |>
+  future_map_dfr(forecast_each_table, .id = "unique_id")
 end <- Sys.time()
 
-forecasts %>% 
-  write.table(
-    str_glue('data/arima-r-forecast-{args[2]}-{args[3]}.txt'),
-    row.name=F, col.name=F
+
+
+forecasts |> 
+  write_csv(
+    str_glue('data/forecast-arima-r-forecast-{args[2]}-{args[3]}.csv')
   )
 
-tibble(time=difftime(end, start, units="secs"), model='auto_arima_r') %>%
+tibble(time=difftime(end, start, units="secs"), model='auto_arima_r') |>
   write_csv(str_glue('data/forecast-arima-r-time-{args[2]}-{args[3]}.csv'))
