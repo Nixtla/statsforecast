@@ -15,21 +15,24 @@ To reproduce the main results, follow these steps:
 3. **Run R Experiments**:
 
     1. Prepare the data for R experiments by running: `make data_prep_r`
-    2. Run all `R` experiments using: make `run_tests_r`
+    2. Run all `R` experiments using: `make run_tests_r`
 
 4. **Evaluate Forecasts**: Finally, evaluate the forecasts by executing: `make run_module module="python -m src.evaluation"`
 
 ### Running trials for debugging 
 - `StatsForecast`:
-`make run_module module="python -m src.statsforecast --dataset M3Small --group Yearly"`
+`make run_module module="python -m src.statsforecast --dataset M4Small --group Yearly"`
 - `PMDARIMA`:
-`make run_module module="python -m src.pmdarima --dataset M3Small --group Yearly"`
+`make run_module module="python -m src.pmdarima --dataset M4Small --group Yearly"`
 - `Prophet`:
-`make run_module module="python -m src.prophet --dataset M3Small --group Yearly"`
+`make run_module module="python -m src.prophet --dataset M4Small --group Yearly"`
 - `R`:
-`make run_module module="python -m src.data --dataset M3Small --group Yearly"`
-`make run_module module="python -m src/arima_forecast_r.R  --dataset M3Small --group Yearly"`
-`make run_module module="python -m src/arima_fable_r.R --dataset M3Small --group Yearly"`
+`make run_module module="python -m src.data --dataset M4Small --group Yearly"`
+`make run_module module="python -m src/arima_forecast_r.R  --dataset M4Small --group Yearly"`
+`make run_module module="python -m src/arima_fable_r.R --dataset M4Small --group Yearly"`
+
+Or fully run with a smaller dataset:
+`make run_all_tests DATASET=M4Small`
 
 ### Additional Commands:
 
