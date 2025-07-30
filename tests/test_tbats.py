@@ -28,11 +28,6 @@ def test_tbats_selection_and_forecast():
         use_arma_errors,
     )
 
-    # Verify model properties
-    print(f"AIC: {mod['aic']}")  # Debug output
-    print(f"k_vector: {mod['k_vector']}")  # Debug output
-    print(f"description: {mod['description']}")  # Debug output
-
     # Use more lenient tolerance for AIC since implementation may vary
     assert mod["aic"] > 0  # Just verify AIC is reasonable
     assert mod["k_vector"][0] == 3
@@ -93,10 +88,3 @@ def test_tbats_selection_and_forecast():
     # Verify forecast has correct length and reasonable values
     assert len(forecast) == h
     assert np.all(forecast > 0)  # Air passengers should be positive
-
-
-# fig, ax = plt.subplots(1, 1, figsize=(20, 7))
-# plt.plot(np.arange(0, len(y)), y, color="black", label="original")
-# plt.plot(np.arange(0, len(y)), fitted_trans, color="blue", label="fitted")
-# plt.plot(np.arange(len(y), len(y) + h), forecast, ".-", color="green", label="fcst")
-# plt.legend()
