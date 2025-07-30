@@ -1,4 +1,4 @@
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 library(readr)
 library(future)
 library(forecast)
@@ -17,11 +17,10 @@ meta <- list(
   Monthly=list(horizon=18, seasonality=12),
   Quarterly=list(horizon=8, seasonality=4)
 )
-horizon <- meta[[args[4]]][['horizon']]
-seasonality <- meta[[args[4]]][['seasonality']]
+horizon <- meta[[args[3]]][['horizon']]
+seasonality <- meta[[args[3]]][['seasonality']]
 
-df <- read_csv(str_glue('data/{args[2]}-{args[4]}.csv'))
-
+df <- read_csv(str_glue('data/{args[2]}-{args[3]}.csv'), show_col_types = FALSE)
 plan(multisession, gc=TRUE)
 
 split_tibble <- function(tibble, col = 'col') tibble %>% split(., .[, col])
@@ -44,9 +43,9 @@ end <- Sys.time()
 
 forecasts %>% 
   write.table(
-    str_glue('data/arima-r-forecast-{args[2]}-{args[4]}.txt'),
+    str_glue('data/arima-r-forecast-{args[2]}-{args[3]}.txt'),
     row.name=F, col.name=F
   )
 
 tibble(time=difftime(end, start, units="secs"), model='auto_arima_r') %>%
-  write_csv(str_glue('data/forecast-arima-r-time-{args[2]}-{args[4]}.csv'))
+  write_csv(str_glue('data/forecast-arima-r-time-{args[2]}-{args[3]}.csv'))

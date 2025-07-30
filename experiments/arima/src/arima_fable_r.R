@@ -1,4 +1,4 @@
-library(dplyr)
+suppressPackageStartupMessages(library(dplyr))
 library(readr)
 library(future)
 library(tsibble)
@@ -10,7 +10,7 @@ library(furrr)
 library(stringr)
 
 args <- commandArgs(trailingOnly=TRUE)
-args <- c(0, "M4Small", 0, "Hourly")
+
 meta <- list(
   Weekly=list(horizon=13, func_ds=yearweek),
   Hourly=list(horizon=48, func_ds=function(x) x), # The official docs tell to convert to posix however the read data are just integers
@@ -19,10 +19,11 @@ meta <- list(
   Monthly=list(horizon=18, func_ds=yearmonth),
   Quarterly=list(horizon=8, func_ds=yearquarter)
 )
-horizon <- meta[[args[4]]][['horizon']]
-func_ds <- meta[[args[4]]][['func_ds']]
 
-df <- read_csv(str_glue('data/{args[2]}-{args[4]}.csv'))
+horizon <- meta[[args[3]]][['horizon']]
+func_ds <- meta[[args[3]]][['func_ds']]
+
+df <- read_csv(str_glue('data/{args[2]}-{args[3]}.csv'))
 # plan(multisession, gc=TRUE)
 # This actually makes an slower perfomance from fable
 # This is an old issue but I don't know if still this applies
@@ -40,9 +41,9 @@ end <- Sys.time()
 
 forecasts %>% 
   write.table(
-    str_glue('data/arima-r-forecasts-{args[2]}-{args[4]}.txt'),
+    str_glue('data/arima-r-forecasts-{args[2]}-{args[3]}.txt'),
     row.name=F, col.name=F
   )
 
 tibble(time=difftime(end, start, units="secs"), model='auto_arima_fable_r') %>%
-  write_csv(str_glue('data/fable-arima-r-time-{args[2]}-{args[4]}.csv'))
+  write_csv(str_glue('data/fable-arima-r-time-{args[2]}-{args[3]}.csv'))
