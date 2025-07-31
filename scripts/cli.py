@@ -2,21 +2,15 @@
 
 # %% auto 0
 __all__ = ['tst_flags', 'to_skip', 'mapper', 'print_execs', 'print_hide', 'other_tests', 'get_markdown', 'get_code',
-           'extract_dir', 'no_dir_and_dir', 'get_all_tests2', 'get_all_tests', 'print_dir_in_nb']
+           'extract_dir', 'no_dir_and_dir', 'get_all_tests', 'print_dir_in_nb']
 
 # %% cli.ipynb 1
 from functools import partial
 
-from execnb.nbio import read_nb
 from fastcore.script import call_parse
-from fastcore.xtras import Path, globtastic
-from nbdev import nbdev_export
-from nbdev.export import ExportModuleProc, nb_export
-from nbdev.maker import ModuleMaker
 from nbdev.processors import NBProcessor
 
-
-# %% cli.ipynb 4
+# %% cli.ipynb 5
 tst_flags = 'datasets distributed matplotlib polars pyarrow scipy'.split()
 to_skip = [
     'showdoc',
@@ -55,7 +49,7 @@ def no_dir_and_dir(cell, dir):
     if dir in cell.directives_:
         print(cell.source)
 
-def get_all_tests2(cell):
+def get_all_tests(cell):
     if cell.cell_type == "code":
 
         if len(cell.directives_) == 0:
@@ -63,19 +57,11 @@ def get_all_tests2(cell):
 
 
         elif any(x in tst_flags + ['hide'] for x in cell.directives_):
-            # if not (x in cell.source for x in to_skip):
-            print(cell.source)
-
-def get_all_tests(cell):
-    if len(cell.directives_) == 0:
-        print(cell.source)
-
-    if any(x in tst_flags + ["hide"] for x in cell.directives_):
-        print(cell.source)
+            if not (x in cell.source for x in to_skip):
+                print(cell.source)
 
 
-
-# %% cli.ipynb 8
+# %% cli.ipynb 9
 mapper = {
     'print_execs': print_execs,
     'print_hide': print_hide,
@@ -83,11 +69,10 @@ mapper = {
     'get_markdown': get_markdown,
     'extract_dir': extract_dir,
     'no_dir_and_dir': no_dir_and_dir,
-    'get_all_tests':get_all_tests,
-    'get_all_tests2':get_all_tests2
+    'get_all_tests':get_all_tests
 }
 
-# %% cli.ipynb 9
+# %% cli.ipynb 10
 @call_parse
 def print_dir_in_nb(nb_path:str,
                     dir:str=None,
