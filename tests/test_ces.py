@@ -17,10 +17,6 @@ from statsforecast.ces import (
 )
 from statsforecast.utils import AirPassengers as ap
 
-initstate(ap, 12, 'N')
-initstate(ap, 12, 'S')
-initstate(ap, 12, 'P')
-initstate(ap, 12, 'F')
 
 class TestCES:
     @classmethod
