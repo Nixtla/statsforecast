@@ -405,14 +405,41 @@ def test_Arima_fixed_argument(method, drift_xreg):
     )
 
 
-def test_Arima_model_parameter():
-    """Test that Arima models can be reconstructed from existing model parameters."""
-    res_Arima_s = Arima(
+@pytest.fixture
+def res_Arima_s():
+    return Arima(
         ap,
         order=(0, 1, 0),
         seasonal={"order": (2, 1, 0), "period": 12},
         method="CSS-ML",
     )
+
+
+@pytest.fixture
+def res_Arima():
+    return Arima(
+        ap,
+        seasonal={"order": (0, 0, 0), "period": 12},
+        include_drift=True,
+        method="CSS-ML",
+    )
+
+
+@pytest.fixture
+def res_Arima_ex():
+    drift = np.arange(1, ap.size + 1).reshape(-1, 1)
+
+    return Arima(
+        ap,
+        seasonal={"order": (0, 0, 0), "period": 12},
+        include_drift=True,
+        xreg=np.sqrt(drift),
+        method="CSS-ML",
+    )
+
+
+def test_Arima_model_parameter(res_Arima_s):
+    """Test that Arima models can be reconstructed from existing model parameters."""
 
     for key in ["residuals", "arma"]:
         np.testing.assert_array_equal(
@@ -420,26 +447,17 @@ def test_Arima_model_parameter():
         )
 
 
-def test_Arima_drift():
-    """Test Arima model with drift parameter."""
+def test_Arima_drift_and_residuals():
+    """Test Arima model with drift parameter and residuals consistency."""
     res_Arima = Arima(
         ap,
         seasonal={"order": (0, 0, 0), "period": 12},
         include_drift=True,
         method="CSS-ML",
     )
+
     # Ensure the model was created successfully
     assert res_Arima is not None
-
-
-def test_Arima_residuals_consistency():
-    """Test that Arima model residuals are consistent when reconstructed."""
-    res_Arima = Arima(
-        ap,
-        seasonal={"order": (0, 0, 0), "period": 12},
-        include_drift=True,
-        method="CSS-ML",
-    )
 
     # Verify model properties exist
     assert "arma" in res_Arima
@@ -453,16 +471,9 @@ def test_Arima_residuals_consistency():
     )
 
 
-def test_Arima_with_exogenous_variables():
+def test_Arima_with_exogenous_variables(res_Arima_ex):
     """Test Arima model with exogenous variables and residuals consistency."""
     drift = np.arange(1, ap.size + 1).reshape(-1, 1)
-    res_Arima_ex = Arima(
-        ap,
-        seasonal={"order": (0, 0, 0), "period": 12},
-        include_drift=True,
-        xreg=np.sqrt(drift),
-        method="CSS-ML",
-    )
 
     np.testing.assert_allclose(
         Arima(ap, model=res_Arima_ex, method="CSS-ML", xreg=np.sqrt(drift))[
@@ -491,14 +502,8 @@ def test_recursive_window_average():
     )
 
 
-def test_forecast_arima_confidence_intervals():
+def test_forecast_arima_confidence_intervals(res_Arima_s):
     """Test forecast_arima with different confidence interval configurations."""
-    res_Arima_s = Arima(
-        ap,
-        order=(0, 1, 0),
-        seasonal={"order": (2, 1, 0), "period": 12},
-        method="CSS-ML",
-    )
 
     # Test default forecast (no intervals)
     fcst = forecast_arima(res_Arima_s, h=12)
@@ -516,31 +521,8 @@ def test_forecast_arima_confidence_intervals():
     assert fcst["upper"].shape[1] == 17
 
 
-def test_fitted_arima_lengths():
+def test_fitted_arima_lengths(res_Arima, res_Arima_ex, res_Arima_s):
     """Test that fitted_arima returns correct lengths for different models."""
-    # Create models for testing
-    res_Arima = Arima(
-        ap,
-        seasonal={"order": (0, 0, 0), "period": 12},
-        include_drift=True,
-        method="CSS-ML",
-    )
-
-    drift = np.arange(1, ap.size + 1).reshape(-1, 1)
-    res_Arima_ex = Arima(
-        ap,
-        seasonal={"order": (0, 0, 0), "period": 12},
-        include_drift=True,
-        xreg=np.sqrt(drift),
-        method="CSS-ML",
-    )
-
-    res_Arima_s = Arima(
-        ap,
-        order=(0, 1, 0),
-        seasonal={"order": (2, 1, 0), "period": 12},
-        method="CSS-ML",
-    )
 
     # Test fitted lengths
     fitted_res_Arima = fitted_arima(res_Arima)
@@ -557,13 +539,18 @@ def test_fitted_arima_lengths():
 # seas_heuristic(x, 12)
 
 
-def test_nsdiffs_and_newmodel():
+@pytest.fixture
+def almost_constant_x():
+    return np.hstack([np.full(42, 100), np.array([119, 525])])
+
+
+def test_nsdiffs_and_newmodel(almost_constant_x):
     """Test nsdiffs function and newmodel function."""
     # Test nsdiffs with seasonal period
     assert nsdiffs(ap, period=12) >= 0
 
     # Test nsdiffs with almost constant data
-    almost_constant_x = np.hstack([np.full(42, 100), np.array([119, 525])])
+
     assert nsdiffs(almost_constant_x, period=12) == 0
 
     # Test ndiffs
@@ -680,7 +667,7 @@ def test_forward_arima_models():
 # model_x.summary()
 
 
-def test_AutoARIMA_edge_cases():
+def test_AutoARIMA_edge_cases(almost_constant_x):
     """Test AutoARIMA with various edge cases and data types."""
     # Test with constant array
     AutoARIMA().fit(np.array([1] * 36)).predict(20, level=80)
@@ -691,7 +678,6 @@ def test_AutoARIMA_edge_cases():
     np.testing.assert_array_equal(preds["mean"], number)
 
     # Test with almost constant data
-    almost_constant_x = np.hstack([np.full(42, 100), np.array([119, 525])])
     np.testing.assert_allclose(
         AutoARIMA().fit(almost_constant_x).predict(1).loc[0, "mean"],
         almost_constant_x.mean(),
