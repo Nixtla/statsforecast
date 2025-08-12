@@ -21,12 +21,6 @@ def theta_params():
 
 
 @pytest.fixture
-def air_passengers():
-    """AirPassengers dataset."""
-    return ap
-
-
-@pytest.fixture
 def init_theta_states(air_passengers, theta_params):
     """Initialize theta model states for all model types."""
     # Initialize all model types

@@ -8,15 +8,6 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 @pytest.fixture
-def sample_data():
-    """Load sample data for Prophet testing."""
-    df = pd.read_csv(
-        "https://raw.githubusercontent.com/facebook/prophet/main/examples/example_wp_log_peyton_manning.csv"
-    )
-    return df
-
-
-@pytest.fixture
 def prophet_model():
     """Create a Prophet model instance."""
     return Prophet(daily_seasonality=False)
@@ -69,38 +60,38 @@ def test_prophet_initialization():
     assert hasattr(model, "predict")
 
 
-def test_prophet_fit(sample_data, prophet_model):
+def test_prophet_fit(sample_data_prophet, prophet_model):
     """Test Prophet model fitting."""
-    prophet_model.fit(sample_data)
+    prophet_model.fit(sample_data_prophet)
     # Check that the model has been fitted by verifying it has the necessary attributes
     assert hasattr(prophet_model, "history")
     assert prophet_model.history is not None
 
 
-def test_prophet_predict(sample_data, prophet_model):
+def test_prophet_predict(sample_data_prophet, prophet_model):
     """Test Prophet model prediction."""
-    prophet_model.fit(sample_data)
+    prophet_model.fit(sample_data_prophet)
     future = prophet_model.make_future_dataframe(365)
     forecast = prophet_model.predict(future)
 
     assert forecast is not None
     assert isinstance(forecast, pd.DataFrame)
-    assert len(forecast) > len(sample_data)
+    assert len(forecast) > len(sample_data_prophet)
 
 
-def test_prophet_make_future_dataframe(sample_data, prophet_model):
+def test_prophet_make_future_dataframe(sample_data_prophet, prophet_model):
     """Test making future dataframe."""
-    prophet_model.fit(sample_data)
+    prophet_model.fit(sample_data_prophet)
     future = prophet_model.make_future_dataframe(365)
 
     assert isinstance(future, pd.DataFrame)
-    assert len(future) == len(sample_data) + 365
+    assert len(future) == len(sample_data_prophet) + 365
     assert "ds" in future.columns
 
 
-def test_prophet_plot(sample_data, prophet_model):
+def test_prophet_plot(sample_data_prophet, prophet_model):
     """Test Prophet plotting functionality."""
-    prophet_model.fit(sample_data)
+    prophet_model.fit(sample_data_prophet)
     future = prophet_model.make_future_dataframe(365)
     forecast = prophet_model.predict(future)
 
@@ -109,10 +100,10 @@ def test_prophet_plot(sample_data, prophet_model):
     assert fig is not None
 
 
-def test_prophet_with_holidays(sample_data, holidays_data):
+def test_prophet_with_holidays(sample_data_prophet, holidays_data):
     """Test Prophet model with holidays."""
     model = Prophet(holidays=holidays_data, daily_seasonality=False)
-    model.fit(sample_data)
+    model.fit(sample_data_prophet)
     future = model.make_future_dataframe(365)
     forecast = model.predict(future)
 
@@ -120,9 +111,9 @@ def test_prophet_with_holidays(sample_data, holidays_data):
     assert isinstance(forecast, pd.DataFrame)
 
 
-def test_prophet_forecast_components(sample_data, prophet_model):
+def test_prophet_forecast_components(sample_data_prophet, prophet_model):
     """Test Prophet forecast components."""
-    prophet_model.fit(sample_data)
+    prophet_model.fit(sample_data_prophet)
     future = prophet_model.make_future_dataframe(10)
     forecast = prophet_model.predict(future)
 
