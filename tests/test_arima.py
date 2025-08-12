@@ -420,26 +420,17 @@ def test_Arima_model_parameter():
         )
 
 
-def test_Arima_drift():
-    """Test Arima model with drift parameter."""
+def test_Arima_drift_and_residuals():
+    """Test Arima model with drift parameter and residuals consistency."""
     res_Arima = Arima(
         ap,
         seasonal={"order": (0, 0, 0), "period": 12},
         include_drift=True,
         method="CSS-ML",
     )
+
     # Ensure the model was created successfully
     assert res_Arima is not None
-
-
-def test_Arima_residuals_consistency():
-    """Test that Arima model residuals are consistent when reconstructed."""
-    res_Arima = Arima(
-        ap,
-        seasonal={"order": (0, 0, 0), "period": 12},
-        include_drift=True,
-        method="CSS-ML",
-    )
 
     # Verify model properties exist
     assert "arma" in res_Arima
