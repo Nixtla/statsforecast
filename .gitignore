@@ -26,3 +26,16 @@ mlruns/
 .luarc.json
 *.so
 *.dll
+
+
+# ignore files created in the docs folder
+docs/*.md
+docs/**/*.mdx
+
+docs-scripts
+docs/mintlify/examples
+
+nbs/_extensions
+.quarto
+
+*.png
