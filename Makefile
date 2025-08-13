@@ -1,6 +1,4 @@
-include dev/.help.mk 
-
-SHELL := /bin/bash 
+SHELL := /bin/bash
 CURR_DIR := $(CURDIR)
 
 START_COMMAND := jupyter-lab --allow-root
