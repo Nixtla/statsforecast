@@ -58,7 +58,7 @@ jobs:
           CIBW_BEFORE_TEST: >
             yum install -y java-17-openjdk
           CIBW_TEST_COMMAND: >
-            uv pip install -r {project}/setup.py --extra all && pytest --durations=0 {project}/action_files -k "not efficiency"
+            uv pip install -r {project}/setup.py --extra all && pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: github.event_name == 'push'
@@ -135,4 +135,4 @@ jobs:
         uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # 3.5.0
         with:
           token: ${{ secrets.CODESPEED_TOKEN }}
-          run: pytest action_files/test_efficiency.py --codspeed -n 2
+          run: pytest action_files/test_efficiency.py --codspeed -n 2 --no-cov
