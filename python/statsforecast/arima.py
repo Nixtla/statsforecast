@@ -151,7 +151,18 @@ def diff(x, lag, differences):
 def fixed_params_from_dict(
     fixed_dict: dict, order: tuple, seasonal: dict, intercept: bool, n_ex: int
 ):
-    """Transforms dict params to list."""
+    """Transforms dict params to list.
+
+    Args:
+        fixed_dict (dict): Dictionary of fixed parameters.
+        order (tuple): ARIMA order (p, d, q).
+        seasonal (dict): Seasonal parameters.
+        intercept (bool): Whether to include intercept.
+        n_ex (int): Number of external variables.
+
+    Returns:
+        list: List of parameter values.
+    """
     ar_dict = {f"ar{i + 1}": np.nan for i in range(order[0])}
     ma_dict = {f"ma{i + 1}": np.nan for i in range(order[2])}
     sar_dict = {f"sar{i + 1}": np.nan for i in range(seasonal["order"][0])}
@@ -1215,7 +1226,15 @@ def forecast_arima(
 
 
 def fitted_arima(model, h=1):
-    """Returns h-step forecasts for the data used in fitting the model."""
+    """Returns h-step forecasts for the data used in fitting the model.
+
+    Args:
+        model: The fitted ARIMA model.
+        h (int): Number of steps ahead. Defaults to 1.
+
+    Returns:
+        Fitted values or None if not available.
+    """
     if h == 1:
         x = model.get("x")
         if model.get("fitted") is not None:
@@ -1948,113 +1967,79 @@ class AutoARIMA:
     Returns best ARIMA model according to either AIC, AICc or BIC value.
     The function conducts a search over possible model within the order constraints provided.
 
-    Parameters
-    ----------
-    d: int optional (default None)
-        Order of first-differencing.
-        If missing, will choose a value based on `test`.
-    D: int optional (default None)
-        Order of seasonal-differencing.
-        If missing, will choose a value based on `season_test`.
-    max_p: int (default 5)
-        Maximum value of p.
-    max_q: int (default 5)
-        Maximum value of q.
-    max_P: int (default 2)
-        Maximum value of P.
-    max_Q: int (default 2)
-        Maximum value of Q.
-    max_order: int (default 5)
-        Maximum value of p+q+P+Q if model selection is not stepwise.
-    max_d: int (default 2)
-        Maximum number of non-seasonal differences
-    max_D: int (default 1)
-        Maximum number of seasonal differences
-    start_p: int (default 2)
-        Starting value of p in stepwise procedure.
-    start_q: int (default 2)
-        Starting value of q in stepwise procedure.
-    start_P: int (default 1)
-        Starting value of P in stepwise procedure.
-    start_Q: int (default 1)
-        Starting value of Q in stepwise procedure.
-    stationary: bool (default False)
-        If True, restricts search to stationary models.
-    seasonal: bool (default True)
-        If False, restricts search to non-seasonal models.
-    ic: str (default 'aicc')
-        Information criterion to be used in model selection.
-    stepwise: bool (default True)
-        If True, will do stepwise selection (faster).
-        Otherwise, it searches over all models.
-        Non-stepwise selection can be very slow,
-        especially for seasonal models.
-    nmodels: int (default 94)
-        Maximum number of models considered in the stepwise search.
-    trace: bool (default False)
-        If True, the list of ARIMA models considered will be reported.
-    approximation: bool optional (default None)
-        If True, estimation is via conditional sums of squares
-        and the information criteria used for model
-        selection are approximated.
-        The final model is still computed using
-        maximum likelihood estimation.
-        Approximation should be used for long time series
-        or a high seasonal period to avoid excessive computation times.
-    method: str optional (default None)
-        fitting method: maximum likelihood or minimize conditional
-        sum-of-squares.
-        The default (unless there are missing values)
-        is to use conditional-sum-of-squares to find starting values,
-        then maximum likelihood. Can be abbreviated.
-    truncate: bool optional (default None)
-        An integer value indicating how many observations
-        to use in model selection.
-        The last truncate values of the series are
-        used to select a model when truncate is not None
-        and approximation=True.
-        All observations are used if either truncate=None
-        or approximation=False.
-    test: str (default 'kpss')
-        Type of unit root test to use. See ndiffs for details.
-    test_kwargs: str optional (default None)
-        Additional arguments to be passed to the unit root test.
-    seasonal_test: str (default 'seas')
-        This determines which method is used to select the number
-        of seasonal differences.
-        The default method is to use a measure of seasonal
-        strength computed from an STL decomposition.
-        Other possibilities involve seasonal unit root tests.
-    seasonal_test_kwargs: dict optional (default None)
-        Additional arguments to be passed to the seasonal
-        unit root test. See nsdiffs for details.
-    allowdrift: bool (default True)
-        If True, models with drift terms are considered.
-    allowmean: bool (default True)
-        If True, models with a non-zero mean are considered.
-    blambda: float optional (default None)
-        Box-Cox transformation parameter.
-        If lambda="auto", then a transformation is automatically
-        selected using BoxCox.lambda.
-        The transformation is ignored if None.
-        Otherwise, data transformed before model is estimated.
-    biasadj: bool (default False)
-        Use adjusted back-transformed mean for Box-Cox transformations.
-        If transformed data is used to produce forecasts and fitted values,
-        a regular back transformation will result in median forecasts.
-        If biasadj is True, an adjustment will be made to produce
-        mean forecasts and fitted values.
-    period: int (default 1)
-        Number of observations per unit of time.
-        For example 24 for Hourly data.
+    Args:
+        d (int, optional): Order of first-differencing.
+            If missing, will choose a value based on `test`. Defaults to None.
+        D (int, optional): Order of seasonal-differencing.
+            If missing, will choose a value based on `season_test`. Defaults to None.
+        max_p (int): Maximum value of p. Defaults to 5.
+        max_q (int): Maximum value of q. Defaults to 5.
+        max_P (int): Maximum value of P. Defaults to 2.
+        max_Q (int): Maximum value of Q. Defaults to 2.
+        max_order (int): Maximum value of p+q+P+Q if model selection is not stepwise. Defaults to 5.
+        max_d (int): Maximum number of non-seasonal differences. Defaults to 2.
+        max_D (int): Maximum number of seasonal differences. Defaults to 1.
+        start_p (int): Starting value of p in stepwise procedure. Defaults to 2.
+        start_q (int): Starting value of q in stepwise procedure. Defaults to 2.
+        start_P (int): Starting value of P in stepwise procedure. Defaults to 1.
+        start_Q (int): Starting value of Q in stepwise procedure. Defaults to 1.
+        stationary (bool): If True, restricts search to stationary models. Defaults to False.
+        seasonal (bool): If False, restricts search to non-seasonal models. Defaults to True.
+        ic (str): Information criterion to be used in model selection. Defaults to 'aicc'.
+        stepwise (bool): If True, will do stepwise selection (faster).
+            Otherwise, it searches over all models.
+            Non-stepwise selection can be very slow,
+            especially for seasonal models. Defaults to True.
+        nmodels (int): Maximum number of models considered in the stepwise search. Defaults to 94.
+        trace (bool): If True, the list of ARIMA models considered will be reported. Defaults to False.
+        approximation (bool, optional): If True, estimation is via conditional sums of squares
+            and the information criteria used for model
+            selection are approximated.
+            The final model is still computed using
+            maximum likelihood estimation.
+            Approximation should be used for long time series
+            or a high seasonal period to avoid excessive computation times. Defaults to None.
+        method (str, optional): fitting method: maximum likelihood or minimize conditional
+            sum-of-squares.
+            The default (unless there are missing values)
+            is to use conditional-sum-of-squares to find starting values,
+            then maximum likelihood. Can be abbreviated. Defaults to None.
+        truncate (bool, optional): An integer value indicating how many observations
+            to use in model selection.
+            The last truncate values of the series are
+            used to select a model when truncate is not None
+            and approximation=True.
+            All observations are used if either truncate=None
+            or approximation=False. Defaults to None.
+        test (str): Type of unit root test to use. See ndiffs for details. Defaults to 'kpss'.
+        test_kwargs (str, optional): Additional arguments to be passed to the unit root test. Defaults to None.
+        seasonal_test (str): This determines which method is used to select the number
+            of seasonal differences.
+            The default method is to use a measure of seasonal
+            strength computed from an STL decomposition.
+            Other possibilities involve seasonal unit root tests. Defaults to 'seas'.
+        seasonal_test_kwargs (dict, optional): Additional arguments to be passed to the seasonal
+            unit root test. See nsdiffs for details. Defaults to None.
+        allowdrift (bool): If True, models with drift terms are considered. Defaults to True.
+        allowmean (bool): If True, models with a non-zero mean are considered. Defaults to True.
+        blambda (float, optional): Box-Cox transformation parameter.
+            If lambda="auto", then a transformation is automatically
+            selected using BoxCox.lambda.
+            The transformation is ignored if None.
+            Otherwise, data transformed before model is estimated. Defaults to None.
+        biasadj (bool): Use adjusted back-transformed mean for Box-Cox transformations.
+            If transformed data is used to produce forecasts and fitted values,
+            a regular back transformation will result in median forecasts.
+            If biasadj is True, an adjustment will be made to produce
+            mean forecasts and fitted values. Defaults to False.
+        period (int): Number of observations per unit of time.
+            For example 24 for Hourly data. Defaults to 1.
 
-    Notes
-    -----
-    * This implementation is a mirror of Hyndman's forecast::auto.arima.
+    Notes:
+        * This implementation is a mirror of Hyndman's forecast::auto.arima.
 
-    References
-    ----------
-    [1] https://github.com/robjhyndman/forecast
+    References:
+        [1] https://github.com/robjhyndman/forecast
     """
 
     def __init__(
@@ -2124,17 +2109,16 @@ class AutoARIMA:
         self.period = period
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
-        """Fit the AutoARIMA estimator
+        """Fit the AutoARIMA estimator.
+
         Fit an AutoARIMA to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
 
-        Parameters
-        ----------
-        y: array-like of shape (n,)
-            One-dimensional numpy array of floats without `np.nan` or `np.inf`
-            values.
-        X: array-like of shape (n, n_x) optional (default=None)
-            An optional 2-d numpy array of exogenous variables (float).
+        Args:
+            y (np.ndarray): One-dimensional numpy array of floats without `np.nan` or `np.inf`
+                values.
+            X (np.ndarray, optional): An optional 2-d numpy array of exogenous variables (float).
+                Defaults to None.
         """
         model_ = auto_arima_f(
             x=y,
@@ -2183,21 +2167,15 @@ class AutoARIMA:
     ):
         """Forecast future values using a fitted AutoArima.
 
-        Parameters
-        ----------
-        h: int
-            Number of periods for forecasting.
-        X: array-like of shape (h, n_x) optional (default=None)
-            Future exogenous variables.
-        level: int
-            Confidence level for prediction intervals.
+        Args:
+            h (int): Number of periods for forecasting.
+            X (np.ndarray, optional): Future exogenous variables. Defaults to None.
+            level (int or tuple of int, optional): Confidence level for prediction intervals. Defaults to None.
 
-        Returns
-        -------
-        forecasts : pandas dataframe of shape (n, 1 + len(level))
-            The array of fitted values.
-            The confidence intervals for the forecasts are returned if
-            level is not None.
+        Returns:
+            pd.DataFrame: The array of fitted values.
+                The confidence intervals for the forecasts are returned if
+                level is not None.
         """
         forecast = forecast_arima(
             self.model_.model,
@@ -2219,17 +2197,13 @@ class AutoARIMA:
     def predict_in_sample(self, level: Optional[Union[int, Tuple[int]]] = None):
         """Return fitted in sample values using a fitted AutoArima.
 
-        Parameters
-        ----------
-        level: int
-            Confidence level for prediction intervals.
+        Args:
+            level (int or tuple of int, optional): Confidence level for prediction intervals. Defaults to None.
 
-        Returns
-        -------
-        fitted_values : pandas dataframe of shape (n, 1 + len(level))
-            The array of fitted values.
-            The confidence intervals for the forecasts are returned if
-            level is not None.
+        Returns:
+            pd.DataFrame: The array of fitted values.
+                The confidence intervals for the forecasts are returned if
+                level is not None.
         """
         fitted_values = pd.DataFrame({"mean": fitted_arima(self.model_.model)})
         if level is not None:

@@ -59,19 +59,14 @@ class FugueBackend(ParallelBackend):
     This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
     computation on Spark, Dask and Ray without any rewrites.
 
-    Parameters
-    ----------
-    engine : fugue.ExecutionEngine
-        A selection between Spark, Dask, and Ray.
-    conf : fugue.Config
-        Engine configuration.
-    **transform_kwargs
-        Additional kwargs for Fugue's transform method.
+    Args:
+        engine (fugue.ExecutionEngine): A selection between Spark, Dask, and Ray.
+        conf (fugue.Config): Engine configuration.
+        **transform_kwargs: Additional kwargs for Fugue's transform method.
 
-    Notes
-    -----
-    A short introduction to Fugue, with examples on how to scale pandas code to Spark, Dask or Ray
-     is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
+    Notes:
+        A short introduction to Fugue, with examples on how to scale pandas code to Spark, Dask or Ray
+        is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/ten_minutes.html).
     """
 
     def __init__(self, engine: Any = None, conf: Any = None, **transform_kwargs: Any):
@@ -320,19 +315,16 @@ class FugueBackend(ParallelBackend):
         {time_col}
         {target_col}
 
-        Returns
-        -------
-        fcsts_df : pandas.DataFrame
-            DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
+        Returns:
+            pandas.DataFrame: DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
 
-        References
-        ----------
-        For more information check the
-        [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html)
-        tutorial.
-        The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
-        method documentation.
-        Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
+        References:
+            - For more information check the
+              [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html)
+              tutorial.
+            - The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
+              method documentation.
+            - Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
         """
         self._fcst_schema = self._get_output_schema(
             df=df,
@@ -494,16 +486,13 @@ class FugueBackend(ParallelBackend):
         {time_col}
         {target_col}
 
-        Returns
-        -------
-        pandas.DataFrame
-            DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.
+        Returns:
+            pandas.DataFrame: DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.
 
-        References
-        ----------
-        The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
-        method documentation.
-        [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
+        References:
+            - The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
+              method documentation.
+            - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
         """
         schema = self._get_output_schema(
             df=df,

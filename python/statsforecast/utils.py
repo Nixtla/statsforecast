@@ -50,29 +50,18 @@ def generate_series(
     If `n_static_features > 0`, then each series gets static features with random values.
     If `equal_ends == True` then all series end at the same date.
 
-    Parameters
-    ----------
-    n_series : int
-        Number of series for synthetic panel.
-    freq : str (default='D')
-        Frequency of the data, 'D' or 'M'.
-    min_length : int (default=50)
-        Minimum length of synthetic panel's series.
-    max_length : int (default=500)
-        Maximum length of synthetic panel's series.
-    n_static_features : int (default=0)
-        Number of static exogenous variables for synthetic panel's series.
-    equal_ends : bool (default=False)
-        Series should end in the same date stamp `ds`.
-    engine : str (default='pandas')
-        Output Dataframe type ('pandas' or 'polars').
-    seed : int (default=0)
-        Random seed used for generating the data.
+    Args:
+        n_series (int): Number of series for synthetic panel.
+        freq (str, optional): Frequency of the data, 'D' or 'M'. Defaults to 'D'.
+        min_length (int, optional): Minimum length of synthetic panel's series. Defaults to 50.
+        max_length (int, optional): Maximum length of synthetic panel's series. Defaults to 500.
+        n_static_features (int, optional): Number of static exogenous variables for synthetic panel's series. Defaults to 0.
+        equal_ends (bool, optional): Series should end in the same date stamp `ds`. Defaults to False.
+        engine (str, optional): Output Dataframe type ('pandas' or 'polars'). Defaults to 'pandas'.
+        seed (int, optional): Random seed used for generating the data. Defaults to 0.
 
-    Returns
-    -------
-    pandas or polars DataFrame
-        Synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
+    Returns:
+        DataFrame: Synthetic panel with columns [`unique_id`, `ds`, `y`] and exogenous.
     """
     return utils_generate_series(
         n_series=n_series,
@@ -328,7 +317,13 @@ def _calculate_sigma(residuals, n):
 
 
 class ConformalIntervals:
-    """Class for storing conformal intervals metadata information."""
+    """Class for storing conformal intervals metadata information.
+
+    Args:
+        n_windows (int, optional): Number of windows for conformal intervals. Defaults to 2.
+        h (int, optional): Forecasting horizon. Defaults to 1.
+        method (str, optional): Method for conformal intervals. Defaults to "conformal_distribution".
+    """
 
     def __init__(
         self,

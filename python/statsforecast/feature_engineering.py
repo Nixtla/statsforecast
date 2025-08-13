@@ -24,23 +24,16 @@ def mstl_decomposition(
 ) -> Tuple[DataFrame, DataFrame]:
     """Decompose the series into trend and seasonal using the MSTL model.
 
-    Parameters
-    ----------
-    df : pandas or polars DataFrame
-        DataFrame with columns [`unique_id`, `ds`, `y`].
-    model : statsforecast MSTL
-        Model to use for the decomposition.
-    freq : str
-        Frequency of the data (pandas alias)
-    h : int
-        Forecast horizon.
+    Args:
+        df (pandas or polars DataFrame): DataFrame with columns [`unique_id`, `ds`, `y`].
+        model (statsforecast MSTL): Model to use for the decomposition.
+        freq (str): Frequency of the data (pandas alias).
+        h (int): Forecast horizon.
 
-    Returns
-    -------
-    train_df : pandas or polars DataFrame
-        Original dataframe with the 'trend' and 'seasonal' columns added.
-    X_df : pandas or polars DataFrame
-        Future dataframe to be provided to the predict method through `X_df`.
+    Returns:
+        Tuple[DataFrame, DataFrame]: A tuple containing:
+            - train_df (pandas or polars DataFrame): Original dataframe with the 'trend' and 'seasonal' columns added.
+            - X_df (pandas or polars DataFrame): Future dataframe to be provided to the predict method through `X_df`.
     """
     if not isinstance(model, MSTL):
         raise ValueError(f"`model` must be an MSTL instance, got {type(model)}")
