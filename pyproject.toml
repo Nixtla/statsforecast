@@ -106,6 +106,7 @@ all = [
     "pyarrow<21.0.0",
     "pybind11",
     "pytest",
+    "pytest-cov",
     "scikit-learn",
     "setuptools<70",
     "supersmoother",
