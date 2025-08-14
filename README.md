@@ -1,13 +1,11 @@
 # Nixtla &nbsp; [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Statistical%20Forecasting%20Algorithms%20by%20Nixtla%20&url=https://github.com/Nixtla/statsforecast&via=nixtlainc&hashtags=StatisticalModels,TimeSeries,Forecasting) &nbsp;[![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlacommunity/shared_invite/zt-1pmhan9j5-F54XR20edHk0UtYAPcW4KQ)
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-32-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/Nixtla/neuralforecast/main/nbs/imgs_indx/logo_mid.png">
+<img src="https://raw.githubusercontent.com/Nixtla/neuralforecast/main/nbs/imgs_indx/logo_mid.png"/>
 <h1 align="center">Statistical ⚡️ Forecast</h1>
 <h3 align="center">Lightning fast forecasting with statistical and econometric models</h3>
-    
+
 [![CI](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/Nixtla/statsforecast/actions/workflows/ci.yaml)
 [![Python](https://img.shields.io/pypi/pyversions/statsforecast)](https://pypi.org/project/statsforecast/)
 [![PyPi](https://img.shields.io/pypi/v/statsforecast?color=blue)](https://pypi.org/project/statsforecast/)
@@ -15,7 +13,7 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/Nixtla/statsforecast/blob/main/LICENSE)
 [![docs](https://img.shields.io/website-up-down-green-red/http/nixtla.github.io/statsforecast.svg?label=docs)](https://nixtla.github.io/statsforecast/)
 [![Downloads](https://pepy.tech/badge/statsforecast)](https://pepy.tech/project/statsforecast)
-    
+
 **StatsForecast** offers a collection of widely used univariate time series forecasting models, including automatic `ARIMA`, `ETS`, `CES`, and `Theta` modeling optimized for high performance using `numba`. It also includes a large battery of benchmarking models.
 </div>
 
@@ -27,11 +25,11 @@ You can install `StatsForecast` with:
 pip install statsforecast
 ```
 
-or 
+or
 
 ```python
 conda install -c conda-forge statsforecast
-``` 
+```
 
 
 Vist our [Installation Guide](https://nixtla.github.io/statsforecast/docs/getting-started/installation.html) for further instructions.
@@ -58,13 +56,13 @@ sf.predict(h=12, level=[95])
 
 **Follow this [end-to-end walkthrough](https://nixtla.github.io/statsforecast/docs/getting-started/getting_started_complete.html) for best practices.**
 
-## Why? 
+## Why?
 
 Current Python alternatives for statistical models are slow, inaccurate and don't scale well. So we created a library that can be used to forecast in production environments or as benchmarks.  `StatsForecast` includes an extensive battery of models that can efficiently fit millions of time series.
 
 ## Features
 
-* Fastest and most accurate implementations of `AutoARIMA`, `AutoETS`, `AutoCES`, `MSTL` and `Theta` in Python. 
+* Fastest and most accurate implementations of `AutoARIMA`, `AutoETS`, `AutoCES`, `MSTL` and `Theta` in Python.
 * Out-of-the-box compatibility with Spark, Dask, and Ray.
 * Probabilistic Forecasting and Confidence Intervals.
 * Support for exogenous Variables and static covariates.
@@ -76,12 +74,12 @@ Current Python alternatives for statistical models are slow, inaccurate and don'
 * Inclusion of `exogenous variables` and `prediction intervals` for ARIMA.
 * 20x [faster](./experiments/arima/) than `pmdarima`.
 * 1.5x faster than `R`.
-* 500x faster than `Prophet`. 
+* 500x faster than `Prophet`.
 * 4x [faster](./experiments/ets/) than `statsmodels`.
 * Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
 * 1,000,000 series in [30 min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray) with [ray](https://github.com/ray-project/ray).
 * Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter).
-* Fit 10 benchmark models on **1,000,000** series in [under **5 min**](./experiments/benchmarks_at_scale/). 
+* Fit 10 benchmark models on **1,000,000** series in [under **5 min**](./experiments/benchmarks_at_scale/).
 
 
 Missing something? Please open an issue or write us in [![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
@@ -98,7 +96,7 @@ Missing something? Please open an issue or write us in [![Slack](https://img.shi
 
 🔌 [Predict Demand Peaks](https://nixtla.github.io/statsforecast/docs/tutorials/electricitypeakforecasting.html): electricity load forecasting for detecting daily peaks and reducing electric bills.
 
-📈 [Intermittent Demand](https://nixtla.github.io/statsforecast/docs/tutorials/intermittentdata.html): forecast series with very few non-zero observations. 
+📈 [Intermittent Demand](https://nixtla.github.io/statsforecast/docs/tutorials/intermittentdata.html): forecast series with very few non-zero observations.
 
 🌡️ [Exogenous Regressors](https://nixtla.github.io/statsforecast/docs/how-to-guides/exogenous.html): like weather or prices
 
@@ -145,8 +143,8 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 |[MFLES](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#mfles)|✅|✅|✅|✅|✅|
 |[TBATS](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#tbats)|✅|✅|✅|✅||
 
-### GARCH and ARCH Models 
-Suited for modeling time series that exhibit non-constant volatility over time. The ARCH model is a particular case of GARCH. 
+### GARCH and ARCH Models
+Suited for modeling time series that exhibit non-constant volatility over time. The ARCH model is a particular case of GARCH.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
@@ -208,9 +206,7 @@ See [CONTRIBUTING.md](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBU
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
+
 <table>
   <tbody>
     <tr>
@@ -258,9 +254,6 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   </tbody>
 </table>
 
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
 
-<!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

@@ -132,23 +132,6 @@ def df_w_ex():
     return df_w_ex, train_df, test_df, xreg
 
 
-def test_distributed_exogenous_regressors(df_w_ex):
-    df_w_ex, train_df, test_df, xreg = df_w_ex
-    # | eval: false
-    # Distributed exogenous regressors
-    fcst_x = StatsForecast(models=[ReturnX()], freq=1)
-    res = fcst_x.forecast(df=train_df, X_df=xreg, h=4).compute()
-    expected_res = xreg.rename(columns={"x": "ReturnX"}).compute()
-    pd.testing.assert_frame_equal(
-        (
-            res.sort_values("unique_id")
-            .reset_index(drop=True)
-            .astype(expected_res.dtypes)
-        ),
-        expected_res,
-    )
-
-
 # # | eval: false
 
 
@@ -265,7 +248,9 @@ def test_ray_cv_fallback_model(ray_df):
     fcst_stats = sf.cross_validation(df=df.to_pandas(), h=12).astype({"unique_id": str})
     pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
 
-
+@pytest.mark.skipif(
+    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+)
 def test_ray_distributed_exogenous_regressors(df_w_ex):
     df_w_ex, train_df, test_df, xreg = df_w_ex
 

@@ -22,16 +22,15 @@ jobs:
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: |
-          git submodule status
-          git submodule update --init --recursive
-          pip install uv && uv pip install --system ".[all]"
+        run: pip install -e ".[all]"
 
       - name: Run pytest
-        run: pytest tests --ignore tests/test_distributed_fugue.py
+        run: pytest
