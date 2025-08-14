@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "statsforecast"
-version = "2.0.2"
+dynamic = ["version"]
 description = "Time series forecasting suite using statistical models"
 readme = "README.md"
 license = { text = "Apache Software License 2.0" }
@@ -120,6 +120,9 @@ all = [
 
 [tool.setuptools]
 packages = ["statsforecast"]
+
+[tool.setuptools.dynamic]
+version = {attr = "statsforecast.__version__"}
 
 [tool.setuptools.package-dir]
 "" = "python"
