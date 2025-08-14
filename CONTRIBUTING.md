@@ -6,14 +6,23 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
 
 ## Table of Contents 📚
 
-1. [Prerequisites](#prerequisites)
-2. [Git `fork-and-pull` worklow](#git-fork-and-pull-worklow)
-3. [Set Up a Virtual Environment](#set-up-a-virtual-environment)
-4. [Install required libraries for development](#install-required-libraries-for-development)
-5. [Start editable mode](#start-editable-mode)
-6. [Set Up your Notebook based development environment](#set-up-your-notebook-based-development-environment)
-7. [Start Coding](#start-coding)
-8. [Example with Screen-shots](#example-with-screen-shots)
+- [Step-by-step Contribution Guide](#step-by-step-contribution-guide)
+  - [Table of Contents 📚](#table-of-contents-)
+  - [Prerequisites](#prerequisites)
+  - [Git `fork-and-pull` worklow](#git-fork-and-pull-worklow)
+  - [Set Up a Virtual Environment](#set-up-a-virtual-environment)
+  - [Install required libraries for development](#install-required-libraries-for-development)
+    - [Setup pre-commit hooks](#setup-pre-commit-hooks)
+  - [Start editable mode](#start-editable-mode)
+    - [Re-compiling the shared library](#re-compiling-the-shared-library)
+  - [Set Up your Notebook based development environment](#set-up-your-notebook-based-development-environment)
+  - [Start Coding](#start-coding)
+  - [Example with Screen-shots](#example-with-screen-shots)
+    - [1. Create a fork of the mlforecast repo](#1-create-a-fork-of-the-mlforecast-repo)
+    - [2. Clone the repository](#2-clone-the-repository)
+    - [3. Make the changes you want](#3-make-the-changes-you-want)
+    - [4. Create a pull request](#4-create-a-pull-request)
+  - [Notes](#notes)
 
 ## Prerequisites
 
@@ -42,7 +51,7 @@ Branching in GitHub is a key strategy for effectively managing and isolating cha
 
 After testing, branches are merged back into the main branch via a pull request, and then typically deleted to maintain a clean repository. You can read more about github and branching [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
 
-##  Set Up a Virtual Environment
+## Set Up a Virtual Environment
 
 > If you want to use Docker or Codespaces, let us know opening an issue and we will set you up.
 
@@ -71,25 +80,12 @@ Install the library in editable mode using `uv pip install --no-build-isolation 
 By using the `-e` flag the package is linked directly to the source code, allowing any changes made to the source code to be immediately reflected in your Python environment without the need to reinstall the package. This is useful for testing changes during package development.
 
 ### Re-compiling the shared library
+
 If you're working on the C++ code, you'll need to re-compile the shared library, which can be done with: `python setup.py build_ext --inplace` (this will compile it into the `build` directory and copy it to the python package location).
 
 ## Set Up your Notebook based development environment
 
-Notebook-based development refers to using interactive notebooks, such as Jupyter Notebooks, for coding, data analysis, and visualization. Here's a brief description of its characteristics:
-
-1. **Interactivity**: Code in notebooks is written in cells which can be run independently. This allows for iterative development and testing of small code snippets.
-
-2. **Visualization**: Notebooks can render charts, tables, images, and other graphical outputs within the same interface, making it great for data exploration and analysis.
-
-3. **Documentation**: Notebooks support Markdown and HTML, allowing for detailed inline documentation. Code, outputs, and documentation are in one place, which is ideal for tutorials, reports, or sharing work.
-
-For notebook based development you'll need `nbdev` and a notebook editor (such as VS Code, Jupyter Notebook or Jupyter Lab). `nbdev` and jupyter have been installed in the previous step. If you use VS Code follow [this tutorial](https://code.visualstudio.com/docs/datascience/jupyter-notebooks).
-
-[nbdev](https://github.com/fastai/nbdev) makes debugging and refactoring your code much easier than in traditional programming environments since you always have live objects at your fingertips. `nbdev` also promotes software engineering best practices because tests and documentation are first class.
-
-All your changes must be written in the notebooks contained in the library (under the `nbs` directory). Once a specific notebook is open (more details to come), you can write your Python code in cells within the notebook, as you would do in a traditional Python development workflow. You can break down complex problems into smaller parts, visualizing data, and documenting your thought process. Along with your code, you can include markdown cells to add documentation directly in the notebook. This includes explanations of your logic, usage examples, and more. Also, `nbdev` allows you to write [tests inline](https://nbdev.fast.ai/tutorials/best_practices.html#document-error-cases-as-tests) with your code in your notebook. After writing a function, you can immediately write tests for it in the following cells.
-
-Once your code is ready, `nbdev` can automatically convert your notebook into Python scripts. Code cells are converted into Python code, and markdown cells into comments and docstrings.
+Notebooks are only used in the project for how-to-guides and code-walkthroughs.
 
 ## Start Coding
 
@@ -98,7 +94,6 @@ Open a jupyter notebook using `jupyter lab` (or VS Code).
 1. **Make Your Changes:** Make changes to the codebase, ensuring your changes are self-contained and cohesive.
 
 2. **Commit Your Changes:** Add the changed files using `git add [your_modified_file_0.ipynb] [your_modified_file_1.ipynb]`, then commit these changes using `git commit -m "<type>: <Your descriptive commit message>"`. Please use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-
 
 3. **Push Your Changes:**
 Push your changes to the remote repository on GitHub with `git push origin feature/your-feature-name`.
@@ -116,6 +111,7 @@ You can find a detailed step by step buide with screen-shots below.
 ## Example with Screen-shots
 
 ### 1. Create a fork of the mlforecast repo
+
 The first thing you need to do is create a fork of the GitHub repository to your own account:
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/af767f5b-66f1-4068-9dd2-917096285ae9)
 
@@ -149,7 +145,7 @@ You will end up with something like this:
 
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/ea4aed6f-2000-4ec8-a242-36b9dfd68d26)
 
-### 3. Make the changes you want.
+### 3. Make the changes you want
 
 In this section, we assume that we want to increase the default number of windows used to create prediction intervals from 2 to 3. The first thing we need to do is create a specific branch for that change using `git checkout -b [new_branch]` like this:
 
@@ -181,8 +177,7 @@ Finally, push your changes using `git push`:
 
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/49c6851c-949b-4ca7-ac38-6b17ec103437)
 
-
-### 4. Create a pull request.
+### 4. Create a pull request
 
 In GitHub, open your repository that contains your fork of the original repo. Once inside, you will see the changes you just pushed. Click on "Compare and pull request":
 
@@ -196,6 +191,6 @@ Finally, you will see something like this:
 
 ![image](https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/846c0b97-46d2-492b-a58e-3e9f669c1632)
 
-
 ## Notes
+
 - This file was generated using [this file](https://github.com/Nixtla/nixtla-commons/blob/main/docs/contribute/step-by-step.md). Please change that file if you want to enhance the document.
