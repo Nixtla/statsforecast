@@ -16,6 +16,10 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
   - [Start editable mode](#start-editable-mode)
     - [Re-compiling the shared library](#re-compiling-the-shared-library)
   - [Set Up your Notebook based development environment](#set-up-your-notebook-based-development-environment)
+  - [Running tests](#running-tests)
+  - [Viewing documentation locally](#viewing-documentation-locally)
+    - [Install `quarto`](#install-quarto)
+    - [Install mintlify](#install-mintlify)
   - [Start Coding](#start-coding)
   - [Example with Screen-shots](#example-with-screen-shots)
     - [1. Create a fork of the mlforecast repo](#1-create-a-fork-of-the-mlforecast-repo)
@@ -86,6 +90,44 @@ If you're working on the C++ code, you'll need to re-compile the shared library,
 ## Set Up your Notebook based development environment
 
 Notebooks are only used in the project for how-to-guides and code-walkthroughs.
+
+## Running tests
+
+To run the tests, run
+
+```sh
+uv run pytest
+```
+
+## Viewing documentation locally
+
+The new documentation pipeline relies on `quarto`, `mintlify` and `lazydocs`.
+
+### Install `quarto`
+
+Install `quarto` from &rarr; [this link](https://quarto.org/docs/get-started/)
+
+### Install mintlify
+
+> [!NOTE]
+> Please install Node.js before proceeding.
+
+```sh
+npm i -g mint
+```
+
+For additional instructions, you can read about it &rarr; [this link](https://mintlify.com/docs/installation).
+
+```sh
+uv pip install -e '.[dev]' lazydocs
+make all_docs
+```
+
+Finally to view the documentation
+
+```sh
+make preview_docs
+```
 
 ## Start Coding
 
