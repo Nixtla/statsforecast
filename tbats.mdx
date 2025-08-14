@@ -1,0 +1,353 @@
+
+
+
+
+# <kbd>module</kbd> `statsforecast.tbats`
+
+
+
+
+**Global Variables**
+---------------
+- **CACHE**
+- **NOGIL**
+
+---
+
+
+
+## <kbd>function</kbd> `find_harmonics`
+
+```python
+find_harmonics(y, m)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `initial_parameters`
+
+```python
+initial_parameters(k_vector, use_trend, use_damped_trend, ar_coeffs, ma_coeffs)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `makeXMatrix`
+
+```python
+makeXMatrix(b, s_vector, d_vector, epsilon_vector)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `findPQ`
+
+```python
+findPQ(ar_coeffs, ma_coeffs)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `makeTBATSWMatrix`
+
+```python
+makeTBATSWMatrix(phi, k_vector, ar_coeffs, ma_coeffs, tau)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `makeTBATSGMatrix`
+
+```python
+makeTBATSGMatrix(
+    k_vector,
+    alpha,
+    adj_beta,
+    beta,
+    gamma_one_v,
+    gamma_two_v,
+    p,
+    q,
+    tau
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `extract_params`
+
+```python
+extract_params(
+    params,
+    use_boxcox,
+    use_trend,
+    use_damped_trend,
+    use_arma_errors,
+    seasonal_periods,
+    p,
+    q
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `updateTBATSWMatrix`
+
+```python
+updateTBATSWMatrix(w_transpose, phi, tau, ar_coeffs, ma_coeffs, p, q)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `updateTBATSGMatrix`
+
+```python
+updateTBATSGMatrix(
+    g,
+    gamma_bold,
+    alpha,
+    beta,
+    k_vector,
+    gamma_one_v,
+    gamma_two_v
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `updateTBATSFMatrix`
+
+```python
+updateTBATSFMatrix(
+    F,
+    phi,
+    alpha,
+    beta,
+    gamma_bold,
+    ar_coeffs,
+    ma_coeffs,
+    p,
+    q,
+    tau
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `checkAdmissibility`
+
+```python
+checkAdmissibility(
+    BoxCox_lambda,
+    bc_lower_bound,
+    bc_upper_bound,
+    phi,
+    ar_coeffs,
+    ma_coeffs,
+    D
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `calcLikelihoodTBATS`
+
+```python
+calcLikelihoodTBATS(
+    params,
+    use_boxcox,
+    use_trend,
+    use_damped_trend,
+    use_arma_errors,
+    y,
+    y_trans,
+    seasonal_periods,
+    k_vector,
+    tau,
+    w_transpose,
+    F,
+    g,
+    gamma_bold,
+    x_nought,
+    x_nought_untransformed,
+    bc_lower_bound,
+    bc_upper_bound,
+    p,
+    q,
+    scale
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `tbats_model_generator`
+
+```python
+tbats_model_generator(
+    y,
+    seasonal_periods,
+    k_vector,
+    use_boxcox,
+    bc_lower_bound,
+    bc_upper_bound,
+    use_trend,
+    use_damped_trend,
+    use_arma_errors,
+    ar_coeffs,
+    ma_coeffs
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `tbats_model`
+
+```python
+tbats_model(
+    y,
+    seasonal_periods,
+    k_vector,
+    use_boxcox,
+    bc_lower_bound,
+    bc_upper_bound,
+    use_trend,
+    use_damped_trend,
+    use_arma_errors
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `tbats_selection`
+
+```python
+tbats_selection(
+    y,
+    seasonal_periods,
+    use_boxcox,
+    bc_lower_bound,
+    bc_upper_bound,
+    use_trend,
+    use_damped_trend,
+    use_arma_errors
+)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>function</kbd> `tbats_forecast`
+
+```python
+tbats_forecast(mod, h)
+```
+
+
+
+
+
+

@@ -26,100 +26,102 @@
   "navigation": [
     {
       "group": "",
-      "pages": ["index.html"]
+      "pages": [
+        "index"
+      ]
     },
     {
       "group": "Getting Started",
       "pages": [
-        "docs/getting-started/installation.html",
-        "docs/getting-started/getting_started_short.html",
-        "docs/getting-started/getting_started_complete.html",
-        "docs/getting-started/getting_started_complete_polars.html"
+        "docs/getting-started/0_Installation",
+        "docs/getting-started/1_Getting_Started_short",
+        "docs/getting-started/2_Getting_Started_complete",
+        "docs/getting-started/3_Getting_Started_complete_polars"
       ]
     },
     {
       "group": "Tutorials",
       "pages": [
-        "docs/tutorials/anomalydetection.html",
-        "docs/tutorials/conformalprediction.html",
-        "docs/tutorials/crossvalidation.html",
-        "docs/tutorials/electricityloadforecasting.html",
-        "docs/tutorials/electricitypeakforecasting.html",
-        "docs/tutorials/garch_tutorial.html",
-        "docs/tutorials/intermittentdata.html",
-        "docs/tutorials/mlflow.html",
-        "docs/tutorials/multipleseasonalities.html",
-        "docs/tutorials/statisticalneuralmethods.html",
-        "docs/tutorials/uncertaintyintervals.html"
+        "docs/tutorials/AnomalyDetection",
+        "docs/tutorials/ConformalPrediction",
+        "docs/tutorials/CrossValidation",
+        "docs/tutorials/ElectricityLoadForecasting",
+        "docs/tutorials/ElectricityPeakForecasting",
+        "docs/tutorials/GARCH_tutorial",
+        "docs/tutorials/IntermittentData",
+        "docs/tutorials/MLFlow",
+        "docs/tutorials/MultipleSeasonalities",
+        "docs/tutorials/StatisticalNeuralMethods",
+        "docs/tutorials/UncertaintyIntervals"
       ]
     },
     {
       "group": "How to Guides",
       "pages": [
-        "docs/how-to-guides/automatic_forecasting.html",
-        "docs/how-to-guides/exogenous.html",
-        "docs/how-to-guides/generating_features.html",
-        "docs/how-to-guides/sklearn_models.html",
+        "docs/how-to-guides/00_Automatic_Forecasting",
+        "docs/how-to-guides/Exogenous",
+        "docs/how-to-guides/generating_features",
+        "docs/how-to-guides/sklearn_models",
         "docs/how-to-guides/migrating_R",
-        "docs/how-to-guides/numba_cache.html"
+        "docs/how-to-guides/numba_cache"
       ]
     },
     {
       "group": "Distributed",
       "pages": [
-        "docs/distributed/dask.html",
-        "docs/distributed/ray.html",
-        "docs/distributed/spark.html"
+        "docs/distributed/dask",
+        "docs/distributed/ray",
+        "docs/distributed/spark"
       ]
     },
     {
       "group": "Experiments",
       "pages": [
-        "docs/experiments/amazonstatsforecast.html",
-        "docs/experiments/autoarima_vs_prophet.html",
-        "docs/experiments/ets_ray_m5.html",
-        "docs/experiments/prophet_spark_m5.html"
+        "docs/experiments/AmazonStatsForecast",
+        "docs/experiments/AutoArima_vs_Prophet",
+        "docs/experiments/ETS_ray_m5",
+        "docs/experiments/Prophet_spark_m5"
       ]
     },
     {
       "group": "Model References",
       "pages": [
-        "docs/models/adida.html",
-        "docs/models/arch.html",
-        "docs/models/arima.html",
-        "docs/models/autoarima.html",
-        "docs/models/autoces.html",
-        "docs/models/autoets.html",
-        "docs/models/autoregressive.html",
-        "docs/models/autotheta.html",
-        "docs/models/crostonclassic.html",
-        "docs/models/crostonoptimized.html",
-        "docs/models/crostonsba.html",
-        "docs/models/dynamicoptimizedtheta.html",
-        "docs/models/dynamicstandardtheta.html",
-        "docs/models/garch.html",
-        "docs/models/holt.html",
-        "docs/models/holtwinters.html",
-        "docs/models/imapa.html",
-        "docs/models/mfles.html",
-        "docs/models/multipleseasonaltrend.html",
-        "docs/models/optimizedtheta.html",
-        "docs/models/seasonalexponentialsmoothing.html",
-        "docs/models/seasonalexponentialsmoothingoptimized.html",
-        "docs/models/simpleexponentialoptimized.html",
-        "docs/models/simpleexponentialsmoothing.html",
-        "docs/models/standardtheta.html",
-        "docs/models/tsb.html"
+        "docs/models/ADIDA",
+        "docs/models/ARCH",
+        "docs/models/ARIMA",
+        "docs/models/AutoARIMA",
+        "docs/models/AutoCES",
+        "docs/models/AutoETS",
+        "docs/models/AutoRegressive",
+        "docs/models/AutoTheta",
+        "docs/models/CrostonClassic",
+        "docs/models/CrostonOptimized",
+        "docs/models/CrostonSBA",
+        "docs/models/DynamicOptimizedTheta",
+        "docs/models/DynamicStandardTheta",
+        "docs/models/GARCH",
+        "docs/models/Holt",
+        "docs/models/HoltWinters",
+        "docs/models/IMAPA",
+        "docs/models/MFLES",
+        "docs/models/MultipleSeasonalTrend",
+        "docs/models/OptimizedTheta",
+        "docs/models/SeasonalExponentialSmoothing",
+        "docs/models/SeasonalExponentialSmoothingOptimized",
+        "docs/models/SimpleExponentialOptimized",
+        "docs/models/SimpleExponentialSmoothing",
+        "docs/models/StandardTheta",
+        "docs/models/TSB"
       ]
     },
     {
       "group": "API Reference",
       "pages": [
-        "src/core/core.html",
-        "src/core/distributed.fugue.html",
-        "src/core/models.html",
+        "core",
+        "distributed.fugue",
+        "models",
         "src/core/models_intro",
-        "src/feature_engineering.html"
+        "feature_engineering"
       ]
     },
     {
