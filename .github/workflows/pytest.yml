@@ -33,4 +33,4 @@ jobs:
         run: pip install -e ".[all]"
 
       - name: Run pytest
-        run: pytest tests --ignore tests/test_distributed_fugue.py
+        run: pytest
