@@ -319,12 +319,9 @@ class FugueBackend(ParallelBackend):
             pandas.DataFrame: DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
 
         References:
-            - For more information check the
-              [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html)
-              tutorial.
-            - The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast)
-              method documentation.
-            - Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html).
+            - For more information check the [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html) tutorial.
+            - The [core.StatsForecast's forecast](https://nixtlaverse.nixtla.io/statsforecast/core#method-forecast-3)method documentation.
+            - Or the list of available [StatsForecast's models](https://nixtlaverse.nixtla.io/statsforecast/models).
         """
         self._fcst_schema = self._get_output_schema(
             df=df,
@@ -467,31 +464,29 @@ class FugueBackend(ParallelBackend):
         provides better model's generalization measurements by increasing the test's length
         and diversity.
 
-        Parameters
-        ----------
-        {df}
-        {freq}
-        {models}
-        {fallback_model}
-        {h}
-        {n_windows}
-        {step_size}
-        {test_size}
-        {input_size}
-        {level}
-        {refit}
-        {fitted}
-        {prediction_intervals}
-        {id_col}
-        {time_col}
-        {target_col}
+        Args:
+            {df}
+            {freq}
+            {models}
+            {fallback_model}
+            {h}
+            {n_windows}
+            {step_size}
+            {test_size}
+            {input_size}
+            {level}
+            {refit}
+            {fitted}
+            {prediction_intervals}
+            {id_col}
+            {time_col}
+            {target_col}
 
         Returns:
             pandas.DataFrame: DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.
 
         References:
-            - The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)
-              method documentation.
+            - The [core.StatsForecast's cross validation](https://nixtlaverse.nixtla.io/statsforecast/core#method-cross_validation-3) method documentation.
             - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
         """
         schema = self._get_output_schema(

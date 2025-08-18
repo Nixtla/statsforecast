@@ -8,8 +8,8 @@ from ..core import ParallelBackend, _StatsForecast
 # This parent class holds common `forecast` and `cross_validation` methods
 # from `core.StatsForecast` to enable the `FugueBackend` and the `RayBackend`.
 
-# This Parent class is inherited by [FugueBakend](https://nixtla.github.io/statsforecast/distributed.fugue.html)
-# and [RayBackend](https://nixtla.github.io/statsforecast/distributed.ray.html).
+# This Parent class is inherited by [FugueBakend](https://nixtlaverse.nixtla.io/statsforecast/distributed.fugue)
+# and [RayBackend](https://nixtlaverse.nixtla.io/statsforecast/distributed.ray).
 
 
 class MultiprocessBackend(ParallelBackend):

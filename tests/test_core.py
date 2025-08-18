@@ -552,7 +552,7 @@ class TestModels:
         # Declare list of instantiated StatsForecast estimators to be fitted
         # You can try other estimator's hyperparameters
         # You can try other methods from the `models.StatsForecast` collection
-        # Check them here: https://nixtla.github.io/statsforecast/models.html
+        # Check them here: https://nixtlaverse.nixtla.io/statsforecast/models
         models = [
             AutoARIMA(),
             Naive(),
