@@ -386,8 +386,8 @@ For the test data we will use the last 500 Hours to test and evaluate
 the performance of our model.
 
 ```python
-train = df[df.ds\<='2023-01-31 19:00:00'] 
-test = df[df.ds>'2023-01-31 19:00:00'] 
+train = df[df.ds\<='2023-01-31 19:00:00']
+test = df[df.ds>'2023-01-31 19:00:00']
 ```
 
 
@@ -428,7 +428,7 @@ periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
 master, Rob Hyndmann, can be useful for `season_length`.
 
 ```python
-season_length = 24 # Hourly data 
+season_length = 24 # Hourly data
 horizon = len(test) # number of predictions
 
 models = [IMAPA()]
@@ -536,7 +536,7 @@ uncertainty intervals.
 This step should take less than 1 second.
 
 ```python
-forecast_df = sf.predict(h=horizon) 
+forecast_df = sf.predict(h=horizon)
 forecast_df
 ```
 
@@ -668,7 +668,7 @@ evaluate(
     Princeton, New Jersey, 1st Edition,
     1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
 4.  [Nixtla
-    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#arch-model).
+    Parameters](https://nixtlaverse.nixtla.io/statsforecast/docs/models/IMAPA)
 5.  [Pandas available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 6.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting

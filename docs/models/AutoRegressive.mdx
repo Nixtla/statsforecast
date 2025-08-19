@@ -643,14 +643,14 @@ By applying a differential, our time series now is stationary.
 def tsplot(y, lags=None, figsize=(12, 7), style='bmh'): # [3]
     if not isinstance(y, pd.Series):
         y = pd.Series(y)
-        
-    with plt.style.context(style):    
+
+    with plt.style.context(style):
         fig = plt.figure(figsize=figsize)
         layout = (2, 2)
         ts_ax = plt.subplot2grid(layout, (0, 0), colspan=2)
         acf_ax = plt.subplot2grid(layout, (1, 0))
         pacf_ax = plt.subplot2grid(layout, (1, 1))
-        
+
         y.plot(ax=ts_ax)
         p_value = sm.tsa.stattools.adfuller(y)[1]
         ts_ax.set_title('Time Series Analysis plot\n Dickey-Fuller: p={0:.5f}'.format(p_value))
@@ -712,7 +712,7 @@ For the test data we will use the last 12 months to test and evaluate
 the performance of our model.
 
 ```python
-train = df[df.ds\<='2011-12-01'] 
+train = df[df.ds\<='2011-12-01']
 test = df[df.ds>'2011-12-01']
 ```
 
@@ -741,7 +741,7 @@ plt.show()
 
 ```python
 from statsforecast import StatsForecast
-from statsforecast.models import AutoRegressive 
+from statsforecast.models import AutoRegressive
 ```
 
 ### Instantiating Model
@@ -755,7 +755,7 @@ master, Rob Hyndmann, can be useful.season_length.
 we put the lags we want to evaluate in the model.
 
 ```python
-season_length = 12 # Monthly data 
+season_length = 12 # Monthly data
 horizon = len(test) # number of predictions biasadj=True, include_drift=True,
 
 models2 = [AutoRegressive(lags=[14], include_mean=True)]
@@ -766,7 +766,7 @@ put the lags that we want to evaluate in the model in the form of a list
 as shown below.
 
 ```python
-season_length = 12 # Monthly data 
+season_length = 12 # Monthly data
 horizon = len(test) # number of predictions
 
 models = [AutoRegressive(lags=[3,4,6,7,9,10,11,12,13,14], include_mean=True)]
@@ -993,7 +993,7 @@ sf.predict(h=horizon)
 | 11  | 1         | 2012-12-01 | 12498.226562   |
 
 ```python
-forecast_df = sf.predict(h=horizon, level=[95]) 
+forecast_df = sf.predict(h=horizon, level=[95])
 forecast_df
 ```
 
@@ -1098,11 +1098,11 @@ from IPython.display import display
 
 
 ```python
-crossvalidation_df.rename(columns = {'y' : 'actual'}, inplace = True) # rename actual values 
+crossvalidation_df.rename(columns = {'y' : 'actual'}, inplace = True) # rename actual values
 
 cutoff = crossvalidation_df['cutoff'].unique()
 
-for k in range(len(cutoff)): 
+for k in range(len(cutoff)):
     cv = crossvalidation_df[crossvalidation_df['cutoff'] == cutoff[k]]
     display(StatsForecast.plot(df, cv.loc[:, cv.columns != 'cutoff']))
 ```
@@ -1159,7 +1159,7 @@ evaluate(
     International Journal of
     Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
 3.  [Nixtla
-    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#autoregressive).
+    Parameters](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoRegressive)
 4.  [Pandas available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 5.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting

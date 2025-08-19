@@ -385,7 +385,7 @@ multiplicative time series can be represented as.
 $$y(t) = Level * Trend * seasonality * Noise$$
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 a = seasonal_decompose(df["y"], model = "add", period=12)
 a.plot();
 ```
@@ -401,8 +401,8 @@ For the test data we will use the last 12 months to test and evaluate
 the performance of our model.
 
 ```python
-Y_train_df = df[df.ds\<='2016-08-01'] 
-Y_test_df = df[df.ds>'2016-08-01'] 
+Y_train_df = df[df.ds\<='2016-08-01']
+Y_test_df = df[df.ds>'2016-08-01']
 ```
 
 
@@ -419,7 +419,7 @@ Now let’s plot the training data and the test data.
 ```python
 sns.lineplot(Y_train_df,x="ds", y="y", label="Train")
 sns.lineplot(Y_test_df, x="ds", y="y", label="Test")
-plt.show()   
+plt.show()
 ```
 
 ![](AutoARIMA_files/figure-markdown_strict/cell-14-output-1.png)
@@ -442,7 +442,7 @@ periods](https://robjhyndman.com/hyndsight/seasonal-periods/)) by the
 master, Rob Hyndmann, can be useful.season_length
 
 ```python
-season_length = 12 # Monthly data 
+season_length = 12 # Monthly data
 horizon = len(Y_test_df) # number of predictions
 
 models = [AutoARIMA(season_length=season_length)]
@@ -687,7 +687,7 @@ sf.predict(h=12)
 | 11  | 1         | 2017-08-01 | 105.426708 |
 
 ```python
-forecast_df = sf.predict(h=12, level = [80, 95]) 
+forecast_df = sf.predict(h=12, level = [80, 95])
 forecast_df
 ```
 
@@ -837,7 +837,7 @@ evaluate(
 
 ## References <a class="anchor" id="references"></a>
 
-1.  [Nixtla-Arima](https://nixtla.github.io/statsforecast/src/core/models.html#arima-family)
+1.  [Nixtla-Arima](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoARIMA)
 2.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
     Principles and Practice (3rd
     ed)”](https://otexts.com/fpp3/tscv.html).

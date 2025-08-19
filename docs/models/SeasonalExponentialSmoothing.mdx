@@ -486,7 +486,7 @@ $$y(t) = Level * Trend * seasonality * Noise$$
 ### Additive
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 a = seasonal_decompose(df["y"], model = "additive", period=12)
 a.plot();
 ```
@@ -496,7 +496,7 @@ a.plot();
 ### Multiplicative
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
 a.plot();
 ```
@@ -514,8 +514,8 @@ For the test data we will use the last 30 hourly to test and evaluate
 the performance of our model.
 
 ```python
-train = df[df.ds\<='2017-09-20 17:00:00'] 
-test = df[df.ds>'2017-09-20 17:00:00'] 
+train = df[df.ds\<='2017-09-20 17:00:00']
+test = df[df.ds>'2017-09-20 17:00:00']
 ```
 
 
@@ -555,7 +555,7 @@ periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
 master, Rob Hyndmann, can be useful for `season_length`.
 
 ```python
-season_length = 24 # Hourly data 
+season_length = 24 # Hourly data
 horizon = len(test) # number of predictions
 
 models = [SeasonalExponentialSmoothing(alpha=0.8, season_length=season_length)]
@@ -751,7 +751,7 @@ uncertainty intervals.
 This step should take less than 1 second.
 
 ```python
-forecast_df = sf.predict(h=horizon) 
+forecast_df = sf.predict(h=horizon)
 forecast_df
 ```
 
@@ -888,7 +888,7 @@ for writing this tutorial.
     Princeton, New Jersey, 1st Edition,
     1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
 4.  [Nixtla
-    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#arch-model).
+    Parameters](https://nixtlaverse.nixtla.io/statsforecast/docs/models/SeasonalExponentialSmoothing)
 5.  [Pandas available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 6.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting

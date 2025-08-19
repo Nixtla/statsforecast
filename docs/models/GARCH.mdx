@@ -488,7 +488,7 @@ row=1, col=1
 
 fig.add_trace(go.Scatter(x=df["ds"], y=df["sq_return"],
                          mode='lines',
-                         name='sq_return'), 
+                         name='sq_return'),
     row=1, col=2
 )
 
@@ -504,7 +504,7 @@ from statsmodels.tsa.stattools import adfuller, q_stat, acf
 import numpy as np
 import seaborn as sns
 
-def plot_correlogram(x, lags=None, title=None):    
+def plot_correlogram(x, lags=None, title=None):
     lags = min(10, int(len(x)/5)) if lags is None else lags
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(14, 8))
     x.plot(ax=axes[0][0], title='Return')
@@ -528,7 +528,7 @@ def plot_correlogram(x, lags=None, title=None):
 
 
 ```python
-plot_correlogram(df["return"], lags=30, title="Time Series Analysis plot \n") 
+plot_correlogram(df["return"], lags=30, title="Time Series Analysis plot \n")
 ```
 
 ![](GARCH_files/figure-markdown_strict/cell-16-output-1.png)
@@ -603,8 +603,8 @@ train.shape, test.shape
 ### Load libraries
 
 ```python
-from statsforecast import StatsForecast 
-from statsforecast.models import GARCH 
+from statsforecast import StatsForecast
+from statsforecast.models import GARCH
 ```
 
 ### Instantiating Models
@@ -615,7 +615,7 @@ periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
 master, Rob Hyndmann, can be useful.season_length.
 
 ```python
-season_length = 7 # Dayly data 
+season_length = 7 # Dayly data
 horizon = len(test) # number of predictions biasadj=True, include_drift=True,
 
 models = [GARCH(1,1),
@@ -624,8 +624,8 @@ models = [GARCH(1,1),
           GARCH(2,1),
           GARCH(3,1),
           GARCH(3,2),
-          GARCH(3,3), 
-          GARCH(1,3), 
+          GARCH(3,3),
+          GARCH(1,3),
           GARCH(2,3)]
 ```
 
@@ -765,7 +765,7 @@ the predictions.
 ### Fit the Model
 
 ```python
-season_length = 7 # Dayly data 
+season_length = 7 # Dayly data
 horizon = len(test) # number of predictions biasadj=True, include_drift=True,
 
 models = [GARCH(1,1)]
@@ -981,7 +981,7 @@ sf.predict(h=horizon)
 | 77  | 1         | 2023-09-18 00:00:00+00:00 | 0.799407   |
 
 ```python
-forecast_df = sf.predict(h=horizon, level=[80,95]) 
+forecast_df = sf.predict(h=horizon, level=[80,95])
 forecast_df.head(10)
 ```
 
@@ -1047,7 +1047,7 @@ evaluate(
     Princeton, New Jersey, 1st Edition,
     1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
 5.  [Nixtla
-    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#arch-model).
+    Parameters](https://nixtlaverse.nixtla.io/statsforecast/docs/models/GARCH)
 6.  [Pandas available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 7.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting

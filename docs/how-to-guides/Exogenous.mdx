@@ -23,7 +23,7 @@ accuracy of our predictions.
 
 By the end of this tutorial, you’ll have a good understanding of how to
 incorporate exogenous regressors into
-[StatsForecast](https://nixtla.github.io/statsforecast/)’s models.
+[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/)’s models.
 Furthermore, you’ll see how to evaluate their performance and decide
 whether or not they can help enhance the forecast.
 
@@ -46,7 +46,7 @@ whether or not they can help enhance the forecast.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html)
+StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/0_Installation).
 
 ```python
 # uncomment the following line to install the library
@@ -84,7 +84,7 @@ X_ts = pd.read_parquet(f'{base_url}/m5_x.parquet', filters=filters)
 
 We can plot the sales of this product-store combination with the
 `statsforecast.plot` method from the
-[StatsForecast](https://nixtla.github.io/statsforecast/core.html#statsforecast)
+[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/core#class-statsforecast)
 class. This method has multiple parameters, and the requiered ones to
 generate the plots in this notebook are explained below.
 
@@ -214,7 +214,7 @@ X_test.head()
 ## Train model
 
 To generate the forecast, we’ll use
-[AutoARIMA](https://nixtla.github.io/statsforecast/models.html#autoarima),
+[AutoARIMA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoARIMA),
 which is one of the models available in StatsForecast that allows
 exogenous regressors. To use this model, we first need to import it from
 `statsforecast.models` and then we need to instatiate it. Given that

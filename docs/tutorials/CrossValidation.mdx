@@ -9,7 +9,7 @@ title: Cross validation
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
+> Start](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/1_Getting_Started_short)
 
 ## Introduction
 
@@ -19,7 +19,7 @@ across the historical data and predicting the period following it.
 
 ![](https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/ChainedWindows.gif)
 
-[Statsforecast](https://nixtla.github.io/statsforecast/) has an
+[Statsforecast](https://nixtlaverse.nixtla.io/statsforecast/) has an
 implementation of time series cross-validation that is fast and easy to
 use. This implementation makes cross-validation a distributed operation,
 which makes it less time-consuming. In this notebook, we’ll use it on a
@@ -44,17 +44,17 @@ hourly dataset.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast]('https://nixtla.github.io/statsforecast/examples/installation.html')
+StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/0_Installation)
 
 Install the necessary packages with `pip install statsforecast`
 
 ```python
-pip install statsforecast 
+pip install statsforecast
 ```
 
 
 ```python
-from statsforecast import StatsForecast # required to instantiate StastForecast object and use cross-validation method 
+from statsforecast import StatsForecast # required to instantiate StastForecast object and use cross-validation method
 ```
 
 ## Load and explore the data
@@ -63,13 +63,13 @@ As stated in the introduction, we’ll use the M4 Competition hourly
 dataset. We’ll first import the data from an URL using `pandas`.
 
 ```python
-import pandas as pd 
+import pandas as pd
 ```
 
 
 ```python
-Y_df = pd.read_parquet('https://datasets-nixtla.s3.amazonaws.com/m4-hourly.parquet') # load the data 
-Y_df.head() 
+Y_df = pd.read_parquet('https://datasets-nixtla.s3.amazonaws.com/m4-hourly.parquet') # load the data
+Y_df.head()
 ```
 
 |     | unique_id | ds  | y     |
@@ -100,7 +100,7 @@ only use one time series from the data, namely the one with
 additional changes to the code needed.
 
 ```python
-df = Y_df[Y_df['unique_id'] == 'H1'] # select time series 
+df = Y_df[Y_df['unique_id'] == 'H1'] # select time series
 ```
 
 We can plot the time series we’ll work with using `StatsForecast.plot`
@@ -115,14 +115,14 @@ StatsForecast.plot(df)
 ## Train model
 
 For this example, we’ll use StastForecast
-[AutoETS](https://nixtla.github.io/statsforecast/models.html#autoets).
+[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoETS).
 We first need to import it from `statsforecast.models` and then we need
 to instantiate a new `StatsForecast` object.
 
 The `StatsForecast` object has the following parameters:
 
 -   models: a list of models. Select the models you want from
-    [models](https://nixtla.github.io/statsforecast/models.html) and
+    [models](https://nixtlaverse.nixtla.io/statsforecast/models/) and
     import them.
 -   freq: a string indicating the frequency of the data. See [panda’s
     available
@@ -142,8 +142,8 @@ from statsforecast.models import AutoETS
 models = [AutoETS(season_length = 24)]
 
 sf = StatsForecast(
-    models = models, 
-    freq = 1, 
+    models = models,
+    freq = 1,
     n_jobs = 1
 )
 ```
@@ -203,11 +203,11 @@ from IPython.display import display
 
 
 ```python
-cv_df.rename(columns = {'y' : 'actual'}, inplace = True) # rename actual values 
+cv_df.rename(columns = {'y' : 'actual'}, inplace = True) # rename actual values
 
 cutoff = cv_df['cutoff'].unique()
 
-for k in range(len(cutoff)): 
+for k in range(len(cutoff)):
     cv = cv_df[cv_df['cutoff'] == cutoff[k]]
     display(StatsForecast.plot(df, cv.loc[:, cv.columns != 'cutoff']))
 ```
@@ -228,7 +228,7 @@ accuracy metric. Here we’ll use the [Root Mean Squared Error
 (RMSE).](https://en.wikipedia.org/wiki/Root-mean-square_deviation).
 
 ```python
-from utilsforecast.losses import rmse  
+from utilsforecast.losses import rmse
 ```
 
 The function to compute the RMSE takes two arguments:
@@ -252,7 +252,7 @@ model, since it used different time periods to test its accuracy.
 >
 > Cross validation is especially useful when comparing multiple models.
 > Here’s an
-> [example](https://nixtla.github.io/statsforecast/examples/getting_started_complete.html)
+> [example](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/2_Getting_Started_complete)
 > with multiple models and time series.
 
 ## References

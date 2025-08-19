@@ -40,15 +40,16 @@ returns the mean or the median or said distribution. However, in
 real-world scenarios, it is better to forecast not only the most
 probable future outcome, but many alternative outcomes as well.
 
-[StatsForecast](https://nixtla.github.io/statsforecast/) has many models
-that can generate point forecasts. It also has probabilistic models than
-generate the same point forecasts and their prediction intervals. These
-models are stochastic data generating processes that can produce entire
-forecast distributions. By the end of this tutorial, you’ll have a good
-understanding of the probabilistic models available in StatsForecast and
-will be able to use them to generate point forecasts and prediction
-intervals. Furthermore, you’ll also learn how to generate plots with the
-historical data, the point forecasts, and the prediction intervals.
+[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/) has many
+models that can generate point forecasts. It also has probabilistic
+models than generate the same point forecasts and their prediction
+intervals. These models are stochastic data generating processes that
+can produce entire forecast distributions. By the end of this tutorial,
+you’ll have a good understanding of the probabilistic models available
+in StatsForecast and will be able to use them to generate point
+forecasts and prediction intervals. Furthermore, you’ll also learn how
+to generate plots with the historical data, the point forecasts, and the
+prediction intervals.
 
 > **Important**
 >
@@ -78,7 +79,7 @@ historical data, the point forecasts, and the prediction intervals.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](../getting-started/0_Installation.ipynb)
+StatsForecast](../getting-started/0_Installation)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -96,7 +97,7 @@ separately. We’ll also rename the `y` column of the test data as
 `y_test`.
 
 ```python
-import pandas as pd 
+import pandas as pd
 ```
 
 
@@ -135,14 +136,14 @@ we’ll only use the first 8 series of the dataset to reduce the total
 computational time.
 
 ```python
-n_series = 8 
+n_series = 8
 uids = train['unique_id'].unique()[:n_series] # select first n_series of the dataset
 train = train.query('unique_id in @uids')
 test = test.query('unique_id in @uids')
 ```
 
 We can plot these series using the `statsforecast.plot` method from the
-[StatsForecast](https://nixtla.github.io/statsforecast/core.html#statsforecast)
+[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/core#class-statsforecast)
 class. This method has multiple parameters, and the required ones to
 generate the plots in this notebook are explained below.
 
@@ -171,19 +172,19 @@ StatsForecast.plot(train, test, plot_random=False)
 ## Train models
 
 StatsForecast can train multiple
-[models](https://nixtla.github.io/statsforecast/#models) on different
-time series efficiently. Most of these models can generate a
+[models](https://nixtlaverse.nixtla.io/statsforecast/models) on
+different time series efficiently. Most of these models can generate a
 probabilistic forecast, which means that they can produce both point
 forecasts and prediction intervals.
 
 For this example, we’ll use
-[AutoETS](https://nixtla.github.io/statsforecast/models.html#autoets)
+[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoETS)
 and the following baseline models:
 
--   [HistoricAverage](https://nixtla.github.io/statsforecast/models.html#historicaverage)
--   [Naive](https://nixtla.github.io/statsforecast/models.html#naive)
--   [RandomWalkWithDrift](https://nixtla.github.io/statsforecast/models.html#randomwalkwithdrift)
--   [SeasonalNaive](https://nixtla.github.io/statsforecast/models.html#seasonalnaive)
+-   [HistoricAverage](https://nixtlaverse.nixtla.io/statsforecast/models#class-historicaverage)
+-   [Naive](https://nixtlaverse.nixtla.io/statsforecast/models#class-naive)
+-   [RandomWalkWithDrift](https://nixtlaverse.nixtla.io/statsforecast/models#class-randomwalkwithdrift)
+-   [SeasonalNaive](https://nixtlaverse.nixtla.io/statsforecast/models#class-seasonalnaive)
 
 To use these models, we first need to import them from
 `statsforecast.models` and then we need to instantiate them. Given that
@@ -192,22 +193,22 @@ the models that requiere this parameter.
 
 ```python
 from statsforecast.models import (
-    AutoETS, 
-    HistoricAverage, 
-    Naive, 
-    RandomWalkWithDrift, 
+    AutoETS,
+    HistoricAverage,
+    Naive,
+    RandomWalkWithDrift,
     SeasonalNaive
 )
 ```
 
 
 ```python
-# Create a list of models and instantiation parameters 
+# Create a list of models and instantiation parameters
 models = [
     AutoETS(season_length=24),
-    HistoricAverage(), 
-    Naive(), 
-    RandomWalkWithDrift(), 
+    HistoricAverage(),
+    Naive(),
+    RandomWalkWithDrift(),
     SeasonalNaive(season_length=24)
 ]
 ```
@@ -224,11 +225,11 @@ parameters:
     parallel processing. Use -1 to select all cores.
 
 ```python
-sf = StatsForecast( 
-    models=models, 
+sf = StatsForecast(
+    models=models,
     freq=1,
     n_jobs=-1
-) 
+)
 ```
 
 Now we’re ready to generate the point forecasts and the prediction
@@ -243,7 +244,7 @@ arguments:
     95%.
 
 ```python
-levels = [80, 90, 95, 99] # confidence levels of the prediction intervals 
+levels = [80, 90, 95, 99] # confidence levels of the prediction intervals
 
 forecasts = sf.forecast(df=train, h=48, level=levels)
 forecasts.head()

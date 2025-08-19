@@ -516,7 +516,7 @@ row=1, col=1
 
 fig.add_trace(go.Scatter(x=df["ds"], y=df["sq_return"],
                          mode='lines',
-                         name='sq_return'), 
+                         name='sq_return'),
     row=1, col=2
 )
 
@@ -532,7 +532,7 @@ from statsmodels.tsa.stattools import adfuller, q_stat, acf
 import numpy as np
 import seaborn as sns
 
-def plot_correlogram(x, lags=None, title=None):    
+def plot_correlogram(x, lags=None, title=None):
     lags = min(10, int(len(x)/5)) if lags is None else lags
     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(14, 8))
     x.plot(ax=axes[0][0], title='Return')
@@ -556,7 +556,7 @@ def plot_correlogram(x, lags=None, title=None):
 
 
 ```python
-plot_correlogram(df["return"], lags=30, title="Time Series Analysis plot \n") 
+plot_correlogram(df["return"], lags=30, title="Time Series Analysis plot \n")
 ```
 
 ![](ARCH_files/figure-markdown_strict/cell-16-output-1.png)
@@ -642,7 +642,7 @@ plt.show()
 
 To also know more about the parameters of the functions of the
 `ARCH Model`, they are listed below. For more information, visit the
-[documentation](https://nixtla.github.io/statsforecast/src/core/models.html#arch-model)
+[documentation](https://nixtlaverse.nixtla.io/statsforecast/docs/models/ARCH)
 
 ``` text
 p : int
@@ -658,8 +658,8 @@ prediction_intervals : Optional[ConformalIntervals]
 ### Load libraries
 
 ```python
-from statsforecast import StatsForecast 
-from statsforecast.models import ARCH 
+from statsforecast import StatsForecast
+from statsforecast.models import ARCH
 ```
 
 ### Building Model
@@ -919,7 +919,7 @@ sf.predict(h=horizon)
 | 81  | 1         | 2023-09-15 00:00:00+00:00 | -0.158605 |
 
 ```python
-forecast_df = sf.predict(h=horizon, level=[80,95]) 
+forecast_df = sf.predict(h=horizon, level=[80,95])
 forecast_df
 ```
 
@@ -1082,7 +1082,7 @@ evaluate(
     Princeton, New Jersey, 1st Edition,
     1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
 4.  [Nixtla
-    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#arch-model).
+    Parameters](https://nixtlaverse.nixtla.io/statsforecast/docs/models/ARCH)
 5.  [Pandas available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 6.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting

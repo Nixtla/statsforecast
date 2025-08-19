@@ -9,7 +9,7 @@ title: Anomaly Detection
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
+> Start](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/1_Getting_Started_short)
 
 ## Introduction
 
@@ -29,8 +29,8 @@ patterns in energy usage.
 
 By the end of this tutorial, you’ll have a good understanding of how to
 detect anomalies in time series data using
-[StatsForecast](https://nixtla.github.io/statsforecast/)’s probabilistic
-models.
+[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/)’s
+probabilistic models.
 
 **Outline:**
 
@@ -57,7 +57,7 @@ models.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html)
+StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/0_Installation)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -136,7 +136,7 @@ plot_series(df)
 ## Train model
 
 To generate the forecast, we’ll use the
-[MSTL](https://nixtla.github.io/statsforecast/models.html#multiple-seasonalities)
+[MSTL](https://nixtlaverse.nixtla.io/statsforecast/docs/models/MultipleSeasonalTrend)
 model, which is well-suited for low-frequency data like the one used
 here. We first need to import it from `statsforecast.models` and then we
 need to instantiate it. Since we’re using hourly data, we have two
@@ -149,7 +149,7 @@ from statsforecast.models import MSTL
 
 
 ```python
-# Create a list of models and instantiation parameters 
+# Create a list of models and instantiation parameters
 models = [MSTL(season_length = [24, 24*7])]
 ```
 
@@ -165,7 +165,7 @@ parameters:
 
 ```python
 sf = StatsForecast(
-    models=models, 
+    models=models,
     freq=1,
     n_jobs=-1,
 )
@@ -185,7 +185,7 @@ detect the anomalies.
 
 ```python
 horizon = 48
-levels = [99] 
+levels = [99]
 
 fcst = sf.forecast(df=df, h=48, level=levels, fitted=True)
 fcst.head()
@@ -202,7 +202,7 @@ fcst.head()
 We can plot the forecasts using the `plot_series` function from before.
 
 ```python
-plot_series(df, fcst) 
+plot_series(df, fcst)
 ```
 
 ![](AnomalyDetection_files/figure-markdown_strict/cell-12-output-1.png)
@@ -263,7 +263,7 @@ plot_series(forecasts_df=insample_forecasts, level=[99], plot_anomalies=True, id
 
 Here we identified the anomalies in the data using the MSTL model, but
 any [probabilistic
-model](https://nixtla.github.io/statsforecast/#models) from
+model](https://nixtlaverse.nixtla.io/statsforecast/models) from
 StatsForecast can be used. We also selected the 99% prediction interval
 of the insample forecasts, but other confidence levels can be used as
 well.

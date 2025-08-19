@@ -546,7 +546,7 @@ multiplicative time series can be represented as.
 $$y(t) = Level * Trend * seasonality * Noise$$
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 a = seasonal_decompose(df["y"], model = "add", period=1)
 a.plot();
 ```
@@ -575,8 +575,8 @@ For the test data we will use the last 6 years to test and evaluate the
 performance of our model.
 
 ```python
-train = df[df.ds\<='2013-01-01'] 
-test = df[df.ds>'2013-01-01'] 
+train = df[df.ds\<='2013-01-01']
+test = df[df.ds>'2013-01-01']
 ```
 
 
@@ -736,7 +736,7 @@ evaluate(
 ## References <a class="anchor" id="references"></a>
 
 1.  [Nixtla Automatic
-    Forecasting](https://nixtla.github.io/statsforecast/src/core/models_intro.html#automatic-forecasting)
+    Forecasting](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoETS)
 2.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
     Principles and Practice (3rd
     ed)”](https://otexts.com/fpp3/tscv.html).

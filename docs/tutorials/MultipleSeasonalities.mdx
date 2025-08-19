@@ -159,7 +159,7 @@ season length. The trend component will be forecasted with an
 # Create a list of models and instantiation parameters
 
 models = [MSTL(
-    season_length=[24, 24 * 7], # seasonalities of the time series 
+    season_length=[24, 24 * 7], # seasonalities of the time series
     trend_forecaster=AutoARIMA() # model used to forecast trend
 )]
 ```
@@ -179,7 +179,7 @@ method and pass in the historical data frame.
 
 ```python
 sf = StatsForecast(
-    models=models, # model used to fit each time series 
+    models=models, # model used to fit each time series
     freq='h', # frequency of the data
 )
 ```
@@ -360,5 +360,5 @@ forecasts_df.head()
 ## Next Steps
 
 -   Learn how to [use cross-validation to assess the robustness of your
-    model](https://nixtla.github.io/statsforecast/examples/getting_started_complete.html#evaluate-the-models-performance).
+    model](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/2_Getting_Started_complete#evaluate-the-model%E2%80%99s-performance)
 

@@ -566,7 +566,7 @@ multiplicative time series can be represented as.
 $$y(t) = Level * Trend * seasonality * Noise$$
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 a = seasonal_decompose(df["y"], model = "add", period=1)
 a.plot();
 ```
@@ -584,7 +584,7 @@ For the test data we will use the last 12 months to test and evaluate
 the performance of our model.
 
 ```python
-train = df[df.ds\<='2013-01-01'] 
+train = df[df.ds\<='2013-01-01']
 test = df[df.ds>'2013-01-01']
 ```
 
@@ -639,7 +639,7 @@ If the component is selected as $Z$, it operates as a placeholder to ask
 the AutoCES model to figure out the best parameter.
 
 ```python
-season_length = 1 # year data 
+season_length = 1 # year data
 horizon = len(test) # number of predictions
 
 # We call the model that we are going to use
@@ -857,7 +857,7 @@ uncertainty intervals.
 This step should take less than 1 second.
 
 ```python
-sf.predict(h=horizon) 
+sf.predict(h=horizon)
 ```
 
 |     | unique_id | ds         | CES       |
@@ -870,7 +870,7 @@ sf.predict(h=horizon)
 | 5   | 1         | 2019-01-01 | 84.208359 |
 
 ```python
-forecast_df = sf.predict(h=horizon, level=[95]) 
+forecast_df = sf.predict(h=horizon, level=[95])
 forecast_df
 ```
 
@@ -999,7 +999,7 @@ evaluate(
 
 ## References <a class="anchor" id="references"></a>
 
-1.  [Nixtla-AutoCES](https://nixtla.github.io/statsforecast/src/core/models.html#autoces)
+1.  [Nixtla-AutoCES](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoCES)
 2.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
     Principles and Practice (3rd
     ed)”](https://otexts.com/fpp3/tscv.html).

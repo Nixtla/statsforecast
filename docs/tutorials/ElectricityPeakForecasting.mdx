@@ -113,7 +113,7 @@ model.
 > **Tip**
 >
 > Check our detailed explanation and tutorial on MSTL
-> [here](https://nixtla.github.io/statsforecast/examples/multipleseasonalities.html)
+> [here](https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/MultipleSeasonalities)
 
 Import the `StatsForecast` class and the models you need.
 
@@ -134,7 +134,7 @@ detailed explanation on how to set seasonal lengths. In this example we
 use the `SklearnModel` with a `LinearRegression` model for the trend
 component, however, any StatsForecast model can be used. The complete
 list of models is available
-[here](https://nixtla.github.io/statsforecast/models.html).
+[here](https://nixtlaverse.nixtla.io/statsforecast/models).
 
 ```python
 train, _ = trend(Y_df, freq='H')
@@ -152,7 +152,7 @@ train.head()
 ```python
 models = [
     MSTL(
-        season_length=[24, 24 * 7], # seasonalities of the time series 
+        season_length=[24, 24 * 7], # seasonalities of the time series
         trend_forecaster=SklearnModel(LinearRegression()) # model used to forecast trend
     )
 ]
@@ -172,7 +172,7 @@ following required parameters:
 # Instantiate StatsForecast class as sf
 sf = StatsForecast(
     models=models,
-    freq='H', 
+    freq='H',
 )
 ```
 
@@ -190,7 +190,7 @@ The `cross_validation` method allows the user to simulate multiple
 historic forecasts, greatly simplifying pipelines by replacing for loops
 with `fit` and `predict` methods. This method re-trains the model and
 forecast each window. See [this
-tutorial](https://nixtla.github.io/statsforecast/examples/getting_started_complete.html)
+tutorial](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/2_Getting_Started_complete)
 for an animation of how the windows are defined.
 
 Use the `cross_validation` method to produce all the daily forecasts for

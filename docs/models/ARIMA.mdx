@@ -482,7 +482,7 @@ multiplicative time series can be represented as.
 $$y(t) = Level * Trend * seasonality * Noise$$
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 ```
 
 
@@ -831,8 +831,8 @@ The commonly used accuracy metrics to judge forecasts are:
 6.  Correlation between the Actual and the Forecast (corr)
 
 ```python
-Y_train_df = df[df.ds\<='2013-01-01'] 
-Y_test_df = df[df.ds>'2013-01-01'] 
+Y_train_df = df[df.ds\<='2013-01-01']
+Y_test_df = df[df.ds>'2013-01-01']
 
 Y_train_df.shape, Y_test_df.shape
 ```
@@ -868,7 +868,7 @@ evaluate(
 
 ## References <a class="anchor" id="references"></a>
 
-1.  [Nixtla-Arima](https://nixtla.github.io/statsforecast/src/core/models.html#arima-family)
+1.  [Nixtla-Arima](https://nixtlaverse.nixtla.io/statsforecast/docs/models/ARIMA)
 2.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
     Principles and Practice (3rd
     ed)”](https://otexts.com/fpp3/tscv.html).

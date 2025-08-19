@@ -393,7 +393,7 @@ $$y(t) = Level * Trend * seasonality * Noise$$
 ### Additive
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 a = seasonal_decompose(df["y"], model = "additive", period=12)
 a.plot();
 ```
@@ -403,7 +403,7 @@ a.plot();
 ### Multiplicative
 
 ```python
-from statsmodels.tsa.seasonal import seasonal_decompose 
+from statsmodels.tsa.seasonal import seasonal_decompose
 a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
 a.plot();
 ```
@@ -419,8 +419,8 @@ For the test data we will use the last 12 months to test and evaluate
 the performance of our model.
 
 ```python
-train = df[df.ds\<='1974-12-01'] 
-test = df[df.ds>'1974-12-01'] 
+train = df[df.ds\<='1974-12-01']
+test = df[df.ds>'1974-12-01']
 ```
 
 
@@ -449,10 +449,10 @@ periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
 master, Rob Hyndmann, can be useful for `season_length`.
 
 ```python
-season_length = 12 # Monthly data 
+season_length = 12 # Monthly data
 horizon = len(test) # number of predictions
 
-models = [Theta(season_length=season_length, 
+models = [Theta(season_length=season_length,
                 decomposition_type="additive")] # multiplicative   additive
 ```
 
@@ -648,7 +648,7 @@ uncertainty intervals.
 This step should take less than 1 second.
 
 ```python
-sf.predict(h=horizon) 
+sf.predict(h=horizon)
 ```
 
 |     | unique_id | ds         | Theta      |
@@ -662,7 +662,7 @@ sf.predict(h=horizon)
 | 11  | 1         | 1975-12-01 | 823.826538 |
 
 ```python
-forecast_df = sf.predict(h=horizon, level=[80,95]) 
+forecast_df = sf.predict(h=horizon, level=[80,95])
 forecast_df
 ```
 
@@ -791,7 +791,7 @@ for writing this tutorial.
     decomposition approach to
     forecasting”](https://www.sciencedirect.com/science/article/abs/pii/S0169207000000662)
 3.  [Nixtla
-    Parameters](https://nixtla.github.io/statsforecast/src/core/models.html#autotheta).
+    Parameters](https://nixtlaverse.nixtla.io/statsforecast/docs/models/StandardTheta)
 4.  [Pandas available
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
 5.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting

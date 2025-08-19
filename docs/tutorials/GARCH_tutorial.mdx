@@ -9,7 +9,7 @@ title: Volatility forecasting (GARCH & ARCH)
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](https://nixtla.github.io/statsforecast/examples/getting_started_short.html)
+> Start](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/1_Getting_Started_short)
 
 ## Introduction
 
@@ -37,8 +37,8 @@ probability of large variations in the price of financial assets.
 
 By the end of this tutorial, you’ll have a good understanding of how to
 implement a GARCH or an ARCH model in
-[StatsForecast](https://nixtla.github.io/statsforecast/) and how they
-can be used to analyze and predict financial time series data.
+[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/) and how
+they can be used to analyze and predict financial time series data.
 
 **Outline:**
 
@@ -58,7 +58,7 @@ can be used to analyze and predict financial time series data.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](https://nixtla.github.io/statsforecast/examples/installation.html)
+StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/0_Installation)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -76,7 +76,7 @@ To install it, use `pip install yfinance`.
 
 ```python
 %%capture
-# pip install yfinance 
+# pip install yfinance
 ```
 
 We’ll also need `pandas` to deal with the dataframes.
@@ -88,7 +88,7 @@ import pandas as pd
 
 
 ```python
-tickers = ['SPY', 'MSFT', 'AAPL', 'GOOG', 'AMZN', 'TSLA', 'NVDA', 'META', 'NKE', 'NFLX'] 
+tickers = ['SPY', 'MSFT', 'AAPL', 'GOOG', 'AMZN', 'TSLA', 'NVDA', 'META', 'NKE', 'NFLX']
 df = yf.download(tickers, start = '2018-01-01', end = '2022-12-31', interval='1mo', progress=False) # use monthly prices
 df.head()
 ```
@@ -167,7 +167,7 @@ We can plot this series using the `plot` method of the StatsForecast
 class.
 
 ```python
-from statsforecast import StatsForecast 
+from statsforecast import StatsForecast
 ```
 
 
@@ -189,13 +189,13 @@ return dataframe with StatsForecast’s format. To do this, we’ll need
 `numpy`.
 
 ```python
-import numpy as np 
+import numpy as np
 prices['rt'] = prices['y'].div(prices.groupby('unique_id')['y'].shift(1))
 prices['rt'] = np.log(prices['rt'])
 
 returns = prices[['unique_id', 'ds', 'rt']]
 returns = returns.rename(columns={'rt':'y'})
-returns 
+returns
 ```
 
 |     | unique_id | ds         | y         |
@@ -233,24 +233,26 @@ than the probability of a small one.
 ## Train models
 
 We first need to import the
-[GARCH](https://nixtla.github.io/statsforecast/models.html) and the
-[ARCH](https://nixtla.github.io/statsforecast/models.html) models from
-`statsforecast.models`, and then we need to fit them by instantiating a
-new StatsForecast object. Notice that we’ll be using different values of
-$p$ and $q$. In the next section, we’ll determine which ones produce the
-most accurate model using cross-validation. We’ll also import the
-[Naive](https://nixtla.github.io/statsforecast/models.html#naive) model
-since we’ll use it as a baseline.
+[GARCH](https://nixtlaverse.nixtla.io/statsforecast/docs/models/GARCH)
+and the
+[ARCH](https://nixtlaverse.nixtla.io/statsforecast/docs/models/ARCH)
+models from `statsforecast.models`, and then we need to fit them by
+instantiating a new StatsForecast object. Notice that we’ll be using
+different values of $p$ and $q$. In the next section, we’ll determine
+which ones produce the most accurate model using cross-validation. We’ll
+also import the
+[Naive](https://nixtlaverse.nixtla.io/statsforecast/models#class-naive)
+model since we’ll use it as a baseline.
 
 ```python
 from statsforecast.models import (
-    GARCH, 
-    ARCH, 
+    GARCH,
+    ARCH,
     Naive
 )
 
-models = [ARCH(1), 
-          ARCH(2), 
+models = [ARCH(1),
+          ARCH(2),
           GARCH(1,1),
           GARCH(1,2),
           GARCH(2,2),
@@ -273,7 +275,7 @@ parameters:
 
 ```python
 sf = StatsForecast(
-    models = models, 
+    models = models,
     freq = 'MS',
     n_jobs = -1
 )
@@ -338,7 +340,7 @@ StatsForecast.plot(returns, cv_df.drop(['cutoff', 'actual'], axis=1))
 ![](GARCH_tutorial_files/figure-markdown_strict/cell-16-output-1.png)
 
 A tutorial on cross-validation can be found
-[here](https://nixtla.github.io/statsforecast/examples/crossvalidation.html).
+[here](https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/CrossValidation)
 
 ## Evaluate results
 
@@ -412,7 +414,7 @@ use the `forecast` method, which requieres the following arguments:
 -   `fitted` : (bool = False) Returns insample predictions.
 
 ```python
-levels = [80, 95] # confidence levels for the prediction intervals 
+levels = [80, 95] # confidence levels for the prediction intervals
 
 forecasts = sf.forecast(df=returns, h=3, level=levels)
 forecasts.head()

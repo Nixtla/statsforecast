@@ -83,8 +83,26 @@ This method uses Fugue's transform function, in combination with `core.StatsFore
 
 `StatsForecast.models`' speed along with Fugue's distributed computation allow to overcome this evaluation technique high computational costs. Temporal cross-validation provides better model's generalization measurements by increasing the test's length and diversity. 
 
-Parameters 
----------- df (pandas or polars DataFrame): DataFrame with ids, times, targets and exogenous. freq (str or int): Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. models (List[Any]): List of instantiated objects models.StatsForecast. fallback_model (Any, optional): Model to be used if a model fails.  Only works with the `forecast` and `cross_validation` methods. Defaults to None. h (int): Forecast horizon. n_windows (int): Number of windows used for cross validation. Defaults to 1. step_size (int): Step size between each window. Defaults to 1. test_size (int, optional): Length of test size. If passed, set `n_windows=None`. Defaults to None. input_size (int, optional): Input size for each window, if not none rolled windows. Defaults to None. level (List[float], optional): Confidence levels between 0 and 100 for prediction intervals. Defaults to None. refit (bool or int): Wether or not refit the model for each window.  If int, train the models every `refit` windows. Defaults to True. fitted (bool): Store in-sample predictions. Defaults to False. prediction_intervals (ConformalIntervals, optional): Configuration to calibrate prediction intervals (Conformal Prediction). Defaults to None. id_col (str): Column that identifies each serie. Defaults to 'unique_id'. time_col (str): Column that identifies each timestep, its values can be timestamps or integers. Defaults to 'ds'. target_col (str): Column that contains the target. Defaults to 'y'. 
+
+
+**Args:**
+ 
+ - <b>`df`</b> (pandas or polars DataFrame):  DataFrame with ids, times, targets and exogenous. 
+ - <b>`freq`</b> (str or int):  Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. 
+ - <b>`models`</b> (List[Any]):  List of instantiated objects models.StatsForecast. 
+ - <b>`fallback_model`</b> (Any, optional):  Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods. Defaults to None. 
+ - <b>`h`</b> (int):  Forecast horizon. 
+ - <b>`n_windows`</b> (int):  Number of windows used for cross validation. Defaults to 1. 
+ - <b>`step_size`</b> (int):  Step size between each window. Defaults to 1. 
+ - <b>`test_size`</b> (int, optional):  Length of test size. If passed, set `n_windows=None`. Defaults to None. 
+ - <b>`input_size`</b> (int, optional):  Input size for each window, if not none rolled windows. Defaults to None. 
+ - <b>`level`</b> (List[float], optional):  Confidence levels between 0 and 100 for prediction intervals. Defaults to None. 
+ - <b>`refit`</b> (bool or int):  Wether or not refit the model for each window. If int, train the models every `refit` windows. Defaults to True. 
+ - <b>`fitted`</b> (bool):  Store in-sample predictions. Defaults to False. 
+ - <b>`prediction_intervals`</b> (ConformalIntervals, optional):  Configuration to calibrate prediction intervals (Conformal Prediction). Defaults to None. 
+ - <b>`id_col`</b> (str):  Column that identifies each serie. Defaults to 'unique_id'. 
+ - <b>`time_col`</b> (str):  Column that identifies each timestep, its values can be timestamps or integers. Defaults to 'ds'. 
+ - <b>`target_col`</b> (str):  Column that contains the target. Defaults to 'y'. 
 
 
 
@@ -93,7 +111,7 @@ Parameters
  - <b>`pandas.DataFrame`</b>:  DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`. 
 
 References: 
-    - The [core.StatsForecast's cross validation](https://nixtla.github.io/statsforecast/core.html#statsforecast.cross_validation)  method documentation. 
+    - The [core.StatsForecast's cross validation](https://nixtlaverse.nixtla.io/statsforecast/core#method-cross_validation-3) method documentation. 
     - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html). 
 
 ---
@@ -123,8 +141,22 @@ Memory Efficient core.StatsForecast predictions with FugueBackend.
 
 This method uses Fugue's transform function, in combination with `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models. 
 
-Parameters 
----------- df (pandas or polars DataFrame): DataFrame with ids, times, targets and exogenous. freq (str or int): Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. models (List[Any]): List of instantiated objects models.StatsForecast. fallback_model (Any, optional): Model to be used if a model fails.  Only works with the `forecast` and `cross_validation` methods. Defaults to None. X_df (pandas or polars DataFrame, optional): DataFrame with ids, times and future exogenous. Defaults to None. h (int): Forecast horizon. level (List[float], optional): Confidence levels between 0 and 100 for prediction intervals. Defaults to None. fitted (bool): Store in-sample predictions. Defaults to False. prediction_intervals (ConformalIntervals, optional): Configuration to calibrate prediction intervals (Conformal Prediction). Defaults to None. id_col (str): Column that identifies each serie. Defaults to 'unique_id'. time_col (str): Column that identifies each timestep, its values can be timestamps or integers. Defaults to 'ds'. target_col (str): Column that contains the target. Defaults to 'y'. 
+
+
+**Args:**
+ 
+ - <b>`df`</b> (pandas or polars DataFrame):  DataFrame with ids, times, targets and exogenous. 
+ - <b>`freq`</b> (str or int):  Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. 
+ - <b>`models`</b> (List[Any]):  List of instantiated objects models.StatsForecast. 
+ - <b>`fallback_model`</b> (Any, optional):  Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods. Defaults to None. 
+ - <b>`X_df`</b> (pandas or polars DataFrame, optional):  DataFrame with ids, times and future exogenous. Defaults to None. 
+ - <b>`h`</b> (int):  Forecast horizon. 
+ - <b>`level`</b> (List[float], optional):  Confidence levels between 0 and 100 for prediction intervals. Defaults to None. 
+ - <b>`fitted`</b> (bool):  Store in-sample predictions. Defaults to False. 
+ - <b>`prediction_intervals`</b> (ConformalIntervals, optional):  Configuration to calibrate prediction intervals (Conformal Prediction). Defaults to None. 
+ - <b>`id_col`</b> (str):  Column that identifies each serie. Defaults to 'unique_id'. 
+ - <b>`time_col`</b> (str):  Column that identifies each timestep, its values can be timestamps or integers. Defaults to 'ds'. 
+ - <b>`target_col`</b> (str):  Column that contains the target. Defaults to 'y'. 
 
 
 
@@ -133,10 +165,9 @@ Parameters
  - <b>`pandas.DataFrame`</b>:  DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models` 
 
 References: 
-    - For more information check the 
- - <b>`[Fugue's transform](https`</b>: //fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html) tutorial. 
-    - The [core.StatsForecast's forecast](https://nixtla.github.io/statsforecast/core.html#statsforecast.forecast) method documentation. 
-    - Or the list of available [StatsForecast's models](https://nixtla.github.io/statsforecast/src/core/models.html). 
+    - For more information check the [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html) tutorial. 
+    - The [core.StatsForecast's forecast](https://nixtlaverse.nixtla.io/statsforecast/core#method-forecast-3)method documentation. 
+    - Or the list of available [StatsForecast's models](https://nixtlaverse.nixtla.io/statsforecast/models). 
 
 ---
 

@@ -122,8 +122,8 @@ Y_df = pd.read_parquet('https://m5-benchmarks.s3.amazonaws.com/data/train/target
 # The 'timestamp' becomes 'ds' representing the time stamp of the data points
 # The 'demand' becomes 'y' representing the target variable we want to forecast
 Y_df = Y_df.rename(columns={
-    'item_id': 'unique_id', 
-    'timestamp': 'ds', 
+    'item_id': 'unique_id',
+    'timestamp': 'ds',
     'demand': 'y'
 })
 
@@ -296,7 +296,7 @@ from time import time
 # Get the current time before forecasting starts, this will be used to measure the execution time
 init = time()
 
-# Call the forecast method of the StatsForecast instance to predict the next 28 days (h=28) 
+# Call the forecast method of the StatsForecast instance to predict the next 28 days (h=28)
 # Level is set to [90], which means that it will compute the 90% prediction interval
 fcst_df = sf.forecast(df=Y_df, h=28, level=[90])
 
@@ -550,7 +550,7 @@ sf.plot(Y_df, fcst_df, max_insample_length=28 * 3)
 Use the plot function to explore models and ID’s
 
 ```python
-sf.plot(Y_df, fcst_df, max_insample_length=28 * 3, 
+sf.plot(Y_df, fcst_df, max_insample_length=28 * 3,
         models=['CrostonOptimized', 'AutoNHITS', 'SeasonalNaive', 'LGBMRegressor'])
 ```
 
@@ -649,10 +649,10 @@ following arguments.
 ```python
 init = time()
 cv_mlf_df = mlf.cross_validation(
-    data=Y_df, 
-    window_size=horizon, 
-    n_windows=3, 
-    step_size=horizon, 
+    data=Y_df,
+    window_size=horizon,
+    n_windows=3,
+    step_size=horizon,
     level=[90],
 )
 end = time()
@@ -746,9 +746,9 @@ cutoffs = cv_df['cutoff'].unique()
 ```python
 for cutoff in cutoffs:
     img = sf.plot(
-        Y_df, 
-        cv_df.query('cutoff == @cutoff').drop(columns=['y', 'cutoff']), 
-        max_insample_length=28 * 5, 
+        Y_df,
+        cv_df.query('cutoff == @cutoff').drop(columns=['y', 'cutoff']),
+        max_insample_length=28 * 5,
         unique_ids=['FOODS_3_001_CA_1'],
     )
     img.show()
@@ -771,7 +771,7 @@ agg_Y_df.insert(0, 'unique_id', 'agg_demand')
 ```python
 for cutoff in cutoffs:
     img = sf.plot(
-        agg_Y_df, 
+        agg_Y_df,
         agg_cv_df.query('cutoff == @cutoff').drop(columns=['y', 'cutoff']),
         max_insample_length=28 * 5,
     )
@@ -833,11 +833,11 @@ window (`cutoff`) using the `dask` client we created before.
 
 ```python
 evaluation_df = transform(
-    cv_df.loc[:, ~cv_df.columns.str.contains('lo|hi')], 
-    evaluate, 
+    cv_df.loc[:, ~cv_df.columns.str.contains('lo|hi')],
+    evaluate,
     engine="dask",
-    params={'metrics': [mse, mae, smape]}, 
-    schema=f"unique_id:str,cutoff:str,metric:str, {str_models}", 
+    params={'metrics': [mse, mae, smape]},
+    schema=f"unique_id:str,cutoff:str,metric:str, {str_models}",
     as_local=True,
     partition={'by': ['unique_id', 'cutoff']}
 )
@@ -953,8 +953,8 @@ plt.show()
 ![](StatisticalNeuralMethods_files/figure-markdown_strict/cell-52-output-1.png)
 
 ```python
-sf.plot(Y_df, cv_df.drop(columns=['cutoff', 'y']), 
-        max_insample_length=28 * 6, 
+sf.plot(Y_df, cv_df.drop(columns=['cutoff', 'y']),
+        max_insample_length=28 * 6,
         models=['AutoNHITS'],
         unique_ids=eval_series_df.query('best_model == "AutoNHITS"').index[:8])
 ```
@@ -987,17 +987,17 @@ sf.plot(Y_df, fcst_df, max_insample_length=28 * 3)
 # Further materials
 
 -   [Available Models
-    StatsForecast](https://nixtla.github.io/statsforecast/examples/models_intro.html)
+    StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/src/core/models_intro)
 -   [Available Models
     NeuralForecast](https://nixtla.github.io/neuralforecast/models.html)
 -   [Scalers and Loss
     Functions](https://nixtla.github.io/neuralforecast/losses.pytorch.html)
 -   [Getting Started
-    NeuralForecast](https://nixtla.github.io/neuralforecast/examples/getting_started.html)
+    NeuralForecast](https://nixtlaverse.nixtla.io/neuralforecast/examples/getting_started)
 -   [Hierarchical
-    Reconciliation](https://nixtla.github.io/hierarchicalforecast/examples/tourismsmall.html)
+    Reconciliation](https://nixtlaverse.nixtla.io/hierarchicalforecast/examples/TourismSmall)
 -   [Distributed ML Forecast
-    (trees)](https://nixtla.github.io/mlforecast/docs/quick_start_distributed.html)
+    (trees)](https://nixtlaverse.nixtla.io/mlforecast/docs/getting-started/quick_start_distributed)
 -   [Using StatsForecast to train millions of time
     series](https://www.anyscale.com/blog/how-nixtla-uses-ray-to-accurately-predict-more-than-a-million-time-series)
 -   [Intermittent Demand Forecasting With Nixtla on
