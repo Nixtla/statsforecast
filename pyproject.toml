@@ -41,7 +41,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/Nixtla/statsforecast/"
 Repository = "https://github.com/Nixtla/statsforecast/"
-Documentation = "https://Nixtla.github.io/statsforecast/"
+Documentation = "https://nixtlaverse.nixtla.io/statsforecast/"
 
 [project.optional-dependencies]
 dev = [
