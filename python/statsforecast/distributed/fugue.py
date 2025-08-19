@@ -300,20 +300,19 @@ class FugueBackend(ParallelBackend):
         This method uses Fugue's transform function, in combination with
         `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models.
 
-        Parameters
-        ----------
-        {df}
-        {freq}
-        {models}
-        {fallback_model}
-        {X_df}
-        {h}
-        {level}
-        {fitted}
-        {prediction_intervals}
-        {id_col}
-        {time_col}
-        {target_col}
+        Args:
+            {df}
+            {freq}
+            {models}
+            {fallback_model}
+            {X_df}
+            {h}
+            {level}
+            {fitted}
+            {prediction_intervals}
+            {id_col}
+            {time_col}
+            {target_col}
 
         Returns:
             pandas.DataFrame: DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
