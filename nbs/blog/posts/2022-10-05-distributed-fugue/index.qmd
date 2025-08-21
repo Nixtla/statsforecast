@@ -1,7 +1,7 @@
 ---
 author: [Fugue, Nixtla]
 date: 2022-10-05
-title: Scalable Time Series Modeling with open-source projects 
+title: Scalable Time Series Modeling with open-source projects
 description: How to Forecast 1M Time Series in 15 Minutes with Spark, Fugue and Nixtla's Statsforecast.
 tags: [fugue, scalability, spark, time-series, forecasting]
 ---
@@ -58,8 +58,8 @@ from statsforecast.core import StatsForecast
 series = generate_series(n_series=1000000, seed=1)
 
 model = StatsForecast(df=series,
-                      models=[AutoARIMA()], 
-                      freq='D', 
+                      models=[AutoARIMA()],
+                      freq='D',
                       n_jobs=-1,
 		      ray_address=ray_address)
 
@@ -112,10 +112,10 @@ from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
 backend = FugueBackend(spark, {"fugue.spark.use_pandas_udf":True})
 
-forecast(spark.read.parquet("/tmp/1m.parquet"), 
-         [AutoARIMA()], 
-         freq="D", 
-         h=7, 
+forecast(spark.read.parquet("/tmp/1m.parquet"),
+         [AutoARIMA()],
+         freq="D",
+         h=7,
          parallel=backend).toPandas()
 ```
 
@@ -146,7 +146,7 @@ On the scale of one million timeseries, our total training time took 12 minutes 
 
 ## Resources
 1. [Nixtla StatsForecast repo](https://github.com/Nixtla/statsforecast)
-2. [StatsForecast docs](https://nixtla.github.io/statsforecast/)
+2. [StatsForecast docs](https://nixtlaverse.nixtla.io/statsforecast/)
 3. [Fugue repo](https://github.com/fugue-project/fugue/)
 4. [Fugue tutorials](https://fugue-tutorials.readthedocs.io/)
 
