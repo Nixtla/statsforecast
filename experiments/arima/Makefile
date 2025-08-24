@@ -67,9 +67,12 @@ data_prep_r:
 	done
 
 .PHONY: run_all_tests
-run_all_tests: run_tests_statsforecast run_tests_pmdarima run_tests_prophet run_tests_r
+run_all_tests: run_tests_statsforecast run_tests_prophet run_tests_r run_tests_pmdarima
     @echo "\nAll experiments completed for dataset: ${DATASET}!"
 
+.PHONY: run_tests
+run_tests: run_tests_prophet run_tests_r
+    @echo "\nAll experiments completed for dataset: ${DATASET}!"
 
 jupyter:
 	docker run -d --rm ${DOCKER_PARAMETERS} -e HOME=/tmp -p ${PORT}:8888 ${IMAGE} \
