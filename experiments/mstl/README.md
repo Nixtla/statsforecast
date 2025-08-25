@@ -51,7 +51,7 @@ The `SeasonalNaive` model is a simple baseline model that sets each forecast to 
 The `MSTL` (Multiple Seasonal-Trend decomposition using LOESS) model, originally developed by [Kasun Bandara, Rob J Hyndman and Christoph Bergmeir](https://arxiv.org/abs/2107.13462), decomposes the time series in multiple seasonalities using a Local Polynomial Regression (LOESS). Then it forecasts the trend using a custom non-seasonal model and each seasonality using a `SeasonalNaive` model.
 
 `StatsForecast` contains a fast implementation of the `MSTL` model.
-[Documentation](https://nixtla.github.io/statsforecast/examples/multipleseasonalities.html)
+[Documentation](https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/MultipleSeasonalities)
 
 
 ### Performance Evaluation
@@ -85,12 +85,12 @@ The performance of the models was evaluated re-training the models every 24 hour
 
 ### Time
 
-| Model | Time (mins) |
-| -------| -----------|
-| SN | 0.03 |                                  
-| MSTL   |  1.066439|                                    
-|Prophet  |2.343852|                            
-|  NeuralProphet  |9.643826 |
+| Model         | Time (mins) |
+| ------------- | ----------- |
+| SN            | 0.03        |
+| MSTL          | 1.066439    |
+| Prophet       | 2.343852    |
+| NeuralProphet | 9.643826    |
 
 ## Conclusion
 
