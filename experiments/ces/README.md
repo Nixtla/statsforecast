@@ -26,7 +26,7 @@ Additionally, with StatsForecast you can easly build ensembles of all statstical
 
 ## References
 
-* Check the StatsForecast [documentation](https://nixtla.github.io/statsforecast/models.html#autoces) on the CES
+* Check the StatsForecast [documentation](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoCES) on the CES
 * [Link](https://forecasting.svetunkov.ru/wp-content/uploads/2022/07/Svetunkov-et-al.-2022-Complex-Exponential-Smoothing.pdf) to the original paper
 * [Link](https://forecasting.svetunkov.ru/en/2022/08/02/the-long-and-winding-road-the-story-of-complex-exponential-smoothing/) to the story of the paper
 
