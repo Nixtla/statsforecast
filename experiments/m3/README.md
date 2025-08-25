@@ -32,7 +32,7 @@ Building upon the original design, we further included [A simple combination of 
 
 This ensemble is formed by averaging four statistical models: [`AutoARIMA`](https://www.jstatsoft.org/article/view/v027i03), [`ETS`](https://robjhyndman.com/expsmooth/), [`CES`](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074) and [`DynamicOptimizedTheta`](https://doi.org/10.1016/j.ijforecast.2016.02.005). This combination won sixth place and was the simplest ensemble among the top 10 performers in the M4 competition. 
  
-For the experiment, we use StatsForecast's implementation of [Arima](https://nixtla.github.io/statsforecast/models.html#autoarima), [ETS](https://nixtla.github.io/statsforecast/models.html#autoets), [CES](https://nixtla.github.io/statsforecast/models.html#autoces) and [DOT](https://nixtla.github.io/statsforecast/models.html#dynamic-optimized-theta-method). 
+For the experiment, we use StatsForecast's implementation of [Arima](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoARIMA), [ETS](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoETS), [CES](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoCES) and [DOT](https://nixtlaverse.nixtla.io/statsforecast/docs/models/DynamicOptimizedTheta). 
 
 For the DL models and ensembles, we reproduce the reported metrics and results from the mentioned paper.
 
@@ -56,9 +56,9 @@ Computational complexity is reported in time, lines of code and, Relative Comput
 #### Time
 Using `StatsForecast` and a 96 cores EC2 instance (c5d.24xlarge) it takes 5.6 mins to train, forecast and ensemble the four models for the 3,003 series of M3. 
 
-| Time (mins) | Yearly | Quarterly | Monthly | Other |
-|-----|-------:|-------:|--------:|--------:|
-|StatsForecast ensemble| 1.10 | 1.32 | 2.38 | 1.08 |
+| Time (mins)            | Yearly | Quarterly | Monthly | Other |
+| ---------------------- | -----: | --------: | ------: | ----: |
+| StatsForecast ensemble |   1.10 |      1.32 |    2.38 |  1.08 |
 
 The authors of the paper only report computational time for the monthly group, which amounts to 20,680 mins or 14.3 days. In comparison, the StatsForecast ensemble only takes 2.38 minutes to run for that group. Furthermore, the authors don't include times for Hyperparameter optimization. 
 
@@ -75,15 +75,15 @@ Using a `c5d.24xlarge` instance (96 CPU, 192 GB RAM) it takes 12 seconds to trai
 
 In the next table, you can find the RCC of the deep learning models and the ensembles
 
-| Method | Type | Relative Computational Complexity (RCC)|
-|--------|------|----------------------------------------:|
-|DeepAR| DL |313,000|
-|Feed-Forward| DL  |47,300 |
-|Transformer| DL | 47,500 |
-|WaveNet| DL | 306,000 |
-|Ensemble-DL | DL | 713,800 |
-|Ensemble - Stats | Statistical | 28 |
-|SeasonalNaive| Benchmark | 1 | 
+| Method           | Type        | Relative Computational Complexity (RCC) |
+| ---------------- | ----------- | --------------------------------------: |
+| DeepAR           | DL          |                                 313,000 |
+| Feed-Forward     | DL          |                                  47,300 |
+| Transformer      | DL          |                                  47,500 |
+| WaveNet          | DL          |                                 306,000 |
+| Ensemble-DL      | DL          |                                 713,800 |
+| Ensemble - Stats | Statistical |                                      28 |
+| SeasonalNaive    | Benchmark   |                                       1 |
 
 
 ### Summary: Comparison with SOTA benchmarks
