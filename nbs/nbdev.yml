@@ -1,9 +1,0 @@
-project:
-  output-dir: _docs
-
-website:
-  title: "statsforecast"
-  site-url: "https://Nixtla.github.io/statsforecast/"
-  description: "Time series forecasting suite using statistical models"
-  repo-branch: main
-  repo-url: "https://github.com/Nixtla/statsforecast/"
