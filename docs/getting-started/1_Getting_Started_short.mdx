@@ -13,7 +13,7 @@ paramount and you want to explore the fitted values and parameters.
 >
 > If you want to forecast many series, we recommend using the `forecast`
 > method. Check this [Getting Started with multiple time
-> series](./2_Getting_Started_complete.ipynb) guide.
+> series](../../2_Getting_Started_complete) guide.
 
 The input to StatsForecast is always a data frame in [long
 format](https://www.theanalysisfactor.com/wide-and-long-data/) with
@@ -34,7 +34,7 @@ to 1960. The CSV is available
 [here](https://www.kaggle.com/datasets/chirag19/air-passengers).
 
 We assume you have StatsForecast already installed. Check this guide for
-instructions on [how to install StatsForecast](./0_Installation.ipynb).
+instructions on [how to install StatsForecast](../../0_Installation).
 
 First, we’ll import the data:
 
@@ -63,12 +63,11 @@ df.head()
 | 4   | AirPassengers | 1949-05-01 | 121 |
 
 We fit the model by instantiating a new `StatsForecast` object with its
-two required parameters:
-https://nixtlaverse.nixtla.io/statsforecast/models \* `models`: a list
-of models. Select the models you want from
-[models](../../src/core/models.ipynb) and import them. For this example,
-we will use a `AutoARIMA` model. We set `season_length` to 12 because we
-expect seasonal effects every 12 months. (See: [Seasonal
+[two required parameters](../../models): \* `models`: a list of models.
+Select the models you want from [models](../../models) and import them.
+For this example, we will use a `AutoARIMA` model. We set
+`season_length` to 12 because we expect seasonal effects every 12
+months. (See: [Seasonal
 periods](https://robjhyndman.com/hyndsight/seasonal-periods/))
 
 -   `freq`: a string indicating the frequency of the data. (See [pandas
