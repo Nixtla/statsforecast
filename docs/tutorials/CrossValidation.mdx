@@ -9,7 +9,7 @@ title: Cross validation
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/1_Getting_Started_short)
+> Start](../getting-started/1_Getting_Started_short)
 
 ## Introduction
 
@@ -19,11 +19,11 @@ across the historical data and predicting the period following it.
 
 ![](https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/ChainedWindows.gif)
 
-[Statsforecast](https://nixtlaverse.nixtla.io/statsforecast/) has an
-implementation of time series cross-validation that is fast and easy to
-use. This implementation makes cross-validation a distributed operation,
-which makes it less time-consuming. In this notebook, we’ll use it on a
-subset of the [M4
+[Statsforecast](../../statsforecast) has an implementation of time
+series cross-validation that is fast and easy to use. This
+implementation makes cross-validation a distributed operation, which
+makes it less time-consuming. In this notebook, we’ll use it on a subset
+of the [M4
 Competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128)
 hourly dataset.
 
@@ -44,7 +44,7 @@ hourly dataset.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/0_Installation)
+StatsForecast](../getting-started/0_Installation)
 
 Install the necessary packages with `pip install statsforecast`
 
@@ -114,16 +114,14 @@ StatsForecast.plot(df)
 
 ## Train model
 
-For this example, we’ll use StastForecast
-[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoETS).
+For this example, we’ll use StastForecast [AutoETS](../models/AutoETS).
 We first need to import it from `statsforecast.models` and then we need
 to instantiate a new `StatsForecast` object.
 
 The `StatsForecast` object has the following parameters:
 
 -   models: a list of models. Select the models you want from
-    [models](https://nixtlaverse.nixtla.io/statsforecast/models/) and
-    import them.
+    [models](../../models/) and import them.
 -   freq: a string indicating the frequency of the data. See [panda’s
     available
     frequencies.](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
@@ -251,8 +249,7 @@ model, since it used different time periods to test its accuracy.
 > **Tip**
 >
 > Cross validation is especially useful when comparing multiple models.
-> Here’s an
-> [example](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/2_Getting_Started_complete)
+> Here’s an [example](../getting-started/2_Getting_Started_complete)
 > with multiple models and time series.
 
 ## References
