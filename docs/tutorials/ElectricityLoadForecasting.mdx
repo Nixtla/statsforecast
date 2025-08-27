@@ -121,15 +121,18 @@ in production.
 
 ### MSTL model
 
-The `MSTL` (Multiple Seasonal-Trend decomposition using LOESS) model,
-originally developed by [Kasun Bandara, Rob J Hyndman and Christoph
+The [MSTL](../models/MultipleSeasonalTrend) (Multiple Seasonal-Trend
+decomposition using LOESS) model, originally developed by [Kasun
+Bandara, Rob J Hyndman and Christoph
 Bergmeir](https://arxiv.org/abs/2107.13462), decomposes the time series
 in multiple seasonalities using a Local Polynomial Regression (LOESS).
 Then it forecasts the trend using a custom non-seasonal model and each
-seasonality using a `SeasonalNaive` model.
+seasonality using a [SeasonalNaive](../../models#class-seasonalnaive)
+model.
 
-`StatsForecast` contains a fast implementation of the `MSTL` model.
-Also, the decomposition of the time series can be calculated.
+`StatsForecast` contains a fast implementation of the
+[MSTL](../models/MultipleSeasonalTrend) model. Also, the decomposition
+of the time series can be calculated.
 
 ```python
 from statsforecast import StatsForecast
@@ -140,9 +143,10 @@ from statsforecast.utils import AirPassengers as ap
 First we must define the model parameters. As mentioned before, the
 electricity load presents seasonalities every 24 hours (Hourly) and
 every 24 \* 7 (Daily) hours. Therefore, we will use `[24, 24 * 7]` as
-the seasonalities that the MSTL model receives. We must also specify the
-manner in which the trend will be forecasted. In this case we will use
-the `AutoARIMA` model.
+the seasonalities that the [MSTL](../models/MultipleSeasonalTrend) model
+receives. We must also specify the manner in which the trend will be
+forecasted. In this case we will use the
+[AutoARIMA](../models/AutoARIMA) model.
 
 ```python
 mstl = MSTL(
@@ -178,8 +182,9 @@ relevant information of the fitted models for each of the time series.
 
 In this case we are fitting a single model for a single time series, so
 by accessing the fitted\_ location \[0, 0\] we will find the relevant
-information of our model. The `MSTL` class generates a `model_`
-attribute that contains the way the series was decomposed.
+information of our model. The [MSTL](../../models#class-mstl) class
+generates a `model_` attribute that contains the way the series was
+decomposed.
 
 ```python
 sf.fitted_[0, 0].model_
@@ -210,10 +215,11 @@ plt.show()
 ![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-14-output-1.png)
 
 We observe that there is a clear trend towards the high (orange line).
-This component would be predicted with the `AutoARIMA` model. We can
-also observe that every 24 hours and every `24 * 7` hours there is a
-very well defined pattern. These two components will be forecast
-separately using a `SeasonalNaive` model.
+This component would be predicted with the
+[AutoARIMA](../models/AutoARIMA) model. We can also observe that every
+24 hours and every `24 * 7` hours there is a very well defined pattern.
+These two components will be forecast separately using a
+[SeasonalNaive](../../models#class-seasonalnaive) model.
 
 #### Produce forecasts
 
@@ -286,10 +292,11 @@ df_train = df.drop(df_test.index)
 
 #### MSTL model
 
-In addition to the `MSTL` model, we will include the `SeasonalNaive`
-model as a benchmark to validate the added value of the `MSTL` model.
-Including `StatsForecast` models is as simple as adding them to the list
-of models to be fitted.
+In addition to the `MSTL` model, we will include the
+[SeasonalNaive](../../models#class-seasonalnaive) model as a benchmark
+to validate the added value of the `MSTL` model. Including
+`StatsForecast` models is as simple as adding them to the list of models
+to be fitted.
 
 ```python
 sf = StatsForecast(
