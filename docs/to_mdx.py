@@ -22,8 +22,6 @@ title: "Statistical ⚡️ Forecast"
 """
 readme_text = Path("README.md").read_text()
 # replace url with .
-readme_text = re.sub(
-    r"https?://nixtlaverse.nixtla.io/statsforecast/", "./", readme_text
-)
+readme_text = re.sub(r"https?://nixtlaverse.nixtla.io/", "./", readme_text)
 readme_text = header + readme_text
 (output_path / "index.mdx").write_text(readme_text)
