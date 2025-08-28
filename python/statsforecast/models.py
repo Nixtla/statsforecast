@@ -3823,7 +3823,7 @@ class CrostonClassic(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter
         of both components is set equal to 0.1
@@ -4001,7 +4001,7 @@ class CrostonOptimized(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method where the smooting paramater is optimally
         selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
@@ -4149,11 +4149,11 @@ class CrostonSBA(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method that uses a debiasing factor, so that the
         forecast is given by:
-        $$\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         References:
             [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
@@ -4486,9 +4486,9 @@ class TSB(_TS):
         intervals with the demand probability $d_t$, which is defined as follows.
 
         $$
-        d_t = \begin{cases}
-            1  & \text{if demand occurs at time t} \\
-            0  & \text{otherwise.}
+        d_t = \\begin{cases}
+            1  & \\text{if demand occurs at time t} \\\\
+            0  & \\text{otherwise.}
         \end{cases}
         $$
 
