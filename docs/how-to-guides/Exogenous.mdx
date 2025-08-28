@@ -81,8 +81,6 @@ Y_ts = pd.read_parquet(f'{base_url}/m5_y.parquet', filters=filters)
 X_ts = pd.read_parquet(f'{base_url}/m5_x.parquet', filters=filters)
 ```
 
-`<<<<<<< HEAD`
-
 We can plot the sales of this product-store combination with the
 `statsforecast.plot` method from the
 [StatsForecast](../../core#class-statsforecast) class. This method has
@@ -95,23 +93,6 @@ this notebook are explained below.
 -   `engine`: str = `matplotlib`. It can also be `plotly`. `plotly`
     generates interactive plots, while `matplotlib` generates static
     plots.
-
-`=======`
-
-We can plot the sales of this product-store combination with the
-`statsforecast.plot` method from the
-[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/core#class-statsforecast)
-class. This method has multiple parameters, and the requiered ones to
-generate the plots in this notebook are explained below.
-
--   `df`: A pandas dataframe with columns \[`unique_id`, `ds`, `y`\].
--   `forecasts_df`: A pandas dataframe with columns \[`unique_id`,
-    `ds`\] and models.
--   `engine`: str = `matplotlib`. It can also be `plotly`. `plotly`
-    generates interactive plots, while `matplotlib` generates static
-    plots.
-
-`>>>>>>> main`
 
 ```python
 from statsforecast import StatsForecast 
