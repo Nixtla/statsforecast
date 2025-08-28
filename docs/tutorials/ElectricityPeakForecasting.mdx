@@ -49,7 +49,8 @@ forecasts to detect the coincident peak.
 ## Libraries
 
 We assume you have StatsForecast already installed. Check this guide for
-instructions on [how to install StatsForecast](./Installation.ipynb).
+instructions on [how to install
+StatsForecast](../getting-started/0_Installation).
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -113,7 +114,7 @@ model.
 > **Tip**
 >
 > Check our detailed explanation and tutorial on MSTL
-> [here](https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/MultipleSeasonalities)
+> [here](../tutorials/MultipleSeasonalities)
 
 Import the `StatsForecast` class and the models you need.
 
@@ -133,8 +134,7 @@ link](https://robjhyndman.com/hyndsight/seasonal-periods/) for a
 detailed explanation on how to set seasonal lengths. In this example we
 use the `SklearnModel` with a `LinearRegression` model for the trend
 component, however, any StatsForecast model can be used. The complete
-list of models is available
-[here](https://nixtlaverse.nixtla.io/statsforecast/models).
+list of models is available [here](../../models).
 
 ```python
 train, _ = trend(Y_df, freq='H')
@@ -162,7 +162,7 @@ We fit the model by instantiating a `StatsForecast` object with the
 following required parameters:
 
 -   `models`: a list of models. Select the models you want from
-    [models](../models.ipynb) and import them.
+    [models](../../models) and import them.
 
 -   `freq`: a string indicating the frequency of the data. (See [panda’s
     available
@@ -190,8 +190,8 @@ The `cross_validation` method allows the user to simulate multiple
 historic forecasts, greatly simplifying pipelines by replacing for loops
 with `fit` and `predict` methods. This method re-trains the model and
 forecast each window. See [this
-tutorial](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/2_Getting_Started_complete)
-for an animation of how the windows are defined.
+tutorial](../getting-started/2_Getting_Started_complete) for an
+animation of how the windows are defined.
 
 Use the `cross_validation` method to produce all the daily forecasts for
 September. To produce daily forecasts set the forecasting horizon `h` as
@@ -292,7 +292,7 @@ N-HiTS, a deep-learning model from Nixtla’s NeuralForecast library.
 
 Learn how to predict ERCOT demand peaks with our deep-learning N-HiTS
 model and the NeuralForecast library in [this
-tutorial](https://nixtla.github.io/neuralforecast/examples/electricitypeakforecasting.html).
+tutorial](../../../neuralforecast/use-cases/electricitypeakforecasting).
 
 ## References
 
