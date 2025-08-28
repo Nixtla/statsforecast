@@ -319,8 +319,8 @@ class FugueBackend(ParallelBackend):
 
         References:
             - For more information check the [Fugue's transform](https://fugue-tutorials.readthedocs.io/tutorials/beginner/transform.html) tutorial.
-            - The [core.StatsForecast's forecast](https://nixtlaverse.nixtla.io/statsforecast/core#method-forecast-3)method documentation.
-            - Or the list of available [StatsForecast's models](https://nixtlaverse.nixtla.io/statsforecast/models).
+            - The [core.StatsForecast's forecast](./core#method-forecast-3)method documentation.
+            - Or the list of available [StatsForecast's models](./models).
         """
         self._fcst_schema = self._get_output_schema(
             df=df,
@@ -485,7 +485,7 @@ class FugueBackend(ParallelBackend):
             pandas.DataFrame: DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.
 
         References:
-            - The [core.StatsForecast's cross validation](https://nixtlaverse.nixtla.io/statsforecast/core#method-cross_validation-3) method documentation.
+            - The [core.StatsForecast's cross validation](./core#method-cross-validation) method documentation.
             - [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Temporal Cross-Validation"](https://otexts.com/fpp3/tscv.html).
         """
         schema = self._get_output_schema(
