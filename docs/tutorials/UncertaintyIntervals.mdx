@@ -22,7 +22,7 @@ logging.getLogger('statsforecast').setLevel(logging.ERROR)
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](../getting-started/1_Getting_Started_short.ipynb)
+> Start](../getting-started/1_Getting_Started_short)
 
 ## Introduction
 
@@ -171,20 +171,18 @@ StatsForecast.plot(train, test, plot_random=False)
 
 ## Train models
 
-StatsForecast can train multiple
-[models](https://nixtlaverse.nixtla.io/statsforecast/models) on
-different time series efficiently. Most of these models can generate a
+StatsForecast can train multiple [models](../../models) on different
+time series efficiently. Most of these models can generate a
 probabilistic forecast, which means that they can produce both point
 forecasts and prediction intervals.
 
-For this example, we’ll use
-[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoETS)
-and the following baseline models:
+For this example, we’ll use [AutoETS](../models/AutoETS) and the
+following baseline models:
 
--   [HistoricAverage](https://nixtlaverse.nixtla.io/statsforecast/models#class-historicaverage)
--   [Naive](https://nixtlaverse.nixtla.io/statsforecast/models#class-naive)
--   [RandomWalkWithDrift](https://nixtlaverse.nixtla.io/statsforecast/models#class-randomwalkwithdrift)
--   [SeasonalNaive](https://nixtlaverse.nixtla.io/statsforecast/models#class-seasonalnaive)
+-   [HistoricAverage](../../models#class-historicaverage)
+-   [Naive](../../models#class-naive)
+-   [RandomWalkWithDrift](../../models#class-randomwalkwithdrift)
+-   [SeasonalNaive](../../models#class-seasonalnaive)
 
 To use these models, we first need to import them from
 `statsforecast.models` and then we need to instantiate them. Given that

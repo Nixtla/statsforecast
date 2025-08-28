@@ -32,7 +32,7 @@ allows us to showcase the versatility and power of our methodology.
 We will train an assortment of models from various forecasting
 paradigms:
 
-*[StatsForecast]((https://github.com/Nixtla/statsforecast))*
+*[StatsForecast](https://github.com/Nixtla/statsforecast)*
 
 -   Baseline models: These models are simple yet often highly effective
     for providing an initial perspective on the forecasting problem. We
@@ -151,10 +151,6 @@ basic
 from statsforecast import StatsForecast
 ```
 
-``` text
-/home/ubuntu/statsforecast/statsforecast/core.py:23: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
-  from tqdm.autonotebook import tqdm
-```
 
 ```python
 # Feature: plot random series for EDA
@@ -499,7 +495,7 @@ Key features of `NeuralForecast` include:
 This machine doesn’t have GPU, but Google Colabs offers some for free.
 
 Using [Colab’s GPU to train
-NeuralForecast](https://nixtla.github.io/neuralforecast/examples/intermittentdata.html).
+NeuralForecast](../../../neuralforecast/docs/tutorials/11_intermittent_data).
 
 ```python
 # Read the results from Colab
@@ -710,7 +706,7 @@ cv_mlf_df.head()
 This machine doesn’t have GPU, but Google Colabs offers some for free.
 
 Using [Colab’s GPU to train
-NeuralForecast](https://nixtla.github.io/neuralforecast/examples/intermittentdata.html).
+NeuralForecast](../../../neuralforecast/docs/tutorials/11_intermittent_data).
 
 ```python
 cv_nf_df = pd.read_parquet('https://m5-benchmarks.s3.amazonaws.com/data/cross-validation-nf.parquet')
@@ -986,18 +982,16 @@ sf.plot(Y_df, fcst_df, max_insample_length=28 * 3)
 
 # Further materials
 
--   [Available Models
-    StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/src/core/models_intro)
--   [Available Models
-    NeuralForecast](https://nixtla.github.io/neuralforecast/models.html)
+-   [Available Models StatsForecast](../../models)
+-   [Available Models NeuralForecast](../../../neuralforecast/models)
 -   [Scalers and Loss
-    Functions](https://nixtla.github.io/neuralforecast/losses.pytorch.html)
+    Functions](../../../neuralforecast/losses.pytorch.html)
 -   [Getting Started
-    NeuralForecast](https://nixtlaverse.nixtla.io/neuralforecast/examples/getting_started)
+    NeuralForecast](../../../neuralforecast/tutorials/01_getting_started_complete)
 -   [Hierarchical
-    Reconciliation](https://nixtlaverse.nixtla.io/hierarchicalforecast/examples/TourismSmall)
+    Reconciliation](../../../hierarchicalforecast/examples/TourismSmall)
 -   [Distributed ML Forecast
-    (trees)](https://nixtlaverse.nixtla.io/mlforecast/docs/getting-started/quick_start_distributed)
+    (trees)](../../../mlforecast/docs/getting-started/quick_start_distributed)
 -   [Using StatsForecast to train millions of time
     series](https://www.anyscale.com/blog/how-nixtla-uses-ray-to-accurately-predict-more-than-a-million-time-series)
 -   [Intermittent Demand Forecasting With Nixtla on
