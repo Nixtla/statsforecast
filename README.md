@@ -110,10 +110,10 @@ Automatic forecasting tools search for the best parameters and select the best p
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[AutoARIMA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoARIMA)|✅|✅|✅|✅|✅|
-|[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoETS)|✅|✅|✅|✅||
-|[AutoCES](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoCES)|✅|✅|✅|✅||
-|[AutoTheta](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoTheta)|✅|✅|✅|✅||
+|[AutoARIMA](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoarima)|✅|✅|✅|✅|✅|
+|[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoets)|✅|✅|✅|✅||
+|[AutoCES](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoces)|✅|✅|✅|✅||
+|[AutoTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-autotheta)|✅|✅|✅|✅||
 |[AutoMFLES](https://nixtlaverse.nixtla.io/statsforecast/models#class-automfles)|✅|✅|✅|✅|✅|
 |[AutoTBATS](https://nixtlaverse.nixtla.io/statsforecast/models#class-autotbats)|✅|✅|✅|✅||
 
@@ -123,8 +123,8 @@ These models exploit the existing autocorrelations in the time series.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[ARIMA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/ARIMA)|✅|✅|✅|✅|✅|
-|[AutoRegressive](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoRegressive)|✅|✅|✅|✅|✅|
+|[ARIMA](https://nixtlaverse.nixtla.io/statsforecast/models#class-arima)|✅|✅|✅|✅|✅|
+|[AutoRegressive](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoregressive)|✅|✅|✅|✅|✅|
 
 ### Theta Family
 
@@ -132,7 +132,7 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[Theta](https://nixtlaverse.nixtla.io/statsforecast/models#class-theta)|✅|✅|✅|✅||
+|[Theta](https://nixtlaverse.nixtla.io/statsforecast/models#class-theta)|✅|✅|✅|✅|✅|
 |[OptimizedTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-optimizedtheta)|✅|✅|✅|✅||
 |[DynamicTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-dynamictheta)|✅|✅|✅|✅||
 |[DynamicOptimizedTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-dynamicoptimizedtheta)|✅|✅|✅|✅||
