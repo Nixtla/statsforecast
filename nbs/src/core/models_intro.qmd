@@ -12,7 +12,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |[`AutoETS`](../../models#class-autoets)|✅|✅|✅|✅|✅|
 |[`AutoCES`](../../models#class-autoces)|✅|✅|✅|✅||
 |[`AutoTheta`](../../models#class-autotheta)|✅|✅|✅|✅|✅|
-: {tbl-colwidths="[75,25]"}
+
 
 ## ARIMA Family
 These models exploit the existing autocorrelations in the time series.
@@ -21,7 +21,7 @@ These models exploit the existing autocorrelations in the time series.
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`ARIMA`](../../models#class-arima)|✅|✅|✅|✅|✅|
 |[`AutoRegressive`](../../models#class-autoregressive)|✅|✅|✅|✅|✅|
-: {tbl-colwidths="[75,25]"}
+
 
 ## Theta Family
 Fit two theta lines to a deseasonalized time series, using different techniques to obtain and combine the two theta lines to produce the final forecasts.
@@ -32,7 +32,7 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 |[`OptimizedTheta`](../../models#class-optimizedtheta)|✅|✅|✅|✅|✅|
 |[`DynamicTheta`](../../models#class-dynamictheta)|✅|✅|✅|✅|✅|
 |[`DynamicOptimizedTheta`](../../models#class-dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
-: {tbl-colwidths="[75,25]"}
+
 
 ## Multiple Seasonalities
 Suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs.
@@ -40,7 +40,7 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`MSTL`](../../models#class-mstl)|✅|✅|✅|✅|✅|
-: {tbl-colwidths="[75,25]"}
+
 
 ## GARCH and ARCH Models
 Suited for modeling time series that exhibit non-constant volatility over time. The ARCH model is a particular case of GARCH. 
@@ -49,7 +49,7 @@ Suited for modeling time series that exhibit non-constant volatility over time. 
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`GARCH`](../../models#class-garch)|✅|✅|✅|✅|✅|
 |[`ARCH`](../../models#class-arch)|✅|✅|✅|✅|✅|
-: {tbl-colwidths="[75,25]"}
+
 
 ## Baseline Models
 Classical models for establishing baseline.
@@ -62,7 +62,7 @@ Classical models for establishing baseline.
 |[`SeasonalNaive`](../../models#class-seasonalnaive)|✅|✅|✅|✅|✅|
 |[`WindowAverage`](../../models#class-windowaverage)|✅|||||
 |[`SeasonalWindowAverage`](../../models#class-seasonalwindowaverage)|✅|||||
-: {tbl-colwidths="[75,25]"}
+
 
 ## Exponential Smoothing
 Uses a weighted average of all past observations where the weights decrease exponentially into the past. Suitable for data with clear trend and/or seasonality. Use the `SimpleExponential` family for data with no clear trend or seasonality.
@@ -74,7 +74,7 @@ Uses a weighted average of all past observations where the weights decrease expo
 
 |[`Holt`](../../models#class-holt)|✅|✅|✅|✅|✅|
 |[`HoltWinters`](../../models#class-holtwinters)|✅|✅|✅|✅|✅|
-: {tbl-colwidths="[75,25]"}
+
 
 ## Sparse or Intermittent 
 Suited for series with very few non-zero observations
@@ -87,6 +87,6 @@ Suited for series with very few non-zero observations
 |[`CrostonSBA`](../../models#class-crostonsba)|✅|||||
 |[`IMAPA`](../../models#class-imapa)|✅|||||
 |[`TSB`](../../models#class-tsb)|✅|||||
-: {tbl-colwidths="[75,25]"}
+
 
 
