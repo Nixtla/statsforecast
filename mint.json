@@ -1,0 +1,139 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Nixtla",
+  "logo": {
+    "light": "/light.png",
+    "dark": "/dark.png"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0E0E0E",
+    "light": "#FAFAFA",
+    "dark": "#0E0E0E",
+    "anchors": {
+      "from": "#2AD0CA",
+      "to": "#0E00F8"
+    }
+  },
+  "topbarCtaButton": {
+    "type": "github",
+    "url": "https://github.com/Nixtla/nixtla"
+  },
+  "topAnchor": {
+    "name": "StatsForecast",
+    "icon": "bolt"
+  },
+  "navigation": [
+    {
+      "group": "",
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "group": "Getting Started",
+      "pages": [
+        "docs/getting-started/0_Installation",
+        "docs/getting-started/1_Getting_Started_short",
+        "docs/getting-started/2_Getting_Started_complete",
+        "docs/getting-started/3_Getting_Started_complete_polars"
+      ]
+    },
+    {
+      "group": "Tutorials",
+      "pages": [
+        "docs/tutorials/AnomalyDetection",
+        "docs/tutorials/ConformalPrediction",
+        "docs/tutorials/CrossValidation",
+        "docs/tutorials/ElectricityLoadForecasting",
+        "docs/tutorials/ElectricityPeakForecasting",
+        "docs/tutorials/GARCH_tutorial",
+        "docs/tutorials/IntermittentData",
+        "docs/tutorials/MLFlow",
+        "docs/tutorials/MultipleSeasonalities",
+        "docs/tutorials/StatisticalNeuralMethods",
+        "docs/tutorials/UncertaintyIntervals"
+      ]
+    },
+    {
+      "group": "How to Guides",
+      "pages": [
+        "docs/how-to-guides/00_Automatic_Forecasting",
+        "docs/how-to-guides/Exogenous",
+        "docs/how-to-guides/generating_features",
+        "docs/how-to-guides/sklearn_models",
+        "docs/how-to-guides/migrating_R",
+        "docs/how-to-guides/numba_cache"
+      ]
+    },
+    {
+      "group": "Distributed",
+      "pages": [
+        "docs/distributed/dask",
+        "docs/distributed/ray",
+        "docs/distributed/spark"
+      ]
+    },
+    {
+      "group": "Experiments",
+      "pages": [
+        "docs/experiments/AmazonStatsForecast",
+        "docs/experiments/AutoArima_vs_Prophet",
+        "docs/experiments/ETS_ray_m5",
+        "docs/experiments/Prophet_spark_m5"
+      ]
+    },
+    {
+      "group": "Model References",
+      "pages": [
+        "docs/models/ADIDA",
+        "docs/models/ARCH",
+        "docs/models/ARIMA",
+        "docs/models/AutoARIMA",
+        "docs/models/AutoCES",
+        "docs/models/AutoETS",
+        "docs/models/AutoRegressive",
+        "docs/models/AutoTheta",
+        "docs/models/CrostonClassic",
+        "docs/models/CrostonOptimized",
+        "docs/models/CrostonSBA",
+        "docs/models/DynamicOptimizedTheta",
+        "docs/models/DynamicStandardTheta",
+        "docs/models/GARCH",
+        "docs/models/Holt",
+        "docs/models/HoltWinters",
+        "docs/models/IMAPA",
+        "docs/models/MFLES",
+        "docs/models/MultipleSeasonalTrend",
+        "docs/models/OptimizedTheta",
+        "docs/models/SeasonalExponentialSmoothing",
+        "docs/models/SeasonalExponentialSmoothingOptimized",
+        "docs/models/SimpleExponentialOptimized",
+        "docs/models/SimpleExponentialSmoothing",
+        "docs/models/StandardTheta",
+        "docs/models/TSB"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "core",
+        "distributed.fugue",
+        "models",
+        "src/core/models_intro",
+        "feature_engineering"
+      ]
+    },
+    {
+      "group": "Contributing",
+      "pages": [
+        "docs/contribute/contribute",
+        "docs/contribute/docs",
+        "docs/contribute/issue-labels",
+        "docs/contribute/issues",
+        "docs/contribute/step-by-step",
+        "docs/contribute/techstack"
+      ]
+    }
+  ]
+}
