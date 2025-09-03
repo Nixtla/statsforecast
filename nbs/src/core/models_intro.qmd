@@ -71,7 +71,6 @@ Uses a weighted average of all past observations where the weights decrease expo
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`SimpleExponentialSmoothing`](../../models#class-simpleexponentialsmoothing)|✅|||||
 |[`SimpleExponentialSmoothingOptimized`](../../models#class-simpleexponentialsmoothingoptimized)|✅|||||
-
 |[`Holt`](../../models#class-holt)|✅|✅|✅|✅|✅|
 |[`HoltWinters`](../../models#class-holtwinters)|✅|✅|✅|✅|✅|
 
