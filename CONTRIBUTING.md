@@ -129,6 +129,13 @@ Finally to view the documentation
 make preview_docs
 ```
 
+- The docs are automatically generated from the docstrings in the `python/statsforecast` folder.
+- To contribute, ensure your docstrings follow the Google style format.
+- Once your docstring is correctly written, the documentation framework will scrape it and regenerate the corresponding `.mdx` files and your changes will then appear in the updated docs.
+- Make an appropriate entry in the `docs/mintlify/mint.json` file.
+- Run `make all_docs` to regenerate the documentation.
+- Run `make preview_docs` to view and test the documentation locally.
+
 ## Start Coding
 
 Open a jupyter notebook using `jupyter lab` (or VS Code).
