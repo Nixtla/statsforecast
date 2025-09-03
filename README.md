@@ -52,7 +52,7 @@ sf.fit(df)
 sf.predict(h=12, level=[95])
 ```
 
-**Get Started with this [quick guide](https://nixtla.github.io/statsforecast/docs/getting-started/getting_started_short.html).**
+**Get Started [quick guide](https://nixtla.github.io/statsforecast/docs/getting-started/getting_started_short.html).**
 
 **Follow this [end-to-end walkthrough](https://nixtla.github.io/statsforecast/docs/getting-started/getting_started_complete.html) for best practices.**
 
