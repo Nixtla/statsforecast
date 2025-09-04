@@ -22,7 +22,7 @@ warnings.simplefilter('ignore')
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](../getting-started/1_Getting_Started_short.ipynb)
+> Start](../getting-started/1_Getting_Started_short)
 
 ## Introduction
 
@@ -47,7 +47,7 @@ we then estimate the uncertainty of predictions?
 > **Prediction Intervals**
 >
 > For models that already provide the forecast distribution, check
-> [Prediction Intervals](./UncertaintyIntervals.ipynb).
+> [Prediction Intervals](./UncertaintyIntervals).
 
 ### Conformal Prediction
 
@@ -77,14 +77,14 @@ probabilities are needed, and the output is well-calibrated. No
 additional training is needed, and the model is treated as a black box.
 The approach is compatible with any model.
 
-[Statsforecast](https://github.com/nixtla/statsforecast) now supports
-Conformal Prediction on all available models.
+[Statsforecast](../../index) now supports Conformal Prediction on all
+available models.
 
 ## Install libraries
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](../getting-started/0_Installation.ipynb)
+StatsForecast](../getting-started/0_Installation)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -161,22 +161,19 @@ plot_series(train, test, plot_random=False)
 
 ## Train models
 
-StatsForecast can train multiple
-[models](https://nixtlaverse.nixtla.io/statsforecast/models/) on
-different time series efficiently. Most of these models can generate a
+StatsForecast can train multiple [models](../../models/) on different
+time series efficiently. Most of these models can generate a
 probabilistic forecast, which means that they can produce both point
 forecasts and prediction intervals.
 
 For this example, we’ll use
-[SimpleExponentialSmoothing](https://nixtlaverse.nixtla.io/statsforecast/docs/models/SimpleExponentialSmoothing)
-and
-[ADIDA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/ADIDA)
-which do not provide a prediction interval natively. Thus, it makes
-sense to use Conformal Prediction to generate the prediction interval.
+[SimpleExponentialSmoothing](../models/SimpleExponentialSmoothing) and
+[ADIDA](../models/ADIDA) which do not provide a prediction interval
+natively. Thus, it makes sense to use Conformal Prediction to generate
+the prediction interval.
 
-We’ll also show using it with
-[ARIMA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/ARIMA)
-to provide prediction intervals that don’t assume normality.
+We’ll also show using it with [ARIMA](../models/ARIMA) to provide
+prediction intervals that don’t assume normality.
 
 To use these models, we first need to import them from
 `statsforecast.models` and then we need to instantiate them.

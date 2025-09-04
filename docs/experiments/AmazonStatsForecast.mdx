@@ -23,7 +23,7 @@ The data are ready for download at the following URLs:
     `https://m5-benchmarks.s3.amazonaws.com/data/train/static.parquet`
 
 A more detailed description of the data can be found
-[here](./data.html).
+[here](../../../datasetsforecast/m5).
 
 > **Warning**
 >
@@ -42,8 +42,7 @@ the AutoPredict functionality of Amazon Forecast following the steps of
 [this
 tutorial](https://docs.aws.amazon.com/forecast/latest/dg/gs-console.html).
 A detailed description of the particular steps for this dataset can be
-found
-[here](https://nixtlaverse.nixtla.io/statsforecast/docs/experiments/AmazonStatsForecast).
+found [here](./AmazonStatsForecast).
 
 Amazon Forecast creates predictors with AutoPredictor, which involves
 applying the optimal combination of algorithms to each time series in
@@ -68,7 +67,8 @@ be found here: `s3://m5-benchmarks/forecasts/amazonforecast-m5.parquet`
 ### Install necessary libraries
 
 We assume you have StatsForecast already installed. Check this guide for
-instructions on [how to install StatsForecast](./Installation.ipynb).
+instructions on [how to install
+StatsForecast](../getting-started/0_Installation).
 
 Additionally, we will install `s3fs` to read from the S3 Filesystem of
 AWS. (If you don’t want to use a cloud storage provider, you can read
@@ -140,7 +140,7 @@ We fit the model by instantiating a new `StatsForecast` object with the
 following parameters:
 
 -   `models`: a list of models. Select the models you want from
-    [models](../models.ipynb) and import them. For this example, we will
+    [models](../../models) and import them. For this example, we will
     use `AutoETS` and `DynamicOptimizedTheta`. We set `season_length` to
     7 because we expect seasonal effects every week. (See: [Seasonal
     periods](https://robjhyndman.com/hyndsight/seasonal-periods/))

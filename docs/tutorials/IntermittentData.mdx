@@ -15,10 +15,9 @@ ubiquity of this type of series, special methods have been developed to
 forecast them. The first was from [Croston (1972)](#ref), followed by
 several variants and by different aggregation frameworks.
 
-[StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/) has
-implemented several models to forecast intermittent time series. By the
-end of this tutorial, you’ll have a good understanding of these models
-and how to use them.
+[StatsForecast](../../index) has implemented several models to forecast
+intermittent time series. By the end of this tutorial, you’ll have a
+good understanding of these models and how to use them.
 
 **Outline:**
 
@@ -42,7 +41,7 @@ and how to use them.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/0_Installation)
+StatsForecast](../getting-started/0_Installation)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -155,17 +154,14 @@ test = df[df['ds'] >= valid_start]
 
 StatsForecast has efficient implementations of multiple models for
 intermittent data. The complete list of models available is
-[here](https://nixtla.github.io/statsforecast/models.html#sparse-or-intermittent).
-In this notebook, we’ll use:
+[here](../../models). In this notebook, we’ll use:
 
 -   [Agregate-Dissagregate Intermittent Demand Approach
-    (ADIDA)](https://nixtla.github.io/statsforecast/models.html#adida)
--   [Croston
-    Classic](https://nixtla.github.io/statsforecast/models.html#crostonclassic)
+    (ADIDA)](../models/ADIDA)
+-   [Croston Classic](../models/CrostonClassic)
 -   [Intermittent Multiple Aggregation Prediction Algorithm
-    (IMAPA)](https://nixtla.github.io/statsforecast/models.html#imapa)
--   [Teunter-Syntetos-Babai
-    (TSB)](https://nixtla.github.io/statsforecast/models.html#tsb)
+    (IMAPA)](../models/IMAPA)
+-   [Teunter-Syntetos-Babai (TSB)](../models/TSB)
 
 To use these models, we first need to import them from
 `statsforecast.models` and then we need to instantiate them.
@@ -212,8 +208,7 @@ Now we’re ready to generate the forecast. To do this, we’ll use the
 
 The models for intermittent series that are currently available in
 StatsForecast can only generate point-forecasts. If prediction intervals
-are needed, then a [probabilisitic
-model](https://nixtla.github.io/statsforecast/#models) should be used.
+are needed, then a [probabilisitic model](../../models) should be used.
 
 ```python
 horizon = 28

@@ -38,7 +38,7 @@ adoption are:
 > **Prerequesites**
 >
 > This Guide assumes basic familiarity with StatsForecast. For a minimal
-> example visit the [Quick Start](./Getting_Started_short.ipynb)
+> example visit the [Quick Start](./Getting_Started_short)
 
 Follow this article for a step to step guide on building a
 production-ready forecasting pipeline for multiple time series.
@@ -71,20 +71,19 @@ it ideal for this task.
 > **Not Covered in this guide**
 >
 > -   Forecasting at scale using clusters on the cloud.
+>     -   [Forecast the M5 Dataset in 5min](../how-to-guides/ETS_ray_m5)
+>         using Ray clusters.
 >     -   [Forecast the M5 Dataset in
->         5min](../how-to-guides/ETS_ray_m5.ipynb) using Ray clusters.
->     -   [Forecast the M5 Dataset in
->         5min](../how-to-guides/Prophet_spark_m5.ipynb) using Spark
->         clusters.
+>         5min](../how-to-guides/Prophet_spark_m5) using Spark clusters.
 >     -   Learn how to predict [1M series in less than
 >         30min](https://www.anyscale.com/blog/how-nixtla-uses-ray-to-accurately-predict-more-than-a-million-time-series).
 > -   Training models on Multiple Seasonalities.
 >     -   Learn to use multiple seasonality in this [Electricity Load
->         forecasting](../tutorials/ElectricityLoadForecasting.ipynb)
+>         forecasting](../tutorials/ElectricityLoadForecasting)
 >         tutorial.
 > -   Using external regressors or exogenous variables
 >     -   Follow this tutorial to [include exogenous
->         variables](../how-to-guides/Exogenous.ipynb) like weather or
+>         variables](../how-to-guides/Exogenous) like weather or
 >         holidays or static variables like category or family.
 > -   Comparing StatsForecast with other popular libraries.
 >     -   You can reproduce our benchmarks
@@ -93,7 +92,8 @@ it ideal for this task.
 ## Install libraries
 
 We assume you have StatsForecast already installed. Check this guide for
-instructions on [how to install StatsForecast](./Installation.ipynb).
+instructions on [how to install
+StatsForecast](./Installation../getting-started/0_Installation).
 
 ## Read the data
 
@@ -261,7 +261,7 @@ We fit the models by instantiating a new `StatsForecast` object with the
 following parameters:
 
 -   `models`: a list of models. Select the models you want from
-    [models](../models.ipynb) and import them.
+    [models](../../src/core/models_intro) and import them.
 
 -   `freq`: a string indicating the frequency of the data. (See [panda’s
     available
