@@ -556,9 +556,8 @@ class AutoETS(_TS):
         This implementation is a mirror of Hyndman's [forecast::ets](https://github.com/robjhyndman/forecast).
 
     References:
-        [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
-
-        [Hyndman, Rob, et al (2008). "Forecasting with exponential smoothing: the state space approach"](https://robjhyndman.com/expsmooth/).
+        - [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
+        - [Hyndman, Rob, et al (2008). "Forecasting with exponential smoothing: the state space approach"](https://robjhyndman.com/expsmooth/).
     """
 
     def __init__(
@@ -773,7 +772,7 @@ class AutoCES(_TS):
             By default, the model will compute the native prediction intervals.
 
     References:
-        [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing". 10.13140/RG.2.1.3757.2562. ](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074).
+        - [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing".](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074).
     """
 
     def __init__(
@@ -981,7 +980,7 @@ class AutoTheta(_TS):
             By default, the model will compute the native prediction intervals.
 
     References:
-        [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+        - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
     """
 
     def __init__(
@@ -1906,7 +1905,7 @@ class SimpleExponentialSmoothing(_TS):
     The rate $0 \leq \alpha \leq 1$ at which the weights decrease is called the smoothing parameter. When $\alpha = 1$, SES is equal to the naive method.
 
     References:
-        [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
+        - [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
 
     Args:
         alpha (float): Smoothing parameter.
@@ -2075,17 +2074,12 @@ class SimpleExponentialSmoothingOptimized(_TS):
         Fit an SimpleExponentialSmoothingOptimized to a time series (numpy array) `y`
         and optionally exogenous variables (numpy array) `X`.
 
-        Parameters
-        ----------
-        y : numpy.array
-            Clean time series of shape (t, ).
-        X : array-like
-            Optional exogenous of shape (t, n_x).
+        Args:
+            y (numpy.array): Clean time series of shape (t, ).
+            X (array-like): Optional exogenous of shape (t, n_x).
 
-        Returns
-        -------
-        self :
-            SimpleExponentialSmoothingOptimized fitted model.
+        Returns:
+            SimpleExponentialSmoothingOptimized: SimpleExponentialSmoothingOptimized fitted model.
         """
         y = _ensure_float(y)
         mod = _ses_optimized(y=y, h=1, fitted=True)
@@ -2144,25 +2138,16 @@ class SimpleExponentialSmoothingOptimized(_TS):
         It is analogous to `fit_predict` without storing information.
         It assumes you know the forecast horizon in advance.
 
-        Parameters
-        ----------
-        y : numpy.array
-            Clean time series of shape (n, ).
-        h : int
-            Forecast horizon.
-        X : array-like
-            Optional insample exogenous of shape (t, n_x).
-        X_future : array-like
-            Optional exogenous of shape (h, n_x).
-        level : List[float]
-            Confidence levels (0-100) for prediction intervals.
-        fitted : bool
-            Whether or not to return insample predictions.
+        Args:
+            y (numpy.array): Clean time series of shape (n, ).
+            h (int): Forecast horizon.
+            X (array-like): Optional insample exogenous of shape (t, n_x).
+            X_future (array-like): Optional exogenous of shape (h, n_x).
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
+            fitted (bool): Whether or not to return insample predictions.
 
-        Returns
-        -------
-        forecasts : dict
-            Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        Returns:
+            dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
         res = _ses_optimized(y=y, h=h, fitted=fitted)
@@ -2383,19 +2368,19 @@ class SeasonalExponentialSmoothingOptimized(_TS):
 
         The smoothing parameter $\alpha^*$ is optimized by square error minimization.
 
-        Notes:
-            This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
-            And a single seasonal smoothing parameter $\alpha$ is shared across seasons.
-
-        References:
-            - [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
-            - [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
-
         Args:
             season_length (int): Number of observations per unit of time. Ex: 24 Hourly data.
             alias (str): Custom name of the model.
             prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
                 This is required for generating future prediction intervals.
+
+        References:
+            - [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
+            - [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
+
+        Notes:
+            - This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
+            - And a single seasonal smoothing parameter $\alpha$ is shared across seasons.
         """
         self.season_length = season_length
         self.alias = alias
@@ -2944,7 +2929,7 @@ class RandomWalkWithDrift(_TS):
         the first and the last observation.
 
         References:
-            [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+            - [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Args:
             alias (str): Custom name of the model.
@@ -3088,7 +3073,7 @@ class SeasonalNaive(_TS):
         A method similar to the naive, but uses the last known observation of the same period (e.g. the same month of the previous year) in order to capture seasonal variations.
 
         References:
-            [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html#seasonal-na%C3%AFve-method).
+            - [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html#seasonal-na%C3%AFve-method).
 
         Args:
             season_length (int): Number of observations per unit of time. Ex: 24 Hourly data.
@@ -3290,7 +3275,7 @@ class WindowAverage(_TS):
         observations and how fast the series changes.
 
         References:
-            [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+            - [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Args:
             window_size (int): Size of truncated series on which average is estimated.
@@ -3433,7 +3418,7 @@ class SeasonalWindowAverage(_TS):
         An average of the last $k$ observations of the same period, with $k$ the length of the window.
 
         References:
-            [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+            - [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
 
         Args:
             season_length (int): Number of observations per unit of time. Ex: 24 Hourly data.
@@ -3661,7 +3646,7 @@ class ADIDA(_TS):
         especifically for them.
 
         References:
-            [Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F., & Assimakopoulos, V. (2011). An aggregate–disaggregate intermittent demand approach (ADIDA) to forecasting: an empirical proposition and analysis. Journal of the Operational Research Society, 62(3), 544-554.](https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f).
+            - [Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F., & Assimakopoulos, V. (2011). An aggregate–disaggregate intermittent demand approach (ADIDA) to forecasting: an empirical proposition and analysis. Journal of the Operational Research Society, 62(3), 544-554.](https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f).
 
         Args:
             alias (str, optional): Custom name of the model. Defaults to "ADIDA".
@@ -3823,13 +3808,13 @@ class CrostonClassic(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The smoothing parameter
         of both components is set equal to 0.1
 
         References:
-            [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50)
+            - [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50)
 
         Args:
             alias (str, optional): Custom name of the model. Defaults to "CrostonClassic".
@@ -4001,14 +3986,14 @@ class CrostonOptimized(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method where the smooting paramater is optimally
         selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
         intervals $p_t$ are smoothed separately, so their smoothing parameters can be different.
 
         References:
-            [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
+            - [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
 
         Args:
             alias (str, optional): Custom name of the model. Defaults to "CrostonOptimized".
@@ -4149,14 +4134,14 @@ class CrostonSBA(_TS):
         A method to forecast time series that exhibit intermittent demand.
         It decomposes the original time series into a non-zero demand size $z_t$ and
         inter-demand intervals $p_t$. Then the forecast is given by:
-        $$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         A variation of the classic Croston's method that uses a debiasing factor, so that the
         forecast is given by:
-        $$\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}$$
+        $$\hat{y}_t = 0.95  \\frac{\hat{z}_t}{\hat{p}_t}$$
 
         References:
-            [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
+            - [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
 
         Args:
             alias (str, optional): Custom name of the model. Defaults to "CrostonSBA".
@@ -4324,7 +4309,7 @@ class IMAPA(_TS):
         and then combines them using a simple average.
 
         References:
-            [Syntetos, A. A., & Boylan, J. E. (2021). Intermittent demand forecasting: Context, methods and applications. John Wiley & Sons.](https://www.ifors.org/intermittent-demand-forecasting-context-methods-and-applications/).
+            - [Syntetos, A. A., & Boylan, J. E. (2021). Intermittent demand forecasting: Context, methods and applications. John Wiley & Sons.](https://www.ifors.org/intermittent-demand-forecasting-context-methods-and-applications/).
 
         Args:
             alias (str, optional): Custom name of the model. Defaults to "IMAPA".
@@ -4486,9 +4471,9 @@ class TSB(_TS):
         intervals with the demand probability $d_t$, which is defined as follows.
 
         $$
-        d_t = \begin{cases}
-            1  & \text{if demand occurs at time t} \\
-            0  & \text{otherwise.}
+        d_t = \\begin{cases}
+            1  & \\text{if demand occurs at time t} \\\\
+            0  & \\text{otherwise.}
         \end{cases}
         $$
 
@@ -4500,7 +4485,7 @@ class TSB(_TS):
         like in the optimized Croston's method.
 
         References:
-            [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011). Intermittent demand: Linking forecasting to inventory obsolescence. European Journal of Operational Research, 214(3), 606-615.](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437)
+            - [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011). Intermittent demand: Linking forecasting to inventory obsolescence. European Journal of Operational Research, 214(3), 606-615.](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437)
 
         Args:
             alpha_d (float): Smoothing parameter for demand.
@@ -4650,7 +4635,7 @@ class MSTL(_TS):
     a custom non-seaonal model and each seasonality using a SeasonalNaive model.
 
     References:
-        [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). "MSTL: A Seasonal-Trend Decomposition Algorithm for Time Series with Multiple Seasonal Patterns".](https://arxiv.org/abs/2107.13462).
+        - [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). "MSTL: A Seasonal-Trend Decomposition Algorithm for Time Series with Multiple Seasonal Patterns".](https://arxiv.org/abs/2107.13462).
 
     Args:
         season_length (Union[int, List[int]]): Number of observations per unit of time. For multiple seasonalities use a list.
@@ -5161,7 +5146,7 @@ class Theta(AutoTheta):
     r"""Standard Theta Method.
 
     References:
-        [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+        - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
 
     Args:
         season_length (int): Number of observations per unit of time. Ex: 24 Hourly data. Default 1.
@@ -5191,7 +5176,7 @@ class OptimizedTheta(AutoTheta):
     r"""Optimized Theta Method.
 
     References:
-        [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+        - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
 
     Args:
         season_length (int): Number of observations per unit of time. Ex: 24 Hourly data. Default 1.
@@ -5295,6 +5280,7 @@ class GARCH(_TS):
     The coefficients $w$, $a_i$, $i=1,...,p$, and $b_j$, $j=1,...,q$ must satisfy the following conditions:
 
     1. $w > 0$ and $a_i, b_j \geq 0$ for all $i$ and $j$.
+
     2. $\sum_{k=1}^{max(p,q)} a_k + b_k < 1$. Here it is assumed that $a_i=0$ for $i>p$ and $b_j=0$ for $j>q$.
 
     The ARCH model is a particular case of the GARCH model when $q=0$.
@@ -5464,9 +5450,8 @@ class ARCH(GARCH):
     The coefficients $w$ and $a_i$, $i=1,...,p$ must be nonnegative and $\sum_{k=1}^p a_k < 1$.
 
     References:
-        [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
-
-        [James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
+        - [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
+        - [James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
 
     Args:
         p (int): Number of lagged versions of the series.
