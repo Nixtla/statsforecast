@@ -40,7 +40,7 @@ end <- Sys.time()
 
 forecasts %>% 
   write.table(
-    str_glue('data/arima-r-forecasts-{args[2]}-{args[4]}.txt'),
+    str_glue('data/fable-arima-r-forecasts-{args[2]}-{args[4]}.txt'),
     row.name=F, col.name=F
   )
 
