@@ -6,25 +6,25 @@ We compared accuracy and speed against [pmdarima](https://github.com/alkaline-ml
 
 The following table summarizes the results. This table is relative to the performanace of auto_arima_r column. As can be seen, our `auto_arima` is the best model in accuracy (measured by the `MASE` loss) and time, even compared with the original implementation in R. This results were run in Github Codespaces with a 16 core machine.
 
-| dataset | metric | auto_arima_nixtla | auto_arima_pmdarima | auto_arima_r | prophet |
-| :------ | :----- | ----------------: | ------------------: | -----------: | ------: |
-| Daily   | MASE   |      **0.014866** |           0.0153234 |            1 |       - |
-| Daily   | time   |           1.57072 |             100.362 |        **1** |       - |
-| Hourly  | MASE   |   **4.13528e-05** |                   - |            1 |    1.79 |
-| Hourly  | time   |      **0.736783** |                   - |            1 |   16.04 |
-| Weekly  | MASE   |     **0.0218248** |           0.0236516 |            1 |    7.26 |
-| Weekly  | time   |           1.83784 |             208.595 |        **1** |   23.31 |
+| dataset | metric | auto_arima_nixtla | auto_arima_pmdarima | auto_arima_r |    prophet |
+| :------ | :----- | ----------------: | ------------------: | -----------: | ---------: |
+| Daily   | MASE   |      **0.014866** |           0.0153234 |            1 |   0.067239 |
+| Daily   | time   |            1.5905 |             100.362 |        **1** |   147.4044 |
+| Hourly  | MASE   |    **4.1352e-05** |                   - |            1 | 7.7917e-05 |
+| Hourly  | time   |          0.736783 |                   - |            1 | **0.1999** |
+| Weekly  | MASE   |     **0.0218248** |           0.0236516 |            1 |      0.069 |
+| Weekly  | time   |           1.81081 |             208.595 |        **1** |         63 |
 
 The following table is the raw results in seconds for time and MASE. 
 
- | dataset | metric | auto_arima_nixtla | auto_arima_pmdarima | auto_arima_r | prophet |
- | :------ | :----- | ----------------: | ------------------: | -----------: | ------: |
- | Daily   | MASE   |          **3.25** |                3.35 |       218.62 |       - |
- | Daily   | time   |              6.33 |              404.46 |     **4.03** |       - |
- | Hourly  | MASE   |          **0.95** |                   - |        22973 |    1.79 |
- | Hourly  | time   |         **59.09** |                   - |         80.2 |   16.04 |
- | Weekly  | MASE   |          **2.27** |                2.46 |       104.01 |    7.26 |
- | Weekly  | time   |              0.68 |               77.18 |     **0.37** |   23.31 |
+ | dataset | metric | auto_arima_nixtla | auto_arima_pmdarima | auto_arima_r |   prophet |
+ | :------ | :----- | ----------------: | ------------------: | -----------: | --------: |
+ | Daily   | MASE   |          **3.25** |                3.35 |       218.62 |      14.7 |
+ | Daily   | time   |              6.41 |              404.46 |     **4.03** |    594.04 |
+ | Hourly  | MASE   |          **0.95** |                   - |        22973 |      1.79 |
+ | Hourly  | time   |             59.42 |                   - |         80.2 | **16.04** |
+ | Weekly  | MASE   |          **2.27** |                2.46 |       104.01 |      7.26 |
+ | Weekly  | time   |              0.67 |               77.18 |     **0.37** |     23.31 |
 
 
 
