@@ -53,8 +53,8 @@ if __name__ == '__main__':
     evaluation_std = evaluation.assign(
         auto_arima_nixtla = lambda x: x.auto_arima_nixtla / x.auto_arima_r,
         auto_arima_pmdarima  = lambda x: x.auto_arima_pmdarima / x.auto_arima_r,
-        auto_arima_r = lambda x: x.auto_arima_r / x.auto_arima_r,
         prophet = lambda x: x.prophet / x.auto_arima_r,
+        auto_arima_r = lambda x: x.auto_arima_r / x.auto_arima_r,
         #auto_arima_fable_r = lambda x: x.auto_arima_fable_r / x.auto_arima_fable_r
     )
     evaluation.to_csv('data/M4-evaluation.csv')
