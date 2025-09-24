@@ -43,8 +43,8 @@ To reproduce the main results, follow these steps:
 `make run_module module="python -m src.prophet --dataset M3Small --group Yearly"`
 - `R`:
 `make run_module module="python -m src.data --dataset M3Small --group Yearly"`
-`make run_module module="python -m src/arima_forecast_r.R  --dataset M3Small --group Yearly"`
-`make run_module module="python -m src/arima_fable_r.R --dataset M3Small --group Yearly"`
+`make run_module module="Rscript -m src/arima_forecast_r.R  --dataset M3Small --group Yearly"`
+`make run_module module="Rscript -m src/arima_fable_r.R --dataset M3Small --group Yearly"`
 
 ### Additional Commands:
 
