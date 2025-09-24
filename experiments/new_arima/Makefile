@@ -51,7 +51,7 @@ run_tests_r: data_prep_r
 	@echo "\nRunning all R experiments..."
 	@for group in Daily Hourly Weekly; do \
 		echo "Running R experiment: group=$$group"; \
-		$(MAKE) run_module module="Rscript src/arima_r.R --dataset M4 $$group"; \
+		$(MAKE) run_module module="Rscript src/arima_forecast_r.R --dataset M4 $$group"; \
 	done
 
 .PHONY: data_prep_r
