@@ -1,10 +1,6 @@
 from itertools import product
-from typing import Optional, Union
-import numpy as np
 import pandas as pd
 from datasetsforecast.m4 import M4Info, M4Evaluation
-from utilsforecast.losses import mase, smape
-from src.data import get_data
 
 
 def read_data(lib:str, group:str):
@@ -20,8 +16,14 @@ def read_data(lib:str, group:str):
         col = 'fable_arima_r'
     elif lib == 'forecast-arima-r':
         col = 'forecast_arima_r'
+        if group == 'Daily':
+            prefix = 'D'
+        elif group == 'Weekly':
+            prefix = 'W'
+        else:
+            prefix = 'M'
         forecast = pd.read_csv(f'data/{lib}-forecasts-M4-{group}.csv', sep = " ", header = None)
-        forecast = forecast.assign(unique_id = lambda x: "W"+x.index.astype(str)).melt(id_vars='unique_id', var_name='ds', value_name='forecast_arima_r')
+        forecast = forecast.assign(unique_id = lambda x: prefix +x.index.astype(str)).melt(id_vars='unique_id', var_name='ds', value_name='forecast_arima_r')
     forecast = forecast[col].values.reshape(-1, horizon)
     return forecast
 
