@@ -2,6 +2,21 @@
 title: AutoTheta Model
 ---
 
+
+```python
+# This cell will not be rendered but is to hide warnings and limit the rows shown
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import logging
+logging.getLogger('statsforecast').setLevel(logging.ERROR)
+
+import pandas as pd
+pd.set_option('display.max_rows', 6)
+```
+
+
 > Step-by-step guide on using the `AutoTheta Model` with
 > `Statsforecast`.
 

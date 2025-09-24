@@ -2,6 +2,21 @@
 title: MLFlow
 ---
 
+
+```python
+import warnings
+import logging
+```
+
+
+
+```python
+warnings.simplefilter('ignore')
+logging.getLogger('statsforecast').setLevel(logging.ERROR)
+logging.getLogger("mlflow").setLevel(logging.ERROR)
+```
+
+
 > Run Statsforecast with MLFlow.
 
 [MLFlow](https://github.com/mlflow/mlflow/) is an open source experiment
