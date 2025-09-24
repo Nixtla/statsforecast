@@ -10,7 +10,7 @@ library(furrr)
 library(stringr)
 
 args <- commandArgs(trailingOnly=TRUE)
-args <- c(0, "M4Small", 0, "Hourly")
+
 meta <- list(
   Weekly=list(horizon=13, func_ds=yearweek),
   Hourly=list(horizon=48, func_ds=function(x) x), # The official docs tell to convert to posix however the read data are just integers
