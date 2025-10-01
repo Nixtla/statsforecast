@@ -258,9 +258,9 @@ def test_ray_distributed_exogenous_regressors(df_w_ex):
     # Distributed exogenous regressors
     sf = StatsForecast(models=[ReturnX()], freq=1)
     res = sf.forecast(df=train_df, X_df=xreg, h=4).compute()
-    expected_res = xreg.compute().rename(columns={"x": "ReturnX"})
+    expected_res = xreg.compute().rename(columns={"x": "ReturnX"}).sort_values(["unique_id", "ds"])
     # we expect strings for unique_id, and ds using exogenous
     pd.testing.assert_frame_equal(
-        res.sort_values("unique_id").reset_index(drop=True).astype(expected_res.dtypes),
+        res.sort_values(["unique_id", "ds"]).reset_index(drop=True).astype(expected_res.dtypes),
         expected_res,
     )

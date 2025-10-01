@@ -115,7 +115,7 @@ def test_arima_transpar(expected_arima_transpar_f):
         np.testing.assert_allclose(actual, exp)
 
     params = np.repeat(0.5, 10)
-    arma = np.ones(5, dtype=np.integer) * 2
+    arma = np.ones(5, dtype=np.int32) * 2
     for exp, calc in zip(
         expected_arima_transpar_f, arima_transpar(params, arma, False)
     ):
