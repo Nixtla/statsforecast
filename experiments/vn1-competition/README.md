@@ -61,7 +61,14 @@ source .venv/bin/activate  # On macOS/Linux
 make download_data
 ```
 
-## Load data
+## Load Data and Dependencies
+
+We begin by importing the necessary libraries: - **pandas** and
+**numpy** for data manipulation - **StatsForecast** for time series
+forecasting with statistical models - **AutoARIMA, AutoETS, AutoCES,
+AutoTheta** - automatic model selection algorithms - **Naive** as a
+fallback model for problematic series - **fill_gaps** utility for
+handling missing timestamps in time series data
 
 ``` python
 import pandas as pd 
@@ -71,10 +78,17 @@ from statsforecast.models import AutoARIMA, AutoETS, AutoCES, AutoTheta, Naive
 from utilsforecast.preprocessing import fill_gaps
 ```
 
-The downloaded data is in wide format so we transform the data in order
-to be used by `statsforecast`. This imply a long dataframe with columns
-`unique_id` denoting the time serie identifier, `ds` the date stamp and
-`y` the values to be forecasted.
+### Transform Data to Long Format
+
+The downloaded competition data comes in wide format (one column per
+timestamp). For time series modeling with `statsforecast`, we need to
+reshape it into long format with three essential columns: -
+**`unique_id`**: Identifies each time series (constructed as
+`Client-Warehouse-Product`) - **`ds`**: Date stamp (timestamp for each
+observation) - **`y`**: Target values to forecast (sales quantities)
+
+This transformation enables efficient processing of thousands of
+product-level time series.
 
 ``` python
 def read_and_prepare_data(file_path: str, value_name: str = "y") -> pd.DataFrame:
@@ -98,10 +112,17 @@ df = df.sort_values(by=["unique_id", "ds"])
 test_df = read_and_prepare_data("../data/phase_2_sales.csv")
 ```
 
-## 2. Load Top 5 Solutions
+## Load Top 5 Competition Solutions
 
-In order to compare the result that we get with `statsforecast` we load
-the predictions for top 5 competitors:
+To benchmark our approach, we load the forecasts from the competition’s
+top 5 performers. This allows us to: 1. Compare `statsforecast` model
+performance against winning solutions 2. Understand the competitive
+landscape and what accuracy levels are achievable 3. Validate that our
+methodology produces competitive results
+
+The competition submissions are stored in wide format CSV files. We load
+all five top solutions and merge them into a single dataframe for
+comparative evaluation.
 
 ``` python
 def get_competition_forecasts() -> pd.DataFrame|None:
@@ -126,8 +147,16 @@ def get_competition_forecasts() -> pd.DataFrame|None:
 solutions = get_competition_forecasts()
 ```
 
-To evaluate the predictions from any prediction we provide the following
-function:
+### Define Competition Evaluation Metric
+
+The VN1 competition uses a custom metric that penalizes both forecast
+error magnitude and bias:
+
+**Score = (Sum of Absolute Errors + Absolute Sum of Errors) / Sum of
+Actuals**
+
+Lower scores indicate better performance, with the metric equally
+weighting accuracy and bias.
 
 ``` python
 def vn1_competition_evaluation(forecasts: pd.DataFrame) -> pd.DataFrame:
@@ -151,12 +180,14 @@ def vn1_competition_evaluation(forecasts: pd.DataFrame) -> pd.DataFrame:
     return score_df
 ```
 
-## 3. Data Processing
+## Data Preprocessing
 
-### 3.1. Remove leading zeros
+### Remove Leading Zeros
 
-There are some `unique_id` that have starting values in `0` meaning that
-the product wasn’t present at the time, for example:
+Many product-warehouse-client combinations have leading zeros in their
+sales history, indicating the product wasn’t available or stocked yet.
+For example, `0-1-11000` shows zeros from July 2020 until sales began
+later.
 
 ``` python
 df.query("unique_id == '0-1-11000'")
@@ -192,7 +223,16 @@ df.query("unique_id == '0-1-11000'")
 <p>183 rows × 3 columns</p>
 </div>
 
-We’ll remove the leading zeros with the following function:
+Including these zeros can: - Bias model estimates of seasonality and
+trend - Reduce forecast accuracy by training on non-informative data -
+Misrepresent the true demand distribution
+
+We remove leading zeros to train models only on periods when products
+were actively sold.
+
+We apply a custom groupby function that identifies the first non-zero
+value for each series and discards all preceding observations. This
+reduces the dataset from ~2.75M to ~1.62M observations.
 
 ``` python
 def _remove_leading_zeros(group): 
@@ -209,10 +249,23 @@ df_clean.shape, df.shape
 
     ((1615437, 3), (2754699, 3))
 
-### 3.2. Identify obsolete series
+### Identify Obsolete Products
 
-There are some products that for a long period haven’t been buyed such
-as:
+Some products have extended periods of zero sales at the end of their
+history, suggesting they may be discontinued, out of stock, or no longer
+carried. For example, product `9-82-9800` shows zeros for the final
+months of the training period.
+
+For these obsolete series: - Statistical models may still predict
+positive sales based on historical patterns - The correct forecast is
+likely zero (product discontinued) - Forecasting non-zero values would
+introduce unnecessary error
+
+We identify series with 180 days of consecutive zeros at the end of the
+training period and flag them as obsolete.
+
+Examples of obsolete patterns include products with zero sales in recent
+history. These require special treatment to avoid spurious forecasts.
 
 ``` python
 df_clean.query("unique_id == '9-82-9800'").tail()
@@ -241,7 +294,9 @@ df_clean.query("unique_id == '9-82-9800'").tail()
 
 </div>
 
-We want to identify them in order to predict 0 demand in this products
+We flag these obsolete series to override their forecasts with zeros,
+preventing statistical models from predicting demand for discontinued
+products.
 
 ``` python
 def _is_obsolete(group, days_obsoletes):
@@ -258,10 +313,23 @@ obsolete_series = df_clean.groupby("unique_id").apply(_is_obsolete, days_obsolet
 obsolete_ids = obsolete_series[obsolete_series].index.tolist()
 ```
 
-## 4. Model fitting
+## Model Fitting and Base Forecasts
 
-Now we proceed to fit the `AutoARIMA`, `AutoETS`, `AutoCES` and
-`AutoTheta` models to all products.
+We train four automatic model selection algorithms on the cleaned
+data: - **AutoARIMA**: Automatically selects the best ARIMA(p,d,q) model
+with seasonal components - **AutoETS**: Chooses optimal
+Error-Trend-Seasonality exponential smoothing model - **AutoCES**:
+Complex Exponential Smoothing with automatic parameter selection -
+**AutoTheta**: Decomposes series into trend and seasonal components
+using Theta method
+
+All models use `season_length=52` for weekly seasonality (52 weeks per
+year). The `Naive` model serves as a fallback for series where other
+models fail to converge.
+
+We instantiate the StatsForecast object with parallel processing
+(`n_jobs=-1`) to leverage all available CPU cores, enabling efficient
+fitting across thousands of product series.
 
 ``` python
 models = [
@@ -286,24 +354,37 @@ fc = sf.forecast(
 )
 ```
 
-### 4.1 Model ensembling
+### Model Ensemble
 
-We now proceed to ensemble the models with the median.
+Individual models often have complementary strengths and weaknesses.
+Ensembling combines multiple models to: - Reduce variance in
+predictions - Mitigate the impact of model-specific biases - Achieve
+more robust forecasts than any single model
+
+We use **median ensembling** rather than mean, which is more robust to
+outlier predictions from individual models.
+
+The ensemble takes the median of all four model forecasts for each
+product-timestamp. We also apply a threshold to set very small forecasts
+(\<0.1 units) to zero, reflecting the discrete nature of sales.
 
 ``` python
 fc['Ensemble'] = fc[['AutoARIMA', 'AutoETS', 'CES', 'AutoTheta']].median(axis=1)
 fc.loc[fc['Ensemble'] <= 1e-1, 'Ensemble'] = 0
 ```
 
-For obsolete series we provide 0 prediction.
+For products identified as obsolete during preprocessing, we override
+all model forecasts (including the ensemble) with zero, regardless of
+what the statistical models predict.
 
 ``` python
 fc.loc[fc["unique_id"].isin(obsolete_ids), "Ensemble"] = 0
 ```
 
-### 4.2 Evaluate results
+### Evaluate Base Model Performance
 
-Now we proceed to evaluate the results from the predictions.
+We compare our forecasts against the competition’s top 5 solutions using
+the custom VN1 metric.
 
 ``` python
 forecasts = solutions.merge(fc, on=["unique_id", "ds"], how="inner")
@@ -338,14 +419,31 @@ vn1_competition_evaluation(forecasts)
 
 </div>
 
-As we can see the median ensemble is much better than models by
-themselves.
+**Key Result**: The median ensemble (score: 0.5337) significantly
+outperforms individual models, with improvements of 8-22% over
+single-model approaches. However, there’s still a gap to the top
+competition solutions (~0.46-0.48 range), suggesting potential for
+further refinement.
 
-## 5. Hierarchical approach
+## Hierarchical Reconciliation Approach
 
-The `unique_id` column contains information about the product so the id
-is created in the following way: `Client-Warehouse-Product` we’ll build
-models based in the Client hierarchy.
+The data has a natural hierarchy: **Client → Warehouse → Product**. Each
+`unique_id` encodes this structure as `Client-Warehouse-Product`.
+
+**Key Insight**: Forecasts at different hierarchical levels contain
+complementary information: - **Aggregate (client) level**: More stable,
+less noisy, captures overall demand trends - **Bottom (product) level**:
+Captures product-specific patterns but more volatile
+
+Hierarchical reconciliation combines both levels to produce coherent
+forecasts where: 1. Individual product forecasts are adjusted to match
+aggregate forecasts 2. The relative distribution among products is
+preserved 3. We leverage the stability of aggregate forecasts with the
+granularity of product forecasts
+
+We extract the hierarchical structure from the `unique_id` field and
+aggregate sales to the client level. The dataset contains 46 unique
+clients, each with multiple warehouse-product combinations.
 
 ``` python
 df_client = df_clean.copy()
@@ -356,9 +454,18 @@ print('There are ', df_client['Client'].nunique(), 'clients in the dataset.')
 
     There are  46 clients in the dataset.
 
-### 5.1 Client level model fitting
+### Fit Models at Client Level
 
-We’ll fit the same models for client level predictions.
+We train the same set of statistical models (AutoARIMA, AutoETS,
+AutoCES, AutoTheta) on aggregated client-level time series. These client
+forecasts will serve as the “target totals” for hierarchical
+reconciliation.
+
+Client-level series have less volatility than individual products, often
+yielding more reliable forecasts.
+
+We use identical model specifications as the product-level forecasts to
+ensure consistency in methodology across hierarchy levels.
 
 ``` python
 sf_client = StatsForecast(
@@ -375,15 +482,16 @@ fc_client = sf_client.forecast(
 )
 ```
 
-We also need to identify the obsolete series:
+We also check for obsolete clients (those with 180 days of zero sales)
+to apply the same zero-forecast override logic at the aggregate level.
 
 ``` python
 client_obsolete_series = df_client.groupby("Client").apply(_is_obsolete, days_obsoletes=days_obsoletes)
 client_obsolete_ids = client_obsolete_series[client_obsolete_series].index.tolist()
 ```
 
-We also create the ensemble model for the client level predictions and
-set the forecast of obsolete clients to 0:
+We create a client-level ensemble using the same median approach and
+override forecasts for obsolete clients.
 
 ``` python
 fc_client['Ensemble'] = fc_client[['AutoARIMA', 'AutoETS', 'CES', 'AutoTheta']].median(axis=1)
@@ -421,17 +529,26 @@ granular forecasts.
 
 ![Hierachical reconcilation](../img/hierarchical.png)
 
-Let’s start by creating columns in order to make the join with the
-client level version:
+We extract the hierarchical components from the `unique_id` to enable
+merging product-level and client-level forecasts.
 
 ``` python
 fc[['Client', 'Warehouse', 'Product']] = fc['unique_id'].str.split('-', expand=True)
 ```
 
-Next we need to have the predictions at the same level so we need to sum
-the predicted values in order to have a Client level forecast and
-compute the proportions for each product. For this we only use the
-`Ensemble` forecast and merge it with the Client level forecast
+### Calculate Product Proportions
+
+To reconcile forecasts, we need to understand each product’s
+contribution to its client’s total forecast:
+
+1.  **Aggregate product forecasts** to client level (sum all products
+    per client)
+2.  **Calculate proportions**: Each product’s share of the client total
+3.  **Handle edge cases**: When base forecast totals are zero,
+    distribute equally among products
+
+These proportions capture the expected distribution of demand across
+products within each client.
 
 ``` python
 total = fc.groupby(['Client', 'ds'])['Ensemble'].sum().reset_index()
@@ -452,8 +569,21 @@ fc_client.rename(columns={'Ensemble': 'Ensemble_client', 'unique_id': 'Client'},
 fc = fc.merge(fc_client[['Client', 'ds', 'Ensemble_client']], on=['Client', 'ds'], how='left')
 ```
 
-Next we have to use this proportions to reconcile with the Client level
-forecasted values:
+### Apply Proportional Reconciliation
+
+We reconcile the product-level forecasts using:
+
+**Reconciled Product Forecast = Product Proportion × Client-Level
+Forecast**
+
+This ensures: - Sum of reconciled product forecasts = Client forecast
+(coherence) - Relative distribution among products preserved (from base
+forecasts) - Leverages the typically more accurate client-level
+aggregated forecast
+
+**Special case**: When the base product forecast sum is zero, we
+distribute the client forecast equally across all products for that
+client.
 
 ``` python
 products_per_client = fc.groupby(['Client', 'ds'])['Product'].nunique().reset_index(name='products_per_client')
@@ -470,7 +600,10 @@ fc_hierar = fc[['unique_id', 'ds', 'Ensemble-hierar']]
 fc_hierar.loc[fc_hierar['Ensemble-hierar'] <= 1e-1, 'Ensemble-hierar'] = 0
 ```
 
-Let’s proceed to evaluate the results:
+### Evaluate Hierarchical Reconciliation
+
+We compare the hierarchically reconciled forecasts against both the base
+ensemble and the competition solutions.
 
 ``` python
 forecasts = forecasts.merge(fc_hierar, on=["unique_id", "ds"], how="left")
@@ -506,4 +639,12 @@ vn1_competition_evaluation(forecasts)
 
 </div>
 
-We’ve achivied better results with this hierarchical reconciliation!
+**Significant Improvement**: The hierarchical ensemble achieves a score
+of 0.4959, representing: - **7.1% improvement** over the base ensemble
+(0.5337) - **Competitive performance**, approaching the 5th place
+solution (0.4808) - Demonstrates the value of leveraging hierarchical
+structure in the data
+
+This shows that hierarchical reconciliation successfully combines the
+stability of aggregate forecasts with product-level granularity, closing
+the gap toward competition-winning performance.
