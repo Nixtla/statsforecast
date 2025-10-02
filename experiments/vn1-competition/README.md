@@ -194,17 +194,6 @@ df.query("unique_id == '0-1-11000'")
 ```
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-&#10;    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-&#10;    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 
 |         | unique_id | ds         | y    |
 |---------|-----------|------------|------|
@@ -272,17 +261,6 @@ df_clean.query("unique_id == '9-82-9800'").tail()
 ```
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-&#10;    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-&#10;    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 
 |         | unique_id | ds         | y   |
 |---------|-----------|------------|-----|
@@ -392,17 +370,6 @@ vn1_competition_evaluation(forecasts)
 ```
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-&#10;    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-&#10;    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 
 |     | model     | score  |
 |-----|-----------|--------|
@@ -611,17 +578,6 @@ vn1_competition_evaluation(forecasts)
 ```
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-&#10;    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-&#10;    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 
 |     | model           | score  |
 |-----|-----------------|--------|
