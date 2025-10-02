@@ -138,8 +138,7 @@ def vn1_competition_evaluation(forecasts: pd.DataFrame) -> pd.DataFrame:
     )
     ids_forecasts = forecasts["unique_id"].unique()
     ids_res = res["unique_id"].unique()
-    res = res.query("unique_id in @ ids_forecasts")
-    #assert set(ids_forecasts) == set(ids_res), "Some unique_ids are missing"
+    assert set(ids_forecasts) == set(ids_res), "Some unique_ids are missing"
     scores = {}
     for model in [col for col in forecasts.columns if col not in ["unique_id", "ds"]]:
         abs_err = np.nansum(np.abs(res[model] - res["y"]))
@@ -281,12 +280,8 @@ sf = StatsForecast(
 ```
 
 ``` python
-first = df_clean.unique_id.unique()[0:2]
-```
-
-``` python
 fc = sf.forecast(
-    df=df_clean.query("unique_id in @first"), 
+    df=df_clean,
     h=13
 )
 ```
@@ -330,16 +325,16 @@ vn1_competition_evaluation(forecasts)
 
 |     | model     | score  |
 |-----|-----------|--------|
-| 3   | 4th       | 1.4175 |
-| 7   | CES       | 1.5778 |
-| 2   | 3rd       | 1.5933 |
-| 8   | AutoTheta | 1.6036 |
-| 9   | Ensemble  | 1.6961 |
-| 5   | AutoARIMA | 1.7497 |
-| 6   | AutoETS   | 1.8290 |
-| 0   | 1st       | 1.8337 |
-| 1   | 2nd       | 1.8602 |
-| 4   | 5th       | 2.4011 |
+| 0   | 1st       | 0.4637 |
+| 1   | 2nd       | 0.4657 |
+| 2   | 3rd       | 0.4758 |
+| 3   | 4th       | 0.4774 |
+| 4   | 5th       | 0.4808 |
+| 9   | Ensemble  | 0.5337 |
+| 8   | AutoTheta | 0.5816 |
+| 5   | AutoARIMA | 0.6320 |
+| 6   | AutoETS   | 0.6452 |
+| 7   | CES       | 0.6872 |
 
 </div>
 
@@ -361,10 +356,6 @@ print('There are ', df_client['Client'].nunique(), 'clients in the dataset.')
 
     There are  46 clients in the dataset.
 
-``` python
-first = df_client.Client.unique()[0:5]
-```
-
 ### 5.1 Client level model fitting
 
 We’ll fit the same models for client level predictions.
@@ -378,7 +369,7 @@ sf_client = StatsForecast(
 )
 
 fc_client = sf_client.forecast(
-    df=df_client.query("Client in @first"), 
+    df=df_client, 
     h=13, 
     id_col="Client"
 )
@@ -499,19 +490,19 @@ vn1_competition_evaluation(forecasts)
     }
 </style>
 
-|     | model           | score      |
-|-----|-----------------|------------|
-| 3   | 4th             | 1.4175     |
-| 7   | CES             | 1.5778     |
-| 2   | 3rd             | 1.5933     |
-| 8   | AutoTheta       | 1.6036     |
-| 9   | Ensemble        | 1.6961     |
-| 5   | AutoARIMA       | 1.7497     |
-| 6   | AutoETS         | 1.8290     |
-| 0   | 1st             | 1.8337     |
-| 1   | 2nd             | 1.8602     |
-| 4   | 5th             | 2.4011     |
-| 10  | Ensemble-hierar | 11689.3420 |
+|     | model           | score  |
+|-----|-----------------|--------|
+| 0   | 1st             | 0.4637 |
+| 1   | 2nd             | 0.4657 |
+| 2   | 3rd             | 0.4758 |
+| 3   | 4th             | 0.4774 |
+| 4   | 5th             | 0.4808 |
+| 10  | Ensemble-hierar | 0.4959 |
+| 9   | Ensemble        | 0.5337 |
+| 8   | AutoTheta       | 0.5816 |
+| 5   | AutoARIMA       | 0.6320 |
+| 6   | AutoETS         | 0.6452 |
+| 7   | CES             | 0.6872 |
 
 </div>
 
