@@ -31,6 +31,5 @@ download_data:
 	@test -f data/solution_5th_place.csv || curl https://www.datasource.ai/attachments/eyJpZCI6IjMwMDEwMmY3NTNhMzlhN2YxNTk3ODYxZTI1N2Q2NzRmLmNzdiIsInN0b3JhZ2UiOiJzdG9yZSIsIm1ldGFkYXRhIjp7ImZpbGVuYW1lIjoiZGl2aW5lb3B0aW1pemVkd2VpZ2h0c2Vuc2VtYmxlLmNzdiIsInNpemUiOjE3OTU0NzgsIm1pbWVfdHlwZSI6InRleHQvY3N2In19 -o data/solution_5th_place.csv
 
 run:
-	docker run -v "$(ROOT)/data:/app/data" -i --rm ${DOCKER_PARAMETERS} ${IMAGE} \
-		uv run quarto render src/vn1_competition.ipynb --to gfm --output-dir . --execute \
-		cp vn1_competition.md README.md
+	docker run -i --rm ${DOCKER_PARAMETERS} ${IMAGE} \
+		bash -c "cd src && uv run quarto render vn1_competition.ipynb --to gfm --execute && mv vn1_competition.md  ../README.md"
