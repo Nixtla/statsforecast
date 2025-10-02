@@ -32,4 +32,5 @@ download_data:
 
 run:
 	docker run -v "$(ROOT)/data:/app/data" -i --rm ${DOCKER_PARAMETERS} ${IMAGE} \
-		uv run quarto render src/vn1_competition.ipynb --to gfm --output-dir . --execute
+		uv run quarto render src/vn1_competition.ipynb --to gfm --output-dir . --execute \
+		cp vn1_competition.md README.md
