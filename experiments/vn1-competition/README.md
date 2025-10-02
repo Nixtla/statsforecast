@@ -71,9 +71,6 @@ from statsforecast.models import AutoARIMA, AutoETS, AutoCES, AutoTheta, Naive
 from utilsforecast.preprocessing import fill_gaps
 ```
 
-    /app/.venv/lib/python3.12/site-packages/fs/__init__.py:4: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
-      __import__("pkg_resources").declare_namespace(__name__)  # type: ignore
-
 The downloaded data is in wide format so we transform the data in order
 to be used by `statsforecast`. This imply a long dataframe with columns
 `unique_id` denoting the time serie identifier, `ds` the date stamp and
@@ -348,3 +345,174 @@ vn1_competition_evaluation(forecasts)
 
 As we can see the median ensemble is much better than models by
 themselves.
+
+## 5. Hierarchical approach
+
+The `unique_id` column contains information about the product so the id
+is created in the following way: `Client-Warehouse-Product` we’ll build
+models based in the Client hierarchy.
+
+``` python
+df_client = df_clean.copy()
+df_clean[['Client', 'Warehouse', 'Product']] = df_clean['unique_id'].str.split('-', expand=True)
+df_client = df_clean.groupby(['Client', 'ds'])['y'].sum().reset_index()
+print('There are ', df_client['Client'].nunique(), 'clients in the dataset.')
+```
+
+    There are  46 clients in the dataset.
+
+``` python
+first = df_client.Client.unique()[0:5]
+```
+
+### 5.1 Client level model fitting
+
+We’ll fit the same models for client level predictions.
+
+``` python
+sf_client = StatsForecast(
+    models=models, 
+    freq='W-MON', 
+    n_jobs=-1, 
+    fallback_model=Naive()
+)
+
+fc_client = sf_client.forecast(
+    df=df_client.query("Client in @first"), 
+    h=13, 
+    id_col="Client"
+)
+```
+
+We also need to identify the obsolete series:
+
+``` python
+client_obsolete_series = df_client.groupby("Client").apply(_is_obsolete, days_obsoletes=days_obsoletes)
+client_obsolete_ids = client_obsolete_series[client_obsolete_series].index.tolist()
+```
+
+We also create the ensemble model for the client level predictions and
+set the forecast of obsolete clients to 0:
+
+``` python
+fc_client['Ensemble'] = fc_client[['AutoARIMA', 'AutoETS', 'CES', 'AutoTheta']].median(axis=1)
+
+fc_client.loc[fc_client["Client"].isin(client_obsolete_ids), "Ensemble"] = 0
+```
+
+### 5.1 Hierarchical Reconciliation with Proportions
+
+We now have two sets of independent forecasts: one at the client level
+(aggregated) and one at the product level (granular). These forecasts
+are often incoherent—meaning the sum of product-level forecasts for a
+client doesn’t match the client-level forecast.
+
+**Proportional reconciliation** resolves this by adjusting the
+bottom-level (product) forecasts to sum exactly to the top-level
+(client) forecast, while preserving the relative proportions between
+products.
+
+**Example:** - Client-level forecast: **120 units** - Product A base
+forecast: **50 units** - Product B base forecast: **50 units** - Total
+product forecasts: **100 units** (incoherent with client forecast)
+
+Since each product contributes 50% (50/100) of the base forecast,
+proportional reconciliation scales both forecasts by the same factor
+(120/100 = 1.2):
+
+- Product A reconciled: **60 units** (50 × 1.2)
+- Product B reconciled: **60 units** (50 × 1.2)
+- Total: **120 units**
+
+This approach leverages the strengths of both aggregation levels: the
+stability of aggregate forecasts and the distributional information from
+granular forecasts.
+
+![Hierachical reconcilation](../img/hierarchical.png)
+
+Let’s start by creating columns in order to make the join with the
+client level version:
+
+``` python
+fc[['Client', 'Warehouse', 'Product']] = fc['unique_id'].str.split('-', expand=True)
+```
+
+Next we need to have the predictions at the same level so we need to sum
+the predicted values in order to have a Client level forecast and
+compute the proportions for each product. For this we only use the
+`Ensemble` forecast and merge it with the Client level forecast
+
+``` python
+total = fc.groupby(['Client', 'ds'])['Ensemble'].sum().reset_index()
+total.rename(columns={'Ensemble': 'total_forecasted'}, inplace=True)
+total['zero_base_fc'] = np.where(
+    total['total_forecasted'] == 0, 
+    True, 
+    False
+)
+
+fc = fc.merge(total, on=['Client', 'ds'], how='left')
+
+fc['fc_proportions'] = fc['Ensemble']/fc['total_forecasted']
+fc['fc_proportions'] = fc['fc_proportions'].fillna(0)
+
+fc_client.rename(columns={'Ensemble': 'Ensemble_client', 'unique_id': 'Client'}, inplace=True)
+
+fc = fc.merge(fc_client[['Client', 'ds', 'Ensemble_client']], on=['Client', 'ds'], how='left')
+```
+
+Next we have to use this proportions to reconcile with the Client level
+forecasted values:
+
+``` python
+products_per_client = fc.groupby(['Client', 'ds'])['Product'].nunique().reset_index(name='products_per_client')
+
+fc = fc.merge(products_per_client, on=['Client', 'ds'], how='left')
+
+fc['Ensemble-hierar'] = np.where(
+    fc['zero_base_fc'] == False,
+    fc['fc_proportions']*fc['Ensemble_client'],
+    fc['Ensemble_client']/fc['products_per_client']
+)
+
+fc_hierar = fc[['unique_id', 'ds', 'Ensemble-hierar']]
+fc_hierar.loc[fc_hierar['Ensemble-hierar'] <= 1e-1, 'Ensemble-hierar'] = 0
+```
+
+Let’s proceed to evaluate the results:
+
+``` python
+forecasts = forecasts.merge(fc_hierar, on=["unique_id", "ds"], how="left")
+vn1_competition_evaluation(forecasts)
+```
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|     | model           | score      |
+|-----|-----------------|------------|
+| 3   | 4th             | 1.4175     |
+| 7   | CES             | 1.5778     |
+| 2   | 3rd             | 1.5933     |
+| 8   | AutoTheta       | 1.6036     |
+| 9   | Ensemble        | 1.6961     |
+| 5   | AutoARIMA       | 1.7497     |
+| 6   | AutoETS         | 1.8290     |
+| 0   | 1st             | 1.8337     |
+| 1   | 2nd             | 1.8602     |
+| 4   | 5th             | 2.4011     |
+| 10  | Ensemble-hierar | 11689.3420 |
+
+</div>
+
+We’ve achivied better results with this hierarchical reconciliation!
