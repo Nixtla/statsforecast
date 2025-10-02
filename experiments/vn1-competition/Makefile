@@ -32,4 +32,4 @@ download_data:
 
 run:
 	docker run -i --rm ${DOCKER_PARAMETERS} ${IMAGE} \
-		bash -c "cd src && uv run quarto render vn1_competition.ipynb --to gfm --execute && mv vn1_competition.md  ../README.md"
+		bash -c "cd src && uv run quarto render vn1_competition.ipynb --to gfm && mv vn1_competition.md  ../README.md"
