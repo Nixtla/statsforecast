@@ -19,9 +19,9 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
 
     start = time.time()
     fcst = StatsForecast(models=models, freq=freq, n_jobs=cpu_count())
-    fcst.fit(train)
-    fcst.last_dates = pd.DatetimeIndex(fcst.last_dates)
-    forecasts = fcst.predict(horizon)
+    # Warm up
+    _ = fcst.forecast(df=train.head(10), h=1)
+    forecasts = fcst.forecast(df=train, h=horizon)
     end = time.time()
     print(end - start)
 
