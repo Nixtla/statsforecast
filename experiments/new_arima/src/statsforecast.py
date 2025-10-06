@@ -12,15 +12,16 @@ from src.data import get_data
 
 
 def main(dataset: str = 'M3', group: str = 'Other') -> None:
+
     train, horizon, freq, seasonality = get_data('data/', dataset, group)
     train['ds'] = pd.to_datetime(train['ds']) 
+    df_warmup=train.groupby("unique_id").head(10)
 
     models = [auto_arima_nixtla(season_length=seasonality)]
-
     start = time.time()
-    fcst = StatsForecast(models=models, freq=freq, n_jobs=cpu_count())
-    # Warm up
-    _ = fcst.forecast(df=train.head(10), h=1)
+    fcst = StatsForecast(models=models, freq=freq, n_jobs=-1)
+    # Warmup
+    _ = fcst.forecast(df=df_warmup, h=1)
     forecasts = fcst.forecast(df=train, h=horizon)
     end = time.time()
     print(end - start)
