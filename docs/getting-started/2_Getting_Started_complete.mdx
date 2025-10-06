@@ -2,20 +2,6 @@
 title: End to End Walkthrough
 ---
 
-
-```python
-import logging
-import warnings
-```
-
-
-
-```python
-warnings.simplefilter('ignore')
-logging.getLogger('statsforecast').setLevel(logging.ERROR)
-```
-
-
 > Model training, evaluation and selection for multiple time series
 
 > **Prerequesites**
@@ -54,10 +40,10 @@ it ideal for this task.
 > **Not Covered in this guide**
 >
 > -   Forecasting at scale using clusters on the cloud.
->     -   [Forecast the M5 Dataset in 5min](../how-to-guides/ETS_ray_m5)
+>     -   [Forecast the M5 Dataset in 5min](../experiments/ETS_ray_m5)
 >         using Ray clusters.
 >     -   [Forecast the M5 Dataset in
->         5min](../how-to-guides/Prophet_spark_m5) using Spark clusters.
+>         5min](../experiments/Prophet_spark_m5) using Spark clusters.
 >     -   Learn how to predict [1M series in less than
 >         30min](https://www.anyscale.com/blog/how-nixtla-uses-ray-to-accurately-predict-more-than-a-million-time-series).
 > -   Training models on Multiple Seasonalities.
@@ -66,8 +52,8 @@ it ideal for this task.
 >         tutorial.
 > -   Using external regressors or exogenous variables
 >     -   Follow this tutorial to [include exogenous
->         variables](../how-to-guides/Exogenous) like weather or
->         holidays or static variables like category or family.
+>         variables](../experiments/Exogenous) like weather or holidays
+>         or static variables like category or family.
 > -   Comparing StatsForecast with other popular libraries.
 >     -   You can reproduce our benchmarks
 >         [here](https://github.com/Nixtla/statsforecast/tree/main/experiments).
