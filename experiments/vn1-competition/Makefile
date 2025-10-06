@@ -29,7 +29,3 @@ download_data:
 	@test -f data/solution_3rd_place.csv || curl https://www.datasource.ai/attachments/eyJpZCI6ImE5NzcwNTZhMzhhMTc2ZWJjODFkMDMwMTM2Y2U2MTdlLmNzdiIsInN0b3JhZ2UiOiJzdG9yZSIsIm1ldGFkYXRhIjp7ImZpbGVuYW1lIjoiYXJzYW5pa3phZF9zdWIuY3N2Iiwic2l6ZSI6Mzg4OTcyNCwibWltZV90eXBlIjoidGV4dC9jc3YifX0 -o data/solution_3rd_place.csv
 	@test -f data/solution_4th_place.csv || curl https://www.datasource.ai/attachments/eyJpZCI6ImVlZmUxYWY2NDFjOWMwM2IxMzRhZTc2MzI1Nzg3NzIxLmNzdiIsInN0b3JhZ2UiOiJzdG9yZSIsIm1ldGFkYXRhIjp7ImZpbGVuYW1lIjoiVEZUX3R1bmVkX1YyX3NlZWRfNDIuY3N2Iiwic2l6ZSI6NjA3NDgzLCJtaW1lX3R5cGUiOiJ0ZXh0L2NzdiJ9fQ -o data/solution_4th_place.csv
 	@test -f data/solution_5th_place.csv || curl https://www.datasource.ai/attachments/eyJpZCI6IjMwMDEwMmY3NTNhMzlhN2YxNTk3ODYxZTI1N2Q2NzRmLmNzdiIsInN0b3JhZ2UiOiJzdG9yZSIsIm1ldGFkYXRhIjp7ImZpbGVuYW1lIjoiZGl2aW5lb3B0aW1pemVkd2VpZ2h0c2Vuc2VtYmxlLmNzdiIsInNpemUiOjE3OTU0NzgsIm1pbWVfdHlwZSI6InRleHQvY3N2In19 -o data/solution_5th_place.csv
-
-run:
-	docker run -i --rm ${DOCKER_PARAMETERS} ${IMAGE} \
-		bash -c "cd src && uv run quarto render vn1_competition.ipynb --to gfm && mv vn1_competition.md  ../README.md"
