@@ -2,6 +2,20 @@
 title: Ray
 ---
 
+
+```python
+import logging
+import warnings
+```
+
+
+
+```python
+warnings.simplefilter('ignore')
+logging.getLogger('statsforecast').setLevel(logging.ERROR)
+```
+
+
 > Run StatsForecast distributedly on top of Ray.
 
 StatsForecast works on top of Spark, Dask, and Ray through
