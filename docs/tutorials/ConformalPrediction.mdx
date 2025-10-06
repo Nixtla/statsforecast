@@ -20,20 +20,23 @@ warnings.simplefilter('ignore')
 > forecasting model using conformal prediction, a distribution-free
 > method for uncertainty quantification in Python.
 
-> **What You’ll Learn**
->
-> In this tutorial, you’ll discover how to: - Generate **calibrated
-> prediction intervals** without distributional assumptions - Apply
-> conformal prediction to any forecasting model in Python - Implement
-> uncertainty quantification with StatsForecast’s `ConformalIntervals` -
-> Compare conformal prediction with traditional uncertainty methods -
-> Evaluate prediction interval coverage and calibration
+## What You’ll Learn
 
-> **Prerequisites**
->
-> This tutorial assumes basic familiarity with StatsForecast. For a
-> minimal example visit the [Quick
-> Start](../getting-started/1_Getting_Started_short)
+In this tutorial, you’ll discover how to:
+
+-   Generate **calibrated prediction intervals** without distributional
+    assumptions
+-   Apply conformal prediction to any forecasting model in Python
+-   Implement uncertainty quantification with StatsForecast’s
+    `ConformalIntervals`
+-   Compare conformal prediction with traditional uncertainty methods
+-   Evaluate prediction interval coverage and calibration
+
+## Prerequisites
+
+This tutorial assumes basic familiarity with StatsForecast. For a
+minimal example visit the [Quick
+Start](../getting-started/1_Getting_Started_short)
 
 ## What is Conformal Prediction?
 
@@ -57,33 +60,34 @@ intervals, or generate intervals that are poorly calibrated. Traditional
 statistical methods also assume normality, which often doesn’t hold in
 practice.
 
-**Conformal prediction solves this by:** - Working with any forecasting
-model (model-agnostic) - Requiring no distributional assumptions - Using
-cross-validation to generate calibrated intervals - Providing
-theoretical coverage guarantees - Treating the forecasting model as a
-black box
+**Conformal prediction solves this by:**
 
-> **Conformal Prediction vs. Traditional Methods**
->
-> | Method                          | Distributional Assumption | Model-Agnostic | Calibration Guarantee |
-> |---------|--------------------------|----------------|----------------------|
-> | **Conformal Prediction**        | None                      | ✓              | ✓                     |
-> | Bootstrap                       | Parametric assumptions    | ✓              | ~                     |
-> | Quantile Regression             | None                      | ✓              | ~                     |
-> | Statistical Models (ARIMA, ETS) | Normal errors             | ✗              | ~                     |
+-   Working with any forecasting model (model-agnostic)
+-   Requiring no distributional assumptions
+-   Using cross-validation to generate calibrated intervals
+-   Providing theoretical coverage guarantees
+-   Treating the forecasting model as a black box
 
-For a video introduction, see the [PyData Seattle
-presentation](https://www.youtube.com/watch?v=Bj1U-Rrxk48). More
-resources available in [Valery Manokhin’s curated
-list](https://github.com/valeman/awesome-conformal-prediction).
+### Conformal Prediction vs. Traditional Methods
 
-> **Models with Native Prediction Intervals**
->
-> For models that already provide forecast distributions (like
-> AutoARIMA, AutoETS), check [Prediction
-> Intervals](./UncertaintyIntervals). Conformal prediction is
-> particularly useful for models that only produce point forecasts, or
-> when you want distribution-free intervals.
+| Method                          | Distributional Assumption | Model-Agnostic | Calibration Guarantee |
+|---------|--------------------------|----------------|----------------------|
+| **Conformal Prediction**        | None                      | ✓              | ✓                     |
+| Bootstrap                       | Parametric assumptions    | ✓              | ~                     |
+| Quantile Regression             | None                      | ✓              | ~                     |
+| Statistical Models (ARIMA, ETS) | Normal errors             | ✗              | ~                     |
+
+> For a video introduction, see the [PyData Seattle
+> presentation](https://www.youtube.com/watch?v=Bj1U-Rrxk48). More
+> resources available in [Valery Manokhin’s curated
+> list](https://github.com/valeman/awesome-conformal-prediction).
+
+## Models with Native Prediction Intervals
+
+For models that already provide forecast distributions (like AutoARIMA,
+AutoETS), check [Prediction Intervals](./UncertaintyIntervals).
+Conformal prediction is particularly useful for models that only produce
+point forecasts, or when you want distribution-free intervals.
 
 ## How Conformal Prediction Works
 
@@ -99,14 +103,17 @@ The key insight: by studying how the model performs on historical data
 through cross-validation, we can quantify uncertainty for future
 predictions without assuming any particular error distribution.
 
-> **Real-World Applications**
->
-> Conformal prediction is particularly valuable for: - **Demand
-> forecasting**: Inventory planning with quantified uncertainty -
-> **Energy prediction**: Load forecasting with reliable confidence
-> bounds - **Financial forecasting**: Risk management with calibrated
-> intervals - **Production models**: Any black-box forecasting model
-> requiring uncertainty quantification
+### Real-World Applications
+
+Conformal prediction is particularly valuable for:
+
+-   **Demand forecasting**: Inventory planning with quantified
+    uncertainty
+-   **Energy prediction**: Load forecasting with reliable confidence
+    bounds
+-   **Financial forecasting**: Risk management with calibrated intervals
+-   **Production models**: Any black-box forecasting model requiring
+    uncertainty quantification
 
 [StatsForecast](../../index) implements conformal prediction for all
 available models, making it easy to add calibrated prediction intervals
@@ -212,12 +219,12 @@ parameters:
 -   `h`: Forecast horizon (how many steps ahead to predict)
 -   `n_windows`: Number of cross-validation windows for calibration
 
-> **Parameter Requirements**
->
-> -   `n_windows * h` must be less than your time series length
-> -   `n_windows` should be at least 2 for reliable calibration
-> -   Larger `n_windows` improves calibration but increases computation
->     time
+### Parameter Requirements
+
+-   `n_windows * h` must be less than your time series length
+-   `n_windows` should be at least 2 for reliable calibration
+-   Larger `n_windows` improves calibration but increases computation
+    time
 
 ```python
 from statsforecast.models import SeasonalExponentialSmoothing, ADIDA, ARIMA
@@ -374,20 +381,22 @@ please let us know by opening an issue on
 
 ## Key Takeaways
 
-> **Summary: Conformal Prediction for Time Series**
->
-> ✓ **Model-agnostic**: Works with any forecasting model in Python  
-> ✓ **Distribution-free**: No normality assumptions required  
-> ✓ **Well-calibrated**: Theoretical coverage guarantees  
-> ✓ **Easy to implement**: Just add `ConformalIntervals` to your
-> StatsForecast models  
-> ✓ **Flexible**: Apply to individual models or all models at once
->
-> **Next steps:** - Try conformal prediction on your own forecasting
-> problems - Experiment with different `n_windows` values for optimal
-> calibration - Compare with native prediction intervals from
-> statistical models - Explore [advanced uncertainty quantification
-> methods](./UncertaintyIntervals)
+### Summary: Conformal Prediction for Time Series
+
+-   **Model-agnostic**: Works with any forecasting model in Python  
+-   **Distribution-free**: No normality assumptions required  
+-   **Well-calibrated**: Theoretical coverage guarantees  
+-   **Easy to implement**: Just add `ConformalIntervals` to your
+    StatsForecast models  
+-   **Flexible**: Apply to individual models or all models at once
+
+**Next steps:**
+
+-   Try conformal prediction on your own forecasting problems
+-   Experiment with different `n_windows` values for optimal calibration
+-   Compare with native prediction intervals from statistical models
+-   Explore [advanced uncertainty quantification
+    methods](./UncertaintyIntervals)
 
 ## Acknowledgements
 
