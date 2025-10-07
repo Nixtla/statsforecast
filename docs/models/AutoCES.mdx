@@ -2,6 +2,21 @@
 title: AutoCES Model
 ---
 
+
+```python
+# This cell will not be rendered but is to hide warnings and limit the rows shown
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import logging
+logging.getLogger('statsforecast').setLevel(logging.ERROR)
+
+import pandas as pd
+pd.set_option('display.max_rows', 6)
+```
+
+
 > Step-by-step guide on using the `AutoCES Model` with `Statsforecast`.
 
 The objective of the following article is to obtain a step-by-step guide

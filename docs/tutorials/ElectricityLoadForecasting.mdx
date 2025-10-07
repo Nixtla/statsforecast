@@ -2,6 +2,25 @@
 title: Electricity Load Forecast
 ---
 
+
+```python
+import logging
+import warnings
+
+import plotly.io as pio
+```
+
+
+
+```python
+# This is to render Plotly plots into HTML
+# For more information, see https://quarto.org/docs/interactive/widgets/jupyter.html#plotly
+pio.renderers.default = "plotly_mimetype+notebook_connected"
+warnings.simplefilter('ignore')
+logging.getLogger('statsforecast').setLevel(logging.ERROR)
+```
+
+
 > In this example we will show how to perform electricity load
 > forecasting considering a model capable of handling multiple
 > seasonalities (MSTL).
@@ -616,12 +635,9 @@ With respect to numerical evaluation, `NeuralProphet` improves the
 results of `Prophet`, as expected, however, `MSTL` improves over
 `NeuralProphet`’s foreacasts by 44% (`MASE`).
 
-> **Important**
->
-> The performance of `NeuralProphet` can be improved using
-> hyperparameter optimization, which can increase the fitting time
-> significantly. In this example we show its performance with the
-> default version.
+The performance of `NeuralProphet` can be improved using hyperparameter
+optimization, which can increase the fitting time significantly. In this
+example we show its performance with the default version.
 
 ## Conclusion
 
