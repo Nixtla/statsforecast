@@ -222,9 +222,11 @@ cv_df.head()
 | 3   | ERCOT     | 2022-09-01 03:00:00 | 2022-08-31 23:00:00 | 41663.156771 | 42972.956286 |
 | 4   | ERCOT     | 2022-09-01 04:00:00 | 2022-08-31 23:00:00 | 41710.621904 | 42909.899438 |
 
-When using `cross_validation` make sure the forecasts are produced at
-the desired timestamps. Check the `cutoff` column which specifices the
-last timestamp before the forecasting window.
+> **Important**
+>
+> When using `cross_validation` make sure the forecasts are produced at
+> the desired timestamps. Check the `cutoff` column which specifices the
+> last timestamp before the forecasting window.
 
 ## Peak Detection
 
@@ -273,11 +275,13 @@ plt.legend()
 
 ![](ElectricityPeakForecasting_files/figure-markdown_strict/cell-15-output-1.png)
 
-In this example we only include September. However, MSTL can correctly
-predict the peaks for the 4 months of 2022. You can try this by
-increasing the `nwindows` parameter of `cross_validation` or filtering
-the `Y_df` dataset. The complete run for all months take only 10
-minutes.
+> **Important**
+>
+> In this example we only include September. However, MSTL can correctly
+> predict the peaks for the 4 months of 2022. You can try this by
+> increasing the `nwindows` parameter of `cross_validation` or filtering
+> the `Y_df` dataset. The complete run for all months take only 10
+> minutes.
 
 ## Next steps
 

@@ -2,20 +2,6 @@
 title: Probabilistic Forecasting
 ---
 
-
-```python
-import logging
-import warnings
-```
-
-
-
-```python
-warnings.simplefilter('ignore')
-logging.getLogger('statsforecast').setLevel(logging.ERROR)
-```
-
-
 > In this example, we’ll implement prediction intervals
 
 > **Prerequisites**
@@ -50,9 +36,11 @@ will be able to use them to generate point forecasts and prediction
 intervals. Furthermore, you’ll also learn how to generate plots with the
 historical data, the point forecasts, and the prediction intervals.
 
-Although the terms are often confused, prediction intervals are not the
-same as [confidence
-intervals](https://robjhyndman.com/hyndsight/intervals/).
+> **Important**
+>
+> Although the terms are often confused, prediction intervals are not
+> the same as [confidence
+> intervals](https://robjhyndman.com/hyndsight/intervals/).
 
 > **Warning**
 >

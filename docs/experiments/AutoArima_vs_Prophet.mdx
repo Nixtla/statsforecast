@@ -462,15 +462,6 @@ def fit_and_predict(index, ts):
 
 
 ```python
-logging.getLogger('prophet').setLevel(logging.ERROR)
-stan_logger = logging.getLogger('cmdstanpy')
-stan_logger.addHandler(logging.NullHandler())
-stan_logger.propagate = False
-stan_logger.setLevel(logging.ERROR)
-```
-
-
-```python
 init = time.time()
 with Pool(cpu_count()) as pool:
     forecast_prophet = pool.starmap(fit_and_predict, train.groupby('unique_id'))
