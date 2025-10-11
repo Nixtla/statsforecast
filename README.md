@@ -110,12 +110,12 @@ Automatic forecasting tools search for the best parameters and select the best p
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[AutoARIMA](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoarima)|✅|✅|✅|✅|✅|
-|[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoets)|✅|✅|✅|✅||
-|[AutoCES](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoces)|✅|✅|✅|✅||
-|[AutoTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-autotheta)|✅|✅|✅|✅||
-|[AutoMFLES](https://nixtlaverse.nixtla.io/statsforecast/models#class-automfles)|✅|✅|✅|✅|✅|
-|[AutoTBATS](https://nixtlaverse.nixtla.io/statsforecast/models#class-autotbats)|✅|✅|✅|✅||
+|[AutoARIMA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/autoarima.html)|✅|✅|✅|✅|✅|
+|[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/docs/models/autoets.html)|✅|✅|✅|✅||
+|[AutoCES](https://nixtlaverse.nixtla.io/statsforecast/docs/models/autoces.html)|✅|✅|✅|✅||
+|[AutoTheta](https://nixtlaverse.nixtla.io/statsforecast/docs/models/autotheta.html)|✅|✅|✅|✅||
+|[AutoMFLES](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#automfles)|✅|✅|✅|✅|✅|
+|[AutoTBATS](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#autotbats)|✅|✅|✅|✅||
 
 ### ARIMA Family
 
@@ -123,8 +123,8 @@ These models exploit the existing autocorrelations in the time series.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[ARIMA](https://nixtlaverse.nixtla.io/statsforecast/models#class-arima)|✅|✅|✅|✅|✅|
-|[AutoRegressive](https://nixtlaverse.nixtla.io/statsforecast/models#class-autoregressive)|✅|✅|✅|✅|✅|
+|[ARIMA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/arima.html)|✅|✅|✅|✅|✅|
+|[AutoRegressive](https://nixtlaverse.nixtla.io/statsforecast/docs/models/autoregressive.html)|✅|✅|✅|✅|✅|
 
 ### Theta Family
 
@@ -132,10 +132,10 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[Theta](https://nixtlaverse.nixtla.io/statsforecast/models#class-theta)|✅|✅|✅|✅|✅|
-|[OptimizedTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-optimizedtheta)|✅|✅|✅|✅||
-|[DynamicTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-dynamictheta)|✅|✅|✅|✅||
-|[DynamicOptimizedTheta](https://nixtlaverse.nixtla.io/statsforecast/models#class-dynamicoptimizedtheta)|✅|✅|✅|✅||
+|[Theta](https://nixtlaverse.nixtla.io/statsforecast/docs/models/standardtheta.html)|✅|✅|✅|✅|✅|
+|[OptimizedTheta](https://nixtlaverse.nixtla.io/statsforecast/docs/models/optimizedtheta.html)|✅|✅|✅|✅||
+|[DynamicTheta](https://nixtlaverse.nixtla.io/statsforecast/docs/models/dynamicstandardtheta.html)|✅|✅|✅|✅||
+|[DynamicOptimizedTheta](https://nixtlaverse.nixtla.io/statsforecast/docs/models/dynamicoptimizedtheta.html)|✅|✅|✅|✅||
 
 ### Multiple Seasonalities
 
@@ -143,9 +143,9 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[MSTL](https://nixtlaverse.nixtla.io/statsforecast/models#class-mstl)|✅|✅|✅|✅|If trend forecaster supports|
-|[MFLES](https://nixtlaverse.nixtla.io/statsforecast/models#class-mfles)|✅|✅|✅|✅|✅|
-|[TBATS](https://nixtlaverse.nixtla.io/statsforecast/models#class-tbats)|✅|✅|✅|✅||
+|[MSTL](https://nixtlaverse.nixtla.io/statsforecast/docs/models/multipleseasonaltrend.html)|✅|✅|✅|✅|If trend forecaster supports|
+|[MFLES](https://nixtlaverse.nixtla.io/statsforecast/docs/models/mfles.html)|✅|✅|✅|✅|✅|
+|[TBATS](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#tbats)|✅|✅|✅|✅||
 
 ### GARCH and ARCH Models
 
@@ -153,8 +153,8 @@ Suited for modeling time series that exhibit non-constant volatility over time. 
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[GARCH](https://nixtlaverse.nixtla.io/statsforecast/models#class-garch)|✅|✅|✅|✅||
-|[ARCH](https://nixtlaverse.nixtla.io/statsforecast/models#class-arch)|✅|✅|✅|✅||
+|[GARCH](https://nixtlaverse.nixtla.io/statsforecast/docs/models/garch.html)|✅|✅|✅|✅||
+|[ARCH](https://nixtlaverse.nixtla.io/statsforecast/docs/models/arch.html)|✅|✅|✅|✅||
 
 ### Baseline Models
 
@@ -162,12 +162,12 @@ Classical models for establishing baseline.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[HistoricAverage](https://nixtlaverse.nixtla.io/statsforecast/models#class-historicaverage)|✅|✅|✅|✅||
-|[Naive](https://nixtlaverse.nixtla.io/statsforecast/models#class-naive)|✅|✅|✅|✅||
-|[RandomWalkWithDrift](https://nixtlaverse.nixtla.io/statsforecast/models#class-randomwalkwithdrift)|✅|✅|✅|✅||
-|[SeasonalNaive](https://nixtlaverse.nixtla.io/statsforecast/models#class-seasonalnaive)|✅|✅|✅|✅||
-|[WindowAverage](https://nixtlaverse.nixtla.io/statsforecast/models#class-windowaverage)|✅|||||
-|[SeasonalWindowAverage](https://nixtlaverse.nixtla.io/statsforecast/models#class-seasonalwindowaverage)|✅|||||
+|[HistoricAverage](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#historicaverage)|✅|✅|✅|✅||
+|[Naive](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#naive)|✅|✅|✅|✅||
+|[RandomWalkWithDrift](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#randomwalkwithdrift)|✅|✅|✅|✅||
+|[SeasonalNaive](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#seasonalnaive)|✅|✅|✅|✅||
+|[WindowAverage](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#windowaverage)|✅|||||
+|[SeasonalWindowAverage](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#seasonalwindowaverage)|✅|||||
 
 ### Exponential Smoothing
 
@@ -175,25 +175,25 @@ Uses a weighted average of all past observations where the weights decrease expo
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[SimpleExponentialSmoothing](https://nixtlaverse.nixtla.io/statsforecast/models#class-simpleexponentialsmoothing)|✅||✅|||
-|[SimpleExponentialSmoothingOptimized](https://nixtlaverse.nixtla.io/statsforecast/models#class-simpleexponentialsmoothingoptimized)|✅||✅|||
-|[SeasonalExponentialSmoothing](https://nixtlaverse.nixtla.io/statsforecast/models#class-seasonalexponentialsmoothing)|✅||✅|||
-|[SeasonalExponentialSmoothingOptimized](https://nixtlaverse.nixtla.io/statsforecast/models#class-seasonalexponentialsmoothingoptimized)|✅||✅|||
-|[Holt](https://nixtlaverse.nixtla.io/statsforecast/models#class-holt)|✅|✅|✅|✅||
-|[HoltWinters](https://nixtlaverse.nixtla.io/statsforecast/models#class-holtwinters)|✅|✅|✅|✅||
+|[SimpleExponentialSmoothing](https://nixtlaverse.nixtla.io/statsforecast/docs/models/simpleexponentialsmoothing.html)|✅||✅|||
+|[SimpleExponentialSmoothingOptimized](https://nixtlaverse.nixtla.io/statsforecast/docs/models/simpleexponentialoptimized.html)|✅||✅|||
+|[SeasonalExponentialSmoothing](https://nixtlaverse.nixtla.io/statsforecast/docs/models/seasonalexponentialsmoothing.html)|✅||✅|||
+|[SeasonalExponentialSmoothingOptimized](https://nixtlaverse.nixtla.io/statsforecast/docs/models/seasonalexponentialsmoothingoptimized.html)|✅||✅|||
+|[Holt](https://nixtlaverse.nixtla.io/statsforecast/docs/models/holt.html)|✅|✅|✅|✅||
+|[HoltWinters](https://nixtlaverse.nixtla.io/statsforecast/docs/models/holtwinters.html)|✅|✅|✅|✅||
 
-### Sparse or Inttermitent
+### Sparse or Intermittent
 
 Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
-|[ADIDA](https://nixtlaverse.nixtla.io/statsforecast/models#class-adida)|✅||✅|✅||
-|[CrostonClassic](https://nixtlaverse.nixtla.io/statsforecast/models#class-crostonclassic)|✅||✅|✅||
-|[CrostonOptimized](https://nixtlaverse.nixtla.io/statsforecast/models#class-crostonoptimized)|✅||✅|✅||
-|[CrostonSBA](https://nixtlaverse.nixtla.io/statsforecast/models#class-crostonsba)|✅||✅|✅||
-|[IMAPA](https://nixtlaverse.nixtla.io/statsforecast/models#class-imapa)|✅||✅|✅||
-|[TSB](https://nixtlaverse.nixtla.io/statsforecast/models#class-tsb)|✅||✅|✅||
+|[ADIDA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/adida.html)|✅||✅|✅||
+|[CrostonClassic](https://nixtlaverse.nixtla.io/statsforecast/docs/models/crostonclassic.html)|✅||✅|✅||
+|[CrostonOptimized](https://nixtlaverse.nixtla.io/statsforecast/docs/models/crostonoptimized.html)|✅||✅|✅||
+|[CrostonSBA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/crostonsba.html)|✅||✅|✅||
+|[IMAPA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/imapa.html)|✅||✅|✅||
+|[TSB](https://nixtlaverse.nixtla.io/statsforecast/docs/models/tsb.html)|✅||✅|✅||
 
 ## 🔨 How to contribute
 
