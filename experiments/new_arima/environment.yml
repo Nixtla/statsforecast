@@ -1,0 +1,28 @@
+name: arima
+channels:
+  - conda-forge
+  - defaults
+  - anaconda
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - prophet=1.1.6
+  - numba
+  - r-base=4.4.3
+  - r-urca
+  - r-tidyverse
+  - r-future
+  - r-future.apply
+  - r-forecast
+  - r-furrr
+  - r-fable=0.4.1
+  - r-feasts=0.4.1
+  - tabulate
+  - scikit-learn
+  - pmdarima=2.0.4
+  - fire
+  - statsforecast=2.0.1
+  - pip:
+    - datasetsforecast
+    - jupyterlab
