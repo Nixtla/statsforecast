@@ -1,0 +1,81 @@
+---
+description: >-
+  The `core.StatsForecast` class allows you to efficiently fit multiple
+  `StatsForecast` models for large sets of time series. It operates with pandas
+  DataFrame `df` that identifies individual series and datestamps with the
+  `unique_id` and `ds` columns, and the `y` column denotes the target time
+  series variable. To assist development, we declare useful datasets that we use
+  throughout all `StatsForecast`'s unit tests.
+title: Utils
+---
+
+## 1. Synthetic Panel Data
+
+### `generate_series`
+
+```python
+generate_series(
+    n_series,
+    freq="D",
+    min_length=50,
+    max_length=500,
+    n_static_features=0,
+    equal_ends=False,
+    engine="pandas",
+    seed=0,
+)
+```
+
+Generate Synthetic Panel Series.
+
+Generates `n_series` of frequency `freq` of different lengths in the interval \[`min_length`, `max_length`\].
+If `n_static_features > 0`, then each series gets static features with random values.
+If `equal_ends == True` then all series end at the same date.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`n_series` | <code>[int](#int)</code> | Number of series for synthetic panel. | *required*
+`freq` | <code>[str](#str)</code> | Frequency of the data, 'D' or 'M'. Defaults to 'D'. | <code>'D'</code>
+`min_length` | <code>[int](#int)</code> | Minimum length of synthetic panel's series. Defaults to 50. | <code>50</code>
+`max_length` | <code>[int](#int)</code> | Maximum length of synthetic panel's series. Defaults to 500. | <code>500</code>
+`n_static_features` | <code>[int](#int)</code> | Number of static exogenous variables for synthetic panel's series. Defaults to 0. | <code>0</code>
+`equal_ends` | <code>[bool](#bool)</code> | Series should end in the same date stamp `ds`. Defaults to False. | <code>False</code>
+`engine` | <code>[str](#str)</code> | Output Dataframe type ('pandas' or 'polars'). Defaults to 'pandas'. | <code>'pandas'</code>
+`seed` | <code>[int](#int)</code> | Random seed used for generating the data. Defaults to 0. | <code>0</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`DataFrame` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | Synthetic panel with columns \[`unique_id`, `ds`, `y`\] and exogenous.
+
+```python
+synthetic_panel = generate_series(n_series=2)
+synthetic_panel.groupby('unique_id', observed=True).head(4)
+```
+
+## 2. AirPassengers Data
+
+The classic Box & Jenkins airline data. Monthly totals of international
+airline passengers, 1949 to 1960.
+
+It has been used as a reference on several forecasting libraries, since
+it is a series that shows clear trends and seasonalities it offers a
+nice opportunity to quickly showcase a model’s predictions performance.
+
+```python
+from statsforecast.utils import AirPassengersDF
+
+#We are going to plot the ARIMA predictions, and the prediction intervals.
+fig, ax = plt.subplots(1, 1, figsize = (20, 7))
+plot_df = AirPassengersDF.set_index('ds')
+
+plot_df[['y']].plot(ax=ax, linewidth=2)
+ax.set_title('AirPassengers Forecast', fontsize=22)
+ax.set_ylabel('Monthly Passengers', fontsize=20)
+ax.set_xlabel('Timestamp [t]', fontsize=20)
+ax.legend(prop={'size': 15})
+ax.grid()
+```
