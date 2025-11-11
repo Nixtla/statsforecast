@@ -1,0 +1,37 @@
+---
+output-file: theta.html
+title: Theta Model
+---
+
+##
+
+### `forecast_theta`
+
+```python
+forecast_theta(obj, h, level=None)
+```
+
+```python
+forecast_theta(res, 12, level=[90, 80])
+```
+
+### `auto_theta`
+
+```python
+auto_theta(
+    y,
+    m,
+    model=None,
+    initial_smoothed=None,
+    alpha=None,
+    theta=None,
+    nmse=3,
+    decomposition_type="multiplicative",
+)
+```
+
+### `forward_theta`
+
+```python
+forward_theta(fitted_model, y)
+```

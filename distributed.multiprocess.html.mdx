@@ -1,0 +1,44 @@
+---
+description: >-
+  The computational efficiency of `StatsForecast` can be tracked to its two core
+  components:<br/>1. Its `models` written in NumBa that optimizes Python code to
+  reach C speeds.<br/>2. Its `core.StatsForecast` class that enables distributed
+  computing.<br/>This is a low-level class enabling other distribution
+  methods.<br/><br/>
+output-file: distributed.multiprocess.html
+title: MultiprocessBackend
+---
+
+### `MultiprocessBackend`
+
+```python
+MultiprocessBackend(n_jobs)
+```
+
+Bases: <code>[ParallelBackend](#statsforecast.core.ParallelBackend)</code>
+
+MultiprocessBackend Parent Class for Distributed Computation.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`n_jobs` | <code>[int](#int)</code> | Number of jobs used in the parallel processing, use -1 for all cores. | *required*
+
+#### `MultiprocessBackend.cross_validation`
+
+```python
+cross_validation(df, models, freq, fallback_model=None, **kwargs)
+```
+
+#### `MultiprocessBackend.forecast`
+
+```python
+forecast(df, models, freq, fallback_model=None, **kwargs)
+```
+
+#### `MultiprocessBackend.n_jobs`
+
+```python
+n_jobs = n_jobs
+```
