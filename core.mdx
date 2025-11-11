@@ -1,0 +1,571 @@
+
+
+
+
+# <kbd>module</kbd> `statsforecast.core`
+
+
+
+
+
+
+---
+
+
+
+## <kbd>class</kbd> `GroupedArray`
+
+
+
+
+
+
+### <kbd>method</kbd> `__init__`
+
+```python
+__init__(data: ndarray, indptr: ndarray)
+```
+
+
+
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `cross_validation`
+
+```python
+cross_validation(
+    models,
+    h,
+    test_size,
+    fallback_model=None,
+    step_size=1,
+    input_size=None,
+    fitted=False,
+    level=(),
+    refit=True,
+    verbose=False,
+    target_col='y'
+)
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `fit`
+
+```python
+fit(models, fallback_model=None)
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `fit_predict`
+
+```python
+fit_predict(models, h, X=None, level=())
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `forecast`
+
+```python
+forecast(
+    models,
+    h,
+    fallback_model=None,
+    fitted=False,
+    X=None,
+    level=(),
+    verbose=False,
+    target_col='y'
+)
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `predict`
+
+```python
+predict(fm, h, X=None, level=())
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `split`
+
+```python
+split(n_chunks)
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `split_fm`
+
+```python
+split_fm(fm, n_chunks)
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `take`
+
+```python
+take(idxs)
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>class</kbd> `ParallelBackend`
+
+
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `cross_validation`
+
+```python
+cross_validation(
+    df,
+    models,
+    freq,
+    fallback_model,
+    h,
+    n_windows,
+    step_size,
+    test_size,
+    input_size,
+    level,
+    refit,
+    fitted,
+    prediction_intervals,
+    id_col,
+    time_col,
+    target_col
+) → Any
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `forecast`
+
+```python
+forecast(
+    models,
+    fallback_model,
+    freq,
+    h,
+    df,
+    X_df,
+    level,
+    fitted,
+    prediction_intervals,
+    id_col,
+    time_col,
+    target_col
+) → Any
+```
+
+
+
+
+
+
+---
+
+
+
+## <kbd>class</kbd> `StatsForecast`
+
+
+
+
+
+
+### <kbd>method</kbd> `__init__`
+
+```python
+__init__(
+    models: List[Any],
+    freq: Union[str, int],
+    n_jobs: int = 1,
+    fallback_model: Optional[Any] = None,
+    verbose: bool = False
+)
+```
+
+Train statistical models. 
+
+
+
+**Args:**
+ 
+ - <b>`models`</b> (List[Any]):  List of instantiated objects models.StatsForecast. 
+ - <b>`freq`</b> (str or int):  Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. 
+ - <b>`n_jobs`</b> (int):  Number of jobs used in the parallel processing, use -1 for all cores. Defaults to 1. 
+ - <b>`df`</b> (pandas or polars DataFrame):  DataFrame with ids, times, targets and exogenous. 
+ - <b>`fallback_model`</b> (Any, optional):  Model to be used if a model fails. Only works with the `forecast` and `cross_validation` methods. Defaults to None. 
+ - <b>`verbose`</b> (bool):  Prints TQDM progress bar when `n_jobs=1`. Defaults to True. 
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `cross_validation`
+
+```python
+cross_validation(
+    h: int,
+    df: Any,
+    n_windows: int = 1,
+    step_size: int = 1,
+    test_size: Optional[int] = None,
+    input_size: Optional[int] = None,
+    level: Optional[List[int]] = None,
+    fitted: bool = False,
+    refit: Union[bool, int] = True,
+    prediction_intervals: Optional[ConformalIntervals] = None,
+    id_col: str = 'unique_id',
+    time_col: str = 'ds',
+    target_col: str = 'y'
+)
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `cross_validation_fitted_values`
+
+```python
+cross_validation_fitted_values() → Union[DataFrame, DataFrame]
+```
+
+Access insample cross validated predictions. 
+
+After executing `StatsForecast.cross_validation`, you can access the insample prediction values for each model and window. To get them, you need to pass `fitted=True` to the `StatsForecast.cross_validation` method and then use the `StatsForecast.cross_validation_fitted_values` method. 
+
+
+
+**Returns:**
+ 
+ - <b>`pandas or polars DataFrame`</b>:  DataFrame with insample `models` columns for point predictions  and probabilistic predictions for all fitted `models`. 
+
+---
+
+
+
+### <kbd>method</kbd> `fit`
+
+```python
+fit(
+    df: Union[DataFrame, DataFrame],
+    prediction_intervals: Optional[ConformalIntervals] = None,
+    id_col: str = 'unique_id',
+    time_col: str = 'ds',
+    target_col: str = 'y'
+)
+```
+
+Fit statistical models. 
+
+Fit `models` to a large set of time series from DataFrame `df` and store fitted models for later inspection. 
+
+
+
+**Args:**
+ 
+ - <b>`df`</b> (pandas or polars DataFrame):  DataFrame with ids, times, targets and exogenous. 
+ - <b>`prediction_intervals`</b> (ConformalIntervals, optional):  Configuration to calibrate prediction intervals (Conformal Prediction). Defaults to None. 
+ - <b>`id_col`</b> (str):  Column that identifies each serie. Defaults to 'unique_id'. 
+ - <b>`time_col`</b> (str):  Column that identifies each timestep, its values can be timestamps or integers. Defaults to 'ds'. 
+ - <b>`target_col`</b> (str):  Column that contains the target. Defaults to 'y'. 
+
+
+
+**Returns:**
+ 
+ - <b>`StatsForecast`</b>:  Returns with stored `StatsForecast` fitted `models`. 
+
+---
+
+
+
+### <kbd>method</kbd> `fit_predict`
+
+```python
+fit_predict(
+    h: int,
+    df: Union[DataFrame, DataFrame],
+    X_df: Optional[DataFrame, DataFrame] = None,
+    level: Optional[List[int]] = None,
+    prediction_intervals: Optional[ConformalIntervals] = None,
+    id_col: str = 'unique_id',
+    time_col: str = 'ds',
+    target_col: str = 'y'
+) → Union[DataFrame, DataFrame]
+```
+
+Fit and Predict with statistical models. 
+
+This method avoids memory burden due from object storage. It is analogous to Scikit-Learn `fit_predict` without storing information. It requires the forecast horizon `h` in advance. 
+
+In contrast to `StatsForecast.forecast` this method stores partial models outputs. 
+
+
+
+**Args:**
+ 
+ - <b>`h`</b> (int):  Forecast horizon. 
+ - <b>`df`</b> (pandas or polars DataFrame):  DataFrame with ids, times, targets and exogenous. 
+ - <b>`X_df`</b> (pandas or polars DataFrame, optional):  DataFrame with ids, times and future exogenous. Defaults to None. 
+ - <b>`level`</b> (List[float], optional):  Confidence levels between 0 and 100 for prediction intervals. Defaults to None. 
+ - <b>`prediction_intervals`</b> (ConformalIntervals, optional):  Configuration to calibrate prediction intervals (Conformal Prediction). Defaults to None. 
+ - <b>`id_col`</b> (str):  Column that identifies each serie. Defaults to 'unique_id'. 
+ - <b>`time_col`</b> (str):  Column that identifies each timestep, its values can be timestamps or integers. Defaults to 'ds'. 
+ - <b>`target_col`</b> (str):  Column that contains the target. Defaults to 'y'. 
+
+
+
+**Returns:**
+ 
+ - <b>`pandas or polars DataFrame`</b>:  DataFrame with `models` columns for point predictions and probabilistic  predictions for all fitted `models`. 
+
+---
+
+
+
+### <kbd>method</kbd> `forecast`
+
+```python
+forecast(
+    h: int,
+    df: Any,
+    X_df: Optional[DataFrame, DataFrame] = None,
+    level: Optional[List[int]] = None,
+    fitted: bool = False,
+    prediction_intervals: Optional[ConformalIntervals] = None,
+    id_col: str = 'unique_id',
+    time_col: str = 'ds',
+    target_col: str = 'y'
+)
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `forecast_fitted_values`
+
+```python
+forecast_fitted_values()
+```
+
+
+
+
+
+---
+
+
+
+### <kbd>method</kbd> `load`
+
+```python
+load(path: Union[Path, str])
+```
+
+Automatically loads the model into ready StatsForecast. 
+
+
+
+**Args:**
+ 
+ - <b>`path`</b> (str or pathlib.Path):  Path to saved StatsForecast file. 
+
+
+
+**Returns:**
+ 
+ - <b>`StatsForecast`</b>:  Previously saved StatsForecast 
+
+---
+
+
+
+### <kbd>method</kbd> `plot`
+
+```python
+plot(
+    df: Union[DataFrame, DataFrame],
+    forecasts_df: Optional[DataFrame, DataFrame] = None,
+    unique_ids: Union[List[str], NoneType, ndarray] = None,
+    plot_random: bool = True,
+    models: Optional[List[str]] = None,
+    level: Optional[List[float]] = None,
+    max_insample_length: Optional[int] = None,
+    plot_anomalies: bool = False,
+    engine: str = 'matplotlib',
+    id_col: str = 'unique_id',
+    time_col: str = 'ds',
+    target_col: str = 'y',
+    resampler_kwargs: Optional[Dict] = None
+)
+```
+
+Plot forecasts and insample values. 
+
+
+
+**Args:**
+ 
+ - <b>`df`</b> (pandas or polars DataFrame):  DataFrame with ids, times, targets and exogenous. 
+ - <b>`forecasts_df`</b> (pandas or polars DataFrame, optional):  DataFrame ids, times and models. Defaults to None. 
+ - <b>`unique_ids`</b> (list of str, optional):  ids to plot. If None, they're selected randomly. Defaults to None. 
+ - <b>`plot_random`</b> (bool):  Select time series to plot randomly. Defaults to True. 
+ - <b>`models`</b> (List[str], optional):  List of models to plot. Defaults to None. 
+ - <b>`level`</b> (List[float], optional):  List of prediction intervals to plot if paseed. Defaults to None. 
+ - <b>`max_insample_length`</b> (int, optional):  Max number of train/insample observations to be plotted. Defaults to None. 
+ - <b>`plot_anomalies`</b> (bool):  Plot anomalies for each prediction interval. Defaults to False. 
+ - <b>`engine`</b> (str):  Library used to plot. 'plotly', 'plotly-resampler' or 'matplotlib'. Defaults to 'matplotlib'. 
+ - <b>`id_col`</b> (str):  Column that identifies each serie. Defaults to 'unique_id'. 
+ - <b>`time_col`</b> (str):  Column that identifies each timestep, its values can be timestamps or integers. Defaults to 'ds'. 
+ - <b>`target_col`</b> (str):  Column that contains the target. Defaults to 'y'. 
+ - <b>`resampler_kwargs`</b> (dict):  Kwargs to be passed to plotly-resampler constructor.  For further custumization ("show_dash") call the method,  store the plotting object and add the extra arguments to  its `show_dash` method. 
+
+---
+
+
+
+### <kbd>method</kbd> `predict`
+
+```python
+predict(
+    h: int,
+    X_df: Optional[DataFrame, DataFrame] = None,
+    level: Optional[List[int]] = None
+)
+```
+
+Predict statistical models. 
+
+Use stored fitted `models` to predict large set of time series from DataFrame `df`. 
+
+
+
+**Args:**
+ 
+ - <b>`h`</b> (int):  Forecast horizon. 
+ - <b>`X_df`</b> (pandas or polars DataFrame, optional):  DataFrame with ids, times and future exogenous. Defaults to None. 
+ - <b>`level`</b> (List[float], optional):  Confidence levels between 0 and 100 for prediction intervals. Defaults to None. 
+
+
+
+**Returns:**
+ 
+ - <b>`pandas or polars DataFrame`</b>:  DataFrame with `models` columns for point predictions and probabilistic  predictions for all fitted `models`. 
+
+---
+
+
+
+### <kbd>method</kbd> `save`
+
+```python
+save(
+    path: Optional[Path, str] = None,
+    max_size: Optional[str] = None,
+    trim: bool = False
+)
+```
+
+Function that will save StatsForecast class with certain settings to make it reproducible. 
+
+
+
+**Args:**
+ 
+ - <b>`path`</b> (str or pathlib.Path, optional):  Path of the file to be saved. If `None` will create one in the current  directory using the current UTC timestamp. Defaults to None. 
+ - <b>`max_size`</b> (str, optional):  StatsForecast object should not exceed this size. 
+ - <b>`Available byte naming`</b>:  ['B', 'KB', 'MB', 'GB']. Defaults to None. 
+ - <b>`trim`</b> (bool):  Delete any attributes not needed for inference. Defaults to False. 
+
+
