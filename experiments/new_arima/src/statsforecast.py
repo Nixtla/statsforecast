@@ -22,7 +22,6 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
     # Compiles the numba code so when the real fit occurs it'll be pre-compiled
     _ = fcst.forecast(df=df_warmup, h=1)
     start = time.time()
-    _ = fcst.forecast(df=df_warmup, h=1)
     forecasts = fcst.forecast(df=train, h=horizon)
     end = time.time()
     print(end - start)
