@@ -18,9 +18,10 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
     df_warmup=train.groupby("unique_id").head(10)
 
     models = [auto_arima_nixtla(season_length=seasonality)]
-    start = time.time()
     fcst = StatsForecast(models=models, freq=freq, n_jobs=-1)
-    # Warmup
+    # Compiles the numba code so when the real fit occurs it'll be pre-compiled
+    _ = fcst.forecast(df=df_warmup, h=1)
+    start = time.time()
     _ = fcst.forecast(df=df_warmup, h=1)
     forecasts = fcst.forecast(df=train, h=horizon)
     end = time.time()
