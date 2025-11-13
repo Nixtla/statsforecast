@@ -31,8 +31,7 @@ load_docs_scripts:
 	fi
 
 api_docs:
-	cd python && lazydocs .statsforecast --no-watermark  --output-path ../docs
-	python docs/to_mdx.py
+	python docs/to_mdx.py docs
 
 examples_docs:
 	mkdir -p nbs/_extensions
