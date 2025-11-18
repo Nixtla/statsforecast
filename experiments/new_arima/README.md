@@ -9,11 +9,11 @@ The following table summarizes the results. The time results are relative to the
 | dataset | metric | auto_arima_nixtla | auto_arima_pmdarima | auto_arima_r |    prophet |
 | :------ | :----- | ----------------: | ------------------: | -----------: | ---------: |
 | Daily   | MASE   |          **3.25** |                3.35 |       218.62 |       14.7 |
-| Daily   | time   |            1.5657 |             100.362 |        **1** |   147.4044 |
+| Daily   | time   |            1.3151 |             100.362 |        **1** |   147.4044 |
 | Hourly  | MASE   |          **0.95** |                   - |        22973 |       1.79 |
-| Hourly  | time   |            0.6013 |                   - |            1 | **0.1999** |
+| Hourly  | time   |            0.5978 |                   - |            1 | **0.1999** |
 | Weekly  | MASE   |          **2.27** |                2.46 |       104.01 |       7.26 |
-| Weekly  | time   |            1.5675 |             208.595 |        **1** |         63 |
+| Weekly  | time   |            1.2702 |             208.595 |        **1** |         63 |
 
 ## Reproducibility
 To reproduce the main results, follow these steps:
