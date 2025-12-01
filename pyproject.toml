@@ -8,9 +8,7 @@ dynamic = ["version"]
 description = "Time series forecasting suite using statistical models"
 readme = "README.md"
 license = { text = "Apache Software License 2.0" }
-authors = [
-    { name = "Nixtla", email = "business@nixtla.io" }
-]
+authors = [{ name = "Nixtla", email = "business@nixtla.io" }]
 keywords = ["time-series", "forecasting", "arima", "ets"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -67,10 +65,7 @@ dev = [
     "pytest",
     "pytest-cov",
 ]
-dask = [
-    "dask<=2024.12.1",
-    "fugue[dask]>=0.8.1",
-]
+dask = ["dask<=2024.12.1", "fugue[dask]>=0.8.1"]
 ray = [
     "fugue[ray]>=0.8.1 ; python_version < '3.12'",
     "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
@@ -78,15 +73,13 @@ ray = [
     "pandas<2.2 ; python_version < '3.12'",
     "ray<=2.10 ; python_version < '3.12'",
 ]
-spark = [
-    "fugue[spark]>=0.8.1",
-]
-plotly = [
-    "plotly",
-    "plotly-resampler",
-]
-polars = [
-    "polars[numpy]",
+spark = ["fugue[spark]>=0.8.1"]
+plotly = ["plotly", "plotly-resampler"]
+polars = ["polars[numpy]"]
+docs = [
+    "griffe2md",
+    "pyyaml",
+    "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
 ]
 all = [
     "dask<=2024.12.1",
@@ -124,7 +117,7 @@ all = [
 packages = ["statsforecast"]
 
 [tool.setuptools.dynamic]
-version = {attr = "statsforecast.__version__"}
+version = { attr = "statsforecast.__version__" }
 
 [tool.setuptools.package-dir]
 "" = "python"
@@ -150,5 +143,5 @@ addopts = [
     "--cov=python/statsforecast",
     "--cov-report=term-missing",
     "--cov-report=html",
-    "--cov-fail-under=80"
+    "--cov-fail-under=80",
 ]
