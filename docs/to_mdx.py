@@ -2,7 +2,7 @@ import argparse
 import re
 from pathlib import Path
 
-from convert_to_mkdocstrings import MkDocstringsParser
+from mkdocstrings_parser import MkDocstringsParser
 
 comment_pat = re.compile(r"<!--.*?-->", re.DOTALL)
 anchor_pat = re.compile(r"<a.*?>(.*?)</a>")
