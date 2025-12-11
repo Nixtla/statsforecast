@@ -14,9 +14,9 @@ def process_files(input_dir):
     # Step 1: Use MkDocstrings parser to generate initial MDX files
     parser = MkDocstringsParser()
     for file in Path(input_dir).rglob("*.md"):
-        output_file = file.with_suffix(".mdx").name
+        output_file = str(Path(input_dir) / "mintlify" / Path(*file.parent.parts[1:]) / file.with_suffix(".mdx").name)
         print(f"Processing {file} -> {output_file}")
-        parser.process_file(str(file), str(Path(input_dir) / "mintlify" / output_file))
+        parser.process_file(str(file), output_file)
 
     # Step 2: Clean up the generated MDX files with regex patterns
     for mdx_file in (Path(input_dir) / "mintlify").glob("*.mdx"):
