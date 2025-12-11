@@ -47,8 +47,6 @@ format_docs:
 	bash ./docs-scripts/docs-final-formatting.bash
 	find docs/mintlify -name "*.mdx" -exec sed -i.bak '/^:::/d' {} + && find docs/mintlify -name "*.bak" -delete
 
-# replace <= with \<=
-	find docs/mintlify -name "*.mdx" -exec sed -i.bak 's/<=/\\<=/g' {} + && find docs/mintlify -name "*.bak" -delete
 
 preview_docs:
 	cd docs/mintlify && mintlify dev
