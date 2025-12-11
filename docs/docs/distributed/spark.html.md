@@ -1,0 +1,94 @@
+---
+description: Run StatsForecast distributedly on top of Spark.
+output-file: spark.html
+title: Spark
+---
+
+
+StatsForecast works on top of Spark, Dask, and Ray through
+[Fugue](https://github.com/fugue-project/fugue/). StatsForecast will
+read the input DataFrame and use the corresponding engine. For example,
+if the input is a Spark DataFrame, StatsForecast will use the existing
+Spark session to run the forecast.
+
+A benchmark (with older syntax) can be found
+[here](https://medium.com/data-science/distributed-forecast-of-1m-time-series-in-under-15-minutes-with-spark-nixtla-and-fugue-e9892da6fd5c)
+where we forecasted one million timeseries in under 15 minutes.
+
+## Installation
+
+As long as Spark is installed and configured, StatsForecast will be able
+to use it. If executing on a distributed Spark cluster, make use the
+`statsforecast` library is installed across all the workers.
+
+## StatsForecast on Pandas
+
+Before running on Spark, it’s recommended to test on a smaller Pandas
+dataset to make sure everything is working. This example also helps show
+the small differences when using Spark.
+
+
+```python
+from statsforecast.core import StatsForecast
+from statsforecast.models import AutoARIMA, AutoETS
+from statsforecast.utils import generate_series
+```
+
+
+```python
+n_series = 4
+horizon = 7
+
+series = generate_series(n_series)
+
+sf = StatsForecast(
+    models=[AutoETS(season_length=7)],
+    freq='D',
+)
+sf.forecast(df=series, h=horizon).head()
+```
+
+|     | unique_id | ds         | AutoETS  |
+|-----|-----------|------------|----------|
+| 0   | 0         | 2000-08-10 | 5.261609 |
+| 1   | 0         | 2000-08-11 | 6.196357 |
+| 2   | 0         | 2000-08-12 | 0.282309 |
+| 3   | 0         | 2000-08-13 | 1.264195 |
+| 4   | 0         | 2000-08-14 | 2.262453 |
+
+## Executing on Spark
+
+To run the forecasts distributed on Spark, just pass in a Spark
+DataFrame instead.
+
+
+```python
+from pyspark.sql import SparkSession
+```
+
+
+```python
+spark = SparkSession.builder.getOrCreate()
+
+series['unique_id'] = series['unique_id'].astype(str)
+
+# Convert to Spark
+sdf = spark.createDataFrame(series)
+
+# Returns a Spark DataFrame
+sf.forecast(df=sdf, h=horizon, level=[90]).show(5)
+```
+
+``` text
++---------+-------------------+----------+-------------+-------------+
+|unique_id|                 ds|   AutoETS|AutoETS-lo-90|AutoETS-hi-90|
++---------+-------------------+----------+-------------+-------------+
+|        0|2000-08-10 00:00:00|  5.261609|    5.0255513|    5.4976664|
+|        0|2000-08-11 00:00:00| 6.1963573|       5.9603|     6.432415|
+|        0|2000-08-12 00:00:00|0.28230855|   0.04625102|    0.5183661|
+|        0|2000-08-13 00:00:00| 1.2641948|    1.0281373|    1.5002524|
+|        0|2000-08-14 00:00:00| 2.2624528|    2.0263953|    2.4985104|
++---------+-------------------+----------+-------------+-------------+
+only showing top 5 rows
+```
+

@@ -1,0 +1,58 @@
+---
+description: Install StatsForecast with pip or conda
+output-file: installation.html
+title: Install
+---
+
+
+You can install the *released version* of
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+from the [Python package index](https://pypi.org) with:
+
+
+```shell
+pip install statsforecast
+```
+
+or
+
+
+```shell
+conda install -c conda-forge statsforecast
+```
+
+> **Warning**
+>
+> We are constantly updating StatsForecast, so we suggest fixing the
+> version to avoid issues. `pip install statsforecast=="1.0.0"`
+
+> **Tip**
+>
+> We recommend installing your libraries inside a python virtual or
+> [conda
+> environment](https://docs.conda.io/projects/conda/en/latest/user-guide/install/macos.html).
+
+#### Extras
+
+The following features can also be installed by specifying the extra
+inside the install command,
+e.g. `pip install 'statsforecast[extra1,extra2]'`
+
+-   **polars**: provide polars dataframes to StatsForecast.
+-   **plotly**: use `StatsForecast.plot` with the plotly backend.
+-   **dask**: perform distributed forecasting with dask.
+-   **spark**: perform distributed forecasting with spark.
+-   **ray**: perform distributed forecasting with ray.
+
+#### Development version
+
+If you want to try out a new feature that hasn’t made it into a release
+yet you have the following options:
+
+-   Install from our nightly wheels:
+    `pip install --extra-index-url=http://nixtla-packages.s3-website.us-east-2.amazonaws.com --trusted-host nixtla-packages.s3-website.us-east-2.amazonaws.com statsforecast`
+-   Install from github:
+    `pip install git+https://github.com/Nixtla/statsforecast`. This
+    requires that you have a C++ compiler installed, so we encourage you
+    to try the previous option first.
+

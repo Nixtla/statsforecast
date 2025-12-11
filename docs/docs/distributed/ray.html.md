@@ -1,0 +1,74 @@
+---
+description: Run StatsForecast distributedly on top of Ray.
+output-file: ray.html
+title: Ray
+---
+
+
+## Installation
+
+As long as Ray is installed and configured, StatsForecast will be able
+to use it. If executing on a distributed Ray cluster, make use the
+`statsforecast` library is installed across all the workers.
+
+## StatsForecast on Pandas
+
+Before running on Ray, it’s recommended to test on a smaller Pandas
+dataset to make sure everything is working. This example also helps show
+the small differences when using Ray.
+
+
+```python
+from statsforecast.core import StatsForecast
+from statsforecast.models import AutoARIMA, AutoETS
+from statsforecast.utils import generate_series
+```
+
+
+```python
+n_series = 4
+horizon = 7
+
+series = generate_series(n_series)
+
+sf = StatsForecast(
+    models=[AutoETS(season_length=7)],
+    freq='D',
+)
+sf.forecast(df=series, h=horizon).head()
+```
+
+|     | unique_id | ds         | AutoETS  |
+|-----|-----------|------------|----------|
+| 0   | 0         | 2000-08-10 | 5.261609 |
+| 1   | 0         | 2000-08-11 | 6.196357 |
+| 2   | 0         | 2000-08-12 | 0.282309 |
+| 3   | 0         | 2000-08-13 | 1.264195 |
+| 4   | 0         | 2000-08-14 | 2.262453 |
+
+## Executing on Ray
+
+To run the forecasts distributed on Ray, just pass in a Ray Dataset
+instead.
+
+
+```python
+import ray
+import logging
+```
+
+
+```python
+ray.init(logging_level=logging.ERROR)
+
+series['unique_id'] = series['unique_id'].astype(str)
+ctx = ray.data.context.DatasetContext.get_current()
+ctx.use_streaming_executor = False
+ray_series = ray.data.from_pandas(series).repartition(4)
+```
+
+
+```python
+sf.forecast(df=ray_series, h=horizon).take(5)
+```
+

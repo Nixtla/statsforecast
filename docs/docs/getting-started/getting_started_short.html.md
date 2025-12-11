@@ -1,0 +1,162 @@
+---
+description: Minimal Example of StatsForecast
+output-file: getting_started_short.html
+title: Quick Start
+---
+
+
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+follows the sklearn model API. For this minimal example, you will create
+an instance of the StatsForecast class and then call its `fit` and
+`predict` methods. We recommend this option if speed is not paramount
+and you want to explore the fitted values and parameters.
+
+> **Tip**
+>
+> If you want to forecast many series, we recommend using the `forecast`
+> method. Check this [Getting Started with multiple time
+> series](./getting_started_complete.html) guide.
+
+The input to StatsForecast is always a data frame in [long
+format](https://www.theanalysisfactor.com/wide-and-long-data/) with
+three columns: `unique_id`, `ds` and `y`:
+
+-   The `unique_id` (string, int or category) represents an identifier
+    for the series.
+
+-   The `ds` (datestamp) column should be of a format expected by
+    Pandas, ideally YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a
+    timestamp.
+
+-   The `y` (numeric) represents the measurement we wish to forecast.
+
+As an example, let’s look at the US Air Passengers dataset. This time
+series consists of monthly totals of a US airline passengers from 1949
+to 1960. The CSV is available
+[here](https://www.kaggle.com/datasets/chirag19/air-passengers).
+
+We assume you have StatsForecast already installed. Check this guide for
+instructions on [how to install StatsForecast](./installation.html).
+
+First, we’ll import the data:
+
+
+```python
+# uncomment the following line to install the library
+# %pip install statsforecast
+```
+
+
+```python
+import pandas as pd
+```
+
+
+```python
+df = pd.read_csv('https://datasets-nixtla.s3.amazonaws.com/air-passengers.csv', parse_dates=['ds'])
+df.head()
+```
+
+|     | unique_id     | ds         | y   |
+|-----|---------------|------------|-----|
+| 0   | AirPassengers | 1949-01-01 | 112 |
+| 1   | AirPassengers | 1949-02-01 | 118 |
+| 2   | AirPassengers | 1949-03-01 | 132 |
+| 3   | AirPassengers | 1949-04-01 | 129 |
+| 4   | AirPassengers | 1949-05-01 | 121 |
+
+We fit the model by instantiating a new
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+object with its two required parameters:
+https://nixtla.github.io/statsforecast/src/core/models.html \* `models`:
+a list of models. Select the models you want from
+[models](../../src/core/models.html) and import them. For this example,
+we will use a
+[`AutoARIMA`](https://Nixtla.github.io/statsforecast/src/core/models.html#autoarima)
+model. We set `season_length` to 12 because we expect seasonal effects
+every 12 months. (See: [Seasonal
+periods](https://robjhyndman.com/hyndsight/seasonal-periods/))
+
+-   `freq`: a string indicating the frequency of the data. (See [pandas
+    available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).)
+
+Any settings are passed into the constructor. Then you call its fit
+method and pass in the historical data frame.
+
+> **Note**
+>
+> StatsForecast achieves its blazing speed using JIT compiling through
+> Numba. The first time you call the statsforecast class, the fit method
+> should take around 5 seconds. The second time -once Numba compiled
+> your settings- it should take less than 0.2s.
+
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
+```
+
+
+```python
+sf = StatsForecast(
+    models=[AutoARIMA(season_length = 12)],
+    freq='MS',
+)
+sf.fit(df)
+```
+
+``` text
+StatsForecast(models=[AutoARIMA])
+```
+
+The `predict` method takes two arguments: forecasts the next `h` (for
+horizon) and `level`.
+
+-   `h` (int): represents the forecast h steps into the future. In this
+    case, 12 months ahead.
+
+-   `level` (list of floats): this optional parameter is used for
+    probabilistic forecasting. Set the `level` (or confidence
+    percentile) of your prediction interval. For example, `level=[90]`
+    means that the model expects the real value to be inside that
+    interval 90% of the times.
+
+The forecast object here is a new data frame that includes a column with
+the name of the model and the y hat values, as well as columns for the
+uncertainty intervals.
+
+
+```python
+forecast_df = sf.predict(h=12, level=[90])
+forecast_df.tail()
+```
+
+|     | unique_id     | ds         | AutoARIMA  | AutoARIMA-lo-90 | AutoARIMA-hi-90 |
+|-----|---------------|------------|------------|-----------------|-----------------|
+| 7   | AirPassengers | 1961-08-01 | 633.236389 | 590.009033      | 676.463745      |
+| 8   | AirPassengers | 1961-09-01 | 535.236389 | 489.558899      | 580.913940      |
+| 9   | AirPassengers | 1961-10-01 | 488.236389 | 440.233795      | 536.239014      |
+| 10  | AirPassengers | 1961-11-01 | 417.236389 | 367.016205      | 467.456604      |
+| 11  | AirPassengers | 1961-12-01 | 459.236389 | 406.892456      | 511.580322      |
+
+You can plot the forecast by calling the `StatsForecast.plot` method and
+passing in your forecast dataframe.
+
+
+```python
+sf.plot(df, forecast_df, level=[90])
+```
+
+![](/statsforecast/docs/getting-started/1_Getting_Started_short_files/figure-markdown_strict/cell-8-output-1.png)
+
+> **Next Steps**
+>
+> -   Build and end-to-end forecasting pipeline following best practices
+>     in [End to End Walkthrough](./getting_started_complete.html)
+> -   [Forecast millions of
+>     series](../how-to-guides/prophet_spark_m5.html) in a scalable
+>     cluster in the cloud using Spark and Nixtla
+> -   [Detect anomalies](../tutorials/anomalydetection.html) in your
+>     past observations
+

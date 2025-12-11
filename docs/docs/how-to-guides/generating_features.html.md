@@ -1,0 +1,149 @@
+---
+description: Leverage StatsForecast models to create features
+output-file: generating_features.html
+title: Generating features
+---
+
+
+Some models create internal representations of the series that can be
+useful for other models to use as inputs. One example is the
+[`MSTL`](https://Nixtla.github.io/statsforecast/src/core/models.html#mstl)
+model, which decomposes the series into trend and seasonal components.
+This guide shows you how to use the
+[`mstl_decomposition`](https://Nixtla.github.io/statsforecast/src/feature_engineering.html#mstl_decomposition)
+function to extract those features for training and then use their
+future values for inference.
+
+
+```python
+from functools import partial
+
+import pandas as pd
+import statsforecast
+from statsforecast import StatsForecast
+from statsforecast.feature_engineering import mstl_decomposition
+from statsforecast.models import ARIMA, MSTL
+from utilsforecast.evaluation import evaluate
+from utilsforecast.losses import smape, mase
+```
+
+
+```python
+df = pd.read_parquet('https://datasets-nixtla.s3.amazonaws.com/m4-hourly.parquet')
+uids = df['unique_id'].unique()[:10]
+df = df[df['unique_id'].isin(uids)]
+df.head()
+```
+
+|     | unique_id | ds  | y     |
+|-----|-----------|-----|-------|
+| 0   | H1        | 1   | 605.0 |
+| 1   | H1        | 2   | 586.0 |
+| 2   | H1        | 3   | 586.0 |
+| 3   | H1        | 4   | 559.0 |
+| 4   | H1        | 5   | 511.0 |
+
+Suppose that you want to use an ARIMA model to forecast your series but
+you want to incorporate the trend and seasonal components from the MSTL
+model as external regressors. You can define the MSTL model to use and
+then provide it to the mstl_decomposition function.
+
+
+```python
+freq = 1
+season_length = 24
+horizon = 2 * season_length
+valid = df.groupby('unique_id').tail(horizon)
+train = df.drop(valid.index)
+model = MSTL(season_length=24)
+transformed_df, X_df = mstl_decomposition(train, model=model, freq=freq, h=horizon)
+```
+
+This generates the dataframe that we should use for training (with the
+trend and seasonal columns added), as well as the dataframe we should
+use to forecast.
+
+
+```python
+transformed_df.head()
+```
+
+|     | unique_id | ds  | y     | trend      | seasonal   |
+|-----|-----------|-----|-------|------------|------------|
+| 0   | H1        | 1   | 605.0 | 502.872910 | 131.419934 |
+| 1   | H1        | 2   | 586.0 | 507.873456 | 93.100015  |
+| 2   | H1        | 3   | 586.0 | 512.822533 | 82.155386  |
+| 3   | H1        | 4   | 559.0 | 517.717481 | 42.412749  |
+| 4   | H1        | 5   | 511.0 | 522.555849 | -11.401890 |
+
+
+```python
+X_df.head()
+```
+
+|     | unique_id | ds  | trend      | seasonal    |
+|-----|-----------|-----|------------|-------------|
+| 0   | H1        | 701 | 643.801348 | -29.189627  |
+| 1   | H1        | 702 | 644.328207 | -99.680432  |
+| 2   | H1        | 703 | 644.749693 | -141.169014 |
+| 3   | H1        | 704 | 645.086883 | -173.325625 |
+| 4   | H1        | 705 | 645.356634 | -195.862530 |
+
+We can now train our ARIMA models and compute our forecasts.
+
+
+```python
+sf = StatsForecast(
+    models=[ARIMA(order=(1, 0, 1), season_length=season_length)],
+    freq=freq
+)
+preds = sf.forecast(h=horizon, df=transformed_df, X_df=X_df)
+preds.head()
+```
+
+|     | unique_id | ds  | ARIMA      |
+|-----|-----------|-----|------------|
+| 0   | H1        | 701 | 612.737668 |
+| 1   | H1        | 702 | 542.851796 |
+| 2   | H1        | 703 | 501.931839 |
+| 3   | H1        | 704 | 470.248289 |
+| 4   | H1        | 705 | 448.115839 |
+
+We can now evaluate the performance.
+
+
+```python
+def compute_evaluation(preds):
+    full = preds.merge(valid, on=['unique_id', 'ds'])
+    mase24 = partial(mase, seasonality=24)
+    res = evaluate(full, metrics=[smape, mase24], train_df=train).groupby('metric')['ARIMA'].mean()
+    res_smape = '{:.1%}'.format(res['smape'])
+    res_mase = '{:.1f}'.format(res['mase'])
+    return pd.Series({'mase': res_mase, 'smape': res_smape})
+```
+
+
+```python
+compute_evaluation(preds)
+```
+
+``` text
+mase      1.0
+smape    3.9%
+dtype: object
+```
+
+And compare this with just using the series values.
+
+
+```python
+preds_noexog = sf.forecast(h=horizon, df=train)
+compute_evaluation(preds_noexog)
+```
+
+``` text
+mase      2.3
+smape    7.7%
+dtype: object
+```
+

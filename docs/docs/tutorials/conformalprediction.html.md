@@ -1,0 +1,334 @@
+---
+description: In this example, we'll implement conformal prediction
+output-file: conformalprediction.html
+title: Conformal Prediction
+---
+
+
+> **Prerequisites**
+>
+> This tutorial assumes basic familiarity with StatsForecast. For a
+> minimal example visit the [Quick
+> Start](../getting-started/getting_started_short.html)
+
+## Introduction
+
+When we generate a forecast, we usually produce a single value known as
+the point forecast. This value, however, doesn’t tell us anything about
+the uncertainty associated with the forecast. To have a measure of this
+uncertainty, we need **prediction intervals**.
+
+A prediction interval is a range of values that the forecast can take
+with a given probability. Hence, a 95% prediction interval should
+contain a range of values that include the actual future value with
+probability 95%. Probabilistic forecasting aims to generate the full
+forecast distribution. Point forecasting, on the other hand, usually
+returns the mean or the median or said distribution. However, in
+real-world scenarios, it is better to forecast not only the most
+probable future outcome, but many alternative outcomes as well.
+
+The problem is that some timeseries models provide forecast
+distributions, but some other ones only provide point forecasts. How can
+we then estimate the uncertainty of predictions?
+
+> **Prediction Intervals**
+>
+> For models that already provide the forecast distribution, check
+> [Prediction Intervals](./uncertaintyintervals.html).
+
+### Conformal Prediction
+
+For a video introduction, see the [PyData Seattle
+presentation](https://www.youtube.com/watch?v=Bj1U-Rrxk48).
+
+Multi-quantile losses and statistical models can provide provide
+prediction intervals, but the problem is that these are uncalibrated,
+meaning that the actual frequency of observations falling within the
+interval does not align with the confidence level associated with it.
+For example, a calibrated 95% prediction interval should contain the
+true value 95% of the time in repeated sampling. An uncalibrated 95%
+prediction interval, on the other hand, might contain the true value
+only 80% of the time, or perhaps 99% of the time. In the first case, the
+interval is too narrow and underestimates the uncertainty, while in the
+second case, it is too wide and overestimates the uncertainty.
+
+Statistical methods also assume normality. Here, we talk about another
+method called conformal prediction that doesn’t require any
+distributional assumptions. More information on the approach can be
+found in [this repo owned by Valery
+Manokhin](https://github.com/valeman/awesome-conformal-prediction).
+
+Conformal prediction intervals use cross-validation on a point
+forecaster model to generate the intervals. This means that no prior
+probabilities are needed, and the output is well-calibrated. No
+additional training is needed, and the model is treated as a black box.
+The approach is compatible with any model.
+
+[Statsforecast](https://github.com/nixtla/statsforecast) now supports
+Conformal Prediction on all available models.
+
+## Install libraries
+
+We assume that you have StatsForecast already installed. If not, check
+this guide for instructions on [how to install
+StatsForecast](../getting-started/installation.html)
+
+Install the necessary packages using `pip install statsforecast`
+
+
+```python
+pip install statsforecast -U
+```
+
+## Load and explore the data
+
+For this example, we’ll use the hourly dataset from the [M4
+Competition](https://www.sciencedirect.com/science/article/pii/S0169207019301128).
+We first need to download the data from a URL and then load it as a
+`pandas` dataframe. Notice that we’ll load the train and the test data
+separately. We’ll also rename the `y` column of the test data as
+`y_test`.
+
+
+```python
+import pandas as pd
+```
+
+
+```python
+train = pd.read_csv('https://auto-arima-results.s3.amazonaws.com/M4-Hourly.csv')
+test = pd.read_csv('https://auto-arima-results.s3.amazonaws.com/M4-Hourly-test.csv').rename(columns={'y': 'y_test'})
+train.head()
+```
+
+|     | unique_id | ds  | y     |
+|-----|-----------|-----|-------|
+| 0   | H1        | 1   | 605.0 |
+| 1   | H1        | 2   | 586.0 |
+| 2   | H1        | 3   | 586.0 |
+| 3   | H1        | 4   | 559.0 |
+| 4   | H1        | 5   | 511.0 |
+
+Since the goal of this notebook is to generate prediction intervals,
+we’ll only use the first 8 series of the dataset to reduce the total
+computational time.
+
+
+```python
+n_series = 8 
+uids = train['unique_id'].unique()[:n_series] # select first n_series of the dataset
+train = train.query('unique_id in @uids')
+test = test.query('unique_id in @uids')
+```
+
+We can plot these series using the `plot_series` function from the
+utilsforecast library. Thisfunctionmethod has multiple parameters, and
+the required ones to generate the plots in this notebook are explained
+below.
+
+-   `df`: A `pandas` dataframe with columns \[`unique_id`, `ds`, `y`\].
+-   `forecasts_df`: A `pandas` dataframe with columns \[`unique_id`,
+    `ds`\] and models.
+-   `plot_random`: bool = `True`. Plots the time series randomly.
+-   `models`: List\[str\]. A list with the models we want to plot.
+-   `level`: List\[float\]. A list with the prediction intervals we want
+    to plot.
+-   `engine`: str = `matplotlib`. It can also be `plotly`. `plotly`
+    generates interactive plots, while `matplotlib` generates static
+    plots.
+
+
+```python
+from utilsforecast.plotting import plot_series
+```
+
+
+```python
+plot_series(train, test, plot_random=False)
+```
+
+![](/statsforecast/docs/tutorials/ConformalPrediction_files/figure-markdown_strict/cell-7-output-1.png)
+
+## Train models
+
+StatsForecast can train multiple
+[models](https://nixtla.github.io/statsforecast/#models) on different
+time series efficiently. Most of these models can generate a
+probabilistic forecast, which means that they can produce both point
+forecasts and prediction intervals.
+
+For this example, we’ll use
+[SimpleExponentialSmoothing](https://nixtla.github.io/statsforecast/src/core/models.html#simpleexponentialsmoothing)
+and
+[ADIDA](https://nixtla.github.io/statsforecast/src/core/models.html#adida)
+which do not provide a prediction interval natively. Thus, it makes
+sense to use Conformal Prediction to generate the prediction interval.
+
+We’ll also show using it with
+[ARIMA](https://nixtla.github.io/statsforecast/src/core/models.html#arima)
+to provide prediction intervals that don’t assume normality.
+
+To use these models, we first need to import them from
+`statsforecast.models` and then we need to instantiate them.
+
+
+```python
+from statsforecast.models import SeasonalExponentialSmoothing, ADIDA, ARIMA
+from statsforecast.utils import ConformalIntervals
+
+# Create a list of models and instantiation parameters 
+intervals = ConformalIntervals(h=24, n_windows=2)
+# P.S. n_windows*h should be less than the count of data elements in your time series sequence.
+# P.S. Also value of n_windows should be atleast 2 or more.
+
+models = [
+    SeasonalExponentialSmoothing(season_length=24, alpha=0.1, prediction_intervals=intervals),
+    ADIDA(prediction_intervals=intervals),
+    ARIMA(order=(24,0,12), prediction_intervals=intervals),
+]
+```
+
+To instantiate a new StatsForecast object, we need the following
+parameters:
+
+-   `df`: The dataframe with the training data.
+-   `models`: The list of models defined in the previous step.  
+-   `freq`: A string indicating the frequency of the data. See [pandas’
+    available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+-   `n_jobs`: An integer that indicates the number of jobs used in
+    parallel processing. Use -1 to select all cores.
+
+
+```python
+sf = StatsForecast(models=models, freq=1, n_jobs=-1)
+```
+
+Now we’re ready to generate the forecasts and the prediction intervals.
+To do this, we’ll use the `forecast` method, which takes two arguments:
+
+-   `h`: An integer that represent the forecasting horizon. In this
+    case, we’ll forecast the next 24 hours.
+-   `level`: A list of floats with the confidence levels of the
+    prediction intervals. For example, `level=[95]` means that the range
+    of values should include the actual future value with probability
+    95%.
+
+
+```python
+levels = [80, 90] # confidence levels of the prediction intervals 
+
+forecasts = sf.forecast(df=train, h=24, level=levels)
+forecasts.head()
+```
+
+|  | unique_id | ds | SeasonalES | SeasonalES-lo-90 | SeasonalES-lo-80 | SeasonalES-hi-80 | SeasonalES-hi-90 | ADIDA | ADIDA-lo-90 | ADIDA-lo-80 | ADIDA-hi-80 | ADIDA-hi-90 | ARIMA | ARIMA-lo-90 | ARIMA-lo-80 | ARIMA-hi-80 | ARIMA-hi-90 |
+|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
+| 0 | H1 | 701 | 624.132703 | 553.097423 | 556.359139 | 691.906266 | 695.167983 | 747.292568 | 599.519220 | 600.030467 | 894.554670 | 895.065916 | 618.078274 | 609.440076 | 610.583304 | 625.573243 | 626.716472 |
+| 1 | H1 | 702 | 555.698193 | 496.653559 | 506.833156 | 604.563231 | 614.742827 | 747.292568 | 491.669220 | 498.330467 | 996.254670 | 1002.915916 | 549.789291 | 510.464070 | 515.232352 | 584.346231 | 589.114513 |
+| 2 | H1 | 703 | 514.403029 | 462.673117 | 464.939840 | 563.866218 | 566.132941 | 747.292568 | 475.105038 | 475.793791 | 1018.791346 | 1019.480099 | 508.099925 | 496.574844 | 496.990264 | 519.209587 | 519.625007 |
+| 3 | H1 | 704 | 482.057899 | 433.030711 | 436.161413 | 527.954385 | 531.085087 | 747.292568 | 440.069220 | 440.130467 | 1054.454670 | 1054.515916 | 486.376622 | 471.141813 | 471.516997 | 501.236246 | 501.611431 |
+| 4 | H1 | 705 | 460.222522 | 414.270186 | 416.959492 | 503.485552 | 506.174858 | 747.292568 | 415.805038 | 416.193791 | 1078.391346 | 1078.780099 | 470.159478 | 445.162316 | 446.808608 | 493.510348 | 495.156640 |
+
+## Plot prediction intervals
+
+Here we’ll plot the different intervals for one timeseries.
+
+The prediction interval with the SeasonalExponentialSmoothing seen
+below. Even if the model generates a point forecast, we are able to get
+a prediction interval. The 80% prediction interval does not cross the
+90% prediction interval, which is a sign that the intervals are
+calibrated.
+
+
+```python
+plot_series(train, forecasts, level=levels, ids=['H105'], models=['SeasonalES'])
+```
+
+![](/statsforecast/docs/tutorials/ConformalPrediction_files/figure-markdown_strict/cell-11-output-1.png)
+
+For weaker fitting models, the conformal prediction interval can be
+larger. A better model corresponds to a narrower interval.
+
+
+```python
+plot_series(train, forecasts, level=levels, ids=['H105'], models=['ADIDA'])
+```
+
+![](/statsforecast/docs/tutorials/ConformalPrediction_files/figure-markdown_strict/cell-12-output-1.png)
+
+ARIMA is an example of a model that provides a forecast distribution,
+but we can still use conformal prediction to generate the prediction
+interval. As mentioned earlier, this method has the benefit of not
+assuming normality.
+
+
+```python
+plot_series(train, forecasts, level=levels, ids=['H105'], models=['ARIMA'])
+```
+
+![](/statsforecast/docs/tutorials/ConformalPrediction_files/figure-markdown_strict/cell-13-output-1.png)
+
+## StatsForecast Object
+
+Alternatively, the prediction interval can be defined on the
+StatsForecast object. This will apply to all models that don’t have the
+`prediction_intervals` defined.
+
+
+```python
+from statsforecast.models import SimpleExponentialSmoothing, ADIDA
+from statsforecast.utils import ConformalIntervals
+from statsforecast import StatsForecast
+
+models = [
+    SimpleExponentialSmoothing(alpha=0.1),
+    ADIDA()
+]
+
+res = StatsForecast(
+    models=models, 
+    freq=1,
+).forecast(df=train, h=24, prediction_intervals=ConformalIntervals(h=24, n_windows=2), level=[80]) 
+res.head()
+```
+
+|  | unique_id | ds | SES | SES-lo-80 | SES-hi-80 | ADIDA | ADIDA-lo-80 | ADIDA-hi-80 |
+|----|----|----|----|----|----|----|----|----|
+| 0 | H1 | 701 | 742.669064 | 649.221405 | 836.116722 | 747.292568 | 600.030467 | 894.554670 |
+| 1 | H1 | 702 | 742.669064 | 550.551324 | 934.786804 | 747.292568 | 498.330467 | 996.254670 |
+| 2 | H1 | 703 | 742.669064 | 523.621405 | 961.716722 | 747.292568 | 475.793791 | 1018.791346 |
+| 3 | H1 | 704 | 742.669064 | 488.121405 | 997.216722 | 747.292568 | 440.130467 | 1054.454670 |
+| 4 | H1 | 705 | 742.669064 | 464.021405 | 1021.316722 | 747.292568 | 416.193791 | 1078.391346 |
+
+## Future work
+
+Conformal prediction has become a powerful framework for uncertainty
+quantification, providing well-calibrated prediction intervals without
+making any distributional assumptions. Its use has surged in both
+academia and industry over the past few years. We’ll continue working on
+it, and future tutorials may include:
+
+-   Exploring larger datasets
+-   Incorporating industry-specific examples
+-   Investigating specialized methods like the jackknife+ that are
+    closely related to conformal prediction (for details on the
+    jackknife+ see
+    [here](https://valeman.medium.com/jackknife-a-swiss-knife-of-conformal-prediction-for-regression-ce3b56432f4f)).
+
+If you’re interested in any of these, or in any other related topic,
+please let us know by opening an issue on
+[GitHub](https://github.com/Nixtla/statsforecast/issues)
+
+## Acknowledgements
+
+We would like to thank [Kevin Kho](https://github.com/kvnkho) for
+writing this tutorial, and Valeriy
+[Manokhin](https://github.com/valeman) for his expertise on conformal
+prediction, as well as for promoting this work.
+
+## References
+
+[Manokhin, Valery. (2022). Machine Learning for Probabilistic
+Prediction. 10.5281/zenodo.6727505.](https://zenodo.org/record/6727505)
+

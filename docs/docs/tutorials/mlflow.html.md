@@ -1,0 +1,250 @@
+---
+description: Run Statsforecast with MLFlow.
+output-file: mlflow.html
+title: MLFlow
+---
+
+
+
+```python
+from statsforecast.utils import generate_series
+```
+
+
+```python
+series = generate_series(5, min_length=50, max_length=50, equal_ends=True, n_static_features=1)
+series.head()
+```
+
+|     | unique_id | ds         | y          | static_0 |
+|-----|-----------|------------|------------|----------|
+| 0   | 0         | 2000-01-01 | 12.073897  | 43       |
+| 1   | 0         | 2000-01-02 | 59.734166  | 43       |
+| 2   | 0         | 2000-01-03 | 101.260794 | 43       |
+| 3   | 0         | 2000-01-04 | 143.987430 | 43       |
+| 4   | 0         | 2000-01-05 | 185.320406 | 43       |
+
+For the next part, `mlflow` and `mlflavors` are needed. Install them
+with:
+
+
+```bash
+pip install mlflow mlflavors
+```
+
+## Model Logging
+
+
+```python
+import pandas as pd
+import mlflow
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
+
+import mlflavors
+import requests
+```
+
+
+```python
+ARTIFACT_PATH = "model"
+DATA_PATH = "./data"
+HORIZON = 7
+LEVEL = [90]
+
+with mlflow.start_run() as run:
+    series = generate_series(5, min_length=50, max_length=50, equal_ends=True, n_static_features=1)
+    
+    train_df = series.groupby('unique_id').head(43)
+    test_df = series.groupby('unique_id').tail(7)
+    X_test = test_df.drop(columns=["y"])
+    y_test = test_df[["y"]]
+
+    models = [AutoARIMA(season_length=7)]
+
+    sf = StatsForecast(models=models, freq="D", n_jobs=-1)
+
+    sf.fit(df=train_df)
+
+    # Evaluate model
+    y_pred = sf.predict(h=HORIZON, X_df=X_test, level=LEVEL)["AutoARIMA"]
+
+    metrics = {
+        "mae": mean_absolute_error(y_test, y_pred),
+        "mape": mean_absolute_percentage_error(y_test, y_pred),
+    }
+
+    print(f"Metrics: \n{metrics}")
+
+    # Log metrics
+    mlflow.log_metrics(metrics)
+
+    # Log model using pickle serialization (default).
+    mlflavors.statsforecast.log_model(
+        statsforecast_model=sf,
+        artifact_path=ARTIFACT_PATH,
+        serialization_format="pickle",
+    )
+    model_uri = mlflow.get_artifact_uri(ARTIFACT_PATH)
+
+print(f"\nMLflow run id:\n{run.info.run_id}")
+```
+
+``` text
+Metrics: 
+{'mae': 6.712853959225143, 'mape': 0.11719246764336884}
+```
+
+``` text
+2023/10/20 23:45:36 WARNING mlflow.utils.environment: Encountered an unexpected error while inferring pip requirements (model URI: /var/folders/w2/91_v34nx0xs2npnl3zsl9tmm0000gn/T/tmpt4686vpu/model/model.pkl, flavor: statsforecast), fall back to return ['statsforecast==1.6.0']. Set logging level to DEBUG to see the full traceback.
+```
+
+``` text
+
+MLflow run id:
+0319bbd664424fcd88d6c532e3ecac77
+```
+
+## Viewing Experiment
+
+To view the newly created experiment and logged artifacts open the
+MLflow UI:
+
+
+```bash
+mlflow ui
+```
+
+## Loading Statsforecast Model
+
+The `statsforecast` model can be loaded from the MLFlow registry using
+the `mlflow.statsforecast.load_model` function and used to generate
+predictions.
+
+
+```python
+loaded_model = mlflavors.statsforecast.load_model(model_uri=model_uri)
+results = loaded_model.predict(h=HORIZON, X_df=X_test, level=LEVEL)
+results.head()
+```
+
+|           | ds         | AutoARIMA  | AutoARIMA-lo-90 | AutoARIMA-hi-90 |
+|-----------|------------|------------|-----------------|-----------------|
+| unique_id |            |            |                 |                 |
+| 0         | 2000-02-13 | 55.894432  | 44.343880       | 67.444984       |
+| 0         | 2000-02-14 | 97.818054  | 86.267502       | 109.368607      |
+| 0         | 2000-02-15 | 146.745422 | 135.194870      | 158.295975      |
+| 0         | 2000-02-16 | 188.888336 | 177.337784      | 200.438904      |
+| 0         | 2000-02-17 | 231.493637 | 219.943085      | 243.044189      |
+
+## Loading Model with pyfunc
+
+[Pyfunc](https://mlflow.org/docs/latest/python_api/mlflow.pyfunc.html)
+is another interface for MLFlow models that has utilities for loading
+and saving models. This code is equivalent in making predictions as
+above.
+
+
+```python
+loaded_pyfunc = mlflavors.statsforecast.pyfunc.load_model(model_uri=model_uri)
+
+# Convert test data to 2D numpy array so it can be passed to pyfunc predict using
+# a single-row Pandas DataFrame configuration argument
+X_test_array = X_test.to_numpy()
+
+# Create configuration DataFrame
+predict_conf = pd.DataFrame(
+    [
+        {
+            "X": X_test_array,
+            "X_cols": X_test.columns,
+            "X_dtypes": list(X_test.dtypes),
+            "h": HORIZON,
+            "level": LEVEL,
+        }
+    ]
+)
+
+
+pyfunc_result = loaded_pyfunc.predict(predict_conf)
+pyfunc_result.head()
+```
+
+|           | ds         | AutoARIMA  | AutoARIMA-lo-90 | AutoARIMA-hi-90 |
+|-----------|------------|------------|-----------------|-----------------|
+| unique_id |            |            |                 |                 |
+| 0         | 2000-02-13 | 55.894432  | 44.343880       | 67.444984       |
+| 0         | 2000-02-14 | 97.818054  | 86.267502       | 109.368607      |
+| 0         | 2000-02-15 | 146.745422 | 135.194870      | 158.295975      |
+| 0         | 2000-02-16 | 188.888336 | 177.337784      | 200.438904      |
+| 0         | 2000-02-17 | 231.493637 | 219.943085      | 243.044189      |
+
+## Model Serving
+
+This section illustrates an example of serving the `pyfunc` flavor to a
+local REST API endpoint and subsequently requesting a prediction from
+the served model. To serve the model run the command below where you
+substitute the run id printed during execution training code.
+
+
+```bash
+mlflow models serve -m runs:/<run_id>/model --env-manager local --host 127.0.0.1
+```
+
+After running this, the code below can be ran to send a request.
+
+
+```python
+HORIZON = 7
+LEVEL = [90, 95]
+
+# Define local host and endpoint url
+host = "127.0.0.1"
+url = f"http://{host}:5000/invocations"
+
+# Convert DateTime to string for JSON serialization
+X_test_pyfunc = X_test.copy()
+X_test_pyfunc["ds"] = X_test_pyfunc["ds"].dt.strftime(date_format="%Y-%m-%d")
+
+# Convert to list for JSON serialization
+X_test_list = X_test_pyfunc.to_numpy().tolist()
+
+# Convert index to list of strings for JSON serialization
+X_cols = list(X_test.columns)
+
+# Convert dtypes to string for JSON serialization
+X_dtypes = [str(dtype) for dtype in list(X_test.dtypes)]
+
+predict_conf = pd.DataFrame(
+    [
+        {
+            "X": X_test_list,
+            "X_cols": X_cols,
+            "X_dtypes": X_dtypes,
+            "h": HORIZON,
+            "level": LEVEL,
+        }
+    ]
+)
+
+# Create dictionary with pandas DataFrame in the split orientation
+json_data = {"dataframe_split": predict_conf.to_dict(orient="split")}
+
+# Score model
+response = requests.post(url, json=json_data)
+```
+
+
+```python
+pd.DataFrame(response.json()['predictions']).head()
+```
+
+|  | ds | AutoARIMA | AutoARIMA-lo-95 | AutoARIMA-lo-90 | AutoARIMA-hi-90 | AutoARIMA-hi-95 |
+|----|----|----|----|----|----|----|
+| 0 | 2000-02-13T00:00:00 | 55.894432 | 42.131100 | 44.343880 | 67.444984 | 69.657768 |
+| 1 | 2000-02-14T00:00:00 | 97.818054 | 84.054718 | 86.267502 | 109.368607 | 111.581390 |
+| 2 | 2000-02-15T00:00:00 | 146.745422 | 132.982086 | 135.194870 | 158.295975 | 160.508759 |
+| 3 | 2000-02-16T00:00:00 | 188.888336 | 175.125015 | 177.337784 | 200.438904 | 202.651672 |
+| 4 | 2000-02-17T00:00:00 | 231.493637 | 217.730301 | 219.943085 | 243.044189 | 245.256973 |
+

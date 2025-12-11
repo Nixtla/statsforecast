@@ -1,0 +1,790 @@
+---
+title: Standard Theta Model
+---
+
+
+
+
+
+> Step-by-step guide on using the `Standard Theta Model` with
+> `Statsforecast`.
+
+During this walkthrough, we will become familiar with the main
+`StatsForecast` class and some relevant methods such as
+`StatsForecast.plot`, `StatsForecast.forecast` and
+`StatsForecast.cross_validation` in other.
+
+The text in this article is largely taken from: 1. [Jose A. Fiorucci,
+Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B.
+Koehler (2016). “Models for optimising the theta method and their
+relationship to state space models”. International Journal of
+Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
+2. [V. Assimakopoulos, K. Nikolopoulos, “The theta model: a
+decomposition approach to
+forecasting”](https://www.sciencedirect.com/science/article/abs/pii/S0169207000000662)
+3. [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
+Principles and Practice (3rd ed)”](https://otexts.com/fpp3/tscv.html).
+
+## Table of Contents
+
+-   [Introduction](#introduction)
+-   [Standard Theta](#model)
+-   [Loading libraries and data](#loading)
+-   [Explore data with the plot method](#plotting)
+-   [Split the data into training and testing](#splitting)
+-   [Implementation of StandardTheta with
+    StatsForecast](#implementation)
+-   [Cross-validation](#cross_validate)
+-   [Model evaluation](#evaluate)
+-   [References](#references)
+
+## Introduction <a class="anchor" id="introduction"></a>
+
+The Theta method [(Assimakopoulos & Nikolopoulos, 2000, hereafter
+A&N)](https://www.sciencedirect.com/science/article/abs/pii/S0169207000000662)
+is applied to non-seasonal or deseasonalised time series, where the
+deseasonalisation is usually performed via the multiplicative classical
+decomposition. The method decomposes the original time series into two
+new lines through the so-called theta coefficients, denoted by
+${\theta}_1$ and ${\theta}_2$ for
+${\theta}_1, {\theta}_2 \in \mathbb{R}$, which are applied to the second
+difference of the data. The second differences are reduced when
+${\theta}<1$, resulting in a better approximation of the long-term
+behaviour of the series (Assimakopoulos, 1995). If ${\theta}$ is equal
+to zero, the new line is a straight line. When ${\theta}>1$ the local
+curvatures are increased, magnifying the short-term movements of the
+time series (A&N). The new lines produced are called theta lines,
+denoted here by $\text{Z}(\theta_1)$ and $\text{Z}(\theta_2)$. These
+lines have the same mean value and slope as the original data, but the
+local curvatures are either filtered out or enhanced, depending on the
+value of the $\theta$ coefficient.
+
+In other words, the decomposition process has the advantage of
+exploiting information in the data that usually cannot be captured and
+modelled completely through the extrapolation of the original time
+series. The theta lines can be regarded as new time series and are
+extrapolated separately using an appropriate forecasting method. Once
+the extrapolation of each theta line has been completed, recomposition
+takes place through a combination scheme in order to calculate the point
+forecasts of the original time series. Combining has long been
+considered as a useful practice in the forecasting literature (for
+example, [Clemen, 1989, Makridakis and Winkler, 1983, Petropoulos et
+al., 2014]()), and therefore its application to the Theta method is
+expected to result in more accurate and robust forecasts.
+
+The Theta method is quite versatile in terms of choosing the number of
+theta lines, the theta coefficients and the extrapolation methods, and
+combining these to obtain robust forecasts. However, A&N proposed a
+simplified version involving the use of only two theta lines with
+prefixed $\theta$ coefficients that are extrapolated over time using a
+linear regression (LR) model for the theta line with ${\theta}_1 =0$ and
+simple exponential smoothing (SES) for the theta line with
+${\theta}_2 =2$. The final forecasts are produced by combining the
+forecasts of the two theta lines with equal weights.
+
+The performance of the Theta method has also been confirmed by other
+empirical studies (for example Nikolopoulos et al., 2012, Petropoulos
+and Nikolopoulos, 2013). Moreover, Hyndman and Billah (2003), hereafter
+H&B, showed that the simple exponential smoothing with drift model
+(SES-d) is a statistical model for the simplified version of the Theta
+method. More recently, Thomakos and Nikolopoulos (2014) provided
+additional theoretical insights, while Thomakos and Nikolopoulos (2015)
+derived new theoretical formulations for the application of the method
+to multivariate time series, and investigated the conditions under which
+the bivariate Theta method is expected to forecast better than the
+univariate one. Despite these advances, we believe that the Theta method
+deserves more attention from the forecasting community, given its
+simplicity and superior forecasting performance.
+
+One key aspect of the Theta method is that, by definition, it is
+dynamic. One can choose different theta lines and combine the produced
+forecasts using either equal or unequal weights. However, AN limit this
+important property by fixing the theta coefficients to have predefined
+values.
+
+## Standard Theta Model<a class="anchor" id="model"></a>
+
+Assimakopoulos and Nikolopoulo for standard theta model proposed the
+Theta line as the solution of the equation
+
+$$
+\begin{equation}
+D^2 \zeta_t(\theta) = \theta D^2 Y_t, t = 1,\cdots,T \tag 1
+\end{equation}
+$$
+
+where $Y_1, \cdots , Y_T$ represent the original time series data and
+$DX_t = (X_t − X_{t−1})$. The initial values $\zeta_1$ and $\zeta_2$ are
+obtained by minimizing $\sum_{i=1}^{T} [Y_t - \zeta_t (\theta) ]^2$.
+However, the analytical solution of (1) is given by
+
+$$
+\begin{equation}
+\zeta_t(\theta)=\theta Y_t +(1−\theta)(A_T +B_T t),\ t=1, \cdots, T,  \tag 2
+\end{equation}
+$$
+
+where $A_T$ and $B_T$ are the minimum square coefficients of a simple
+linear regression over $Y_1, \cdots,Y_T$ against $1, \cdots , T$ which
+are only dependent on the original data and given as follow
+
+$$
+\begin{equation}
+A_T=\frac{1}{T} \sum_{i=1}^{T} Y_t - \frac{T+1}{2} B_T \tag 3
+\end{equation}
+$$
+
+$$
+\begin{equation}
+B_T=\frac{6}{T^2 - 1} (\frac{2}{T} \sum_{t=1}^{T} tY_t - \frac{T+1}{T} \sum_{t=1}^{T} Y_t  \tag 4
+\end{equation}
+$$
+
+Theta lines can be understood as functions of the linear regression
+model directly applied to the data from this perspective. Indeed, the
+Theta method’s projections for h steps ahead are an ad hoc combination
+(50 percent - 50 percent) of the linear extrapolations of $\zeta(0)$ and
+$\zeta(2)$.
+
+-   When $\theta < 1$ is applied to the second differences of the data,
+    the decomposition process is defined by a theta coefficient, which
+    reduces the second differences and improves the approximation of
+    series behavior.
+
+-   If $\theta = 0$, the deconstructed line is turned into a constant
+    straight line. (see Fig)
+
+-   If $\theta > 1$ then the short term movements of the analyzed series
+    show more local curvatures (see fig)
+
+<figure>
+<img
+src="https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/eb9226e1acc10cc10b482dc6190aae521c377546/imagen/theta.png"
+alt="Figure" />
+<figcaption aria-hidden="true">Figure</figcaption>
+</figure>
+
+We will refer to the above setup as the standard Theta method. The steps
+for building the theta method are as follows:
+
+1.  **Deseasonalisation:** Firstly, the time series data is tested for
+    statistically significant seasonal behaviour. A time series is
+    seasonal if
+
+$$|\rho_m| > q_{1- \frac{\alpha}{2} } \sqrt{\frac{1+2 \sum_{i=1}^{m-1} \rho_{i}^{2} }{T} }$$
+
+where ρk denotes the lag $k$ autocorrelation function, $m$ is the number
+of the periods within a seasonal cycle (for example, 12 for monthly
+data), $T$ is the sample size, $q$ is the quantile function of the
+standard normal distribution, and $(1 − a)\%$ is the confidence level.
+Assimakopoulos and Nikolopoulo \[Standar Theta model\] opted for a 90%
+confidence level. If the time series is identified as seasonal, then it
+is deseasonalised via the classical decomposition method, assuming the
+seasonal component to have a multiplicative relationship.
+
+1.  **Decomposition:** The second step consits for the decomposition of
+    the seasonally adjusted time series into two Theta lines, the
+    `linear regression` line $\zeta(0)$ and the theta line $\zeta(2)$.
+
+2.  **Extrapolation:** $\zeta(2)$ is extrapolated using
+    `simple exponential smoothing (SES)`, while $\zeta(0)$ is
+    extrapolated as a normal `linear regression` line.
+
+3.  **Combination:** the final forecast is a combination of the
+    forecasts of the two $\theta$ lines using equal weights.
+
+4.  Reseasonalisation: In the presence of seasonality in first step,
+    then the final forecasts are multiplied by the respective seasonal
+    indices.
+
+## Loading libraries and data <a class="anchor" id="loading"></a>
+
+> **Tip**
+>
+> Statsforecast will be needed. To install, see
+> [instructions](../getting-started/0_Installation).
+
+Next, we import plotting libraries and configure the plotting style.
+
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+plt.style.use('grayscale') # fivethirtyeight  grayscale  classic
+plt.rcParams['lines.linewidth'] = 1.5
+dark_style = {
+    'figure.facecolor': '#008080',  # #212946
+    'axes.facecolor': '#008080',
+    'savefig.facecolor': '#008080',
+    'axes.grid': True,
+    'axes.grid.which': 'both',
+    'axes.spines.left': False,
+    'axes.spines.right': False,
+    'axes.spines.top': False,
+    'axes.spines.bottom': False,
+    'grid.color': '#000000',  #2A3459
+    'grid.linewidth': '1',
+    'text.color': '0.9',
+    'axes.labelcolor': '0.9',
+    'xtick.color': '0.9',
+    'ytick.color': '0.9',
+    'font.size': 12 }
+plt.rcParams.update(dark_style)
+
+
+from pylab import rcParams
+rcParams['figure.figsize'] = (18,7)
+```
+
+### Read Data
+
+```python
+import pandas as pd
+df = pd.read_csv("https://raw.githubusercontent.com/Naren8520/Serie-de-tiempo-con-Machine-Learning/main/Data/milk_production.csv", usecols=[1,2])
+df.head()
+```
+
+|     | month      | production |
+|-----|------------|------------|
+| 0   | 1962-01-01 | 589        |
+| 1   | 1962-02-01 | 561        |
+| 2   | 1962-03-01 | 640        |
+| 3   | 1962-04-01 | 656        |
+| 4   | 1962-05-01 | 727        |
+
+The input to StatsForecast is always a data frame in long format with
+three columns: unique_id, ds and y:
+
+-   The `unique_id` (string, int or category) represents an identifier
+    for the series.
+
+-   The `ds` (datestamp) column should be of a format expected by
+    Pandas, ideally YYYY-MM-DD for a date or YYYY-MM-DD HH:MM:SS for a
+    timestamp.
+
+-   The `y` (numeric) represents the measurement we wish to forecast.
+
+```python
+df["unique_id"]="1"
+df.columns=["ds", "y", "unique_id"]
+df.head()
+```
+
+|     | ds         | y   | unique_id |
+|-----|------------|-----|-----------|
+| 0   | 1962-01-01 | 589 | 1         |
+| 1   | 1962-02-01 | 561 | 1         |
+| 2   | 1962-03-01 | 640 | 1         |
+| 3   | 1962-04-01 | 656 | 1         |
+| 4   | 1962-05-01 | 727 | 1         |
+
+```python
+print(df.dtypes)
+```
+
+``` text
+ds           object
+y             int64
+unique_id    object
+dtype: object
+```
+
+We can see that our time variable `(ds)` is in an object format, we need
+to convert to a date format
+
+```python
+df["ds"] = pd.to_datetime(df["ds"])
+```
+
+## Explore Data with the plot method <a class="anchor" id="plotting"></a>
+
+Plot some series using the plot method from the StatsForecast class.
+This method prints a random series from the dataset and is useful for
+basic EDA.
+
+```python
+from statsforecast import StatsForecast
+
+StatsForecast.plot(df)
+```
+
+![](StandardTheta_files/figure-markdown_strict/cell-8-output-1.png)
+
+### Autocorrelation plots
+
+```python
+fig, axs = plt.subplots(nrows=1, ncols=2)
+
+plot_acf(df["y"],  lags=30, ax=axs[0],color="fuchsia")
+axs[0].set_title("Autocorrelation");
+
+plot_pacf(df["y"],  lags=30, ax=axs[1],color="lime")
+axs[1].set_title('Partial Autocorrelation')
+
+plt.show();
+```
+
+![](StandardTheta_files/figure-markdown_strict/cell-9-output-1.png)
+
+### Decomposition of the time series
+
+How to decompose a time series and why?
+
+In time series analysis to forecast new values, it is very important to
+know past data. More formally, we can say that it is very important to
+know the patterns that values follow over time. There can be many
+reasons that cause our forecast values to fall in the wrong direction.
+Basically, a time series consists of four components. The variation of
+those components causes the change in the pattern of the time series.
+These components are:
+
+-   **Level:** This is the primary value that averages over time.
+-   **Trend:** The trend is the value that causes increasing or
+    decreasing patterns in a time series.
+-   **Seasonality:** This is a cyclical event that occurs in a time
+    series for a short time and causes short-term increasing or
+    decreasing patterns in a time series.
+-   **Residual/Noise:** These are the random variations in the time
+    series.
+
+Combining these components over time leads to the formation of a time
+series. Most time series consist of level and noise/residual and trend
+or seasonality are optional values.
+
+If seasonality and trend are part of the time series, then there will be
+effects on the forecast value. As the pattern of the forecasted time
+series may be different from the previous time series.
+
+The combination of the components in time series can be of two types: \*
+Additive \* Multiplicative
+
+### Additive time series
+
+If the components of the time series are added to make the time series.
+Then the time series is called the additive time series. By
+visualization, we can say that the time series is additive if the
+increasing or decreasing pattern of the time series is similar
+throughout the series. The mathematical function of any additive time
+series can be represented by:
+$$y(t) = level + Trend + seasonality + noise$$
+
+### Multiplicative time series
+
+If the components of the time series are multiplicative together, then
+the time series is called a multiplicative time series. For
+visualization, if the time series is having exponential growth or
+decline with time, then the time series can be considered as the
+multiplicative time series. The mathematical function of the
+multiplicative time series can be represented as.
+
+$$y(t) = Level * Trend * seasonality * Noise$$
+
+### Additive
+
+```python
+from statsmodels.tsa.seasonal import seasonal_decompose
+a = seasonal_decompose(df["y"], model = "additive", period=12)
+a.plot();
+```
+
+![](StandardTheta_files/figure-markdown_strict/cell-10-output-1.png)
+
+### Multiplicative
+
+```python
+from statsmodels.tsa.seasonal import seasonal_decompose
+a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
+a.plot();
+```
+
+![](StandardTheta_files/figure-markdown_strict/cell-11-output-1.png)
+
+## Split the data into training and testing<a class="anchor" id="splitting"></a>
+
+Let’s divide our data into sets 1. Data to train our `Theta` model 2.
+Data to test our model
+
+For the test data we will use the last 12 months to test and evaluate
+the performance of our model.
+
+```python
+train = df[df.ds\<='1974-12-01']
+test = df[df.ds>'1974-12-01']
+```
+
+
+```python
+train.shape, test.shape
+```
+
+``` text
+((156, 3), (12, 3))
+```
+
+## Implementation of StandardTheta with StatsForecast <a class="anchor" id="implementation"></a>
+
+### Load libraries
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import Theta
+```
+
+### Instantiating Model
+
+Import and instantiate the models. Setting the argument is sometimes
+tricky. This article on [Seasonal
+periods](https://robjhyndman.com/hyndsight/seasonal-periods/) by the
+master, Rob Hyndmann, can be useful for `season_length`.
+
+```python
+season_length = 12 # Monthly data
+horizon = len(test) # number of predictions
+
+models = [Theta(season_length=season_length,
+                decomposition_type="additive")] # multiplicative   additive
+```
+
+We fit the models by instantiating a new StatsForecast object with the
+following parameters:
+
+models: a list of models. Select the models you want from models and
+import them.
+
+-   `freq:` a string indicating the frequency of the data. (See [panda’s
+    available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).)
+
+-   `n_jobs:` n_jobs: int, number of jobs used in the parallel
+    processing, use -1 for all cores.
+
+-   `fallback_model:` a model to be used if a model fails.
+
+Any settings are passed into the constructor. Then you call its fit
+method and pass in the historical data frame.
+
+```python
+sf = StatsForecast(models=models, freq='MS')
+```
+
+### Fit Model
+
+```python
+sf.fit(df=train)
+```
+
+``` text
+StatsForecast(models=[Theta])
+```
+
+Let’s see the results of our Theta model. We can observe it with the
+following instruction:
+
+```python
+result=sf.fitted_[0,0].model_
+print(result.keys())
+print(result['fit'])
+```
+
+``` text
+dict_keys(['mse', 'amse', 'fit', 'residuals', 'm', 'states', 'par', 'n', 'modeltype', 'mean_y', 'decompose', 'decomposition_type', 'seas_forecast', 'fitted'])
+results(x=array([225.82002697,   0.76015625]), fn=10.638733596938778, nit=19, simplex=array([[241.83142594,   0.76274414],
+       [225.82002697,   0.76015625],
+       [212.41789302,   0.76391602]]))
+```
+
+Let us now visualize the residuals of our models.
+
+As we can see, the result obtained above has an output in a dictionary,
+to extract each element from the dictionary we are going to use the
+`.get()` function to extract the element and then we are going to save
+it in a `pd.DataFrame()`.
+
+```python
+residual=pd.DataFrame(result.get("residuals"), columns=["residual Model"])
+residual
+```
+
+|     | residual Model |
+|-----|----------------|
+| 0   | -17.596375     |
+| 1   | -46.997192     |
+| 2   | 23.093933      |
+| ... | ...            |
+| 153 | -59.003235     |
+| 154 | -91.150085     |
+| 155 | -42.749451     |
+
+```python
+import scipy.stats as stats
+
+fig, axs = plt.subplots(nrows=2, ncols=2)
+
+residual.plot(ax=axs[0,0])
+axs[0,0].set_title("Residuals");
+
+sns.distplot(residual, ax=axs[0,1]);
+axs[0,1].set_title("Density plot - Residual");
+
+stats.probplot(residual["residual Model"], dist="norm", plot=axs[1,0])
+axs[1,0].set_title('Plot Q-Q')
+
+plot_acf(residual,  lags=35, ax=axs[1,1],color="fuchsia")
+axs[1,1].set_title("Autocorrelation");
+
+plt.show();
+```
+
+![](StandardTheta_files/figure-markdown_strict/cell-20-output-1.png)
+
+### Forecast Method
+
+If you want to gain speed in productive settings where you have multiple
+series or models we recommend using the `StatsForecast.forecast` method
+instead of `.fit` and `.predict`.
+
+The main difference is that the `.forecast` doest not store the fitted
+values and is highly scalable in distributed environments.
+
+The forecast method takes two arguments: forecasts next `h` (horizon)
+and `level`.
+
+-   `h (int):` represents the forecast h steps into the future. In this
+    case, 12 months ahead.
+
+-   `level (list of floats):` this optional parameter is used for
+    probabilistic forecasting. Set the level (or confidence percentile)
+    of your prediction interval. For example, `level=[90]` means that
+    the model expects the real value to be inside that interval 90% of
+    the times.
+
+The forecast object here is a new data frame that includes a column with
+the name of the model and the y hat values, as well as columns for the
+uncertainty intervals. Depending on your computer, this step should take
+around 1min.
+
+```python
+# Prediction
+Y_hat = sf.forecast(df=train, h=horizon, fitted=True)
+Y_hat
+```
+
+|     | unique_id | ds         | Theta      |
+|-----|-----------|------------|------------|
+| 0   | 1         | 1975-01-01 | 838.559814 |
+| 1   | 1         | 1975-02-01 | 800.188232 |
+| 2   | 1         | 1975-03-01 | 893.472900 |
+| ... | ...       | ...        | ...        |
+| 9   | 1         | 1975-10-01 | 816.166931 |
+| 10  | 1         | 1975-11-01 | 786.962036 |
+| 11  | 1         | 1975-12-01 | 823.826538 |
+
+```python
+values=sf.forecast_fitted_values()
+values.head()
+```
+
+|     | unique_id | ds         | y     | Theta      |
+|-----|-----------|------------|-------|------------|
+| 0   | 1         | 1962-01-01 | 589.0 | 606.596375 |
+| 1   | 1         | 1962-02-01 | 561.0 | 607.997192 |
+| 2   | 1         | 1962-03-01 | 640.0 | 616.906067 |
+| 3   | 1         | 1962-04-01 | 656.0 | 608.873047 |
+| 4   | 1         | 1962-05-01 | 727.0 | 607.395142 |
+
+Adding 95% confidence interval with the forecast method
+
+```python
+sf.forecast(df=train, h=horizon, level=[95])
+```
+
+|     | unique_id | ds         | Theta      | Theta-lo-95 | Theta-hi-95 |
+|-----|-----------|------------|------------|-------------|-------------|
+| 0   | 1         | 1975-01-01 | 838.559814 | 741.324280  | 954.365540  |
+| 1   | 1         | 1975-02-01 | 800.188232 | 640.785583  | 944.996887  |
+| 2   | 1         | 1975-03-01 | 893.472900 | 705.123901  | 1064.757324 |
+| ... | ...       | ...        | ...        | ...         | ...         |
+| 9   | 1         | 1975-10-01 | 816.166931 | 539.706665  | 1083.791626 |
+| 10  | 1         | 1975-11-01 | 786.962036 | 487.945831  | 1032.029053 |
+| 11  | 1         | 1975-12-01 | 823.826538 | 512.674500  | 1101.965576 |
+
+```python
+sf.plot(train, Y_hat)
+```
+
+![](StandardTheta_files/figure-markdown_strict/cell-24-output-1.png)
+
+### Predict method with confidence interval
+
+To generate forecasts use the predict method.
+
+The predict method takes two arguments: forecasts the next `h` (for
+horizon) and `level`.
+
+-   `h (int):` represents the forecast h steps into the future. In this
+    case, 12 months ahead.
+
+-   `level (list of floats):` this optional parameter is used for
+    probabilistic forecasting. Set the level (or confidence percentile)
+    of your prediction interval. For example, `level=[95]` means that
+    the model expects the real value to be inside that interval 95% of
+    the times.
+
+The forecast object here is a new data frame that includes a column with
+the name of the model and the y hat values, as well as columns for the
+uncertainty intervals.
+
+This step should take less than 1 second.
+
+```python
+sf.predict(h=horizon)
+```
+
+|     | unique_id | ds         | Theta      |
+|-----|-----------|------------|------------|
+| 0   | 1         | 1975-01-01 | 838.559814 |
+| 1   | 1         | 1975-02-01 | 800.188232 |
+| 2   | 1         | 1975-03-01 | 893.472900 |
+| ... | ...       | ...        | ...        |
+| 9   | 1         | 1975-10-01 | 816.166931 |
+| 10  | 1         | 1975-11-01 | 786.962036 |
+| 11  | 1         | 1975-12-01 | 823.826538 |
+
+```python
+forecast_df = sf.predict(h=horizon, level=[80,95])
+forecast_df
+```
+
+|     | unique_id | ds         | Theta      | Theta-lo-80 | Theta-hi-80 | Theta-lo-95 | Theta-hi-95 |
+|-----|-----------|------------|------------|-------------|-------------|-------------|-------------|
+| 0   | 1         | 1975-01-01 | 838.559814 | 765.496094  | 927.260071  | 741.324280  | 954.365540  |
+| 1   | 1         | 1975-02-01 | 800.188232 | 701.729736  | 898.807434  | 640.785583  | 944.996887  |
+| 2   | 1         | 1975-03-01 | 893.472900 | 758.480957  | 1006.847595 | 705.123901  | 1064.757324 |
+| ... | ...       | ...        | ...        | ...         | ...         | ...         | ...         |
+| 9   | 1         | 1975-10-01 | 816.166931 | 611.404236  | 991.667175  | 539.706665  | 1083.791626 |
+| 10  | 1         | 1975-11-01 | 786.962036 | 561.990540  | 969.637634  | 487.945831  | 1032.029053 |
+| 11  | 1         | 1975-12-01 | 823.826538 | 591.283508  | 1029.491211 | 512.674500  | 1101.965576 |
+
+```python
+sf.plot(train, test.merge(forecast_df), level=[80, 95])
+```
+
+![](StandardTheta_files/figure-markdown_strict/cell-27-output-1.png)
+
+## Cross-validation <a class="anchor" id="cross_validate"></a>
+
+In previous steps, we’ve taken our historical data to predict the
+future. However, to asses its accuracy we would also like to know how
+the model would have performed in the past. To assess the accuracy and
+robustness of your models on your data perform Cross-Validation.
+
+With time series data, Cross Validation is done by defining a sliding
+window across the historical data and predicting the period following
+it. This form of cross-validation allows us to arrive at a better
+estimation of our model’s predictive abilities across a wider range of
+temporal instances while also keeping the data in the training set
+contiguous as is required by our models.
+
+The following graph depicts such a Cross Validation Strategy:
+
+![](https://raw.githubusercontent.com/Nixtla/statsforecast/main/nbs/imgs/ChainedWindows.gif)
+
+### Perform time series cross-validation
+
+Cross-validation of time series models is considered a best practice but
+most implementations are very slow. The statsforecast library implements
+cross-validation as a distributed operation, making the process less
+time-consuming to perform. If you have big datasets you can also perform
+Cross Validation in a distributed cluster using Ray, Dask or Spark.
+
+In this case, we want to evaluate the performance of each model for the
+last 5 months `(n_windows=5)`, forecasting every second months
+`(step_size=12)`. Depending on your computer, this step should take
+around 1 min.
+
+The cross_validation method from the StatsForecast class takes the
+following arguments.
+
+-   `df:` training data frame
+
+-   `h (int):` represents h steps into the future that are being
+    forecasted. In this case, 12 months ahead.
+
+-   `step_size (int):` step size between each window. In other words:
+    how often do you want to run the forecasting processes.
+
+-   `n_windows(int):` number of windows used for cross validation. In
+    other words: what number of forecasting processes in the past do you
+    want to evaluate.
+
+```python
+crossvalidation_df = sf.cross_validation(df=train,
+                                         h=horizon,
+                                         step_size=12,
+                                         n_windows=3)
+```
+
+The crossvaldation_df object is a new data frame that includes the
+following columns:
+
+-   `unique_id:` series identifier
+-   `ds:` datestamp or temporal index
+-   `cutoff:` the last datestamp or temporal index for the n_windows.
+-   `y:` true value
+-   `"model":` columns with the model’s name and fitted value.
+
+## Model Evaluation <a class="anchor" id="evaluate"></a>
+
+Now we are going to evaluate our model with the results of the
+predictions, we will use different types of metrics MAE, MAPE, MASE,
+RMSE, SMAPE to evaluate the accuracy.
+
+```python
+from functools import partial
+
+import utilsforecast.losses as ufl
+from utilsforecast.evaluation import evaluate
+```
+
+
+```python
+evaluate(
+    test.merge(Y_hat),
+    metrics=[ufl.mae, ufl.mape, partial(ufl.mase, seasonality=season_length), ufl.rmse, ufl.smape],
+    train_df=train,
+)
+```
+
+|     | unique_id | metric | Theta    |
+|-----|-----------|--------|----------|
+| 0   | 1         | mae    | 8.111287 |
+| 1   | 1         | mape   | 0.009649 |
+| 2   | 1         | mase   | 0.364780 |
+| 3   | 1         | rmse   | 9.730347 |
+| 4   | 1         | smape  | 0.004829 |
+
+## Acknowledgements
+
+We would like to thank [Naren
+Castellon](https://www.linkedin.com/in/naren-castellon-1541b8101/?originalSubdomain=pa)
+for writing this tutorial.
+
+## References <a class="anchor" id="references"></a>
+
+1.  [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios
+    Petropoulos, Anne B. Koehler (2016). “Models for optimising the
+    theta method and their relationship to state space models”.
+    International Journal of
+    Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
+2.  [V. Assimakopoulos, K. Nikolopoulos, “The theta model: a
+    decomposition approach to
+    forecasting”](https://www.sciencedirect.com/science/article/abs/pii/S0169207000000662)
+3.  [Nixtla StandardTheta API](../../src/core/models.html#theta)
+4.  [Pandas available
+    frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).
+5.  [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
+    Principles and Practice (3rd
+    ed)”](https://otexts.com/fpp3/tscv.html).
+6.  [Seasonal periods- Rob J
+    Hyndman](https://robjhyndman.com/hyndsight/seasonal-periods/).
+

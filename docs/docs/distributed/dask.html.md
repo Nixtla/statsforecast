@@ -1,0 +1,82 @@
+---
+description: Run StatsForecast distributedly on top of Dask.
+output-file: dask.html
+title: Dask
+---
+
+
+StatsForecast works on top of Spark, Dask, and Ray through
+[Fugue](https://github.com/fugue-project/fugue/). StatsForecast will
+read the input DataFrame and use the corresponding engine. For example,
+if the input is a Spark DataFrame, StatsForecast will use the existing
+Spark session to run the forecast.
+
+## Installation
+
+As long as Dask is installed and configured, StatsForecast will be able
+to use it. If executing on a distributed Dask cluster, make use the
+`statsforecast` library is installed across all the workers.
+
+## StatsForecast on Pandas
+
+Before running on Dask, it’s recommended to test on a smaller Pandas
+dataset to make sure everything is working. This example also helps show
+the small differences when using Dask.
+
+
+```python
+from statsforecast.core import StatsForecast
+from statsforecast.models import ( 
+    AutoARIMA,
+    AutoETS,
+)
+from statsforecast.utils import generate_series
+```
+
+
+```python
+n_series = 4
+horizon = 7
+
+series = generate_series(n_series)
+
+sf = StatsForecast(
+    models=[AutoETS(season_length=7)],
+    freq='D',
+)
+sf.forecast(df=series, h=horizon).head()
+```
+
+|     | unique_id | ds         | AutoETS  |
+|-----|-----------|------------|----------|
+| 0   | 0         | 2000-08-10 | 5.261609 |
+| 1   | 0         | 2000-08-11 | 6.196357 |
+| 2   | 0         | 2000-08-12 | 0.282309 |
+| 3   | 0         | 2000-08-13 | 1.264195 |
+| 4   | 0         | 2000-08-14 | 2.262453 |
+
+## Executing on Dask
+
+To run the forecasts distributed on Dask, just pass in a Dask DataFrame
+instead.
+
+
+```python
+import dask.dataframe as dd
+```
+
+
+```python
+series['unique_id'] = series['unique_id'].astype(str)
+ddf = dd.from_pandas(series, npartitions=4)
+sf.forecast(df=ddf, h=horizon).compute().head()
+```
+
+|     | unique_id | ds                  | AutoETS  |
+|-----|-----------|---------------------|----------|
+| 0   | 0         | 2000-08-10 00:00:00 | 5.261609 |
+| 1   | 0         | 2000-08-11 00:00:00 | 6.196357 |
+| 2   | 0         | 2000-08-12 00:00:00 | 0.282309 |
+| 3   | 0         | 2000-08-13 00:00:00 | 1.264195 |
+| 4   | 0         | 2000-08-14 00:00:00 | 2.262453 |
+

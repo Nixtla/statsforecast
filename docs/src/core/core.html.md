@@ -1,0 +1,710 @@
+---
+description: Methods for Fit, Predict, Forecast (fast), Cross Validation and plotting
+output-file: core.html
+title: Core Methods
+---
+
+
+The core methods of
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+are:
+
+-   `StatsForecast.fit`
+-   `StatsForecast.predict`
+-   [`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+-   [`StatsForecast.cross_validation`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
+-   `StatsForecast.plot`
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L1517"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast
+
+> ``` text
+>  StatsForecast (models:List[Any], freq:Union[str,int], n_jobs:int=1,
+>                 fallback_model:Optional[Any]=None, verbose:bool=False)
+> ```
+
+\*The
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+class allows you to efficiently fit multiple
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+models for large sets of time series. It operates on a DataFrame `df`
+with at least three columns ids, times and targets.
+
+The class has memory-efficient
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+method that avoids storing partial model outputs. While the
+`StatsForecast.fit` and `StatsForecast.predict` methods with
+Scikit-learn interface store the fitted models.
+
+The
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+class offers parallelization utilities with Dask, Spark and Ray
+back-ends. See distributed computing example
+[here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).\*
+
+
+```python
+# StatsForecast's class usage example
+
+#from statsforecast.core import StatsForecast
+from statsforecast.models import ( 
+    ADIDA,
+    AutoARIMA,
+    CrostonClassic,
+    CrostonOptimized,
+    CrostonSBA,
+    HistoricAverage,
+    IMAPA,
+    Naive,
+    RandomWalkWithDrift,
+    SeasonalExponentialSmoothing,
+    SeasonalNaive,
+    SeasonalWindowAverage,
+    SimpleExponentialSmoothing,
+    TSB,
+    WindowAverage,
+    DynamicOptimizedTheta,
+    AutoETS,
+    AutoCES
+)
+```
+
+
+```python
+# Generate synthetic panel DataFrame for example
+panel_df = generate_series(n_series=9, equal_ends=False, engine='pandas')
+panel_df.groupby('unique_id').tail(4)
+```
+
+
+```python
+# Declare list of instantiated StatsForecast estimators to be fitted
+# You can try other estimator's hyperparameters
+# You can try other methods from the `models.StatsForecast` collection
+# Check them here: https://Nixtla.github.io/statsforecast/src/core/models.html
+models=[AutoARIMA(), Naive(), 
+        AutoETS(), AutoARIMA(allowmean=True, alias='MeanAutoARIMA')] 
+
+# Instantiate StatsForecast class
+fcst = StatsForecast(models=models,
+                     freq='D',
+                     n_jobs=1,
+                     verbose=True)
+
+# Efficiently predict
+fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True)
+fcsts_df.groupby('unique_id').tail(4)
+```
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L633"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.fit
+
+> ``` text
+>  StatsForecast.fit
+>                     (df:Union[pandas.core.frame.DataFrame,polars.dataframe
+>                     .frame.DataFrame], prediction_intervals:Optional[stats
+>                     forecast.utils.ConformalIntervals]=None,
+>                     id_col:str='unique_id', time_col:str='ds',
+>                     target_col:str='y')
+> ```
+
+\*Fit statistical models.
+
+Fit `models` to a large set of time series from DataFrame `df` and store
+fitted models for later inspection.\*
+
+|  | **Type** | **Default** | **Details** |
+|------|------------------|-------------------------|-------------------------|
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **StatsForecast** |  | **Returns with stored [`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast) fitted `models`.** |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L711"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## SatstForecast.predict
+
+> ``` text
+>  SatstForecast.predict (h:int, X_df:Union[pandas.core.frame.DataFrame,pola
+>                         rs.dataframe.frame.DataFrame,NoneType]=None,
+>                         level:Optional[List[int]]=None)
+> ```
+
+\*Predict statistical models.
+
+Use stored fitted `models` to predict large set of time series from
+DataFrame `df`.\*
+
+|  | **Type** | **Default** | **Details** |
+|------|------------------|-------------------------|-------------------------|
+| h | int |  | Forecast horizon. |
+| X_df | Union | None | DataFrame with ids, times and future exogenous. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| **Returns** | **pandas or polars DataFrame** |  | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L758"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.fit_predict
+
+> ``` text
+>  StatsForecast.fit_predict (h:int,
+>                             df:Union[pandas.core.frame.DataFrame,polars.da
+>                             taframe.frame.DataFrame], X_df:Union[pandas.co
+>                             re.frame.DataFrame,polars.dataframe.frame.Data
+>                             Frame,NoneType]=None,
+>                             level:Optional[List[int]]=None, prediction_int
+>                             ervals:Optional[statsforecast.utils.ConformalI
+>                             ntervals]=None, id_col:str='unique_id',
+>                             time_col:str='ds', target_col:str='y')
+> ```
+
+\*Fit and Predict with statistical models.
+
+This method avoids memory burden due from object storage. It is
+analogous to Scikit-Learn `fit_predict` without storing information. It
+requires the forecast horizon `h` in advance.
+
+In contrast to
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+this method stores partial models outputs.\*
+
+|  | **Type** | **Default** | **Details** |
+|------|------------------|-------------------------|-------------------------|
+| h | int |  | Forecast horizon. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
+| X_df | Union | None | DataFrame with ids, times and future exogenous. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **Union** |  | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L819"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.forecast
+
+> ``` text
+>  StatsForecast.forecast (h:int,
+>                          df:Union[pandas.core.frame.DataFrame,polars.dataf
+>                          rame.frame.DataFrame], X_df:Union[pandas.core.fra
+>                          me.DataFrame,polars.dataframe.frame.DataFrame,Non
+>                          eType]=None, level:Optional[List[int]]=None,
+>                          fitted:bool=False, prediction_intervals:Optional[
+>                          statsforecast.utils.ConformalIntervals]=None,
+>                          id_col:str='unique_id', time_col:str='ds',
+>                          target_col:str='y')
+> ```
+
+\*Memory Efficient predictions.
+
+This method avoids memory burden due from object storage. It is
+analogous to Scikit-Learn `fit_predict` without storing information. It
+requires the forecast horizon `h` in advance.\*
+
+|  | **Type** | **Default** | **Details** |
+|------|------------------|-------------------------|-------------------------|
+| h | int |  | Forecast horizon. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
+| X_df | Union | None | DataFrame with ids, times and future exogenous. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| fitted | bool | False | Store in-sample predictions. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **Union** |  | **DataFrame with `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
+
+
+```python
+# StatsForecast.forecast method usage example
+
+#from statsforecast.core import StatsForecast
+from statsforecast.utils import AirPassengersDF as panel_df
+from statsforecast.models import AutoARIMA, Naive
+```
+
+
+```python
+# Instantiate StatsForecast class
+fcst = StatsForecast(models=[AutoARIMA(), Naive()],
+                     freq='D', n_jobs=1)
+
+# Efficiently predict without storing memory
+fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True)
+fcsts_df.groupby('unique_id').tail(4)
+```
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L893"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.forecast_fitted_values
+
+> ``` text
+>  StatsForecast.forecast_fitted_values ()
+> ```
+
+\*Access insample predictions.
+
+After executing
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast),
+you can access the insample prediction values for each model. To get
+them, you need to pass `fitted=True` to the
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+method and then use the
+[`StatsForecast.forecast_fitted_values`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast_fitted_values)
+method.\*
+
+
+```python
+# StatsForecast.forecast_fitted_values method usage example
+
+#from statsforecast.core import StatsForecast
+from statsforecast.utils import AirPassengersDF as panel_df
+from statsforecast.models import Naive
+```
+
+
+```python
+# Instantiate StatsForecast class
+fcst = StatsForecast(models=[AutoARIMA()], freq='D', n_jobs=1)
+
+# Access insample predictions
+fcsts_df = fcst.forecast(df=panel_df, h=12, fitted=True, level=(90, 10))
+insample_fcsts_df = fcst.forecast_fitted_values()
+insample_fcsts_df.tail(4)
+```
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L921"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.cross_validation
+
+> ``` text
+>  StatsForecast.cross_validation (h:int,
+>                                  df:Union[pandas.core.frame.DataFrame,pola
+>                                  rs.dataframe.frame.DataFrame],
+>                                  n_windows:int=1, step_size:int=1,
+>                                  test_size:Optional[int]=None,
+>                                  input_size:Optional[int]=None,
+>                                  level:Optional[List[int]]=None,
+>                                  fitted:bool=False,
+>                                  refit:Union[bool,int]=True, prediction_in
+>                                  tervals:Optional[statsforecast.utils.Conf
+>                                  ormalIntervals]=None,
+>                                  id_col:str='unique_id',
+>                                  time_col:str='ds', target_col:str='y')
+> ```
+
+\*Temporal Cross-Validation.
+
+Efficiently fits a list of
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+models through multiple training windows, in either chained or rolled
+manner.
+
+`StatsForecast.models`’ speed allows to overcome this evaluation
+technique high computational costs. Temporal cross-validation provides
+better model’s generalization measurements by increasing the test’s
+length and diversity.\*
+
+|  | **Type** | **Default** | **Details** |
+|------|------------------|-------------------------|-------------------------|
+| h | int |  | Forecast horizon. |
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
+| n_windows | int | 1 | Number of windows used for cross validation. |
+| step_size | int | 1 | Step size between each window. |
+| test_size | Optional | None | Length of test size. If passed, set `n_windows=None`. |
+| input_size | Optional | None | Input size for each window, if not none rolled windows. |
+| level | Optional | None | Confidence levels between 0 and 100 for prediction intervals. |
+| fitted | bool | False | Store in-sample predictions. |
+| refit | Union | True | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows. |
+| prediction_intervals | Optional | None | Configuration to calibrate prediction intervals (Conformal Prediction). |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| **Returns** | **Union** |  | **DataFrame with insample `models` columns for point predictions and probabilistic<br/>predictions for all fitted `models`.** |
+
+
+```python
+# StatsForecast.crossvalidation method usage example
+
+#from statsforecast.core import StatsForecast
+from statsforecast.utils import AirPassengersDF as panel_df
+from statsforecast.models import Naive
+```
+
+
+```python
+# Instantiate StatsForecast class
+fcst = StatsForecast(models=[Naive()],
+                     freq='D', n_jobs=1, verbose=True)
+
+# Access insample predictions
+rolled_fcsts_df = fcst.cross_validation(df=panel_df, h=14, n_windows=2)
+rolled_fcsts_df.head(4)
+```
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L1053"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.cross_validation_fitted_values
+
+> ``` text
+>  StatsForecast.cross_validation_fitted_values ()
+> ```
+
+\*Access insample cross validated predictions.
+
+After executing
+[`StatsForecast.cross_validation`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation),
+you can access the insample prediction values for each model and window.
+To get them, you need to pass `fitted=True` to the
+[`StatsForecast.cross_validation`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
+method and then use the `StatsForecast.cross_validation_fitted_values`
+method.\*
+
+
+```python
+# StatsForecast.cross_validation_fitted_values method usage example
+
+#from statsforecast.core import StatsForecast
+from statsforecast.utils import AirPassengersDF as panel_df
+from statsforecast.models import Naive
+```
+
+
+```python
+# Instantiate StatsForecast class
+fcst = StatsForecast(models=[Naive()],
+                     freq='D', n_jobs=1)
+
+# Access insample predictions
+rolled_fcsts_df = fcst.cross_validation(df=panel_df, h=12, n_windows=2, fitted=True)
+insample_rolled_fcsts_df = fcst.cross_validation_fitted_values()
+insample_rolled_fcsts_df.tail(4)
+```
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L1256"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.plot
+
+> ``` text
+>  StatsForecast.plot
+>                      (df:Union[pandas.core.frame.DataFrame,polars.datafram
+>                      e.frame.DataFrame], forecasts_df:Union[pandas.core.fr
+>                      ame.DataFrame,polars.dataframe.frame.DataFrame,NoneTy
+>                      pe]=None, unique_ids:Union[List[str],NoneType,numpy.n
+>                      darray]=None, plot_random:bool=True,
+>                      models:Optional[List[str]]=None,
+>                      level:Optional[List[float]]=None,
+>                      max_insample_length:Optional[int]=None,
+>                      plot_anomalies:bool=False, engine:str='matplotlib',
+>                      id_col:str='unique_id', time_col:str='ds',
+>                      target_col:str='y',
+>                      resampler_kwargs:Optional[Dict]=None)
+> ```
+
+*Plot forecasts and insample values.*
+
+|  | **Type** | **Default** | **Details** |
+|------|------------------|-------------------------|-------------------------|
+| df | Union |  | DataFrame with ids, times, targets and exogenous. |
+| forecasts_df | Union | None | DataFrame ids, times and models. |
+| unique_ids | Union | None | ids to plot. If None, they’re selected randomly. |
+| plot_random | bool | True | Select time series to plot randomly. |
+| models | Optional | None | List of models to plot. |
+| level | Optional | None | List of prediction intervals to plot if paseed. |
+| max_insample_length | Optional | None | Max number of train/insample observations to be plotted. |
+| plot_anomalies | bool | False | Plot anomalies for each prediction interval. |
+| engine | str | matplotlib | Library used to plot. ‘plotly’, ‘plotly-resampler’ or ‘matplotlib’. |
+| id_col | str | unique_id | Column that identifies each serie. |
+| time_col | str | ds | Column that identifies each timestep, its values can be timestamps or integers. |
+| target_col | str | y | Column that contains the target. |
+| resampler_kwargs | Optional | None | Kwargs to be passed to plotly-resampler constructor. <br/>For further custumization (“show_dash”) call the method,<br/>store the plotting object and add the extra arguments to<br/>its `show_dash` method. |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L1323"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.save
+
+> ``` text
+>  StatsForecast.save (path:Union[pathlib.Path,str,NoneType]=None,
+>                      max_size:Optional[str]=None, trim:bool=False)
+> ```
+
+*Function that will save StatsForecast class with certain settings to
+make it reproducible.*
+
+|  | **Type** | **Default** | **Details** |
+|------|------------------|-------------------------|-------------------------|
+| path | Union | None | Path of the file to be saved. If `None` will create one in the current <br/>directory using the current UTC timestamp. |
+| max_size | Optional | None | StatsForecast object should not exceed this size.<br/>Available byte naming: \[‘B’, ‘KB’, ‘MB’, ‘GB’\] |
+| trim | bool | False | Delete any attributes not needed for inference. |
+
+------------------------------------------------------------------------
+
+<a
+href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/core.py#L1410"
+target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+
+## StatsForecast.load
+
+> ``` text
+>  StatsForecast.load (path:Union[pathlib.Path,str])
+> ```
+
+*Automatically loads the model into ready StatsForecast.*
+
+|             | **Type**              | **Details**                        |
+|-------------|-----------------------|------------------------------------|
+| path        | Union                 | Path to saved StatsForecast file.  |
+| **Returns** | **sf: StatsForecast** | **Previously saved StatsForecast** |
+
+
+```python
+fcst = StatsForecast(
+    models=[ADIDA(), SimpleExponentialSmoothing(0.1), 
+            HistoricAverage(), CrostonClassic()],
+    freq='D',
+    n_jobs=1
+)
+res = fcst.forecast(df=series, h=14)
+```
+
+# Misc
+
+## Integer datestamp
+
+The
+[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
+class can also receive integers as datestamp, the following example
+shows how to do it.
+
+
+```python
+# from statsforecast.core import StatsForecast
+from statsforecast.utils import AirPassengers as ap
+from statsforecast.models import HistoricAverage
+```
+
+
+```python
+int_ds_df = pd.DataFrame({'ds': np.arange(1, len(ap) + 1), 'y': ap})
+int_ds_df.insert(0, 'unique_id', 'AirPassengers')
+int_ds_df.head()
+```
+
+
+```python
+int_ds_df.tail()
+```
+
+
+```python
+int_ds_df
+```
+
+
+```python
+fcst = StatsForecast(models=[HistoricAverage()], freq=1)
+horizon = 7
+forecast = fcst.forecast(df=int_ds_df, h=horizon)
+forecast.head()
+```
+
+
+```python
+last_date = int_ds_df['ds'].max()
+test_eq(forecast['ds'].values, np.arange(last_date + 1, last_date + 1 + horizon))
+```
+
+
+```python
+int_ds_cv = fcst.cross_validation(df=int_ds_df, h=7, test_size=8, n_windows=None)
+int_ds_cv
+```
+
+## External regressors
+
+Every column after **y** is considered an external regressor and will be
+passed to the models that allow them. If you use them you must supply
+the future values to the
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+method.
+
+
+```python
+class LinearRegression(_TS):
+    
+    def __init__(self):
+        pass
+    
+    def fit(self, y, X):
+        self.coefs_, *_ = np.linalg.lstsq(X, y, rcond=None)
+        return self
+    
+    def predict(self, h, X):
+        mean = X @ coefs
+        return mean
+    
+    def __repr__(self):
+        return 'LinearRegression()'
+    
+    def forecast(self, y, h, X=None, X_future=None, fitted=False):
+        coefs, *_ = np.linalg.lstsq(X, y, rcond=None)
+        return {'mean': X_future @ coefs}
+    
+    def new(self):
+        b = type(self).__new__(type(self))
+        b.__dict__.update(self.__dict__)
+        return b
+```
+
+
+```python
+series_xreg = series = generate_series(10_000, equal_ends=True)
+series_xreg['intercept'] = 1
+series_xreg['dayofweek'] = series_xreg['ds'].dt.dayofweek
+series_xreg = pd.get_dummies(series_xreg, columns=['dayofweek'], drop_first=True)
+series_xreg
+```
+
+
+```python
+dates = sorted(series_xreg['ds'].unique())
+valid_start = dates[-14]
+train_mask = series_xreg['ds'] < valid_start
+series_train = series_xreg[train_mask]
+series_valid = series_xreg[~train_mask]
+X_valid = series_valid.drop(columns=['y'])
+fcst = StatsForecast(
+    models=[LinearRegression()],
+    freq='D',
+)
+xreg_res = fcst.forecast(df=series_train, h=14, X_df=X_valid)
+xreg_res['y'] = series_valid['y'].values
+```
+
+
+```python
+xreg_res.drop(columns='unique_id').groupby('ds').mean().plot()
+```
+
+
+```python
+xreg_res_cv = fcst.cross_validation(df=series_train, h=3, test_size=5, n_windows=None)
+```
+
+## Prediction intervals
+
+You can pass the argument `level` to the
+[`StatsForecast.forecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
+method to calculate prediction intervals. Not all models can calculate
+them at the moment, so we will only obtain the intervals of those models
+that have it implemented.
+
+
+```python
+ap_df = pd.DataFrame({'ds': np.arange(ap.size), 'y': ap})
+ap_df['unique_id'] = 0
+sf = StatsForecast(
+    models=[
+        SeasonalNaive(season_length=12), 
+        AutoARIMA(season_length=12)
+    ],
+    freq=1,
+    n_jobs=1
+)
+ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95))
+fcst.plot(ap_df, ap_ci, level=[80], engine="matplotlib")
+```
+
+## Conformal Prediction intervals
+
+You can also add conformal intervals using the following code.
+
+
+```python
+from statsforecast.utils import ConformalIntervals
+```
+
+
+```python
+sf = StatsForecast(
+    models=[
+        AutoARIMA(season_length=12),
+        AutoARIMA(
+            season_length=12, 
+            prediction_intervals=ConformalIntervals(n_windows=2, h=12),
+            alias='ConformalAutoARIMA'
+        ),
+    ],
+    freq=1,
+    n_jobs=1
+)
+ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95))
+fcst.plot(ap_df, ap_ci, level=[80], engine="plotly")
+```
+
+You can also compute conformal intervals for all the models that support
+them, using the following,
+
+
+```python
+sf = StatsForecast(
+    models=[
+        AutoARIMA(season_length=12),
+    ],
+    freq=1,
+    n_jobs=1
+)
+ap_ci = sf.forecast(
+    df=ap_df, 
+    h=12, 
+    level=(50, 80, 95), 
+    prediction_intervals=ConformalIntervals(h=12),
+)
+fcst.plot(ap_df, ap_ci, level=[80], engine="matplotlib")
+```
+
