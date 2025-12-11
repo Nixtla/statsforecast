@@ -1,5858 +1,665 @@
----
-description: Models currently supported by StatsForecast
-output-file: models.html
-title: Models
----
+# Models
 
+StatsForecast offers a wide variety of statistical forecasting models grouped into the following categories:
 
-StatsForecast offers a wide variety of models grouped in the following
-categories:
+- **Auto Forecast**: Automatic forecasting tools that search for the best parameters and select the best possible model. Useful for large collections of univariate time series. Includes: AutoARIMA, AutoETS, AutoTheta, AutoCES, AutoMFLES, AutoTBATS.
 
--   **Auto Forecast:** Automatic forecasting tools search for the best
-    parameters and select the best possible model for a series of time
-    series. These tools are useful for large collections of univariate
-    time series. Includes automatic versions of: Arima, ETS, Theta, CES.
+- **ARIMA Family**: AutoRegressive Integrated Moving Average models for capturing autocorrelations in time series data.
 
--   **Exponential Smoothing:** Uses a weighted average of all past
-    observations where the weights decrease exponentially into the past.
-    Suitable for data with clear trend and/or seasonality. Use the
-    `SimpleExponential` family for data with no clear trend or
-    seasonality. Examples: SES, Holt’s Winters, SSO.
+- **Exponential Smoothing**: Uses weighted averages of past observations where weights decrease exponentially into the past. Suitable for data with clear trend and/or seasonality.
 
--   **Benchmark models:** classical models for establishing baselines.
-    Examples: Mean, Naive, Random Walk
+- **Baseline Models**: Classical models for establishing baselines: HistoricAverage, Naive, RandomWalkWithDrift, SeasonalNaive, WindowAverage, SeasonalWindowAverage.
 
--   **Intermittent or Sparse models:** suited for series with very few
-    non-zero observations. Examples: CROSTON, ADIDA, IMAPA
+- **Sparse or Intermittent**: Models suited for series with very few non-zero observations: ADIDA, CrostonClassic, CrostonOptimized, CrostonSBA, IMAPA, TSB.
 
--   **Multiple Seasonalities:** suited for signals with more than one
-    clear seasonality. Useful for low-frequency data like electricity
-    and logs. Examples: MSTL and TBATS.
+- **Multiple Seasonalities**: Models suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs: MSTL, MFLES, TBATS.
 
--   **Theta Models:** fit two theta lines to a deseasonalized time
-    series, using different techniques to obtain and combine the two
-    theta lines to produce the final forecasts. Examples: Theta,
-    DynamicTheta
+- **Theta Models**: Fit two theta lines to a deseasonalized time series using different techniques: Theta, OptimizedTheta, DynamicTheta, DynamicOptimizedTheta.
 
--   **GARCH Model:** suited for modeling time series that exhibit
-    non-constant volatility over time. Commonly used in finance to model
-    stock prices, exchange rates, interest rates, and other financial
-    instruments. The ARCH model is a particular case of GARCH.
+- **ARCH/GARCH Family**: Models for time series exhibiting non-constant volatility over time. Commonly used in finance.
 
-# Automatic Forecasting
+- **Machine Learning**: Wrapper for scikit-learn models to be used with StatsForecast.
 
-## AutoARIMA
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L175"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## Automatic Forecasting
 
 ### AutoARIMA
 
-> ``` text
->  AutoARIMA (d:Optional[int]=None, D:Optional[int]=None, max_p:int=5,
->             max_q:int=5, max_P:int=2, max_Q:int=2, max_order:int=5,
->             max_d:int=2, max_D:int=1, start_p:int=2, start_q:int=2,
->             start_P:int=1, start_Q:int=1, stationary:bool=False,
->             seasonal:bool=True, ic:str='aicc', stepwise:bool=True,
->             nmodels:int=94, trace:bool=False,
->             approximation:Optional[bool]=False, method:Optional[str]=None,
->             truncate:Optional[bool]=None, test:str='kpss',
->             test_kwargs:Optional[str]=None, seasonal_test:str='seas',
->             seasonal_test_kwargs:Optional[Dict]=None,
->             allowdrift:bool=True, allowmean:bool=True,
->             blambda:Optional[float]=None, biasadj:bool=False,
->             season_length:int=1, alias:str='AutoARIMA', prediction_interva
->             ls:Optional[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*AutoARIMA model.
-
-Automatically selects the best ARIMA (AutoRegressive Integrated Moving
-Average) model using an information criterion. Default is Akaike
-Information Criterion (AICc).\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| d | Optional | None | Order of first-differencing. |
-| D | Optional | None | Order of seasonal-differencing. |
-| max_p | int | 5 | Max autorregresives p. |
-| max_q | int | 5 | Max moving averages q. |
-| max_P | int | 2 | Max seasonal autorregresives P. |
-| max_Q | int | 2 | Max seasonal moving averages Q. |
-| max_order | int | 5 | Max p+q+P+Q value if not stepwise selection. |
-| max_d | int | 2 | Max non-seasonal differences. |
-| max_D | int | 1 | Max seasonal differences. |
-| start_p | int | 2 | Starting value of p in stepwise procedure. |
-| start_q | int | 2 | Starting value of q in stepwise procedure. |
-| start_P | int | 1 | Starting value of P in stepwise procedure. |
-| start_Q | int | 1 | Starting value of Q in stepwise procedure. |
-| stationary | bool | False | If True, restricts search to stationary models. |
-| seasonal | bool | True | If False, restricts search to non-seasonal models. |
-| ic | str | aicc | Information criterion to be used in model selection. |
-| stepwise | bool | True | If True, will do stepwise selection (faster). |
-| nmodels | int | 94 | Number of models considered in stepwise search. |
-| trace | bool | False | If True, the searched ARIMA models is reported. |
-| approximation | Optional | False | If True, conditional sums-of-squares estimation, final MLE. |
-| method | Optional | None | Fitting method between maximum likelihood or sums-of-squares. |
-| truncate | Optional | None | Observations truncated series used in model selection. |
-| test | str | kpss | Unit root test to use. See [`ndiffs`](https://Nixtla.github.io/statsforecast/src/arima.html#ndiffs) for details. |
-| test_kwargs | Optional | None | Unit root test additional arguments. |
-| seasonal_test | str | seas | Selection method for seasonal differences. |
-| seasonal_test_kwargs | Optional | None | Seasonal unit root test arguments. |
-| allowdrift | bool | True | If True, drift models terms considered. |
-| allowmean | bool | True | If True, non-zero mean models considered. |
-| blambda | Optional | None | Box-Cox transformation parameter. |
-| biasadj | bool | False | Use adjusted back-transformed mean Box-Cox. |
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| alias | str | AutoARIMA | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L333"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoARIMA.fit
-
-> ``` text
->  AutoARIMA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the AutoARIMA model.
-
-Fit an AutoARIMA to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **AutoARIMA fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L396"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoARIMA.predict
-
-> ``` text
->  AutoARIMA.predict (h:int, X:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted AutoArima.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L434"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoARIMA.predict_in_sample
-
-> ``` text
->  AutoARIMA.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted AutoArima insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L454"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoARIMA.forecast
-
-> ``` text
->  AutoARIMA.forecast (y:numpy.ndarray, h:int,
->                      X:Optional[numpy.ndarray]=None,
->                      X_future:Optional[numpy.ndarray]=None,
->                      level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient AutoARIMA predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenpus of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x) optional exogenous. |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L546"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoARIMA.forward
-
-> ``` text
->  AutoARIMA.forward (y:numpy.ndarray, h:int,
->                     X:Optional[numpy.ndarray]=None,
->                     X_future:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted ARIMA model to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import AutoARIMA
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# AutoARIMA's usage example
-arima = AutoARIMA(season_length=4)
-arima = arima.fit(y=ap)
-y_hat_dict = arima.predict(h=4, level=[80])
-y_hat_dict
-```
-
-## AutoETS
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L603"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.AutoARIMA
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### AutoETS
 
-> ``` text
->  AutoETS (season_length:int=1, model:str='ZZZ',
->           damped:Optional[bool]=None, phi:Optional[float]=None,
->           alias:str='AutoETS', prediction_intervals:Optional[statsforecast
->           .utils.ConformalIntervals]=None)
-> ```
-
-\*Automatic Exponential Smoothing model.
-
-Automatically selects the best ETS (Error, Trend, Seasonality) model
-using an information criterion. Default is Akaike Information Criterion
-(AICc), while particular models are estimated using maximum likelihood.
-The state-space equations can be determined based on their $M$
-multiplicative, $A$ additive, $Z$ optimized or $N$ ommited components.
-The `model` string parameter defines the ETS equations: E in
-\[$M, A, Z$\], T in \[$N, A, M, Z$\], and S in \[$N, A, M, Z$\].
-
-For example when model=‘ANN’ (additive error, no trend, and no
-seasonality), ETS will explore only a simple exponential smoothing.
-
-If the component is selected as ‘Z’, it operates as a placeholder to ask
-the AutoETS model to figure out the best parameter.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| model | str | ZZZ | Controlling state-space-equations. |
-| damped | Optional | None | A parameter that ‘dampens’ the trend. |
-| phi | Optional | None | Smoothing parameter for trend damping. Only used when `damped=True`. |
-| alias | str | AutoETS | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L667"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoETS.fit
-
-> ``` text
->  AutoETS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Exponential Smoothing model.
-
-Fit an Exponential Smoothing model to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                             |
-|-------------|----------|-------------|-----------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).       |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x).   |
-| **Returns** |          |             | **Exponential Smoothing fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L697"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoETS.predict
-
-> ``` text
->  AutoETS.predict (h:int, X:Optional[numpy.ndarray]=None,
->                   level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted Exponential Smoothing.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenpus of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L731"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoETS.predict_in_sample
-
-> ``` text
->  AutoETS.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Exponential Smoothing insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L751"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoETS.forecast
-
-> ``` text
->  AutoETS.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                    X_future:Optional[numpy.ndarray]=None,
->                    level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient Exponential Smoothing predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenpus of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L811"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoETS.forward
-
-> ``` text
->  AutoETS.forward (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                   X_future:Optional[numpy.ndarray]=None,
->                   level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted Exponential Smoothing model to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenpus of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import AutoETS
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# AutoETS' usage example
-# Multiplicative trend, optimal error and seasonality
-autoets = AutoETS(model='ZMZ', season_length=4)
-autoets = autoets.fit(y=ap)
-y_hat_dict = autoets.predict(h=4)
-y_hat_dict
-```
-
-## AutoCES
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L868"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.AutoETS
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### AutoCES
 
-> ``` text
->  AutoCES (season_length:int=1, model:str='Z', alias:str='CES', prediction_
->           intervals:Optional[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*Complex Exponential Smoothing model.
-
-Automatically selects the best Complex Exponential Smoothing model using
-an information criterion. Default is Akaike Information Criterion
-(AICc), while particular models are estimated using maximum likelihood.
-The state-space equations can be determined based on their $S$ simple,
-$P$ parial, $Z$ optimized or $N$ ommited components. The `model` string
-parameter defines the kind of CES model: $N$ for simple CES (withous
-seasonality), $S$ for simple seasonality (lagged CES), $P$ for partial
-seasonality (without complex part), $F$ for full seasonality (lagged CES
-with real and complex seasonal parts).
-
-If the component is selected as ‘Z’, it operates as a placeholder to ask
-the AutoCES model to figure out the best parameter.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| model | str | Z | Controlling state-space-equations. |
-| alias | str | CES | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L913"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoCES.fit
-
-> ``` text
->  AutoCES.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Complex Exponential Smoothing model.
-
-Fit the Complex Exponential Smoothing model to a time series (numpy
-array) `y` and optionally exogenous variables (numpy array) `X`.\*
-
-|  | **Type** | **Default** | **Details** |
-|----|----|----|----|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| X | Optional | None | Optional exogenous of shape (t, n_x). |
-| **Returns** |  |  | **Complex Exponential Smoothing fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L947"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoCES.predict
-
-> ``` text
->  AutoCES.predict (h:int, X:Optional[numpy.ndarray]=None,
->                   level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted Exponential Smoothing.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None |  |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L981"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoCES.predict_in_sample
-
-> ``` text
->  AutoCES.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Exponential Smoothing insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1001"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoCES.forecast
-
-> ``` text
->  AutoCES.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                    X_future:Optional[numpy.ndarray]=None,
->                    level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient Complex Exponential Smoothing predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenpus of shape (h, n_x). |
-| level | Optional | None |  |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1066"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoCES.forward
-
-> ``` text
->  AutoCES.forward (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                   X_future:Optional[numpy.ndarray]=None,
->                   level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted Complex Exponential Smoothing to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenpus of shape (h, n_x). |
-| level | Optional | None |  |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import AutoCES
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# CES' usage example
-# Multiplicative trend, optimal error and seasonality
-ces = AutoCES(model='Z',  
-              season_length=4)
-ces = ces.fit(y=ap)
-y_hat_dict = ces.predict(h=4)
-y_hat_dict
-```
-
-## AutoTheta
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1123"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.AutoCES
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### AutoTheta
 
-> ``` text
->  AutoTheta (season_length:int=1, decomposition_type:str='multiplicative',
->             model:Optional[str]=None, alias:str='AutoTheta', prediction_in
->             tervals:Optional[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*AutoTheta model.
-
-Automatically selects the best Theta (Standard Theta Model (‘STM’),
-Optimized Theta Model (‘OTM’), Dynamic Standard Theta Model (‘DSTM’),
-Dynamic Optimized Theta Model (‘DOTM’)) model using mse.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| decomposition_type | str | multiplicative | Sesonal decomposition type, ‘multiplicative’ (default) or ‘additive’. |
-| model | Optional | None | Controlling Theta Model. By default searchs the best model. |
-| alias | str | AutoTheta | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1164"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTheta.fit
-
-> ``` text
->  AutoTheta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the AutoTheta model.
-
-Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **AutoTheta fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1197"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTheta.predict
-
-> ``` text
->  AutoTheta.predict (h:int, X:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted AutoTheta.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1224"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTheta.predict_in_sample
-
-> ``` text
->  AutoTheta.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted AutoTheta insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1243"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTheta.forecast
-
-> ``` text
->  AutoTheta.forecast (y:numpy.ndarray, h:int,
->                      X:Optional[numpy.ndarray]=None,
->                      X_future:Optional[numpy.ndarray]=None,
->                      level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient AutoTheta predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1296"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTheta.forward
-
-> ``` text
->  AutoTheta.forward (y:numpy.ndarray, h:int,
->                     X:Optional[numpy.ndarray]=None,
->                     X_future:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted AutoTheta to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import AutoTheta
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# AutoTheta's usage example
-theta = AutoTheta(season_length=4)
-theta = theta.fit(y=ap)
-y_hat_dict = theta.predict(h=4)
-y_hat_dict
-```
-
-## AutoMFLES
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1343"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.AutoTheta
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### AutoMFLES
 
-> ``` text
->  AutoMFLES (test_size:int,
->             season_length:Union[int,List[int],NoneType]=None,
->             n_windows:int=2, config:Optional[Dict[str,Any]]=None,
->             step_size:Optional[int]=None, metric:str='smape',
->             verbose:bool=False, prediction_intervals:Optional[statsforecas
->             t.utils.ConformalIntervals]=None, alias:str='AutoMFLES')
-> ```
-
-*AutoMFLES*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| test_size | int |  | Forecast horizon used during cross validation. |
-| season_length | Union | None | Number of observations per unit of time. Ex: 24 Hourly data. |
-| n_windows | int | 2 | Number of windows used for cross validation. |
-| config | Optional | None | Mapping from parameter name (from the init arguments of MFLES) to a list of values to try.<br/>If `None`, will use defaults. |
-| step_size | Optional | None | Step size between each cross validation window. If `None` will be set to test_size. |
-| metric | str | smape | Metric used to select the best model. Possible options are: ‘smape’, ‘mape’, ‘mse’ and ‘mae’. |
-| verbose | bool | False | Print debugging information. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-| alias | str | AutoMFLES | Custom name of the model. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1418"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoMFLES.fit
-
-> ``` text
->  AutoMFLES.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-*Fit the model*
-
-|             | **Type**      | **Default** | **Details**                       |
-|-------------|---------------|-------------|-----------------------------------|
-| y           | ndarray       |             | Clean time series of shape (t, ). |
-| X           | Optional      | None        | Exogenous of shape (t, n_x).      |
-| **Returns** | **AutoMFLES** |             | **Fitted AutoMFLES object.**      |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1440"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoMFLES.predict
-
-> ``` text
->  AutoMFLES.predict (h:int, X:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted AutoMFLES.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Exogenous of shape (h, n_x). |
-| level | Optional | None |  |
-| **Returns** | **Dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1472"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoMFLES.predict_in_sample
-
-> ``` text
->  AutoMFLES.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted AutoMFLES insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **Dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1491"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoMFLES.forecast
-
-> ``` text
->  AutoMFLES.forecast (y:numpy.ndarray, h:int,
->                      X:Optional[numpy.ndarray]=None,
->                      X_future:Optional[numpy.ndarray]=None,
->                      level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient AutoMFLES predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **Dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-## AutoTBATS
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1544"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.AutoMFLES
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### AutoTBATS
 
-> ``` text
->  AutoTBATS (season_length:Union[int,List[int]],
->             use_boxcox:Optional[bool]=None, bc_lower_bound:float=0.0,
->             bc_upper_bound:float=1.0, use_trend:Optional[bool]=None,
->             use_damped_trend:Optional[bool]=None,
->             use_arma_errors:bool=True, alias:str='AutoTBATS')
-> ```
+::: statsforecast.models.AutoTBATS
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
-\*AutoTBATS model.
-
-Automatically selects the best TBATS model from all feasible
-combinations of the parameters use_boxcox, use_trend, use_damped_trend,
-and use_arma_errors. Selection is made using the AIC. Default value for
-use_arma_errors is True since this enables the evaluation of models with
-and without ARMA errors.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | Union |  |  |
-| use_boxcox | Optional | None | Whether or not to use a Box-Cox transformation. By default tries both. |
-| bc_lower_bound | float | 0.0 | Lower bound for the Box-Cox transformation. |
-| bc_upper_bound | float | 1.0 | Upper bound for the Box-Cox transformation. |
-| use_trend | Optional | None | Whether or not to use a trend component. By default tries both. |
-| use_damped_trend | Optional | None | Whether or not to dampen the trend component. By default tries both. |
-| use_arma_errors | bool | True | Whether or not to use a ARMA errors. Default is True and this evaluates both models. |
-| alias | str | AutoTBATS | Custom name of the model. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1599"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTBATS.fit
-
-> ``` text
->  AutoTBATS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit TBATS model.
-
-Fit TBATS model to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        | Ignored                           |
-| **Returns** |          |             | **TBATS model.**                  |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1629"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTBATS.predict
-
-> ``` text
->  AutoTBATS.predict (h:int, X:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted TBATS model.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1663"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTBATS.predict_in_sample
-
-> ``` text
->  AutoTBATS.predict_in_sample (level:Optional[Tuple[int]]=None)
-> ```
-
-*Access fitted TBATS model predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1691"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoTBATS.forecast
-
-> ``` text
->  AutoTBATS.forecast (y:numpy.ndarray, h:int,
->                      X:Optional[numpy.ndarray]=None,
->                      X_future:Optional[numpy.ndarray]=None,
->                      level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient TBATS model.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| X_future | Optional | None |  |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-# ARIMA family
-
-## ARIMA
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1755"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## ARIMA Family
 
 ### ARIMA
 
-> ``` text
->  ARIMA (order:Tuple[int,int,int]=(0, 0, 0), season_length:int=1,
->         seasonal_order:Tuple[int,int,int]=(0, 0, 0),
->         include_mean:bool=True, include_drift:bool=False,
->         include_constant:Optional[bool]=None,
->         blambda:Optional[float]=None, biasadj:bool=False, method:str='CSS-
->         ML', fixed:Optional[dict]=None, alias:str='ARIMA', prediction_inte
->         rvals:Optional[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*ARIMA model.
-
-AutoRegressive Integrated Moving Average model.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| order | Tuple | (0, 0, 0) | A specification of the non-seasonal part of the ARIMA model: the three components (p, d, q) are the AR order, the degree of differencing, and the MA order. |
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| seasonal_order | Tuple | (0, 0, 0) | A specification of the seasonal part of the ARIMA model.<br/>(P, D, Q) for the AR order, the degree of differencing, the MA order. |
-| include_mean | bool | True | Should the ARIMA model include a mean term? <br/>The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions). |
-| include_drift | bool | False | Should the ARIMA model include a linear drift term? <br/>(i.e., a linear regression with ARIMA errors is fitted.) |
-| include_constant | Optional | None | If True, then includ_mean is set to be True for undifferenced series and include_drift is set to be True for differenced series. <br/>Note that if there is more than one difference taken, no constant is included regardless of the value of this argument. <br/>This is deliberate as otherwise quadratic and higher order polynomial trends would be induced. |
-| blambda | Optional | None | Box-Cox transformation parameter. |
-| biasadj | bool | False | Use adjusted back-transformed mean Box-Cox. |
-| method | str | CSS-ML | Fitting method: maximum likelihood or minimize conditional sum-of-squares. <br/>The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. |
-| fixed | Optional | None | Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`.<br/>For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`.<br/>For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`.<br/>For intercept and drift use the `intercept` and `drift` keys.<br/>For exogenous variables use the `ex_{i}` keys. |
-| alias | str | ARIMA | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1834"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARIMA.fit
-
-> ``` text
->  ARIMA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-*Fit the model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **Fitted model.**                     |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1873"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARIMA.predict
-
-> ``` text
->  ARIMA.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted model.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1911"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARIMA.predict_in_sample
-
-> ``` text
->  ARIMA.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1931"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARIMA.forecast
-
-> ``` text
->  ARIMA.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory efficient predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x) optional exogenous. |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2001"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARIMA.forward
-
-> ``` text
->  ARIMA.forward (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                 X_future:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted model to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import ARIMA
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# ARIMA's usage example
-arima = ARIMA(order=(1, 0, 0), season_length=12)
-arima = arima.fit(y=ap)
-y_hat_dict = arima.predict(h=4, level=[80])
-y_hat_dict
-```
-
-## AutoRegressive
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2058"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.ARIMA
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### AutoRegressive
 
-> ``` text
->  AutoRegressive (lags:Tuple[int,List], include_mean:bool=True,
->                  include_drift:bool=False, blambda:Optional[float]=None,
->                  biasadj:bool=False, method:str='CSS-ML',
->                  fixed:Optional[dict]=None, alias:str='AutoRegressive', pr
->                  ediction_intervals:Optional[statsforecast.utils.Conformal
->                  Intervals]=None)
-> ```
+::: statsforecast.models.AutoRegressive
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
-*Simple Autoregressive model.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| lags | Tuple |  | Number of lags to include in the model. <br/>If an int is passed then all lags up to `lags` are considered.<br/>If a list, only the elements of the list are considered as lags. |
-| include_mean | bool | True | Should the AutoRegressive model include a mean term? <br/>The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions). |
-| include_drift | bool | False | Should the AutoRegressive model include a linear drift term? <br/>(i.e., a linear regression with AutoRegressive errors is fitted.) |
-| blambda | Optional | None | Box-Cox transformation parameter. |
-| biasadj | bool | False | Use adjusted back-transformed mean Box-Cox. |
-| method | str | CSS-ML | Fitting method: maximum likelihood or minimize conditional sum-of-squares. <br/>The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. |
-| fixed | Optional | None | Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`.<br/>For autoregressive terms use the `ar{i}` keys. |
-| alias | str | AutoRegressive | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoRegressive.fit
-
-> ``` text
->  AutoRegressive.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-*Fit the model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **Fitted model.**                     |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoRegressive.predict
-
-> ``` text
->  AutoRegressive.predict (h:int, X:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted model.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoRegressive.predict_in_sample
-
-> ``` text
->  AutoRegressive.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoRegressive.forecast
-
-> ``` text
->  AutoRegressive.forecast (y:numpy.ndarray, h:int,
->                           X:Optional[numpy.ndarray]=None,
->                           X_future:Optional[numpy.ndarray]=None,
->                           level:Optional[List[int]]=None,
->                           fitted:bool=False)
-> ```
-
-\*Memory efficient predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x) optional exogenous. |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### AutoRegressive.forward
-
-> ``` text
->  AutoRegressive.forward (y:numpy.ndarray, h:int,
->                          X:Optional[numpy.ndarray]=None,
->                          X_future:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None,
->                          fitted:bool=False)
-> ```
-
-*Apply fitted model to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import AutoRegressive
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# AutoRegressive's usage example
-ar = AutoRegressive(lags=[12])
-ar = ar.fit(y=ap)
-y_hat_dict = ar.predict(h=4, level=[80])
-y_hat_dict
-```
-
-# ExponentialSmoothing
-
-## SimpleSmooth
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2256"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## Exponential Smoothing
 
 ### SimpleExponentialSmoothing
 
-> ``` text
->  SimpleExponentialSmoothing (alpha:float, alias:str='SES', prediction_inte
->                              rvals:Optional[statsforecast.utils.ConformalI
->                              ntervals]=None)
-> ```
-
-\*SimpleExponentialSmoothing model.
-
-Uses a weighted average of all past observations where the weights
-decrease exponentially into the past. Suitable for data with no clear
-trend or seasonality. Assuming there are $t$ observations, the one-step
-forecast is given by:
-$\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
-
-The rate $0 \leq \alpha \leq 1$ at which the weights decrease is called
-the smoothing parameter. When $\alpha = 1$, SES is equal to the naive
-method.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alpha | float |  | Smoothing parameter. |
-| alias | str | SES | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2370"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothing.forecast
-
-> ``` text
->  SimpleExponentialSmoothing.forecast (y:numpy.ndarray, h:int,
->                                       X:Optional[numpy.ndarray]=None, X_fu
->                                       ture:Optional[numpy.ndarray]=None,
->                                       level:Optional[List[int]]=None,
->                                       fitted:bool=False)
-> ```
-
-\*Memory Efficient SimpleExponentialSmoothing predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2292"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothing.fit
-
-> ``` text
->  SimpleExponentialSmoothing.fit (y:numpy.ndarray,
->                                  X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the SimpleExponentialSmoothing model.
-
-Fit an SimpleExponentialSmoothing to a time series (numpy array) `y` and
-optionally exogenous variables (numpy array) `X`.\*
-
-|  | **Type** | **Default** | **Details** |
-|----|----|----|----|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| X | Optional | None | Optional exogenous of shape (t, n_x). |
-| **Returns** |  |  | **SimpleExponentialSmoothing fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2320"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothing.predict
-
-> ``` text
->  SimpleExponentialSmoothing.predict (h:int,
->                                      X:Optional[numpy.ndarray]=None,
->                                      level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted SimpleExponentialSmoothing.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2353"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothing.predict_in_sample
-
-> ``` text
->  SimpleExponentialSmoothing.predict_in_sample ()
-> ```
-
-*Access fitted SimpleExponentialSmoothing insample predictions.*
-
-
-```python
-from statsforecast.models import SimpleExponentialSmoothing
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# SimpleExponentialSmoothing's usage example
-ses = SimpleExponentialSmoothing(alpha=0.5)
-ses = ses.fit(y=ap)
-y_hat_dict = ses.predict(h=4)
-y_hat_dict
-```
-
-## SimpleSmoothOptimized
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2431"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.SimpleExponentialSmoothing
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### SimpleExponentialSmoothingOptimized
 
-> ``` text
->  SimpleExponentialSmoothingOptimized (alias:str='SESOpt', prediction_inter
->                                       vals:Optional[statsforecast.utils.Co
->                                       nformalIntervals]=None)
-> ```
-
-\*SimpleExponentialSmoothing model.
-
-Uses a weighted average of all past observations where the weights
-decrease exponentially into the past. Suitable for data with no clear
-trend or seasonality. Assuming there are $t$ observations, the one-step
-forecast is given by:
-$\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
-
-The smoothing parameter $\alpha^*$ is optimized by square error
-minimization.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | SESOpt |  |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2462"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothingOptimized.fit
-
-> ``` text
->  SimpleExponentialSmoothingOptimized.fit (y:numpy.ndarray,
->                                           X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the SimpleExponentialSmoothingOptimized model.
-
-Fit an SimpleExponentialSmoothingOptimized to a time series (numpy
-array) `y` and optionally exogenous variables (numpy array) `X`.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| X | Optional | None | Optional exogenous of shape (t, n_x). |
-| **Returns** |  |  | **SimpleExponentialSmoothingOptimized fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2490"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothingOptimized.predict
-
-> ``` text
->  SimpleExponentialSmoothingOptimized.predict (h:int,
->                                               X:Optional[numpy.ndarray]=No
->                                               ne, level:Optional[List[int]
->                                               ]=None)
-> ```
-
-*Predict with fitted SimpleExponentialSmoothingOptimized.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2523"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothingOptimized.predict_in_sample
-
-> ``` text
->  SimpleExponentialSmoothingOptimized.predict_in_sample ()
-> ```
-
-*Access fitted SimpleExponentialSmoothingOptimized insample
-predictions.*
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2539"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SimpleExponentialSmoothingOptimized.forecast
-
-> ``` text
->  SimpleExponentialSmoothingOptimized.forecast (y:numpy.ndarray, h:int,
->                                                X:Optional[numpy.ndarray]=N
->                                                one, X_future:Optional[nump
->                                                y.ndarray]=None, level:Opti
->                                                onal[List[int]]=None,
->                                                fitted:bool=False)
-> ```
-
-\*Memory Efficient SimpleExponentialSmoothingOptimized predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import SimpleExponentialSmoothingOptimized
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# SimpleExponentialSmoothingOptimized's usage example
-seso = SimpleExponentialSmoothingOptimized()
-seso = seso.fit(y=ap)
-y_hat_dict = seso.predict(h=4)
-y_hat_dict
-```
-
-## SeasonalSmooth
-
-
-```python
-plt.plot(np.concatenate([ap[6:], seas_es.forecast(ap[6:], h=12)['mean']]))
-```
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2611"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.SimpleExponentialSmoothingOptimized
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### SeasonalExponentialSmoothing
 
-> ``` text
->  SeasonalExponentialSmoothing (season_length:int, alpha:float,
->                                alias:str='SeasonalES', prediction_interval
->                                s:Optional[statsforecast.utils.ConformalInt
->                                ervals]=None)
-> ```
-
-\*SeasonalExponentialSmoothing model.
-
-Uses a weighted average of all past observations where the weights
-decrease exponentially into the past. Suitable for data with no clear
-trend or seasonality. Assuming there are $t$ observations and season
-$s$, the one-step forecast is given by:
-$\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int |  | Number of observations per unit of time. Ex: 24 Hourly data. |
-| alpha | float |  | Smoothing parameter. |
-| alias | str | SeasonalES | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2655"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothing.fit
-
-> ``` text
->  SeasonalExponentialSmoothing.fit (y:numpy.ndarray,
->                                    X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the SeasonalExponentialSmoothing model.
-
-Fit an SeasonalExponentialSmoothing to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.\*
-
-|  | **Type** | **Default** | **Details** |
-|----|----|----|----|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| X | Optional | None | Optional exogenous of shape (t, n_x). |
-| **Returns** |  |  | **SeasonalExponentialSmoothing fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2689"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothing.predict
-
-> ``` text
->  SeasonalExponentialSmoothing.predict (h:int,
->                                        X:Optional[numpy.ndarray]=None,
->                                        level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted SeasonalExponentialSmoothing.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2722"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothing.predict_in_sample
-
-> ``` text
->  SeasonalExponentialSmoothing.predict_in_sample ()
-> ```
-
-*Access fitted SeasonalExponentialSmoothing insample predictions.*
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2738"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothing.forecast
-
-> ``` text
->  SeasonalExponentialSmoothing.forecast (y:numpy.ndarray, h:int,
->                                         X:Optional[numpy.ndarray]=None, X_
->                                         future:Optional[numpy.ndarray]=Non
->                                         e, level:Optional[List[int]]=None,
->                                         fitted:bool=False)
-> ```
-
-\*Memory Efficient SeasonalExponentialSmoothing predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import SeasonalExponentialSmoothing
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# SeasonalExponentialSmoothing's usage example
-model = SeasonalExponentialSmoothing(alpha=0.5, season_length=12)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## SeasonalSmoothOptimized
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2811"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.SeasonalExponentialSmoothing
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### SeasonalExponentialSmoothingOptimized
 
-> ``` text
->  SeasonalExponentialSmoothingOptimized (season_length:int,
->                                         alias:str='SeasESOpt', prediction_
->                                         intervals:Optional[statsforecast.u
->                                         tils.ConformalIntervals]=None)
-> ```
-
-\*SeasonalExponentialSmoothingOptimized model.
-
-Uses a weighted average of all past observations where the weights
-decrease exponentially into the past. Suitable for data with no clear
-trend or seasonality. Assuming there are $t$ observations and season
-$s$, the one-step forecast is given by:
-$\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
-
-The smoothing parameter $\alpha^*$ is optimized by square error
-minimization.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int |  | Number of observations per unit of time. Ex: 24 Hourly data. |
-| alias | str | SeasESOpt | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2935"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothingOptimized.forecast
-
-> ``` text
->  SeasonalExponentialSmoothingOptimized.forecast (y:numpy.ndarray, h:int,
->                                                  X:Optional[numpy.ndarray]
->                                                  =None, X_future:Optional[
->                                                  numpy.ndarray]=None, leve
->                                                  l:Optional[List[int]]=Non
->                                                  e, fitted:bool=False)
-> ```
-
-\*Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2853"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothingOptimized.fit
-
-> ``` text
->  SeasonalExponentialSmoothingOptimized.fit (y:numpy.ndarray,
->                                             X:Optional[numpy.ndarray]=None
->                                             )
-> ```
-
-\*Fit the SeasonalExponentialSmoothingOptimized model.
-
-Fit an SeasonalExponentialSmoothingOptimized to a time series (numpy
-array) `y` and optionally exogenous variables (numpy array) `X`.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| X | Optional | None | Optional exogenous of shape (t, n_x). |
-| **Returns** |  |  | **SeasonalExponentialSmoothingOptimized fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2886"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothingOptimized.predict
-
-> ``` text
->  SeasonalExponentialSmoothingOptimized.predict (h:int,
->                                                 X:Optional[numpy.ndarray]=
->                                                 None, level:Optional[List[
->                                                 int]]=None)
-> ```
-
-*Predict with fitted SeasonalExponentialSmoothingOptimized.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2919"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalExponentialSmoothingOptimized.predict_in_sample
-
-> ``` text
->  SeasonalExponentialSmoothingOptimized.predict_in_sample ()
-> ```
-
-*Access fitted SeasonalExponentialSmoothingOptimized insample
-predictions.*
-
-
-```python
-from statsforecast.models import SeasonalExponentialSmoothingOptimized
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# SeasonalExponentialSmoothingOptimized's usage example
-model = SeasonalExponentialSmoothingOptimized(season_length=12)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## Holt’s method
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L2985"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.SeasonalExponentialSmoothingOptimized
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### Holt
 
-> ``` text
->  Holt (season_length:int=1, error_type:str='A', alias:str='Holt', predicti
->        on_intervals:Optional[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*Holt’s method.
-
-Also known as double exponential smoothing, Holt’s method is an
-extension of exponential smoothing for series with a trend. This
-implementation returns the corresponding `ETS` model with additive (A)
-or multiplicative (M) errors (so either ‘AAN’ or ‘MAN’).\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 12 Monthly data. |
-| error_type | str | A | The type of error of the ETS model. Can be additive (A) or multiplicative (M). |
-| alias | str | Holt | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Holt.forecast
-
-> ``` text
->  Holt.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                 X_future:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient Exponential Smoothing predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenpus of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Holt.fit
-
-> ``` text
->  Holt.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Exponential Smoothing model.
-
-Fit an Exponential Smoothing model to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                             |
-|-------------|----------|-------------|-----------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).       |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x).   |
-| **Returns** |          |             | **Exponential Smoothing fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Holt.predict
-
-> ``` text
->  Holt.predict (h:int, X:Optional[numpy.ndarray]=None,
->                level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted Exponential Smoothing.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenpus of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Holt.predict_in_sample
-
-> ``` text
->  Holt.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Exponential Smoothing insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Holt.forward
-
-> ``` text
->  Holt.forward (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                X_future:Optional[numpy.ndarray]=None,
->                level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted Exponential Smoothing model to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenpus of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import Holt
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# Holt's usage example
-model = Holt(season_length=12, error_type='A')
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## Holt-Winters’ method
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3026"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.Holt
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
 ### HoltWinters
 
-> ``` text
->  HoltWinters (season_length:int=1, error_type:str='A',
->               alias:str='HoltWinters', prediction_intervals:Optional[stats
->               forecast.utils.ConformalIntervals]=None)
-> ```
+::: statsforecast.models.HoltWinters
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
-\*Holt-Winters’ method.
-
-Also known as triple exponential smoothing, Holt-Winters’ method is an
-extension of exponential smoothing for series that contain both trend
-and seasonality. This implementation returns the corresponding `ETS`
-model with additive (A) or multiplicative (M) errors (so either ‘AAA’ or
-‘MAM’).\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | season length |
-| error_type | str | A | error type |
-| alias | str | HoltWinters | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HoltWinters.forecast
-
-> ``` text
->  HoltWinters.forecast (y:numpy.ndarray, h:int,
->                        X:Optional[numpy.ndarray]=None,
->                        X_future:Optional[numpy.ndarray]=None,
->                        level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient Exponential Smoothing predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenpus of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HoltWinters.fit
-
-> ``` text
->  HoltWinters.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Exponential Smoothing model.
-
-Fit an Exponential Smoothing model to a time series (numpy array) `y`
-and optionally exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                             |
-|-------------|----------|-------------|-----------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).       |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x).   |
-| **Returns** |          |             | **Exponential Smoothing fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HoltWinters.predict
-
-> ``` text
->  HoltWinters.predict (h:int, X:Optional[numpy.ndarray]=None,
->                       level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted Exponential Smoothing.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenpus of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HoltWinters.predict_in_sample
-
-> ``` text
->  HoltWinters.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Exponential Smoothing insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HoltWinters.forward
-
-> ``` text
->  HoltWinters.forward (y:numpy.ndarray, h:int,
->                       X:Optional[numpy.ndarray]=None,
->                       X_future:Optional[numpy.ndarray]=None,
->                       level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted Exponential Smoothing model to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenpus of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import HoltWinters
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# Holt-Winters' usage example
-model = HoltWinters(season_length=12, error_type='A')
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-# Baseline Models
-
-## HistoricAverage
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3078"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## Baseline Models
 
 ### HistoricAverage
 
-> ``` text
->  HistoricAverage (alias:str='HistoricAverage', prediction_intervals:Option
->                   al[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*HistoricAverage model.
-
-Also known as mean method. Uses a simple average of all past
-observations. Assuming there are $t$ observations, the one-step forecast
-is given by: $$\hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j$$\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | HistoricAverage |  |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3196"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HistoricAverage.forecast
-
-> ``` text
->  HistoricAverage.forecast (y:numpy.ndarray, h:int,
->                            X:Optional[numpy.ndarray]=None,
->                            X_future:Optional[numpy.ndarray]=None,
->                            level:Optional[List[int]]=None,
->                            fitted:bool=False)
-> ```
-
-\*Memory Efficient HistoricAverage predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3107"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HistoricAverage.fit
-
-> ``` text
->  HistoricAverage.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the HistoricAverage model.
-
-Fit an HistoricAverage to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** | **self** |             | **HistoricAverage fitted model.**     |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3138"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HistoricAverage.predict
-
-> ``` text
->  HistoricAverage.predict (h:int, X:Optional[numpy.ndarray]=None,
->                           level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted HistoricAverage.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3176"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### HistoricAverage.predict_in_sample
-
-> ``` text
->  HistoricAverage.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted HistoricAverage insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions.** |
-
-
-```python
-from statsforecast.models import HistoricAverage
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# HistoricAverage's usage example
-model = HistoricAverage()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## Naive
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3256"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.HistoricAverage
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### Naive
 
-> ``` text
->  Naive (alias:str='Naive', prediction_intervals:Optional[statsforecast.uti
->         ls.ConformalIntervals]=None)
-> ```
-
-\*Naive model.
-
-All forecasts have the value of the last observation:  
-$\hat{y}_{t+1} = y_t$ for all $t$\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | Naive |  |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3371"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Naive.forecast
-
-> ``` text
->  Naive.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient Naive predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n,). |
-| h | int |  |  |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3284"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Naive.fit
-
-> ``` text
->  Naive.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Naive model.
-
-Fit an Naive to a time series (numpy.array) `y`.\*
-
-|             | **Type**  | **Default** | **Details**                           |
-|-------------|-----------|-------------|---------------------------------------|
-| y           | ndarray   |             | Clean time series of shape (t, ).     |
-| X           | Optional  | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** | **self:** |             | **Naive fitted model.**               |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3315"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Naive.predict
-
-> ``` text
->  Naive.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted Naive.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | forecasting horizon |
-| X | Optional | None | exogenous regressors |
-| level | Optional | None | confidence level |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3353"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Naive.predict_in_sample
-
-> ``` text
->  Naive.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Naive insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions.** |
-
-
-```python
-from statsforecast.models import Naive
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# Naive's usage example
-model = Naive()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## RandomWalkWithDrift
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3485"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.Naive
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### RandomWalkWithDrift
 
-> ``` text
->  RandomWalkWithDrift (alias:str='RWD', prediction_intervals:Optional[stats
->                       forecast.utils.ConformalIntervals]=None)
-> ```
-
-\*RandomWalkWithDrift model.
-
-A variation of the naive method allows the forecasts to change over
-time. The amout of change, called drift, is the average change seen in
-the historical data.
-
-$$\hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-y_1}{t-1}$$
-
-From the previous equation, we can see that this is equivalent to
-extrapolating a line between the first and the last observation.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | RWD | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3602"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### RandomWalkWithDrift.forecast
-
-> ``` text
->  RandomWalkWithDrift.forecast (y:numpy.ndarray, h:int,
->                                X:Optional[numpy.ndarray]=None,
->                                X_future:Optional[numpy.ndarray]=None,
->                                level:Optional[List[int]]=None,
->                                fitted:bool=False)
-> ```
-
-\*Memory Efficient RandomWalkWithDrift predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n,). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **forecasts: dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3518"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### RandomWalkWithDrift.fit
-
-> ``` text
->  RandomWalkWithDrift.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the RandomWalkWithDrift model.
-
-Fit an RandomWalkWithDrift to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             |                                       |
-| X           | Optional | None        |                                       |
-| **Returns** |          |             | **RandomWalkWithDrift fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3548"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### RandomWalkWithDrift.predict
-
-> ``` text
->  RandomWalkWithDrift.predict (h:int, X:Optional[numpy.ndarray]=None,
->                               level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted RandomWalkWithDrift.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3584"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### RandomWalkWithDrift.predict_in_sample
-
-> ``` text
->  RandomWalkWithDrift.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted RandomWalkWithDrift insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import RandomWalkWithDrift
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# RandomWalkWithDrift's usage example
-model = RandomWalkWithDrift()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## SeasonalNaive
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3662"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.RandomWalkWithDrift
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### SeasonalNaive
 
-> ``` text
->  SeasonalNaive (season_length:int, alias:str='SeasonalNaive', prediction_i
->                 ntervals:Optional[statsforecast.utils.ConformalIntervals]=
->                 None)
-> ```
-
-\*Seasonal naive model.
-
-A method similar to the naive, but uses the last known observation of
-the same period (e.g. the same month of the previous year) in order to
-capture seasonal variations.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int |  | Number of observations per unit of time. Ex: 24 Hourly data. |
-| alias | str | SeasonalNaive | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3785"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalNaive.forecast
-
-> ``` text
->  SeasonalNaive.forecast (y:numpy.ndarray, h:int,
->                          X:Optional[numpy.ndarray]=None,
->                          X_future:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None,
->                          fitted:bool=False)
-> ```
-
-\*Memory Efficient SeasonalNaive predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3693"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalNaive.fit
-
-> ``` text
->  SeasonalNaive.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the SeasonalNaive model.
-
-Fit an SeasonalNaive to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **SeasonalNaive fitted model.**   |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3728"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalNaive.predict
-
-> ``` text
->  SeasonalNaive.predict (h:int, X:Optional[numpy.ndarray]=None,
->                         level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted Naive.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| level | Optional | None |  |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3766"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalNaive.predict_in_sample
-
-> ``` text
->  SeasonalNaive.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted SeasonalNaive insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import SeasonalNaive
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# SeasonalNaive's usage example
-model = SeasonalNaive(season_length=12)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## WindowAverage
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3900"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.SeasonalNaive
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### WindowAverage
 
-> ``` text
->  WindowAverage (window_size:int, alias:str='WindowAverage', prediction_int
->                 ervals:Optional[statsforecast.utils.ConformalIntervals]=No
->                 ne)
-> ```
-
-\*WindowAverage model.
-
-Uses the average of the last $k$ observations, with $k$ the length of
-the window. Wider windows will capture global trends, while narrow
-windows will reveal local trends. The length of the window selected
-should take into account the importance of past observations and how
-fast the series changes.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| window_size | int |  | Size of truncated series on which average is estimated. |
-| alias | str | WindowAverage | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4010"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### WindowAverage.forecast
-
-> ``` text
->  WindowAverage.forecast (y:numpy.ndarray, h:int,
->                          X:Optional[numpy.ndarray]=None,
->                          X_future:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None,
->                          fitted:bool=False)
-> ```
-
-\*Memory Efficient WindowAverage predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3934"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### WindowAverage.fit
-
-> ``` text
->  WindowAverage.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the WindowAverage model.
-
-Fit an WindowAverage to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **WindowAverage fitted model.**       |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L3962"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### WindowAverage.predict
-
-> ``` text
->  WindowAverage.predict (h:int, X:Optional[numpy.ndarray]=None,
->                         level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted WindowAverage.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import WindowAverage
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# WindowAverage's usage example
-model = WindowAverage(window_size=12*4)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## SeasonalWindowAverage
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4075"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.WindowAverage
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### SeasonalWindowAverage
 
-> ``` text
->  SeasonalWindowAverage (season_length:int, window_size:int,
->                         alias:str='SeasWA', prediction_intervals:Optional[
->                         statsforecast.utils.ConformalIntervals]=None)
-> ```
+::: statsforecast.models.SeasonalWindowAverage
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
-\*SeasonalWindowAverage model.
-
-An average of the last $k$ observations of the same period, with $k$ the
-length of the window.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int |  |  |
-| window_size | int |  | Size of truncated series on which average is estimated. |
-| alias | str | SeasWA | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4192"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalWindowAverage.forecast
-
-> ``` text
->  SeasonalWindowAverage.forecast (y:numpy.ndarray, h:int,
->                                  X:Optional[numpy.ndarray]=None,
->                                  X_future:Optional[numpy.ndarray]=None,
->                                  level:Optional[List[int]]=None,
->                                  fitted:bool=False)
-> ```
-
-\*Memory Efficient SeasonalWindowAverage predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n,). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4110"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalWindowAverage.fit
-
-> ``` text
->  SeasonalWindowAverage.fit (y:numpy.ndarray,
->                             X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the SeasonalWindowAverage model.
-
-Fit an SeasonalWindowAverage to a time series (numpy array) `y` and
-optionally exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                             |
-|-------------|----------|-------------|-----------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).       |
-| X           | Optional | None        | Optional exogenpus of shape (t, n_x).   |
-| **Returns** |          |             | **SeasonalWindowAverage fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4144"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SeasonalWindowAverage.predict
-
-> ``` text
->  SeasonalWindowAverage.predict (h:int, X:Optional[numpy.ndarray]=None,
->                                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted SeasonalWindowAverage.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import SeasonalWindowAverage
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# SeasonalWindowAverage's usage example
-model = SeasonalWindowAverage(season_length=12, window_size=4)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-# Sparse or Intermittent
-
-## ADIDA
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4330"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## Sparse or Intermittent Models
 
 ### ADIDA
 
-> ``` text
->  ADIDA (alias:str='ADIDA', prediction_intervals:Optional[statsforecast.uti
->         ls.ConformalIntervals]=None)
-> ```
-
-\*ADIDA model.
-
-Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal
-aggregation to reduce the number of zero observations. Once the data has
-been agregated, it uses the optimized SES to generate the forecasts at
-the new level. It then breaks down the forecast to the original level
-using equal weights.
-
-ADIDA specializes on sparse or intermittent series are series with very
-few non-zero observations. They are notoriously hard to forecast, and
-so, different methods have been developed especifically for them.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | ADIDA | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4446"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ADIDA.forecast
-
-> ``` text
->  ADIDA.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient ADIDA predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n,). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4365"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ADIDA.fit
-
-> ``` text
->  ADIDA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the ADIDA model.
-
-Fit an ADIDA to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **ADIDA fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4390"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ADIDA.predict
-
-> ``` text
->  ADIDA.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted ADIDA.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import ADIDA
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# ADIDA's usage example
-model = ADIDA()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## CrostonClassic
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4527"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.ADIDA
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### CrostonClassic
 
-> ``` text
->  CrostonClassic (alias:str='CrostonClassic', prediction_intervals:Optional
->                  [statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*CrostonClassic model.
-
-A method to forecast time series that exhibit intermittent demand. It
-decomposes the original time series into a non-zero demand size $z_t$
-and inter-demand intervals $p_t$. Then the forecast is given by:
-$$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
-
-where $\hat{z}_t$ and $\hat{p}_t$ are forecasted using SES. The
-smoothing parameter of both components is set equal to 0.1\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | CrostonClassic | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4639"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonClassic.forecast
-
-> ``` text
->  CrostonClassic.forecast (y:numpy.ndarray, h:int,
->                           X:Optional[numpy.ndarray]=None,
->                           X_future:Optional[numpy.ndarray]=None,
->                           level:Optional[List[int]]=None,
->                           fitted:bool=False)
-> ```
-
-\*Memory Efficient CrostonClassic predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4561"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonClassic.fit
-
-> ``` text
->  CrostonClassic.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the CrostonClassic model.
-
-Fit an CrostonClassic to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **CrostonClassic fitted model.**  |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4586"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonClassic.predict
-
-> ``` text
->  CrostonClassic.predict (h:int, X:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted CrostonClassic.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import CrostonClassic
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# CrostonClassic's usage example
-model = CrostonClassic()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## CrostonOptimized
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4733"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.CrostonClassic
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### CrostonOptimized
 
-> ``` text
->  CrostonOptimized (alias:str='CrostonOptimized', prediction_intervals:Opti
->                    onal[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*CrostonOptimized model.
-
-A method to forecast time series that exhibit intermittent demand. It
-decomposes the original time series into a non-zero demand size $z_t$
-and inter-demand intervals $p_t$. Then the forecast is given by:
-$$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
-
-A variation of the classic Croston’s method where the smooting paramater
-is optimally selected from the range $[0.1,0.3]$. Both the non-zero
-demand $z_t$ and the inter-demand intervals $p_t$ are smoothed
-separately, so their smoothing parameters can be different.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | CrostonOptimized | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4845"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonOptimized.forecast
-
-> ``` text
->  CrostonOptimized.forecast (y:numpy.ndarray, h:int,
->                             X:Optional[numpy.ndarray]=None,
->                             X_future:Optional[numpy.ndarray]=None,
->                             level:Optional[List[int]]=None,
->                             fitted:bool=False)
-> ```
-
-\*Memory Efficient CrostonOptimized predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None |  |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4767"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonOptimized.fit
-
-> ``` text
->  CrostonOptimized.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the CrostonOptimized model.
-
-Fit an CrostonOptimized to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                        |
-|-------------|----------|-------------|------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).  |
-| X           | Optional | None        |                                    |
-| **Returns** |          |             | **CrostonOptimized fitted model.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4792"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonOptimized.predict
-
-> ``` text
->  CrostonOptimized.predict (h:int, X:Optional[numpy.ndarray]=None,
->                            level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted CrostonOptimized.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import CrostonOptimized
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# CrostonOptimized's usage example
-model = CrostonOptimized()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## CrostonSBA
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4906"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.CrostonOptimized
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### CrostonSBA
 
-> ``` text
->  CrostonSBA (alias:str='CrostonSBA', prediction_intervals:Optional[statsfo
->              recast.utils.ConformalIntervals]=None)
-> ```
-
-\*CrostonSBA model.
-
-A method to forecast time series that exhibit intermittent demand. It
-decomposes the original time series into a non-zero demand size $z_t$
-and inter-demand intervals $p_t$. Then the forecast is given by:
-$$\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}$$
-
-A variation of the classic Croston’s method that uses a debiasing
-factor, so that the forecast is given by:
-$$\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}$$\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | CrostonSBA | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5019"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonSBA.forecast
-
-> ``` text
->  CrostonSBA.forecast (y:numpy.ndarray, h:int,
->                       X:Optional[numpy.ndarray]=None,
->                       X_future:Optional[numpy.ndarray]=None,
->                       level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient CrostonSBA predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4941"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonSBA.fit
-
-> ``` text
->  CrostonSBA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the CrostonSBA model.
-
-Fit an CrostonSBA to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **CrostonSBA fitted model.**      |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L4966"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### CrostonSBA.predict
-
-> ``` text
->  CrostonSBA.predict (h:int, X:Optional[numpy.ndarray]=None,
->                      level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted CrostonSBA.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import CrostonSBA
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# CrostonSBA's usage example
-model = CrostonSBA()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## IMAPA
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5106"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.CrostonSBA
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### IMAPA
 
-> ``` text
->  IMAPA (alias:str='IMAPA', prediction_intervals:Optional[statsforecast.uti
->         ls.ConformalIntervals]=None)
-> ```
-
-\*IMAPA model.
-
-Intermittent Multiple Aggregation Prediction Algorithm: Similar to
-ADIDA, but instead of using a single aggregation level, it considers
-multiple in order to capture different dynamics of the data. Uses the
-optimized SES to generate the forecasts at the new levels and then
-combines them using a simple average.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alias | str | IMAPA | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5218"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### IMAPA.forecast
-
-> ``` text
->  IMAPA.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient IMAPA predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5137"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### IMAPA.fit
-
-> ``` text
->  IMAPA.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the IMAPA model.
-
-Fit an IMAPA to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **IMAPA fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5162"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### IMAPA.predict
-
-> ``` text
->  IMAPA.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted IMAPA.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| level | Optional | None |  |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import IMAPA
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# IMAPA's usage example
-model = IMAPA()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## TSB
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5296"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.IMAPA
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### TSB
 
-> ``` text
->  TSB (alpha_d:float, alpha_p:float, alias:str='TSB', prediction_intervals:
->       Optional[statsforecast.utils.ConformalIntervals]=None)
-> ```
+::: statsforecast.models.TSB
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
-\*TSB model.
-
-Teunter-Syntetos-Babai: A modification of Croston’s method that replaces
-the inter-demand intervals with the demand probability $d_t$, which is
-defined as follows.
-
-$$
-
-d_t = \begin{cases}
-    1  & \text{if demand occurs at time t} \\
-    0  & \text{otherwise.}
-\end{cases}
-
-$$
-
-Hence, the forecast is given by
-
-$$\hat{y}_t= \hat{d}_t\hat{z_t}$$
-
-Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters
-of each may differ, like in the optimized Croston’s method.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| alpha_d | float |  | Smoothing parameter for demand. |
-| alpha_p | float |  | Smoothing parameter for probability. |
-| alias | str | TSB | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5422"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TSB.forecast
-
-> ``` text
->  TSB.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                X_future:Optional[numpy.ndarray]=None,
->                level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient TSB predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None |  |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5346"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TSB.fit
-
-> ``` text
->  TSB.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the TSB model.
-
-Fit an TSB to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **TSB fitted model.**             |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5373"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TSB.predict
-
-> ``` text
->  TSB.predict (h:int, X:Optional[numpy.ndarray]=None,
->               level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted TSB.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import TSB
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# TSB's usage example
-model = TSB(alpha_d=0.5, alpha_p=0.5)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-# Multiple Seasonalities
-
-## MSTL
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5492"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## Multiple Seasonalities
 
 ### MSTL
 
-> ``` text
->  MSTL (season_length:Union[int,List[int]], trend_forecaster=AutoETS,
->        stl_kwargs:Optional[Dict]=None, alias:str='MSTL', prediction_interv
->        als:Optional[statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*MSTL model.
-
-The MSTL (Multiple Seasonal-Trend decomposition using LOESS) decomposes
-the time series in multiple seasonalities using LOESS. Then forecasts
-the trend using a custom non-seaonal model and each seasonality using a
-SeasonalNaive model.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | Union |  | Number of observations per unit of time. For multiple seasonalities use a list. |
-| trend_forecaster | AutoETS | AutoETS | StatsForecast model used to forecast the trend component. |
-| stl_kwargs | Optional | None | Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.STL.html#statsmodels.tsa.seasonal.STL).<br/>The `period` and `seasonal` arguments are reserved. |
-| alias | str | MSTL | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5557"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MSTL.fit
-
-> ``` text
->  MSTL.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the MSTL model.
-
-Fit MSTL to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **MSTL fitted model.**            |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5589"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MSTL.predict
-
-> ``` text
->  MSTL.predict (h:int, X:Optional[numpy.ndarray]=None,
->                level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted MSTL.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5628"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MSTL.predict_in_sample
-
-> ``` text
->  MSTL.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted MSTL insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5646"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MSTL.forecast
-
-> ``` text
->  MSTL.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                 X_future:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient MSTL predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5711"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MSTL.forward
-
-> ``` text
->  MSTL.forward (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                X_future:Optional[numpy.ndarray]=None,
->                level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted MSTL model to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import MSTL
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# MSTL's usage example
-mstl_model = MSTL(season_length=[3, 12], trend_forecaster=AutoARIMA(prediction_intervals=ConformalIntervals(h=4, n_windows=2)))
-mstl_model = mstl_model.fit(y=ap)
-y_hat_dict = mstl_model.predict(h=4, level=[80])
-y_hat_dict
-```
-
-## MFLES
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5771"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.MSTL
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### MFLES
 
-> ``` text
->  MFLES (season_length:Union[int,List[int],NoneType]=None,
->         fourier_order:Optional[int]=None, max_rounds:int=50,
->         ma:Optional[int]=None, alpha:float=1.0, decay:float=-1.0,
->         changepoints:bool=True, n_changepoints:Union[float,int]=0.25,
->         seasonal_lr:float=0.9, trend_lr:float=0.9, exogenous_lr:float=1.0,
->         residuals_lr:float=1.0, cov_threshold:float=0.7,
->         moving_medians:bool=False, min_alpha:float=0.05,
->         max_alpha:float=1.0, trend_penalty:bool=True,
->         multiplicative:Optional[bool]=None, smoother:bool=False,
->         robust:Optional[bool]=None, verbose:bool=False, prediction_interva
->         ls:Optional[statsforecast.utils.ConformalIntervals]=None,
->         alias:str='MFLES')
-> ```
-
-\*MFLES model.
-
-A method to forecast time series based on Gradient Boosted Time Series
-Decomposition which treats traditional decomposition as the base
-estimator in the boosting process. Unlike normal gradient boosting,
-slight learning rates are applied at the component level
-(trend/seasonality/exogenous).
-
-The method derives its name from some of the underlying estimators that
-can enter into the boosting procedure, specifically: a simple Median,
-Fourier functions for seasonality, a simple/piecewise Linear trend, and
-Exponential Smoothing.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | Union | None | Number of observations per unit of time. Ex: 24 Hourly data. |
-| fourier_order | Optional | None | How many fourier sin/cos pairs to create, the larger the number the more complex of a seasonal pattern can be fitted.<br/>A lower number leads to smoother results.<br/>This is auto-set based on seasonal_period. |
-| max_rounds | int | 50 | The max number of boosting rounds. The boosting will auto-stop but depending on other parameters such as rs_lr you may want more rounds.<br/>Generally more rounds means a smoother fit. |
-| ma | Optional | None | The moving average order to use, this is auto-set based on internal logic.<br/>Passing 4 would fit a 4 period moving average on the residual component. |
-| alpha | float | 1.0 | The alpha which is used in fitting the underlying LASSO when using piecewise functions. |
-| decay | float | -1.0 | Effects the slopes of the piecewise-linear basis function. |
-| changepoints | bool | True | Whether to fit for changepoints if all other logic allows for it. If False, MFLES will not ever fit a piecewise trend. |
-| n_changepoints | Union | 0.25 | Number (if int) or proportion (if float) of changepoint knots to place. The default of 0.25 will place 0.25 \* (series length) number of knots. |
-| seasonal_lr | float | 0.9 | A shrinkage parameter (0 \< seasonal_lr \<= 1) which penalizes the seasonal fit.<br/>A value of 0.9 will flatly multiply the seasonal fit by 0.9 each boosting round, this can be used to allow more signal to the exogenous component. |
-| trend_lr | float | 0.9 | A shrinkage parameter (0 \< trend_lr \<= 1) which penalizes the linear trend fit<br/>A value of 0.9 will flatly multiply the linear fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or exogenous components. |
-| exogenous_lr | float | 1.0 | The shrinkage parameter (0 \< exogenous_lr \<= 1) which controls how much of the exogenous signal is carried to the next round. |
-| residuals_lr | float | 1.0 | A shrinkage parameter (0 \< residuals_lr \<= 1) which penalizes the residual smoothing.<br/>A value of 0.9 will flatly multiply the residual fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or linear components. |
-| cov_threshold | float | 0.7 | The deseasonalized cov is used to auto-set some logic, lowering the cov_threshold will result in simpler and less complex residual smoothing.<br/>If you pass something like 1000 then there will be no safeguards applied. |
-| moving_medians | bool | False | The default behavior is to fit an initial median to the time series. If True, then it will fit a median per seasonal period. |
-| min_alpha | float | 0.05 | The minimum alpha in the SES ensemble. |
-| max_alpha | float | 1.0 | The maximum alpha used in the SES ensemble. |
-| trend_penalty | bool | True | Whether to apply a simple penalty to the linear trend component, very useful for dealing with the potentially dangerous piecewise trend. |
-| multiplicative | Optional | None | Auto-set based on internal logic. If True, it will simply take the log of the time series. |
-| smoother | bool | False | If True, then a simple exponential ensemble will be used rather than auto settings. |
-| robust | Optional | None | If True then MFLES will fit using more reserved methods, i.e. not using piecewise trend or moving average residual smoother.<br/>Auto-set based on internal logic. |
-| verbose | bool | False | Print debugging information. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-| alias | str | MFLES | Custom name of the model. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5927"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MFLES.fit
-
-> ``` text
->  MFLES.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-*Fit the model*
-
-|             | **Type**  | **Default** | **Details**                       |
-|-------------|-----------|-------------|-----------------------------------|
-| y           | ndarray   |             | Clean time series of shape (t, ). |
-| X           | Optional  | None        | Exogenous of shape (t, n_x).      |
-| **Returns** | **MFLES** |             | **Fitted MFLES object.**          |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5949"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MFLES.predict
-
-> ``` text
->  MFLES.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted MFLES.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Exogenous of shape (h, n_x). |
-| level | Optional | None |  |
-| **Returns** | **Dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L5981"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MFLES.predict_in_sample
-
-> ``` text
->  MFLES.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted SklearnModel insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **Dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6000"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### MFLES.forecast
-
-> ``` text
->  MFLES.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient MFLES predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **Dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-## TBATS
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6053"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.MFLES
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### TBATS
 
-> ``` text
->  TBATS (season_length:Union[int,List[int]],
->         use_boxcox:Optional[bool]=True, bc_lower_bound:float=0.0,
->         bc_upper_bound:float=1.0, use_trend:Optional[bool]=True,
->         use_damped_trend:Optional[bool]=False, use_arma_errors:bool=False,
->         alias:str='TBATS')
-> ```
+::: statsforecast.models.TBATS
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
-\*Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal
-components (TBATS) model.
-
-TBATS is an innovations state space model framework used for forecasting
-time series with multiple seasonalities. It uses a Box-Cox
-tranformation, ARMA errors, and a trigonometric representation of the
-seasonal patterns based on Fourier series.
-
-The name TBATS is an acronym for the key features of the model:
-Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal
-components.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | Union |  | Number of observations per unit of time. Ex: 24 Hourly data. |
-| use_boxcox | Optional | True | Whether or not to use a Box-Cox transformation. |
-| bc_lower_bound | float | 0.0 | Lower bound for the Box-Cox transformation. |
-| bc_upper_bound | float | 1.0 | Upper bound for the Box-Cox transformation. |
-| use_trend | Optional | True | Whether or not to use a trend component. |
-| use_damped_trend | Optional | False | Whether or not to dampen the trend component. |
-| use_arma_errors | bool | False | Whether or not to use a ARMA errors. |
-| alias | str | TBATS | Custom name of the model. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1599"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.fit
-
-> ``` text
->  TBATS.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit TBATS model.
-
-Fit TBATS model to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        | Ignored                           |
-| **Returns** |          |             | **TBATS model.**                  |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1629"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.predict
-
-> ``` text
->  TBATS.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted TBATS model.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1663"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.predict_in_sample
-
-> ``` text
->  TBATS.predict_in_sample (level:Optional[Tuple[int]]=None)
-> ```
-
-*Access fitted TBATS model predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L1691"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### TBATS.forecast
-
-> ``` text
->  TBATS.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient TBATS model.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| X_future | Optional | None |  |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-# Theta Family
-
-## Standard Theta Method
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6109"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## Theta Family
 
 ### Theta
 
-> ``` text
->  Theta (season_length:int=1, decomposition_type:str='multiplicative',
->         alias:str='Theta', prediction_intervals:Optional[statsforecast.uti
->         ls.ConformalIntervals]=None)
-> ```
-
-*Standard Theta Method.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| decomposition_type | str | multiplicative | Sesonal decomposition type, ‘multiplicative’ (default) or ‘additive’. |
-| alias | str | Theta | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Theta.forecast
-
-> ``` text
->  Theta.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient AutoTheta predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Theta.fit
-
-> ``` text
->  Theta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the AutoTheta model.
-
-Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **AutoTheta fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Theta.predict
-
-> ``` text
->  Theta.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted AutoTheta.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Theta.predict_in_sample
-
-> ``` text
->  Theta.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted AutoTheta insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### Theta.forward
-
-> ``` text
->  Theta.forward (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                 X_future:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted AutoTheta to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import Theta
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# Theta's usage example
-model = Theta(season_length=12)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## Optimized Theta Method
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6146"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.Theta
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
 ### OptimizedTheta
 
-> ``` text
->  OptimizedTheta (season_length:int=1,
->                  decomposition_type:str='multiplicative',
->                  alias:str='OptimizedTheta', prediction_intervals:Optional
->                  [statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-*Optimized Theta Method.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| decomposition_type | str | multiplicative | Sesonal decomposition type, ‘multiplicative’ (default) or ‘additive’. |
-| alias | str | OptimizedTheta | Custom name of the model. Default [`OptimizedTheta`](https://Nixtla.github.io/statsforecast/src/core/models.html#optimizedtheta). |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### OptimizedTheta.forecast
-
-> ``` text
->  OptimizedTheta.forecast (y:numpy.ndarray, h:int,
->                           X:Optional[numpy.ndarray]=None,
->                           X_future:Optional[numpy.ndarray]=None,
->                           level:Optional[List[int]]=None,
->                           fitted:bool=False)
-> ```
-
-\*Memory Efficient AutoTheta predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### OptimizedTheta.fit
-
-> ``` text
->  OptimizedTheta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the AutoTheta model.
-
-Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **AutoTheta fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### OptimizedTheta.predict
-
-> ``` text
->  OptimizedTheta.predict (h:int, X:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted AutoTheta.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### OptimizedTheta.predict_in_sample
-
-> ``` text
->  OptimizedTheta.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted AutoTheta insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### OptimizedTheta.forward
-
-> ``` text
->  OptimizedTheta.forward (y:numpy.ndarray, h:int,
->                          X:Optional[numpy.ndarray]=None,
->                          X_future:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None,
->                          fitted:bool=False)
-> ```
-
-*Apply fitted AutoTheta to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import OptimizedTheta
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# OptimzedThetA's usage example
-model = OptimizedTheta(season_length=12)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## Dynamic Standard Theta Method
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6183"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.OptimizedTheta
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
 ### DynamicTheta
 
-> ``` text
->  DynamicTheta (season_length:int=1,
->                decomposition_type:str='multiplicative',
->                alias:str='DynamicTheta', prediction_intervals:Optional[sta
->                tsforecast.utils.ConformalIntervals]=None)
-> ```
-
-*Dynamic Standard Theta Method.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| decomposition_type | str | multiplicative | Sesonal decomposition type, ‘multiplicative’ (default) or ‘additive’. |
-| alias | str | DynamicTheta | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicTheta.forecast
-
-> ``` text
->  DynamicTheta.forecast (y:numpy.ndarray, h:int,
->                         X:Optional[numpy.ndarray]=None,
->                         X_future:Optional[numpy.ndarray]=None,
->                         level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient AutoTheta predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicTheta.fit
-
-> ``` text
->  DynamicTheta.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the AutoTheta model.
-
-Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **AutoTheta fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicTheta.predict
-
-> ``` text
->  DynamicTheta.predict (h:int, X:Optional[numpy.ndarray]=None,
->                        level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted AutoTheta.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicTheta.predict_in_sample
-
-> ``` text
->  DynamicTheta.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted AutoTheta insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicTheta.forward
-
-> ``` text
->  DynamicTheta.forward (y:numpy.ndarray, h:int,
->                        X:Optional[numpy.ndarray]=None,
->                        X_future:Optional[numpy.ndarray]=None,
->                        level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply fitted AutoTheta to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import DynamicTheta
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# DynStandardThetaMethod's usage example
-model = DynamicTheta(season_length=12)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## Dynamic Optimized Theta Method
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6220"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.DynamicTheta
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
 ### DynamicOptimizedTheta
 
-> ``` text
->  DynamicOptimizedTheta (season_length:int=1,
->                         decomposition_type:str='multiplicative',
->                         alias:str='DynamicOptimizedTheta', prediction_inte
->                         rvals:Optional[statsforecast.utils.ConformalInterv
->                         als]=None)
-> ```
+::: statsforecast.models.DynamicOptimizedTheta
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
-*Dynamic Optimized Theta Method.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| season_length | int | 1 | Number of observations per unit of time. Ex: 24 Hourly data. |
-| decomposition_type | str | multiplicative | Sesonal decomposition type, ‘multiplicative’ (default) or ‘additive’. |
-| alias | str | DynamicOptimizedTheta | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicOptimizedTheta.forecast
-
-> ``` text
->  DynamicOptimizedTheta.forecast (y:numpy.ndarray, h:int,
->                                  X:Optional[numpy.ndarray]=None,
->                                  X_future:Optional[numpy.ndarray]=None,
->                                  level:Optional[List[int]]=None,
->                                  fitted:bool=False)
-> ```
-
-\*Memory Efficient AutoTheta predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicOptimizedTheta.fit
-
-> ``` text
->  DynamicOptimizedTheta.fit (y:numpy.ndarray,
->                             X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the AutoTheta model.
-
-Fit an AutoTheta model to a time series (numpy array) `y` and optionally
-exogenous variables (numpy array) `X`.\*
-
-|             | **Type** | **Default** | **Details**                           |
-|-------------|----------|-------------|---------------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ).     |
-| X           | Optional | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** |          |             | **AutoTheta fitted model.**           |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicOptimizedTheta.predict
-
-> ``` text
->  DynamicOptimizedTheta.predict (h:int, X:Optional[numpy.ndarray]=None,
->                                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted AutoTheta.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicOptimizedTheta.predict_in_sample
-
-> ``` text
->  DynamicOptimizedTheta.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted AutoTheta insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### DynamicOptimizedTheta.forward
-
-> ``` text
->  DynamicOptimizedTheta.forward (y:numpy.ndarray, h:int,
->                                 X:Optional[numpy.ndarray]=None,
->                                 X_future:Optional[numpy.ndarray]=None,
->                                 level:Optional[List[int]]=None,
->                                 fitted:bool=False)
-> ```
-
-*Apply fitted AutoTheta to a new time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import DynamicOptimizedTheta
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# OptimzedThetaMethod's usage example
-model = DynamicOptimizedTheta(season_length=12)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-# ARCH Family
-
-## Garch model
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6257"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## ARCH/GARCH Family
 
 ### GARCH
 
-> ``` text
->  GARCH (p:int=1, q:int=1, alias:str='GARCH', prediction_intervals:Optional
->         [statsforecast.utils.ConformalIntervals]=None)
-> ```
-
-\*Generalized Autoregressive Conditional Heteroskedasticity (GARCH)
-model.
-
-A method for modeling time series that exhibit non-constant volatility
-over time. The GARCH model assumes that at time $t$, $y_t$ is given by:
-
-$$y_t = v_t \sigma_t$$
-
-with
-
-$$\sigma_t^2 = w + \sum_{i=1}^p a_i y_{t-i}^2 + \sum_{j=1}^q b_j \sigma_{t-j}^2$$.
-
-Here $v_t$ is a sequence of iid random variables with zero mean and unit
-variance. The coefficients $w$, $a_i$, $i=1,...,p$, and $b_j$,
-$j=1,...,q$ must satisfy the following conditions:
-
-1.  $w > 0$ and $a_i, b_j \geq 0$ for all $i$ and $j$.
-2.  $\sum_{k=1}^{max(p,q)} a_k + b_k < 1$. Here it is assumed that
-    $a_i=0$ for $i>p$ and $b_j=0$ for $j>q$.
-
-The ARCH model is a particular case of the GARCH model when $q=0$.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| p | int | 1 | Number of lagged versions of the series. |
-| q | int | 1 |  |
-| alias | str | GARCH | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6314"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### GARCH.fit
-
-> ``` text
->  GARCH.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit GARCH model.
-
-Fit GARCH model to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **GARCH model.**                  |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6335"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### GARCH.predict
-
-> ``` text
->  GARCH.predict (h:int, X:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted GARCH model.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6371"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### GARCH.predict_in_sample
-
-> ``` text
->  GARCH.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted GARCH model predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6391"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### GARCH.forecast
-
-> ``` text
->  GARCH.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                  X_future:Optional[numpy.ndarray]=None,
->                  level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient GARCH model.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| X_future | Optional | None |  |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-## ARCH model
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6451"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.GARCH
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### ARCH
 
-> ``` text
->  ARCH (p:int=1, alias:str='ARCH', prediction_intervals:Optional[statsforec
->        ast.utils.ConformalIntervals]=None)
-> ```
+::: statsforecast.models.ARCH
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
-\*Autoregressive Conditional Heteroskedasticity (ARCH) model.
-
-A particular case of the GARCH(p,q) model where $q=0$. It assumes that
-at time $t$, $y_t$ is given by:
-
-$$y_t = \epsilon_t \sigma_t$$
-
-with
-
-$$\sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2$$.
-
-Here $\epsilon_t$ is a sequence of iid random variables with zero mean
-and unit variance. The coefficients $w$ and $a_i$, $i=1,...,p$ must be
-nonnegative and $\sum_{k=1}^p a_k < 1$.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| p | int | 1 | Number of lagged versions of the series. |
-| alias | str | ARCH | Custom name of the model. |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>By default, the model will compute the native prediction<br/>intervals. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6314"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARCH.fit
-
-> ``` text
->  ARCH.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit GARCH model.
-
-Fit GARCH model to a time series (numpy array) `y`.\*
-
-|             | **Type** | **Default** | **Details**                       |
-|-------------|----------|-------------|-----------------------------------|
-| y           | ndarray  |             | Clean time series of shape (t, ). |
-| X           | Optional | None        |                                   |
-| **Returns** |          |             | **GARCH model.**                  |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6335"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARCH.predict
-
-> ``` text
->  ARCH.predict (h:int, X:Optional[numpy.ndarray]=None,
->                level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted GARCH model.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6371"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARCH.predict_in_sample
-
-> ``` text
->  ARCH.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted GARCH model predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6391"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ARCH.forecast
-
-> ``` text
->  ARCH.forecast (y:numpy.ndarray, h:int, X:Optional[numpy.ndarray]=None,
->                 X_future:Optional[numpy.ndarray]=None,
->                 level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient GARCH model.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None |  |
-| X_future | Optional | None |  |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-# Machine Learning models
-
-## SklearnModel
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6495"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+## Machine Learning
 
 ### SklearnModel
 
-> ``` text
->  SklearnModel (model, prediction_intervals:Optional[statsforecast.utils.Co
->                nformalIntervals]=None, alias:Optional[str]=None)
-> ```
+::: statsforecast.models.SklearnModel
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
-*scikit-learn model wrapper*
+## Fallback Models
 
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| model | sklearn.base.BaseEstimator |  | scikit-learn estimator |
-| prediction_intervals | Optional | None | Information to compute conformal prediction intervals.<br/>This is required for generating future prediction intervals. |
-| alias | Optional | None | Custom name of the model. If `None` will use the model’s class. |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6521"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SklearnModel.fit
-
-> ``` text
->  SklearnModel.fit (y:numpy.ndarray, X:numpy.ndarray)
-> ```
-
-*Fit the model.*
-
-|             | **Type**         | **Details**                       |
-|-------------|------------------|-----------------------------------|
-| y           | ndarray          | Clean time series of shape (t, ). |
-| X           | ndarray          | Exogenous of shape (t, n_x).      |
-| **Returns** | **SklearnModel** | **Fitted SklearnModel object.**   |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6550"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SklearnModel.predict
-
-> ``` text
->  SklearnModel.predict (h:int, X:numpy.ndarray,
->                        level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted SklearnModel.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | Forecast horizon. |
-| X | ndarray |  | Exogenous of shape (h, n_x). |
-| level | Optional | None |  |
-| **Returns** | **Dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6582"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SklearnModel.predict_in_sample
-
-> ``` text
->  SklearnModel.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted SklearnModel insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **Dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6601"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### SklearnModel.forecast
-
-> ``` text
->  SklearnModel.forecast (y:numpy.ndarray, h:int, X:numpy.ndarray,
->                         X_future:numpy.ndarray,
->                         level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient SklearnModel predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (t, ). |
-| h | int |  | Forecast horizon. |
-| X | ndarray |  | Insample exogenous of shape (t, n_x). |
-| X_future | ndarray |  | Exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **Dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-# Fallback Models
-
-## ConstantModel
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6703"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+These models are used as fallbacks when other models fail during forecasting.
 
 ### ConstantModel
 
-> ``` text
->  ConstantModel (constant:float, alias:str='ConstantModel')
-> ```
-
-\*Constant Model.
-
-Returns Constant values.\*
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6800"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ConstantModel.forecast
-
-> ``` text
->  ConstantModel.forecast (y:numpy.ndarray, h:int,
->                          X:Optional[numpy.ndarray]=None,
->                          X_future:Optional[numpy.ndarray]=None,
->                          level:Optional[List[int]]=None,
->                          fitted:bool=False)
-> ```
-
-\*Memory Efficient Constant Model predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n,). |
-| h | int |  |  |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6720"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ConstantModel.fit
-
-> ``` text
->  ConstantModel.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Constant model.
-
-Fit an Constant Model to a time series (numpy.array) `y`.\*
-
-|             | **Type**  | **Default** | **Details**                           |
-|-------------|-----------|-------------|---------------------------------------|
-| y           | ndarray   |             | Clean time series of shape (t, ).     |
-| X           | Optional  | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** | **self:** |             | **Constant fitted model.**            |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6746"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ConstantModel.predict
-
-> ``` text
->  ConstantModel.predict (h:int, X:Optional[numpy.ndarray]=None,
->                         level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted ConstantModel.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | forecasting horizon |
-| X | Optional | None | exogenous regressors |
-| level | Optional | None | confidence level |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6778"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ConstantModel.predict_in_sample
-
-> ``` text
->  ConstantModel.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Constant Model insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6852"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ConstantModel.forward
-
-> ``` text
->  ConstantModel.forward (y:numpy.ndarray, h:int,
->                         X:Optional[numpy.ndarray]=None,
->                         X_future:Optional[numpy.ndarray]=None,
->                         level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply Constant model predictions to a new/updated time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import ConstantModel
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# ConstantModel's usage example
-model = ConstantModel(1)
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## ZeroModel
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6889"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.ConstantModel
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### ZeroModel
 
-> ``` text
->  ZeroModel (alias:str='ZeroModel')
-> ```
-
-\*Returns Zero forecasts.
-
-Returns Zero values.\*
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ZeroModel.forecast
-
-> ``` text
->  ZeroModel.forecast (y:numpy.ndarray, h:int,
->                      X:Optional[numpy.ndarray]=None,
->                      X_future:Optional[numpy.ndarray]=None,
->                      level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient Constant Model predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n,). |
-| h | int |  |  |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ZeroModel.fit
-
-> ``` text
->  ZeroModel.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Constant model.
-
-Fit an Constant Model to a time series (numpy.array) `y`.\*
-
-|             | **Type**  | **Default** | **Details**                           |
-|-------------|-----------|-------------|---------------------------------------|
-| y           | ndarray   |             | Clean time series of shape (t, ).     |
-| X           | Optional  | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** | **self:** |             | **Constant fitted model.**            |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ZeroModel.predict
-
-> ``` text
->  ZeroModel.predict (h:int, X:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted ConstantModel.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | forecasting horizon |
-| X | Optional | None | exogenous regressors |
-| level | Optional | None | confidence level |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ZeroModel.predict_in_sample
-
-> ``` text
->  ZeroModel.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Constant Model insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### ZeroModel.forward
-
-> ``` text
->  ZeroModel.forward (y:numpy.ndarray, h:int,
->                     X:Optional[numpy.ndarray]=None,
->                     X_future:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-*Apply Constant model predictions to a new/updated time series.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n, ). |
-| h | int |  | Forecast horizon. |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels for prediction intervals. |
-| fitted | bool | False | Whether or not returns insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `constant` for point predictions and `level_*` for probabilistic predictions.** |
-
-
-```python
-from statsforecast.models import ZeroModel
-from statsforecast.utils import AirPassengers as ap
-```
-
-
-```python
-# NanModel's usage example
-model = ZeroModel()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
-```
-
-## NaNModel
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#L6904"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+::: statsforecast.models.ZeroModel
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
 ### NaNModel
 
-> ``` text
->  NaNModel (alias:str='NaNModel')
-> ```
+::: statsforecast.models.NaNModel
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
 
-\*NaN Model.
+## Usage Examples
 
-Returns NaN values.\*
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### NaNModel.forecast
-
-> ``` text
->  NaNModel.forecast (y:numpy.ndarray, h:int,
->                     X:Optional[numpy.ndarray]=None,
->                     X_future:Optional[numpy.ndarray]=None,
->                     level:Optional[List[int]]=None, fitted:bool=False)
-> ```
-
-\*Memory Efficient Constant Model predictions.
-
-This method avoids memory burden due from object storage. It is
-analogous to `fit_predict` without storing information. It assumes you
-know the forecast horizon in advance.\*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| y | ndarray |  | Clean time series of shape (n,). |
-| h | int |  |  |
-| X | Optional | None | Optional insample exogenous of shape (t, n_x). |
-| X_future | Optional | None | Optional exogenous of shape (h, n_x). |
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| fitted | bool | False | Whether or not to return insample predictions. |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### NaNModel.fit
-
-> ``` text
->  NaNModel.fit (y:numpy.ndarray, X:Optional[numpy.ndarray]=None)
-> ```
-
-\*Fit the Constant model.
-
-Fit an Constant Model to a time series (numpy.array) `y`.\*
-
-|             | **Type**  | **Default** | **Details**                           |
-|-------------|-----------|-------------|---------------------------------------|
-| y           | ndarray   |             | Clean time series of shape (t, ).     |
-| X           | Optional  | None        | Optional exogenous of shape (t, n_x). |
-| **Returns** | **self:** |             | **Constant fitted model.**            |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### NaNModel.predict
-
-> ``` text
->  NaNModel.predict (h:int, X:Optional[numpy.ndarray]=None,
->                    level:Optional[List[int]]=None)
-> ```
-
-*Predict with fitted ConstantModel.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| h | int |  | forecasting horizon |
-| X | Optional | None | exogenous regressors |
-| level | Optional | None | confidence level |
-| **Returns** | **dict** |  | **Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py#LNone"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### NaNModel.predict_in_sample
-
-> ``` text
->  NaNModel.predict_in_sample (level:Optional[List[int]]=None)
-> ```
-
-*Access fitted Constant Model insample predictions.*
-
-|  | **Type** | **Default** | **Details** |
-|------|------------------|-------------------------|-------------------------|
-| level | Optional | None | Confidence levels (0-100) for prediction intervals. |
-| **Returns** | **dict** |  | **Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.** |
-
+### Basic Model Usage
 
 ```python
-from statsforecast.models import NaNModel
-from statsforecast.utils import AirPassengers as ap
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA, Naive
+from statsforecast.utils import generate_series
+
+# Generate example data
+df = generate_series(n_series=10)
+
+# Create StatsForecast instance with models
+sf = StatsForecast(
+    models=[
+        AutoARIMA(season_length=7),
+        Naive()
+    ],
+    freq='D'
+)
+
+# Forecast
+forecasts = sf.forecast(df=df, h=7)
 ```
 
+### Using Multiple Models
 
 ```python
-# NanModel's usage example
-model = NaNModel()
-model = model.fit(y=ap)
-y_hat_dict = model.predict(h=4)
-y_hat_dict
+from statsforecast import StatsForecast
+from statsforecast.models import (
+    AutoARIMA,
+    AutoETS,
+    SeasonalNaive,
+    Theta,
+    HistoricAverage
+)
+
+# Combine multiple models for comparison
+models = [
+    AutoARIMA(season_length=12),
+    AutoETS(season_length=12),
+    SeasonalNaive(season_length=12),
+    Theta(season_length=12),
+    HistoricAverage()
+]
+
+sf = StatsForecast(models=models, freq='M', n_jobs=-1)
+forecasts = sf.forecast(df=df, h=12, level=[80, 95])
 ```
 
-# References
+### Model with Prediction Intervals
 
-#### **General**
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
+from statsforecast.utils import ConformalIntervals
 
--   [Hyndman, R.J., & Athanasopoulos, G. (2021). “Forecasting:
-    principles and practice, 3rd edition”. OTexts: Melbourne, Australia.
-    OTexts.com/fpp3 Accessed on July 2022](https://otexts.com/fpp3/).
+# Create model with conformal prediction intervals
+model = AutoARIMA(
+    season_length=12,
+    prediction_intervals=ConformalIntervals(n_windows=2, h=12),
+    alias='ConformalAutoARIMA'
+)
 
--   [Shmueli, G., & Lichtendahl Jr, K. C. (2016). “Practical time series
-    forecasting with R: A hands-on guide”. Axelrod Schnall
-    Publishers](https://www.forecastingbook.com/).
+sf = StatsForecast(models=[model], freq='M')
+forecasts = sf.forecast(df=df, h=12, level=[80, 95])
+```
 
-#### **Automatic Forecasting**
+### Sparse/Intermittent Data
 
--   [Rob J. Hyndman, Yeasmin Khandakar (2008). “Automatic Time Series
-    Forecasting: The forecast package for
-    R”](https://www.jstatsoft.org/article/view/v027i03).
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import (
+    CrostonOptimized,
+    ADIDA,
+    IMAPA,
+    TSB
+)
 
-#### **Exponential Smoothing**
+# Models specialized for sparse/intermittent data
+sparse_models = [
+    CrostonOptimized(),
+    ADIDA(),
+    IMAPA(),
+    TSB(alpha_d=0.2, alpha_p=0.2)
+]
 
--   [Charles. C. Holt (1957). “Forecasting seasonals and trends by
-    exponentially weighted moving averages”, ONR Research Memorandum,
-    Carnegie Institute of Technology
-    52](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
+sf = StatsForecast(models=sparse_models, freq='D')
+forecasts = sf.forecast(df=sparse_df, h=30)
+```
 
--   [Peter R. Winters (1960). “Forecasting sales by exponentially
-    weighted moving averages”. Management
-    Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
+### Multiple Seasonalities
 
--   [Hyndman, Rob, et al (2008). “Forecasting with exponential
-    smoothing: the state space
-    approach”](https://robjhyndman.com/expsmooth/).
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import MSTL, AutoTBATS
 
--   [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
-    principles and practice, Methods with
-    trend”](https://otexts.com/fpp3/holt.html).
+# For data with multiple seasonal patterns
+models = [
+    MSTL(season_length=[24, 168]),  # Hourly with daily and weekly seasonality
+    AutoTBATS(season_length=[24, 168])
+]
 
--   [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
-    principles and practice, Methods with
-    seasonality”](https://otexts.com/fpp3/holt-winters.html).
+sf = StatsForecast(models=models, freq='H')
+forecasts = sf.forecast(df=hourly_df, h=168)
+```
 
-#### **Simple Methods**
+### ARCH/GARCH for Volatility
 
--   [Rob J. Hyndman and George Athanasopoulos (2018). “Forecasting
-    principles and practice, Simple
-    Methods”](https://otexts.com/fpp3/simple-methods.html).
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import GARCH, ARCH
 
-#### **Sparse Intermittent**
+# Models for financial data with volatility
+volatility_models = [
+    GARCH(p=1, q=1),
+    ARCH(p=1)
+]
 
--   [Croston, J. D. (1972). “Forecasting and stock control for
-    intermittent demands”. Journal of the Operational Research Society,
-    23(3),
-    289-303](https://link.springer.com/article/10.1057/jors.1972.50).
+sf = StatsForecast(models=volatility_models, freq='D')
+forecasts = sf.forecast(df=financial_df, h=30)
+```
 
--   [Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F.,
-    & Assimakopoulos, V. (2011). “An aggregate–disaggregate intermittent
-    demand approach (ADIDA) to forecasting: an empirical proposition and
-    analysis”. Journal of the Operational Research Society, 62(3),
-    544-554](https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f).
+### Using Scikit-learn Models
 
--   [Syntetos, A. A., & Boylan, J. E. (2005). “The accuracy of
-    intermittent demand estimates”. International Journal of
-    forecasting, 21(2),
-    303-314](https://www.academia.edu/1527250/The_accuracy_of_intermittent_demand_estimates).
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import SklearnModel
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import Ridge
 
--   [Syntetos, A. A., & Boylan, J. E. (2021). “Intermittent demand
-    forecasting: Context, methods and applications”. John Wiley &
-    Sons](https://www.ifors.org/intermittent-demand-forecasting-context-methods-and-applications/).
+# Wrap scikit-learn models
+models = [
+    SklearnModel(RandomForestRegressor(n_estimators=100), alias='RF'),
+    SklearnModel(Ridge(alpha=1.0), alias='Ridge')
+]
 
--   [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011).
-    “Intermittent demand: Linking forecasting to inventory
-    obsolescence”. European Journal of Operational Research, 214(3),
-    606-615](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437).
+sf = StatsForecast(models=models, freq='D')
+forecasts = sf.forecast(df=df, h=14)
+```
 
-#### **Multiple Seasonalities**
+## Model Selection Tips
 
--   [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). “MSTL:
-    A Seasonal-Trend Decomposition Algorithm for Time Series with
-    Multiple Seasonal Patterns”.](https://arxiv.org/abs/2107.13462)
+- **For automatic selection**: Start with `AutoARIMA` or `AutoETS`
+- **For baseline comparison**: Use `Naive`, `SeasonalNaive`, or `HistoricAverage`
+- **For seasonal data**: Use models with `season_length` parameter
+- **For sparse data**: Use Croston family or ADIDA
+- **For multiple seasonalities**: Use MSTL or TBATS
+- **For volatile data**: Use GARCH or ARCH
+- **For ensemble approaches**: Combine multiple models and compare performance
 
-#### **Theta Family**
+## References
 
--   [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios
-    Petropoulos, Anne B. Koehler (2016). “Models for optimising the
-    theta method and their relationship to state space models”.
-    International Journal of
-    Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
-
-#### **GARCH Model**
-
--   [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity
-    with estimates of the variance of United Kingdom inflation.
-    Econometrica: Journal of the econometric society,
-    987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
-
--   [Bollerslev, T. (1986). Generalized autoregressive conditional
-    heteroskedasticity. Journal of econometrics, 31(3),
-    307-327.](https://www.sciencedirect.com/science/article/abs/pii/0304407686900631)
-
--   [Hamilton, J. D. (1994). Time series analysis. Princeton university
-    press.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
-
-#### **TBATS Model**
-
--   [De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011).
-    Forecasting time series with complex seasonal patterns using
-    exponential smoothing. Journal of the American statistical
-    association, 106(496),
-    1513-1527.](https://www.sciencedirect.com/science/article/abs/pii/0304407686900631)
-
--   [De Livera, Alysha M (2017). Modeling time series with complex
-    seasonal patterns using exponential smoothing. Monash University.
-    Thesis.](https://doi.org/10.4225/03/589299681de3d)
-
+For detailed information on the statistical models and algorithms, please refer to the [source code](https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py) and the original academic papers referenced in the docstrings.
