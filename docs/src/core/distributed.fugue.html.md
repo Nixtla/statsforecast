@@ -1,189 +1,95 @@
----
-output-file: distributed.fugue.html
-title: FugueBackend
----
+# FugueBackend
 
+The `FugueBackend` class enables distributed computation for StatsForecast using [Fugue](https://github.com/fugue-project/fugue), which provides a unified interface for Spark, Dask, and Ray backends without requiring code rewrites.
 
+## Overview
+
+With FugueBackend, you can:
+
+- Distribute forecasting and cross-validation across clusters
+- Switch between Spark, Dask, and Ray without changing your code
+- Scale to large datasets with parallel processing
+- Maintain the same API as the standard StatsForecast interface
+
+## API Reference
+
+::: statsforecast.distributed.fugue.FugueBackend
+    options:
+      show_source: true
+      heading_level: 3
+      members:
+        - __init__
+        - forecast
+        - cross_validation
+
+## Quick Start
+
+### Basic Usage with Spark
 
 ```python
 from statsforecast.core import StatsForecast
-from statsforecast.models import ( 
-    AutoARIMA,
-    AutoETS,
-)
+from statsforecast.models import AutoARIMA, AutoETS
 from statsforecast.utils import generate_series
-```
+from pyspark.sql import SparkSession
 
-
-```python
+# Generate example data
 n_series = 4
 horizon = 7
-
 series = generate_series(n_series)
 
-sf = StatsForecast(
-    models=[AutoETS(season_length=7)],
-    freq='D',
-)
-
-sf.cross_validation(df=series, h=horizon, step_size = 24,
-    n_windows = 2, level=[90]).head()
-```
-
-
-```python
-from pyspark.sql import SparkSession
-```
-
-
-```python
+# Create Spark session
 spark = SparkSession.builder.getOrCreate()
 
-# Make unique_id a column
+# Convert unique_id to string and create Spark DataFrame
 series['unique_id'] = series['unique_id'].astype(str)
-
-# Convert to Spark
 sdf = spark.createDataFrame(series)
-```
 
-
-```python
-# Returns a Spark DataFrame
+# Use StatsForecast with Spark DataFrame (automatically uses FugueBackend)
 sf = StatsForecast(
     models=[AutoETS(season_length=7)],
     freq='D',
 )
-sf.cross_validation(df=sdf, h=horizon, step_size = 24,
-    n_windows = 2, level=[90]).show()
+
+# Returns a Spark DataFrame
+results = sf.cross_validation(
+    df=sdf,
+    h=horizon,
+    step_size=24,
+    n_windows=2,
+    level=[90]
+)
+results.show()
 ```
 
-------------------------------------------------------------------------
+### Basic Forecasting
 
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/distributed/fugue.py#L57"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoETS
+from statsforecast.utils import generate_series
 
-### FugueBackend
+# Generate data
+series = generate_series(n_series=4)
 
-> ``` text
->  FugueBackend (engine:Any=None, conf:Any=None, **transform_kwargs:Any)
-> ```
+# Standard usage (pandas/polars)
+sf = StatsForecast(
+    models=[AutoETS(season_length=7)],
+    freq='D',
+)
 
-\*FugueBackend for Distributed Computation. [Source
-code](https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/distributed/fugue.py).
+# Forecast with pandas DataFrame
+sf.cross_validation(
+    df=series,
+    h=7,
+    step_size=24,
+    n_windows=2,
+    level=[90]
+).head()
+```
 
-This class uses [Fugue](https://github.com/fugue-project/fugue) backend
-capable of distributing computation on Spark, Dask and Ray without any
-rewrites.\*
+## Dask Distributed Example
 
-|  | **Type** | **Default** | **Details** |
-|----|----|----|----|
-| engine | Any | None | A selection between Spark, Dask, and Ray. |
-| conf | Any | None | Engine configuration. |
-| transform_kwargs | Any |  |  |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/distributed/fugue.py#L289"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### FugueBackend.forecast
-
-> ``` text
->  FugueBackend.forecast (df:~AnyDataFrame, freq:Union[str,int],
->                         models:List[Any], fallback_model:Optional[Any],
->                         X_df:Optional[~AnyDataFrame], h:int,
->                         level:Optional[List[int]], fitted:bool, prediction
->                         _intervals:Optional[statsforecast.utils.ConformalI
->                         ntervals], id_col:str, time_col:str,
->                         target_col:str)
-> ```
-
-\*Memory Efficient core.StatsForecast predictions with FugueBackend.
-
-This method uses Fugue’s transform function, in combination with
-`core.StatsForecast`’s forecast to efficiently fit a list of
-StatsForecast models.\*
-
-|  | **Type** | **Details** |
-|--------|---------------------------|-------------------------------------|
-| df | AnyDataFrame | DataFrame with ids, times, targets and exogenous. |
-| freq | Union | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. |
-| models | List | List of instantiated objects models.StatsForecast. |
-| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the `forecast` and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
-| X_df | Optional | DataFrame with ids, times and future exogenous. |
-| h | int | Forecast horizon. |
-| level | Optional | Confidence levels between 0 and 100 for prediction intervals. |
-| fitted | bool | Store in-sample predictions. |
-| prediction_intervals | Optional | Configuration to calibrate prediction intervals (Conformal Prediction). |
-| id_col | str | Column that identifies each serie. |
-| time_col | str | Column that identifies each timestep, its values can be timestamps or integers. |
-| target_col | str | Column that contains the target. |
-| **Returns** | **Any** | **DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`** |
-
-------------------------------------------------------------------------
-
-<a
-href="https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/distributed/fugue.py#L449"
-target="_blank" style={{ float: "right", fontSize: "smaller" }}>source</a>
-
-### FugueBackend.cross_validation
-
-> ``` text
->  FugueBackend.cross_validation (df:~AnyDataFrame, freq:Union[str,int],
->                                 models:List[Any],
->                                 fallback_model:Optional[Any], h:int,
->                                 n_windows:int, step_size:int,
->                                 test_size:int, input_size:int,
->                                 level:Optional[List[int]], refit:bool,
->                                 fitted:bool, prediction_intervals:Optional
->                                 [statsforecast.utils.ConformalIntervals],
->                                 id_col:str, time_col:str, target_col:str)
-> ```
-
-\*Temporal Cross-Validation with core.StatsForecast and FugueBackend.
-
-This method uses Fugue’s transform function, in combination with
-`core.StatsForecast`’s cross-validation to efficiently fit a list of
-StatsForecast models through multiple training windows, in either
-chained or rolled manner.
-
-`StatsForecast.models`’ speed along with Fugue’s distributed computation
-allow to overcome this evaluation technique high computational costs.
-Temporal cross-validation provides better model’s generalization
-measurements by increasing the test’s length and diversity.\*
-
-|  | **Type** | **Details** |
-|--------|---------------------------|-------------------------------------|
-| df | AnyDataFrame | DataFrame with ids, times, targets and exogenous. |
-| freq | Union | Frequency of the data. Must be a valid pandas or polars offset alias, or an integer. |
-| models | List | List of instantiated objects models.StatsForecast. |
-| fallback_model | Optional | Any, optional (default=None)<br/>Model to be used if a model fails.<br/>Only works with the `forecast` and [`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation) methods. |
-| h | int | Forecast horizon. |
-| n_windows | int | Number of windows used for cross validation. |
-| step_size | int | Step size between each window. |
-| test_size | int | Length of test size. If passed, set `n_windows=None`. |
-| input_size | int | Input size for each window, if not none rolled windows. |
-| level | Optional | Confidence levels between 0 and 100 for prediction intervals. |
-| refit | bool | Wether or not refit the model for each window.<br/>If int, train the models every `refit` windows. |
-| fitted | bool | Store in-sample predictions. |
-| prediction_intervals | Optional | Configuration to calibrate prediction intervals (Conformal Prediction). |
-| id_col | str | Column that identifies each serie. |
-| time_col | str | Column that identifies each timestep, its values can be timestamps or integers. |
-| target_col | str | Column that contains the target. |
-| **Returns** | **Any** | **DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.** |
-
-## Dask Distributed Predictions
-
-Here we provide an example for the distribution of the
-[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
-predictions using `Fugue` to execute the code in a Dask cluster.
-
-To do it we instantiate the
-[`FugueBackend`](https://Nixtla.github.io/statsforecast/src/core/distributed.fugue.html#fuguebackend)
-class with a `DaskExecutionEngine`.
-
+Here's a complete example using Dask for distributed predictions:
 
 ```python
 import dask.dataframe as dd
@@ -192,66 +98,72 @@ from fugue_dask import DaskExecutionEngine
 from statsforecast import StatsForecast
 from statsforecast.models import Naive
 from statsforecast.utils import generate_series
-```
 
-
-```python
-# Generate Synthetic Panel Data
+# Generate synthetic panel data
 df = generate_series(10)
 df['unique_id'] = df['unique_id'].astype(str)
 df = dd.from_pandas(df, npartitions=10)
 
-# Instantiate FugueBackend with DaskExecutionEngine
+# Instantiate Dask client and execution engine
 dask_client = Client()
 engine = DaskExecutionEngine(dask_client=dask_client)
-```
 
-We have simply create the class to the usual
-[`StatsForecast`](https://Nixtla.github.io/statsforecast/src/core/core.html#statsforecast)
-instantiation.
-
-
-```python
+# Create StatsForecast instance
 sf = StatsForecast(models=[Naive()], freq='D')
 ```
 
 ### Distributed Forecast
 
-For extremely fast distributed predictions we use FugueBackend as
-backend that operates like the original
-[StatsForecast.forecast](https://nixtla.github.io/statsforecast/src/core/core.html#statsforecast.forecast)
-method.
-
-It receives as input a pandas.DataFrame with columns
-\[`unique_id`,`ds`,`y`\] and exogenous, where the `ds` (datestamp)
-column should be of a format expected by Pandas. The `y` column must be
-numeric, and represents the measurement we wish to forecast. And the
-`unique_id` uniquely identifies the series in the panel data.
-
+The FugueBackend automatically handles distributed forecasting when you pass a Dask/Spark/Ray DataFrame:
 
 ```python
-# Distributed predictions with FugueBackend.
-sf.forecast(df=df, h=12).compute()
-```
+# Distributed predictions
+forecast_df = sf.forecast(df=df, h=12).compute()
 
-
-```python
+# With fitted values
 sf = StatsForecast(models=[Naive()], freq='D')
-xx = sf.forecast(df=df, h=12, fitted=True).compute()
-yy = sf.forecast_fitted_values().compute()
+forecast_df = sf.forecast(df=df, h=12, fitted=True).compute()
+fitted_df = sf.forecast_fitted_values().compute()
 ```
 
 ### Distributed Cross-Validation
 
-For extremely fast distributed temporcal cross-validation we use
-[`cross_validation`](https://Nixtla.github.io/statsforecast/src/mfles.html#cross_validation)
-method that operates like the original
-[StatsForecast.cross_validation](https://nixtla.github.io/statsforecast/src/core/core.html#statsforecast.cross_validation)
-method.
-
+Perform distributed temporal cross-validation across your cluster:
 
 ```python
-# Distributed cross-validation with FugueBackend.
-sf.cross_validation(df=df, h=12, n_windows=2).compute()
+# Distributed cross-validation
+cv_results = sf.cross_validation(
+    df=df,
+    h=12,
+    n_windows=2
+).compute()
 ```
 
+## How It Works
+
+1. **Automatic Detection**: When you pass a Spark, Dask, or Ray DataFrame to StatsForecast methods, the FugueBackend is automatically used.
+
+2. **Data Partitioning**: Data is partitioned by `unique_id`, allowing parallel processing across different time series.
+
+3. **Distributed Execution**: Each partition is processed independently using the standard StatsForecast logic.
+
+4. **Result Aggregation**: Results are collected and returned in the same format as the input (Spark/Dask/Ray DataFrame).
+
+## Supported Backends
+
+- **Apache Spark**: For large-scale distributed processing
+- **Dask**: For flexible distributed computing with Python
+- **Ray**: For modern distributed machine learning workloads
+
+## Notes
+
+- Ensure your cluster has sufficient resources for the number of time series and models
+- The `unique_id` column should be string type for distributed operations
+- Use `.compute()` on Dask DataFrames to materialize results
+- Use `.show()` or `.collect()` on Spark DataFrames to view results
+
+## See Also
+
+- [Core StatsForecast Methods](core.html)
+- [Distributed Computing Examples](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray)
+- [Fugue Documentation](https://fugue-tutorials.readthedocs.io/)
