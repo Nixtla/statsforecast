@@ -1,4 +1,9 @@
-# Core Methods
+---
+description: >-
+  Methods for Fit, Predict, Forecast (fast), Cross Validation and plotting
+output-file: core.html
+title: Core Methods
+---
 
 The core methods of `StatsForecast` provide a comprehensive interface for fitting, predicting, forecasting, and evaluating statistical forecasting models on large sets of time series.
 

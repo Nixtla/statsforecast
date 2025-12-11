@@ -1,3 +1,4 @@
 /.quarto/
 
 lightning_logs/
+**/*.quarto_ipynb

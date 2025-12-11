@@ -1,4 +1,7 @@
-# FugueBackend
+---
+output-file: distributed.fugue.html
+title: Fugue Backend
+---
 
 The `FugueBackend` class enables distributed computation for StatsForecast using [Fugue](https://github.com/fugue-project/fugue), which provides a unified interface for Spark, Dask, and Ray backends without requiring code rewrites.
 

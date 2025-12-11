@@ -1,4 +1,9 @@
-# Models
+---
+description: >-
+  Models currently supported by StatsForecast
+output-file: models.html
+title: Models
+---
 
 StatsForecast offers a wide variety of statistical forecasting models grouped into the following categories:
 
