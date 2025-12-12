@@ -474,14 +474,14 @@ def _get_n_jobs(n_groups, n_jobs):
 
 class _StatsForecast:
     """The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
-    for large sets of time series. It operates on a DataFrame `df` with at least three columns
-    ids, times and targets.
+    for large sets of time series. It operates on a DataFrame `df` with at least three columns:
+    ids, times, and targets.
 
-    The class has memory-efficient `StatsForecast.forecast` method that avoids storing partial
-    model outputs. While the `StatsForecast.fit` and `StatsForecast.predict` methods with
+    The class has a memory-efficient `StatsForecast.forecast` method that avoids storing partial
+    model outputs, while the `StatsForecast.fit` and `StatsForecast.predict` methods with the
     Scikit-learn interface store the fitted models.
 
-    The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray back-ends.
+    The `StatsForecast` class offers parallelization utilities with Dask, Spark, and Ray back-ends.
     See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
     """
 

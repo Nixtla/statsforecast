@@ -15,7 +15,6 @@ from triad import Schema
 
 from statsforecast.core import (
     ParallelBackend,
-    _param_descriptions,
     _StatsForecast,
     make_backend,
 )
@@ -301,18 +300,18 @@ class FugueBackend(ParallelBackend):
         `core.StatsForecast`'s forecast to efficiently fit a list of StatsForecast models.
 
         Args:
-            {df}
-            {freq}
-            {models}
-            {fallback_model}
-            {X_df}
-            {h}
-            {level}
-            {fitted}
-            {prediction_intervals}
-            {id_col}
-            {time_col}
-            {target_col}
+            df (DataFrame): Input DataFrame containing time series data. Must have columns for series identifiers, timestamps, and target values. Can optionally include exogenous features.
+            freq (str or int): Frequency of the time series data. Must be a valid pandas or polars offset alias (e.g., 'D' for daily, 'M' for monthly, 'H' for hourly), or an integer representing the number of observations per cycle.
+            models (List[Any]): List of instantiated StatsForecast model objects. Each model should implement the forecast interface. Models must have unique names, which can be set using the `alias` parameter.
+            fallback_model (Any, optional): Model to use when a primary model fails during fitting or forecasting. Only works with the `forecast` and `cross_validation` methods. If None, exceptions from failing models will be raised.
+            X_df (DataFrame, optional): DataFrame containing future exogenous variables. Required if any models use exogenous features. Must include future values for all time series and forecast horizon.
+            h (int): Forecast horizon, the number of time steps ahead to predict.
+            level (List[float], optional): Confidence levels between 0 and 100 for prediction intervals (e.g., [80, 95] for 80% and 95% intervals).
+            fitted (bool, optional): If True, stores in-sample (fitted) predictions which can be retrieved using `forecast_fitted_values()`.
+            prediction_intervals (ConformalIntervals, optional): Configuration for calibrating prediction intervals using Conformal Prediction.
+            id_col (str, optional): Name of the column containing unique identifiers for each time series. Defaults to 'unique_id'.
+            time_col (str, optional): Name of the column containing timestamps or time indices. Values can be timestamps (datetime) or integers. Defaults to 'ds'.
+            target_col (str, optional): Name of the column containing the target variable to forecast. Defaults to 'y'.
 
         Returns:
             pandas.DataFrame: DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
@@ -376,7 +375,6 @@ class FugueBackend(ParallelBackend):
             )
         return res
 
-    forecast.__doc__ = forecast.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
     def forecast_fitted_values(self):
         """Retrieve in-sample predictions"""
@@ -464,22 +462,22 @@ class FugueBackend(ParallelBackend):
         and diversity.
 
         Args:
-            {df}
-            {freq}
-            {models}
-            {fallback_model}
-            {h}
-            {n_windows}
-            {step_size}
-            {test_size}
-            {input_size}
-            {level}
-            {refit}
-            {fitted}
-            {prediction_intervals}
-            {id_col}
-            {time_col}
-            {target_col}
+            df (DataFrame): Input DataFrame containing time series data with columns for series identifiers, timestamps, and target values.
+            freq (str or int): Frequency of the time series data. Must be a valid pandas or polars offset alias (e.g., 'D' for daily, 'M' for monthly, 'H' for hourly), or an integer representing the number of observations per cycle.
+            models (List[Any]): List of instantiated StatsForecast model objects. Each model should implement the forecast interface. Models must have unique names, which can be set using the `alias` parameter.
+            fallback_model (Any, optional): Model to use when a primary model fails during fitting or forecasting. Only works with the `forecast` and `cross_validation` methods. If None, exceptions from failing models will be raised.
+            h (int): Forecast horizon for each validation window.
+            n_windows (int, optional): Number of validation windows to create. Cannot be specified together with `test_size`.
+            step_size (int, optional): Number of time steps between consecutive validation windows. Smaller values create overlapping windows.
+            test_size (int, optional): Total size of the test period. If provided, `n_windows` is computed automatically. Overrides `n_windows` if specified.
+            input_size (int, optional): Maximum number of training observations to use for each window. If None, uses expanding windows with all available history. If specified, uses rolling windows of fixed size.
+            level (List[float], optional): Confidence levels between 0 and 100 for prediction intervals (e.g., [80, 95]).
+            refit (bool or int, optional): Controls model refitting frequency. If True, refits models for every window. If False, fits once and uses the forward method. If an integer n, refits every n windows. Models must implement the `forward` method when refit is not True.
+            fitted (bool, optional): If True, stores in-sample predictions for each window, accessible via `cross_validation_fitted_values()`.
+            prediction_intervals (ConformalIntervals, optional): Configuration for calibrating prediction intervals using Conformal Prediction. Requires `level` to be specified.
+            id_col (str, optional): Name of the column containing unique identifiers for each time series. Defaults to 'unique_id'.
+            time_col (str, optional): Name of the column containing timestamps or time indices. Defaults to 'ds'.
+            target_col (str, optional): Name of the column containing the target variable. Defaults to 'y'.
 
         Returns:
             pandas.DataFrame: DataFrame, with `models` columns for point predictions and probabilistic predictions for all fitted `models`.
@@ -524,7 +522,6 @@ class FugueBackend(ParallelBackend):
             **self._transform_kwargs,
         )
 
-    cross_validation.__doc__ = cross_validation.__doc__.format(**_param_descriptions)  # type: ignore[union-attr]
 
 
 @make_backend.candidate(lambda obj, *args, **kwargs: isinstance(obj, ExecutionEngine))
