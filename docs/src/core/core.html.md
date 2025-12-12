@@ -29,9 +29,7 @@ The main methods include:
         - predict
         - fit_predict
         - forecast
-        - forecast_fitted_values
         - cross_validation
-        - cross_validation_fitted_values
         - plot
         - save
         - load
