@@ -31,8 +31,7 @@ load_docs_scripts:
 	fi
 
 api_docs:
-	cd python && lazydocs .statsforecast --no-watermark  --output-path ../docs
-	python docs/to_mdx.py
+	python docs/to_mdx.py docs
 
 examples_docs:
 	mkdir -p nbs/_extensions
@@ -40,6 +39,7 @@ examples_docs:
 	quarto render nbs/docs --output-dir ../docs/mintlify/
 	quarto render nbs/src --output-dir ../docs/mintlify/
 	quarto render nbs/blog --output-dir ../docs/mintlify/
+	find docs/mintlify -name "*.mdx" ! -name "*.html.mdx" -exec sh -c 'dir=$$(dirname "$$1"); base=$$(basename "$$1" .mdx | tr "[:upper:]" "[:lower:]"); mv "$$1" "$$dir/$$base.html.mdx"' _ {} \;
 
 format_docs:
 	# replace _docs with docs
@@ -47,8 +47,6 @@ format_docs:
 	bash ./docs-scripts/docs-final-formatting.bash
 	find docs/mintlify -name "*.mdx" -exec sed -i.bak '/^:::/d' {} + && find docs/mintlify -name "*.bak" -delete
 
-# replace <= with \<=
-	find docs/mintlify -name "*.mdx" -exec sed -i.bak 's/<=/\\<=/g' {} + && find docs/mintlify -name "*.bak" -delete
 
 preview_docs:
 	cd docs/mintlify && mintlify dev

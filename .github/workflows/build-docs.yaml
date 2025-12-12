@@ -30,7 +30,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install -e '.[all]' lazydocs pyyaml
+        run: pip install -e '.[all, docs]'
 
       # setup quarto for rendering example/tutorial nbs
       - uses: quarto-dev/quarto-actions/setup@v2
@@ -41,7 +41,7 @@ jobs:
         run: make all_docs
 
       - name: Deploy (Push to main or Pull Request)
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
         uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4.0.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -61,7 +61,7 @@ jobs:
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
 
       - name: Trigger mintlify workflow (Push to main or Pull Request)
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         with:
           github-token: ${{ secrets.DOCS_WORKFLOW_TOKEN }}

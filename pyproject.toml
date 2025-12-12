@@ -77,6 +77,11 @@ ray = [
 spark = ["fugue[spark]>=0.8.1"]
 plotly = ["plotly", "plotly-resampler"]
 polars = ["polars[numpy]"]
+docs = [
+    "griffe2md",
+    "pyyaml",
+    "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
+]
 all = [
     "dask<=2024.12.1",
     "fugue[dask]>=0.8.1",
