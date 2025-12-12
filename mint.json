@@ -62,7 +62,6 @@
         "docs/how-to-guides/exogenous.html",
         "docs/how-to-guides/generating_features.html",
         "docs/how-to-guides/sklearn_models.html",
-        "docs/how-to-guides/migrating_r.html",
         "docs/how-to-guides/numba_cache.html"
       ]
     },
