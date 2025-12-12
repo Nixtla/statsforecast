@@ -5,7 +5,7 @@ title: Volatility forecasting (GARCH & ARCH)
 > In this example, we’ll forecast the volatility of the S&P 500 and
 > several publicly traded companies using GARCH and ARCH models
 
-> **Prerequesites**
+> **Prerequisites**
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
@@ -282,7 +282,7 @@ sf = StatsForecast(
 Time series cross-validation is a method for evaluating how a model
 would have performed in the past. It works by defining a sliding window
 across the historical data and predicting the period following it. Here
-we’ll use StatsForercast’s `cross-validation` method to determine the
+we’ll use StatsForecast’s `cross-validation` method to determine the
 most accurate model for the S&P 500 and the companies selected.
 
 This method takes the following arguments:
@@ -308,7 +308,7 @@ cv_df = sf.cross_validation(
   )
 ```
 
-The `cv_df` object ia a dataframe with the following columns:
+The `cv_df` object is a dataframe with the following columns:
 
 -   `unique_id`: series identifier.
 -   `ds`: datestamp or temporal index
@@ -395,13 +395,13 @@ dtype: object
 ```
 
 Hence, the most accurate model to describe the logarithmic returns of
-Apple’s stock is an GARCH(2, 1), for Amazon’s stock is a GARCH(2,2), and
+Apple’s stock is a GARCH(2, 1), for Amazon’s stock is a GARCH(2,2), and
 so on.
 
 ## Forecast volatility
 
 We can now generate a forecast for the next quarter. To do this, we’ll
-use the `forecast` method, which requieres the following arguments:
+use the `forecast` method, which requires the following arguments:
 
 -   `h`: (int) The forecasting horizon.
 -   `level`: (list\[float\]) The confidence levels of the prediction
@@ -425,7 +425,7 @@ forecasts.head()
 
 With the results of the previous section, we can choose the best model
 for the S&P 500 and the companies selected. Some of the plots are shown
-below. Notice that we’re using somo additional arguments in the `plot`
+below. Notice that we’re using some additional arguments in the `plot`
 method:
 
 -   `level`: (list\[int\]) The confidence levels for the prediction

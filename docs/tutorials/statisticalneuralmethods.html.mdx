@@ -203,7 +203,7 @@ forecasting:
     solution for large-scale time series forecasting tasks.
 
 `StatsForecast` receives a list of models to fit each time series. Since
-we are dealing with Daily data, it would be benefitial to use 7 as
+we are dealing with Daily data, it would be beneficial to use 7 as
 seasonality.
 
 ```python
@@ -601,14 +601,14 @@ divide by zero encountered in double_scalars
 CV Minutes: 5.206169327100118
 ```
 
-The crossvaldation_df object is a new data frame that includes the
+The cross_validation_df object is a new data frame that includes the
 following columns:
 
 -   `unique_id` index: (If you dont like working with index just run
     forecasts_cv_df.resetindex())
 -   `ds`: datestamp or temporal index
 -   `cutoff`: the last datestamp or temporal index for the n_windows. If
-    n_windows=1, then one unique cuttoff value, if n_windows=2 then two
+    n_windows=1, then one unique cutoff value, if n_windows=2 then two
     unique cutoff values.
 -   `y`: true value
 -   `"model"`: columns with the model’s name and fitted value.
@@ -676,14 +676,14 @@ Please rerun the `fit` method passing a proper value to prediction intervals to 
 CV Minutes: 2.961174162228902
 ```
 
-The crossvaldation_df object is a new data frame that includes the
+The cross_validation_df object is a new data frame that includes the
 following columns:
 
 -   `unique_id` index: (If you dont like working with index just run
     forecasts_cv_df.resetindex())
 -   `ds`: datestamp or temporal index
 -   `cutoff`: the last datestamp or temporal index for the n_windows. If
-    n_windows=1, then one unique cuttoff value, if n_windows=2 then two
+    n_windows=1, then one unique cutoff value, if n_windows=2 then two
     unique cutoff values.
 -   `y`: true value
 -   `"model"`: columns with the model’s name and fitted value.
@@ -814,7 +814,7 @@ cv_df['cutoff'] = cv_df['cutoff'].astype(str)
 cv_df['unique_id'] = cv_df['unique_id'].astype(str)
 ```
 
-Let’s cleate a `dask` client.
+Let’s create a `dask` client.
 
 ```python
 client = Client() # without this, dask is not in distributed mode

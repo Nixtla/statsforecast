@@ -5,7 +5,7 @@ title: Anomaly Detection
 > In this notebook, we’ll implement anomaly detection in time series
 > data
 
-> **Prerequesites**
+> **Prerequisites**
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
@@ -89,7 +89,7 @@ df_total.head()
 
 The input to StatsForecast is always a data frame in [long
 format](https://www.theanalysisfactor.com/wide-and-long-data/) with
-three columns: `unique_id`, `df` and `y`.
+three columns: `unique_id`, `ds` and `y`.
 
 -   `unique_id`: (string, int or category) A unique identifier for the
     series.
@@ -171,7 +171,7 @@ sf = StatsForecast(
 ```
 
 We’ll now predict the next 48 hours. To do this, we’ll use the
-`forecast` method, which requieres the following arguments:
+`forecast` method, which requires the following arguments:
 
 -   `df`: The dataframe with the training data.
 -   `h`: The forecasting horizon.

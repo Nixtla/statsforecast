@@ -5,7 +5,7 @@ title: Cross validation
 > In this example, we’ll implement time series cross-validation to
 > evaluate model’s performance.
 
-> **Prerequesites**
+> **Prerequisites**
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
@@ -54,7 +54,7 @@ pip install statsforecast
 
 
 ```python
-from statsforecast import StatsForecast # required to instantiate StastForecast object and use cross-validation method
+from statsforecast import StatsForecast # required to instantiate StatsForecast object and use cross-validation method
 ```
 
 ## Load and explore the data
@@ -114,7 +114,7 @@ StatsForecast.plot(df)
 
 ## Train model
 
-For this example, we’ll use StastForecast [AutoETS](../models/AutoETS).
+For this example, we’ll use StatsForecast [AutoETS](../models/AutoETS).
 We first need to import it from `statsforecast.models` and then we need
 to instantiate a new `StatsForecast` object.
 
@@ -125,8 +125,8 @@ The `StatsForecast` object has the following parameters:
 -   freq: a string indicating the frequency of the data. See [panda’s
     available
     frequencies.](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases)
--   n_jobs: n_jobs: int, number of jobs used in the parallel processing,
-    use -1 for all cores.
+-   n_jobs: int, number of jobs used in the parallel processing, use -1
+    for all cores.
 
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame `df`.
@@ -221,7 +221,7 @@ Notice that in each cutoff period, we generated a forecast for the next
 
 ## Evaluate results
 
-We can now compute the accuracy of the forecast using an appropiate
+We can now compute the accuracy of the forecast using an appropriate
 accuracy metric. Here we’ll use the [Root Mean Squared Error
 (RMSE).](https://en.wikipedia.org/wiki/Root-mean-square_deviation).
 

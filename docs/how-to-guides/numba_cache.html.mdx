@@ -8,7 +8,7 @@ title: Numba caching
 speed up several critical functions that estimate model parameters. This
 comes at a cost though, which is that the functions have to be [JIT
 compiled](https://en.wikipedia.org/wiki/Just-in-time_compilation) the
-first time they’re run, which can be expensive. Once a function has ben
+first time they’re run, which can be expensive. Once a function has been
 JIT compiled, subsequent calls are significantly faster. One problem is
 that this compilation is saved (by default) on a per-session basis.
 

@@ -35,15 +35,15 @@ adoption are:
     multi-core CPUs, Polars facilitates parallel execution of
     operations, substantially accelerating data processing tasks.
 
-> **Prerequesites**
+> **Prerequisites**
 >
 > This Guide assumes basic familiarity with StatsForecast. For a minimal
 > example visit the [Quick Start](./Getting_Started_short)
 
-Follow this article for a step to step guide on building a
+Follow this article for a step-by-step guide on building a
 production-ready forecasting pipeline for multiple time series.
 
-During this guide you will gain familiary with the core
+During this guide you will gain familiarity with the core
 `StatsForecast`class and some relevant methods like
 `StatsForecast.plot`, `StatsForecast.forecast` and
 `StatsForecast.cross_validation.`
@@ -92,8 +92,7 @@ it ideal for this task.
 ## Install libraries
 
 We assume you have StatsForecast already installed. Check this guide for
-instructions on [how to install
-StatsForecast](./Installation../getting-started/0_Installation).
+instructions on [how to install StatsForecast](./0_Installation).
 
 ## Read the data
 
@@ -109,7 +108,7 @@ three columns: `unique_id`, `ds` and `y`:
     for the series.
 
 -   The `ds` (datestamp or int) column should be either an integer
-    indexing time or a datestampe ideally like YYYY-MM-DD for a date or
+    indexing time or a datestamp ideally like YYYY-MM-DD for a date or
     YYYY-MM-DD HH:MM:SS for a timestamp.
 
 -   The `y` (numeric) represents the measurement we wish to forecast.
@@ -224,7 +223,7 @@ For this example we will use:
 -   `SeasonalNaive`: Memory Efficient Seasonal Naive predictions. Ref:
     `SeasonalNaive`
 
--   `HistoricAverage`: arthimetic mean. Ref: `HistoricAverage`.
+-   `HistoricAverage`: arithmetic mean. Ref: `HistoricAverage`.
 
 -   `DynamicOptimizedTheta`: The theta family of models has been shown
     to perform well in various datasets such as M3. Models the
@@ -268,8 +267,8 @@ following parameters:
     frequencies](https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases).)
     This is also available with Polars.
 
--   `n_jobs`: n_jobs: int, number of jobs used in the parallel
-    processing, use -1 for all cores.
+-   `n_jobs`: int, number of jobs used in the parallel processing, use
+    -1 for all cores.
 
 -   `fallback_model`: a model to be used if a model fails.
 
@@ -317,8 +316,8 @@ remove the AutoModels like ARIMA and Theta)
 > The `forecast` method is compatible with distributed clusters, so it
 > does not store any model parameters. If you want to store parameters
 > for every model you can use the `fit` and `predict` methods. However,
-> those methods are not defined for distrubed engines like Spark, Ray or
-> Dask.
+> those methods are not defined for distributed engines like Spark, Ray
+> or Dask.
 
 ```python
 forecasts_df = sf.forecast(df=Y_df, h=48, level=[90])
@@ -338,7 +337,7 @@ Forecast:   0%|          | 0/10 [Elapsed: 00:00]
 | "H1"      | 752 | 756.0       | 349.549268        | 1162.450732       | 756.0          | 349.549268           | 1162.450732          | 493.0         | 424.036734          | 561.963266          | 660.982143      | 398.037761            | 923.926524            | 456.195032            | 430.554302                  | 478.260963                  |
 | "H1"      | 753 | 719.0       | 312.549268        | 1125.450732       | 719.0          | 312.549268           | 1125.450732          | 477.0         | 408.036734          | 545.963266          | 660.982143      | 398.037761            | 923.926524            | 436.290514            | 411.051232                  | 461.815932                  |
 
-Plot the results of 8 randon series using the `StatsForecast.plot`
+Plot the results of 8 random series using the `StatsForecast.plot`
 method.
 
 ```python
@@ -367,7 +366,7 @@ sf.plot(Y_df, forecasts_df, models=["SeasonalNaive"], unique_ids=["H10", "H105"]
 ## Evaluate the model’s performance
 
 In previous steps, we’ve taken our historical data to predict the
-future. However, to asses its accuracy we would also like to know how
+future. However, to assess its accuracy we would also like to know how
 the model would have performed in the past. To assess the accuracy and
 robustness of your models on your data perform Cross-Validation.
 
@@ -430,7 +429,7 @@ columns:
 -   `ds`: datestamp or temporal index
 
 -   `cutoff`: the last datestamp or temporal index for the `n_windows.`
-    If `n_windows=1`, then one unique cuttoff value, if `n_windows=2`
+    If `n_windows=1`, then one unique cutoff value, if `n_windows=2`
     then two unique cutoff values.
 
 -   `y`: true value

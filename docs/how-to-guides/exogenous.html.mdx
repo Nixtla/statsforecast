@@ -5,7 +5,7 @@ title: Exogenous Regressors
 > In this notebook, we’ll incorporate exogenous regressors to a
 > StatsForecast model.
 
-> **Prerequesites**
+> **Prerequisites**
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
@@ -15,7 +15,7 @@ title: Exogenous Regressors
 
 **Exogenous regressors** are variables that can affect the values of a
 time series. They may not be directly related to the variable that is
-beging forecasted, but they can still have an impact on it. Examples of
+being forecasted, but they can still have an impact on it. Examples of
 exogenous regressors are weather data, economic indicators, or
 promotional sales. They are typically collected from external sources
 and by incorporating them into a forecasting model, they can improve the
@@ -84,8 +84,8 @@ X_ts = pd.read_parquet(f'{base_url}/m5_x.parquet', filters=filters)
 We can plot the sales of this product-store combination with the
 `statsforecast.plot` method from the
 [StatsForecast](../../core#class-statsforecast) class. This method has
-multiple parameters, and the requiered ones to generate the plots in
-this notebook are explained below.
+multiple parameters, and the required ones to generate the plots in this
+notebook are explained below.
 
 -   `df`: A pandas dataframe with columns \[`unique_id`, `ds`, `y`\].
 -   `forecasts_df`: A pandas dataframe with columns \[`unique_id`,
@@ -216,7 +216,7 @@ To generate the forecast, we’ll use
 [AutoARIMA](https://nixtlaverse.nixtla.io/statsforecast/docs/models/AutoARIMA),
 which is one of the models available in StatsForecast that allows
 exogenous regressors. To use this model, we first need to import it from
-`statsforecast.models` and then we need to instatiate it. Given that
+`statsforecast.models` and then we need to instantiate it. Given that
 we’re working with daily data, we need to set `season_length = 7`.
 
 ```python
@@ -314,10 +314,10 @@ The MAE with exogenous regressors is 11.42
 ```
 
 To check whether the exogenous regressors were useful or not, we need to
-generate the forecast again, now without them. To do this, we simple
-pass the dataframe wihtout exogenous variables to the `forecast` method.
+generate the forecast again, now without them. To do this, we simply
+pass the dataframe without exogenous variables to the `forecast` method.
 Notice that the data only includes `unique_id`, `ds`, and `y`. The
-`forecast` method no longer requieres the future values of the exogenous
+`forecast` method no longer requires the future values of the exogenous
 regressors `X_df`.
 
 ```python
