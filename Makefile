@@ -38,7 +38,6 @@ examples_docs:
 	cp -r docs-scripts/mintlify/ nbs/_extensions/mintlify
 	quarto render nbs/docs --output-dir ../docs/mintlify/
 	quarto render nbs/src --output-dir ../docs/mintlify/
-	quarto render nbs/blog --output-dir ../docs/mintlify/
 	find docs/mintlify -name "*.mdx" ! -name "*.html.mdx" -exec sh -c 'dir=$$(dirname "$$1"); base=$$(basename "$$1" .mdx | tr "[:upper:]" "[:lower:]"); mv "$$1" "$$dir/$$base.html.mdx"' _ {} \;
 
 format_docs:
