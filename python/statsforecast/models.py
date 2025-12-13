@@ -529,7 +529,7 @@ class AutoARIMA(_TS):
 
 
 class AutoETS(_TS):
-    r"""Automatic Exponential Smoothing model.
+    r"""Automatic Error, Trend, Seasonal Model.
 
     Automatically selects the best ETS (Error, Trend, Seasonality)
     model using an information criterion. Default is Akaike Information Criterion (AICc), while particular models are estimated using maximum likelihood.
