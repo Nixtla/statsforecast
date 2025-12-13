@@ -8,10 +8,10 @@ Automatic forecasting tools search for the best parameters and select the best p
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`AutoARIMA`](../models.html#autoarima)|✅|✅|✅|✅|✅|
-|[`AutoETS`](../models.html#autoets)|✅|✅|✅|✅|✅|
-|[`AutoCES`](../models.html#autoces)|✅|✅|✅|✅||
-|[`AutoTheta`](../models.html#autotheta)|✅|✅|✅|✅|✅|
+|[`AutoARIMA`](models.html#autoarima)|✅|✅|✅|✅|✅|
+|[`AutoETS`](models.html#autoets)|✅|✅|✅|✅|✅|
+|[`AutoCES`](models.html#autoces)|✅|✅|✅|✅||
+|[`AutoTheta`](models.html#autotheta)|✅|✅|✅|✅|✅|
 
 
 ## ARIMA Family
@@ -19,8 +19,8 @@ These models exploit the existing autocorrelations in the time series.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`ARIMA`](../models.html#arima)|✅|✅|✅|✅|✅|
-|[`AutoRegressive`](../models.html#autoregressive)|✅|✅|✅|✅|✅|
+|[`ARIMA`](models.html#arima)|✅|✅|✅|✅|✅|
+|[`AutoRegressive`](models.html#autoregressive)|✅|✅|✅|✅|✅|
 
 
 ## Theta Family
@@ -28,10 +28,10 @@ Fit two theta lines to a deseasonalized time series, using different techniques 
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`Theta`](../models.html#theta)|✅|✅|✅|✅|✅|
-|[`OptimizedTheta`](../models.html#optimizedtheta)|✅|✅|✅|✅|✅|
-|[`DynamicTheta`](../models.html#dynamictheta)|✅|✅|✅|✅|✅|
-|[`DynamicOptimizedTheta`](../models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
+|[`Theta`](models.html#theta)|✅|✅|✅|✅|✅|
+|[`OptimizedTheta`](models.html#optimizedtheta)|✅|✅|✅|✅|✅|
+|[`DynamicTheta`](models.html#dynamictheta)|✅|✅|✅|✅|✅|
+|[`DynamicOptimizedTheta`](models.html#dynamicoptimizedtheta)|✅|✅|✅|✅|✅|
 
 
 ## Multiple Seasonalities
@@ -39,7 +39,7 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`MSTL`](../models.html#mstl)|✅|✅|✅|✅|✅|
+|[`MSTL`](models.html#mstl)|✅|✅|✅|✅|✅|
 
 
 ## GARCH and ARCH Models
@@ -47,8 +47,8 @@ Suited for modeling time series that exhibit non-constant volatility over time. 
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`GARCH`](../models.html#garch)|✅|✅|✅|✅|✅|
-|[`ARCH`](../models.html#arch)|✅|✅|✅|✅|✅|
+|[`GARCH`](models.html#garch)|✅|✅|✅|✅|✅|
+|[`ARCH`](models.html#arch)|✅|✅|✅|✅|✅|
 
 
 ## Baseline Models
@@ -56,12 +56,12 @@ Classical models for establishing baseline.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`HistoricAverage`](../models.html#historicaverage)|✅|✅|✅|✅|✅|
-|[`Naive`](../../models.html#naive)|✅|✅|✅|✅|✅|
-|[`RandomWalkWithDrift`](../../models.html#randomwalkwithdrift)|✅|✅|✅|✅|✅|
-|[`SeasonalNaive`](../../models.html#seasonalnaive)|✅|✅|✅|✅|✅|
-|[`WindowAverage`](../../models.html#windowaverage)|✅|||||
-|[`SeasonalWindowAverage`](../../models.html#seasonalwindowaverage)|✅|||||
+|[`HistoricAverage`](models.html#historicaverage)|✅|✅|✅|✅|✅|
+|[`Naive`](models.html#naive)|✅|✅|✅|✅|✅|
+|[`RandomWalkWithDrift`](models.html#randomwalkwithdrift)|✅|✅|✅|✅|✅|
+|[`SeasonalNaive`](models.html#seasonalnaive)|✅|✅|✅|✅|✅|
+|[`WindowAverage`](models.html#windowaverage)|✅|||||
+|[`SeasonalWindowAverage`](models.html#seasonalwindowaverage)|✅|||||
 
 
 ## Exponential Smoothing
@@ -69,10 +69,10 @@ Uses a weighted average of all past observations where the weights decrease expo
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`SimpleExponentialSmoothing`](../models.html#simpleexponentialsmoothing)|✅|||||
-|[`SimpleExponentialSmoothingOptimized`](../models.html#simpleexponentialsmoothingoptimized)|✅|||||
-|[`Holt`](../models.html#holt)|✅|✅|✅|✅|✅|
-|[`HoltWinters`](../models.html#holtwinters)|✅|✅|✅|✅|✅|
+|[`SimpleExponentialSmoothing`](models.html#simpleexponentialsmoothing)|✅|||||
+|[`SimpleExponentialSmoothingOptimized`](models.html#simpleexponentialsmoothingoptimized)|✅|||||
+|[`Holt`](models.html#holt)|✅|✅|✅|✅|✅|
+|[`HoltWinters`](models.html#holtwinters)|✅|✅|✅|✅|✅|
 
 
 ## Sparse or Intermittent 
@@ -80,12 +80,12 @@ Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`ADIDA`](../models.html#adida)|✅|||||
-|[`CrostonClassic`](../models.html#crostonclassic)|✅|||||
-|[`CrostonOptimized`](../models.html#crostonoptimized)|✅|||||
-|[`CrostonSBA`](../models.html#crostonsba)|✅|||||
-|[`IMAPA`](../models.html#imapa)|✅|||||
-|[`TSB`](../models.html#tsb)|✅|||||
+|[`ADIDA`](models.html#adida)|✅|||||
+|[`CrostonClassic`](models.html#crostonclassic)|✅|||||
+|[`CrostonOptimized`](models.html#crostonoptimized)|✅|||||
+|[`CrostonSBA`](models.html#crostonsba)|✅|||||
+|[`IMAPA`](models.html#imapa)|✅|||||
+|[`TSB`](models.html#tsb)|✅|||||
 
 
 
