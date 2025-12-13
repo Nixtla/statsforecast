@@ -1,4 +1,7 @@
-# Contributing Code to Nixtla Development
+---
+title: Contributing Code to Nixtla Development
+description: A guide on the technical skills and tools needed to contribute code to the Nixtla project.
+---
 
 Curious about the skills required to contribute to the Nixtla project?
 
