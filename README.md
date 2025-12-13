@@ -75,14 +75,14 @@ Current Python alternatives for statistical models are slow, inaccurate and don'
 ## Highlights
 
 * Inclusion of `exogenous variables` and `prediction intervals` for ARIMA.
-* 20x [faster](./experiments/arima/) than `pmdarima`.
+* 20x [faster](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima) than `pmdarima`.
 * 1.5x faster than `R`.
 * 500x faster than `Prophet`.
-* 4x [faster](./experiments/ets/) than `statsmodels`.
+* 4x [faster](https://github.com/Nixtla/statsforecast/tree/main/experiments/ets) than `statsmodels`.
 * Compiled to high performance machine code through [`numba`](https://numba.pydata.org/).
 * 1,000,000 series in [30 min](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray) with [ray](https://github.com/ray-project/ray).
 * Replace FB-Prophet in two lines of code and gain speed and accuracy. Check the experiments [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/arima_prophet_adapter).
-* Fit 10 benchmark models on **1,000,000** series in [under **5 min**](./experiments/benchmarks_at_scale/).
+* Fit 10 benchmark models on **1,000,000** series in [under **5 min**](https://github.com/Nixtla/statsforecast/tree/main/experiments/benchmarks_at_scale/).
 
 Missing something? Please open an issue or write us in [![Slack](https://img.shields.io/badge/Slack-4A154B?&logo=slack&logoColor=white)](https://join.slack.com/t/nixtlaworkspace/shared_invite/zt-135dssye9-fWTzMpv2WBthq8NK0Yvu6A)
 

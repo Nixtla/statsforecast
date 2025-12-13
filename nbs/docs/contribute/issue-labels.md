@@ -33,7 +33,7 @@ You can browse all `help wanted` issues [here](https://github.com/nixtla/nixtla/
 
 The `bug` label flags issues that outline something that's currently not functioning correctly.
 
-You can report a bug by following the instructions [here](/contribute/issues#report-a-bug).
+You can report a bug by following the instructions [here](./issues.html#report-a-bug).
 
 ### The `discussion` Label
 
@@ -43,13 +43,13 @@ If an issue is labeled as `discussion`, it signifies that more conversation is n
 
 The `documentation` label identifies issues pertaining to our documentation.
 
-You can contribute to improving our documentation by creating issues following the guidelines [here](/contribute/issues#improve-our-docs).
+You can contribute to improving our documentation by creating issues following the guidelines [here](./issues.html#improve-our-docs).
 
 ### The `enhancement` Label
 
 As Nixtla continues to evolve, there are always areas that can be enhanced. All issues suggesting improvements to Nixtla are tagged with the `enhancement` label.
 
-You can propose a feature by following the instructions [here](/contribute/issues#request-a-feature).
+You can propose a feature by following the instructions [here](./issues.html#request-a-feature).
 
 ### The `discussion` Label
 
