@@ -1,0 +1,4426 @@
+---
+description: >-
+  Models currently supported by StatsForecast
+output-file: models.html
+title: Models
+---
+
+StatsForecast offers a wide variety of statistical forecasting models grouped into the following categories:
+
+- **Auto Forecast**: Automatic forecasting tools that search for the best parameters and select the best possible model. Useful for large collections of univariate time series. Includes: AutoARIMA, AutoETS, AutoTheta, AutoCES, AutoMFLES, AutoTBATS.
+
+- **ARIMA Family**: AutoRegressive Integrated Moving Average models for capturing autocorrelations in time series data.
+
+- **Exponential Smoothing**: Uses weighted averages of past observations where weights decrease exponentially into the past. Suitable for data with clear trend and/or seasonality.
+
+- **Baseline Models**: Classical models for establishing baselines: HistoricAverage, Naive, RandomWalkWithDrift, SeasonalNaive, WindowAverage, SeasonalWindowAverage.
+
+- **Sparse or Intermittent**: Models suited for series with very few non-zero observations: ADIDA, CrostonClassic, CrostonOptimized, CrostonSBA, IMAPA, TSB.
+
+- **Multiple Seasonalities**: Models suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs: MSTL, MFLES, TBATS.
+
+- **Theta Models**: Fit two theta lines to a deseasonalized time series using different techniques: Theta, OptimizedTheta, DynamicTheta, DynamicOptimizedTheta.
+
+- **ARCH/GARCH Family**: Models for time series exhibiting non-constant volatility over time. Commonly used in finance.
+
+- **Machine Learning**: Wrapper for scikit-learn models to be used with StatsForecast.
+
+## Automatic Forecasting
+
+### AutoARIMA
+
+#### `AutoARIMA`
+
+```python
+AutoARIMA(
+    d=None,
+    D=None,
+    max_p=5,
+    max_q=5,
+    max_P=2,
+    max_Q=2,
+    max_order=5,
+    max_d=2,
+    max_D=1,
+    start_p=2,
+    start_q=2,
+    start_P=1,
+    start_Q=1,
+    stationary=False,
+    seasonal=True,
+    ic="aicc",
+    stepwise=True,
+    nmodels=94,
+    trace=False,
+    approximation=False,
+    method=None,
+    truncate=None,
+    test="kpss",
+    test_kwargs=None,
+    seasonal_test="seas",
+    seasonal_test_kwargs=None,
+    allowdrift=True,
+    allowmean=True,
+    blambda=None,
+    biasadj=False,
+    season_length=1,
+    alias="AutoARIMA",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+AutoARIMA model.
+
+Automatically selects the best ARIMA (AutoRegressive Integrated Moving Average)
+model using an information criterion. Default is Akaike Information Criterion (AICc).
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`d` | <code>[Optional](#typing.Optional)\[[int](#int)\]</code> | Order of first-differencing. | <code>None</code>
+`D` | <code>[Optional](#typing.Optional)\[[int](#int)\]</code> | Order of seasonal-differencing. | <code>None</code>
+`max_p` | <code>int, default=5</code> | Max autorregresives p. | <code>5</code>
+`max_q` | <code>int, default=5</code> | Max moving averages q. | <code>5</code>
+`max_P` | <code>int, default=2</code> | Max seasonal autorregresives P. | <code>2</code>
+`max_Q` | <code>int, default=2</code> | Max seasonal moving averages Q. | <code>2</code>
+`max_order` | <code>int, default=5</code> | Max p+q+P+Q value if not stepwise selection. | <code>5</code>
+`max_d` | <code>int, default=2</code> | Max non-seasonal differences. | <code>2</code>
+`max_D` | <code>int, default=1</code> | Max seasonal differences. | <code>1</code>
+`start_p` | <code>int, default=2</code> | Starting value of p in stepwise procedure. | <code>2</code>
+`start_q` | <code>int, default=2</code> | Starting value of q in stepwise procedure. | <code>2</code>
+`start_P` | <code>int, default=1</code> | Starting value of P in stepwise procedure. | <code>1</code>
+`start_Q` | <code>int, default=1</code> | Starting value of Q in stepwise procedure. | <code>1</code>
+`stationary` | <code>bool, default=False</code> | If True, restricts search to stationary models. | <code>False</code>
+`seasonal` | <code>bool, default=True</code> | If False, restricts search to non-seasonal models. | <code>True</code>
+`ic` | <code>str, default="aicc"</code> | Information criterion to be used in model selection. | <code>'aicc'</code>
+`stepwise` | <code>bool, default=True</code> | If True, will do stepwise selection (faster). | <code>True</code>
+`nmodels` | <code>int, default=94</code> | Number of models considered in stepwise search. | <code>94</code>
+`trace` | <code>bool, default=False</code> | If True, the searched ARIMA models is reported. | <code>False</code>
+`approximation` | <code>Optional[bool], default=False</code> | If True, conditional sums-of-squares estimation, final MLE. | <code>False</code>
+`method` | <code>[Optional](#typing.Optional)\[[str](#str)\]</code> | Fitting method between maximum likelihood or sums-of-squares. | <code>None</code>
+`truncate` | <code>[Optional](#typing.Optional)\[[bool](#bool)\]</code> | Observations truncated series used in model selection. | <code>None</code>
+`test` | <code>str, default="kpss"</code> | Unit root test to use. See `ndiffs` for details. | <code>'kpss'</code>
+`test_kwargs` | <code>[Optional](#typing.Optional)\[[str](#str)\]</code> | Unit root test additional arguments. | <code>None</code>
+`seasonal_test` | <code>str, default="seas"</code> | Selection method for seasonal differences. | <code>'seas'</code>
+`seasonal_test_kwargs` | <code>[Optional](#typing.Optional)\[[dict](#dict)\]</code> | Seasonal unit root test arguments. | <code>None</code>
+`allowdrift` | <code>bool, default=True</code> | If True, drift models terms considered. | <code>True</code>
+`allowmean` | <code>bool, default=True</code> | If True, non-zero mean models considered. | <code>True</code>
+`blambda` | <code>[Optional](#typing.Optional)\[[float](#float)\]</code> | Box-Cox transformation parameter. | <code>None</code>
+`biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
+`season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`alias` | <code>str, default="AutoARIMA"</code> | Custom name of the model. | <code>'AutoARIMA'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+<details class="notes" open markdown="1">
+<summary>Notes</summary>
+
+This implementation is a mirror of Hyndman's [forecast::auto.arima](https://github.com/robjhyndman/forecast).
+
+</details>
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+[Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
+
+</details>
+
+##### `AutoARIMA.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the AutoARIMA model.
+
+Fit an AutoARIMA to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`AutoARIMA` | | AutoARIMA fitted model.
+
+##### `AutoARIMA.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted AutoArima.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoARIMA.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted AutoArima insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoARIMA.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient AutoARIMA predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenpus of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x) optional exogenous. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>bool, default=False</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### AutoETS
+
+#### `AutoETS`
+
+```python
+AutoETS(
+    season_length=1,
+    model="ZZZ",
+    damped=None,
+    phi=None,
+    alias="AutoETS",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+Automatic Error, Trend, Seasonal Model.
+
+Automatically selects the best ETS (Error, Trend, Seasonality)
+model using an information criterion. Default is Akaike Information Criterion (AICc), while particular models are estimated using maximum likelihood.
+The state-space equations can be determined based on their $M$ multiplicative, $A$ additive,
+$Z$ optimized or $N$ ommited components. The `model` string parameter defines the ETS equations:
+E in [$M, A, Z$], T in [$N, A, M, Z$], and S in [$N, A, M, Z$].
+
+For example when model='ANN' (additive error, no trend, and no seasonality), ETS will
+explore only a simple exponential smoothing.
+
+If the component is selected as 'Z', it operates as a placeholder to ask the AutoETS model
+to figure out the best parameter.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`model` | <code>str, default="ZZZ"</code> | Controlling state-space-equations. | <code>'ZZZ'</code>
+`damped` | <code>[bool](#bool)</code> | A parameter that 'dampens' the trend. | <code>None</code>
+`phi` | <code>[float](#float)</code> | Smoothing parameter for trend damping. Only used when `damped=True`. | <code>None</code>
+`alias` | <code>str, default="AutoETS"</code> | Custom name of the model. | <code>'AutoETS'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+<details class="notes" open markdown="1">
+<summary>Notes</summary>
+
+This implementation is a mirror of Hyndman's [forecast::ets](https://github.com/robjhyndman/forecast).
+
+</details>
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
+- [Hyndman, Rob, et al (2008). "Forecasting with exponential smoothing: the state space approach"](https://robjhyndman.com/expsmooth/).
+
+</details>
+
+##### `AutoETS.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the Exponential Smoothing model.
+
+Fit an Exponential Smoothing model to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`AutoETS` | | Exponential Smoothing fitted model.
+
+##### `AutoETS.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted Exponential Smoothing.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenpus of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoETS.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted Exponential Smoothing insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoETS.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient Exponential Smoothing predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenpus of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>bool, default=False</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### AutoCES
+
+#### `AutoCES`
+
+```python
+AutoCES(season_length=1, model='Z', alias='CES', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+Complex Exponential Smoothing model.
+
+Automatically selects the best Complex Exponential Smoothing
+model using an information criterion. Default is Akaike Information Criterion (AICc), while particular
+models are estimated using maximum likelihood.
+The state-space equations can be determined based on their $S$ simple, $P$ parial,
+$Z$ optimized or $N$ ommited components. The `model` string parameter defines the
+kind of CES model: $N$ for simple CES (withous seasonality), $S$ for simple seasonality (lagged CES),
+$P$ for partial seasonality (without complex part), $F$ for full seasonality (lagged CES
+with real and complex seasonal parts).
+
+If the component is selected as 'Z', it operates as a placeholder to ask the AutoCES model
+to figure out the best parameter.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`model` | <code>str, default="Z"</code> | Controlling state-space-equations. | <code>'Z'</code>
+`alias` | <code>str, default="CES"</code> | Custom name of the model. | <code>'CES'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Svetunkov, Ivan & Kourentzes, Nikolaos. (2015). "Complex Exponential Smoothing".](https://onlinelibrary.wiley.com/doi/full/10.1002/nav.22074).
+
+</details>
+
+##### `AutoCES.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the Complex Exponential Smoothing model.
+
+Fit the Complex Exponential Smoothing model to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`AutoCES` | | Complex Exponential Smoothing fitted model.
+
+##### `AutoCES.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted Exponential Smoothing.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoCES.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted Exponential Smoothing insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoCES.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient Complex Exponential Smoothing predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenpus of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>bool, default=False</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### AutoTheta
+
+#### `AutoTheta`
+
+```python
+AutoTheta(
+    season_length=1,
+    decomposition_type="multiplicative",
+    model=None,
+    alias="AutoTheta",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+AutoTheta model.
+
+Automatically selects the best Theta (Standard Theta Model ('STM'),
+Optimized Theta Model ('OTM'), Dynamic Standard Theta Model ('DSTM'),
+Dynamic Optimized Theta Model ('DOTM')) model using mse.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`decomposition_type` | <code>str, default="multiplicative"</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. | <code>'multiplicative'</code>
+`model` | <code>[Optional](#typing.Optional)\[[str](#str)\]</code> | Controlling Theta Model. By default searchs the best model. | <code>None</code>
+`alias` | <code>str, default="AutoTheta"</code> | Custom name of the model. | <code>'AutoTheta'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+
+</details>
+
+##### `AutoTheta.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the AutoTheta model.
+
+Fit an AutoTheta model to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`AutoTheta` | | AutoTheta fitted model.
+
+##### `AutoTheta.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted AutoTheta.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoTheta.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted AutoTheta insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoTheta.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient AutoTheta predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>bool, default=False</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### AutoMFLES
+
+#### `AutoMFLES`
+
+```python
+AutoMFLES(
+    test_size,
+    season_length=None,
+    n_windows=2,
+    config=None,
+    step_size=None,
+    metric="smape",
+    verbose=False,
+    prediction_intervals=None,
+    alias="AutoMFLES",
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+AutoMFLES
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`test_size` | <code>[int](#int)</code> | Forecast horizon used during cross validation. | *required*
+`season_length` | <code>int or list of int, optional, default=None</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>None</code>
+`n_windows` | <code>int, default=2</code> | Number of windows used for cross validation. | <code>2</code>
+`config` | <code>dict, optional, default=None</code> | Mapping from parameter name (from the init arguments of MFLES) to a list of values to try. If `None`, will use defaults. | <code>None</code>
+`step_size` | <code>int, optional, default=None</code> | Step size between each cross validation window. If `None` will be set to test_size. | <code>None</code>
+`metric` | <code>str, default='smape'</code> | Metric used to select the best model. Possible options are: 'smape', 'mape', 'mse' and 'mae'. | <code>'smape'</code>
+`verbose` | <code>bool, default=False</code> | Print debugging information. | <code>False</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+`alias` | <code>str, default='AutoMFLES'</code> | Custom name of the model. | <code>'AutoMFLES'</code>
+
+##### `AutoMFLES.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the model
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>array-like, optional, default=None</code> | Exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`AutoMFLES` | <code>[AutoMFLES](#statsforecast.models.AutoMFLES)</code> | Fitted AutoMFLES object.
+
+##### `AutoMFLES.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted AutoMFLES.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>array-like, optional, default=None</code> | Exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | <code>[Dict](#typing.Dict)\[[str](#str), [Any](#typing.Any)\]</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoMFLES.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted AutoMFLES insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | <code>[Dict](#typing.Dict)\[[str](#str), [Any](#typing.Any)\]</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoMFLES.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient AutoMFLES predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>bool, default=False</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | <code>[Dict](#typing.Dict)\[[str](#str), [Any](#typing.Any)\]</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### AutoTBATS
+
+#### `AutoTBATS`
+
+```python
+AutoTBATS(
+    season_length,
+    use_boxcox=None,
+    bc_lower_bound=0.0,
+    bc_upper_bound=1.0,
+    use_trend=None,
+    use_damped_trend=None,
+    use_arma_errors=True,
+    alias="AutoTBATS",
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+AutoTBATS model.
+
+Automatically selects the best TBATS model from all feasible combinations of the parameters use_boxcox, use_trend, use_damped_trend, and use_arma_errors.
+Selection is made using the AIC.
+Default value for use_arma_errors is True since this enables the evaluation of models with and without ARMA errors.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011). Forecasting time series with complex seasonal patterns using exponential smoothing. Journal of the American statistical association, 106(496), 1513-1527.](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=f3de25596ab60ef0e886366826bf58a02b35a44f)
+- [De Livera, Alysha M (2017). Modeling time series with complex seasonal patterns using exponential smoothing. Monash University. Thesis.](https://doi.org/10.4225/03/589299681de3d)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`seasonal_periods` | <code>int or list of int</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
+`use_boxcox` | <code>bool, default=None</code> | Whether or not to use a Box-Cox transformation. By default tries both. | <code>None</code>
+`bc_lower_bound` | <code>float, default=0.0</code> | Lower bound for the Box-Cox transformation. | <code>0.0</code>
+`bc_upper_bound` | <code>float, default=1.0</code> | Upper bound for the Box-Cox transformation. | <code>1.0</code>
+`use_trend` | <code>bool, default=None</code> | Whether or not to use a trend component. By default tries both. | <code>None</code>
+`use_damped_trend` | <code>bool, default=None</code> | Whether or not to dampen the trend component. By default tries both. | <code>None</code>
+`use_arma_errors` | <code>bool, default=True</code> | Whether or not to use a ARMA errors. Default is True and this evaluates both models. | <code>True</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'AutoTBATS'</code>
+
+##### `AutoTBATS.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit TBATS model.
+
+Fit TBATS model to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>numpy.array, optional, default=None</code> | Ignored | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | TBATS model.
+
+##### `AutoTBATS.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted TBATS model.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoTBATS.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted TBATS model predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoTBATS.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient TBATS model.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+## ARIMA Family
+
+### ARIMA
+
+#### `ARIMA`
+
+```python
+ARIMA(
+    order=(0, 0, 0),
+    season_length=1,
+    seasonal_order=(0, 0, 0),
+    include_mean=True,
+    include_drift=False,
+    include_constant=None,
+    blambda=None,
+    biasadj=False,
+    method="CSS-ML",
+    fixed=None,
+    alias="ARIMA",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+ARIMA model.
+
+AutoRegressive Integrated Moving Average model.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman, Yeasmin Khandakar (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`order` | <code>tuple, default=(0, 0, 0)</code> | A specification of the non-seasonal part of the ARIMA model: the three components (p, d, q) are the AR order, the degree of differencing, and the MA order. | <code>(0, 0, 0)</code>
+`season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`seasonal_order` | <code>tuple, default=(0, 0, 0)</code> | A specification of the seasonal part of the ARIMA model. (P, D, Q) for the AR order, the degree of differencing, the MA order. | <code>(0, 0, 0)</code>
+`include_mean` | <code>bool, default=True</code> | Should the ARIMA model include a mean term? The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions). | <code>True</code>
+`include_drift` | <code>bool, default=False</code> | Should the ARIMA model include a linear drift term? (i.e., a linear regression with ARIMA errors is fitted.) | <code>False</code>
+`include_constant` | <code>bool, optional, default=None</code> | If True, then includ_mean is set to be True for undifferenced series and include_drift is set to be True for differenced series. Note that if there is more than one difference taken, no constant is included regardless of the value of this argument. This is deliberate as otherwise quadratic and higher order polynomial trends would be induced. | <code>None</code>
+`blambda` | <code>float, optional, default=None</code> | Box-Cox transformation parameter. | <code>None</code>
+`biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
+`method` | <code>str, default='CSS-ML'</code> | Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. | <code>'CSS-ML'</code>
+`fixed` | <code>dict, optional, default=None</code> | Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys. | <code>None</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'ARIMA'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `ARIMA.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the model to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | Fitted model.
+
+##### `ARIMA.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted model.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `ARIMA.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `ARIMA.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory efficient predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x) optional exogenous. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### AutoRegressive
+
+#### `AutoRegressive`
+
+```python
+AutoRegressive(
+    lags,
+    include_mean=True,
+    include_drift=False,
+    blambda=None,
+    biasadj=False,
+    method="CSS-ML",
+    fixed=None,
+    alias="AutoRegressive",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[ARIMA](#statsforecast.models.ARIMA)</code>
+
+Simple Autoregressive model.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`lags` | <code>[int](#int) or [list](#list)</code> | Number of lags to include in the model. If an int is passed then all lags up to `lags` are considered. If a list, only the elements of the list are considered as lags. | *required*
+`include_mean` | <code>bool, default=True</code> | Should the AutoRegressive model include a mean term? The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions). | <code>True</code>
+`include_drift` | <code>bool, default=False</code> | Should the AutoRegressive model include a linear drift term? (i.e., a linear regression with AutoRegressive errors is fitted.) | <code>False</code>
+`blambda` | <code>float, optional, default=None</code> | Box-Cox transformation parameter. | <code>None</code>
+`biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
+`method` | <code>str, default='CSS-ML'</code> | Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. | <code>'CSS-ML'</code>
+`fixed` | <code>dict, optional, default=None</code> | Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys. | <code>None</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'AutoRegressive'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `AutoRegressive.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the model to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | Fitted model.
+
+##### `AutoRegressive.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted model.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoRegressive.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `AutoRegressive.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory efficient predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x) optional exogenous. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+## Exponential Smoothing
+
+### SimpleExponentialSmoothing
+
+#### `SimpleExponentialSmoothing`
+
+```python
+SimpleExponentialSmoothing(alpha, alias='SES', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+SimpleExponentialSmoothing model.
+
+Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+Suitable for data with no clear trend or seasonality.
+Assuming there are $t$ observations, the one-step forecast is given by: $\\hat{y}_{t+1} = \\alpha y_t + (1-\\alpha) \\hat{y}_{t-1}$
+
+The rate $0 \\leq \\alpha \\leq 1$ at which the weights decrease is called the smoothing parameter. When $\\alpha = 1$, SES is equal to the naive method.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alpha` | <code>[float](#float)</code> | Smoothing parameter. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SES'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `SimpleExponentialSmoothing.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the SimpleExponentialSmoothing model.
+
+Fit an SimpleExponentialSmoothing to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | SimpleExponentialSmoothing fitted model.
+
+##### `SimpleExponentialSmoothing.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted SimpleExponentialSmoothing.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SimpleExponentialSmoothing.predict_in_sample`
+
+```python
+predict_in_sample()
+```
+
+Access fitted SimpleExponentialSmoothing insample predictions.
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions.
+
+##### `SimpleExponentialSmoothing.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient SimpleExponentialSmoothing predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### SimpleExponentialSmoothingOptimized
+
+#### `SimpleExponentialSmoothingOptimized`
+
+```python
+SimpleExponentialSmoothingOptimized(alias='SESOpt', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+SimpleExponentialSmoothing model.
+
+Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+Suitable for data with no clear trend or seasonality.
+Assuming there are $t$ observations, the one-step forecast is given by: $\\hat{y}_{t+1} = \\alpha y_t + (1-\\alpha) \\hat{y}_{t-1}$
+
+The smoothing parameter $\\alpha^\*$ is optimized by square error minimization.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SESOpt'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+
+##### `SimpleExponentialSmoothingOptimized.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the SimpleExponentialSmoothingOptimized model.
+
+Fit an SimpleExponentialSmoothingOptimized to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`SimpleExponentialSmoothingOptimized` | | SimpleExponentialSmoothingOptimized fitted model.
+
+##### `SimpleExponentialSmoothingOptimized.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted SimpleExponentialSmoothingOptimized.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SimpleExponentialSmoothingOptimized.predict_in_sample`
+
+```python
+predict_in_sample()
+```
+
+Access fitted SimpleExponentialSmoothingOptimized insample predictions.
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions.
+
+##### `SimpleExponentialSmoothingOptimized.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient SimpleExponentialSmoothingOptimized predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### SeasonalExponentialSmoothing
+
+#### `SeasonalExponentialSmoothing`
+
+```python
+SeasonalExponentialSmoothing(
+    season_length, alpha, alias="SeasonalES", prediction_intervals=None
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+SeasonalExponentialSmoothing model.
+
+Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+Suitable for data with no clear trend or seasonality.
+Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
+$\\hat{y}_{t+1,s} = \\alpha y_t + (1-\\alpha) \\hat{y}_{t-1,s}$
+
+<details class="notes" open markdown="1">
+<summary>Notes</summary>
+
+This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
+And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
+
+</details>
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
+- [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alpha` | <code>[float](#float)</code> | Smoothing parameter. | *required*
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SeasonalES'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+
+##### `SeasonalExponentialSmoothing.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the SeasonalExponentialSmoothing model.
+
+Fit an SeasonalExponentialSmoothing to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`SeasonalExponentialSmoothing` | | SeasonalExponentialSmoothing fitted model.
+
+##### `SeasonalExponentialSmoothing.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted SeasonalExponentialSmoothing.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SeasonalExponentialSmoothing.predict_in_sample`
+
+```python
+predict_in_sample()
+```
+
+Access fitted SeasonalExponentialSmoothing insample predictions.
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions.
+
+##### `SeasonalExponentialSmoothing.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient SeasonalExponentialSmoothing predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### SeasonalExponentialSmoothingOptimized
+
+#### `SeasonalExponentialSmoothingOptimized`
+
+```python
+SeasonalExponentialSmoothingOptimized(
+    season_length, alias="SeasESOpt", prediction_intervals=None
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+SeasonalExponentialSmoothingOptimized model.
+
+Uses a weighted average of all past observations where the weights decrease exponentially into the past.
+Suitable for data with no clear trend or seasonality.
+Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
+$\\hat{y}_{t+1,s} = \\alpha y_t + (1-\\alpha) \\hat{y}_{t-1,s}$
+
+The smoothing parameter $\\alpha^\*$ is optimized by square error minimization.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SeasESOpt'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Charles. C. Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages", ONR Research Memorandum, Carnegie Institute of Technology 52.](https://www.sciencedirect.com/science/article/abs/pii/S0169207003001134).
+- [Peter R. Winters (1960). "Forecasting sales by exponentially weighted moving averages". Management Science](https://pubsonline.informs.org/doi/abs/10.1287/mnsc.6.3.324).
+
+</details>
+
+<details class="notes" open markdown="1">
+<summary>Notes</summary>
+
+- This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
+- And a single seasonal smoothing parameter $\\alpha$ is shared across seasons.
+
+</details>
+
+##### `SeasonalExponentialSmoothingOptimized.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the SeasonalExponentialSmoothingOptimized model.
+
+Fit an SeasonalExponentialSmoothingOptimized to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`SeasonalExponentialSmoothingOptimized` | | SeasonalExponentialSmoothingOptimized fitted model.
+
+##### `SeasonalExponentialSmoothingOptimized.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted SeasonalExponentialSmoothingOptimized.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SeasonalExponentialSmoothingOptimized.predict_in_sample`
+
+```python
+predict_in_sample()
+```
+
+Access fitted SeasonalExponentialSmoothingOptimized insample predictions.
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions.
+
+##### `SeasonalExponentialSmoothingOptimized.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient SeasonalExponentialSmoothingOptimized predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### Holt
+
+#### `Holt`
+
+```python
+Holt(season_length=1, error_type='A', alias='Holt', prediction_intervals=None)
+```
+
+Bases: <code>[AutoETS](#statsforecast.models.AutoETS)</code>
+
+Holt's method.
+
+Also known as double exponential smoothing, Holt's method is an extension of exponential smoothing for series with a trend.
+This implementation returns the corresponding `ETS` model with additive (A) or multiplicative (M) errors (so either 'AAN' or 'MAN').
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with trend"](https://otexts.com/fpp3/holt.html).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 12 Monthly data. | <code>1</code>
+`error_type` | <code>[str](#str)</code> | The type of error of the ETS model. Can be additive (A) or multiplicative (M). | <code>'A'</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'Holt'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+### HoltWinters
+
+#### `HoltWinters`
+
+```python
+HoltWinters(
+    season_length=1,
+    error_type="A",
+    alias="HoltWinters",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[AutoETS](#statsforecast.models.AutoETS)</code>
+
+Holt-Winters' method.
+
+Also known as triple exponential smoothing, Holt-Winters' method is an extension of exponential smoothing for series that contain both trend and seasonality.
+This implementation returns the corresponding `ETS` model with additive (A) or multiplicative (M) errors (so either 'AAA' or 'MAM').
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Methods with seasonality"](https://otexts.com/fpp3/holt-winters.html).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 12 Monthly data. | <code>1</code>
+`error_type` | <code>[str](#str)</code> | The type of error of the ETS model. Can be additive (A) or multiplicative (M). | <code>'A'</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'HoltWinters'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+## Baseline Models
+
+### HistoricAverage
+
+#### `HistoricAverage`
+
+```python
+HistoricAverage(alias='HistoricAverage', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+HistoricAverage model.
+
+Also known as mean method. Uses a simple average of all past observations.
+Assuming there are $t$ observations, the one-step forecast is given by:
+
+```math
+\hat{y}_{t+1} = \frac{1}{t} \sum_{j=1}^t y_j
+```
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman and George Athanasopoulos (2018). "Forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'HistoricAverage'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `HistoricAverage.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the HistoricAverage model.
+
+Fit an HistoricAverage to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | HistoricAverage fitted model.
+
+r
+
+##### `HistoricAverage.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted HistoricAverage.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `HistoricAverage.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted HistoricAverage insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions.
+
+##### `HistoricAverage.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient HistoricAverage predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. Defaults to False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### Naive
+
+#### `Naive`
+
+```python
+Naive(alias='Naive', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+Naive model.
+
+All forecasts have the value of the last observation:
+$\\hat{y}\_{t+1} = y_t$ for all $t$
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+[Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "Naive". | <code>'Naive'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Defaults to None. | <code>None</code>
+
+##### `Naive.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the Naive model.
+
+Fit an Naive to a time series (numpy.array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | Naive fitted model.
+
+##### `Naive.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted Naive.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `Naive.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted Naive insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions.
+
+##### `Naive.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient Naive predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n,). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### RandomWalkWithDrift
+
+#### `RandomWalkWithDrift`
+
+```python
+RandomWalkWithDrift(alias='RWD', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+RandomWalkWithDrift model.
+
+A variation of the naive method allows the forecasts to change over time.
+The amout of change, called drift, is the average change seen in the historical data.
+
+```math
+\hat{y}_{t+1} = y_t+\frac{1}{t-1}\sum_{j=1}^t (y_j-y_{j-1}) = y_t+ \frac{y_t-y_1}{t-1}
+```
+
+From the previous equation, we can see that this is equivalent to extrapolating a line between
+the first and the last observation.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'RWD'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `RandomWalkWithDrift.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the RandomWalkWithDrift model.
+
+Fit an RandomWalkWithDrift to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | RandomWalkWithDrift fitted model.
+
+r
+
+##### `RandomWalkWithDrift.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted RandomWalkWithDrift.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `RandomWalkWithDrift.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted RandomWalkWithDrift insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `RandomWalkWithDrift.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient RandomWalkWithDrift predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n,). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### SeasonalNaive
+
+#### `SeasonalNaive`
+
+```python
+SeasonalNaive(season_length, alias='SeasonalNaive', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+Seasonal naive model.
+
+A method similar to the naive, but uses the last known observation of the same period (e.g. the same month of the previous year) in order to capture seasonal variations.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html#seasonal-na%C3%AFve-method).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SeasonalNaive'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `SeasonalNaive.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the SeasonalNaive model.
+
+Fit an SeasonalNaive to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | SeasonalNaive fitted model.
+
+r
+
+##### `SeasonalNaive.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted Naive.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SeasonalNaive.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted SeasonalNaive insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+r
+
+##### `SeasonalNaive.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient SeasonalNaive predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### WindowAverage
+
+#### `WindowAverage`
+
+```python
+WindowAverage(window_size, alias='WindowAverage', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+WindowAverage model.
+
+Uses the average of the last $k$ observations, with $k$ the length of the window.
+Wider windows will capture global trends, while narrow windows will reveal local trends.
+The length of the window selected should take into account the importance of past
+observations and how fast the series changes.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`window_size` | <code>[int](#int)</code> | Size of truncated series on which average is estimated. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'WindowAverage'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+
+r
+
+##### `WindowAverage.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the WindowAverage model.
+
+Fit an WindowAverage to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | WindowAverage fitted model.
+
+##### `WindowAverage.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted WindowAverage.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#numpy.array)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `WindowAverage.predict_in_sample`
+
+```python
+predict_in_sample()
+```
+
+Access fitted WindowAverage insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | *required*
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `WindowAverage.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient WindowAverage predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### SeasonalWindowAverage
+
+#### `SeasonalWindowAverage`
+
+```python
+SeasonalWindowAverage(
+    season_length, window_size, alias="SeasWA", prediction_intervals=None
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+SeasonalWindowAverage model.
+
+An average of the last $k$ observations of the same period, with $k$ the length of the window.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Rob J. Hyndman and George Athanasopoulos (2018). "forecasting principles and practice, Simple Methods"](https://otexts.com/fpp3/simple-methods.html).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
+`window_size` | <code>[int](#int)</code> | Size of truncated series on which average is estimated. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SeasWA'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+
+r
+
+##### `SeasonalWindowAverage.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the SeasonalWindowAverage model.
+
+Fit an SeasonalWindowAverage to a time series (numpy array) `y`
+and optionally exogenous variables (numpy array) `X`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`SeasonalWindowAverage` | | SeasonalWindowAverage fitted model.
+
+##### `SeasonalWindowAverage.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted SeasonalWindowAverage.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SeasonalWindowAverage.predict_in_sample`
+
+```python
+predict_in_sample()
+```
+
+Access fitted SeasonalWindowAverage insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. | *required*
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SeasonalWindowAverage.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient SeasonalWindowAverage predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n,). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels for prediction intervals. Defaults to None. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. Defaults to False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+## Sparse or Intermittent Models
+
+### ADIDA
+
+#### `ADIDA`
+
+```python
+ADIDA(alias='ADIDA', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+ADIDA model.
+
+Aggregate-Dissagregate Intermittent Demand Approach: Uses temporal aggregation to reduce the
+number of zero observations. Once the data has been agregated, it uses the optimized SES to
+generate the forecasts at the new level. It then breaks down the forecast to the original
+level using equal weights.
+
+ADIDA specializes on sparse or intermittent series are series with very few non-zero observations.
+They are notoriously hard to forecast, and so, different methods have been developed
+especifically for them.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Nikolopoulos, K., Syntetos, A. A., Boylan, J. E., Petropoulos, F., & Assimakopoulos, V. (2011). An aggregate–disaggregate intermittent demand approach (ADIDA) to forecasting: an empirical proposition and analysis. Journal of the Operational Research Society, 62(3), 544-554.](https://researchportal.bath.ac.uk/en/publications/an-aggregate-disaggregate-intermittent-demand-approach-adida-to-f).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "ADIDA". | <code>'ADIDA'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Defaults to None. | <code>None</code>
+
+##### `ADIDA.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the ADIDA model.
+
+Fit an ADIDA to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous variables. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`ADIDA` | | ADIDA fitted model.
+
+##### `ADIDA.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted ADIDA.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `ADIDA.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted ADIDA insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `ADIDA.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient ADIDA predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n,). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. Defaults to False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### CrostonClassic
+
+#### `CrostonClassic`
+
+```python
+CrostonClassic(alias='CrostonClassic', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+CrostonClassic model.
+
+A method to forecast time series that exhibit intermittent demand.
+It decomposes the original time series into a non-zero demand size $z_t$ and
+inter-demand intervals $p_t$. Then the forecast is given by:
+
+```math
+\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}
+```
+
+where $\\hat{z}\_t$ and $\\hat{p}\_t$ are forecasted using SES. The smoothing parameter
+of both components is set equal to 0.1
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "CrostonClassic". | <code>'CrostonClassic'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Defaults to None. | <code>None</code>
+
+##### `CrostonClassic.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the CrostonClassic model.
+
+Fit an CrostonClassic to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous variables. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`CrostonClassic` | | CrostonClassic fitted model.
+
+##### `CrostonClassic.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted CrostonClassic.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `CrostonClassic.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted CrostonClassic insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `CrostonClassic.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient CrostonClassic predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. Defaults to False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### CrostonOptimized
+
+#### `CrostonOptimized`
+
+```python
+CrostonOptimized(alias='CrostonOptimized', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+CrostonOptimized model.
+
+A method to forecast time series that exhibit intermittent demand.
+It decomposes the original time series into a non-zero demand size $z_t$ and
+inter-demand intervals $p_t$. Then the forecast is given by:
+
+```math
+\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}
+```
+
+A variation of the classic Croston's method where the smooting paramater is optimally
+selected from the range $[0.1,0.3]$. Both the non-zero demand $z_t$ and the inter-demand
+intervals $p_t$ are smoothed separately, so their smoothing parameters can be different.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "CrostonOptimized". | <code>'CrostonOptimized'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. Defaults to None. | <code>None</code>
+
+##### `CrostonOptimized.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the CrostonOptimized model.
+
+Fit an CrostonOptimized to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous variables. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`CrostonOptimized` | | CrostonOptimized fitted model.
+
+##### `CrostonOptimized.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted CrostonOptimized.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `CrostonOptimized.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted CrostonOptimized insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `CrostonOptimized.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient CrostonOptimized predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. Defaults to False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### CrostonSBA
+
+#### `CrostonSBA`
+
+```python
+CrostonSBA(alias='CrostonSBA', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+CrostonSBA model.
+
+A method to forecast time series that exhibit intermittent demand.
+It decomposes the original time series into a non-zero demand size $z_t$ and
+inter-demand intervals $p_t$. Then the forecast is given by:
+
+```math
+\hat{y}_t = \frac{\hat{z}_t}{\hat{p}_t}
+```
+
+A variation of the classic Croston's method that uses a debiasing factor, so that the
+forecast is given by:
+
+```math
+\hat{y}_t = 0.95  \frac{\hat{z}_t}{\hat{p}_t}
+```
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Croston, J. D. (1972). Forecasting and stock control for intermittent demands. Journal of the Operational Research Society, 23(3), 289-303.](https://link.springer.com/article/10.1057/jors.1972.50).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "CrostonSBA". | <code>'CrostonSBA'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Defaults to None. | <code>None</code>
+
+##### `CrostonSBA.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the CrostonSBA model.
+
+Fit an CrostonSBA to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous variables. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`CrostonSBA` | | CrostonSBA fitted model.
+
+##### `CrostonSBA.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted CrostonSBA.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `CrostonSBA.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted CrostonSBA insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `CrostonSBA.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient CrostonSBA predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. Defaults to False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### IMAPA
+
+#### `IMAPA`
+
+```python
+IMAPA(alias='IMAPA', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+IMAPA model.
+
+Intermittent Multiple Aggregation Prediction Algorithm: Similar to ADIDA, but instead of
+using a single aggregation level, it considers multiple in order to capture different
+dynamics of the data. Uses the optimized SES to generate the forecasts at the new levels
+and then combines them using a simple average.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Syntetos, A. A., & Boylan, J. E. (2021). Intermittent demand forecasting: Context, methods and applications. John Wiley & Sons.](https://www.ifors.org/intermittent-demand-forecasting-context-methods-and-applications/).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "IMAPA". | <code>'IMAPA'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Defaults to None. | <code>None</code>
+
+##### `IMAPA.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the IMAPA model.
+
+Fit an IMAPA to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous variables. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`IMAPA` | | IMAPA fitted model.
+
+##### `IMAPA.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted IMAPA.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `IMAPA.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted IMAPA insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `IMAPA.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient IMAPA predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional insample exogenous of shape (t, n_x). Defaults to None. | <code>None</code>
+`X_future` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. Defaults to False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### TSB
+
+#### `TSB`
+
+```python
+TSB(alpha_d, alpha_p, alias='TSB', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+TSB model.
+
+Teunter-Syntetos-Babai: A modification of Croston's method that replaces the inter-demand
+intervals with the demand probability $d_t$, which is defined as follows.
+
+```math
+d_t = \begin{cases}
+    1  & \text{if demand occurs at time t} \\
+    0  & \text{otherwise.}
+\end{cases}
+```
+
+Hence, the forecast is given by
+
+```math
+\hat{y}_t= \hat{d}_t\hat{z_t}
+```
+
+Both $d_t$ and $z_t$ are forecasted using SES. The smooting paramaters of each may differ,
+like in the optimized Croston's method.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Teunter, R. H., Syntetos, A. A., & Babai, M. Z. (2011). Intermittent demand: Linking forecasting to inventory obsolescence. European Journal of Operational Research, 214(3), 606-615.](https://www.sciencedirect.com/science/article/abs/pii/S0377221711004437)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alpha_d` | <code>[float](#float)</code> | Smoothing parameter for demand. | *required*
+`alpha_p` | <code>[float](#float)</code> | Smoothing parameter for probability. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "TSB". | <code>'TSB'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. Defaults to None. | <code>None</code>
+
+##### `TSB.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the TSB model.
+
+Fit an TSB to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[ndarray](#numpy.ndarray)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous variables. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`TSB` | | TSB fitted model.
+
+##### `TSB.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted TSB.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[Optional](#typing.Optional)\[[ndarray](#numpy.ndarray)\]</code> | Optional exogenous of shape (h, n_x). Defaults to None. | <code>None</code>
+`level` | <code>[Optional](#typing.Optional)\[[List](#typing.List)\[[int](#int)\]\]</code> | Confidence levels (0-100) for prediction intervals. Defaults to None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `TSB.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted TSB insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `TSB.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient TSB predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+## Multiple Seasonalities
+
+### MSTL
+
+#### `MSTL`
+
+```python
+MSTL(
+    season_length,
+    trend_forecaster=AutoETS(model="ZZN"),
+    stl_kwargs=None,
+    alias="MSTL",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+MSTL model.
+
+The MSTL (Multiple Seasonal-Trend decomposition using LOESS) decomposes the time series
+in multiple seasonalities using LOESS. Then forecasts the trend using
+a custom non-seaonal model and each seasonality using a SeasonalNaive model.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Bandara, Kasun & Hyndman, Rob & Bergmeir, Christoph. (2021). "MSTL: A Seasonal-Trend Decomposition Algorithm for Time Series with Multiple Seasonal Patterns".](https://arxiv.org/abs/2107.13462).
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[Union](#typing.Union)\[[int](#int), [List](#typing.List)\[[int](#int)\]\]</code> | Number of observations per unit of time. For multiple seasonalities use a list. | *required*
+`trend_forecaster` | <code>model, default=AutoETS(model='ZZN')</code> | StatsForecast model used to forecast the trend component. | <code>[AutoETS](#statsforecast.models.AutoETS)(model='ZZN')</code>
+`stl_kwargs` | <code>[dict](#dict)</code> | Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.STL.html#statsmodels.tsa.seasonal.STL). The `period` and `seasonal` arguments are reserved. | <code>None</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'MSTL'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `MSTL.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the MSTL model.
+
+Fit MSTL to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | MSTL fitted model.
+
+##### `MSTL.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted MSTL.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `MSTL.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted MSTL insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `MSTL.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient MSTL predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### MFLES
+
+#### `MFLES`
+
+```python
+MFLES(
+    season_length=None,
+    fourier_order=None,
+    max_rounds=50,
+    ma=None,
+    alpha=1.0,
+    decay=-1.0,
+    changepoints=True,
+    n_changepoints=0.25,
+    seasonal_lr=0.9,
+    trend_lr=0.9,
+    exogenous_lr=1.0,
+    residuals_lr=1.0,
+    cov_threshold=0.7,
+    moving_medians=False,
+    min_alpha=0.05,
+    max_alpha=1.0,
+    trend_penalty=True,
+    multiplicative=None,
+    smoother=False,
+    robust=None,
+    verbose=False,
+    prediction_intervals=None,
+    alias="MFLES",
+)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+MFLES model.
+
+A method to forecast time series based on Gradient Boosted Time Series Decomposition
+which treats traditional decomposition as the base estimator in the boosting
+process. Unlike normal gradient boosting, slight learning rates are applied at the
+component level (trend/seasonality/exogenous).
+
+The method derives its name from some of the underlying estimators that can
+enter into the boosting procedure, specifically: a simple Median, Fourier
+functions for seasonality, a simple/piecewise Linear trend, and Exponential
+Smoothing.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>int or list of int</code> | Number of observations per unit of time. Ex: 24 Hourly data. Default None. | <code>None</code>
+`fourier_order` | <code>[int](#int)</code> | How many fourier sin/cos pairs to create, the larger the number the more complex of a seasonal pattern can be fitted. A lower number leads to smoother results. This is auto-set based on seasonal_period. Default None. | <code>None</code>
+`max_rounds` | <code>[int](#int)</code> | The max number of boosting rounds. The boosting will auto-stop but depending on other parameters such as rs_lr you may want more rounds. Generally more rounds means a smoother fit. Default 50. | <code>50</code>
+`ma` | <code>[int](#int)</code> | The moving average order to use, this is auto-set based on internal logic. Passing 4 would fit a 4 period moving average on the residual component. Default None. | <code>None</code>
+`alpha` | <code>[float](#float)</code> | The alpha which is used in fitting the underlying LASSO when using piecewise functions. Default 1.0. | <code>1.0</code>
+`decay` | <code>[float](#float)</code> | Effects the slopes of the piecewise-linear basis function. Default -1.0. | <code>-1.0</code>
+`changepoints` | <code>[boolean](#boolean)</code> | Whether to fit for changepoints if all other logic allows for it. If False, MFLES will not ever fit a piecewise trend. Default True. | <code>True</code>
+`n_changepoints` | <code>[int](#int) or [float](#float)</code> | Number (if int) or proportion (if float) of changepoint knots to place. The default of 0.25 will place 0.25 * (series length) number of knots. Default 0.25. | <code>0.25</code>
+`seasonal_lr` | <code>[float](#float)</code> | A shrinkage parameter (0 < seasonal_lr \<= 1) which penalizes the seasonal fit. A value of 0.9 will flatly multiply the seasonal fit by 0.9 each boosting round, this can be used to allow more signal to the exogenous component. Default 0.9. | <code>0.9</code>
+`trend_lr` | <code>[float](#float)</code> | A shrinkage parameter (0 < trend_lr \<= 1) which penalizes the linear trend fit A value of 0.9 will flatly multiply the linear fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or exogenous components. Default 0.9. | <code>0.9</code>
+`exogenous_lr` | <code>[float](#float)</code> | The shrinkage parameter (0 < exogenous_lr \<= 1) which controls how much of the exogenous signal is carried to the next round. Default 1.0. | <code>1.0</code>
+`residuals_lr` | <code>[float](#float)</code> | A shrinkage parameter (0 < residuals_lr \<= 1) which penalizes the residual smoothing. A value of 0.9 will flatly multiply the residual fit by 0.9 each boosting round, this can be used to allow more signal to the seasonality or linear components. Default 1.0. | <code>1.0</code>
+`cov_threshold` | <code>[float](#float)</code> | The deseasonalized cov is used to auto-set some logic, lowering the cov_threshold will result in simpler and less complex residual smoothing. If you pass something like 1000 then there will be no safeguards applied. Default 0.7. | <code>0.7</code>
+`moving_medians` | <code>[bool](#bool)</code> | The default behavior is to fit an initial median to the time series. If True, then it will fit a median per seasonal period. Default False. | <code>False</code>
+`min_alpha` | <code>[float](#float)</code> | The minimum alpha in the SES ensemble. Default 0.05. | <code>0.05</code>
+`max_alpha` | <code>[float](#float)</code> | The maximum alpha used in the SES ensemble. Default 1.0. | <code>1.0</code>
+`trend_penalty` | <code>[bool](#bool)</code> | Whether to apply a simple penalty to the linear trend component, very useful for dealing with the potentially dangerous piecewise trend. Default True. | <code>True</code>
+`multiplicative` | <code>[bool](#bool)</code> | Auto-set based on internal logic. If True, it will simply take the log of the time series. Default None. | <code>None</code>
+`smoother` | <code>[bool](#bool)</code> | If True, then a simple exponential ensemble will be used rather than auto settings. Default False. | <code>False</code>
+`robust` | <code>[bool](#bool)</code> | If True then MFLES will fit using more reserved methods, i.e. not using piecewise trend or moving average residual smoother. Auto-set based on internal logic. Default None. | <code>None</code>
+`verbose` | <code>[bool](#bool)</code> | Print debugging information. Default False. | <code>False</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. Default 'MFLES'. | <code>'MFLES'</code>
+
+##### `MFLES.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the model
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Exogenous of shape (t, n_x). Default None. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | <code>[MFLES](#statsforecast.models.MFLES)</code> | Fitted MFLES object.
+
+##### `MFLES.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted MFLES.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Exogenous of shape (h, n_x). Default None. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `MFLES.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted SklearnModel insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `MFLES.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient MFLES predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. Default False. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### TBATS
+
+#### `TBATS`
+
+```python
+TBATS(
+    season_length,
+    use_boxcox=True,
+    bc_lower_bound=0.0,
+    bc_upper_bound=1.0,
+    use_trend=True,
+    use_damped_trend=False,
+    use_arma_errors=False,
+    alias="TBATS",
+)
+```
+
+Bases: <code>[AutoTBATS](#statsforecast.models.AutoTBATS)</code>
+
+Trigonometric Box-Cox transform, ARMA errors, Trend and Seasonal components (TBATS) model.
+
+TBATS is an innovations state space model framework used for forecasting time series with multiple seasonalities. It uses a Box-Cox tranformation, ARMA errors, and a trigonometric representation of the seasonal patterns based on Fourier series.
+
+The name TBATS is an acronym for the key features of the model: Trigonometric, Box-Cox transform, ARMA errors, Trend, and Seasonal components.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [De Livera, A. M., Hyndman, R. J., & Snyder, R. D. (2011). Forecasting time series with complex seasonal patterns using exponential smoothing. Journal of the American statistical association, 106(496), 1513-1527.](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=f3de25596ab60ef0e886366826bf58a02b35a44f)
+- [De Livera, Alysha M (2017). Modeling time series with complex seasonal patterns using exponential smoothing. Monash University. Thesis.](https://doi.org/10.4225/03/589299681de3d)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[Union](#typing.Union)\[[int](#int), [List](#typing.List)\[[int](#int)\]\]</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
+`use_boxcox` | <code>[Optional](#typing.Optional)\[[bool](#bool)\]</code> | Whether or not to use a Box-Cox transformation. Default True. | <code>True</code>
+`bc_lower_bound` | <code>[float](#float)</code> | Lower bound for the Box-Cox transformation. Default 0.0. | <code>0.0</code>
+`bc_upper_bound` | <code>[float](#float)</code> | Upper bound for the Box-Cox transformation. Default 1.0. | <code>1.0</code>
+`use_trend` | <code>[Optional](#typing.Optional)\[[bool](#bool)\]</code> | Whether or not to use a trend component. Default True. | <code>True</code>
+`use_damped_trend` | <code>[Optional](#typing.Optional)\[[bool](#bool)\]</code> | Whether or not to dampen the trend component. Default False. | <code>False</code>
+`use_arma_errors` | <code>[bool](#bool)</code> | Whether or not to use a ARMA errors. Default False. | <code>False</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. Default 'TBATS'. | <code>'TBATS'</code>
+
+## Theta Family
+
+### Theta
+
+#### `Theta`
+
+```python
+Theta(
+    season_length=1,
+    decomposition_type="multiplicative",
+    alias="Theta",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
+
+Standard Theta Method.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. Default 1. | <code>1</code>
+`decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. Default 'multiplicative'. | <code>'multiplicative'</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. Default 'Theta'. | <code>'Theta'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Default None. | <code>None</code>
+
+### OptimizedTheta
+
+#### `OptimizedTheta`
+
+```python
+OptimizedTheta(
+    season_length=1,
+    decomposition_type="multiplicative",
+    alias="OptimizedTheta",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
+
+Optimized Theta Method.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. Default 1. | <code>1</code>
+`decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. Default 'multiplicative'. | <code>'multiplicative'</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. Default 'OptimizedTheta'. | <code>'OptimizedTheta'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Default None. | <code>None</code>
+
+### DynamicTheta
+
+#### `DynamicTheta`
+
+```python
+DynamicTheta(
+    season_length=1,
+    decomposition_type="multiplicative",
+    alias="DynamicTheta",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
+
+Dynamic Standard Theta Method.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. | <code>'multiplicative'</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'DynamicTheta'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+### DynamicOptimizedTheta
+
+#### `DynamicOptimizedTheta`
+
+```python
+DynamicOptimizedTheta(
+    season_length=1,
+    decomposition_type="multiplicative",
+    alias="DynamicOptimizedTheta",
+    prediction_intervals=None,
+)
+```
+
+Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
+
+Dynamic Optimized Theta Method.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. | <code>'multiplicative'</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'DynamicOptimizedTheta'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+## ARCH/GARCH Family
+
+### GARCH
+
+#### `GARCH`
+
+```python
+GARCH(p=1, q=1, alias='GARCH', prediction_intervals=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+Generalized Autoregressive Conditional Heteroskedasticity (GARCH) model.
+
+A method for modeling time series that exhibit non-constant volatility over time.
+The GARCH model assumes that at time $t$, $y_t$ is given by:
+
+```math
+y_t = v_t \sigma_t
+```
+
+with
+
+```math
+\sigma_t^2 = w + \sum_{i=1}^p a_i y_{t-i}^2 + \sum_{j=1}^q b_j \sigma_{t-j}^2.
+```
+
+Here $v_t$ is a sequence of iid random variables with zero mean and unit variance.
+The coefficients $w$, $a_i$, $i=1,...,p$, and $b_j$, $j=1,...,q$ must satisfy the following conditions:
+
+1. $w > 0$ and $a_i, b_j \\geq 0$ for all $i$ and $j$.
+
+1. $\\sum\_{k=1}^{max(p,q)} a_k + b_k < 1$. Here it is assumed that $a_i=0$ for $i>p$ and $b_j=0$ for $j>q$.
+
+The ARCH model is a particular case of the GARCH model when $q=0$.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
+- [Bollerslev, T. (1986). Generalized autoregressive conditional heteroskedasticity. Journal of econometrics, 31(3), 307-327.](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=7da8bfa5295375c1141d797e80065a599153c19d)
+- [James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`p` | <code>[int](#int)</code> | Number of lagged versions of the series. | <code>1</code>
+`q` | <code>[int](#int)</code> | Number of lagged versions of the volatility. | <code>1</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'GARCH'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+##### `GARCH.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit GARCH model.
+
+Fit GARCH model to a time series (numpy array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`self` | | GARCH model.
+
+##### `GARCH.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted GARCH model.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `GARCH.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted GARCH model predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `GARCH.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient GARCH model.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not returns insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`forecasts` | <code>[dict](#dict)</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### ARCH
+
+#### `ARCH`
+
+```python
+ARCH(p=1, alias='ARCH', prediction_intervals=None)
+```
+
+Bases: <code>[GARCH](#statsforecast.models.GARCH)</code>
+
+Autoregressive Conditional Heteroskedasticity (ARCH) model.
+
+A particular case of the GARCH(p,q) model where $q=0$.
+It assumes that at time $t$, $y_t$ is given by:
+
+```math
+y_t = \epsilon_t \sigma_t
+```
+
+with
+
+```math
+\sigma_t^2 = w0 + \sum_{i=1}^p a_i y_{t-i}^2
+```
+
+Here $\\epsilon_t$ is a sequence of iid random variables with zero mean and unit variance.
+The coefficients $w$ and $a_i$, $i=1,...,p$ must be nonnegative and $\\sum\_{k=1}^p a_k < 1$.
+
+<details class="references" open markdown="1">
+<summary>References</summary>
+
+- [Engle, R. F. (1982). Autoregressive conditional heteroscedasticity with estimates of the variance of United Kingdom inflation. Econometrica: Journal of the econometric society, 987-1007.](http://www.econ.uiuc.edu/~econ508/Papers/engle82.pdf)
+- [James D. Hamilton. Time Series Analysis Princeton University Press, Princeton, New Jersey, 1st Edition, 1994.](https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis)
+
+</details>
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`p` | <code>[int](#int)</code> | Number of lagged versions of the series. | <code>1</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'ARCH'</code>
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+
+## Machine Learning
+
+### SklearnModel
+
+#### `SklearnModel`
+
+```python
+SklearnModel(model, prediction_intervals=None, alias=None)
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+scikit-learn model wrapper
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`model` | <code>[BaseEstimator](#sklearn.base.BaseEstimator)</code> | scikit-learn estimator | *required*
+`prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
+`alias` | <code>[str](#str)</code> | Custom name of the model. If `None` will use the model's class. | <code>None</code>
+
+##### `SklearnModel.fit`
+
+```python
+fit(y, X)
+```
+
+Fit the model.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Exogenous of shape (t, n_x). | *required*
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`SklearnModel` | <code>[SklearnModel](#statsforecast.models.SklearnModel)</code> | Fitted SklearnModel object.
+
+##### `SklearnModel.predict`
+
+```python
+predict(h, X, level=None)
+```
+
+Predict with fitted SklearnModel.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Exogenous of shape (h, n_x). | *required*
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | <code>[Dict](#typing.Dict)\[[str](#str), [Any](#typing.Any)\]</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SklearnModel.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted SklearnModel insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | <code>[Dict](#typing.Dict)\[[str](#str), [Any](#typing.Any)\]</code> | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `SklearnModel.forecast`
+
+```python
+forecast(y, h, X, X_future, level=None, fitted=False)
+```
+
+Memory Efficient SklearnModel predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Insample exogenous of shape (t, n_x). | *required*
+`X_future` | <code>[array](#array) - [like](#like)</code> | Exogenous of shape (h, n_x). | *required*
+`level` | <code>[List](#typing.List)\[[int](#int)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | <code>[Dict](#typing.Dict)\[[str](#str), [Any](#typing.Any)\]</code> | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+## Fallback Models
+
+These models are used as fallbacks when other models fail during forecasting.
+
+### ConstantModel
+
+#### `ConstantModel`
+
+```python
+ConstantModel(constant, alias='ConstantModel')
+```
+
+Bases: <code>[\_TS](#statsforecast.models._TS)</code>
+
+Constant Model.
+
+Returns Constant values.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`constant` | <code>[float](#float)</code> | Custom value to return as forecast. | *required*
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'ConstantModel'</code>
+
+##### `ConstantModel.fit`
+
+```python
+fit(y, X=None)
+```
+
+Fit the Constant model.
+
+Fit an Constant Model to a time series (numpy.array) `y`.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (t, ). | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (t, n_x). | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`ConstantModel` | | Constant fitted model.
+
+##### `ConstantModel.predict`
+
+```python
+predict(h, X=None, level=None)
+```
+
+Predict with fitted ConstantModel.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+##### `ConstantModel.predict_in_sample`
+
+```python
+predict_in_sample(level=None)
+```
+
+Access fitted Constant Model insample predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
+
+##### `ConstantModel.forecast`
+
+```python
+forecast(y, h, X=None, X_future=None, level=None, fitted=False)
+```
+
+Memory Efficient Constant Model predictions.
+
+This method avoids memory burden due from object storage.
+It is analogous to `fit_predict` without storing information.
+It assumes you know the forecast horizon in advance.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`y` | <code>[array](#numpy.array)</code> | Clean time series of shape (n,). | *required*
+`h` | <code>[int](#int)</code> | Forecast horizon. | *required*
+`X` | <code>[array](#array) - [like](#like)</code> | Optional insample exogenous of shape (t, n_x). | <code>None</code>
+`X_future` | <code>[array](#array) - [like](#like)</code> | Optional exogenous of shape (h, n_x). | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels (0-100) for prediction intervals. | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | Whether or not to return insample predictions. | <code>False</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`dict` | | Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+
+### ZeroModel
+
+#### `ZeroModel`
+
+```python
+ZeroModel(alias='ZeroModel')
+```
+
+Bases: <code>[ConstantModel](#statsforecast.models.ConstantModel)</code>
+
+Returns Zero forecasts.
+
+Returns Zero values.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'ZeroModel'</code>
+
+### NaNModel
+
+#### `NaNModel`
+
+```python
+NaNModel(alias='NaNModel')
+```
+
+Bases: <code>[ConstantModel](#statsforecast.models.ConstantModel)</code>
+
+NaN Model.
+
+Returns NaN values.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'NaNModel'</code>
+
+## Usage Examples
+
+### Basic Model Usage
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA, Naive
+from statsforecast.utils import generate_series
+
+# Generate example data
+df = generate_series(n_series=10)
+
+# Create StatsForecast instance with models
+sf = StatsForecast(
+    models=[
+        AutoARIMA(season_length=7),
+        Naive()
+    ],
+    freq='D'
+)
+
+# Forecast
+forecasts = sf.forecast(df=df, h=7)
+```
+
+### Using Multiple Models
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import (
+    AutoARIMA,
+    AutoETS,
+    SeasonalNaive,
+    Theta,
+    HistoricAverage
+)
+
+# Combine multiple models for comparison
+models = [
+    AutoARIMA(season_length=12),
+    AutoETS(season_length=12),
+    SeasonalNaive(season_length=12),
+    Theta(season_length=12),
+    HistoricAverage()
+]
+
+sf = StatsForecast(models=models, freq='M', n_jobs=-1)
+forecasts = sf.forecast(df=df, h=12, level=[80, 95])
+```
+
+### Model with Prediction Intervals
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
+from statsforecast.utils import ConformalIntervals
+
+# Create model with conformal prediction intervals
+model = AutoARIMA(
+    season_length=12,
+    prediction_intervals=ConformalIntervals(n_windows=2, h=12),
+    alias='ConformalAutoARIMA'
+)
+
+sf = StatsForecast(models=[model], freq='M')
+forecasts = sf.forecast(df=df, h=12, level=[80, 95])
+```
+
+### Sparse/Intermittent Data
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import (
+    CrostonOptimized,
+    ADIDA,
+    IMAPA,
+    TSB
+)
+
+# Models specialized for sparse/intermittent data
+sparse_models = [
+    CrostonOptimized(),
+    ADIDA(),
+    IMAPA(),
+    TSB(alpha_d=0.2, alpha_p=0.2)
+]
+
+sf = StatsForecast(models=sparse_models, freq='D')
+forecasts = sf.forecast(df=sparse_df, h=30)
+```
+
+### Multiple Seasonalities
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import MSTL, AutoTBATS
+
+# For data with multiple seasonal patterns
+models = [
+    MSTL(season_length=[24, 168]),  # Hourly with daily and weekly seasonality
+    AutoTBATS(season_length=[24, 168])
+]
+
+sf = StatsForecast(models=models, freq='H')
+forecasts = sf.forecast(df=hourly_df, h=168)
+```
+
+### ARCH/GARCH for Volatility
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import GARCH, ARCH
+
+# Models for financial data with volatility
+volatility_models = [
+    GARCH(p=1, q=1),
+    ARCH(p=1)
+]
+
+sf = StatsForecast(models=volatility_models, freq='D')
+forecasts = sf.forecast(df=financial_df, h=30)
+```
+
+### Using Scikit-learn Models
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import SklearnModel
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import Ridge
+
+# Wrap scikit-learn models
+models = [
+    SklearnModel(RandomForestRegressor(n_estimators=100), alias='RF'),
+    SklearnModel(Ridge(alpha=1.0), alias='Ridge')
+]
+
+sf = StatsForecast(models=models, freq='D')
+forecasts = sf.forecast(df=df, h=14)
+```
+
+## Model Selection Tips
+
+- **For automatic selection**: Start with `AutoARIMA` or `AutoETS`
+- **For baseline comparison**: Use `Naive`, `SeasonalNaive`, or `HistoricAverage`
+- **For seasonal data**: Use models with `season_length` parameter
+- **For sparse data**: Use Croston family or ADIDA
+- **For multiple seasonalities**: Use MSTL or TBATS
+- **For volatile data**: Use GARCH or ARCH
+- **For ensemble approaches**: Combine multiple models and compare performance
+
+## References
+
+For detailed information on the statistical models and algorithms, please refer to the [source code](https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/models.py) and the original academic papers referenced in the docstrings.

@@ -1,0 +1,469 @@
+---
+description: >-
+  Methods for Fit, Predict, Forecast (fast), Cross Validation and plotting
+output-file: core.html
+title: Core Methods
+---
+
+The core methods of `StatsForecast` provide a comprehensive interface for fitting, predicting, forecasting, and evaluating statistical forecasting models on large sets of time series.
+
+## Overview
+
+The main methods include:
+
+- `StatsForecast.fit` - Fit statistical models
+- `StatsForecast.predict` - Predict using fitted models
+- `StatsForecast.forecast` - Memory-efficient predictions without storing models
+- `StatsForecast.cross_validation` - Temporal cross-validation
+- `StatsForecast.plot` - Visualization of forecasts and historical data
+
+## StatsForecast Class
+
+### `StatsForecast`
+
+Bases: <code>[\_StatsForecast](#statsforecast.core._StatsForecast)</code>
+
+The `StatsForecast` class allows you to efficiently fit multiple `StatsForecast` models
+for large sets of time series. It operates on a DataFrame `df` with at least three columns:
+ids, times, and targets.
+
+The class has a memory-efficient `StatsForecast.forecast` method that avoids storing partial
+model outputs, while the `StatsForecast.fit` and `StatsForecast.predict` methods with the
+Scikit-learn interface store the fitted models.
+
+The `StatsForecast` class offers parallelization utilities with Dask, Spark, and Ray back-ends.
+See distributed computing example [here](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray).
+
+#### `StatsForecast.fit`
+
+```python
+fit(
+    df,
+    prediction_intervals=None,
+    id_col="unique_id",
+    time_col="ds",
+    target_col="y",
+)
+```
+
+Fit statistical models to time series data.
+
+Fits all models specified in the constructor to each time series in the input
+DataFrame. The fitted models are stored internally and can be used later with
+the `predict` method. This follows the scikit-learn fit/predict interface.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | Input DataFrame containing time series data. Must have columns for series identifiers, timestamps, and target values. Can optionally include exogenous features. | *required*
+`prediction_intervals` | <code>[ConformalIntervals](#statsforecast.utils.ConformalIntervals)</code> | Configuration for calibrating prediction intervals using Conformal Prediction. If provided, the models will be prepared to generate prediction intervals. | <code>None</code>
+`id_col` | <code>[str](#str)</code> | Name of the column containing unique identifiers for each time series. | <code>'unique_id'</code>
+`time_col` | <code>[str](#str)</code> | Name of the column containing timestamps or time indices. Values can be timestamps (datetime) or integers. | <code>'ds'</code>
+`target_col` | <code>[str](#str)</code> | Name of the column containing the target variable to forecast. | <code>'y'</code>
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`StatsForecast` | <code>[StatsForecast](#statsforecast.core.StatsForecast)</code> | Returns self with fitted models stored in the `fitted_` attribute. This allows for method chaining.
+
+#### `StatsForecast.predict`
+
+```python
+predict(h, X_df=None, level=None)
+```
+
+Generate forecasts using previously fitted models.
+
+Uses the models fitted via the `fit` method to generate predictions for the
+specified forecast horizon. This follows the scikit-learn fit/predict interface.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon, the number of time steps ahead to predict. | *required*
+`X_df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame containing future exogenous variables. Required if any models use exogenous features. Must have the same structure as training data and include future values for all time series and forecast horizon. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels between 0 and 100 for prediction intervals (e.g., [80, 95] for 80% and 95% intervals). If provided with models configured for prediction intervals, the output will include lower and upper bounds. | <code>None</code>
+
+**Returns:**
+
+Type | Description
+---- | -----------
+<code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame with forecasts for each model. Contains the series identifiers, future timestamps, and one column per model with point predictions. If `level` is specified, includes additional columns for prediction interval bounds (e.g., 'model-lo-95', 'model-hi-95').
+
+#### `StatsForecast.fit_predict`
+
+```python
+fit_predict(
+    h,
+    df,
+    X_df=None,
+    level=None,
+    prediction_intervals=None,
+    id_col="unique_id",
+    time_col="ds",
+    target_col="y",
+)
+```
+
+Fit models and generate predictions in a single step.
+
+Combines the `fit` and `predict` methods in a single operation. The fitted models
+are stored internally in the `fitted_` attribute for later use, making this method
+suitable when you need both training and immediate predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon, the number of time steps ahead to predict. | *required*
+`df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | Input DataFrame containing time series data. Must have columns for series identifiers, timestamps, and target values. Can optionally include exogenous features. | *required*
+`X_df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame containing future exogenous variables. Required if any models use exogenous features. Must include future values for all time series and forecast horizon. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels between 0 and 100 for prediction intervals (e.g., [80, 95]). Required if `prediction_intervals` is specified. | <code>None</code>
+`prediction_intervals` | <code>[ConformalIntervals](#statsforecast.utils.ConformalIntervals)</code> | Configuration for calibrating prediction intervals using Conformal Prediction. | <code>None</code>
+`id_col` | <code>[str](#str)</code> | Name of the column containing unique identifiers for each time series. | <code>'unique_id'</code>
+`time_col` | <code>[str](#str)</code> | Name of the column containing timestamps or time indices. Values can be timestamps (datetime) or integers. | <code>'ds'</code>
+`target_col` | <code>[str](#str)</code> | Name of the column containing the target variable to forecast. | <code>'y'</code>
+
+**Returns:**
+
+Type | Description
+---- | -----------
+<code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame with forecasts containing series identifiers, future timestamps, and predictions from each model. Includes prediction intervals if `level` is specified.
+
+#### `StatsForecast.forecast`
+
+```python
+forecast(
+    h,
+    df,
+    X_df=None,
+    level=None,
+    fitted=False,
+    prediction_intervals=None,
+    id_col="unique_id",
+    time_col="ds",
+    target_col="y",
+)
+```
+
+Generate forecasts with memory-efficient model training.
+
+This is the primary forecasting method that trains models and generates predictions
+without storing fitted model objects. It is more memory-efficient than `fit_predict`
+when you don't need to inspect or reuse the fitted models. Models are trained and
+used for forecasting within each time series, then discarded.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon, the number of time steps ahead to predict. | *required*
+`df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | Input DataFrame containing time series data. Must have columns for series identifiers, timestamps, and target values. Can optionally include exogenous features for training. | *required*
+`X_df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame containing future exogenous variables. Required if any models use exogenous features. Must include future values for all time series and forecast horizon. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels between 0 and 100 for prediction intervals (e.g., [80, 95]). | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | If True, stores in-sample (fitted) predictions which can be retrieved using `forecast_fitted_values()`. | <code>False</code>
+`prediction_intervals` | <code>[ConformalIntervals](#statsforecast.utils.ConformalIntervals)</code> | Configuration for calibrating prediction intervals using Conformal Prediction. | <code>None</code>
+`id_col` | <code>[str](#str)</code> | Name of the column containing unique identifiers for each time series. | <code>'unique_id'</code>
+`time_col` | <code>[str](#str)</code> | Name of the column containing timestamps or time indices. Values can be timestamps (datetime) or integers. | <code>'ds'</code>
+`target_col` | <code>[str](#str)</code> | Name of the column containing the target variable to forecast. | <code>'y'</code>
+
+**Returns:**
+
+Type | Description
+---- | -----------
+<code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame with forecasts containing series identifiers, future timestamps, and predictions from each model. Includes prediction intervals if `level` is specified.
+
+#### `StatsForecast.cross_validation`
+
+```python
+cross_validation(
+    h,
+    df,
+    n_windows=1,
+    step_size=1,
+    test_size=None,
+    input_size=None,
+    level=None,
+    fitted=False,
+    refit=True,
+    prediction_intervals=None,
+    id_col="unique_id",
+    time_col="ds",
+    target_col="y",
+)
+```
+
+Perform temporal cross-validation for model evaluation.
+
+Evaluates model performance across multiple time windows using a time series
+cross-validation approach. This method trains models on expanding or rolling
+windows and generates forecasts for each validation period, providing robust
+assessment of forecast accuracy and generalization.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`h` | <code>[int](#int)</code> | Forecast horizon for each validation window. | *required*
+`df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | Input DataFrame containing time series data with columns for series identifiers, timestamps, and target values. | *required*
+`n_windows` | <code>[int](#int)</code> | Number of validation windows to create. Cannot be specified together with `test_size`. | <code>1</code>
+`step_size` | <code>[int](#int)</code> | Number of time steps between consecutive validation windows. Smaller values create overlapping windows. | <code>1</code>
+`test_size` | <code>[int](#int)</code> | Total size of the test period. If provided, `n_windows` is computed automatically. Overrides `n_windows` if specified. | <code>None</code>
+`input_size` | <code>[int](#int)</code> | Maximum number of training observations to use for each window. If None, uses expanding windows with all available history. If specified, uses rolling windows of fixed size. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels between 0 and 100 for prediction intervals (e.g., [80, 95]). | <code>None</code>
+`fitted` | <code>[bool](#bool)</code> | If True, stores in-sample predictions for each window, accessible via `cross_validation_fitted_values()`. | <code>False</code>
+`refit` | <code>[bool](#bool) or [int](#int)</code> | Controls model refitting frequency. If True, refits models for every window. If False, fits once and uses the forward method. If an integer n, refits every n windows. Models must implement the `forward` method when refit is not True. | <code>True</code>
+`prediction_intervals` | <code>[ConformalIntervals](#statsforecast.utils.ConformalIntervals)</code> | Configuration for calibrating prediction intervals using Conformal Prediction. Requires `level` to be specified. | <code>None</code>
+`id_col` | <code>[str](#str)</code> | Name of the column containing unique identifiers for each time series. | <code>'unique_id'</code>
+`time_col` | <code>[str](#str)</code> | Name of the column containing timestamps or time indices. | <code>'ds'</code>
+`target_col` | <code>[str](#str)</code> | Name of the column containing the target variable. | <code>'y'</code>
+
+**Returns:**
+
+Type | Description
+---- | -----------
+<code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame with cross-validation results including series identifiers, cutoff dates (last training observation), forecast dates, actual values, and predictions from each model for all windows.
+
+#### `StatsForecast.plot`
+
+```python
+plot(
+    df,
+    forecasts_df=None,
+    unique_ids=None,
+    plot_random=True,
+    models=None,
+    level=None,
+    max_insample_length=None,
+    plot_anomalies=False,
+    engine="matplotlib",
+    id_col="unique_id",
+    time_col="ds",
+    target_col="y",
+    resampler_kwargs=None,
+)
+```
+
+Visualize time series data with forecasts and prediction intervals.
+
+Creates plots showing historical data, forecasts, and optional prediction intervals
+for time series. Supports multiple plotting engines and interactive visualization.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | Input DataFrame containing historical time series data with columns for series identifiers, timestamps, and target values. | *required*
+`forecasts_df` | <code>[DataFrame](#utilsforecast.compat.DataFrame)</code> | DataFrame with forecast results from `forecast()` or `cross_validation()`. Should contain series identifiers, timestamps, and model predictions. | <code>None</code>
+`unique_ids` | <code>[List](#typing.List)\[[str](#str)\] or [ndarray](#numpy.ndarray)</code> | Specific series identifiers to plot. If None and `plot_random` is True, series are selected randomly. | <code>None</code>
+`plot_random` | <code>[bool](#bool)</code> | Whether to randomly select series to plot when `unique_ids` is not specified. | <code>True</code>
+`models` | <code>[List](#typing.List)\[[str](#str)\]</code> | Names of specific models to include in the plot. If None, plots all models present in `forecasts_df`. | <code>None</code>
+`level` | <code>[List](#typing.List)\[[float](#float)\]</code> | Confidence levels to plot as shaded regions around forecasts (e.g., [80, 95]). Only applicable if prediction intervals are present in `forecasts_df`. | <code>None</code>
+`max_insample_length` | <code>[int](#int)</code> | Maximum number of historical observations to display. Useful for focusing on recent history when series are long. | <code>None</code>
+`plot_anomalies` | <code>[bool](#bool)</code> | If True, highlights observations that fall outside prediction intervals as anomalies. | <code>False</code>
+`engine` | <code>[str](#str)</code> | Plotting library to use. Options are 'matplotlib' (static plots), 'plotly' (interactive plots), or 'plotly-resampler' (interactive with downsampling for large datasets). | <code>'matplotlib'</code>
+`id_col` | <code>[str](#str)</code> | Name of the column containing series identifiers. | <code>'unique_id'</code>
+`time_col` | <code>[str](#str)</code> | Name of the column containing timestamps. | <code>'ds'</code>
+`target_col` | <code>[str](#str)</code> | Name of the column containing the target variable. | <code>'y'</code>
+`resampler_kwargs` | <code>[Dict](#typing.Dict)</code> | Additional keyword arguments passed to the plotly-resampler constructor when `engine='plotly-resampler'`. For further customization (e.g., 'show_dash'), call this method, store the returned object, and add arguments to its `show_dash` method. | <code>None</code>
+
+**Returns:**
+
+Type | Description
+---- | -----------
+| Plotting object from the selected engine (matplotlib Figure, plotly Figure, or
+| FigureResampler object), which can be further customized or displayed.
+
+#### `StatsForecast.save`
+
+```python
+save(path=None, max_size=None, trim=False)
+```
+
+Save the StatsForecast instance to disk using pickle.
+
+Serializes the StatsForecast object including all fitted models and configuration
+to a file for later use. The saved object can be loaded with the `load()` method
+to restore the exact state for making predictions.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`path` | <code>[str](#str) or [Path](#pathlib.Path)</code> | File path where the object will be saved. If None, creates a filename in the current directory using the format 'StatsForecast_YYYY-MM-DD_HH-MM-SS.pkl' with the current UTC timestamp. | <code>None</code>
+`max_size` | <code>[str](#str)</code> | Maximum allowed size for the serialized object. Should be specified as a number followed by a unit: 'B', 'KB', 'MB', or 'GB' (e.g., '100MB', '1.5GB'). If the object exceeds this size, an OSError is raised. | <code>None</code>
+`trim` | <code>[bool](#bool)</code> | If True, removes fitted values from `forecast()` and `cross_validation()` before saving to reduce file size. These values are not needed for generating new predictions. | <code>False</code>
+
+#### `StatsForecast.load`
+
+```python
+load(path)
+```
+
+Load a previously saved StatsForecast instance from disk.
+
+Deserializes a StatsForecast object that was saved using the `save()` method,
+restoring all fitted models and configuration. The loaded object is ready to
+generate predictions immediately.
+
+**Parameters:**
+
+Name | Type | Description | Default
+---- | ---- | ----------- | -------
+`path` | <code>[str](#str) or [Path](#pathlib.Path)</code> | File path to the saved StatsForecast pickle file. Must point to a file created by the `save()` method. | *required*
+
+**Returns:**
+
+Name | Type | Description
+---- | ---- | -----------
+`StatsForecast` | | The deserialized StatsForecast instance with all fitted models and configuration restored, ready for prediction.
+
+## Usage Examples
+
+### Basic Forecasting
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA, Naive
+from statsforecast.utils import generate_series
+
+# Generate example data
+panel_df = generate_series(n_series=9, equal_ends=False, engine='pandas')
+
+# Instantiate StatsForecast class
+fcst = StatsForecast(
+    models=[AutoARIMA(), Naive()],
+    freq='D',
+    n_jobs=1,
+    verbose=True
+)
+
+# Efficiently predict
+fcsts_df = fcst.forecast(df=panel_df, h=4, fitted=True)
+```
+
+### Cross-Validation
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import Naive
+from statsforecast.utils import AirPassengersDF as panel_df
+
+# Instantiate StatsForecast class
+fcst = StatsForecast(
+    models=[Naive()],
+    freq='D',
+    n_jobs=1,
+    verbose=True
+)
+
+# Perform cross-validation
+cv_df = fcst.cross_validation(df=panel_df, h=14, n_windows=2)
+```
+
+### Prediction Intervals
+
+```python
+import pandas as pd
+import numpy as np
+from statsforecast import StatsForecast
+from statsforecast.models import SeasonalNaive, AutoARIMA
+from statsforecast.utils import AirPassengers as ap
+
+# Prepare data
+ap_df = pd.DataFrame({'ds': np.arange(ap.size), 'y': ap})
+ap_df['unique_id'] = 0
+
+# Forecast with prediction intervals
+sf = StatsForecast(
+    models=[
+        SeasonalNaive(season_length=12),
+        AutoARIMA(season_length=12)
+    ],
+    freq=1,
+    n_jobs=1
+)
+ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95))
+
+# Plot with confidence intervals
+sf.plot(ap_df, ap_ci, level=[80], engine="matplotlib")
+```
+
+### Conformal Prediction Intervals
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import AutoARIMA
+from statsforecast.utils import ConformalIntervals
+
+sf = StatsForecast(
+    models=[
+        AutoARIMA(season_length=12),
+        AutoARIMA(
+            season_length=12,
+            prediction_intervals=ConformalIntervals(n_windows=2, h=12),
+            alias='ConformalAutoARIMA'
+        ),
+    ],
+    freq=1,
+    n_jobs=1
+)
+ap_ci = sf.forecast(df=ap_df, h=12, level=(80, 95))
+```
+
+## Advanced Features
+
+### Integer Datestamps
+
+The `StatsForecast` class can work with integer datestamps instead of datetime objects:
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.models import HistoricAverage
+from statsforecast.utils import AirPassengers as ap
+import pandas as pd
+import numpy as np
+
+# Create dataframe with integer datestamps
+int_ds_df = pd.DataFrame({'ds': np.arange(1, len(ap) + 1), 'y': ap})
+int_ds_df.insert(0, 'unique_id', 'AirPassengers')
+
+# Use freq=1 for integer datestamps
+fcst = StatsForecast(models=[HistoricAverage()], freq=1)
+forecast = fcst.forecast(df=int_ds_df, h=7)
+```
+
+### External Regressors
+
+Every column after `y` is considered an external regressor and will be passed to models that support them:
+
+```python
+from statsforecast import StatsForecast
+from statsforecast.utils import generate_series
+import pandas as pd
+
+# Create data with external regressors
+series_xreg = generate_series(10_000, equal_ends=True)
+series_xreg['intercept'] = 1
+series_xreg['dayofweek'] = series_xreg['ds'].dt.dayofweek
+series_xreg = pd.get_dummies(series_xreg, columns=['dayofweek'], drop_first=True)
+
+# Split train/validation
+dates = sorted(series_xreg['ds'].unique())
+valid_start = dates[-14]
+train_mask = series_xreg['ds'] < valid_start
+series_train = series_xreg[train_mask]
+series_valid = series_xreg[~train_mask]
+X_valid = series_valid.drop(columns=['y'])
+
+# Forecast with external regressors
+fcst = StatsForecast(models=[your_model], freq='D')
+xreg_res = fcst.forecast(df=series_train, h=14, X_df=X_valid)
+```
+
+## Distributed Computing
+
+The `StatsForecast` class offers parallelization utilities with Dask, Spark and Ray backends for distributed computing. See the [distributed computing examples](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray) for more information.
