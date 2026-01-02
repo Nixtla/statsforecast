@@ -1,4 +1,4 @@
-__all__ = ['ets_f']
+__all__ = ["ets_f", "simulate_ets"]
 
 
 import math
@@ -39,6 +39,7 @@ def etssimulate(
         m = 1
     # Copy initial state components
     l = x[0]
+    b = 0.0
     if trend != _ets.Component.Nothing:
         b = x[1]
     if season != _ets.Component.Nothing:
@@ -1245,3 +1246,52 @@ def forecast_ets(obj, h, level=None):
 
 def forward_ets(fitted_model, y):
     return ets_f(y=y, m=fitted_model["m"], model=fitted_model)
+
+
+def simulate_ets(model, h, n_paths, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
+
+    sigma = model["sigma2"]
+    season_length = model["m"]
+    last_state = model["states"][-1]
+    model_type = model["components"]
+    error = model_type[0]
+    trend = model_type[1]
+    seasonality = model_type[2]
+
+    # parameters
+    alpha = model["par"][0]
+    beta = model["par"][1]
+    gamma = model["par"][2]
+    phi = model["par"][3]
+
+    if math.isnan(beta):
+        beta = 0
+    if math.isnan(gamma):
+        gamma = 0
+    if math.isnan(phi):
+        phi = 0
+
+    y_path = np.zeros([n_paths, h])
+
+    for k in range(n_paths):
+        e = np.random.normal(0, np.sqrt(sigma), h)
+        yhat = np.zeros(h)
+        etssimulate(
+            last_state,
+            season_length,
+            switch(error),
+            switch(trend),
+            switch(seasonality),
+            alpha,
+            beta,
+            gamma,
+            phi,
+            h,
+            yhat,
+            e,
+        )
+        y_path[k,] = yhat
+
+    return y_path

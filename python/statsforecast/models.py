@@ -1,10 +1,44 @@
-__all__ = ['AutoARIMA', 'AutoETS', 'AutoCES', 'AutoTheta', 'AutoMFLES', 'AutoTBATS', 'ARIMA', 'AutoRegressive',
-           'SimpleExponentialSmoothing', 'SimpleExponentialSmoothingOptimized', 'SeasonalExponentialSmoothing',
-           'SeasonalExponentialSmoothingOptimized', 'Holt', 'HoltWinters', 'HistoricAverage', 'Naive',
-           'RandomWalkWithDrift', 'SeasonalNaive', 'WindowAverage', 'SeasonalWindowAverage', 'ADIDA', 'CrostonClassic',
-           'CrostonOptimized', 'CrostonSBA', 'IMAPA', 'TSB', 'MSTL', 'MFLES', 'TBATS', 'Theta', 'OptimizedTheta',
-           'DynamicTheta', 'DynamicOptimizedTheta', 'GARCH', 'ARCH', 'SklearnModel', 'ConstantModel', 'ZeroModel',
-           'NaNModel']
+__all__ = [
+    "AutoARIMA",
+    "AutoETS",
+    "AutoCES",
+    "AutoTheta",
+    "AutoMFLES",
+    "AutoTBATS",
+    "ARIMA",
+    "AutoRegressive",
+    "SimpleExponentialSmoothing",
+    "SimpleExponentialSmoothingOptimized",
+    "SeasonalExponentialSmoothing",
+    "SeasonalExponentialSmoothingOptimized",
+    "Holt",
+    "HoltWinters",
+    "HistoricAverage",
+    "Naive",
+    "RandomWalkWithDrift",
+    "SeasonalNaive",
+    "WindowAverage",
+    "SeasonalWindowAverage",
+    "ADIDA",
+    "CrostonClassic",
+    "CrostonOptimized",
+    "CrostonSBA",
+    "IMAPA",
+    "TSB",
+    "MSTL",
+    "MFLES",
+    "TBATS",
+    "Theta",
+    "OptimizedTheta",
+    "DynamicTheta",
+    "DynamicOptimizedTheta",
+    "GARCH",
+    "ARCH",
+    "SklearnModel",
+    "ConstantModel",
+    "ZeroModel",
+    "NaNModel",
+]
 
 
 import warnings
@@ -168,6 +202,17 @@ class _TS:
 
     def _add_predict_conformal_intervals(self, fcst, level):
         return self._add_conformal_intervals(fcst=fcst, y=None, X=None, level=level)
+
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ):
+        raise NotImplementedError
 
 
 class AutoARIMA(_TS):
@@ -527,6 +572,62 @@ class AutoARIMA(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ):
+        if y is not None:
+            y = _ensure_float(y)
+            with np.errstate(invalid="ignore"):
+                mod = auto_arima_f(
+                    x=y,
+                    d=self.d,
+                    D=self.D,
+                    max_p=self.max_p,
+                    max_q=self.max_q,
+                    max_P=self.max_P,
+                    max_Q=self.max_Q,
+                    max_order=self.max_order,
+                    max_d=self.max_d,
+                    max_D=self.max_D,
+                    start_p=self.start_p,
+                    start_q=self.start_q,
+                    start_P=self.start_P,
+                    start_Q=self.start_Q,
+                    stationary=self.stationary,
+                    seasonal=self.seasonal,
+                    ic=self.ic,
+                    stepwise=self.stepwise,
+                    nmodels=self.nmodels,
+                    trace=self.trace,
+                    approximation=self.approximation,
+                    method=self.method,
+                    truncate=self.truncate,
+                    xreg=X,
+                    test=self.test,
+                    test_kwargs=self.test_kwargs,
+                    seasonal_test=self.seasonal_test,
+                    seasonal_test_kwargs=self.seasonal_test_kwargs,
+                    allowdrift=self.allowdrift,
+                    allowmean=self.allowmean,
+                    blambda=self.blambda,
+                    biasadj=self.biasadj,
+                    period=self.season_length,
+                )
+        else:
+            if not hasattr(self, "model_"):
+                raise Exception("You have to use the `fit` method first")
+            mod = self.model_
+
+        from statsforecast.arima import simulate_arima
+
+        return simulate_arima(model=mod, h=h, n_paths=n_paths, xreg=X_future, seed=seed)
+
 
 class AutoETS(_TS):
     r"""Automatic Error, Trend, Seasonal Model.
@@ -748,6 +849,33 @@ class AutoETS(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ):
+        if y is not None:
+            y = _ensure_float(y)
+            mod = ets_f(
+                y,
+                m=self.season_length,
+                model=self.model,
+                damped=self.damped,
+                phi=self.phi,
+            )
+        else:
+            if not hasattr(self, "model_"):
+                raise Exception("You have to use the `fit` method first")
+            mod = self.model_
+
+        from statsforecast.ets import simulate_ets
+
+        return simulate_ets(model=mod, h=h, n_paths=n_paths, seed=seed)
+
 
 class AutoCES(_TS):
     r"""Complex Exponential Smoothing model.
@@ -963,6 +1091,31 @@ class AutoCES(_TS):
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ):
+        if y is not None:
+            y = _ensure_float(y)
+            if is_constant(y):
+                return Naive(alias=self.alias).simulate(
+                    h=h, n_paths=n_paths, y=y, X=X, seed=seed
+                )
+            mod = auto_ces(y, m=self.season_length, model=self.model)
+        else:
+            if not hasattr(self, "model_"):
+                raise Exception("You have to use the `fit` method first")
+            mod = self.model_
+
+        from statsforecast.ces import simulate_ces
+
+        return simulate_ces(model=mod, h=h, n_paths=n_paths, seed=seed)
+
 
 class AutoTheta(_TS):
     r"""AutoTheta model.
@@ -1060,6 +1213,36 @@ class AutoTheta(_TS):
             se = np.std(self.model_["residuals"][3:], ddof=1)
             res = _add_fitted_pi(res=res, se=se, level=level)
         return res
+
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ):
+        if y is not None:
+            y = _ensure_float(y)
+            if is_constant(y):
+                return Naive(alias=self.alias).simulate(
+                    h=h, n_paths=n_paths, y=y, X=X, seed=seed
+                )
+            mod = auto_theta(
+                y=y,
+                m=self.season_length,
+                model=self.model,
+                decomposition_type=self.decomposition_type,
+            )
+        else:
+            if not hasattr(self, "model_"):
+                raise Exception("You have to use the `fit` method first")
+            mod = self.model_
+
+        from statsforecast.theta import simulate_theta
+
+        return simulate_theta(model=mod, h=h, n_paths=n_paths, seed=seed)
 
     def forecast(
         self,
@@ -2773,6 +2956,30 @@ class Naive(_TS):
         self._store_cs(y=y, X=X)
         return self
 
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ):
+        if y is not None:
+            self.fit(y=y, X=X)
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        if seed is not None:
+            np.random.seed(seed)
+
+        # Naive: y_t = y_{t-1} + e_t
+        # Simulation: y_{T+h} = y_T + sum_{i=1}^h e_{T+i}
+        sigma = self.model_["sigma"]
+        last_value = self.model_["mean"][0]
+
+        drifts = np.random.normal(0, sigma, (n_paths, h))
+        return last_value + np.cumsum(drifts, axis=1)
+
     def predict(
         self,
         h: int,  # forecasting horizon
@@ -3120,6 +3327,36 @@ class SeasonalNaive(_TS):
         self.model_ = mod
         self._store_cs(y=y, X=X)
         return self
+
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+    ):
+        if y is not None:
+            self.fit(y=y, X=X)
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        if seed is not None:
+            np.random.seed(seed)
+
+        m = self.season_length
+        sigma = self.model_["sigma"]
+        last_cycle = self.model_["mean"]
+
+        errors = np.random.normal(0, sigma, (n_paths, h))
+        paths = np.zeros((n_paths, h))
+        for i in range(h):
+            if i < m:
+                prev_vals = last_cycle[i]
+            else:
+                prev_vals = paths[:, i - m]
+            paths[:, i] = prev_vals + errors[:, i]
+        return paths
 
     def predict(
         self,
@@ -5292,7 +5529,7 @@ class GARCH(_TS):
     ``` math
     y_t = v_t \sigma_t
     ```
-    
+
 
     with
 

@@ -1,4 +1,4 @@
-__all__ = ['ces_target_fn']
+__all__ = ["auto_ces", "simulate_ces"]
 
 
 import math
@@ -802,3 +802,26 @@ def forward_ces(fitted_model, y):
         beta_0=beta_0,
         beta_1=beta_1,
     )
+
+
+def simulate_ces(model, h, n_paths, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
+    y_path = np.zeros([n_paths, h])
+
+    for k in range(n_paths):
+        e = np.random.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
+        states = model["states"]
+        fcsts = np.zeros(h, dtype=np.float32)
+        cesforecast(
+            states=states + e,
+            n=model["n"],
+            m=model["m"],
+            season=switch_ces(model["seasontype"]),
+            h=h,
+            f=fcsts,
+            **model["par"],
+        )
+        y_path[k,] = fcsts
+
+    return y_path

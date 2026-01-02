@@ -1,5 +1,14 @@
-__all__ = ['predict_arima', 'arima_string', 'forecast_arima', 'fitted_arima', 'auto_arima_f', 'print_statsforecast_ARIMA',
-           'ARIMASummary', 'AutoARIMA']
+__all__ = [
+    "predict_arima",
+    "arima_string",
+    "forecast_arima",
+    "fitted_arima",
+    "auto_arima_f",
+    "print_statsforecast_ARIMA",
+    "ARIMASummary",
+    "AutoARIMA",
+    "simulate_arima",
+]
 
 
 import math
@@ -1223,6 +1232,93 @@ def forecast_arima(
     }
 
     return ans
+
+
+def simulate_arima(model, h, n_paths, xreg=None, seed=None):
+    if model.get("constant", False):
+        return np.full((n_paths, h), model["x"][-1])
+    if seed is not None:
+        np.random.seed(seed)
+
+    # Regression component (similar to forecast_arima and predict_arima)
+    use_drift = "drift" in model["coef"].keys()
+    if use_drift:
+        n = len(model["x"])
+        drift = np.arange(1, h + 1, dtype=np.float64).reshape(-1, 1)
+        drift += n
+        if xreg is not None:
+            xreg = np.concatenate([drift, xreg], axis=1)
+        else:
+            xreg = drift
+        # we need to temporarily change names for internal logic if we were to call predict_arima
+        # but here we can just handle it.
+
+    arma = model["arma"]
+    ncoefs = list(model["coef"].keys())
+    coefs = np.array(list(model["coef"].values()))
+    narma = sum(arma[:4])
+
+    newxreg = xreg
+    if len(coefs) > narma:
+        # Check if we need to add intercept (similar to predict_arima)
+        # Note: if drift was used, it's typically handled by concatenating to xreg
+        # and it's NOT named 'intercept' in model['coef'] usually.
+        # However, some models might have 'intercept'.
+        if ncoefs[narma] == "intercept":
+            intercept = np.ones(h, dtype=np.float64).reshape(-1, 1)
+            if newxreg is None:
+                newxreg = intercept
+            else:
+                newxreg = np.concatenate([intercept, newxreg], axis=1)
+
+        if newxreg is not None:
+            # Check for column mismatch
+            if narma == 0:
+                needed_cols = len(coefs)
+                reg_coefs = coefs
+            else:
+                needed_cols = len(coefs) - narma
+                reg_coefs = coefs[narma:]
+
+            if newxreg.shape[1] != needed_cols:
+                # This could happen if some exog were dropped.
+                # For now, let's just try to be robust.
+                if newxreg.shape[1] > needed_cols:
+                    xm = np.matmul(newxreg[:, :needed_cols], reg_coefs)
+                else:
+                    raise Exception(
+                        f"Number of regressors ({newxreg.shape[1]}) does not match fitted model ({needed_cols})"
+                    )
+            else:
+                xm = np.matmul(newxreg, reg_coefs)
+            xm = xm.flatten()
+        else:
+            xm = 0
+    else:
+        xm = 0
+
+    # Kalman components
+    Z, a_init, T, V, obs_h = [model["model"][var] for var in ["Z", "a", "T", "V", "h"]]
+    sigma2 = model["sigma2"]
+
+    paths = np.empty((n_paths, h))
+
+    # V can be singular, so we use SVD-based sampling
+    u, s, _ = np.linalg.svd(V * sigma2)
+    state_noise_std = u * np.sqrt(s)
+
+    obs_noise_std = np.sqrt(obs_h * sigma2)
+
+    for i in range(n_paths):
+        a = a_init.copy()
+        for t in range(h):
+            a = T @ a + state_noise_std @ np.random.normal(size=a.size)
+            paths[i, t] = (Z @ a) + np.random.normal(0, obs_noise_std)
+
+    if not isinstance(xm, int):
+        paths += xm
+
+    return paths
 
 
 def fitted_arima(model, h=1):

@@ -1,4 +1,4 @@
-__all__ = ['forecast_theta', 'auto_theta', 'forward_theta']
+__all__ = ["forecast_theta", "auto_theta", "forward_theta", "simulate_theta"]
 
 
 import math
@@ -211,6 +211,34 @@ def compute_pi_samples(
         B = ((i - 1) * B + 6 * (samples[i - n] - mean_y) / (i + 1)) / (i + 2)
         A = mean_y - B * (i + 2) / 2
     return samples
+
+
+def simulate_theta(model, h, n_paths, seed=None):
+    if seed is not None:
+        np.random.seed(seed)
+
+    sigma = np.std(model["residuals"][3:], ddof=1)
+    samples = compute_pi_samples(
+        n=model["n"],
+        h=h,
+        states=model["states"],
+        sigma=sigma,
+        alpha=model["par"]["alpha"],
+        theta=model["par"]["theta"],
+        mean_y=model["mean_y"],
+        seed=seed if seed is not None else 0,
+        n_samples=n_paths,
+    )
+
+    res = samples.T
+
+    if model.get("decompose", False):
+        seas_forecast = _repeat_val_seas(model["seas_forecast"]["mean"], h=h)
+        if model["decomposition_type"] == "multiplicative":
+            res = res * seas_forecast
+        else:
+            res = res + seas_forecast
+    return res
 
 
 def forecast_theta(obj, h, level=None):
