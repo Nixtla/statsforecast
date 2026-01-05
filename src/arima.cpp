@@ -136,7 +136,7 @@ arima_css(const py::array_t<double> yv, const py::array_t<int32_t> armav,
 
   py::array_t<double> residv(n);
   const auto resid = make_span(residv);
-  std::fill_n(resid.begin(), ncond, 0.0);
+  std::fill_n(resid.begin(), std::min(ncond, n), 0.0);
   std::vector<double> w(y.begin(), y.end());
 
   for (size_t _ = 0; _ < d; ++_) {
