@@ -111,7 +111,6 @@ all = [
     "fugue[ray]>=0.8.1 ; python_version < '3.12'",
     "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
     "numpy<2 ; python_version < '3.12'",
-    "pandas<2.2 ; python_version < '3.12'",
     "ray<=2.10 ; python_version < '3.12'",
 ]
 
