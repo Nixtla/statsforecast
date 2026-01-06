@@ -66,15 +66,14 @@ dev = [
     "pytest-cov",
     "pip-licenses",
 ]
-dask = ["dask<=2024.12.1", "fugue[dask]>=0.8.1"]
+dask = ["dask<=2024.12.1", "fugue[dask]>=0.9.4"]
 ray = [
-    "fugue[ray]>=0.8.1 ; python_version < '3.12'",
+    "fugue[ray]>=0.9.4 ; python_version < '3.12'",
     "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
-    "numpy<2 ; python_version < '3.12'",
-    "pandas<2.2 ; python_version < '3.12'",
-    "ray<=2.10 ; python_version < '3.12'",
+    "numpy",
+    "pandas",
 ]
-spark = ["fugue[spark]>=0.8.1", "pyspark<4.1.0; sys_platform == 'win32'"]
+spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
 plotly = ["plotly", "plotly-resampler"]
 polars = ["polars[numpy]"]
 docs = [
@@ -84,8 +83,9 @@ docs = [
 ]
 all = [
     "dask<=2024.12.1",
-    "fugue[dask]>=0.8.1",
-    "fugue[spark]>=0.8.1",
+    "fugue[dask]>=0.9.4",
+    "fugue[spark]>=0.9.4",
+    "fugue[ray]>=0.9.4",
     "pyspark<4.1.0; sys_platform == 'win32'",
     "plotly",
     "plotly-resampler",
@@ -108,10 +108,8 @@ all = [
     "setuptools<70",
     "supersmoother",
     "yfinance",
-    "fugue[ray]>=0.8.1 ; python_version < '3.12'",
     "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
-    "numpy<2 ; python_version < '3.12'",
-    "ray<=2.10 ; python_version < '3.12'",
+    "numpy",
 ]
 
 [tool.setuptools]
