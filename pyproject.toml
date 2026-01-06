@@ -85,7 +85,7 @@ all = [
     "dask<=2024.12.1",
     "fugue[dask]>=0.9.4",
     "fugue[spark]>=0.9.4",
-    "fugue[ray]>=0.9.4",
+    "fugue[ray]>=0.9.4; sys_platform != 'win32' or python_version < '3.12'",
     "pyspark<4.1.0; sys_platform == 'win32'",
     "plotly",
     "plotly-resampler",
