@@ -74,7 +74,7 @@ ray = [
     "pandas<2.2 ; python_version < '3.12'",
     "ray<=2.10 ; python_version < '3.12'",
 ]
-spark = ["fugue[spark]>=0.8.1"]
+spark = ["fugue[spark]>=0.8.1", "pyspark<4.1.0; sys_platform == 'win32'"]
 plotly = ["plotly", "plotly-resampler"]
 polars = ["polars[numpy]"]
 docs = [
@@ -86,6 +86,7 @@ all = [
     "dask<=2024.12.1",
     "fugue[dask]>=0.8.1",
     "fugue[spark]>=0.8.1",
+    "pyspark<4.1.0; sys_platform == 'win32'",
     "plotly",
     "plotly-resampler",
     "polars[numpy]",
