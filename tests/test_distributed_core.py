@@ -8,6 +8,19 @@ from statsforecast.utils import generate_series
 
 print("[MODULE] test_distributed_core.py loaded", flush=True)
 
+# Import ray to ensure proper shutdown
+try:
+    import ray
+    import os
+    HAS_RAY = True
+
+    # Configure Ray to avoid resource backpressure issues in tests
+    # Reduce memory pressure by limiting object store memory and worker processes
+    os.environ['RAY_memory_monitor_refresh_ms'] = '0'  # Disable memory monitor for tests
+    os.environ['RAY_DEDUP_LOGS'] = '0'  # Show all logs for debugging
+except ImportError:
+    HAS_RAY = False
+
 
 @pytest.fixture
 def df():
@@ -147,6 +160,18 @@ def test_parallel_backend_cross_validation_with_fallback(df, common_params, cv_p
 
 @pytest.fixture(scope="module", autouse=True)
 def module_teardown():
-    """Track module teardown to detect hangs after all tests complete."""
+    """Track module teardown and shutdown Ray to prevent hangs."""
     yield
     print("\n[MODULE] All tests completed, running module teardown", flush=True)
+
+    # Shutdown Ray if it's running
+    if HAS_RAY:
+        print("[MODULE] Checking if Ray is initialized", flush=True)
+        if ray.is_initialized():
+            print("[MODULE] Ray is initialized, shutting down...", flush=True)
+            ray.shutdown()
+            print("[MODULE] Ray shutdown complete", flush=True)
+        else:
+            print("[MODULE] Ray is not initialized, skipping shutdown", flush=True)
+
+    print("[MODULE] Module teardown complete", flush=True)
