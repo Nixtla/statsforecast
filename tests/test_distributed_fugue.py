@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-if not sys.version_info >= (3, 12):
+if sys.platform != "win32":
     import ray
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
@@ -195,7 +195,7 @@ def ray_df():
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+    sys.platform == "win32", reason="Ray is in beta for Windows."
 )
 def test_ray_cv_predictions(ray_df):
     df = ray_df
@@ -231,7 +231,7 @@ def test_ray_cv_predictions(ray_df):
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+    sys.platform == "win32", reason="Ray is in beta for Windows."
 )
 def test_ray_cv_fallback_model(ray_df):
     df = ray_df
@@ -249,7 +249,7 @@ def test_ray_cv_fallback_model(ray_df):
     pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+    sys.platform == "win32", reason="Ray is in beta for Windows."
 )
 def test_ray_distributed_exogenous_regressors(df_w_ex):
     df_w_ex, train_df, test_df, xreg = df_w_ex
