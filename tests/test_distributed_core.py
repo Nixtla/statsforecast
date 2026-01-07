@@ -9,7 +9,7 @@ from statsforecast.utils import generate_series
 
 @pytest.fixture
 def df():
-    df = generate_series(10).reset_index()
+    df = generate_series(10, max_length=100).reset_index()
     df["unique_id"] = df["unique_id"].astype(str)
     return df
 
