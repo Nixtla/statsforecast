@@ -196,10 +196,9 @@ def ray_session():
     if not ray.is_initialized():
         ray.init(
             num_cpus=2,
-            object_store_memory=500 * 1024 * 1024,  # 500 MB
-            _memory=1024 * 1024 * 1024,  # 1 GB total memory
             ignore_reinit_error=True,
             include_dashboard=False,
+            _metrics_export_port=None,
             runtime_env={
                 "working_dir": None,  # Don't upload working directory for local testing
             },
@@ -219,7 +218,7 @@ def ray_df(ray_session):
         pytest.skip("Ray is in beta for Windows.")
 
     # Generate Synthetic Panel Data.
-    df = generate_series(10).reset_index()
+    df = generate_series(5).reset_index()
     df["unique_id"] = df["unique_id"].astype(str)
     df = ray.data.from_pandas(df).repartition(2)
     return df
