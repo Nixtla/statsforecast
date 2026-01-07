@@ -185,8 +185,38 @@ def test_distribute_cv_predictions(df):
 
 
 # # | eval: false
+@pytest.fixture(scope="module")
+def ray_session():
+    """Initialize Ray once for all tests in this module and shutdown afterwards."""
+    if sys.platform == "win32":
+        yield None
+        return
+
+    # Initialize Ray with runtime environment to exclude large files
+    if not ray.is_initialized():
+        ray.init(
+            num_cpus=2,
+            object_store_memory=500 * 1024 * 1024,  # 500 MB
+            _memory=1024 * 1024 * 1024,  # 1 GB total memory
+            ignore_reinit_error=True,
+            runtime_env={
+                "working_dir": None,  # Don't upload working directory for local testing
+            },
+        )
+
+    yield ray
+
+    # Cleanup: shutdown Ray after all tests in this module complete
+    if ray.is_initialized():
+        ray.shutdown()
+
+
 @pytest.fixture
-def ray_df():
+def ray_df(ray_session):
+    """Generate test data as Ray Dataset."""
+    if sys.platform == "win32":
+        pytest.skip("Ray is in beta for Windows.")
+
     # Generate Synthetic Panel Data.
     df = generate_series(10).reset_index()
     df["unique_id"] = df["unique_id"].astype(str)
