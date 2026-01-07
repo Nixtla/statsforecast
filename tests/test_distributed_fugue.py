@@ -199,6 +199,7 @@ def ray_session():
             object_store_memory=500 * 1024 * 1024,  # 500 MB
             _memory=1024 * 1024 * 1024,  # 1 GB total memory
             ignore_reinit_error=True,
+            include_dashboard=False,
             runtime_env={
                 "working_dir": None,  # Don't upload working directory for local testing
             },
