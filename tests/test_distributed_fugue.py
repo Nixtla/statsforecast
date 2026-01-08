@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-if not sys.version_info >= (3, 12):
+if sys.platform != "win32":
     import ray
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
@@ -185,17 +185,47 @@ def test_distribute_cv_predictions(df):
 
 
 # # | eval: false
+@pytest.fixture(scope="module")
+def ray_session():
+    """Initialize Ray once for all tests in this module and shutdown afterwards."""
+    if sys.platform == "win32":
+        yield None
+        return
+
+    # Initialize Ray with runtime environment to exclude large files
+    if not ray.is_initialized():
+        ray.init(
+            num_cpus=2,
+            ignore_reinit_error=True,
+            include_dashboard=False,
+            _metrics_export_port=None,
+            runtime_env={
+                "working_dir": None,  # Don't upload working directory for local testing
+            },
+        )
+
+    yield ray
+
+    # Cleanup: shutdown Ray after all tests in this module complete
+    if ray.is_initialized():
+        ray.shutdown()
+
+
 @pytest.fixture
-def ray_df():
+def ray_df(ray_session):
+    """Generate test data as Ray Dataset."""
+    if sys.platform == "win32":
+        pytest.skip("Ray is in beta for Windows.")
+
     # Generate Synthetic Panel Data.
-    df = generate_series(10).reset_index()
+    df = generate_series(5).reset_index()
     df["unique_id"] = df["unique_id"].astype(str)
     df = ray.data.from_pandas(df).repartition(2)
     return df
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+    sys.platform == "win32", reason="Ray is in beta for Windows."
 )
 def test_ray_cv_predictions(ray_df):
     df = ray_df
@@ -231,7 +261,7 @@ def test_ray_cv_predictions(ray_df):
 
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+    sys.platform == "win32", reason="Ray is in beta for Windows."
 )
 def test_ray_cv_fallback_model(ray_df):
     df = ray_df
@@ -249,7 +279,7 @@ def test_ray_cv_fallback_model(ray_df):
     pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
 
 @pytest.mark.skipif(
-    sys.version_info >= (3, 12), reason="This test is not compatible with Python 3.12+"
+    sys.platform == "win32", reason="Ray is in beta for Windows."
 )
 def test_ray_distributed_exogenous_regressors(df_w_ex):
     df_w_ex, train_df, test_df, xreg = df_w_ex
