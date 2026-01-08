@@ -804,13 +804,63 @@ def forward_ces(fitted_model, y):
     )
 
 
-def simulate_ces(model, h, n_paths, seed=None):
+def simulate_ces(
+    model,
+    h,
+    n_paths,
+    seed=None,
+    error_distribution="normal",
+    error_params=None,
+):
+    """
+    Simulate future paths from a fitted CES model.
+
+    Parameters
+    ----------
+    model : dict
+        Fitted CES model dictionary.
+    h : int
+        Forecast horizon.
+    n_paths : int
+        Number of simulation paths to generate.
+    seed : int, optional
+        Random seed for reproducibility.
+    error_distribution : str, default='normal'
+        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
+        'laplace', 'skew-normal', 'ged'.
+    error_params : dict, optional
+        Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
+
+    Returns
+    -------
+    np.ndarray
+        Simulated paths of shape (n_paths, h).
+    """
+    from statsforecast.simulation import sample_errors
+
+    # Set up random generator
+    rng = np.random.default_rng(seed)
     if seed is not None:
         np.random.seed(seed)
+
     y_path = np.zeros([n_paths, h])
 
+    sigma = np.sqrt(model["sigma2"])
+    states_shape = model["states"].shape
+
+    # Get residuals for bootstrap if needed
+    residuals = model.get("residuals", None)
+
     for k in range(n_paths):
-        e = np.random.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
+        # Sample state noise from specified distribution
+        e = sample_errors(
+            size=states_shape,
+            sigma=sigma,
+            distribution=error_distribution,
+            params=error_params,
+            residuals=residuals,
+            rng=rng,
+        )
         states = model["states"]
         fcsts = np.zeros(h, dtype=np.float32)
         cesforecast(
@@ -825,3 +875,4 @@ def simulate_ces(model, h, n_paths, seed=None):
         y_path[k,] = fcsts
 
     return y_path
+

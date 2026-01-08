@@ -721,7 +721,6 @@ def ets_f(
         upper = np.array([0.9999, 0.9999, 0.9999, _PHI_UPPER])
     if any(upper < lower):
         raise ValueError("Lower limits must be less than upper limits")
-    # check if y is contant
     if is_constant(y):
         return etsmodel(
             y=y,
@@ -1248,9 +1247,44 @@ def forward_ets(fitted_model, y):
     return ets_f(y=y, m=fitted_model["m"], model=fitted_model)
 
 
-def simulate_ets(model, h, n_paths, seed=None):
+def simulate_ets(
+    model,
+    h,
+    n_paths,
+    seed=None,
+    error_distribution="normal",
+    error_params=None,
+):
+    """
+    Simulate future paths from a fitted ETS model.
+
+    Parameters
+    ----------
+    model : dict
+        Fitted ETS model dictionary.
+    h : int
+        Forecast horizon.
+    n_paths : int
+        Number of simulation paths to generate.
+    seed : int, optional
+        Random seed for reproducibility.
+    error_distribution : str, default='normal'
+        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
+        'laplace', 'skew-normal', 'ged'.
+    error_params : dict, optional
+        Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
+
+    Returns
+    -------
+    np.ndarray
+        Simulated paths of shape (n_paths, h).
+    """
+    from statsforecast.simulation import sample_errors
+
+    # Set up random generator
+    rng = np.random.default_rng(seed)
     if seed is not None:
-        np.random.seed(seed)
+        np.random.seed(seed)  # For backward compatibility
 
     sigma = model["sigma2"]
     season_length = model["m"]
@@ -1275,8 +1309,19 @@ def simulate_ets(model, h, n_paths, seed=None):
 
     y_path = np.zeros([n_paths, h])
 
+    # Get residuals for bootstrap if needed
+    residuals = model.get("residuals", None)
+
     for k in range(n_paths):
-        e = np.random.normal(0, np.sqrt(sigma), h)
+        # Sample errors from specified distribution
+        e = sample_errors(
+            size=h,
+            sigma=np.sqrt(sigma),
+            distribution=error_distribution,
+            params=error_params,
+            residuals=residuals,
+            rng=rng,
+        )
         yhat = np.zeros(h)
         etssimulate(
             last_state,
@@ -1295,3 +1340,4 @@ def simulate_ets(model, h, n_paths, seed=None):
         y_path[k,] = yhat
 
     return y_path
+

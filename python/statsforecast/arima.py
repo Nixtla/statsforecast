@@ -59,7 +59,6 @@ def getQ0(phi, theta):
 
 
 def arima_transpar(params_in, arma, trans):
-    # TODO check trans=True results
     return _arima.arima_transpar(params_in, arma, trans)
 
 
@@ -677,8 +676,6 @@ def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
 
     narma = sum(arma[:4])
     if len(coefs) > narma:
-        # check intercept
-        # i think xreg is unused
         if ncoefs[narma] == "intercept":
             intercept = np.ones(n_ahead, dtype=np.float64).reshape(-1, 1)
             if newxreg is None:
@@ -1234,11 +1231,50 @@ def forecast_arima(
     return ans
 
 
-def simulate_arima(model, h, n_paths, xreg=None, seed=None):
+def simulate_arima(
+    model,
+    h,
+    n_paths,
+    xreg=None,
+    seed=None,
+    error_distribution="normal",
+    error_params=None,
+):
+    """
+    Simulate future paths from a fitted ARIMA model.
+
+    Parameters
+    ----------
+    model : dict
+        Fitted ARIMA model dictionary.
+    h : int
+        Forecast horizon.
+    n_paths : int
+        Number of simulation paths to generate.
+    xreg : np.ndarray, optional
+        Future exogenous regressors of shape (h, n_x).
+    seed : int, optional
+        Random seed for reproducibility.
+    error_distribution : str, default='normal'
+        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
+        'laplace', 'skew-normal', 'ged'.
+    error_params : dict, optional
+        Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
+
+    Returns
+    -------
+    np.ndarray
+        Simulated paths of shape (n_paths, h).
+    """
+    from statsforecast.simulation import sample_errors
+
     if model.get("constant", False):
         return np.full((n_paths, h), model["x"][-1])
+
+    # Set up random generator
+    rng = np.random.default_rng(seed)
     if seed is not None:
-        np.random.seed(seed)
+        np.random.seed(seed)  # For backward compatibility
 
     # Regression component (similar to forecast_arima and predict_arima)
     use_drift = "drift" in model["coef"].keys()
@@ -1250,9 +1286,6 @@ def simulate_arima(model, h, n_paths, xreg=None, seed=None):
             xreg = np.concatenate([drift, xreg], axis=1)
         else:
             xreg = drift
-        # we need to temporarily change names for internal logic if we were to call predict_arima
-        # but here we can just handle it.
-
     arma = model["arma"]
     ncoefs = list(model["coef"].keys())
     coefs = np.array(list(model["coef"].values()))
@@ -1260,10 +1293,6 @@ def simulate_arima(model, h, n_paths, xreg=None, seed=None):
 
     newxreg = xreg
     if len(coefs) > narma:
-        # Check if we need to add intercept (similar to predict_arima)
-        # Note: if drift was used, it's typically handled by concatenating to xreg
-        # and it's NOT named 'intercept' in model['coef'] usually.
-        # However, some models might have 'intercept'.
         if ncoefs[narma] == "intercept":
             intercept = np.ones(h, dtype=np.float64).reshape(-1, 1)
             if newxreg is None:
@@ -1272,7 +1301,6 @@ def simulate_arima(model, h, n_paths, xreg=None, seed=None):
                 newxreg = np.concatenate([intercept, newxreg], axis=1)
 
         if newxreg is not None:
-            # Check for column mismatch
             if narma == 0:
                 needed_cols = len(coefs)
                 reg_coefs = coefs
@@ -1281,8 +1309,6 @@ def simulate_arima(model, h, n_paths, xreg=None, seed=None):
                 reg_coefs = coefs[narma:]
 
             if newxreg.shape[1] != needed_cols:
-                # This could happen if some exog were dropped.
-                # For now, let's just try to be robust.
                 if newxreg.shape[1] > needed_cols:
                     xm = np.matmul(newxreg[:, :needed_cols], reg_coefs)
                 else:
@@ -1297,28 +1323,42 @@ def simulate_arima(model, h, n_paths, xreg=None, seed=None):
     else:
         xm = 0
 
-    # Kalman components
+    # Kalman filter state-space components
     Z, a_init, T, V, obs_h = [model["model"][var] for var in ["Z", "a", "T", "V", "h"]]
     sigma2 = model["sigma2"]
 
     paths = np.empty((n_paths, h))
 
-    # V can be singular, so we use SVD-based sampling
+    # V can be singular, so we use SVD-based sampling for state transition noise
     u, s, _ = np.linalg.svd(V * sigma2)
     state_noise_std = u * np.sqrt(s)
 
     obs_noise_std = np.sqrt(obs_h * sigma2)
+    residuals = model.get("residuals", None)
 
     for i in range(n_paths):
         a = a_init.copy()
         for t in range(h):
-            a = T @ a + state_noise_std @ np.random.normal(size=a.size)
-            paths[i, t] = (Z @ a) + np.random.normal(0, obs_noise_std)
+            # State transition noise (Gaussian for state-space consistency)
+            state_noise = rng.normal(size=a.size)
+            a = T @ a + state_noise_std @ state_noise
+
+            # Observation noise with selected distribution
+            obs_noise = sample_errors(
+                size=1,
+                sigma=obs_noise_std,
+                distribution=error_distribution,
+                params=error_params,
+                residuals=residuals,
+                rng=rng,
+            )[0]
+            paths[i, t] = (Z @ a) + obs_noise
 
     if not isinstance(xm, int):
         paths += xm
 
     return paths
+
 
 
 def fitted_arima(model, h=1):

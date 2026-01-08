@@ -195,17 +195,54 @@ def thetamodel(
 
 
 def compute_pi_samples(
-    n, h, states, sigma, alpha, theta, mean_y, seed=0, n_samples=200
+    n,
+    h,
+    states,
+    sigma,
+    alpha,
+    theta,
+    mean_y,
+    seed=0,
+    n_samples=200,
+    error_distribution="normal",
+    error_params=None,
+    residuals=None,
 ):
+    """
+    Compute prediction interval samples for Theta model.
+
+    Parameters
+    ----------
+    error_distribution : str, default='normal'
+        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
+        'laplace', 'skew-normal', 'ged'.
+    error_params : dict, optional
+        Distribution-specific parameters.
+    residuals : np.ndarray, optional
+        Residuals for bootstrap sampling.
+    """
+    from statsforecast.simulation import sample_errors
+
     samples = np.full((h, n_samples), fill_value=np.nan, dtype=np.float32)
     # states: level, meany, An, Bn, mu
     smoothed, _, A, B, _ = states[-1]
-    np.random.seed(seed)
+
+    rng = np.random.default_rng(seed)
+
     for i in range(n, n + h):
         samples[i - n] = smoothed + (1 - 1 / theta) * (
             A * ((1 - alpha) ** i) + B * (1 - (1 - alpha) ** (i + 1)) / alpha
         )
-        samples[i - n] += np.random.normal(scale=sigma, size=n_samples)
+        # Sample errors from specified distribution
+        errors = sample_errors(
+            size=n_samples,
+            sigma=sigma,
+            distribution=error_distribution,
+            params=error_params,
+            residuals=residuals,
+            rng=rng,
+        )
+        samples[i - n] += errors
         smoothed = alpha * samples[i - n] + (1 - alpha) * smoothed
         mean_y = (i * mean_y + samples[i - n]) / (i + 1)
         B = ((i - 1) * B + 6 * (samples[i - n] - mean_y) / (i + 1)) / (i + 2)
@@ -213,11 +250,45 @@ def compute_pi_samples(
     return samples
 
 
-def simulate_theta(model, h, n_paths, seed=None):
+def simulate_theta(
+    model,
+    h,
+    n_paths,
+    seed=None,
+    error_distribution="normal",
+    error_params=None,
+):
+    """
+    Simulate future paths from a fitted Theta model.
+
+    Parameters
+    ----------
+    model : dict
+        Fitted Theta model dictionary.
+    h : int
+        Forecast horizon.
+    n_paths : int
+        Number of simulation paths to generate.
+    seed : int, optional
+        Random seed for reproducibility.
+    error_distribution : str, default='normal'
+        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
+        'laplace', 'skew-normal', 'ged'.
+    error_params : dict, optional
+        Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
+
+    Returns
+    -------
+    np.ndarray
+        Simulated paths of shape (n_paths, h).
+    """
+    # Set up random generator
     if seed is not None:
         np.random.seed(seed)
 
     sigma = np.std(model["residuals"][3:], ddof=1)
+    residuals = model["residuals"][3:]  # For bootstrap
+
     samples = compute_pi_samples(
         n=model["n"],
         h=h,
@@ -228,6 +299,9 @@ def simulate_theta(model, h, n_paths, seed=None):
         mean_y=model["mean_y"],
         seed=seed if seed is not None else 0,
         n_samples=n_paths,
+        error_distribution=error_distribution,
+        error_params=error_params,
+        residuals=residuals,
     )
 
     res = samples.T
@@ -239,6 +313,7 @@ def simulate_theta(model, h, n_paths, seed=None):
         else:
             res = res + seas_forecast
     return res
+
 
 
 def forecast_theta(obj, h, level=None):

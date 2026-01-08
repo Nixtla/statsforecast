@@ -463,7 +463,17 @@ class GroupedArray(BaseGroupedArray):
             target_col=target_col,
         )
 
-    def simulate(self, h, n_paths, models, X=None, seed=None, seeds=None):
+    def simulate(
+        self,
+        h,
+        n_paths,
+        models,
+        X=None,
+        seed=None,
+        seeds=None,
+        error_distribution="normal",
+        error_params=None,
+    ):
         n_groups = self.n_groups
         n_models = len(models)
         if seeds is None and seed is not None:
@@ -489,16 +499,33 @@ class GroupedArray(BaseGroupedArray):
                     X=X_in,
                     X_future=X_future,
                     seed=group_seed,
+                    error_distribution=error_distribution,
+                    error_params=error_params,
                 )
                 out[i * n_paths * h : (i + 1) * n_paths * h, i_model] = paths.flatten()
         return {"forecasts": out, "cols": [repr(m) for m in models]}
 
     @_controller.wrap(limits=1)
     def _single_threaded_simulate(
-        self, h, n_paths, models, X=None, seed=None, seeds=None
+        self,
+        h,
+        n_paths,
+        models,
+        X=None,
+        seed=None,
+        seeds=None,
+        error_distribution="normal",
+        error_params=None,
     ):
         return self.simulate(
-            h=h, n_paths=n_paths, models=models, X=X, seed=seed, seeds=seeds
+            h=h,
+            n_paths=n_paths,
+            models=models,
+            X=X,
+            seed=seed,
+            seeds=seeds,
+            error_distribution=error_distribution,
+            error_params=error_params,
         )
 
 
@@ -555,7 +582,6 @@ class _StatsForecast:
                 execution (when n_jobs=1).
 
         """
-        # TODO @fede: needed for residuals, think about it later
         self.models = models
         self._validate_model_names()
         self.freq = freq
@@ -909,7 +935,9 @@ class _StatsForecast:
         self.forecast_times_ = res_fcsts["times"]
         return fcsts_df
 
-    def _simulate_parallel(self, h, n_paths, X, seed):
+    def _simulate_parallel(
+        self, h, n_paths, X, seed, error_distribution="normal", error_params=None
+    ):
         gas, Xs = self._get_gas_Xs(X=X, tasks_per_job=1)
 
         # Pre-calculate seeds for each group to ensure consistency across models
@@ -935,6 +963,8 @@ class _StatsForecast:
                     seeds=all_seeds[cumsum_groups[i] : cumsum_groups[i + 1]]
                     if all_seeds is not None
                     else None,
+                    error_distribution=error_distribution,
+                    error_params=error_params,
                 ): i
                 for i, (ga, X) in enumerate(zip(gas, Xs))
             }
@@ -964,6 +994,8 @@ class _StatsForecast:
         time_col: str = "ds",
         target_col: str = "y",
         seed: Optional[int] = None,
+        error_distribution: str = "normal",
+        error_params: Optional[Dict] = None,
     ) -> DataFrame:
         """Generate sample trajectories (simulated paths).
 
@@ -979,6 +1011,9 @@ class _StatsForecast:
             time_col (str): Name of the column containing timestamps.
             target_col (str): Name of the column containing target values.
             seed (int, optional): Random seed for reproducibility.
+            error_distribution (str, optional): Error distribution for the simulation.
+                Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            error_params (dict, optional): Distribution-specific parameters.
 
         Returns:
             DataFrame with simulated paths, including a `sample_id` column.
@@ -989,10 +1024,23 @@ class _StatsForecast:
 
         if self.n_jobs == 1:
             res_sim = self.ga.simulate(
-                h=h, n_paths=n_paths, models=self.models, X=X, seed=seed
+                h=h,
+                n_paths=n_paths,
+                models=self.models,
+                X=X,
+                seed=seed,
+                error_distribution=error_distribution,
+                error_params=error_params,
             )
         else:
-            res_sim = self._simulate_parallel(h=h, n_paths=n_paths, X=X, seed=seed)
+            res_sim = self._simulate_parallel(
+                h=h,
+                n_paths=n_paths,
+                X=X,
+                seed=seed,
+                error_distribution=error_distribution,
+                error_params=error_params,
+            )
 
         fcsts = res_sim["forecasts"]
         cols = res_sim["cols"]
@@ -1744,6 +1792,8 @@ class StatsForecast(_StatsForecast):
         time_col: str = "ds",
         target_col: str = "y",
         seed: Optional[int] = None,
+        error_distribution: str = "normal",
+        error_params: Optional[Dict] = None,
     ) -> DataFrame:
         """Generate sample trajectories (simulated paths).
 
@@ -1760,6 +1810,9 @@ class StatsForecast(_StatsForecast):
             time_col (str, optional): Name of the column containing timestamps.
             target_col (str, optional): Name of the column containing target values.
             seed (int, optional): Random seed for reproducibility.
+            error_distribution (str, optional): Error distribution for the simulation.
+                Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            error_params (dict, optional): Distribution-specific parameters.
 
         Returns:
             DataFrame with simulated paths, including a `sample_id` column.
@@ -1774,6 +1827,8 @@ class StatsForecast(_StatsForecast):
                 time_col=time_col,
                 target_col=target_col,
                 seed=seed,
+                error_distribution=error_distribution,
+                error_params=error_params,
             )
         assert df is not None
         # Distributed simulation not implemented yet, fallback to native if possible or raise
@@ -1789,6 +1844,8 @@ class StatsForecast(_StatsForecast):
             time_col=time_col,
             target_col=target_col,
             seed=seed,
+            error_distribution=error_distribution,
+            error_params=error_params,
         )
 
     def forecast_fitted_values(self):
