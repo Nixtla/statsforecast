@@ -139,7 +139,8 @@ arima_css(const py::array_t<double> yv, const py::array_t<int32_t> armav,
   const auto resid = make_span(residv);
   if (static_cast<size_t>(ncond) > resid.size()) {
      throw std::logic_error(
-         "Internal error: resid length must be >= ncond"
+       "Internal error: resid length (" + std::to_string(resid.size()) +
+       ") must be >= ncond (" + std::to_string(ncond) + ")"
      );
   }
   std::fill_n(resid.begin(), ncond, 0.0);
