@@ -44,14 +44,10 @@ Homepage = "https://github.com/Nixtla/statsforecast/"
 Repository = "https://github.com/Nixtla/statsforecast/"
 Documentation = "https://nixtlaverse.nixtla.io/statsforecast/"
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "black",
     "datasetsforecast",
-    "fastcore<=1.7.29",
     "fire",
-    "nbformat",
-    "nbdev_plotly",
     "pandas[plot]",
     "polars[numpy]",
     "pre-commit",
@@ -66,17 +62,15 @@ dev = [
     "pytest",
     "pytest-cov",
     "pip-licenses",
+    "griffe2md",
+    "pyyaml",
+    "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
 ]
 dask = ["dask<=2024.12.1", "fugue[dask]>=0.8.1"]
 ray = ["fugue[ray]>=0.9.4", "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'"]
 spark = ["fugue[spark]>=0.8.1", "pyspark<4.1.0; sys_platform == 'win32'"]
 plotly = ["plotly", "plotly-resampler"]
 polars = ["polars[numpy]"]
-docs = [
-    "griffe2md",
-    "pyyaml",
-    "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
-]
 all = [
     "dask<=2024.12.1",
     "fugue[dask]>=0.9.4",
@@ -86,12 +80,8 @@ all = [
     "plotly",
     "plotly-resampler",
     "polars[numpy]",
-    "black",
     "datasetsforecast",
-    "fastcore<=1.7.29",
     "fire",
-    "nbformat",
-    "nbdev_plotly",
     "pandas[plot]",
     "polars[numpy]",
     "pre-commit",
