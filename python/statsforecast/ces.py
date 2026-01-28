@@ -1,4 +1,4 @@
-__all__ = ['ces_target_fn']
+__all__ = ['ces_target_fn', 'generate_ces_samples']
 
 
 import math
@@ -719,6 +719,81 @@ def forecast_ces(obj, h, level=None):
         pi = _simulate_pred_intervals(model=obj, h=h, level=level)
         out = {**out, **pi}
     return out
+
+
+def generate_ces_samples(model, h, n_samples=100, bootstrap=False, random_state=None):
+    """Generate sample forecast trajectories from a fitted CES model.
+
+    Simulates future sample paths by adding random perturbations to the
+    model states and generating forecasts. This provides the full predictive
+    distribution rather than just point forecasts or quantile intervals.
+
+    Args:
+        model: Fitted CES model dictionary (from auto_ces).
+        h: Forecast horizon (number of steps ahead).
+        n_samples: Number of sample trajectories to generate.
+        bootstrap: If True, resample innovations from model residuals.
+            If False, sample from N(0, sigma^2).
+        random_state: Random seed for reproducibility.
+
+    Returns:
+        np.ndarray: Array of shape (n_samples, h) containing simulated
+            forecast trajectories.
+
+    Examples:
+        >>> from statsforecast.ces import auto_ces, generate_ces_samples
+        >>> import numpy as np
+        >>> y = np.random.randn(100).cumsum() + 100
+        >>> model = auto_ces(y, m=1)
+        >>> samples = generate_ces_samples(model, h=12, n_samples=500)
+        >>> samples.shape
+        (500, 12)
+    """
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    sigma = model["sigma2"]
+    states = model["states"]
+    m = model["m"]
+    n = model["n"]
+    seasontype = model["seasontype"]
+    par = model["par"]
+
+    samples = np.zeros((n_samples, h))
+
+    for k in range(n_samples):
+        if bootstrap:
+            # Resample from residuals
+            residuals = model.get("residuals", None)
+            if residuals is not None:
+                residuals = residuals[~np.isnan(residuals)]
+            if residuals is None or len(residuals) == 0:
+                # Fall back to parametric if no residuals
+                e = np.random.normal(0, np.sqrt(sigma), states.shape)
+            else:
+                # Create perturbation array matching states shape
+                e = np.zeros(states.shape)
+                flat_size = e.size
+                indices = np.random.randint(0, len(residuals), size=flat_size)
+                e = residuals[indices].reshape(states.shape)
+        else:
+            # Sample from error distribution
+            e = np.random.normal(0, np.sqrt(sigma), states.shape)
+
+        # Perturb states and forecast
+        fcsts = np.zeros(h, dtype=np.float32)
+        cesforecast(
+            states=states + e,
+            n=n,
+            m=m,
+            season=switch_ces(seasontype),
+            h=h,
+            f=fcsts,
+            **par,
+        )
+        samples[k, :] = fcsts
+
+    return samples
 
 
 def auto_ces(
