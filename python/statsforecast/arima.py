@@ -1,5 +1,5 @@
 __all__ = ['predict_arima', 'arima_string', 'forecast_arima', 'fitted_arima', 'auto_arima_f', 'print_statsforecast_ARIMA',
-           'ARIMASummary', 'AutoARIMA']
+           'ARIMASummary', 'AutoARIMA', 'generate_arima_samples']
 
 
 import math
@@ -644,6 +644,95 @@ def kalman_forecast(n, Z, a, P, T, V, h):
         P = V + mm @ T.T
         se[l] = h + np.sum(z * P)
     return forecasts, se
+
+
+def generate_arima_samples(model, h, n_samples=100, bootstrap=False, random_state=None):
+    """Generate sample forecast trajectories from a fitted ARIMA model.
+
+    Simulates future sample paths by propagating through the state-space
+    representation with sampled innovations. This provides the full predictive
+    distribution rather than just point forecasts or quantile intervals.
+
+    Args:
+        model: Fitted ARIMA model dictionary (from auto_arima_f or Arima).
+        h: Forecast horizon (number of steps ahead).
+        n_samples: Number of sample trajectories to generate.
+        bootstrap: If True, resample innovations from model residuals.
+            If False, sample from N(0, sigma^2).
+        random_state: Random seed for reproducibility.
+
+    Returns:
+        np.ndarray: Array of shape (n_samples, h) containing simulated
+            forecast trajectories.
+
+    Examples:
+        >>> from statsforecast.arima import auto_arima_f, generate_arima_samples
+        >>> import numpy as np
+        >>> y = np.random.randn(100).cumsum() + 100
+        >>> model = auto_arima_f(y)
+        >>> samples = generate_arima_samples(model, h=12, n_samples=500)
+        >>> samples.shape
+        (500, 12)
+    """
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    sigma2 = model["sigma2"]
+    sigma = np.sqrt(sigma2)
+
+    # Get state-space matrices
+    Z = model["model"]["Z"]
+    T = model["model"]["T"]
+    a = model["model"]["a"]  # Current state
+
+    # Handle drift/intercept for xreg models
+    xm_base = None
+    coef = model.get("coef", {})
+    if "drift" in coef:
+        n = len(model.get("x", []))
+        drift_coef = coef["drift"]
+        # Drift adds drift_coef * (n + step) for each forecast step
+        xm_base = np.arange(n + 1, n + h + 1) * drift_coef
+
+    samples = np.zeros((n_samples, h))
+
+    for k in range(n_samples):
+        if bootstrap:
+            # Resample from residuals
+            residuals = model.get("residuals", None)
+            if residuals is not None:
+                residuals = residuals[~np.isnan(residuals)]
+            if residuals is None or len(residuals) == 0:
+                # Fall back to parametric
+                e = np.random.normal(0, sigma, h)
+            else:
+                indices = np.random.randint(0, len(residuals), size=h)
+                e = residuals[indices]
+        else:
+            e = np.random.normal(0, sigma, h)
+
+        # Initialize state for this sample path
+        a_curr = a.copy()
+
+        for i in range(h):
+            # Propagate state
+            a_curr = T @ a_curr
+
+            # Forecast = state dot observation vector
+            y_val = a_curr @ Z
+
+            # Add innovation to state (affects future predictions)
+            # The innovation enters through the first state component
+            # This is the standard ARIMA state-space formulation
+            a_curr[0] += e[i]
+
+            samples[k, i] = y_val + e[i]
+
+        # Add drift/intercept contribution
+        if xm_base is not None:
+            samples[k, :] += xm_base
+
+    return samples
 
 
 def checkarima(obj):

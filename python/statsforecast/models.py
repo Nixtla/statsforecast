@@ -22,6 +22,7 @@ from statsforecast.arima import (
     fitted_arima,
     forecast_arima,
     forward_arima,
+    generate_arima_samples,
     is_constant,
 )
 from statsforecast.ets import (
@@ -527,6 +528,51 @@ class AutoARIMA(_TS):
                 se = np.sqrt(mod["sigma2"])
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
+
+    def generate(
+        self,
+        h: int,
+        n_samples: int = 100,
+        bootstrap: bool = False,
+        random_state: Optional[int] = None,
+    ) -> np.ndarray:
+        r"""Generate sample forecast trajectories from fitted model.
+
+        Simulates future sample paths by propagating through the state-space
+        representation with sampled innovations. This provides the full
+        predictive distribution rather than just point forecasts or quantile
+        intervals.
+
+        Args:
+            h (int): Forecast horizon (number of steps ahead).
+            n_samples (int, default=100): Number of sample trajectories to generate.
+            bootstrap (bool, default=False): If True, resample innovations from
+                model residuals. If False, sample from N(0, sigma^2).
+            random_state (int, optional): Random seed for reproducibility.
+
+        Returns:
+            np.ndarray: Array of shape (n_samples, h) containing simulated
+                forecast trajectories.
+
+        Examples:
+            >>> from statsforecast.models import AutoARIMA
+            >>> import numpy as np
+            >>> y = np.random.randn(100).cumsum() + 100
+            >>> model = AutoARIMA(season_length=1)
+            >>> model.fit(y)
+            >>> samples = model.generate(h=12, n_samples=500, random_state=42)
+            >>> samples.shape
+            (500, 12)
+        """
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        return generate_arima_samples(
+            model=self.model_,
+            h=h,
+            n_samples=n_samples,
+            bootstrap=bootstrap,
+            random_state=random_state,
+        )
 
 
 class AutoETS(_TS):

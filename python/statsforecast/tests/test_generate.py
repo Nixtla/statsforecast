@@ -9,7 +9,8 @@ import pytest
 
 from statsforecast.ets import ets_f, generate_ets_samples
 from statsforecast.ces import auto_ces, generate_ces_samples
-from statsforecast.models import AutoETS, AutoCES
+from statsforecast.arima import auto_arima_f, generate_arima_samples
+from statsforecast.models import AutoETS, AutoCES, AutoARIMA
 
 
 class TestGenerateEtsSamples:
@@ -298,6 +299,133 @@ class TestAutoCESGenerate:
         y = y.astype(np.float64)
 
         model = AutoCES(season_length=1)
+        model.fit(y)
+
+        samples = model.generate(h=12, n_samples=100, bootstrap=True, random_state=42)
+
+        assert samples.shape == (100, 12)
+        assert not np.any(np.isnan(samples))
+
+
+class TestGenerateArimaSamples:
+    """Tests for the low-level generate_arima_samples helper function."""
+
+    def test_basic(self):
+        """Test generate_arima_samples with basic ARIMA model."""
+        np.random.seed(42)
+        y = np.random.randn(100).cumsum() + 100
+        y = y.astype(np.float64)
+
+        model = auto_arima_f(y)
+        samples = generate_arima_samples(model, h=12, n_samples=100, random_state=42)
+
+        assert samples.shape == (100, 12)
+        assert not np.any(np.isnan(samples))
+
+    def test_seasonal(self):
+        """Test generate_arima_samples with seasonal ARIMA model."""
+        np.random.seed(42)
+        t = np.arange(120)
+        y = 100 + 0.5 * t + 10 * np.sin(2 * np.pi * t / 12) + np.random.randn(120) * 2
+        y = y.astype(np.float64)
+
+        model = auto_arima_f(y, period=12)
+        samples = generate_arima_samples(model, h=12, n_samples=100, random_state=42)
+
+        assert samples.shape == (100, 12)
+        assert not np.any(np.isnan(samples))
+
+    def test_reproducibility(self):
+        """Test that random_state makes results reproducible."""
+        np.random.seed(42)
+        y = np.random.randn(100).cumsum() + 100
+        y = y.astype(np.float64)
+        model = auto_arima_f(y)
+
+        samples1 = generate_arima_samples(model, h=12, n_samples=50, random_state=123)
+        samples2 = generate_arima_samples(model, h=12, n_samples=50, random_state=123)
+
+        np.testing.assert_allclose(samples1, samples2)
+
+    def test_sample_mean_matches_point_forecast(self):
+        """Test that sample mean is close to point forecast."""
+        np.random.seed(42)
+        t = np.arange(120)
+        y = 100 + 0.5 * t + 10 * np.sin(2 * np.pi * t / 12) + np.random.randn(120) * 2
+        y = y.astype(np.float64)
+
+        from statsforecast.arima import forecast_arima
+
+        model = auto_arima_f(y, period=12)
+        samples = generate_arima_samples(model, h=12, n_samples=1000, random_state=42)
+        point_forecast = forecast_arima(model, h=12)["mean"]
+
+        # Sample mean should be close to point forecast (within ~3%)
+        np.testing.assert_allclose(
+            samples.mean(axis=0), point_forecast, rtol=0.03, atol=1.0
+        )
+
+
+class TestAutoARIMAGenerate:
+    """Tests for the AutoARIMA.generate() method."""
+
+    def test_generate_basic(self):
+        """Test basic generate() functionality."""
+        np.random.seed(42)
+        y = np.random.randn(100).cumsum() + 100
+        y = y.astype(np.float64)
+
+        model = AutoARIMA(season_length=1)
+        model.fit(y)
+
+        samples = model.generate(h=12, n_samples=100, random_state=42)
+
+        assert samples.shape == (100, 12)
+        assert not np.any(np.isnan(samples))
+
+    def test_generate_seasonal(self):
+        """Test generate() with seasonal model."""
+        np.random.seed(42)
+        t = np.arange(120)
+        y = 100 + 0.5 * t + 10 * np.sin(2 * np.pi * t / 12) + np.random.randn(120) * 2
+        y = y.astype(np.float64)
+
+        model = AutoARIMA(season_length=12)
+        model.fit(y)
+
+        samples = model.generate(h=12, n_samples=100, random_state=42)
+
+        assert samples.shape == (100, 12)
+        assert not np.any(np.isnan(samples))
+
+    def test_generate_not_fitted_raises(self):
+        """Test that generate() raises error if model not fitted."""
+        model = AutoARIMA(season_length=1)
+
+        with pytest.raises(Exception, match="fit"):
+            model.generate(h=12)
+
+    def test_generate_reproducibility(self):
+        """Test that random_state makes generate() reproducible."""
+        np.random.seed(42)
+        y = np.random.randn(100).cumsum() + 100
+        y = y.astype(np.float64)
+
+        model = AutoARIMA(season_length=1)
+        model.fit(y)
+
+        samples1 = model.generate(h=12, n_samples=50, random_state=123)
+        samples2 = model.generate(h=12, n_samples=50, random_state=123)
+
+        np.testing.assert_allclose(samples1, samples2)
+
+    def test_generate_bootstrap(self):
+        """Test generate() with bootstrap=True."""
+        np.random.seed(42)
+        y = np.random.randn(100).cumsum() + 100
+        y = y.astype(np.float64)
+
+        model = AutoARIMA(season_length=1)
         model.fit(y)
 
         samples = model.generate(h=12, n_samples=100, bootstrap=True, random_state=42)
