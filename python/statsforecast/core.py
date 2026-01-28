@@ -871,19 +871,31 @@ class _StatsForecast:
         self.forecast_times_ = res_fcsts["times"]
         return fcsts_df
 
-    def forecast_fitted_values(self):
+    def forecast_fitted_values(self, h: int = 1):
         """Retrieve in-sample predictions from the forecast method.
 
         Returns the fitted (in-sample) predictions generated during the last call to
         `forecast()`. These are the model's predictions on the training data, useful
         for assessing model fit quality and identifying patterns in residuals.
 
+        Args:
+            h (int, optional): Forecast horizon. Currently only h=1 is supported.
+                Multi-step in-sample forecasts are not available through this method.
+
         Returns:
             pandas.DataFrame or polars.DataFrame: DataFrame containing in-sample predictions
                 with columns for series identifiers, timestamps, target values, and fitted
                 predictions from each model. Includes prediction intervals if they were
                 requested during forecasting.
+
+        Raises:
+            ValueError: If h > 1, as multi-step in-sample forecasts are not supported.
         """
+        if h > 1:
+            raise ValueError(
+                "forecast_fitted_values currently supports only h=1. "
+                "Use cross_validation or forecast() for multi-step predictions."
+            )
         if not hasattr(self, "fcst_fitted_values_"):
             raise Exception("Please run `forecast` method using `fitted=True`")
         cols = self.fcst_fitted_values_["cols"]
@@ -1592,11 +1604,11 @@ class StatsForecast(_StatsForecast):
             target_col=target_col,
         )
 
-    def forecast_fitted_values(self):
+    def forecast_fitted_values(self, h: int = 1):
         if hasattr(self, "_backend"):
-            res = self._backend.forecast_fitted_values()
+            res = self._backend.forecast_fitted_values(h=h)
         else:
-            res = super().forecast_fitted_values()
+            res = super().forecast_fitted_values(h=h)
         return res
 
     def cross_validation(
