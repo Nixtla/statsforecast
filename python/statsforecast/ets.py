@@ -1,4 +1,4 @@
-__all__ = ['ets_f']
+__all__ = ['ets_f', 'generate_ets_samples']
 
 
 import math
@@ -1245,3 +1245,156 @@ def forecast_ets(obj, h, level=None):
 
 def forward_ets(fitted_model, y):
     return ets_f(y=y, m=fitted_model["m"], model=fitted_model)
+
+
+def generate_ets_samples(model, h, n_samples=100, bootstrap=False, random_state=None):
+    """Generate sample forecast trajectories from a fitted ETS model.
+
+    Simulates future sample paths by repeatedly applying the ETS state-space
+    equations with sampled innovations. This provides the full predictive
+    distribution rather than just point forecasts or quantile intervals.
+
+    Args:
+        model: Fitted ETS model dictionary (from ets_f).
+        h: Forecast horizon (number of steps ahead).
+        n_samples: Number of sample trajectories to generate.
+        bootstrap: If True, resample innovations from model residuals.
+            If False, sample from N(0, sigma^2).
+        random_state: Random seed for reproducibility.
+
+    Returns:
+        np.ndarray: Array of shape (n_samples, h) containing simulated
+            forecast trajectories.
+
+    Examples:
+        >>> from statsforecast.ets import ets_f, generate_ets_samples
+        >>> import numpy as np
+        >>> y = np.random.randn(100).cumsum() + 100
+        >>> model = ets_f(y, m=12)
+        >>> samples = generate_ets_samples(model, h=12, n_samples=500)
+        >>> samples.shape
+        (500, 12)
+    """
+    if random_state is not None:
+        np.random.seed(random_state)
+
+    sigma = model["sigma2"]
+    m = model["m"]
+
+    # Extract component types from model
+    components = model["components"]
+    error_type = components[0]  # A or M
+    trend_type = components[1]  # N, A, or M
+    season_type = components[2]  # N, A, or M
+
+    # Extract parameters
+    alpha = model["par"][0]
+    beta = model["par"][1] if not math.isnan(model["par"][1]) else 0.0
+    gamma = model["par"][2] if not math.isnan(model["par"][2]) else 0.0
+    phi = model["par"][3] if not math.isnan(model["par"][3]) else 1.0
+
+    # Parse initial state from last observation
+    states = model["states"][-1]
+    l = states[0]
+
+    has_trend = trend_type != "N"
+    has_season = season_type != "N"
+
+    if has_trend:
+        b = states[1]
+        s_start = 2
+    else:
+        b = 0.0
+        s_start = 1
+
+    if has_season:
+        s = states[s_start:s_start + m].copy()
+    else:
+        s = np.zeros(max(m, 1))
+
+    # Generate sample paths
+    samples = np.zeros((n_samples, h))
+
+    for k in range(n_samples):
+        if bootstrap:
+            residuals = model.get("actual_residuals", model["residuals"])
+            residuals = residuals[~np.isnan(residuals)]
+            if len(residuals) == 0:
+                residuals = model["residuals"][~np.isnan(model["residuals"])]
+            indices = np.random.randint(0, len(residuals), size=h)
+            e = residuals[indices]
+        else:
+            e = np.random.normal(0, np.sqrt(sigma), h)
+
+        # Initialize state for this sample path
+        l_curr = l
+        b_curr = b
+        s_curr = s.copy()
+
+        for i in range(h):
+            # One-step forecast
+            if trend_type == "N":
+                f_val = l_curr
+            elif trend_type == "A":
+                f_val = l_curr + phi * b_curr
+            else:  # M
+                f_val = l_curr * (b_curr ** phi) if b_curr > 0 else l_curr
+
+            # Add seasonality
+            s_idx = i % m if m > 0 else 0
+            if season_type == "A":
+                f_val = f_val + s_curr[s_idx]
+            elif season_type == "M":
+                f_val = f_val * s_curr[s_idx]
+
+            # Apply error to get observation
+            if error_type == "A":
+                y_val = f_val + e[i]
+            else:  # M
+                y_val = f_val * (1.0 + e[i])
+
+            samples[k, i] = y_val
+
+            # Update state for next step
+            old_l = l_curr
+            old_s = s_curr[s_idx] if has_season else 1.0
+
+            # Update level
+            if error_type == "A":
+                if season_type == "A":
+                    l_curr = alpha * (y_val - old_s) + (1 - alpha) * (old_l + phi * b_curr)
+                elif season_type == "M":
+                    l_curr = alpha * (y_val / old_s) + (1 - alpha) * (old_l + phi * b_curr)
+                else:
+                    l_curr = alpha * y_val + (1 - alpha) * (old_l + phi * b_curr)
+            else:  # M
+                if season_type == "A":
+                    l_curr = alpha * (y_val - old_s) + (1 - alpha) * (old_l + phi * b_curr)
+                elif season_type == "M":
+                    l_curr = alpha * (y_val / old_s) + (1 - alpha) * (old_l + phi * b_curr)
+                else:
+                    l_curr = alpha * (y_val / (old_l + phi * b_curr)) * old_l + (1 - alpha) * old_l
+
+            # Update trend
+            if has_trend:
+                if trend_type == "A":
+                    b_curr = beta * (l_curr - old_l) + (1 - beta) * phi * b_curr
+                else:  # M
+                    if old_l > 0:
+                        b_curr = beta * (l_curr / old_l) + (1 - beta) * phi * b_curr
+
+            # Update seasonality
+            if has_season:
+                if season_type == "A":
+                    if error_type == "A":
+                        s_curr[s_idx] = gamma * (y_val - old_l - phi * b_curr) + (1 - gamma) * old_s
+                    else:
+                        s_curr[s_idx] = gamma * (y_val / (old_l + phi * b_curr) - 1) * old_s + old_s
+                else:  # M
+                    if error_type == "A":
+                        s_curr[s_idx] = gamma * (y_val / (old_l + phi * b_curr)) + (1 - gamma) * old_s
+                    else:
+                        s_curr[s_idx] = gamma * (y_val / (old_l + phi * b_curr)) + (1 - gamma) * old_s
+
+    return samples
+
