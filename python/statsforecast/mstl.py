@@ -32,11 +32,11 @@ def mstl(
         raise Exception(
             "`mstl` cannot handle missing values. "
             "Please raise an issue to include this feature."
-        )  # we should interpolate here
+        )
     if blambda is not None:
         raise Exception(
             "`blambda` not implemented yet. "
-            "Please rise an issue to include this feature."
+            "Please raise an issue to include this feature."
         )
     stl_kwargs = {"seasonal_deg": 0, **stl_kwargs}
     if msts[0] > 1:
