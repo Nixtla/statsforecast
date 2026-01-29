@@ -2200,7 +2200,7 @@ def _probability(x: np.ndarray) -> np.ndarray:
 
 def _optimized_ses_forecast(
     x: np.ndarray, bounds: Tuple[float, float] = (0.1, 0.3)
-) -> Tuple[float, np.ndarray]:
+) -> Tuple[float, np.ndarray, float]:
     r"""Compute the one-step ahead forecast for an optimal simple exponential smoothing fit.
 
     Args:
@@ -4419,7 +4419,7 @@ def _chunk_forecast(y, aggregation_level):
     lost_remainder_data = len(y) % aggregation_level
     y_cut = y[lost_remainder_data:]
     aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-    sums_forecast, _ = _optimized_ses_forecast(aggregation_sums)
+    sums_forecast, _, _ = _optimized_ses_forecast(aggregation_sums)
     return sums_forecast
 
 
@@ -4816,11 +4816,11 @@ def _croston_optimized(
     yd = _demand(y)
     if not yd.size:
         return _naive(y=y, h=h, fitted=fitted)
-    ydp, _ = _optimized_ses_forecast(yd)
+    ydp, _, _ = _optimized_ses_forecast(yd)
 
     # intervals
     yi = _intervals(y)
-    yip, _ = _optimized_ses_forecast(yi)
+    yip, _, _ = _optimized_ses_forecast(yi)
 
     if yip != 0.0:
         mean = ydp / yip
@@ -5163,7 +5163,7 @@ def _imapa(
         lost_remainder_data = len(y) % aggregation_level
         y_cut = y[lost_remainder_data:]
         aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-        forecast, _ = _optimized_ses_forecast(aggregation_sums)
+        forecast, _, _ = _optimized_ses_forecast(aggregation_sums)
         forecasts[aggregation_level - 1] = forecast / aggregation_level
     forecast = forecasts.mean()
     res = {"mean": _repeat_val(val=forecast, h=h)}
