@@ -122,9 +122,6 @@ jobs:
       - name: Install the library
         run: uv sync --group dev
 
-      - name: Install additional dependencies
-        run: uv pip install "datasetsforecast<1"
-
       - name: Run M3 experiment
         run: |
           uv run python -m src.experiment
