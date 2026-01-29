@@ -63,7 +63,13 @@ jobs:
           CIBW_BEFORE_TEST: >
             yum install -y java-17-openjdk
           CIBW_TEST_COMMAND: >
-            uv pip install pytest pytest-cov "dask<=2024.12.1" "fugue[dask]>=0.9.4" "fugue[spark]>=0.9.4" "fugue[ray]>=0.9.4" "pyspark" && pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov
+            if python -c "import sys; exit(0 if sys.version_info >= (3, 14) else 1)"; then
+              uv pip install pytest pytest-cov "dask<=2024.12.1" "fugue[dask]>=0.9.4" "fugue[spark]>=0.9.4" "pyspark" &&
+              pytest --durations=0 {project}/action_files -k "not efficiency and not ray" --no-cov;
+            else
+              uv pip install pytest pytest-cov "dask<=2024.12.1" "fugue[dask]>=0.9.4" "fugue[spark]>=0.9.4" "fugue[ray]>=0.9.4" "pyspark" &&
+              pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov;
+            fi
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: github.event_name == 'push'
