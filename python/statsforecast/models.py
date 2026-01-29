@@ -2417,6 +2417,8 @@ class SimpleExponentialSmoothing(_TS):
         y = _ensure_float(y)
         res = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
         res = dict(res)
+        # Remove alpha from output (internal parameter, not user-facing)
+        res.pop("alpha", None)
         if level is None:
             return res
         level = sorted(level)
@@ -2612,6 +2614,8 @@ class SimpleExponentialSmoothingOptimized(_TS):
         y = _ensure_float(y)
         res = _ses_optimized(y=y, h=h, fitted=fitted)
         res = dict(res)
+        # Remove alpha from output (internal parameter, not user-facing)
+        res.pop("alpha", None)
         if level is None:
             return res
         level = sorted(level)
@@ -2842,6 +2846,8 @@ class SeasonalExponentialSmoothing(_TS):
             y=y, h=h, fitted=fitted, alpha=self.alpha, season_length=self.season_length
         )
         res = dict(res)
+        # Remove alpha from output (internal parameter, not user-facing)
+        res.pop("alpha", None)
         if level is None:
             return res
         level = sorted(level)
@@ -3068,6 +3074,8 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             y=y, h=h, fitted=fitted, season_length=self.season_length
         )
         res = dict(res)
+        # Remove alpha from output (internal parameter, not user-facing)
+        res.pop("alpha", None)
         if level is None:
             return res
         level = sorted(level)
