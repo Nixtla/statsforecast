@@ -57,12 +57,13 @@ jobs:
         if: matrix.os-platform[0] == 'ubuntu-latest'
         uses: pypa/cibuildwheel@5f22145df44122af0f5a201f93cf0207171beca7 # v3.0.0
         env:
+          CIBW_ENABLE: cpython-prerelease
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_BEFORE_TEST: >
             yum install -y java-17-openjdk
           CIBW_TEST_COMMAND: >
-            uv pip install -r {project}/setup.py --extra all && pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov
+            uv pip install pytest "dask<=2024.12.1" "fugue[dask]>=0.9.4" "fugue[spark]>=0.9.4" "fugue[ray]>=0.9.4" "pyspark" && pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: github.event_name == 'push'
