@@ -40,3 +40,5 @@ jobs:
 
       - name: Run pytest
         run: uv run pytest
+        env:
+          MPLBACKEND: Agg
