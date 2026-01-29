@@ -1,8 +1,19 @@
 """Tests for TimeSeriesSimulator."""
 
+import importlib.util
+import sys
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
+
+# Direct import from file (bypasses installed statsforecast)
+_generator_path = Path(__file__).parent.parent / "python" / "statsforecast" / "synthetic" / "generator.py"
+spec = importlib.util.spec_from_file_location("generator", _generator_path)
+_generator_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(_generator_module)
+TimeSeriesSimulator = _generator_module.TimeSeriesSimulator
 
 
 class TestTimeSeriesSimulator:
@@ -10,8 +21,6 @@ class TestTimeSeriesSimulator:
 
     def test_basic_generation(self):
         """Test basic series generation."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(length=100, seed=42)
         df = sim.simulate(n_series=2)
 
@@ -22,8 +31,6 @@ class TestTimeSeriesSimulator:
 
     def test_reproducibility(self):
         """Test that same seed produces same results."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim1 = TimeSeriesSimulator(length=50, seed=42)
         sim2 = TimeSeriesSimulator(length=50, seed=42)
 
@@ -34,8 +41,6 @@ class TestTimeSeriesSimulator:
 
     def test_different_seeds(self):
         """Test that different seeds produce different results."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim1 = TimeSeriesSimulator(length=50, seed=42)
         sim2 = TimeSeriesSimulator(length=50, seed=123)
 
@@ -50,8 +55,6 @@ class TestBuiltInDistributions:
 
     def test_normal_distribution(self):
         """Test normal distribution."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=1000,
             distribution="normal",
@@ -66,8 +69,6 @@ class TestBuiltInDistributions:
 
     def test_poisson_distribution(self):
         """Test Poisson distribution."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=1000,
             distribution="poisson",
@@ -81,8 +82,6 @@ class TestBuiltInDistributions:
 
     def test_gamma_distribution(self):
         """Test gamma distribution."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=1000,
             distribution="gamma",
@@ -96,8 +95,6 @@ class TestBuiltInDistributions:
 
     def test_uniform_distribution(self):
         """Test uniform distribution."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=1000,
             distribution="uniform",
@@ -112,8 +109,6 @@ class TestBuiltInDistributions:
 
     def test_all_distributions(self):
         """Test all built-in distributions work."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         distributions = [
             "normal",
             "poisson",
@@ -135,8 +130,6 @@ class TestCustomDistribution:
 
     def test_custom_distribution_callable(self):
         """Test custom distribution via callable."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         def custom_dist(size, rng):
             return rng.beta(2, 5, size=size) * 100
 
@@ -153,8 +146,6 @@ class TestCustomDistribution:
 
     def test_demand_with_spikes(self):
         """Test the demand with spikes example from docstring."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         def demand_with_spikes(size, rng):
             base_demand = rng.gamma(shape=5, scale=10, size=size)
             spike_mask = rng.random(size) < 0.05
@@ -179,8 +170,6 @@ class TestTrend:
 
     def test_linear_trend(self):
         """Test linear trend."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=100,
             distribution="normal",
@@ -196,8 +185,6 @@ class TestTrend:
 
     def test_exponential_trend(self):
         """Test exponential trend."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=100,
             distribution="normal",
@@ -213,8 +200,6 @@ class TestTrend:
 
     def test_custom_trend(self):
         """Test custom trend function."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         def custom_trend(t):
             return np.log1p(t) * 10
 
@@ -235,8 +220,6 @@ class TestSeasonality:
 
     def test_single_seasonality(self):
         """Test single seasonality period."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=21,  # 3 weeks
             distribution="normal",
@@ -252,8 +235,6 @@ class TestSeasonality:
 
     def test_multiple_seasonality(self):
         """Test multiple seasonality periods."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=100,
             distribution="normal",
@@ -268,8 +249,6 @@ class TestSeasonality:
 
     def test_seasonality_auto_length_adjustment(self):
         """Test that length is adjusted for seasonality."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             length=10,  # Too short for period=30
             seasonality=30,
@@ -285,8 +264,6 @@ class TestNoise:
 
     def test_noise_addition(self):
         """Test that noise increases variance."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim_no_noise = TimeSeriesSimulator(
             length=1000,
             distribution="normal",
@@ -314,31 +291,23 @@ class TestErrorHandling:
 
     def test_invalid_distribution(self):
         """Test error on invalid distribution name."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(distribution="invalid", seed=42)
         with pytest.raises(ValueError, match="Unknown distribution"):
             sim.simulate()
 
     def test_invalid_trend(self):
         """Test error on invalid trend name."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(trend="invalid", seed=42)
         with pytest.raises(ValueError, match="Unknown trend"):
             sim.simulate()
 
     def test_invalid_length(self):
         """Test error on invalid length."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         with pytest.raises(ValueError, match="length must be >= 1"):
             TimeSeriesSimulator(length=0)
 
     def test_mismatched_seasonality_strength(self):
         """Test error on mismatched seasonality/strength lengths."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(
             seasonality=[7, 30],
             seasonality_strength=[1.0, 2.0, 3.0],  # Wrong length
@@ -353,8 +322,6 @@ class TestIntegration:
 
     def test_output_format_compatible(self):
         """Test output is compatible with StatsForecast."""
-        from statsforecast.synthetic import TimeSeriesSimulator
-
         sim = TimeSeriesSimulator(length=50, seed=42)
         df = sim.simulate(n_series=3)
 
@@ -364,5 +331,5 @@ class TestIntegration:
         assert "y" in df.columns
 
         # Check types
-        assert df["ds"].dtype == "datetime64[ns]"
+        assert np.issubdtype(df["ds"].dtype, np.datetime64)
         assert np.issubdtype(df["y"].dtype, np.floating)
