@@ -773,16 +773,16 @@ name = "dash"
 version = "3.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "flask" },
-    { name = "importlib-metadata" },
-    { name = "nest-asyncio" },
-    { name = "plotly", version = "5.24.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "flask", marker = "python_full_version < '3.14'" },
+    { name = "importlib-metadata", marker = "python_full_version < '3.14'" },
+    { name = "nest-asyncio", marker = "python_full_version < '3.14'" },
+    { name = "plotly", version = "5.24.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.13.*'" },
     { name = "plotly", version = "6.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
-    { name = "requests" },
-    { name = "retrying" },
-    { name = "setuptools" },
-    { name = "typing-extensions" },
-    { name = "werkzeug" },
+    { name = "requests", marker = "python_full_version < '3.14'" },
+    { name = "retrying", marker = "python_full_version < '3.14'" },
+    { name = "setuptools", marker = "python_full_version < '3.14'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.14'" },
+    { name = "werkzeug", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7a/3a/322a583ca3479ad2dc6a8bfbaf7f8e4d01e16cc5030d8e7b45445bc22502/dash-3.4.0.tar.gz", hash = "sha256:3944beb32000ee8b22cd7fbb33545a0a43e25916c63aa41ba59ee5611997815e", size = 7581177, upload-time = "2026-01-20T20:46:47.43Z" }
 wheels = [
@@ -959,12 +959,12 @@ name = "flask"
 version = "3.1.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "blinker" },
-    { name = "click" },
-    { name = "itsdangerous" },
-    { name = "jinja2" },
-    { name = "markupsafe" },
-    { name = "werkzeug" },
+    { name = "blinker", marker = "python_full_version < '3.14'" },
+    { name = "click", marker = "python_full_version < '3.14'" },
+    { name = "itsdangerous", marker = "python_full_version < '3.14'" },
+    { name = "jinja2", marker = "python_full_version < '3.14'" },
+    { name = "markupsafe", marker = "python_full_version < '3.14'" },
+    { name = "werkzeug", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/dc/6d/cfe3c0fcc5e477df242b98bfe186a4c34357b4847e87ecaef04507332dab/flask-3.1.2.tar.gz", hash = "sha256:bf656c15c80190ed628ad08cdfd3aaa35beb087855e2f494910aa3774cc4fd87", size = 720160, upload-time = "2025-08-19T21:03:21.205Z" }
 wheels = [
@@ -1279,7 +1279,7 @@ name = "importlib-metadata"
 version = "8.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "zipp" },
+    { name = "zipp", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f3/49/3b30cad09e7771a4982d9975a8cbf64f00d4a1ececb53297f1d9a7be1b10/importlib_metadata-8.7.1.tar.gz", hash = "sha256:49fef1ae6440c182052f407c8d34a68f72efc36db9ca90dc0113398f2fdde8bb", size = 57107, upload-time = "2025-12-21T10:00:19.278Z" }
 wheels = [
@@ -2436,17 +2436,16 @@ name = "plotly-resampler"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14'",
     "python_full_version == '3.13.*' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "dash", marker = "python_full_version >= '3.13'" },
-    { name = "numpy", marker = "python_full_version >= '3.13'" },
-    { name = "orjson", marker = "python_full_version >= '3.13'" },
-    { name = "pandas", marker = "python_full_version >= '3.13'" },
-    { name = "plotly", version = "5.24.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
-    { name = "tsdownsample", marker = "python_full_version >= '3.13'" },
+    { name = "dash", marker = "python_full_version == '3.13.*'" },
+    { name = "numpy", marker = "python_full_version == '3.13.*'" },
+    { name = "orjson", marker = "python_full_version == '3.13.*'" },
+    { name = "pandas", marker = "python_full_version == '3.13.*'" },
+    { name = "plotly", version = "5.24.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.13.*'" },
+    { name = "tsdownsample", marker = "python_full_version == '3.13.*'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f1/03/02d7d2ac465466c419b99a56577572bc4db3005bb9ce384b8b2d4109654b/plotly_resampler-0.10.0.tar.gz", hash = "sha256:e1063d6d00aa4aedeb8c2c204de8661751b2145fd06682cd8fead9983c9a8334", size = 55489, upload-time = "2024-03-27T07:54:05.39Z" }
 wheels = [
@@ -3537,7 +3536,7 @@ all = [
     { name = "pandas", extra = ["plot"] },
     { name = "plotly", version = "5.24.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "plotly", version = "6.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
-    { name = "plotly-resampler", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "plotly-resampler", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.13.*'" },
     { name = "plotly-resampler", version = "0.11.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "polars", extra = ["numpy"] },
     { name = "pre-commit" },
@@ -3584,7 +3583,7 @@ dev = [
 plotly = [
     { name = "plotly", version = "5.24.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "plotly", version = "6.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
-    { name = "plotly-resampler", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "plotly-resampler", version = "0.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.13.*'" },
     { name = "plotly-resampler", version = "0.11.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
 ]
 polars = [
@@ -3629,7 +3628,7 @@ all = [
     { name = "numpy" },
     { name = "pandas", extras = ["plot"], specifier = "<3.0.0" },
     { name = "plotly" },
-    { name = "plotly-resampler" },
+    { name = "plotly-resampler", marker = "python_full_version < '3.14'" },
     { name = "polars", extras = ["numpy"] },
     { name = "pre-commit" },
     { name = "prophet" },
@@ -3672,7 +3671,7 @@ dev = [
 ]
 plotly = [
     { name = "plotly" },
-    { name = "plotly-resampler" },
+    { name = "plotly-resampler", marker = "python_full_version < '3.14'" },
 ]
 polars = [{ name = "polars", extras = ["numpy"] }]
 ray = [
@@ -3888,7 +3887,7 @@ name = "tsdownsample"
 version = "0.1.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
+    { name = "numpy", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4b/bf/7590ae93ee6970876a79ab08602e4098a0c00db4b19f813d87935bb16607/tsdownsample-0.1.4.1.tar.gz", hash = "sha256:cc2e2fc0031a5fb75c0f5204b498e86eae0333bcc19da481c0859f1943690f3b", size = 555937, upload-time = "2025-01-29T13:13:25.185Z" }
 wheels = [
@@ -4081,7 +4080,7 @@ name = "werkzeug"
 version = "3.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "markupsafe" },
+    { name = "markupsafe", marker = "python_full_version < '3.14'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5a/70/1469ef1d3542ae7c2c7b72bd5e3a4e6ee69d7978fa8a3af05a38eca5becf/werkzeug-3.1.5.tar.gz", hash = "sha256:6a548b0e88955dd07ccb25539d7d0cc97417ee9e179677d22c7041c8f078ce67", size = 864754, upload-time = "2026-01-08T17:49:23.247Z" }
 wheels = [
