@@ -12,6 +12,7 @@ concurrency:
 
 env:
   NIXTLA_NUMBA_CACHE: "1"
+  MPLBACKEND: Agg
 
 jobs:
   run-tests:
@@ -24,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [39, 310, 311, 312, 313]
+        python-version: [310, 311, 312, 313, 314]
         os-platform:
           [
             [ubuntu-latest, manylinux_x86_64],
@@ -47,9 +48,10 @@ jobs:
           platforms: arm64
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v6.1.0
+        uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Build wheels and run all tests
         if: matrix.os-platform[0] == 'ubuntu-latest'
@@ -106,17 +108,26 @@ jobs:
           submodules: "true"
 
       - name: Set up environment
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Install the library
-        run: pip install uv && uv pip install --system ".[dev]" "datasetsforecast<1"
+        run: uv sync --group dev
+
+      - name: Install additional dependencies
+        run: uv pip install "datasetsforecast<1"
 
       - name: Run M3 experiment
         run: |
-          python -m src.experiment
-          python -m src.evaluation --test
+          uv run python -m src.experiment
+          uv run python -m src.evaluation --test
         working-directory: ./experiments/m3
 
   efficiency-tests:
@@ -126,15 +137,21 @@ jobs:
         with:
           submodules: "true"
 
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Install dependencies
-        run: pip install uv && uv pip install --system . pytest-cov pytest-codspeed pytest-xdist
+        run: uv sync && uv pip install pytest-codspeed pytest-xdist
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # 3.5.0
         with:
           token: ${{ secrets.CODESPEED_TOKEN }}
-          run: pytest action_files/test_efficiency.py --codspeed -n 2 --no-cov
+          run: uv run pytest action_files/test_efficiency.py --codspeed -n 2 --no-cov
