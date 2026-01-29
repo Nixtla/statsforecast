@@ -1019,6 +1019,12 @@ class _StatsForecast:
             DataFrame with simulated paths, including a `sample_id` column.
         """
         self._prepare_fit(df, id_col, time_col, target_col)
+        total_points = len(self.uids) * n_paths * h
+        if total_points > 100_000:
+            warnings.warn(
+                f"Generating {total_points:,} simulation points. "
+                "Large simulations may consume significant memory and time."
+            )
         self._validate_exog(X_df)
         X, _ = self._parse_X_level(h, X_df, None)
 
