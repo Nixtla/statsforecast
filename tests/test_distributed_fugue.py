@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-if sys.platform != "win32":
+if sys.platform != "win32" and sys.version_info < (3, 14):
     import ray
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
@@ -188,7 +188,7 @@ def test_distribute_cv_predictions(df):
 @pytest.fixture(scope="module")
 def ray_session():
     """Initialize Ray once for all tests in this module and shutdown afterwards."""
-    if sys.platform == "win32":
+    if sys.platform == "win32" or sys.version_info >= (3, 14):
         yield None
         return
 
@@ -214,8 +214,8 @@ def ray_session():
 @pytest.fixture
 def ray_df(ray_session):
     """Generate test data as Ray Dataset."""
-    if sys.platform == "win32":
-        pytest.skip("Ray is in beta for Windows.")
+    if sys.platform == "win32" or sys.version_info >= (3, 14):
+        pytest.skip("Ray is not available on Windows or Python 3.14+.")
 
     # Generate Synthetic Panel Data.
     df = generate_series(5).reset_index()
@@ -225,7 +225,8 @@ def ray_df(ray_session):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32", reason="Ray is in beta for Windows."
+    sys.platform == "win32" or sys.version_info >= (3, 14),
+    reason="Ray is not available on Windows or Python 3.14+.",
 )
 def test_ray_cv_predictions(ray_df):
     df = ray_df
@@ -261,7 +262,8 @@ def test_ray_cv_predictions(ray_df):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32", reason="Ray is in beta for Windows."
+    sys.platform == "win32" or sys.version_info >= (3, 14),
+    reason="Ray is not available on Windows or Python 3.14+.",
 )
 def test_ray_cv_fallback_model(ray_df):
     df = ray_df
@@ -278,8 +280,10 @@ def test_ray_cv_fallback_model(ray_df):
     fcst_stats = sf.cross_validation(df=df.to_pandas(), h=12).astype({"unique_id": str})
     pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
 
+
 @pytest.mark.skipif(
-    sys.platform == "win32", reason="Ray is in beta for Windows."
+    sys.platform == "win32" or sys.version_info >= (3, 14),
+    reason="Ray is not available on Windows or Python 3.14+.",
 )
 def test_ray_distributed_exogenous_regressors(df_w_ex):
     df_w_ex, train_df, test_df, xreg = df_w_ex
@@ -288,9 +292,13 @@ def test_ray_distributed_exogenous_regressors(df_w_ex):
     # Distributed exogenous regressors
     sf = StatsForecast(models=[ReturnX()], freq=1)
     res = sf.forecast(df=train_df, X_df=xreg, h=4).compute()
-    expected_res = xreg.compute().rename(columns={"x": "ReturnX"}).sort_values(["unique_id", "ds"])
+    expected_res = (
+        xreg.compute().rename(columns={"x": "ReturnX"}).sort_values(["unique_id", "ds"])
+    )
     # we expect strings for unique_id, and ds using exogenous
     pd.testing.assert_frame_equal(
-        res.sort_values(["unique_id", "ds"]).reset_index(drop=True).astype(expected_res.dtypes),
+        res.sort_values(["unique_id", "ds"])
+        .reset_index(drop=True)
+        .astype(expected_res.dtypes),
         expected_res,
     )
