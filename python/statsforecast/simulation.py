@@ -239,8 +239,8 @@ def sample_errors(
         return stats.t.rvs(df, scale=t_scale, size=size, random_state=rng)
 
     elif distribution == "bootstrap":
-        # Bootstrap requires residuals (already validated above)
-        clean_residuals = residuals[~np.isnan(residuals)]
+        # Bootstrap requires residuals (already validated above at lines 222-226)
+        clean_residuals = residuals[~np.isnan(residuals)]  # type: ignore[index]
         if len(clean_residuals) == 0:
             raise ValueError("No valid residuals available for bootstrap sampling.")
         if isinstance(size, int):
