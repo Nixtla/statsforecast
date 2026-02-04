@@ -154,6 +154,14 @@ Y_df = Y_df.filter(pl.col('unique_id').is_in(uids))
 Y_df = Y_df.group_by('unique_id').tail(7 * 24) #Select last 7 days of data to make example faster
 ```
 
+``` text
+/var/folders/cc/cylsfhls0hb_9wg0wh8tvpyh0000gn/T/ipykernel_32103/3020671980.py:2: DeprecationWarning: `is_in` with a collection of the same datatype is ambiguous and deprecated.
+Please use `implode` to return to previous behavior.
+
+See https://github.com/pola-rs/polars/issues/22149 for more information.
+  Y_df = Y_df.filter(pl.col('unique_id').is_in(uids))
+```
+
 ## Explore Data with the plot method
 
 Plot some series using the `plot` method from the `StatsForecast` class.
@@ -169,6 +177,10 @@ basic EDA.
 from statsforecast import StatsForecast
 ```
 
+``` text
+/Users/nasaul/nixtla/statsforecast/.venv/lib/python3.9/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
+```
 
 ```python
 StatsForecast.plot(Y_df) 
@@ -325,14 +337,14 @@ forecasts_df.head()
 ```
 
 ``` text
-Forecast:   0%|          | 0/10 [Elapsed: 00:00]
+Forecast: 100%|██████████| 10/10 [Elapsed: 00:03]
 ```
 
 | unique_id | ds  | HoltWinters | HoltWinters-lo-90 | HoltWinters-hi-90 | CrostonClassic | CrostonClassic-lo-90 | CrostonClassic-hi-90 | SeasonalNaive | SeasonalNaive-lo-90 | SeasonalNaive-hi-90 | HistoricAverage | HistoricAverage-lo-90 | HistoricAverage-hi-90 | DynamicOptimizedTheta | DynamicOptimizedTheta-lo-90 | DynamicOptimizedTheta-hi-90 |
 |-----------|-----|-------------|-------------------|-------------------|----------------|----------------------|----------------------|---------------|---------------------|---------------------|-----------------|-----------------------|-----------------------|-----------------------|-----------------------------|-----------------------------|
 | str       | i64 | f64         | f64               | f64               | f64            | f64                  | f64                  | f64           | f64                 | f64                 | f64             | f64                   | f64                   | f64                   | f64                         | f64                         |
 | "H1"      | 749 | 829.0       | 422.549268        | 1235.450732       | 829.0          | 422.549268           | 1235.450732          | 635.0         | 566.036734          | 703.963266          | 660.982143      | 398.037761            | 923.926524            | 592.701851            | 577.67728                   | 611.652639                  |
-| "H1"      | 750 | 807.0       | 400.549268        | 1213.450732       | 807.0          | 400.549268           | 1213.450732          | 572.0         | 503.036734          | 640.963266          | 660.982143      | 398.037761            | 923.926524            | 525.589116            | 505.449755                  | 546.621805                  |
+| "H1"      | 750 | 807.0       | 400.549268        | 1213.450732       | 807.0          | 400.549268           | 1213.450732          | 572.0         | 503.036734          | 640.963266          | 660.982143      | 398.037761            | 923.926524            | 525.589117            | 505.449755                  | 546.621805                  |
 | "H1"      | 751 | 785.0       | 378.549268        | 1191.450732       | 785.0          | 378.549268           | 1191.450732          | 532.0         | 463.036734          | 600.963266          | 660.982143      | 398.037761            | 923.926524            | 489.251814            | 462.072871                  | 512.424116                  |
 | "H1"      | 752 | 756.0       | 349.549268        | 1162.450732       | 756.0          | 349.549268           | 1162.450732          | 493.0         | 424.036734          | 561.963266          | 660.982143      | 398.037761            | 923.926524            | 456.195032            | 430.554302                  | 478.260963                  |
 | "H1"      | 753 | 719.0       | 312.549268        | 1125.450732       | 719.0          | 312.549268           | 1125.450732          | 477.0         | 408.036734          | 545.963266          | 660.982143      | 398.037761            | 923.926524            | 436.290514            | 411.051232                  | 461.815932                  |
@@ -421,6 +433,19 @@ cv_df = sf.cross_validation(
 )
 ```
 
+``` text
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  2.02it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  2.02it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  2.26it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  2.76it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  2.25it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  2.78it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  3.20it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  4.14it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  4.11it/s]
+Cross Validation Time Series 1: 100%|██████████| 2/2 [00:00<00:00,  4.75it/s]
+```
+
 The `cv_df` object is a new data frame that includes the following
 columns:
 
@@ -443,11 +468,11 @@ cv_df.head()
 | unique_id | ds  | cutoff | y     | HoltWinters | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta |
 |-----------|-----|--------|-------|-------------|----------------|---------------|-----------------|-----------------------|
 | str       | i64 | i64    | f64   | f64         | f64            | f64           | f64             | f64                   |
-| "H1"      | 701 | 700    | 619.0 | 847.0       | 742.668748     | 691.0         | 661.675         | 612.767504            |
-| "H1"      | 702 | 700    | 565.0 | 820.0       | 742.668748     | 618.0         | 661.675         | 536.846278            |
-| "H1"      | 703 | 700    | 532.0 | 790.0       | 742.668748     | 563.0         | 661.675         | 497.824286            |
-| "H1"      | 704 | 700    | 495.0 | 784.0       | 742.668748     | 529.0         | 661.675         | 464.723219            |
-| "H1"      | 705 | 700    | 481.0 | 752.0       | 742.668748     | 504.0         | 661.675         | 440.972336            |
+| "H1"      | 701 | 700    | 619.0 | 847.0       | 742.668748     | 691.0         | 661.675         | 612.767525            |
+| "H1"      | 702 | 700    | 565.0 | 820.0       | 742.668748     | 618.0         | 661.675         | 536.846296            |
+| "H1"      | 703 | 700    | 532.0 | 790.0       | 742.668748     | 563.0         | 661.675         | 497.824302            |
+| "H1"      | 704 | 700    | 495.0 | 784.0       | 742.668748     | 529.0         | 661.675         | 464.723235            |
+| "H1"      | 705 | 700    | 481.0 | 752.0       | 742.668748     | 504.0         | 661.675         | 440.972351            |
 
 Next, we will evaluate the performance of every model for every series
 using common error metrics like Mean Absolute Error (MAE) or Mean Square
@@ -460,6 +485,7 @@ metric and returns an evaluation data frame with the average of the
 error metric for every unique id and fitted model and all cutoffs.
 
 ```python
+from utilsforecast.evaluation import evaluate
 from utilsforecast.losses import mse
 ```
 
@@ -467,7 +493,8 @@ from utilsforecast.losses import mse
 ```python
 def evaluate_cv(df, metric):
     models = [c for c in df.columns if c not in ('unique_id', 'ds', 'cutoff', 'y')]
-    evals = mse(cv_df, models=models)
+    evals = evaluate(df, metrics=[metric], models=models)
+    evals = evals.drop('metric')
     pos2model = dict(enumerate(models))
     return evals.with_columns(
         best_model=pl.concat_list(models).list.arg_min().replace_strict(pos2model)
@@ -489,14 +516,14 @@ evaluation_df = evaluate_cv(cv_df, mse)
 evaluation_df.head()
 ```
 
-| unique_id | HoltWinters   | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta | best_model              |
-|-----------|---------------|----------------|---------------|-----------------|-----------------------|-------------------------|
-| str       | f64           | f64            | f64           | f64             | f64                   | str                     |
-| "H1"      | 44888.020833  | 28038.733985   | 1422.666667   | 20927.664488    | 1296.333977           | "DynamicOptimizedTheta" |
-| "H10"     | 2812.916667   | 1483.483839    | 96.895833     | 1980.367543     | 379.621134            | "SeasonalNaive"         |
-| "H100"    | 121625.375    | 91945.139237   | 12019.0       | 78491.191439    | 21699.649325          | "SeasonalNaive"         |
-| "H101"    | 28453.395833  | 16183.63434    | 10944.458333  | 18208.4098      | 63698.077266          | "SeasonalNaive"         |
-| "H102"    | 232924.854167 | 132655.309136  | 12699.895833  | 309110.475212   | 31393.535274          | "SeasonalNaive"         |
+| unique_id | cutoff | HoltWinters   | CrostonClassic | SeasonalNaive | HistoricAverage | DynamicOptimizedTheta | best_model       |
+|-----------|--------|---------------|----------------|---------------|-----------------|-----------------------|------------------|
+| str       | i64    | f64           | f64            | f64           | f64             | f64                   | str              |
+| "H1"      | 700    | 38009.958333  | 28751.156365   | 1517.5        | 23823.193125    | 1595.491947           | "SeasonalNaive"  |
+| "H10"     | 700    | 2617.458333   | 1429.094499    | 89.375        | 1833.382222     | 397.616596            | "SeasonalNaive"  |
+| "H100"    | 700    | 104198.5      | 80556.697053   | 8313.25       | 71869.350278    | 28936.963781          | "SeasonalNaive"  |
+| "H101"    | 700    | 19922.958333  | 6907.766752    | 13607.708333  | 9870.140347     | 107823.332195         | "CrostonClassic" |
+| "H102"    | 700    | 264394.791667 | 144611.993865  | 9206.166667   | 350475.255208   | 32221.37975           | "SeasonalNaive"  |
 
 Create a summary table with a model column and the number of series
 where that model performs best. In this case, the Arima and Seasonal
@@ -510,8 +537,9 @@ evaluation_df['best_model'].value_counts()
 | best_model              | count |
 |-------------------------|-------|
 | str                     | u32   |
-| "DynamicOptimizedTheta" | 4     |
-| "SeasonalNaive"         | 6     |
+| "SeasonalNaive"         | 11    |
+| "CrostonClassic"        | 1     |
+| "DynamicOptimizedTheta" | 8     |
 
 You can further explore your results by plotting the unique_ids where a
 specific model wins.
@@ -563,11 +591,11 @@ prod_forecasts_df.head()
 | unique_id | ds  | best_model | best_model-lo-90 | best_model-hi-90 |
 |-----------|-----|------------|------------------|------------------|
 | str       | i64 | f64        | f64              | f64              |
+| "H1"      | 749 | 635.0      | 566.036734       | 703.963266       |
 | "H1"      | 749 | 592.701851 | 577.67728        | 611.652639       |
-| "H1"      | 750 | 525.589116 | 505.449755       | 546.621805       |
-| "H1"      | 751 | 489.251814 | 462.072871       | 512.424116       |
-| "H1"      | 752 | 456.195032 | 430.554302       | 478.260963       |
-| "H1"      | 753 | 436.290514 | 411.051232       | 461.815932       |
+| "H1"      | 750 | 572.0      | 503.036734       | 640.963266       |
+| "H1"      | 750 | 525.589117 | 505.449755       | 546.621805       |
+| "H1"      | 751 | 532.0      | 463.036734       | 600.963266       |
 
 Plot the results.
 

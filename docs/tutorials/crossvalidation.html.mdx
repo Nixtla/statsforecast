@@ -54,7 +54,15 @@ pip install statsforecast
 
 
 ```python
+import os
+os.environ['NIXTLA_ID_AS_COL'] = '1'
+
 from statsforecast import StatsForecast # required to instantiate StatsForecast object and use cross-validation method
+```
+
+``` text
+/Users/nasaul/nixtla/statsforecast/.venv/lib/python3.9/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
+  from .autonotebook import tqdm as notebook_tqdm
 ```
 
 ## Load and explore the data
@@ -226,6 +234,7 @@ accuracy metric. Here we’ll use the [Root Mean Squared Error
 (RMSE).](https://en.wikipedia.org/wiki/Root-mean-square_deviation).
 
 ```python
+from utilsforecast.evaluation import evaluate
 from utilsforecast.losses import rmse
 ```
 
@@ -235,12 +244,12 @@ The function to compute the RMSE takes two arguments:
 2.  The forecasts, in this case, `AutoETS`.
 
 ```python
-cv_rmse = rmse(cv_df, models=['AutoETS'], target_col='actual')['AutoETS'].item()
+cv_rmse = evaluate(cv_df, metrics=[rmse], models=['AutoETS'], target_col='actual', agg_fn='mean')['AutoETS']
 print(f"RMSE using cross-validation: {cv_rmse:.2f}")
 ```
 
 ``` text
-RMSE using cross-validation: 33.90
+RMSE using cross-validation: 32.21
 ```
 
 This measure should better reflect the predictive abilities of our

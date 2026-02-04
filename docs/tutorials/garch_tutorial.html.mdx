@@ -81,6 +81,9 @@ To install it, use `pip install yfinance`.
 We’ll also need `pandas` to deal with the dataframes.
 
 ```python
+import os
+os.environ['NIXTLA_ID_AS_COL'] = '1'
+
 import yfinance as yf
 import pandas as pd
 ```
@@ -344,6 +347,7 @@ error (mae), which is the sum of the absolute errors divided by the
 number of forecasts.
 
 ```python
+from utilsforecast.evaluation import evaluate
 from utilsforecast.losses import mae
 ```
 
@@ -357,7 +361,8 @@ models = cv_df.columns.drop(['unique_id', 'ds', 'cutoff', 'actual'])
 
 
 ```python
-mae_cv = mae(cv_df, models=models, target_col='actual').set_index('unique_id')
+mae_cv = evaluate(cv_df, metrics=[mae], models=models, target_col='actual')
+mae_cv = mae_cv.drop(columns=['metric']).set_index('unique_id')
 mae_cv
 ```
 
