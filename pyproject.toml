@@ -93,7 +93,7 @@ all = [
     "fire",
     "nbformat",
     "nbdev_plotly",
-    "pandas[plot]",
+    "pandas[plot]<3.0.0",
     "polars[numpy]",
     "pre-commit",
     "prophet",
