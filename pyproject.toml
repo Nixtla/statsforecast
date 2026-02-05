@@ -25,7 +25,8 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
     "cloudpickle",
-    "coreforecast @ git+https://github.com/Nixtla/coreforecast.git@v0.0.17",
+    "coreforecast @ git+https://github.com/Nixtla/coreforecast.git@v0.0.17; python_version >= '3.14'",
+    "coreforecast>=0.0.12 ; python_version < '3.14'", 
     "numba>=0.63.0 ; sys_platform != 'win32' or python_version < '3.10' or python_version >= '3.12'",
     "numba>=0.58.0,<0.60.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
     "llvmlite>=0.41.0,<0.43.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
@@ -102,7 +103,7 @@ all = [
     "pytest",
     "pytest-cov",
     "scikit-learn",
-    "setuptools<70",
+    "setuptools>=45",
     "supersmoother",
     "yfinance",
     "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
