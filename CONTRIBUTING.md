@@ -25,6 +25,8 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
 
 - **GitHub**: You should already have a GitHub account and a basic understanding of its functionalities. Alternatively check [this guide](https://docs.github.com/en/get-started).
 - **uv**: You need to have `uv` installed. You can refer to the [docs](https://docs.astral.sh/uv/getting-started/installation/) in order to install it.
+- **C++ compiler** (required for building): Install `build-essential` on Ubuntu/Debian: `sudo apt install build-essential`
+- **Git submodules**: The project uses Eigen as a submodule. If you cloned without `--recursive`, run: `git submodule update --init`
 
 ## Git `fork-and-pull` worklow
 
@@ -79,6 +81,20 @@ By using the `-e` flag the package is linked directly to the source code, allowi
 ### Re-compiling the shared library
 
 If you're working on the C++ code, you'll need to re-compile the shared library, which can be done with: `python setup.py build_ext --inplace` (this will compile it into the `build` directory and copy it to the python package location).
+
+### Python 3.14 installation troubleshooting
+
+If you encounter build failures when installing with Python 3.14:
+
+1. **CXX environment variable**: If `CXX` is set to something like `c++ -pthread`, CMake may fail. Unset it before installing:
+   ```sh
+   unset CXX
+   ```
+
+2. **Correct install command**: Use the project path with extras (not `-r setup.py`):
+   ```sh
+   uv pip install -e ".[dev]"
+   ```
 
 ## Set Up your Notebook based development environment
 
