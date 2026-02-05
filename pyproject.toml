@@ -20,12 +20,13 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 requires-python = ">=3.9"
 dependencies = [
     "cloudpickle",
     "coreforecast>=0.0.12",
-    "numba>=0.55.0 ; sys_platform != 'win32' or python_version < '3.10' or python_version >= '3.12'",
+    "numba>=0.63.0 ; sys_platform != 'win32' or python_version < '3.10' or python_version >= '3.12'",
     "numba>=0.58.0,<0.60.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
     "llvmlite>=0.41.0,<0.43.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
     "numpy>=1.21.6",
