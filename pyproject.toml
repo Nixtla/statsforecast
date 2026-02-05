@@ -25,7 +25,7 @@ classifiers = [
 requires-python = ">=3.9"
 dependencies = [
     "cloudpickle",
-    "coreforecast>=0.0.12",
+    "coreforecast @ git+https://github.com/Nixtla/coreforecast.git@v0.0.17",
     "numba>=0.63.0 ; sys_platform != 'win32' or python_version < '3.10' or python_version >= '3.12'",
     "numba>=0.58.0,<0.60.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
     "llvmlite>=0.41.0,<0.43.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
@@ -57,7 +57,7 @@ dev = [
     "polars[numpy]",
     "pre-commit",
     "prophet",
-    "pyarrow<21.0.0",
+    "pyarrow<21.0.0 ; python_version < '3.14'",
     "pybind11",
     "pytest",
     "scikit-learn",
@@ -97,7 +97,7 @@ all = [
     "polars[numpy]",
     "pre-commit",
     "prophet",
-    "pyarrow<21.0.0",
+    "pyarrow<21.0.0 ; python_version < '3.14'",
     "pybind11",
     "pytest",
     "pytest-cov",
