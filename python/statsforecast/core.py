@@ -590,9 +590,13 @@ class _StatsForecast:
         self.verbose = verbose
 
     def _validate_model_names(self):
-        # Some test models don't have alias
-        names = [getattr(model, "alias", lambda: None) for model in self.models]
-        names = [x for x in names if x is not None]
+
+        names = []
+        for model in self.models:
+            name = getattr(model, "alias", None)
+            if name is None:
+                name = repr(model)
+            names.append(name)
         if len(names) != len(set(names)):
             raise ValueError(
                 "Model names must be unique. You can use `alias` to set a unique name for each model."
