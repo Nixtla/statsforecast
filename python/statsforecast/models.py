@@ -2246,12 +2246,16 @@ class SimpleExponentialSmoothing(_TS):
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
     Suitable for data with no clear trend or seasonality.
-    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
+    Assuming there are $t$ observations, the one-step forecast is given by:
+
+    ``` math
+    \hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}
+    ```
 
     The rate $0 \leq \alpha \leq 1$ at which the weights decrease is called the smoothing parameter. When $\alpha = 1$, SES is equal to the naive method.
 
     References:
-        - [Charles C Holt (1957). “Forecasting seasonals and trends by exponentially weighted moving averages”](https://doi.org/10.1016/j.ijforecast).
+        - [Charles C Holt (1957). "Forecasting seasonals and trends by exponentially weighted moving averages"](https://doi.org/10.1016/j.ijforecast).
 
     Args:
         alpha (float): Smoothing parameter.
@@ -2447,7 +2451,11 @@ class SimpleExponentialSmoothingOptimized(_TS):
 
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
     Suitable for data with no clear trend or seasonality.
-    Assuming there are $t$ observations, the one-step forecast is given by: $\hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}$
+    Assuming there are $t$ observations, the one-step forecast is given by:
+
+    ``` math
+    \hat{y}_{t+1} = \alpha y_t + (1-\alpha) \hat{y}_{t-1}
+    ```
 
     The smoothing parameter $\alpha^*$ is optimized by square error minimization.
 
@@ -2658,7 +2666,10 @@ class SeasonalExponentialSmoothing(_TS):
     Uses a weighted average of all past observations where the weights decrease exponentially into the past.
     Suitable for data with no clear trend or seasonality.
     Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
-    $\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
+
+    ``` math
+    \hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}
+    ```
 
     Notes:
         This method is an extremely simplified of Holt-Winter's method where the trend and level are set to zero.
@@ -2895,7 +2906,10 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         Uses a weighted average of all past observations where the weights decrease exponentially into the past.
         Suitable for data with no clear trend or seasonality.
         Assuming there are $t$ observations and season $s$, the one-step forecast is given by:
-        $\hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}$
+
+        ``` math
+        \hat{y}_{t+1,s} = \alpha y_t + (1-\alpha) \hat{y}_{t-1,s}
+        ```
 
         The smoothing parameter $\alpha^*$ is optimized by square error minimization.
 
