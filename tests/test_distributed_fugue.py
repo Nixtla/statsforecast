@@ -1,11 +1,16 @@
 import sys
 
+import pytest
+
+pytest.importorskip("dask")
+pytest.importorskip("fugue_dask")
+
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
-import pytest
 
 if sys.platform != "win32":
+    pytest.importorskip("ray")
     import ray
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine

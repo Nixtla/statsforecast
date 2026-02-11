@@ -2,6 +2,8 @@ import warnings
 
 import pandas as pd
 import pytest
+
+pytest.importorskip("prophet")
 from statsforecast.adapters.prophet import Prophet
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
