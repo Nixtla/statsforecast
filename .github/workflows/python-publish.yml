@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [39, 310, 311, 312, 313, 314]
+        python-version: [310, 311, 312, 313, 314]
         os-platform:
           [
             [ubuntu-latest, manylinux_x86_64],
