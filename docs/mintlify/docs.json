@@ -38,7 +38,8 @@
           "docs/tutorials/mlflow.html",
           "docs/tutorials/multipleseasonalities.html",
           "docs/tutorials/statisticalneuralmethods.html",
-          "docs/tutorials/uncertaintyintervals.html"
+          "docs/tutorials/uncertaintyintervals.html",
+          "docs/tutorials/simulation.html"
         ]
       },
       {
