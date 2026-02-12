@@ -85,6 +85,7 @@ from .mfles import MFLES as _MFLES
 from .mstl import mstl
 from .tbats import _compute_sigmah, tbats_forecast, tbats_selection
 from .theta import auto_theta, forecast_theta, forward_theta
+from .ucm import UCM, LocalLevel, LocalLinearTrend, SmoothTrend
 
 
 def _add_fitted_pi(res, se, level):
