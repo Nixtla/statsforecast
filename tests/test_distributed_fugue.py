@@ -9,9 +9,7 @@ import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 
-if sys.platform != "win32":
-    pytest.importorskip("ray")
-    import ray
+# Ray import deferred so Dask-only tests run when Ray is not installed (e.g. Python 3.14)
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
 from pyspark.sql import SparkSession
@@ -197,6 +195,9 @@ def ray_session():
         yield None
         return
 
+    pytest.importorskip("ray")
+    import ray
+
     # Initialize Ray with runtime environment to exclude large files
     if not ray.is_initialized():
         ray.init(
@@ -221,11 +222,13 @@ def ray_df(ray_session):
     """Generate test data as Ray Dataset."""
     if sys.platform == "win32":
         pytest.skip("Ray is in beta for Windows.")
+    if ray_session is None:
+        pytest.skip("Ray not available (e.g. Python 3.14).")
 
     # Generate Synthetic Panel Data.
     df = generate_series(5).reset_index()
     df["unique_id"] = df["unique_id"].astype(str)
-    df = ray.data.from_pandas(df).repartition(2)
+    df = ray_session.data.from_pandas(df).repartition(2)
     return df
 
 
