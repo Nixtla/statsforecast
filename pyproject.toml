@@ -68,7 +68,11 @@ dev = [
     "supersmoother",
     "yfinance",
 ]
-dask = ["dask<=2024.12.1", "fugue[dask]>=0.8.1"]
+dask = [
+    "dask<=2024.12.1 ; python_version < '3.14'",
+    "dask>=2026.1.1 ; python_version >= '3.14'",
+    "fugue[dask]>=0.8.1",
+]
 ray = ["fugue[ray]>=0.9.4", "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'"]
 spark = ["fugue[spark]>=0.8.1", "pyspark<4.1.0 ; sys_platform == 'win32'"]
 plotly = ["plotly", "plotly-resampler"]
@@ -80,7 +84,8 @@ docs = [
 ]
 all = [
     "dask<=2024.12.1 ; python_version < '3.14'",
-    "fugue[dask]>=0.9.6 ; python_version < '3.14'",
+    "dask>=2026.1.1 ; python_version >= '3.14'",
+    "fugue[dask]>=0.9.6",
     "fugue[ray]>=0.9.6 ; sys_platform != 'win32' and python_version < '3.14'",
     "fugue[spark]>=0.9.4",
     "pyspark<4.1.0 ; sys_platform == 'win32'",
