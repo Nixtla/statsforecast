@@ -1,7 +1,7 @@
 ---
 description: Generate features for downstream models
 output-file: feature_engineering.html
-title: Feature engineering
+title: Feature engineering | StatsForecast
 ---
 
 ::: statsforecast.feature_engineering.mstl_decomposition
