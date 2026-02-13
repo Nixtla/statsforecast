@@ -958,8 +958,8 @@ wheels = [
 
 [[package]]
 name = "datasetsforecast"
-version = "1.0.1.dev0"
-source = { git = "https://github.com/Nixtla/datasetsforecast.git?rev=05ef80d0ae50413ffdd070f5783896337a57f303#05ef80d0ae50413ffdd070f5783896337a57f303" }
+version = "1.0.2"
+source = { git = "https://github.com/Nixtla/datasetsforecast.git?rev=v1.0.2#ab0420562328937d1c5071e5c2c563cfe78a8b02" }
 dependencies = [
     { name = "aiohttp" },
     { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and sys_platform != 'win32') or (python_full_version < '3.12' and sys_platform == 'win32')" },
@@ -4028,8 +4028,8 @@ requires-dist = [
     { name = "dask", marker = "python_full_version >= '3.14' and extra == 'dask'", specifier = ">=2026.1.1" },
     { name = "dask", marker = "python_full_version < '3.14' and extra == 'all'", specifier = "<=2024.12.1" },
     { name = "dask", marker = "python_full_version < '3.14' and extra == 'dask'", specifier = "<=2024.12.1" },
-    { name = "datasetsforecast", marker = "extra == 'all'", git = "https://github.com/Nixtla/datasetsforecast.git?rev=05ef80d0ae50413ffdd070f5783896337a57f303" },
-    { name = "datasetsforecast", marker = "extra == 'dev'", git = "https://github.com/Nixtla/datasetsforecast.git?rev=05ef80d0ae50413ffdd070f5783896337a57f303" },
+    { name = "datasetsforecast", marker = "extra == 'all'", git = "https://github.com/Nixtla/datasetsforecast.git?rev=v1.0.2" },
+    { name = "datasetsforecast", marker = "extra == 'dev'", git = "https://github.com/Nixtla/datasetsforecast.git?rev=v1.0.2" },
     { name = "fastcore", marker = "extra == 'all'", specifier = "<=1.7.29" },
     { name = "fastcore", marker = "extra == 'dev'", specifier = "<=1.7.29" },
     { name = "fire", marker = "extra == 'all'" },
