@@ -135,6 +135,27 @@ To reproduce the main results you have to:
 3. Run the experiments using `python -m src.experiment --group [group]` where `[group]` can be `Other`, `Monthly`, `Quarterly`, and `Yearly`.
 4. Finally, you can evaluate the forecasts using `python -m src.evaluation`.
 
+### Local testing (CI-style, before opening a PR)
+
+From the **repository root** (not inside `experiments/m3`):
+
+1. Install the package with dev dependencies (includes `fire`, `datasetsforecast` for M3 data, etc.):
+   ```bash
+   pip install uv && uv pip install -e ".[dev]"
+   ```
+   Or with pip only: `pip install -e ".[dev]"`
+
+2. Run the M3 experiment and the evaluation test (same as CI job `test-m3-performance`):
+   ```bash
+   cd experiments/m3
+   python -m src.experiment
+   python -m src.evaluation --test
+   ```
+   - `src.experiment` uses defaults `--dataset M3 --group Other`: it downloads M3 “Other” data, runs the statistical ensemble, and writes forecast/time CSVs under `data/`.
+   - `src.evaluation --test` evaluates only the “Other” group and checks SMAPE and runtime against expected values; it exits with code 0 if the test passes.
+
+If both commands finish without errors, the M3 performance test will pass in CI.
+
 ## References
 
 - [Hyndman, Rob J. & Khandakar, Yeasmin (2008). "Automatic Time Series Forecasting: The forecast package for R"](https://www.jstatsoft.org/article/view/v027i03)

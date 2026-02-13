@@ -2,9 +2,19 @@ from itertools import product
 
 import fire
 import pandas as pd
-from datasetsforecast.losses import mape, smape
+from statsforecast.mfles import calc_mape, calc_smape
 
 from src.data import get_data
+
+
+def mape(y_test, y_hat):
+    """MAPE metric for (y_true, y_pred) arrays, in percentage scale (0-100)."""
+    return float(calc_mape(y_test, y_hat) * 100)
+
+
+def smape(y_test, y_hat):
+    """SMAPE metric for (y_true, y_pred) arrays, in percentage scale (0-100)."""
+    return float(calc_smape(y_test, y_hat) * 100)
 
 
 def evaluate(lib: str, model: str, dataset: str, group: str):

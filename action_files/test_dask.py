@@ -1,5 +1,9 @@
-import dask.dataframe as dd
 import pytest
+
+try:
+    import dask.dataframe as dd
+except ImportError:
+    pytest.skip("Dask is not installed", allow_module_level=True)
 
 from .utils import pipeline, pipeline_with_level, pipeline_fitted
 

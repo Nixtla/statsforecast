@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [39, 310, 311, 312, 313]
+        python-version: [310, 311, 312, 313, 314]
         os-platform:
           [
             [ubuntu-latest, manylinux_x86_64],
@@ -53,7 +53,7 @@ jobs:
 
       - name: Build wheels and run all tests
         if: matrix.os-platform[0] == 'ubuntu-latest'
-        uses: pypa/cibuildwheel@5f22145df44122af0f5a201f93cf0207171beca7 # v3.0.0
+        uses: pypa/cibuildwheel@v3.3.1 # v3.3.1
         env:
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
@@ -111,7 +111,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install the library
-        run: pip install uv && uv pip install --system ".[dev]" "datasetsforecast<1"
+        run: pip install uv && uv pip install --system ".[dev]"
 
       - name: Run M3 experiment
         run: |
