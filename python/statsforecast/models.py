@@ -1655,6 +1655,32 @@ class AutoMFLES(_TS):
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        r"""Apply fitted AutoMFLES to a new time series.
+
+        Args:
+            y (numpy.array): Clean time series of shape (n, ).
+            h (int): Forecast horizon.
+            X (array-like, optional): Optional insample exogenous of shape (t, n_x).
+            X_future (array-like, optional): Optional exogenous of shape (h, n_x).
+            level (List[float], optional): Confidence levels (0-100) for prediction intervals.
+            fitted (bool, default=False): Whether or not to return insample predictions.
+
+        Returns:
+            dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        return self.forecast(y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted)
+
 
 class AutoTBATS(_TS):
     r"""AutoTBATS model.
@@ -1833,6 +1859,32 @@ class AutoTBATS(_TS):
         else:
             res_trans = res
         return res_trans
+
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        r"""Apply fitted AutoTBATS to a new time series.
+
+        Args:
+            y (numpy.array): Clean time series of shape (n, ).
+            h (int): Forecast horizon.
+            X (array-like, optional): Optional insample exogenous of shape (t, n_x).
+            X_future (array-like, optional): Optional exogenous of shape (h, n_x).
+            level (List[float], optional): Confidence levels (0-100) for prediction intervals.
+            fitted (bool, default=False): Whether or not to return insample predictions.
+
+        Returns:
+            dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
+        """
+        if not hasattr(self, "model_"):
+            raise Exception("You have to use the `fit` method first")
+        return self.forecast(y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted)
 
 
 class ARIMA(_TS):
