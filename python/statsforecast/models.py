@@ -1552,7 +1552,12 @@ class AutoMFLES(_TS):
             seasonal_period=seasonal_period,
             **optim_params,
         )
-        return {"model": model, "fitted": fitted}
+        return {
+            "model": model,
+            "fitted": fitted,
+            "optim_params": optim_params,
+            "seasonal_period": seasonal_period,
+        }
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> "AutoMFLES":
         r"""Fit the model
@@ -1666,6 +1671,9 @@ class AutoMFLES(_TS):
     ):
         r"""Apply fitted AutoMFLES to a new time series.
 
+        Re-fits the model on new data using the hyperparameters found during
+        the original ``fit`` (skipping optimization), then produces forecasts.
+
         Args:
             y (numpy.array): Clean time series of shape (n, ).
             h (int): Forecast horizon.
@@ -1679,7 +1687,30 @@ class AutoMFLES(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
-        return self.forecast(y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted)
+        y = _ensure_float(y)
+        model = _MFLES(verbose=self.verbose)
+        fitted_vals = model.fit(
+            y=y,
+            X=X,
+            seasonal_period=self.model_["seasonal_period"],
+            **self.model_["optim_params"],
+        )
+        res = {"mean": model.predict(forecast_horizon=h, X=X_future)}
+        if fitted:
+            res["fitted"] = fitted_vals
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception(
+                    "You must pass `prediction_intervals` to compute them."
+                )
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, y.size)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
+        return res
 
 
 class AutoTBATS(_TS):
@@ -1871,6 +1902,10 @@ class AutoTBATS(_TS):
     ):
         r"""Apply fitted AutoTBATS to a new time series.
 
+        Re-fits the model on new data using the structural choices
+        (Box-Cox, trend, damping, ARMA errors) found during the original
+        ``fit`` (skipping model selection), then produces forecasts.
+
         Args:
             y (numpy.array): Clean time series of shape (n, ).
             h (int): Forecast horizon.
@@ -1884,7 +1919,38 @@ class AutoTBATS(_TS):
         """
         if not hasattr(self, "model_"):
             raise Exception("You have to use the `fit` method first")
-        return self.forecast(y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted)
+        y = _ensure_float(y)
+        desc = self.model_["description"]
+        mod = tbats_selection(
+            y=y,
+            seasonal_periods=self.season_length,
+            use_boxcox=desc["use_boxcox"],
+            bc_lower_bound=self.bc_lower_bound,
+            bc_upper_bound=self.bc_upper_bound,
+            use_trend=desc["use_trend"],
+            use_damped_trend=desc["use_damped_trend"],
+            use_arma_errors=desc["use_arma_errors"],
+        )
+        fcst = tbats_forecast(mod, h)
+        res = {"mean": fcst["mean"]}
+        if fitted:
+            res["fitted"] = mod["fitted"].ravel()
+        if level is not None:
+            level = sorted(level)
+            sigmah = _compute_sigmah(mod, h)
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
+            if fitted:
+                se = _calculate_sigma(mod["errors"], mod["errors"].shape[1])
+                fitted_pred_int = _add_fitted_pi(res, se, level)
+                res = {**res, **fitted_pred_int}
+        if mod["BoxCox_lambda"] is not None:
+            res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
+            for k, v in res_trans.items():
+                res_trans[k] = np.where(np.isnan(v), res[k], v)
+        else:
+            res_trans = res
+        return res_trans
 
 
 class ARIMA(_TS):
