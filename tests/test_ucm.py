@@ -7,7 +7,7 @@ import pytest
 
 def test_ucm_import():
     """Test that UCM classes can be imported."""
-    from statsforecast.ucm import UCM, LocalLevel, LocalLinearTrend, SmoothTrend
+    from statsforecast.models import UCM, LocalLevel, LocalLinearTrend, SmoothTrend
     assert UCM is not None
     assert LocalLevel is not None
     assert LocalLinearTrend is not None
@@ -16,7 +16,7 @@ def test_ucm_import():
 
 def test_ucm_basic_fit_predict():
     """Test basic fit and predict workflow."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     np.random.seed(42)
     y = np.cumsum(np.random.randn(100)) + 50
@@ -33,7 +33,7 @@ def test_ucm_basic_fit_predict():
 
 def test_ucm_with_seasonal():
     """Test UCM with seasonal component."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     np.random.seed(42)
     n = 120
@@ -51,7 +51,7 @@ def test_ucm_with_seasonal():
 
 def test_ucm_prediction_intervals():
     """Test prediction intervals."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     np.random.seed(42)
     y = np.cumsum(np.random.randn(100)) + 50
@@ -73,7 +73,7 @@ def test_ucm_prediction_intervals():
 
 def test_ucm_forecast_method():
     """Test the forecast() method (fit + predict in one call)."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     np.random.seed(42)
     y = np.cumsum(np.random.randn(100)) + 50
@@ -91,7 +91,7 @@ def test_ucm_forecast_method():
 
 def test_ucm_predict_in_sample():
     """Test in-sample predictions."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     np.random.seed(42)
     y = np.cumsum(np.random.randn(100)) + 50
@@ -109,7 +109,7 @@ def test_ucm_predict_in_sample():
 
 def test_ucm_get_components():
     """Test component extraction."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     np.random.seed(42)
     n = 120
@@ -129,7 +129,7 @@ def test_ucm_get_components():
 
 def test_ucm_with_exogenous():
     """Test UCM with exogenous variables."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     np.random.seed(42)
     n = 100
@@ -147,7 +147,7 @@ def test_ucm_with_exogenous():
 
 def test_local_level():
     """Test LocalLevel convenience class."""
-    from statsforecast.ucm import LocalLevel
+    from statsforecast.models import LocalLevel
 
     np.random.seed(42)
     y = np.cumsum(np.random.randn(100)) + 50
@@ -163,7 +163,7 @@ def test_local_level():
 
 def test_local_linear_trend():
     """Test LocalLinearTrend convenience class."""
-    from statsforecast.ucm import LocalLinearTrend
+    from statsforecast.models import LocalLinearTrend
 
     np.random.seed(42)
     n = 100
@@ -180,7 +180,7 @@ def test_local_linear_trend():
 
 def test_smooth_trend():
     """Test SmoothTrend convenience class."""
-    from statsforecast.ucm import SmoothTrend
+    from statsforecast.models import SmoothTrend
 
     np.random.seed(42)
     y = np.cumsum(np.random.randn(100)) + 50
@@ -193,7 +193,7 @@ def test_smooth_trend():
 
 def test_ucm_alias():
     """Test custom alias."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     model = UCM(level='local level', alias='MyCustomModel')
     assert str(model) == 'MyCustomModel'
@@ -202,7 +202,7 @@ def test_ucm_alias():
 
 def test_ucm_new():
     """Test the new() method for copying."""
-    from statsforecast.ucm import UCM
+    from statsforecast.models import UCM
 
     model1 = UCM(level='local level', seasonal=12)
     model2 = model1.new()
@@ -218,7 +218,7 @@ def test_statsforecast_integration():
 
     import pandas as pd
     from statsforecast import StatsForecast
-    from statsforecast.ucm import LocalLevel, LocalLinearTrend
+    from statsforecast.models import LocalLevel, LocalLinearTrend
 
     np.random.seed(42)
     n = 60
