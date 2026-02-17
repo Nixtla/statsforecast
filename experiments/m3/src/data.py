@@ -7,6 +7,12 @@ _original_read_excel = pd.read_excel
 def patched_read_excel(io, *args, **kwargs):
     if isinstance(io, str) and io.endswith(".xls") and "engine" not in kwargs:
         kwargs["engine"] = "xlrd"
+        try:
+            return _original_read_excel(io, *args, **kwargs)
+        except Exception:
+            # Fallback: file may be an HTML table saved with .xls extension
+            dfs = pd.read_html(io)
+            return dfs[0]
     return _original_read_excel(io, *args, **kwargs)
 
 pd.read_excel = patched_read_excel
