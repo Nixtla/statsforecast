@@ -2,124 +2,96 @@ __all__ = ['garch_model', 'garch_forecast']
 
 
 import numpy as np
-from numba import njit
 from scipy.optimize import minimize
 
-from .utils import CACHE, NOGIL
+from ._lib import garch as _garch
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def generate_garch_data(n, w, alpha, beta):
-    np.random.seed(1)
-
-    y = np.zeros(n)
-    sigma2 = np.zeros(n)
-
+    alpha = np.asarray(alpha)
+    beta = np.asarray(beta)
     p = len(alpha)
     q = len(beta)
 
-    w_vals = w < 0
-    alpha_vals = np.any(alpha < 0)
-    beta_vals = np.any(beta < 0)
-
-    if np.any(np.array([w_vals, alpha_vals, beta_vals])):
+    if w < 0 or any(alpha < 0) or any(beta < 0):
         raise ValueError("Coefficients must be nonnegative")
-
-    if np.sum(alpha) + np.sum(beta) >= 1:
+    if sum(alpha) + sum(beta) >= 1:
         raise ValueError(
-            "Sum of coefficients of lagged versions of the series and lagged versions of volatility must be less than 1"
+            "Sum of coefficients of lagged versions of the series and lagged "
+            "versions of volatility must be less than 1"
         )
 
-    # initialization
+    y = np.zeros(n)
+    sigma2 = np.zeros(n)
+    np.random.seed(1)
+
     if q != 0:
-        sigma2[0:q] = 1
+        sigma2[:q] = 1.0
+    y[:p] = np.random.randn(p)
 
-    for k in range(p):
-        y[k] = np.random.normal(loc=0, scale=1)
+    alpha_rev = alpha[::-1]
+    beta_rev = beta[::-1]
 
-    for k in range(max(p, q), n):
-        psum = np.flip(alpha) * (y[k - p : k] ** 2)
-        psum = np.nansum(psum)
+    start = max(p, q)
+    for k in range(start, n):
+        psum = np.sum(alpha_rev * y[k - p:k] ** 2)
+        result = w + psum
         if q != 0:
-            qsum = np.flip(beta) * (sigma2[k - q : k])
-            qsum = np.nansum(qsum)
-            sigma2[k] = w + psum + qsum
-        else:
-            sigma2[k] = w + psum
-        y[k] = np.random.normal(loc=0, scale=np.sqrt(sigma2[k]))
-
+            qsum = np.sum(beta_rev * sigma2[k - q:k])
+            result += qsum
+        sigma2[k] = result
+        y[k] = np.random.randn() * np.sqrt(sigma2[k])
     return y
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def garch_sigma2(x0, x, p, q):
-    w = x0[0]
-    alpha = x0[1 : (p + 1)]
-    beta = x0[(p + 1) :]
-
-    sigma2 = np.full((len(x),), np.nan)
-    sigma2[0] = np.var(x)  # sigma2 can be initialized with the unconditional variance
-
-    for k in range(max(p, q), len(x)):
-        psum = np.flip(alpha) * (x[k - p : k] ** 2)
-        psum = np.nansum(psum)
-        if q != 0:
-            qsum = np.flip(beta) * (sigma2[k - q : k])
-            qsum = np.nansum(qsum)
-            sigma2[k] = w + psum + qsum
-        else:
-            sigma2[k] = w + psum
-
-    return sigma2
+    return _garch.compute_sigma2(np.asarray(x0, dtype=np.float64),
+                                 np.asarray(x, dtype=np.float64), p, q)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
-def garch_cons(x0):
-    # Constraints for GARCH model
-    # alpha+beta < 1
-    return 1 - (x0[1:].sum())
-
-
-@njit(nogil=NOGIL, cache=CACHE)
 def garch_loglik(x0, x, p, q):
-    sigma2 = garch_sigma2(x0, x, p, q)
-    z = x - np.nanmean(x)
-    loglik = 0
+    return _garch.loglik(np.asarray(x0, dtype=np.float64),
+                         np.asarray(x, dtype=np.float64), p, q)
 
-    for k in range(max(p, q), len(z)):
-        if sigma2[k] == 0:
-            sigma2[k] = 1e-10
-        loglik = loglik - 0.5 * (
-            np.log(2 * np.pi) + np.log(sigma2[k]) + (z[k] ** 2) / sigma2[k]
-        )
 
-    return -loglik
+def garch_cons(x0):
+    return _garch.constraint_value(np.asarray(x0, dtype=np.float64))
 
 
 def garch_model(x, p, q):
-    np.random.seed(1)
-    x0 = np.repeat(0.1, p + q + 1)
-    bnds = ((0, None),) * len(x0)
-    cons = {"type": "ineq", "fun": garch_cons}
-    opt = minimize(
-        garch_loglik, x0, args=(x, p, q), method="SLSQP", bounds=bnds, constraints=cons
+    x = np.asarray(x, dtype=np.float64)
+    n_params = p + q + 1
+    x0 = np.full(n_params, 0.1)
+    bounds = [(1e-8, None)] * n_params
+    constraints = {"type": "ineq", "fun": garch_cons}
+
+    def obj(params):
+        return _garch.loglik(params, x, p, q)
+
+    result = minimize(
+        obj,
+        x0,
+        method="SLSQP",
+        bounds=bounds,
+        constraints=constraints,
     )
 
-    coeff = opt.x
+    coeff = result.x
     sigma2 = garch_sigma2(coeff, x, p, q)
-    fitted = np.full((len(x),), np.nan)
 
+    np.random.seed(1)
+    fitted = np.full(len(x), np.nan)
     for k in range(p, len(x)):
-        error = np.random.normal(loc=0, scale=1)
+        error = np.random.randn()
         fitted[k] = error * np.sqrt(sigma2[k])
 
     res = {
         "p": p,
         "q": q,
         "coeff": coeff,
-        "message": opt.message,
+        "message": result.message,
         "y_vals": x[-p:],
-        "sigma2_vals": sigma2[-q:],
+        "sigma2_vals": sigma2[-q:] if q > 0 else np.array([]),
         "fitted": fitted,
     }
 
@@ -127,37 +99,14 @@ def garch_model(x, p, q):
 
 
 def garch_forecast(mod, h):
-    np.random.seed(1)
-
+    coeff = mod["coeff"]
     p = mod["p"]
     q = mod["q"]
+    y_vals = np.asarray(mod["y_vals"], dtype=np.float64)
+    sigma2_vals = np.asarray(mod["sigma2_vals"], dtype=np.float64) if q > 0 else np.array([], dtype=np.float64)
 
-    w = mod["coeff"][0]
-    alpha = mod["coeff"][1 : (p + 1)]
-    beta = mod["coeff"][(p + 1) :]
+    mean_vals, sigma2_out = _garch.forecast(coeff, p, q, h, y_vals, sigma2_vals)
 
-    y_vals = np.full((h + p,), np.nan)
-    sigma2_vals = np.full((h + q,), np.nan)
-
-    y_vals[0:p] = mod["y_vals"]
-
-    if q != 0:
-        sigma2_vals[0:q] = mod["sigma2_vals"]
-
-    for k in range(0, h):
-        error = np.random.normal(loc=0, scale=1)
-        psum = np.flip(alpha) * (y_vals[k : p + k] ** 2)
-        psum = np.nansum(psum)
-        if q != 0:
-            qsum = np.flip(beta) * (sigma2_vals[k : q + k])
-            qsum = np.nansum(qsum)
-            sigma2hat = w + psum + qsum
-        else:
-            sigma2hat = w + psum
-        yhat = error * np.sqrt(sigma2hat)
-        y_vals[p + k] = yhat
-        sigma2_vals[q + k] = sigma2hat
-
-    res = {"mean": y_vals[-h:], "sigma2": sigma2_vals[-h:], "fitted": mod["fitted"]}
+    res = {"mean": mean_vals, "sigma2": sigma2_out, "fitted": mod["fitted"]}
 
     return res

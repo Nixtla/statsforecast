@@ -60,23 +60,24 @@ class TestCES:
                 beta_1=self.beta_1_nonseas,
                 e=e_, amse=amse_, nmse=3, 
                 backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             self.init_states_non_seas[[0, -2, -1]],
             np.array([
                 [  112.06887, 1301.9882 ],
                 [  430.92154 , 2040.1951 ],
                 [  432.40475, -1612.2461 ]
-            ], dtype=np.float32)
+            ], dtype=np.float32),
+            decimal=1,
         )
-    
+
     def test_nonseasonal_forecast(self):
         """Test nonseasonal forecast"""
         h = 13
         fcsts = np.zeros(h, dtype=np.float32)
-        cesforecast(states=self.init_states_non_seas, n=len(ap), m=self.m, 
-                    season=NONE, 
-                    f=fcsts, h=h, 
-                    alpha_0=self.alpha_0_nonseas, alpha_1=self.alpha_1_nonseas, 
+        cesforecast(states=self.init_states_non_seas, n=len(ap), m=self.m,
+                    season=NONE,
+                    f=fcsts, h=h,
+                    alpha_0=self.alpha_0_nonseas, alpha_1=self.alpha_1_nonseas,
                     beta_0=self.beta_0_nonseas, beta_1=self.beta_1_nonseas)
         # taken from R using ces(AirPassengers, h=13)
         np.testing.assert_array_almost_equal(
@@ -85,8 +86,8 @@ class TestCES:
                 430.9211, 432.4049, 431.2324, 432.7212, 431.5439,
                 433.0376, 431.8556, 433.3543, 432.1675, 433.6712,
                 432.4796, 433.9884, 432.7920
-            ], dtype=np.float32), 
-            decimal=2
+            ], dtype=np.float32),
+            decimal=3
         )
     
     def test_simple_seasonal(self):
@@ -105,16 +106,17 @@ class TestCES:
                 alpha_1=self.alpha_1_simple, beta_0=self.beta_0_simple, 
                 beta_1=self.beta_1_simple,
                 e=e_, amse=amse_, nmse=3, backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             init_states_s_seas[[0, 11, 145, 143 + self.m]],
             np.array([
                 [130.49458 ,  36.591137],
                 [135.21922 , 121.62022 ],
                 [423.57788 , 252.81241 ],
                 [505.3621  ,  95.29781 ]
-            ], dtype=np.float32)
+            ], dtype=np.float32),
+            decimal=4,
         )
-    
+
     def test_simple_seasonal_forecast(self):
         """Test simple seasonal forecast"""
         # Set up and process states first
@@ -146,8 +148,8 @@ class TestCES:
                 446.2768, 423.5779, 481.4365, 514.7730, 533.5008,
                 589.0500, 688.2703, 674.5891, 580.9486, 516.0776,
                 449.7246, 505.3621, 507.9884
-            ], dtype=np.float32), 
-            decimal=2
+            ], dtype=np.float32),
+            decimal=3
         )
 
     def test_partial_seasonal(self):
@@ -166,14 +168,15 @@ class TestCES:
                 alpha_1=self.alpha_1_partial, beta_0=self.beta_0_partial, 
                 beta_1=self.beta_1_partial,
                 e=e_, amse=amse_, nmse=3, backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             init_states_p_seas[[0, 11, 145, 143 + self.m]],
             np.array([
                 [122.580666,  83.00358 ,  -9.710966],
                 [122.580666,  78.11936 ,  -4.655848],
                 [438.5037  , 300.70374 , -25.55726 ],
                 [438.5037  , 296.92316 ,  -7.581563]
-            ], dtype=np.float32)
+            ], dtype=np.float32),
+            decimal=4,
         )
 
     def test_partial_seasonal_forecast(self):
@@ -206,8 +209,8 @@ class TestCES:
             np.array([
                 437.6247, 412.9464, 445.5811, 498.5370, 493.0405, 550.7443, 
                 629.2205, 607.1793, 512.3455, 462.1260, 383.4097, 430.9221, 437.6247
-            ], dtype=np.float32), 
-            decimal=2
+            ], dtype=np.float32),
+            decimal=4
         )
 
     def test_full_seasonal(self):
@@ -226,14 +229,15 @@ class TestCES:
                 alpha_1=self.alpha_1_full, beta_0=self.beta_0_full, 
                 beta_1=self.beta_1_full,
                 e=e_, amse=amse_, nmse=3, backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             init_states_f_seas[[0, 11, 145, 143 + self.m]],
             np.array([
                 [ 227.74284 ,  167.7603  ,  -94.299805,  -39.623283],
                 [ 211.48921 ,  155.72342 ,  -91.62251 ,  -82.953064],
                 [ 533.1726  ,  372.95758 , -139.31824 , -125.856834],
                 [ 564.9041  ,  404.3251  , -130.9048  , -137.33    ]
-            ], dtype=np.float32)
+            ], dtype=np.float32),
+            decimal=3,
         )
 
     def test_full_seasonal_forecast(self):

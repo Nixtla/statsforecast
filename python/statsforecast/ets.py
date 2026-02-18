@@ -241,7 +241,7 @@ def fourier(x, period, K, h=None):
     if h is not None:
         times = np.arange(len(x) + 1, len(x) + h + 1)
     # compute periods of all fourier terms
-    # numba doesnt support list comprehension
+    # compute periods of all fourier terms
     len_p = sum(K)
     p = np.full(len_p, fill_value=np.nan)
     idx = 0
@@ -702,7 +702,6 @@ def ets_f(
 ):
     y = y.astype(np.float64, copy=False)
     # converting params to floats
-    # to improve numba compilation
     if alpha is None:
         alpha = np.nan
     if beta is None:
