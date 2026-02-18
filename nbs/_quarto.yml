@@ -1,5 +1,7 @@
+# Use default project type; mintlify-md format comes from _extensions/mintlify.
+# (type: mintlify is only recognized by Quarto 1.4.x; 1.8+ fails with "Unsupported project type mintlify".)
 project:
-  type: mintlify
+  type: default
 
 format:
   mintlify-md:
