@@ -1,5 +1,20 @@
 import fire
+import pandas as pd
 from datasetsforecast.m3 import M3, M3Info
+
+# Newer pandas requires engine='xlrd' for .xls files
+_orig_read_excel = pd.read_excel
+
+
+def _read_excel_with_engine(*args, **kwargs):
+    if "engine" not in kwargs:
+        io = args[0] if args else kwargs.get("io", "")
+        if isinstance(io, str) and io.endswith(".xls"):
+            kwargs["engine"] = "xlrd"
+    return _orig_read_excel(*args, **kwargs)
+
+
+pd.read_excel = _read_excel_with_engine
 
 dict_datasets = {
     'M3': (M3, M3Info),
