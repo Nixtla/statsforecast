@@ -27,9 +27,14 @@ double ses_sse(double alpha, const Eigen::Ref<const VectorXd> &x) {
 
 std::tuple<double, VectorXd> ses_forecast(const Eigen::Ref<const VectorXd> &x,
                                           double alpha) {
-  if (x.size() < 2) {
+  if (x.size() < 1) {
     throw std::invalid_argument(
-        "ses_forecast requires at least 2 data points");
+        "ses_forecast requires at least 1 data point");
+  }
+  if (x.size() == 1) {
+    VectorXd fitted(1);
+    fitted[0] = std::numeric_limits<double>::quiet_NaN();
+    return {x[0], fitted};
   }
   double complement = 1.0 - alpha;
   VectorXd fitted(x.size());

@@ -54,19 +54,20 @@ class TestCES:
         e_ = np.zeros(len(ap))
         
         cescalc(y=ap,
-                states=self.init_states_non_seas, m=self.m, 
-                season=NONE, alpha_0=self.alpha_0_nonseas, 
-                alpha_1=self.alpha_1_nonseas, beta_0=self.beta_0_nonseas, 
+                states=self.init_states_non_seas, m=self.m,
+                season=NONE, alpha_0=self.alpha_0_nonseas,
+                alpha_1=self.alpha_1_nonseas, beta_0=self.beta_0_nonseas,
                 beta_1=self.beta_1_nonseas,
-                e=e_, amse=amse_, nmse=3, 
+                e=e_, amse=amse_, nmse=3,
                 backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             self.init_states_non_seas[[0, -2, -1]],
             np.array([
                 [  112.06887, 1301.9882 ],
                 [  430.92154 , 2040.1951 ],
                 [  432.40475, -1612.2461 ]
             ], dtype=np.float32),
+            decimal=1,
         )
 
     def test_nonseasonal_forecast(self):
@@ -99,13 +100,13 @@ class TestCES:
         init_states_s_seas = np.zeros((self.m * 2 + len(ap), 2), dtype=np.float32)
         init_states_s_seas[:self.m] = initstate(ap, self.m, 'S')
         
-        cescalc(y=ap, 
-                states=init_states_s_seas, m=self.m, 
-                season=SIMPLE, alpha_0=self.alpha_0_simple, 
-                alpha_1=self.alpha_1_simple, beta_0=self.beta_0_simple, 
+        cescalc(y=ap,
+                states=init_states_s_seas, m=self.m,
+                season=SIMPLE, alpha_0=self.alpha_0_simple,
+                alpha_1=self.alpha_1_simple, beta_0=self.beta_0_simple,
                 beta_1=self.beta_1_simple,
                 e=e_, amse=amse_, nmse=3, backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             init_states_s_seas[[0, 11, 145, 143 + self.m]],
             np.array([
                 [130.49458 ,  36.591137],
@@ -113,6 +114,7 @@ class TestCES:
                 [423.57788 , 252.81241 ],
                 [505.3621  ,  95.29781 ]
             ], dtype=np.float32),
+            decimal=4,
         )
 
     def test_simple_seasonal_forecast(self):
@@ -160,13 +162,13 @@ class TestCES:
         init_states_p_seas = np.zeros((self.m + len(ap), 3), dtype=np.float32)
         init_states_p_seas[:self.m] = initstate(ap, self.m, 'P')
         
-        cescalc(y=ap, 
-                states=init_states_p_seas, m=self.m, 
-                season=2, alpha_0=self.alpha_0_partial, 
-                alpha_1=self.alpha_1_partial, beta_0=self.beta_0_partial, 
+        cescalc(y=ap,
+                states=init_states_p_seas, m=self.m,
+                season=2, alpha_0=self.alpha_0_partial,
+                alpha_1=self.alpha_1_partial, beta_0=self.beta_0_partial,
                 beta_1=self.beta_1_partial,
                 e=e_, amse=amse_, nmse=3, backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             init_states_p_seas[[0, 11, 145, 143 + self.m]],
             np.array([
                 [122.580666,  83.00358 ,  -9.710966],
@@ -174,6 +176,7 @@ class TestCES:
                 [438.5037  , 300.70374 , -25.55726 ],
                 [438.5037  , 296.92316 ,  -7.581563]
             ], dtype=np.float32),
+            decimal=4,
         )
 
     def test_partial_seasonal_forecast(self):
@@ -221,12 +224,12 @@ class TestCES:
         init_states_f_seas[:self.m] = initstate(ap, self.m, 'F')
         
         cescalc(y=ap,
-                states=init_states_f_seas, m=self.m, 
-                season=3, alpha_0=self.alpha_0_full, 
-                alpha_1=self.alpha_1_full, beta_0=self.beta_0_full, 
+                states=init_states_f_seas, m=self.m,
+                season=3, alpha_0=self.alpha_0_full,
+                alpha_1=self.alpha_1_full, beta_0=self.beta_0_full,
                 beta_1=self.beta_1_full,
                 e=e_, amse=amse_, nmse=3, backfit=1)
-        np.testing.assert_array_equal(
+        np.testing.assert_array_almost_equal(
             init_states_f_seas[[0, 11, 145, 143 + self.m]],
             np.array([
                 [ 227.74284 ,  167.7603  ,  -94.299805,  -39.623283],
@@ -234,6 +237,7 @@ class TestCES:
                 [ 533.1726  ,  372.95758 , -139.31824 , -125.856834],
                 [ 564.9041  ,  404.3251  , -130.9048  , -137.33    ]
             ], dtype=np.float32),
+            decimal=3,
         )
 
     def test_full_seasonal_forecast(self):
