@@ -47,7 +47,6 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 from numba import njit
-from scipy.optimize import minimize_scalar
 from scipy.special import inv_boxcox
 
 from statsforecast.arima import (
@@ -2210,11 +2209,7 @@ def _optimized_ses_forecast(
     Returns:
         tuple of (float, numpy.array): One-step ahead forecast and in-sample fitted values.
     """
-    alpha = minimize_scalar(
-        fun=_ses_sse,
-        bounds=bounds,
-        args=(x,),
-    ).x
+    alpha = _golden_section_ses(x, bounds[0], bounds[1])
     forecast, fitted = _ses_forecast(x, alpha)
     return forecast, fitted, alpha
 
@@ -2226,6 +2221,116 @@ def _chunk_sums(array: np.ndarray, chunk_size: int) -> np.ndarray:
     n_chunks = array.size // chunk_size
     n_elems = n_chunks * chunk_size
     return array[:n_elems].reshape(n_chunks, chunk_size).sum(axis=1)
+
+
+@njit(nogil=NOGIL, cache=CACHE)
+def _golden_section_ses(x: np.ndarray, lower: float = 0.1, upper: float = 0.3) -> float:
+    r"""Find the optimal SES alpha in [lower, upper] using golden section search."""
+    gr = (np.sqrt(5.0) + 1.0) / 2.0
+    a, b = lower, upper
+    c = b - (b - a) / gr
+    d = a + (b - a) / gr
+    fc = _ses_sse(c, x)
+    fd = _ses_sse(d, x)
+    for _ in range(80):
+        if abs(b - a) < 1e-12:
+            break
+        if fc < fd:
+            b = d
+            d = c
+            fd = fc
+            c = b - (b - a) / gr
+            fc = _ses_sse(c, x)
+        elif fd < fc:
+            a = c
+            c = d
+            fc = fd
+            d = a + (b - a) / gr
+            fd = _ses_sse(d, x)
+        else:
+            # flat objective: any alpha is optimal, return midpoint
+            break
+    return (b + a) / 2.0
+
+
+@njit(nogil=NOGIL, cache=CACHE)
+def _chunk_forecast_nb(y: np.ndarray, aggregation_level: int) -> float:
+    r"""Numba-compiled version of _chunk_forecast."""
+    n = len(y)
+    lost = n % aggregation_level
+    n_cut = n - lost
+    if n_cut < aggregation_level:
+        return y[n - 1]
+    n_chunks = n_cut // aggregation_level
+    agg_sums = np.empty(n_chunks, dtype=y.dtype)
+    for i in range(n_chunks):
+        s = 0.0
+        base = lost + i * aggregation_level
+        for j in range(aggregation_level):
+            s += y[base + j]
+        agg_sums[i] = s
+    if n_chunks <= 1:
+        return agg_sums[0]
+    alpha = _golden_section_ses(agg_sums)
+    forecast, _ = _ses_forecast(agg_sums, alpha)
+    return forecast
+
+
+@njit(nogil=NOGIL, cache=CACHE)
+def _adida_fitted_vals(
+    y: np.ndarray, fitted_aggregation_levels: np.ndarray
+) -> np.ndarray:
+    r"""Compute ADIDA fitted values with Numba."""
+    n = y.size - 1
+    sums_fitted = np.empty(n, dtype=y.dtype)
+    for i in range(n):
+        agg_lvl = fitted_aggregation_levels[i]
+        sums_fitted[i] = _chunk_forecast_nb(y[: i + 1], agg_lvl)
+    return sums_fitted
+
+
+@njit(nogil=NOGIL, cache=CACHE)
+def _imapa_fitted_vals(y: np.ndarray) -> np.ndarray:
+    r"""Compute IMAPA fitted values with Numba."""
+    n = y.size
+    fitted_vals = np.empty(n, dtype=y.dtype)
+    fitted_vals[0] = np.nan
+    for i in range(1, n):
+        prefix = y[:i]
+        # count non-zero elements and compute intervals
+        nonzero_count = 0
+        for j in range(i):
+            if prefix[j] != 0.0:
+                nonzero_count += 1
+        if nonzero_count == 0:
+            fitted_vals[i] = 0.0
+            continue
+        # compute mean interval
+        intervals_sum = 0.0
+        idx = 0
+        prev = 0
+        for j in range(i):
+            if prefix[j] != 0.0:
+                intervals_sum += (j + 1) - prev
+                prev = j + 1
+                idx += 1
+        mean_interval = intervals_sum / nonzero_count
+        max_agg = max(1, int(np.round(mean_interval)))
+        max_agg = min(max_agg, i)
+        # compute IMAPA forecast: average over aggregation levels
+        forecast_sum = 0.0
+        count = 0
+        for agg_level in range(1, max_agg + 1):
+            if agg_level > i:
+                continue
+            fcst = _chunk_forecast_nb(prefix, agg_level)
+            forecast_sum += fcst / agg_level
+            count += 1
+        if count > 0:
+            fitted_vals[i] = forecast_sum / count
+        else:
+            fitted_vals[i] = 0.0
+    return fitted_vals
 
 
 def _ses(
@@ -4490,7 +4595,6 @@ def _adida(
     forecast = sums_forecast / aggregation_level
     res = {"mean": _repeat_val(val=forecast, h=h)}
     if fitted:
-        warnings.warn("Computing fitted values for ADIDA is very expensive")
         fitted_aggregation_levels = np.round(
             y_intervals.cumsum() / np.arange(1, y_intervals.size + 1)
         )
@@ -4498,9 +4602,7 @@ def _adida(
             np.append(np.nan, fitted_aggregation_levels), y
         )[1:].astype(np.int32)
 
-        sums_fitted = np.empty(y.size - 1, dtype=y.dtype)
-        for i, agg_lvl in enumerate(fitted_aggregation_levels):
-            sums_fitted[i] = _chunk_forecast(y[: i + 1], agg_lvl)
+        sums_fitted = _adida_fitted_vals(y, fitted_aggregation_levels)
 
         res["fitted"] = np.append(np.nan, sums_fitted / fitted_aggregation_levels)
     return res
@@ -5176,12 +5278,7 @@ def _imapa(
     forecast = forecasts.mean()
     res = {"mean": _repeat_val(val=forecast, h=h)}
     if fitted:
-        warnings.warn("Computing fitted values for IMAPA is very expensive.")
-        fitted_vals = np.empty_like(y)
-        fitted_vals[0] = np.nan
-        for i in range(y.size - 1):
-            fitted_vals[i + 1] = _imapa(y[: i + 1], h=1, fitted=False)["mean"].item()
-        res["fitted"] = fitted_vals
+        res["fitted"] = _imapa_fitted_vals(y)
     return res
 
 

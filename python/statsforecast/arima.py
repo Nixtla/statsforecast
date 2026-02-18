@@ -147,13 +147,9 @@ def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
 
 def diff(x, lag, differences):
     x = np.asarray(x, dtype=np.float64)
-    y = x.copy()
     for _ in range(differences):
-        x = y.copy()
-        y[:lag] = np.nan
-        y[lag:] = x[lag:] - x[:-lag]
-    nans = lag * differences
-    return y[nans:]
+        x = x[lag:] - x[:-lag]
+    return x
 
 
 def fixed_params_from_dict(
@@ -244,7 +240,6 @@ def arima(
         )
 
     def armafn(p, x, trans):
-        x = x.copy()
         par = coef.copy()
         par[mask] = p
         trarma = arima_transpar(par, arma, trans)
@@ -252,7 +247,7 @@ def arima(
         if Z is None:
             return np.finfo(np.float64).max
         if ncxreg > 0:
-            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+            x = x - np.dot(xreg, par[xreg_idx])
         res = arima_like(
             x,
             Z["phi"],
@@ -457,14 +452,15 @@ def arima(
     else:
         init = init0
 
+    xreg_idx = narma + np.arange(ncxreg) if ncxreg > 0 else None
+
     def arma_css_op(p, x):
-        x = x.copy()
         par = coef.copy()
         par[mask] = p
         phi, theta = arima_transpar(par, arma, False)
 
         if ncxreg > 0:
-            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+            x = x - np.dot(xreg, par[xreg_idx])
 
         res, _ = arima_css(x, arma, phi, theta)
         if math.isinf(res):
