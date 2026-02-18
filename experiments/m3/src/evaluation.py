@@ -13,7 +13,7 @@ _METRIC_SCALE = {'mape': 100, 'smape': 200}
 
 def evaluate(lib: str, model: str, dataset: str, group: str):
     y_test, horizon, freq, seasonality = get_data('data/', dataset, group, False)
-    forecast = pd.read_csv(f'data/{lib}-forecasts-{dataset}-{group}.csv')
+    forecast = pd.read_csv(f'data/{lib}-forecasts-{dataset}-{group}.csv', parse_dates=['ds'])
     df = y_test.merge(forecast[['unique_id', 'ds', model]], on=['unique_id', 'ds'])
 
     result = uf_evaluate(df, metrics=[mape, smape], models=[model], agg_fn='mean')

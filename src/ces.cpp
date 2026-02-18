@@ -36,41 +36,42 @@ int switch_ces(const std::string &x) {
 void cesupdate(Eigen::Ref<RowMajorMatrixXf> states, Eigen::Index i, int m,
                int season, double alpha_0, double alpha_1, double beta_0,
                double beta_1, float y) {
-  float e;
+  // Compute intermediate values in double to match Numba's float64 promotion.
+  // Only narrow to float on the final store into the float32 states matrix.
+  double e;
   if (season == NONE || season == PARTIAL || season == FULL) {
-    e = y - states(i - 1, 0);
+    e = static_cast<double>(y) - static_cast<double>(states(i - 1, 0));
   } else {
-    e = y - states(i - m, 0);
+    e = static_cast<double>(y) - static_cast<double>(states(i - m, 0));
   }
   if (season > SIMPLE) {
-    e -= states(i - m, 2);
+    e -= static_cast<double>(states(i - m, 2));
   }
 
-  auto a0 = static_cast<float>(alpha_0);
-  auto a1 = static_cast<float>(alpha_1);
-  auto b0 = static_cast<float>(beta_0);
-  auto b1 = static_cast<float>(beta_1);
-
   if (season == NONE || season == PARTIAL || season == FULL) {
-    states(i, 0) = states(i - 1, 0) - (1.0f - a1) * states(i - 1, 1) +
-                   (a0 - a1) * e;
-    states(i, 1) = states(i - 1, 0) + (1.0f - a0) * states(i - 1, 1) +
-                   (a0 + a1) * e;
+    double s0 = states(i - 1, 0), s1 = states(i - 1, 1);
+    states(i, 0) = static_cast<float>(s0 - (1.0 - alpha_1) * s1 +
+                                       (alpha_0 - alpha_1) * e);
+    states(i, 1) = static_cast<float>(s0 + (1.0 - alpha_0) * s1 +
+                                       (alpha_0 + alpha_1) * e);
   } else {
-    states(i, 0) = states(i - m, 0) - (1.0f - a1) * states(i - m, 1) +
-                   (a0 - a1) * e;
-    states(i, 1) = states(i - m, 0) + (1.0f - a0) * states(i - m, 1) +
-                   (a0 + a1) * e;
+    double s0 = states(i - m, 0), s1 = states(i - m, 1);
+    states(i, 0) = static_cast<float>(s0 - (1.0 - alpha_1) * s1 +
+                                       (alpha_0 - alpha_1) * e);
+    states(i, 1) = static_cast<float>(s0 + (1.0 - alpha_0) * s1 +
+                                       (alpha_0 + alpha_1) * e);
   }
 
   if (season == PARTIAL) {
-    states(i, 2) = states(i - m, 2) + b0 * e;
+    states(i, 2) = static_cast<float>(
+        static_cast<double>(states(i - m, 2)) + beta_0 * e);
   }
   if (season == FULL) {
-    states(i, 2) = states(i - m, 2) - (1.0f - b1) * states(i - m, 3) +
-                   (b0 - b1) * e;
-    states(i, 3) = states(i - m, 2) + (1.0f - b0) * states(i - m, 3) +
-                   (b0 + b1) * e;
+    double s2 = states(i - m, 2), s3 = states(i - m, 3);
+    states(i, 2) = static_cast<float>(s2 - (1.0 - beta_1) * s3 +
+                                       (beta_0 - beta_1) * e);
+    states(i, 3) = static_cast<float>(s2 + (1.0 - beta_0) * s3 +
+                                       (beta_0 + beta_1) * e);
   }
 }
 
@@ -127,10 +128,10 @@ static void reverse_rows_inplace(Eigen::Ref<RowMajorMatrixXf> mat) {
 // Requires nmse <= m_eff for seasonal types (always true in practice).
 static void inline_forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
                             Eigen::Index i, int m_eff, int season,
-                            Eigen::Ref<VectorXd> f, int nmse, float a0,
-                            float a1) {
-  float ca1 = 1.0f - a1; // complement of alpha_1
-  float ca0 = 1.0f - a0; // complement of alpha_0
+                            Eigen::Ref<VectorXd> f, int nmse, double a0,
+                            double a1) {
+  double ca1 = 1.0 - a1; // complement of alpha_1
+  double ca0 = 1.0 - a0; // complement of alpha_0
 
   if (season == SIMPLE) {
     // Each step reads directly from original states (no recurrence needed)
@@ -138,12 +139,12 @@ static void inline_forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
       f[j] = states(i - m_eff + j, 0);
     }
   } else if (season == NONE) {
-    // 2-component scalar recurrence
-    float s0 = states(i - 1, 0), s1 = states(i - 1, 1);
+    // 2-component scalar recurrence in double precision
+    double s0 = states(i - 1, 0), s1 = states(i - 1, 1);
     f[0] = s0;
     for (int j = 1; j < nmse; ++j) {
-      float s0_new = s0 - ca1 * s1;
-      float s1_new = s0 + ca0 * s1;
+      double s0_new = s0 - ca1 * s1;
+      double s1_new = s0 + ca0 * s1;
       s0 = s0_new;
       s1 = s1_new;
       f[j] = s0;
@@ -152,11 +153,11 @@ static void inline_forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
     // PARTIAL or FULL: level follows NONE recurrence, seasonal read from
     // original states (valid when nmse <= m_eff, which is always true since
     // nmse <= 30 and m_eff >= 12 for seasonal models)
-    float s0 = states(i - 1, 0), s1 = states(i - 1, 1);
+    double s0 = states(i - 1, 0), s1 = states(i - 1, 1);
     f[0] = s0 + states(i - m_eff, 2);
     for (int j = 1; j < nmse; ++j) {
-      float s0_new = s0 - ca1 * s1;
-      float s1_new = s0 + ca0 * s1;
+      double s0_new = s0 - ca1 * s1;
+      double s1_new = s0 + ca0 * s1;
       s0 = s0_new;
       s1 = s1_new;
       f[j] = s0 + states(i - m_eff + j, 2);
@@ -174,8 +175,6 @@ static double cescalc_pass(const VectorXd &y_mut,
                            VectorXd &denom, int nmse, VectorXd &f) {
   Eigen::Index n = y_mut.size();
   double lik = 0.0;
-  auto a0 = static_cast<float>(alpha_0);
-  auto a1 = static_cast<float>(alpha_1);
 
   // inline_forecast is only valid for seasonal types when nmse <= m_eff.
   // Pre-allocate a fallback buffer for the rare case where nmse > m_eff.
@@ -189,7 +188,7 @@ static double cescalc_pass(const VectorXd &y_mut,
     // Multi-step forecast via zero-error scalar recurrence (fast path)
     // or buffer-based forecast (fallback for nmse > m_eff with seasonal)
     if (use_inline) {
-      inline_forecast(states, i, m_eff, season, f, nmse, a0, a1);
+      inline_forecast(states, i, m_eff, season, f, nmse, alpha_0, alpha_1);
     } else {
       cesfcst_buf(fcst_fallback, states, i, m_eff, season, f, nmse, alpha_0,
                    alpha_1, beta_0, beta_1);

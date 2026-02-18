@@ -60,14 +60,13 @@ class TestCES:
                 beta_1=self.beta_1_nonseas,
                 e=e_, amse=amse_, nmse=3,
                 backfit=1)
-        np.testing.assert_array_almost_equal(
+        np.testing.assert_array_equal(
             self.init_states_non_seas[[0, -2, -1]],
             np.array([
                 [  112.06887, 1301.9882 ],
                 [  430.92154 , 2040.1951 ],
                 [  432.40475, -1612.2461 ]
             ], dtype=np.float32),
-            decimal=1,
         )
 
     def test_nonseasonal_forecast(self):
@@ -106,7 +105,7 @@ class TestCES:
                 alpha_1=self.alpha_1_simple, beta_0=self.beta_0_simple,
                 beta_1=self.beta_1_simple,
                 e=e_, amse=amse_, nmse=3, backfit=1)
-        np.testing.assert_array_almost_equal(
+        np.testing.assert_array_equal(
             init_states_s_seas[[0, 11, 145, 143 + self.m]],
             np.array([
                 [130.49458 ,  36.591137],
@@ -114,7 +113,6 @@ class TestCES:
                 [423.57788 , 252.81241 ],
                 [505.3621  ,  95.29781 ]
             ], dtype=np.float32),
-            decimal=4,
         )
 
     def test_simple_seasonal_forecast(self):
