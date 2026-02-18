@@ -120,6 +120,50 @@ static void reverse_rows_inplace(Eigen::Ref<RowMajorMatrixXf> mat) {
   }
 }
 
+// Inline multi-step forecast using scalar state variables.
+// During forecasting the "observation" equals the forecast value, so the
+// error inside cesupdate is identically zero.  This reduces state propagation
+// to a pure linear recurrence that needs no matrix buffer.
+// Requires nmse <= m_eff for seasonal types (always true in practice).
+static void inline_forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
+                            Eigen::Index i, int m_eff, int season,
+                            Eigen::Ref<VectorXd> f, int nmse, float a0,
+                            float a1) {
+  float ca1 = 1.0f - a1; // complement of alpha_1
+  float ca0 = 1.0f - a0; // complement of alpha_0
+
+  if (season == SIMPLE) {
+    // Each step reads directly from original states (no recurrence needed)
+    for (int j = 0; j < nmse; ++j) {
+      f[j] = states(i - m_eff + j, 0);
+    }
+  } else if (season == NONE) {
+    // 2-component scalar recurrence
+    float s0 = states(i - 1, 0), s1 = states(i - 1, 1);
+    f[0] = s0;
+    for (int j = 1; j < nmse; ++j) {
+      float s0_new = s0 - ca1 * s1;
+      float s1_new = s0 + ca0 * s1;
+      s0 = s0_new;
+      s1 = s1_new;
+      f[j] = s0;
+    }
+  } else {
+    // PARTIAL or FULL: level follows NONE recurrence, seasonal read from
+    // original states (valid when nmse <= m_eff, which is always true since
+    // nmse <= 30 and m_eff >= 12 for seasonal models)
+    float s0 = states(i - 1, 0), s1 = states(i - 1, 1);
+    f[0] = s0 + states(i - m_eff, 2);
+    for (int j = 1; j < nmse; ++j) {
+      float s0_new = s0 - ca1 * s1;
+      float s1_new = s0 + ca0 * s1;
+      s0 = s0_new;
+      s1 = s1_new;
+      f[j] = s0 + states(i - m_eff + j, 2);
+    }
+  }
+}
+
 // Core inner loop used by cescalc for one pass (forward or backward).
 // Updates states, e, amse, denom in place. Returns accumulated lik.
 static double cescalc_pass(const VectorXd &y_mut,
@@ -127,15 +171,15 @@ static double cescalc_pass(const VectorXd &y_mut,
                            int season, double alpha_0, double alpha_1,
                            double beta_0, double beta_1,
                            Eigen::Ref<VectorXd> e, Eigen::Ref<VectorXd> amse,
-                           VectorXd &denom, int nmse, VectorXd &f,
-                           RowMajorMatrixXf &fcst_buf) {
+                           VectorXd &denom, int nmse, VectorXd &f) {
   Eigen::Index n = y_mut.size();
   double lik = 0.0;
+  auto a0 = static_cast<float>(alpha_0);
+  auto a1 = static_cast<float>(alpha_1);
 
   for (Eigen::Index i = m_eff; i < n + m_eff; ++i) {
-    // One step forecast using pre-allocated buffer
-    cesfcst_buf(fcst_buf, states, i, m_eff, season, f, nmse, alpha_0, alpha_1,
-                beta_0, beta_1);
+    // Multi-step forecast via zero-error scalar recurrence
+    inline_forecast(states, i, m_eff, season, f, nmse, a0, a1);
     if (std::fabs(f[0] - NA) < TOL) {
       return NA;
     }
@@ -147,7 +191,7 @@ static double cescalc_pass(const VectorXd &y_mut,
         amse[j] = (amse[j] * (denom[j] - 1.0) + tmp * tmp) / denom[j];
       }
     }
-    // Update state
+    // Update state with actual observation
     cesupdate(states, i, m_eff, season, alpha_0, alpha_1, beta_0, beta_1,
               static_cast<float>(y_mut[i - m_eff]));
     lik += e[i - m_eff] * e[i - m_eff];
@@ -181,13 +225,12 @@ double cescalc(const Eigen::Ref<const VectorXd> &y,
   // Create mutable copy of y for potential reversal
   VectorXd y_mut = y;
 
-  // Pre-allocate forecast buffer (reused across all iterations and passes)
-  RowMajorMatrixXf fcst_buf =
-      RowMajorMatrixXf::Zero(m_eff + std::max(nmse, m_eff), cols);
+  // Buffer only needed for update_trailing_states (not the inner loop)
+  RowMajorMatrixXf fcst_buf = RowMajorMatrixXf::Zero(2 * m_eff, cols);
 
   // First forward pass
   double lik = cescalc_pass(y_mut, states, m_eff, season, alpha_0, alpha_1,
-                            beta_0, beta_1, e, amse, denom, nmse, f, fcst_buf);
+                            beta_0, beta_1, e, amse, denom, nmse, f);
   if (std::fabs(lik - NA) < TOL) {
     return NA;
   }
@@ -205,7 +248,7 @@ double cescalc(const Eigen::Ref<const VectorXd> &y,
   e.reverseInPlace();
 
   lik = cescalc_pass(y_mut, states, m_eff, season, alpha_0, alpha_1, beta_0,
-                     beta_1, e, amse, denom, nmse, f, fcst_buf);
+                     beta_1, e, amse, denom, nmse, f);
   if (std::fabs(lik - NA) < TOL) {
     return NA;
   }
@@ -218,7 +261,7 @@ double cescalc(const Eigen::Ref<const VectorXd> &y,
   e.reverseInPlace();
 
   lik = cescalc_pass(y_mut, states, m_eff, season, alpha_0, alpha_1, beta_0,
-                     beta_1, e, amse, denom, nmse, f, fcst_buf);
+                     beta_1, e, amse, denom, nmse, f);
   if (std::fabs(lik - NA) < TOL) {
     return NA;
   }
