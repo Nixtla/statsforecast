@@ -1,14 +1,11 @@
 __all__ = ["auto_ces", "simulate_ces"]
 
 
-from collections import namedtuple
-
 import numpy as np
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 from ._lib import ces as _ces
-
-results = namedtuple("results", "x fn nit simplex")
+from .utils import results
 
 # Global variables
 NONE = 0

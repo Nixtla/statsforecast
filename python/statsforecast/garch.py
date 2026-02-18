@@ -99,14 +99,37 @@ def garch_model(x, p, q):
 
 
 def garch_forecast(mod, h):
-    coeff = mod["coeff"]
+    np.random.seed(1)
+
     p = mod["p"]
     q = mod["q"]
-    y_vals = np.asarray(mod["y_vals"], dtype=np.float64)
-    sigma2_vals = np.asarray(mod["sigma2_vals"], dtype=np.float64) if q > 0 else np.array([], dtype=np.float64)
 
-    mean_vals, sigma2_out = _garch.forecast(coeff, p, q, h, y_vals, sigma2_vals)
+    w = mod["coeff"][0]
+    alpha = mod["coeff"][1 : (p + 1)]
+    beta = mod["coeff"][(p + 1):]
 
-    res = {"mean": mean_vals, "sigma2": sigma2_out, "fitted": mod["fitted"]}
+    y_vals = np.full((h + p,), np.nan)
+    sigma2_vals = np.full((h + q,), np.nan)
+
+    y_vals[0:p] = mod["y_vals"]
+
+    if q != 0:
+        sigma2_vals[0:q] = mod["sigma2_vals"]
+
+    for k in range(0, h):
+        error = np.random.normal(loc=0, scale=1)
+        psum = np.flip(alpha) * (y_vals[k : p + k] ** 2)
+        psum = np.nansum(psum)
+        if q != 0:
+            qsum = np.flip(beta) * (sigma2_vals[k : q + k])
+            qsum = np.nansum(qsum)
+            sigma2hat = w + psum + qsum
+        else:
+            sigma2hat = w + psum
+        yhat = error * np.sqrt(sigma2hat)
+        y_vals[p + k] = yhat
+        sigma2_vals[q + k] = sigma2hat
+
+    res = {"mean": y_vals[-h:], "sigma2": sigma2_vals[-h:], "fitted": mod["fitted"]}
 
     return res

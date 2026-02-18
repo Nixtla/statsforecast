@@ -1,4 +1,5 @@
 #include <cmath>
+#include <stdexcept>
 #include <tuple>
 
 #include <Eigen/Dense>
@@ -6,6 +7,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+// Named tbats_ns (not tbats) to avoid collision with the pybind11 submodule name
 namespace tbats_ns {
 namespace py = pybind11;
 using Eigen::VectorXd;

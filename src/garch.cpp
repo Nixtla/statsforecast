@@ -1,12 +1,10 @@
 #include <cmath>
-#include <random>
+#include <stdexcept>
 #include <tuple>
 
 #include <Eigen/Dense>
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
-
-#include "nelder_mead.h"
 
 namespace garch {
 namespace py = pybind11;
@@ -79,159 +77,11 @@ double constraint_value(const VectorXd &x0) {
   return 1.0 - x0.tail(x0.size() - 1).sum();
 }
 
-// Penalized objective for Nelder-Mead: loglik + penalty if constraint violated
-double penalized_loglik(const VectorXd &x0, const VectorXd &x, int p, int q) {
-  // Check non-negativity
-  if ((x0.array() < 0.0).any()) {
-    return 1e20;
-  }
-  // Check constraint: sum of alpha + beta < 1
-  if (constraint_value(x0) < 0.0) {
-    return 1e20;
-  }
-  return loglik(x0, x, p, q);
-}
-
-// Full model fitting using Nelder-Mead
-std::tuple<VectorXd, VectorXd, VectorXd>
-fit(const Eigen::Ref<const VectorXd> &x, int p, int q) {
-  int n_params = p + q + 1;
-  VectorXd x0 = VectorXd::Constant(n_params, 0.1);
-  VectorXd lower = VectorXd::Constant(n_params, 1e-8);
-  VectorXd upper = VectorXd::Constant(n_params, 0.999);
-
-  auto result = nm::NelderMead(penalized_loglik, x0, lower, upper,
-                               0.05, 1e-4, 1.0, 2.0, 0.5, 0.5, 2000, 1e-10,
-                               true, x, p, q);
-
-  VectorXd coeff = std::get<0>(result);
-  VectorXd sigma2 = compute_sigma2(coeff, x, p, q);
-
-  // Generate fitted values using deterministic RNG (seed=1)
-  std::mt19937 gen(1);
-  std::normal_distribution<double> dist(0.0, 1.0);
-  VectorXd fitted = VectorXd::Constant(x.size(), std::numeric_limits<double>::quiet_NaN());
-  for (Eigen::Index k = p; k < x.size(); ++k) {
-    double error = dist(gen);
-    fitted[k] = error * std::sqrt(sigma2[k]);
-  }
-
-  return {coeff, sigma2, fitted};
-}
-
-// Forecast
-std::tuple<VectorXd, VectorXd>
-forecast(const Eigen::Ref<const VectorXd> &coeff, int p, int q, int h,
-         const Eigen::Ref<const VectorXd> &y_vals_in,
-         const Eigen::Ref<const VectorXd> &sigma2_vals_in) {
-  double w = coeff[0];
-  VectorXd alpha = coeff.segment(1, p);
-  VectorXd beta = coeff.segment(p + 1, q);
-
-  VectorXd y_vals = VectorXd::Constant(h + p, std::numeric_limits<double>::quiet_NaN());
-  VectorXd sigma2_vals = VectorXd::Constant(h + q, std::numeric_limits<double>::quiet_NaN());
-
-  y_vals.head(p) = y_vals_in;
-  if (q != 0) {
-    sigma2_vals.head(q) = sigma2_vals_in;
-  }
-
-  std::mt19937 gen(1);
-  std::normal_distribution<double> dist(0.0, 1.0);
-
-  VectorXd alpha_rev = alpha.reverse();
-  VectorXd beta_rev = beta.reverse();
-
-  for (int k = 0; k < h; ++k) {
-    double error = dist(gen);
-    double psum = 0.0;
-    for (int j = 0; j < p; ++j) {
-      double val = y_vals[k + j];
-      if (!std::isnan(val)) {
-        psum += alpha_rev[j] * val * val;
-      }
-    }
-    double sigma2hat = w + psum;
-    if (q != 0) {
-      double qsum = 0.0;
-      for (int j = 0; j < q; ++j) {
-        double sv = sigma2_vals[k + j];
-        if (!std::isnan(sv)) {
-          qsum += beta_rev[j] * sv;
-        }
-      }
-      sigma2hat += qsum;
-    }
-    double yhat = error * std::sqrt(sigma2hat);
-    y_vals[p + k] = yhat;
-    sigma2_vals[q + k] = sigma2hat;
-  }
-
-  return {y_vals.tail(h), sigma2_vals.tail(h)};
-}
-
-VectorXd generate_data(int n, double w,
-                       const Eigen::Ref<const VectorXd> &alpha,
-                       const Eigen::Ref<const VectorXd> &beta) {
-  int p = alpha.size();
-  int q = beta.size();
-
-  if (w < 0 || (alpha.array() < 0).any() || (beta.array() < 0).any()) {
-    throw std::invalid_argument("Coefficients must be nonnegative");
-  }
-  if (alpha.sum() + beta.sum() >= 1.0) {
-    throw std::invalid_argument(
-        "Sum of coefficients of lagged versions of the series and lagged "
-        "versions of volatility must be less than 1");
-  }
-
-  VectorXd y = VectorXd::Zero(n);
-  VectorXd sigma2 = VectorXd::Zero(n);
-
-  std::mt19937 gen(1);
-  std::normal_distribution<double> dist(0.0, 1.0);
-
-  if (q != 0) {
-    for (int i = 0; i < q; ++i) {
-      sigma2[i] = 1.0;
-    }
-  }
-  for (int k = 0; k < p; ++k) {
-    y[k] = dist(gen);
-  }
-
-  VectorXd alpha_rev = alpha.reverse();
-  VectorXd beta_rev = beta.reverse();
-
-  int start = std::max(p, q);
-  for (int k = start; k < n; ++k) {
-    double psum = 0.0;
-    for (int j = 0; j < p; ++j) {
-      double val = y[k - p + j];
-      psum += alpha_rev[j] * val * val;
-    }
-    double result = w + psum;
-    if (q != 0) {
-      double qsum = 0.0;
-      for (int j = 0; j < q; ++j) {
-        qsum += beta_rev[j] * sigma2[k - q + j];
-      }
-      result += qsum;
-    }
-    sigma2[k] = result;
-    y[k] = dist(gen) * std::sqrt(sigma2[k]);
-  }
-  return y;
-}
-
 void init(py::module_ &m) {
   py::module_ garch_mod = m.def_submodule("garch");
   garch_mod.def("compute_sigma2", &compute_sigma2);
   garch_mod.def("loglik", &loglik);
   garch_mod.def("constraint_value", &constraint_value);
-  garch_mod.def("fit", &fit);
-  garch_mod.def("forecast", &forecast);
-  garch_mod.def("generate_data", &generate_data);
 }
 
 } // namespace garch

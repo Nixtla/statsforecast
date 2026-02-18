@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numeric>
+#include <stdexcept>
 #include <vector>
 
 #include <Eigen/Dense>
@@ -51,30 +52,44 @@ RowMajorMatrixXd get_basis(const Eigen::Ref<const VectorXd> &y_in,
   };
   std::vector<SplitInfo> splits(n_changepoints);
 
+  // Pre-sort gradient indices once (reused across all changepoints)
+  std::vector<Eigen::Index> grad_sorted_indices;
+  std::vector<Eigen::Index> grad_filtered;
+  if (gradient_strategy) {
+    Eigen::Index grad_n = gradients.size();
+    grad_sorted_indices.resize(grad_n);
+    std::iota(grad_sorted_indices.begin(), grad_sorted_indices.end(), 0);
+    std::sort(grad_sorted_indices.begin(), grad_sorted_indices.end(),
+              [&gradients](Eigen::Index a, Eigen::Index b) {
+                return gradients[a] > gradients[b];
+              });
+    // Filter: keep indices whose value falls in (0.1*len, 0.9*len)
+    Eigen::Index low_bound = static_cast<Eigen::Index>(0.1 * grad_n);
+    Eigen::Index high_bound = static_cast<Eigen::Index>(0.9 * grad_n);
+    for (auto ci : grad_sorted_indices) {
+      if (ci > low_bound && ci < high_bound) {
+        grad_filtered.push_back(ci);
+      }
+    }
+  }
+
   // Work on a copy for the non-gradient strategy
   VectorXd y_work = y;
   for (int idx = 0; idx < n_changepoints; ++idx) {
     int i = n_changepoints - idx; // goes from n_changepoints down to 1
     Eigen::Index split_point;
     if (gradient_strategy) {
-      // argsort by -gradients (descending order)
-      Eigen::Index grad_n = gradients.size();
-      std::vector<Eigen::Index> indices(grad_n);
-      std::iota(indices.begin(), indices.end(), 0);
-      std::sort(indices.begin(), indices.end(),
-                [&gradients](Eigen::Index a, Eigen::Index b) {
-                  return gradients[a] > gradients[b];
-                });
-      // Filter: keep indices in [0.1*len, 0.9*len)
-      Eigen::Index low_bound = (Eigen::Index)(0.1 * grad_n);
-      Eigen::Index high_bound = (Eigen::Index)(0.9 * grad_n);
-      std::vector<Eigen::Index> filtered;
-      for (auto ci : indices) {
-        if (ci > low_bound && ci < high_bound) {
-          filtered.push_back(ci);
-        }
+      if (i - 1 >= static_cast<int>(grad_filtered.size())) {
+        throw std::runtime_error(
+            "get_basis: not enough gradient changepoint candidates ("
+            + std::to_string(grad_filtered.size())
+            + ") for n_changepoints=" + std::to_string(n_changepoints));
       }
-      split_point = filtered[i - 1];
+      split_point = grad_filtered[i - 1];
+      if (split_point < 1) {
+        throw std::runtime_error(
+            "get_basis: gradient split_point is 0, cannot index y[-1]");
+      }
       splits[idx].length = split_point;
       splits[idx].last_value = y[split_point - 1];
     } else {
