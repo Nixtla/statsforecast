@@ -184,6 +184,137 @@ arima_css(const py::array_t<double> yv, const py::array_t<int32_t> armav,
   return {ssq / nu, residv};
 }
 
+std::tuple<double, py::array_t<double>, py::array_t<double>,
+           py::array_t<double>, py::array_t<double>>
+arima_css_grad(const py::array_t<double> yv, const py::array_t<int32_t> armav,
+               const py::array_t<double> phiv,
+               const py::array_t<double> thetav) {
+  assert(yv.ndim() == 1);
+  assert(armav.ndim() == 1);
+  assert(phiv.ndim() == 1);
+  assert(thetav.ndim() == 1);
+
+  const size_t n = static_cast<size_t>(yv.size());
+  const size_t p = static_cast<size_t>(phiv.size());
+  const size_t q = static_cast<size_t>(thetav.size());
+
+  const auto y = make_cspan(yv);
+  const auto arma = make_cspan(armav);
+  const auto phi = make_cspan(phiv);
+  const auto theta = make_cspan(thetav);
+
+  assert(arma.size() == 7);
+  assert(arma[0] >= 0 && arma[1] >= 0 && arma[2] >= 0 && arma[3] >= 0 &&
+         arma[4] >= 0 && arma[5] >= 0 && arma[6] >= 0);
+
+  const auto d = static_cast<size_t>(arma[5]);
+  const auto D = static_cast<size_t>(arma[6]);
+  const auto ns = static_cast<size_t>(arma[4]);
+  const auto ncond =
+      static_cast<size_t>(arma[0] + arma[5] + arma[4] * (arma[2] + arma[6]));
+  uint32_t nu = 0;
+  double ssq = 0.0;
+
+  py::array_t<double> residv(n);
+  const auto resid = make_span(residv);
+  if (ncond > resid.size()) {
+    throw std::logic_error(
+        "Internal error: resid length (" + std::to_string(resid.size()) +
+        ") must be >= ncond (" + std::to_string(ncond) + ")");
+  }
+  std::fill_n(resid.begin(), ncond, 0.0);
+
+  // Forward pass: identical to arima_css
+  std::vector<double> w(y.begin(), y.end());
+
+  for (size_t _ = 0; _ < d; ++_) {
+    for (size_t l = n - 1; l > 0; --l) {
+      w[l] -= w[l - 1];
+    }
+  }
+
+  for (size_t _ = 0; _ < D; ++_) {
+    for (size_t l = n - 1; l >= ns; --l) {
+      w[l] -= w[l - ns];
+    }
+  }
+
+  for (size_t l = ncond; l < n; ++l) {
+    double tmp = w[l];
+    for (size_t j = 0; j < p; ++j) {
+      tmp -= phi[j] * w[l - j - 1];
+    }
+    for (size_t j = 0; j < std::min(static_cast<size_t>(l - ncond), q); ++j) {
+      tmp -= theta[j] * resid[l - j - 1];
+    }
+    resid[l] = tmp;
+    if (!std::isnan(tmp)) {
+      nu++;
+      ssq += tmp * tmp;
+    }
+  }
+
+  // Backward pass: reverse-mode autodiff
+  py::array_t<double> d_phiv(p);
+  py::array_t<double> d_thetav(q);
+  py::array_t<double> d_yv(n);
+  auto d_phi = make_span(d_phiv);
+  auto d_theta = make_span(d_thetav);
+  auto d_y = make_span(d_yv);
+
+  std::fill(d_phi.begin(), d_phi.end(), 0.0);
+  std::fill(d_theta.begin(), d_theta.end(), 0.0);
+
+  std::vector<double> bar_e(n, 0.0);
+  std::vector<double> bar_w(n, 0.0);
+
+  // Step A: seed adjoint from ssq = sum(resid[l]^2)
+  for (size_t l = ncond; l < n; ++l) {
+    if (!std::isnan(resid[l])) {
+      bar_e[l] = 2.0 * resid[l];
+    }
+  }
+
+  // Step B: backward through residual recursion
+  for (size_t l = n - 1; ; --l) {
+    if (l < ncond)
+      break;
+
+    bar_w[l] += bar_e[l];
+
+    for (size_t j = 0; j < p; ++j) {
+      d_phi[j] -= bar_e[l] * w[l - j - 1];
+      bar_w[l - j - 1] -= bar_e[l] * phi[j];
+    }
+
+    for (size_t j = 0; j < std::min(static_cast<size_t>(l - ncond), q); ++j) {
+      d_theta[j] -= bar_e[l] * resid[l - j - 1];
+      bar_e[l - j - 1] -= bar_e[l] * theta[j];
+    }
+
+    if (l == ncond)
+      break;
+  }
+
+  // Step C: adjoint of seasonal differencing (reversed: forward order)
+  for (size_t _ = 0; _ < D; ++_) {
+    for (size_t l = ns; l < n; ++l) {
+      bar_w[l - ns] -= bar_w[l];
+    }
+  }
+
+  // Step D: adjoint of regular differencing (reversed: forward order)
+  for (size_t _ = 0; _ < d; ++_) {
+    for (size_t l = 1; l < n; ++l) {
+      bar_w[l - 1] -= bar_w[l];
+    }
+  }
+
+  std::copy(bar_w.begin(), bar_w.end(), d_y.begin());
+
+  return {ssq / nu, residv, d_phiv, d_thetav, d_yv};
+}
+
 std::tuple<double, double, int>
 arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
            const py::array_t<double> thetav, const py::array_t<double> deltav,
@@ -748,6 +879,7 @@ void invpartrans(const uint32_t p, const py::array_t<double> phiv,
 void init(py::module_ &m) {
   py::module_ arima = m.def_submodule("arima");
   arima.def("arima_css", &arima_css);
+  arima.def("arima_css_grad", &arima_css_grad);
   arima.def("arima_like", &arima_like);
   arima.def("getQ0", &getQ0);
   arima.def("arima_gradtrans", &arima_gradtrans);

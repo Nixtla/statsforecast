@@ -693,3 +693,107 @@ def test_auto_arima_with_trend():
         xreg=trend.reshape(-1, 1),
     )
     np.testing.assert_equal(model["xreg"][:, 0], trend)
+
+
+def test_arima_css_grad_nonseasonal():
+    """Validate analytical CSS gradient against finite differences for non-seasonal ARIMA."""
+    from statsforecast.arima import arima_css_grad
+
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.cumsum(np.random.randn(100)).astype(np.float64)
+    arma_arr = np.array([2, 1, 0, 0, 1, 1, 0], dtype=np.int32)
+    phi = np.array([0.5, -0.3], dtype=np.float64)
+    theta = np.array([-0.4], dtype=np.float64)
+
+    sigma2, resid, d_phi, d_theta, d_y = arima_css_grad(y, arma_arr, phi, theta)
+    sigma2_ref, resid_ref = arima_css(y, arma_arr, phi, theta)
+    np.testing.assert_allclose(sigma2, sigma2_ref)
+    np.testing.assert_allclose(resid, resid_ref)
+
+    ncond = 2 + 1
+    nu = np.count_nonzero(~np.isnan(resid[ncond:]))
+
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        fd = (arima_css(y, arma_arr, phi_p, theta)[0] - arima_css(y, arma_arr, phi_m, theta)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-4)
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        fd = (arima_css(y, arma_arr, phi, theta_p)[0] - arima_css(y, arma_arr, phi, theta_m)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-4)
+
+    for idx in [0, 5, 50, 99]:
+        y_p, y_m = y.copy(), y.copy()
+        y_p[idx] += eps
+        y_m[idx] -= eps
+        fd = (arima_css(y_p, arma_arr, phi, theta)[0] - arima_css(y_m, arma_arr, phi, theta)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_y[idx], fd, rtol=1e-4)
+
+
+def test_arima_css_grad_seasonal():
+    """Validate analytical CSS gradient against finite differences for seasonal ARIMA."""
+    from statsforecast.arima import arima_css_grad
+
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.random.randn(200).astype(np.float64)
+    arma_s = np.array([1, 1, 1, 1, 12, 0, 0], dtype=np.int32)
+    phi, theta = arima_transpar(
+        np.array([0.3, 0.5, 0.4, 0.3], dtype=np.float64), arma_s, False
+    )
+
+    sigma2, resid, d_phi, d_theta, d_y = arima_css_grad(y, arma_s, phi, theta)
+    ncond = 1 + 12 * 1
+    nu = np.count_nonzero(~np.isnan(resid[ncond:]))
+
+    for j in range(len(phi)):
+        phi_p, phi_m = np.array(phi, dtype=np.float64), np.array(phi, dtype=np.float64)
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        fd = (arima_css(y, arma_s, phi_p, theta)[0] - arima_css(y, arma_s, phi_m, theta)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-4, atol=1e-8)
+
+    for j in range(len(theta)):
+        theta_p, theta_m = np.array(theta, dtype=np.float64), np.array(theta, dtype=np.float64)
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        fd = (arima_css(y, arma_s, phi, theta_p)[0] - arima_css(y, arma_s, phi, theta_m)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-4, atol=1e-8)
+
+
+def test_transpar_vjp():
+    """Validate transpar VJP against numerical Jacobian."""
+    from statsforecast.arima import transpar_vjp
+
+    eps = 1e-5
+    arma_s = np.array([2, 1, 1, 1, 12, 0, 0], dtype=np.int32)
+    params = np.array([0.3, -0.2, 0.5, 0.4, 0.3], dtype=np.float64)
+    np.random.seed(123)
+    bar_phi = np.random.randn(14)
+    bar_theta = np.random.randn(13)
+
+    result = transpar_vjp(bar_phi, bar_theta, params, arma_s)
+
+    for k in range(len(params)):
+        params_p, params_m = params.copy(), params.copy()
+        params_p[k] += eps
+        params_m[k] -= eps
+        phi_p, theta_p = arima_transpar(params_p, arma_s, False)
+        phi_m, theta_m = arima_transpar(params_m, arma_s, False)
+        fd = (bar_phi @ (np.array(phi_p) - np.array(phi_m)) + bar_theta @ (np.array(theta_p) - np.array(theta_m))) / (2 * eps)
+        np.testing.assert_allclose(result[k], fd, rtol=1e-4)
+
+    # Also test non-seasonal case
+    arma_ns = np.array([2, 1, 0, 0, 0, 1, 0], dtype=np.int32)
+    params_ns = np.array([0.3, -0.2, 0.5], dtype=np.float64)
+    bar_phi_ns = np.random.randn(2)
+    bar_theta_ns = np.random.randn(1)
+    result_ns = transpar_vjp(bar_phi_ns, bar_theta_ns, params_ns, arma_ns)
+    np.testing.assert_allclose(result_ns[:2], bar_phi_ns)
+    np.testing.assert_allclose(result_ns[2:], bar_theta_ns)
