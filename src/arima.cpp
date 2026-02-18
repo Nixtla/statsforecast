@@ -550,6 +550,506 @@ arima_like(const py::array_t<double> yv, const py::array_t<double> phiv,
   return {ssq, sumlog, nu};
 }
 
+std::tuple<double, py::array_t<double>, py::array_t<double>,
+           py::array_t<double>, py::array_t<double>>
+arima_like_grad(const py::array_t<double> yv, const py::array_t<double> phiv,
+                const py::array_t<double> thetav,
+                const py::array_t<double> deltav, py::array_t<double> av,
+                py::array_t<double> Pv, py::array_t<double> Pnewv,
+                uint32_t up) {
+  const size_t n = static_cast<size_t>(yv.size());
+  const size_t d = static_cast<size_t>(deltav.size());
+  const size_t rd = static_cast<size_t>(av.size());
+  const size_t p = static_cast<size_t>(phiv.size());
+  const size_t q = static_cast<size_t>(thetav.size());
+
+  const auto y = make_cspan(yv);
+  const auto phi = make_cspan(phiv);
+  const auto theta = make_cspan(thetav);
+  const auto delta = make_cspan(deltav);
+  auto a = make_span(av);
+  auto P = make_span(Pv);
+  auto Pnew = make_span(Pnewv);
+
+  assert(rd >= d);
+  const size_t r = rd - d;
+
+  // ===================== Forward pass with tape =====================
+  // Per-step storage
+  std::vector<double> a_tape(n * rd);
+  std::vector<double> P_tape(n * rd * rd);
+  std::vector<double> anew_tape(n * rd);
+  std::vector<double> Pnew_tape(n * rd * rd);
+  std::vector<double> M_tape(n * rd);
+  std::vector<double> resid_tape(n);
+  std::vector<double> gain_tape(n);
+  std::vector<uint8_t> valid_tape(n, 0);    // contributed to likelihood
+  std::vector<uint8_t> observed_tape(n, 0); // non-NaN observation
+  std::vector<double> mm_tape;
+  if (d > 0) {
+    mm_tape.resize(n * rd * rd);
+  }
+
+  double ssq = 0.0;
+  double sumlog = 0.0;
+  uint32_t nu = 0;
+
+  std::vector<double> anew(rd);
+  std::vector<double> M(rd);
+  std::vector<double> mm;
+  if (d > 0) {
+    mm.resize(rd * rd);
+  }
+
+  double tmp;
+  for (size_t l = 0; l < n; ++l) {
+    // Save a, P before prediction
+    std::copy(a.begin(), a.begin() + rd, a_tape.begin() + l * rd);
+    std::copy(P.begin(), P.begin() + rd * rd, P_tape.begin() + l * rd * rd);
+
+    // --- State prediction ---
+    for (size_t i = 0; i < r; ++i) {
+      tmp = (i < r - 1) ? a[i + 1] : 0.0;
+      if (i < p)
+        tmp += phi[i] * a[0];
+      anew[i] = tmp;
+    }
+    if (d > 0) {
+      for (size_t i = r + 1; i < rd; ++i)
+        anew[i] = a[i - 1];
+      tmp = a[0];
+      for (size_t i = 0; i < d; ++i)
+        tmp += delta[i] * a[r + i];
+      anew[r] = tmp;
+    }
+
+    // --- Covariance prediction ---
+    if (l > up) {
+      if (d == 0) {
+        for (size_t i = 0; i < r; ++i) {
+          const double vi = (i == 0)       ? 1.0
+                            : (i - 1 < q) ? theta[i - 1]
+                                           : 0.0;
+          for (size_t j = 0; j < r; ++j) {
+            tmp = 0.0;
+            if (j == 0)
+              tmp = vi;
+            else if (j - 1 < q)
+              tmp = vi * theta[j - 1];
+            if (i < p && j < p)
+              tmp += phi[i] * phi[j] * P[0];
+            if (i < r - 1 && j < r - 1)
+              tmp += P[i + 1 + r * (j + 1)];
+            if (i < p && j < r - 1)
+              tmp += phi[i] * P[j + 1];
+            if (j < p && i < r - 1)
+              tmp += phi[j] * P[i + 1];
+            Pnew[i + r * j] = tmp;
+          }
+        }
+      } else {
+        // mm = T @ P
+        for (size_t i = 0; i < r; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
+            tmp = 0.0;
+            if (i < p)
+              tmp += phi[i] * P[rd * j];
+            if (i < r - 1)
+              tmp += P[i + 1 + rd * j];
+            mm[i + rd * j] = tmp;
+          }
+        }
+        for (size_t j = 0; j < rd; ++j) {
+          tmp = P[rd * j];
+          for (size_t k = 0; k < d; ++k)
+            tmp += delta[k] * P[r + k + rd * j];
+          mm[r + rd * j] = tmp;
+        }
+        for (size_t i = 1; i < d; ++i) {
+          for (size_t j = 0; j < rd; ++j)
+            mm[r + i + rd * j] = P[r + i - 1 + rd * j];
+        }
+
+        // Pnew = mm @ T'
+        for (size_t i = 0; i < r; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
+            tmp = 0.0;
+            if (i < p)
+              tmp += phi[i] * mm[j];
+            if (i < r - 1)
+              tmp += mm[rd * (i + 1) + j];
+            Pnew[j + rd * i] = tmp;
+          }
+        }
+        for (size_t j = 0; j < rd; ++j) {
+          tmp = mm[j];
+          for (size_t k = 0; k < d; ++k)
+            tmp += delta[k] * mm[rd * (r + k) + j];
+          Pnew[rd * r + j] = tmp;
+        }
+        for (size_t i = 1; i < d; ++i) {
+          for (size_t j = 0; j < rd; ++j)
+            Pnew[rd * (r + i) + j] = mm[rd * (r + i - 1) + j];
+        }
+
+        // Pnew += V
+        for (size_t i = 0; i < q + 1; ++i) {
+          const double vi = i == 0 ? 1.0 : theta[i - 1];
+          for (size_t j = 0; j < q + 1; ++j) {
+            Pnew[i + rd * j] += vi * (j == 0 ? 1.0 : theta[j - 1]);
+          }
+        }
+
+        // Save mm
+        std::copy(mm.begin(), mm.begin() + rd * rd,
+                  mm_tape.begin() + l * rd * rd);
+      }
+    }
+
+    // Save anew, Pnew
+    std::copy(anew.begin(), anew.end(), anew_tape.begin() + l * rd);
+    std::copy(Pnew.begin(), Pnew.begin() + rd * rd,
+              Pnew_tape.begin() + l * rd * rd);
+
+    // --- Innovation and state update ---
+    if (!std::isnan(y[l])) {
+      observed_tape[l] = 1;
+      double resid = y[l] - anew[0];
+      for (size_t i = 0; i < d; ++i)
+        resid -= delta[i] * anew[r + i];
+
+      for (size_t i = 0; i < rd; ++i) {
+        tmp = Pnew[i];
+        for (size_t j = 0; j < d; ++j)
+          tmp += Pnew[i + (r + j) * rd] * delta[j];
+        M[i] = tmp;
+      }
+
+      double gain = M[0];
+      for (size_t j = 0; j < d; ++j)
+        gain += delta[j] * M[r + j];
+
+      resid_tape[l] = resid;
+      gain_tape[l] = gain;
+      std::copy(M.begin(), M.end(), M_tape.begin() + l * rd);
+
+      if (gain < 1e4) {
+        valid_tape[l] = 1;
+        nu++;
+        if (gain == 0) {
+          ssq = std::numeric_limits<double>::infinity();
+        } else {
+          ssq += resid * resid / gain;
+        }
+        sumlog += std::log(gain);
+      }
+
+      if (gain == 0) {
+        for (size_t i = 0; i < rd; ++i) {
+          a[i] = std::numeric_limits<double>::infinity();
+          for (size_t j = 0; j < rd; ++j)
+            Pnew[i + j * rd] = std::numeric_limits<double>::infinity();
+        }
+      } else {
+        for (size_t i = 0; i < rd; ++i) {
+          a[i] = anew[i] + M[i] * resid / gain;
+          for (size_t j = 0; j < rd; ++j)
+            P[i + j * rd] = Pnew[i + j * rd] - M[i] * M[j] / gain;
+        }
+      }
+    } else {
+      std::copy(anew.begin(), anew.end(), a.begin());
+      std::copy(Pnew.begin(), Pnew.begin() + rd * rd, P.begin());
+    }
+  }
+
+  // ===================== Compute loss =====================
+  if (nu == 0 || ssq <= 0.0 || std::isinf(ssq)) {
+    py::array_t<double> d_phiv(p), d_thetav(q), d_Pnv(rd * rd), d_yv(n);
+    std::fill(make_span(d_phiv).begin(), make_span(d_phiv).end(), 0.0);
+    std::fill(make_span(d_thetav).begin(), make_span(d_thetav).end(), 0.0);
+    std::fill(make_span(d_Pnv).begin(), make_span(d_Pnv).end(), 0.0);
+    std::fill(make_span(d_yv).begin(), make_span(d_yv).end(), 0.0);
+    double loss = std::isinf(ssq) ? std::numeric_limits<double>::max()
+                                  : std::numeric_limits<double>::quiet_NaN();
+    return {loss, d_phiv, d_thetav, d_Pnv, d_yv};
+  }
+
+  const double s2 = ssq / nu;
+  const double loss = 0.5 * (std::log(s2) + sumlog / nu);
+  const double bar_ssq = 0.5 / ssq;     // dL/d(ssq)
+  const double bar_sumlog = 0.5 / nu;    // dL/d(sumlog)
+
+  // ===================== Backward pass =====================
+  py::array_t<double> d_phiv(p);
+  py::array_t<double> d_thetav(q);
+  py::array_t<double> d_Pnv(rd * rd);
+  py::array_t<double> d_yv(n);
+  auto d_phi = make_span(d_phiv);
+  auto d_theta = make_span(d_thetav);
+  auto d_Pn = make_span(d_Pnv);
+  auto d_y = make_span(d_yv);
+
+  std::fill(d_phi.begin(), d_phi.end(), 0.0);
+  std::fill(d_theta.begin(), d_theta.end(), 0.0);
+  std::fill(d_Pn.begin(), d_Pn.end(), 0.0);
+  std::fill(d_y.begin(), d_y.end(), 0.0);
+
+  // Adjoints of state a and covariance P (propagated backward through time)
+  std::vector<double> bar_a(rd, 0.0);
+  std::vector<double> bar_P(rd * rd, 0.0);
+
+  // Temporaries for the backward pass
+  std::vector<double> bar_anew(rd);
+  std::vector<double> bar_Pnew(rd * rd);
+  std::vector<double> bar_M(rd);
+  std::vector<double> bar_a_prev(rd);
+  std::vector<double> bar_P_prev(rd * rd);
+  std::vector<double> bar_mm;
+  if (d > 0) {
+    bar_mm.resize(rd * rd);
+  }
+
+  for (size_t l = n - 1;; --l) {
+    // Restore tape
+    const double *a_l = &a_tape[l * rd];
+    const double *P_l = &P_tape[l * rd * rd];
+    const double *M_l = &M_tape[l * rd];
+
+    std::fill(bar_anew.begin(), bar_anew.end(), 0.0);
+    std::fill(bar_Pnew.begin(), bar_Pnew.end(), 0.0);
+    std::fill(bar_M.begin(), bar_M.end(), 0.0);
+
+    if (observed_tape[l] && gain_tape[l] != 0.0) {
+      const double resid_l = resid_tape[l];
+      const double gain_l = gain_tape[l];
+      const double inv_gain = 1.0 / gain_l;
+      const double resid_over_gain = resid_l * inv_gain;
+
+      // --- Reverse state update: a_out[i] = anew[i] + M[i]*resid/gain ---
+      for (size_t i = 0; i < rd; ++i) {
+        bar_anew[i] += bar_a[i];
+        bar_M[i] += bar_a[i] * resid_over_gain;
+      }
+      double bar_resid = 0.0;
+      double bar_gain = 0.0;
+      for (size_t i = 0; i < rd; ++i) {
+        bar_resid += bar_a[i] * M_l[i] * inv_gain;
+        bar_gain -= bar_a[i] * M_l[i] * resid_over_gain * inv_gain;
+      }
+
+      // --- Reverse covariance update: P_out[i+j*rd] = Pnew[i+j*rd] -
+      // M[i]*M[j]/gain ---
+      for (size_t i = 0; i < rd; ++i) {
+        for (size_t j = 0; j < rd; ++j) {
+          const double bP = bar_P[i + j * rd];
+          bar_Pnew[i + j * rd] += bP;
+          bar_M[i] -= bP * M_l[j] * inv_gain;
+          bar_M[j] -= bP * M_l[i] * inv_gain;
+          bar_gain += bP * M_l[i] * M_l[j] * inv_gain * inv_gain;
+        }
+      }
+
+      // --- Reverse likelihood: ssq += resid^2/gain, sumlog += log(gain) ---
+      if (valid_tape[l]) {
+        bar_resid += bar_ssq * 2.0 * resid_l * inv_gain;
+        bar_gain -= bar_ssq * resid_l * resid_l * inv_gain * inv_gain;
+        bar_gain += bar_sumlog * inv_gain;
+      }
+
+      // --- Reverse gain: gain = M[0] + sum(delta[j]*M[r+j]) ---
+      bar_M[0] += bar_gain;
+      for (size_t j = 0; j < d; ++j)
+        bar_M[r + j] += bar_gain * delta[j];
+
+      // --- Reverse M: M[i] = Pnew[i,0] + sum(Pnew[i,(r+j)]*delta[j]) ---
+      for (size_t i = 0; i < rd; ++i) {
+        bar_Pnew[i] += bar_M[i];
+        for (size_t j = 0; j < d; ++j)
+          bar_Pnew[i + (r + j) * rd] += bar_M[i] * delta[j];
+      }
+
+      // --- Reverse resid: resid = y[l] - anew[0] - sum(delta[i]*anew[r+i])
+      // ---
+      d_y[l] += bar_resid;
+      bar_anew[0] -= bar_resid;
+      for (size_t i = 0; i < d; ++i)
+        bar_anew[r + i] -= bar_resid * delta[i];
+
+    } else if (observed_tape[l]) {
+      // gain == 0: state goes to inf, adjoint contributions are undefined
+      // Pass through: bar_anew = bar_a, bar_Pnew = bar_P
+      for (size_t i = 0; i < rd; ++i)
+        bar_anew[i] += bar_a[i];
+      for (size_t i = 0; i < rd * rd; ++i)
+        bar_Pnew[i] += bar_P[i];
+    } else {
+      // NaN observation: a = anew (copy), P = Pnew (copy)
+      for (size_t i = 0; i < rd; ++i)
+        bar_anew[i] += bar_a[i];
+      for (size_t i = 0; i < rd * rd; ++i)
+        bar_Pnew[i] += bar_P[i];
+    }
+
+    // --- Reverse covariance prediction ---
+    std::fill(bar_P_prev.begin(), bar_P_prev.end(), 0.0);
+
+    if (l > up) {
+      if (d == 0) {
+        // Reverse: Pnew[i+r*j] = V[i,j] + phi[i]*phi[j]*P[0]
+        //                        + P[i+1+r*(j+1)] + phi[i]*P[j+1] +
+        //                        phi[j]*P[i+1]
+        for (size_t i = 0; i < r; ++i) {
+          const double vi = (i == 0)       ? 1.0
+                            : (i - 1 < q) ? theta[i - 1]
+                                           : 0.0;
+          for (size_t j = 0; j < r; ++j) {
+            const double b = bar_Pnew[i + r * j];
+            if (b == 0.0)
+              continue;
+            const double vj = (j == 0)       ? 1.0
+                              : (j - 1 < q) ? theta[j - 1]
+                                             : 0.0;
+
+            // V contribution
+            if (i > 0 && i - 1 < q)
+              d_theta[i - 1] += b * vj;
+            if (j > 0 && j - 1 < q)
+              d_theta[j - 1] += b * vi;
+
+            if (i < p && j < p) {
+              d_phi[i] += b * phi[j] * P_l[0];
+              d_phi[j] += b * phi[i] * P_l[0];
+              bar_P_prev[0] += b * phi[i] * phi[j];
+            }
+            if (i < r - 1 && j < r - 1)
+              bar_P_prev[i + 1 + r * (j + 1)] += b;
+            if (i < p && j < r - 1) {
+              d_phi[i] += b * P_l[j + 1];
+              bar_P_prev[j + 1] += b * phi[i];
+            }
+            if (j < p && i < r - 1) {
+              d_phi[j] += b * P_l[i + 1];
+              bar_P_prev[i + 1] += b * phi[j];
+            }
+          }
+        }
+      } else {
+        // d > 0: reverse through mm-based computation
+        const double *mm_l = &mm_tape[l * rd * rd];
+
+        // Reverse V addition: Pnew[i+rd*j] += vi*vj
+        for (size_t i = 0; i < q + 1; ++i) {
+          const double vi = i == 0 ? 1.0 : theta[i - 1];
+          for (size_t j = 0; j < q + 1; ++j) {
+            const double b = bar_Pnew[i + rd * j];
+            if (b == 0.0)
+              continue;
+            if (i > 0 && i - 1 < q)
+              d_theta[i - 1] +=
+                  b * (j == 0 ? 1.0 : theta[j - 1]);
+            if (j > 0 && j - 1 < q)
+              d_theta[j - 1] += b * vi;
+          }
+        }
+
+        // Reverse Pnew = mm @ T' (stages 6, 5, 4)
+        std::fill(bar_mm.begin(), bar_mm.end(), 0.0);
+
+        // Stage 6 reverse: Pnew[rd*(r+i)+j] = mm[rd*(r+i-1)+j]
+        for (size_t i = d - 1; i >= 1; --i) {
+          for (size_t j = 0; j < rd; ++j)
+            bar_mm[rd * (r + i - 1) + j] += bar_Pnew[rd * (r + i) + j];
+        }
+
+        // Stage 5 reverse: Pnew[rd*r+j] = mm[j] +
+        // sum(delta[k]*mm[rd*(r+k)+j])
+        for (size_t j = 0; j < rd; ++j) {
+          const double b = bar_Pnew[rd * r + j];
+          bar_mm[j] += b;
+          for (size_t k = 0; k < d; ++k)
+            bar_mm[rd * (r + k) + j] += b * delta[k];
+        }
+
+        // Stage 4 reverse: Pnew[j+rd*i] = phi[i]*mm[j] + mm[rd*(i+1)+j]
+        for (size_t i = 0; i < r; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
+            const double b = bar_Pnew[j + rd * i];
+            if (i < p) {
+              d_phi[i] += b * mm_l[j];
+              bar_mm[j] += b * phi[i];
+            }
+            if (i < r - 1)
+              bar_mm[rd * (i + 1) + j] += b;
+          }
+        }
+
+        // Reverse mm = T @ P (stages 3, 2, 1)
+        // Stage 3 reverse: mm[r+i+rd*j] = P[r+i-1+rd*j]
+        for (size_t i = d - 1; i >= 1; --i) {
+          for (size_t j = 0; j < rd; ++j)
+            bar_P_prev[r + i - 1 + rd * j] += bar_mm[r + i + rd * j];
+        }
+
+        // Stage 2 reverse: mm[r+rd*j] = P[rd*j] +
+        // sum(delta[k]*P[r+k+rd*j])
+        for (size_t j = 0; j < rd; ++j) {
+          const double b = bar_mm[r + rd * j];
+          bar_P_prev[rd * j] += b;
+          for (size_t k = 0; k < d; ++k)
+            bar_P_prev[r + k + rd * j] += b * delta[k];
+        }
+
+        // Stage 1 reverse: mm[i+rd*j] = phi[i]*P[rd*j] + P[i+1+rd*j]
+        for (size_t i = 0; i < r; ++i) {
+          for (size_t j = 0; j < rd; ++j) {
+            const double b = bar_mm[i + rd * j];
+            if (i < p) {
+              d_phi[i] += b * P_l[rd * j];
+              bar_P_prev[rd * j] += b * phi[i];
+            }
+            if (i < r - 1)
+              bar_P_prev[i + 1 + rd * j] += b;
+          }
+        }
+      }
+    } else {
+      // l <= up: Pnew was the initial Pn, accumulate into d_Pn
+      for (size_t i = 0; i < rd * rd; ++i)
+        d_Pn[i] += bar_Pnew[i];
+    }
+
+    // --- Reverse state prediction ---
+    std::fill(bar_a_prev.begin(), bar_a_prev.end(), 0.0);
+    for (size_t i = 0; i < r; ++i) {
+      if (i < r - 1)
+        bar_a_prev[i + 1] += bar_anew[i];
+      if (i < p) {
+        d_phi[i] += bar_anew[i] * a_l[0];
+        bar_a_prev[0] += bar_anew[i] * phi[i];
+      }
+    }
+    if (d > 0) {
+      // anew[r] = a[0] + sum(delta[i]*a[r+i])
+      bar_a_prev[0] += bar_anew[r];
+      for (size_t i = 0; i < d; ++i)
+        bar_a_prev[r + i] += bar_anew[r] * delta[i];
+      // anew[r+i] = a[r+i-1] for i=1..d-1
+      for (size_t i = 1; i < d; ++i)
+        bar_a_prev[r + i - 1] += bar_anew[r + i];
+    }
+
+    // Propagate to next backward step
+    std::copy(bar_a_prev.begin(), bar_a_prev.end(), bar_a.begin());
+    std::copy(bar_P_prev.begin(), bar_P_prev.end(), bar_P.begin());
+
+    if (l == 0)
+      break;
+  }
+
+  return {loss, d_phiv, d_thetav, d_Pnv, d_yv};
+}
+
 void inclu2(const std::vector<double> &xnext, std::vector<double> &xrow,
             double ynext, std::span<double> d, std::vector<double> &rbar,
             std::vector<double> &thetab) {
@@ -881,6 +1381,7 @@ void init(py::module_ &m) {
   arima.def("arima_css", &arima_css);
   arima.def("arima_css_grad", &arima_css_grad);
   arima.def("arima_like", &arima_like);
+  arima.def("arima_like_grad", &arima_like_grad);
   arima.def("getQ0", &getQ0);
   arima.def("arima_gradtrans", &arima_gradtrans);
   arima.def("arima_undopars", &arima_undopars);

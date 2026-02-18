@@ -13,6 +13,8 @@ from statsforecast.arima import (
     arima_css,
     arima_gradtrans,
     arima_like,
+    arima_like_grad,
+    getQ0_vjp,
     arima_string,
     arima_transpar,
     arima_undopars,
@@ -797,3 +799,149 @@ def test_transpar_vjp():
     result_ns = transpar_vjp(bar_phi_ns, bar_theta_ns, params_ns, arma_ns)
     np.testing.assert_allclose(result_ns[:2], bar_phi_ns)
     np.testing.assert_allclose(result_ns[2:], bar_theta_ns)
+
+
+def _ml_loss(y, phi, theta, delta, a, P, Pn, up=0):
+    """Compute ML loss using arima_like (helper for finite-diff tests)."""
+    ssq, sumlog, nu, _ = arima_like(
+        y, phi, theta, delta, a.copy(), P.copy(), Pn.copy(), up, False
+    )
+    if nu == 0 or ssq <= 0:
+        return float("inf")
+    return 0.5 * (math.log(ssq / nu) + sumlog / nu)
+
+
+def test_arima_like_grad_d0():
+    """Validate ML Kalman gradient for ARMA(2,1) with d=0 (no differencing)."""
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.random.randn(100).astype(np.float64)
+    phi = np.array([0.4, -0.2], dtype=np.float64)
+    theta = np.array([-0.3], dtype=np.float64)
+    delta = np.array([], dtype=np.float64)
+
+    mod = make_arima(phi, theta, delta)
+    loss, d_phi, d_theta, d_Pn, d_y = arima_like_grad(
+        y, phi, theta, delta, mod["a"].copy(), mod["P"].copy(), mod["Pn"].copy(), 0
+    )
+
+    # Verify loss matches
+    expected = _ml_loss(y, phi, theta, delta, mod["a"], mod["P"], mod["Pn"])
+    np.testing.assert_allclose(loss, expected, rtol=1e-12)
+
+    # Finite-diff check for phi (direct path only, excluding getQ0)
+    # We pass the SAME Pn to avoid getQ0 dependency
+    Pn_fixed = mod["Pn"].copy()
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        L_p = _ml_loss(y, phi_p, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        L_m = _ml_loss(y, phi_m, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-3, err_msg=f"d_phi[{j}]")
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        L_p = _ml_loss(y, phi, theta_p, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        L_m = _ml_loss(y, phi, theta_m, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-3, err_msg=f"d_theta[{j}]")
+
+    for idx in [0, 5, 50, 99]:
+        y_p, y_m = y.copy(), y.copy()
+        y_p[idx] += eps
+        y_m[idx] -= eps
+        L_p = _ml_loss(y_p, phi, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        L_m = _ml_loss(y_m, phi, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_y[idx], fd, rtol=1e-3, err_msg=f"d_y[{idx}]")
+
+
+def test_arima_like_grad_nonseasonal():
+    """Validate ML Kalman gradient for ARIMA(2,1,1) with d=1."""
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.cumsum(np.random.randn(100)).astype(np.float64)
+    phi = np.array([0.5, -0.3], dtype=np.float64)
+    theta = np.array([-0.4], dtype=np.float64)
+    delta = np.array([1.0], dtype=np.float64)  # d=1
+
+    mod = make_arima(phi, theta, delta)
+    loss, d_phi, d_theta, d_Pn, d_y = arima_like_grad(
+        y, phi, theta, delta, mod["a"].copy(), mod["P"].copy(), mod["Pn"].copy(), 0
+    )
+
+    expected = _ml_loss(y, phi, theta, delta, mod["a"], mod["P"], mod["Pn"])
+    np.testing.assert_allclose(loss, expected, rtol=1e-12)
+
+    Pn_fixed = mod["Pn"].copy()
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        L_p = _ml_loss(y, phi_p, theta, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        L_m = _ml_loss(y, phi_m, theta, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-3, err_msg=f"d_phi[{j}]")
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        L_p = _ml_loss(y, phi, theta_p, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        L_m = _ml_loss(y, phi, theta_m, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-3, err_msg=f"d_theta[{j}]")
+
+
+def test_getQ0_vjp():
+    """Validate getQ0 VJP against finite differences."""
+    eps = 1e-6
+    phi = np.array([0.5, -0.3], dtype=np.float64)
+    theta = np.array([-0.4], dtype=np.float64)
+
+    np.random.seed(42)
+    r = max(len(phi), len(theta) + 1)
+    bar_Pn = np.random.randn(r, r)
+
+    bar_phi, bar_theta = getQ0_vjp(phi, theta, bar_Pn, r, len(phi))
+
+    # Verify via finite differences
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        Q_p = getQ0(phi_p, theta)
+        Q_m = getQ0(phi_m, theta)
+        fd = np.sum(bar_Pn[:r, :r] * (Q_p - Q_m) / (2 * eps))
+        np.testing.assert_allclose(bar_phi[j], fd, rtol=1e-3)
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        Q_p = getQ0(phi, theta_p)
+        Q_m = getQ0(phi, theta_m)
+        fd = np.sum(bar_Pn[:r, :r] * (Q_p - Q_m) / (2 * eps))
+        np.testing.assert_allclose(bar_theta[j], fd, rtol=1e-3)
+
+
+def test_ml_grad_convergence():
+    """Verify CSS-ML with analytical gradients produces reasonable coefficients."""
+    y = ap.astype(np.float64)
+
+    # Fit with BFGS (uses analytical grad)
+    result = arima(y, order=(1, 1, 1), method="CSS-ML", optim_method="BFGS")
+
+    # Compare to known values from the original (finite-diff) BFGS run
+    # ar1 ~= -0.483, ma1 ~= 0.875
+    np.testing.assert_allclose(
+        result["coef"]["ar1"], -0.483, atol=0.05
+    )
+    np.testing.assert_allclose(
+        result["coef"]["ma1"], 0.875, atol=0.05
+    )
+    assert np.isfinite(result["aic"])
