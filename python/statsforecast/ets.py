@@ -241,7 +241,6 @@ def fourier(x, period, K, h=None):
     if h is not None:
         times = np.arange(len(x) + 1, len(x) + h + 1)
     # compute periods of all fourier terms
-    # compute periods of all fourier terms
     len_p = sum(K)
     p = np.full(len_p, fill_value=np.nan)
     idx = 0

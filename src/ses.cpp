@@ -11,6 +11,9 @@ namespace py = pybind11;
 using Eigen::VectorXd;
 
 double ses_sse(double alpha, const Eigen::Ref<const VectorXd> &x) {
+  if (x.size() < 2) {
+    return 0.0;
+  }
   double complement = 1.0 - alpha;
   double forecast = x[0];
   double sse = 0.0;
@@ -24,6 +27,10 @@ double ses_sse(double alpha, const Eigen::Ref<const VectorXd> &x) {
 
 std::tuple<double, VectorXd> ses_forecast(const Eigen::Ref<const VectorXd> &x,
                                           double alpha) {
+  if (x.size() < 2) {
+    throw std::invalid_argument(
+        "ses_forecast requires at least 2 data points");
+  }
   double complement = 1.0 - alpha;
   VectorXd fitted(x.size());
   fitted[0] = x[0];
@@ -95,10 +102,14 @@ VectorXd expand_fitted_intervals(const Eigen::Ref<const VectorXd> &fitted,
 
 void init(py::module_ &m) {
   py::module_ ses_mod = m.def_submodule("ses");
-  ses_mod.def("ses_sse", &ses_sse);
-  ses_mod.def("ses_forecast", &ses_forecast);
-  ses_mod.def("expand_fitted_demand", &expand_fitted_demand);
-  ses_mod.def("expand_fitted_intervals", &expand_fitted_intervals);
+  ses_mod.def("ses_sse", &ses_sse,
+              py::call_guard<py::gil_scoped_release>());
+  ses_mod.def("ses_forecast", &ses_forecast,
+              py::call_guard<py::gil_scoped_release>());
+  ses_mod.def("expand_fitted_demand", &expand_fitted_demand,
+              py::call_guard<py::gil_scoped_release>());
+  ses_mod.def("expand_fitted_intervals", &expand_fitted_intervals,
+              py::call_guard<py::gil_scoped_release>());
 }
 
 } // namespace ses

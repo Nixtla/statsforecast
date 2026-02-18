@@ -20,10 +20,14 @@ VectorXd compute_sigma2(const Eigen::Ref<const VectorXd> &x0,
   VectorXd beta_rev = beta.reverse();
 
   Eigen::Index n = x.size();
+  double unconditional_var = (x.array() - x.mean()).square().mean();
   VectorXd sigma2 = VectorXd::Constant(n, std::numeric_limits<double>::quiet_NaN());
-  sigma2[0] = (x.array() - x.mean()).square().mean(); // unconditional variance
-
+  // Initialize all slots up to max(p,q) with unconditional variance so that
+  // the beta sum in early iterations does not skip NaN entries silently.
   int start = std::max(p, q);
+  for (int i = 0; i < start && i < n; ++i) {
+    sigma2[i] = unconditional_var;
+  }
   for (Eigen::Index k = start; k < n; ++k) {
     double psum = 0.0;
     for (int j = 0; j < p; ++j) {
@@ -80,9 +84,12 @@ double constraint_value(const VectorXd &x0) {
 
 void init(py::module_ &m) {
   py::module_ garch_mod = m.def_submodule("garch");
-  garch_mod.def("compute_sigma2", &compute_sigma2);
-  garch_mod.def("loglik", &loglik);
-  garch_mod.def("constraint_value", &constraint_value);
+  garch_mod.def("compute_sigma2", &compute_sigma2,
+                py::call_guard<py::gil_scoped_release>());
+  garch_mod.def("loglik", &loglik,
+                py::call_guard<py::gil_scoped_release>());
+  garch_mod.def("constraint_value", &constraint_value,
+                py::call_guard<py::gil_scoped_release>());
 }
 
 } // namespace garch

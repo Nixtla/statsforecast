@@ -1,3 +1,4 @@
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <stdexcept>
 #include <tuple>
@@ -203,8 +204,10 @@ calcFaster(const Eigen::Ref<const VectorXd> &y_trans,
 
 void init(py::module_ &m) {
   py::module_ tbats_mod = m.def_submodule("tbats");
+  // makeFMatrix uses py::object for None-detection, so it needs the GIL
   tbats_mod.def("makeFMatrix", &makeFMatrix);
-  tbats_mod.def("calcFaster", &calcFaster);
+  tbats_mod.def("calcFaster", &calcFaster,
+                py::call_guard<py::gil_scoped_release>());
 }
 
 } // namespace tbats_ns

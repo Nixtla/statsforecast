@@ -230,8 +230,10 @@ VectorXd siegel_repeated_medians(const Eigen::Ref<const VectorXd> &x,
 
 void init(py::module_ &m) {
   py::module_ mfles_mod = m.def_submodule("mfles");
-  mfles_mod.def("get_basis", &get_basis);
-  mfles_mod.def("siegel_repeated_medians", &siegel_repeated_medians);
+  mfles_mod.def("get_basis", &get_basis,
+                py::call_guard<py::gil_scoped_release>());
+  mfles_mod.def("siegel_repeated_medians", &siegel_repeated_medians,
+                py::call_guard<py::gil_scoped_release>());
 }
 
 } // namespace mfles

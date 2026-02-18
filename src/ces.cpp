@@ -177,9 +177,23 @@ static double cescalc_pass(const VectorXd &y_mut,
   auto a0 = static_cast<float>(alpha_0);
   auto a1 = static_cast<float>(alpha_1);
 
+  // inline_forecast is only valid for seasonal types when nmse <= m_eff.
+  // Pre-allocate a fallback buffer for the rare case where nmse > m_eff.
+  bool use_inline = (season <= SIMPLE || nmse <= m_eff);
+  RowMajorMatrixXf fcst_fallback;
+  if (!use_inline) {
+    fcst_fallback = RowMajorMatrixXf::Zero(m_eff + nmse, states.cols());
+  }
+
   for (Eigen::Index i = m_eff; i < n + m_eff; ++i) {
-    // Multi-step forecast via zero-error scalar recurrence
-    inline_forecast(states, i, m_eff, season, f, nmse, a0, a1);
+    // Multi-step forecast via zero-error scalar recurrence (fast path)
+    // or buffer-based forecast (fallback for nmse > m_eff with seasonal)
+    if (use_inline) {
+      inline_forecast(states, i, m_eff, season, f, nmse, a0, a1);
+    } else {
+      cesfcst_buf(fcst_fallback, states, i, m_eff, season, f, nmse, alpha_0,
+                   alpha_1, beta_0, beta_1);
+    }
     if (std::fabs(f[0] - NA) < TOL) {
       return NA;
     }
@@ -378,10 +392,14 @@ double cescalc_py(const Eigen::Ref<const VectorXd> &y,
 void init(py::module_ &m) {
   py::module_ ces_mod = m.def_submodule("ces");
   ces_mod.def("switch_ces", &switch_ces);
-  ces_mod.def("optimize", &optimize);
-  ces_mod.def("pegelsresid", &pegelsresid);
-  ces_mod.def("forecast", &forecast);
-  ces_mod.def("cescalc", &cescalc_py);
+  ces_mod.def("optimize", &optimize,
+              py::call_guard<py::gil_scoped_release>());
+  ces_mod.def("pegelsresid", &pegelsresid,
+              py::call_guard<py::gil_scoped_release>());
+  ces_mod.def("forecast", &forecast,
+              py::call_guard<py::gil_scoped_release>());
+  ces_mod.def("cescalc", &cescalc_py,
+              py::call_guard<py::gil_scoped_release>());
 }
 
 } // namespace ces
