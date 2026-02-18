@@ -59,6 +59,7 @@ dev = [
     "scikit-learn",
     "setuptools<70",
     "supersmoother",
+    "xlrd",
     "yfinance",
     "pytest",
     "pytest-cov",
