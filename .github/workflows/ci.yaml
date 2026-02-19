@@ -131,7 +131,7 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: pip install uv && uv pip install --system . pytest-cov pytest-codspeed pytest-xdist
+        run: pip install uv && uv pip install --system . scikit-learn pytest-cov pytest-codspeed pytest-xdist
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # 3.5.0
