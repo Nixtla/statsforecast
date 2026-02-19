@@ -126,7 +126,9 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install the library
-        run: uv sync --group dev
+        run: |
+          uv sync --group dev
+          uv pip install "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git"
 
       - name: Run M3 experiment
         run: |
