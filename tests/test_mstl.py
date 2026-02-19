@@ -1,6 +1,28 @@
 import numpy as np
 import pandas as pd
 from statsforecast.mstl import mstl
+from statsforecast import StatsForecast
+from statsforecast.models import MSTL
+from utilsforecast.data import generate_series
+
+
+def test_mstl_cv_refit_false():
+    """Regression test for for CV with refit=False and short series."""
+    df = generate_series(n_series=1, freq="MS", min_length=25, max_length=25)
+    sf = StatsForecast(
+        models=[MSTL(season_length=[12])],
+        freq="MS",
+        n_jobs=1,
+    )
+    cv = sf.cross_validation(
+        df=df,
+        h=12,
+        step_size=1,
+        n_windows=3,
+        refit=False,
+    )
+    assert len(cv) > 0
+    assert "MSTL" in cv.columns
 
 
 def test_mstl():
