@@ -929,19 +929,73 @@ def test_getQ0_vjp():
         np.testing.assert_allclose(bar_theta[j], fd, rtol=1e-3)
 
 
-def test_ml_grad_convergence():
-    """Verify CSS-ML with analytical gradients produces reasonable coefficients."""
+def _minimize_force_numerical(fn, x0, args=(), method="BFGS", jac=None, **kw):
+    """Wrapper that strips jac=True to force finite-difference gradients."""
+    from scipy.optimize import minimize as _scipy_minimize
+
+    if jac is True:
+
+        def val_only(*a, **ka):
+            r = fn(*a, **ka)
+            return r[0] if isinstance(r, tuple) else r
+
+        return _scipy_minimize(val_only, x0, args=args, method=method, **kw)
+    return _scipy_minimize(fn, x0, args=args, method=method, jac=jac, **kw)
+
+
+@pytest.mark.parametrize(
+    "order, seasonal, include_mean",
+    [
+        ((1, 1, 1), {"order": (0, 0, 0), "period": 1}, False),
+        ((2, 1, 2), {"order": (0, 0, 0), "period": 1}, False),
+        ((1, 0, 1), {"order": (0, 0, 0), "period": 1}, True),
+        ((1, 0, 1), {"order": (1, 0, 1), "period": 12}, False),
+        ((2, 1, 1), {"order": (1, 1, 1), "period": 12}, False),
+    ],
+    ids=[
+        "ARIMA(1,1,1)",
+        "ARIMA(2,1,2)",
+        "ARIMA(1,0,1)+mean",
+        "SARIMA(1,0,1)(1,0,1)[12]",
+        "SARIMA(2,1,1)(1,1,1)[12]",
+    ],
+)
+def test_ml_grad_numerical_equivalence(order, seasonal, include_mean):
+    """Verify analytical gradients produce the same results as numerical gradients."""
+    from unittest.mock import patch
+
     y = ap.astype(np.float64)
-
-    # Fit with BFGS (uses analytical grad)
-    result = arima(y, order=(1, 1, 1), method="CSS-ML", optim_method="BFGS")
-
-    # Compare to known values from the original (finite-diff) BFGS run
-    # ar1 ~= -0.483, ma1 ~= 0.875
-    np.testing.assert_allclose(
-        result["coef"]["ar1"], -0.483, atol=0.05
+    kw = dict(
+        order=order,
+        seasonal=seasonal,
+        include_mean=include_mean,
+        method="CSS-ML",
+        optim_method="BFGS",
     )
+
+    # New code path: BFGS with analytical gradients
+    res_analytical = Arima(y, **kw)
+
+    # Old code path: BFGS with scipy finite-difference gradients
+    with patch("statsforecast.arima.minimize", _minimize_force_numerical):
+        res_numerical = Arima(y, **kw)
+
+    # Log-likelihood must be close (primary correctness metric)
     np.testing.assert_allclose(
-        result["coef"]["ma1"], 0.875, atol=0.05
+        res_analytical["loglik"], res_numerical["loglik"], atol=2.0,
+        err_msg="Log-likelihood differs",
     )
-    assert np.isfinite(result["aic"])
+
+    # sigma2 must be close
+    np.testing.assert_allclose(
+        res_analytical["sigma2"], res_numerical["sigma2"], rtol=0.1,
+        err_msg="sigma2 differs",
+    )
+
+    # Forecasts must be close
+    fc_ana = forecast_arima(res_analytical, h=12)
+    fc_num = forecast_arima(res_numerical, h=12)
+    np.testing.assert_allclose(
+        fc_ana["mean"], fc_num["mean"], rtol=0.05,
+        err_msg="Forecasts differ",
+    )
