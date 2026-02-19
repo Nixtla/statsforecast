@@ -32,41 +32,7 @@ StatsForecast offers a wide variety of statistical forecasting models grouped in
 #### `AutoARIMA`
 
 ```python
-AutoARIMA(
-    d=None,
-    D=None,
-    max_p=5,
-    max_q=5,
-    max_P=2,
-    max_Q=2,
-    max_order=5,
-    max_d=2,
-    max_D=1,
-    start_p=2,
-    start_q=2,
-    start_P=1,
-    start_Q=1,
-    stationary=False,
-    seasonal=True,
-    ic="aicc",
-    stepwise=True,
-    nmodels=94,
-    trace=False,
-    approximation=False,
-    method=None,
-    truncate=None,
-    test="kpss",
-    test_kwargs=None,
-    seasonal_test="seas",
-    seasonal_test_kwargs=None,
-    allowdrift=True,
-    allowmean=True,
-    blambda=None,
-    biasadj=False,
-    season_length=1,
-    alias="AutoARIMA",
-    prediction_intervals=None,
-)
+AutoARIMA(d=None, D=None, max_p=5, max_q=5, max_P=2, max_Q=2, max_order=5, max_d=2, max_D=1, start_p=2, start_q=2, start_P=1, start_Q=1, stationary=False, seasonal=True, ic='aicc', stepwise=True, nmodels=94, trace=False, approximation=False, method=None, truncate=None, test='kpss', test_kwargs=None, seasonal_test='seas', seasonal_test_kwargs=None, allowdrift=True, allowmean=True, blambda=None, biasadj=False, season_length=1, alias='AutoARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -228,14 +194,7 @@ Name | Type | Description
 #### `AutoETS`
 
 ```python
-AutoETS(
-    season_length=1,
-    model="ZZZ",
-    damped=None,
-    phi=None,
-    alias="AutoETS",
-    prediction_intervals=None,
-)
+AutoETS(season_length=1, model='ZZZ', damped=None, phi=None, alias='AutoETS', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -515,13 +474,7 @@ Name | Type | Description
 #### `AutoTheta`
 
 ```python
-AutoTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    model=None,
-    alias="AutoTheta",
-    prediction_intervals=None,
-)
+AutoTheta(season_length=1, decomposition_type='multiplicative', model=None, alias='AutoTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -649,17 +602,7 @@ Name | Type | Description
 #### `AutoMFLES`
 
 ```python
-AutoMFLES(
-    test_size,
-    season_length=None,
-    n_windows=2,
-    config=None,
-    step_size=None,
-    metric="smape",
-    verbose=False,
-    prediction_intervals=None,
-    alias="AutoMFLES",
-)
+AutoMFLES(test_size, season_length=None, n_windows=2, config=None, step_size=None, metric='smape', verbose=False, prediction_intervals=None, alias='AutoMFLES')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -777,16 +720,7 @@ Name | Type | Description
 #### `AutoTBATS`
 
 ```python
-AutoTBATS(
-    season_length,
-    use_boxcox=None,
-    bc_lower_bound=0.0,
-    bc_upper_bound=1.0,
-    use_trend=None,
-    use_damped_trend=None,
-    use_arma_errors=True,
-    alias="AutoTBATS",
-)
+AutoTBATS(season_length, use_boxcox=None, bc_lower_bound=0.0, bc_upper_bound=1.0, use_trend=None, use_damped_trend=None, use_arma_errors=True, alias='AutoTBATS')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -916,20 +850,7 @@ Name | Type | Description
 #### `ARIMA`
 
 ```python
-ARIMA(
-    order=(0, 0, 0),
-    season_length=1,
-    seasonal_order=(0, 0, 0),
-    include_mean=True,
-    include_drift=False,
-    include_constant=None,
-    blambda=None,
-    biasadj=False,
-    method="CSS-ML",
-    fixed=None,
-    alias="ARIMA",
-    prediction_intervals=None,
-)
+ARIMA(order=(0, 0, 0), season_length=1, seasonal_order=(0, 0, 0), include_mean=True, include_drift=False, include_constant=None, blambda=None, biasadj=False, method='CSS-ML', fixed=None, alias='ARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1060,17 +981,7 @@ Name | Type | Description
 #### `AutoRegressive`
 
 ```python
-AutoRegressive(
-    lags,
-    include_mean=True,
-    include_drift=False,
-    blambda=None,
-    biasadj=False,
-    method="CSS-ML",
-    fixed=None,
-    alias="AutoRegressive",
-    prediction_intervals=None,
-)
+AutoRegressive(lags, include_mean=True, include_drift=False, blambda=None, biasadj=False, method='CSS-ML', fixed=None, alias='AutoRegressive', prediction_intervals=None)
 ```
 
 Bases: <code>[ARIMA](#statsforecast.models.ARIMA)</code>
@@ -1434,9 +1345,7 @@ Name | Type | Description
 #### `SeasonalExponentialSmoothing`
 
 ```python
-SeasonalExponentialSmoothing(
-    season_length, alpha, alias="SeasonalES", prediction_intervals=None
-)
+SeasonalExponentialSmoothing(season_length, alpha, alias='SeasonalES', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1567,9 +1476,7 @@ Name | Type | Description
 #### `SeasonalExponentialSmoothingOptimized`
 
 ```python
-SeasonalExponentialSmoothingOptimized(
-    season_length, alias="SeasESOpt", prediction_intervals=None
-)
+SeasonalExponentialSmoothingOptimized(season_length, alias='SeasESOpt', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1732,12 +1639,7 @@ Name | Type | Description | Default
 #### `HoltWinters`
 
 ```python
-HoltWinters(
-    season_length=1,
-    error_type="A",
-    alias="HoltWinters",
-    prediction_intervals=None,
-)
+HoltWinters(season_length=1, error_type='A', alias='HoltWinters', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoETS](#statsforecast.models.AutoETS)</code>
@@ -2409,9 +2311,7 @@ Name | Type | Description
 #### `SeasonalWindowAverage`
 
 ```python
-SeasonalWindowAverage(
-    season_length, window_size, alias="SeasWA", prediction_intervals=None
-)
+SeasonalWindowAverage(season_length, window_size, alias='SeasWA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -3334,13 +3234,7 @@ Name | Type | Description
 #### `MSTL`
 
 ```python
-MSTL(
-    season_length,
-    trend_forecaster=AutoETS(model="ZZN"),
-    stl_kwargs=None,
-    alias="MSTL",
-    prediction_intervals=None,
-)
+MSTL(season_length, trend_forecaster=AutoETS(model='ZZN'), stl_kwargs=None, alias='MSTL', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -3467,31 +3361,7 @@ Name | Type | Description
 #### `MFLES`
 
 ```python
-MFLES(
-    season_length=None,
-    fourier_order=None,
-    max_rounds=50,
-    ma=None,
-    alpha=1.0,
-    decay=-1.0,
-    changepoints=True,
-    n_changepoints=0.25,
-    seasonal_lr=0.9,
-    trend_lr=0.9,
-    exogenous_lr=1.0,
-    residuals_lr=1.0,
-    cov_threshold=0.7,
-    moving_medians=False,
-    min_alpha=0.05,
-    max_alpha=1.0,
-    trend_penalty=True,
-    multiplicative=None,
-    smoother=False,
-    robust=None,
-    verbose=False,
-    prediction_intervals=None,
-    alias="MFLES",
-)
+MFLES(season_length=None, fourier_order=None, max_rounds=50, ma=None, alpha=1.0, decay=-1.0, changepoints=True, n_changepoints=0.25, seasonal_lr=0.9, trend_lr=0.9, exogenous_lr=1.0, residuals_lr=1.0, cov_threshold=0.7, moving_medians=False, min_alpha=0.05, max_alpha=1.0, trend_penalty=True, multiplicative=None, smoother=False, robust=None, verbose=False, prediction_intervals=None, alias='MFLES')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -3633,16 +3503,7 @@ Name | Type | Description
 #### `TBATS`
 
 ```python
-TBATS(
-    season_length,
-    use_boxcox=True,
-    bc_lower_bound=0.0,
-    bc_upper_bound=1.0,
-    use_trend=True,
-    use_damped_trend=False,
-    use_arma_errors=False,
-    alias="TBATS",
-)
+TBATS(season_length, use_boxcox=True, bc_lower_bound=0.0, bc_upper_bound=1.0, use_trend=True, use_damped_trend=False, use_arma_errors=False, alias='TBATS')
 ```
 
 Bases: <code>[AutoTBATS](#statsforecast.models.AutoTBATS)</code>
@@ -3681,12 +3542,7 @@ Name | Type | Description | Default
 #### `Theta`
 
 ```python
-Theta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="Theta",
-    prediction_intervals=None,
-)
+Theta(season_length=1, decomposition_type='multiplicative', alias='Theta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3714,12 +3570,7 @@ Name | Type | Description | Default
 #### `OptimizedTheta`
 
 ```python
-OptimizedTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="OptimizedTheta",
-    prediction_intervals=None,
-)
+OptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='OptimizedTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3747,12 +3598,7 @@ Name | Type | Description | Default
 #### `DynamicTheta`
 
 ```python
-DynamicTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="DynamicTheta",
-    prediction_intervals=None,
-)
+DynamicTheta(season_length=1, decomposition_type='multiplicative', alias='DynamicTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3780,12 +3626,7 @@ Name | Type | Description | Default
 #### `DynamicOptimizedTheta`
 
 ```python
-DynamicOptimizedTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="DynamicOptimizedTheta",
-    prediction_intervals=None,
-)
+DynamicOptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='DynamicOptimizedTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>

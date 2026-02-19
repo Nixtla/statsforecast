@@ -37,13 +37,7 @@ See distributed computing example [here](https://github.com/Nixtla/statsforecast
 #### `StatsForecast.fit`
 
 ```python
-fit(
-    df,
-    prediction_intervals=None,
-    id_col="unique_id",
-    time_col="ds",
-    target_col="y",
-)
+fit(df, prediction_intervals=None, id_col='unique_id', time_col='ds', target_col='y')
 ```
 
 Fit statistical models to time series data.
@@ -96,16 +90,7 @@ Type | Description
 #### `StatsForecast.fit_predict`
 
 ```python
-fit_predict(
-    h,
-    df,
-    X_df=None,
-    level=None,
-    prediction_intervals=None,
-    id_col="unique_id",
-    time_col="ds",
-    target_col="y",
-)
+fit_predict(h, df, X_df=None, level=None, prediction_intervals=None, id_col='unique_id', time_col='ds', target_col='y')
 ```
 
 Fit models and generate predictions in a single step.
@@ -136,17 +121,7 @@ Type | Description
 #### `StatsForecast.forecast`
 
 ```python
-forecast(
-    h,
-    df,
-    X_df=None,
-    level=None,
-    fitted=False,
-    prediction_intervals=None,
-    id_col="unique_id",
-    time_col="ds",
-    target_col="y",
-)
+forecast(h, df, X_df=None, level=None, fitted=False, prediction_intervals=None, id_col='unique_id', time_col='ds', target_col='y')
 ```
 
 Generate forecasts with memory-efficient model training.
@@ -179,21 +154,7 @@ Type | Description
 #### `StatsForecast.cross_validation`
 
 ```python
-cross_validation(
-    h,
-    df,
-    n_windows=1,
-    step_size=1,
-    test_size=None,
-    input_size=None,
-    level=None,
-    fitted=False,
-    refit=True,
-    prediction_intervals=None,
-    id_col="unique_id",
-    time_col="ds",
-    target_col="y",
-)
+cross_validation(h, df, n_windows=1, step_size=1, test_size=None, input_size=None, level=None, fitted=False, refit=True, prediction_intervals=None, id_col='unique_id', time_col='ds', target_col='y')
 ```
 
 Perform temporal cross-validation for model evaluation.
@@ -230,21 +191,7 @@ Type | Description
 #### `StatsForecast.plot`
 
 ```python
-plot(
-    df,
-    forecasts_df=None,
-    unique_ids=None,
-    plot_random=True,
-    models=None,
-    level=None,
-    max_insample_length=None,
-    plot_anomalies=False,
-    engine="matplotlib",
-    id_col="unique_id",
-    time_col="ds",
-    target_col="y",
-    resampler_kwargs=None,
-)
+plot(df, forecasts_df=None, unique_ids=None, plot_random=True, models=None, level=None, max_insample_length=None, plot_anomalies=False, engine='matplotlib', id_col='unique_id', time_col='ds', target_col='y', resampler_kwargs=None)
 ```
 
 Visualize time series data with forecasts and prediction intervals.
