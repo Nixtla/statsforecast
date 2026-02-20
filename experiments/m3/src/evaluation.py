@@ -2,7 +2,7 @@ from itertools import product
 
 import fire
 import pandas as pd
-from datasetsforecast.losses import mape, smape
+from utilsforecast.losses import mape, smape
 
 from src.data import get_data
 
