@@ -256,6 +256,7 @@ class GroupedArray(BaseGroupedArray):
         refit=True,
         verbose=False,
         target_col="y",
+        min_train_size=None,
     ):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
@@ -279,6 +280,7 @@ class GroupedArray(BaseGroupedArray):
             last_fitted_idxs = np.full_like(fitted_idxs, False, dtype=bool)
         matches = ["mean", "lo", "hi"]
         steps = list(range(-test_size, -h + 1, step_size))
+        valid_mask = np.ones((self.n_groups, n_windows), dtype=bool)
         for i_ts, grp in enumerate(self):
             iterable = tqdm(
                 enumerate(steps, start=0),
@@ -288,12 +290,20 @@ class GroupedArray(BaseGroupedArray):
             )
             fitted_models = [None for _ in range(n_models)]
             for i_window, cutoff in iterable:
-                should_fit = i_window == 0 or (refit > 0 and i_window % refit == 0)
+                should_fit = (
+                    refit is True
+                    or fitted_models[0] is None
+                    or (refit > 0 and i_window % refit == 0)
+                )
                 end_cutoff = cutoff + h
                 in_size_disp = cutoff if input_size is None else input_size
                 y = grp[(cutoff - in_size_disp) : cutoff]
                 y_train = y[:, 0] if y.ndim == 2 else y
                 X_train = y[:, 1:] if (y.ndim == 2 and y.shape[1] > 1) else None
+                train_size = y_train.shape[0] if hasattr(y_train, "shape") else len(y_train)
+                if min_train_size is not None and train_size < min_train_size:
+                    valid_mask[i_ts, i_window] = False
+                    continue
                 y_test = grp[cutoff:] if end_cutoff == 0 else grp[cutoff:end_cutoff]
                 X_future = (
                     y_test[:, 1:]
@@ -372,7 +382,11 @@ class GroupedArray(BaseGroupedArray):
                             i_model + 1,
                         ][(cutoff - in_size_disp) : cutoff] = res_i["fitted"]
                     cols += cols_m
-        result = {"forecasts": out.reshape(-1, 1 + cuts[-1]), "cols": cols}
+        result = {
+            "forecasts": out.reshape(-1, 1 + cuts[-1]),
+            "cols": cols,
+            "valid_mask": valid_mask,
+        }
         if fitted:
             result["fitted"] = {
                 "values": fitted_vals,
@@ -448,6 +462,7 @@ class GroupedArray(BaseGroupedArray):
         refit=True,
         verbose=False,
         target_col="y",
+        min_train_size=None,
     ):
         return self.cross_validation(
             models=models,
@@ -461,6 +476,7 @@ class GroupedArray(BaseGroupedArray):
             refit=refit,
             verbose=verbose,
             target_col=target_col,
+            min_train_size=min_train_size,
         )
 
     def simulate(
@@ -655,6 +671,16 @@ class _StatsForecast:
             interval = getattr(model, "prediction_intervals", None)
             if interval is None:
                 setattr(model, "prediction_intervals", prediction_intervals)
+
+    def _cv_min_train_size(self) -> Optional[int]:
+        """Min training size for CV; used to skip early windows (e.g. MSTL needs season_length)."""
+        sizes = []
+        for m in self.models:
+            if hasattr(m, "min_train_size"):
+                s = getattr(m, "min_train_size", None)
+                if s is not None:
+                    sizes.append(s)
+        return max(sizes) if sizes else None
 
     def fit(
         self,
@@ -1190,6 +1216,7 @@ class _StatsForecast:
         )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         _, level = self._parse_X_level(h=h, X=None, level=level)
+        min_train_size = self._cv_min_train_size()
         if self.n_jobs == 1:
             res_fcsts = self.ga.cross_validation(
                 models=self.models,
@@ -1203,6 +1230,7 @@ class _StatsForecast:
                 verbose=self.verbose,
                 refit=refit,
                 target_col=target_col,
+                min_train_size=min_train_size,
             )
         else:
             res_fcsts = self._cross_validation_parallel(
@@ -1214,6 +1242,7 @@ class _StatsForecast:
                 level=level,
                 refit=refit,
                 target_col=target_col,
+                min_train_size=min_train_size,
             )
         if fitted:
             self.cv_fitted_values_ = res_fcsts["fitted"]
@@ -1233,6 +1262,13 @@ class _StatsForecast:
         fcsts_df = ufp.assign_columns(
             fcsts_df, res_fcsts["cols"], res_fcsts["forecasts"]
         )
+        valid_mask = res_fcsts.get("valid_mask")
+        if valid_mask is not None:
+            n_valid = valid_mask.shape[0] * valid_mask.shape[1]
+            n_rows = res_fcsts["forecasts"].shape[0]
+            h = n_rows // n_valid if n_valid > 0 else 0
+            valid_row_mask = np.repeat(valid_mask.ravel(), h)
+            fcsts_df = ufp.filter_with_mask(fcsts_df, valid_row_mask)
         return fcsts_df
 
     def cross_validation_fitted_values(self) -> DataFrame:
@@ -1390,7 +1426,16 @@ class _StatsForecast:
         return result
 
     def _cross_validation_parallel(
-        self, h, test_size, step_size, input_size, fitted, level, refit, target_col
+        self,
+        h,
+        test_size,
+        step_size,
+        input_size,
+        fitted,
+        level,
+        refit,
+        target_col,
+        min_train_size=None,
     ):
         # create elements for each core
         gas = self.ga.split(self.n_jobs)
@@ -1415,6 +1460,7 @@ class _StatsForecast:
                         refit=refit,
                         verbose=self.verbose,
                         target_col=target_col,
+                        min_train_size=min_train_size,
                     ),
                 )
                 futures.append(future)
@@ -1424,6 +1470,7 @@ class _StatsForecast:
             cols = out[0]["cols"]
             result["forecasts"] = fcsts
             result["cols"] = cols
+            result["valid_mask"] = np.vstack([d["valid_mask"] for d in out])
             if fitted:
                 result["fitted"] = {}
                 result["fitted"]["values"] = np.concatenate(
