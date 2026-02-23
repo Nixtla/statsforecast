@@ -55,7 +55,7 @@ def test_mstl():
     electricity_data = electricity_data[mask]
 
     # Resample to hourly frequency for analysis
-    hourly_data = electricity_data.set_index("ds").resample("H").sum()
+    hourly_data = electricity_data.set_index("ds").resample("h").sum()
 
     seasonal_periods = [24, 24 * 7]  # Daily and weekly patterns
     decomposition = mstl(hourly_data["y"].values, seasonal_periods)
