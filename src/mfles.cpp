@@ -163,6 +163,10 @@ RowMajorMatrixXd get_basis(const Eigen::Ref<const VectorXd> &y_in,
 VectorXd siegel_repeated_medians(const Eigen::Ref<const VectorXd> &x,
                                  const Eigen::Ref<const VectorXd> &y) {
   Eigen::Index n = y.size();
+  if (n < 2) {
+    throw std::invalid_argument(
+        "siegel_repeated_medians requires at least 2 data points");
+  }
   VectorXd slopes(n);
   std::vector<double> slopes_sub(n - 1);
 

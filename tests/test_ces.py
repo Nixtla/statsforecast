@@ -49,7 +49,6 @@ class TestCES:
         
     def test_nonseasonal(self):
         """Test nonseasonal CES model"""
-        _nmse = len(ap)
         amse_ = np.zeros(30)
         e_ = np.zeros(len(ap))
         
@@ -92,9 +91,7 @@ class TestCES:
     
     def test_simple_seasonal(self):
         """Test simple seasonal CES model"""
-        _nmse = len(ap)
         amse_ = np.zeros(30)
-        _lik = 0.
         e_ = np.zeros(len(ap))
         
         init_states_s_seas = np.zeros((self.m * 2 + len(ap), 2), dtype=np.float64)
@@ -154,9 +151,7 @@ class TestCES:
 
     def test_partial_seasonal(self):
         """Test partial seasonal CES model"""
-        _nmse = len(ap)
         amse_ = np.zeros(30)
-        _lik = 0.
         e_ = np.zeros(len(ap))
         
         init_states_p_seas = np.zeros((self.m + len(ap), 3), dtype=np.float64)
@@ -215,9 +210,7 @@ class TestCES:
 
     def test_full_seasonal(self):
         """Test full seasonal CES model"""
-        _nmse = len(ap)
         amse_ = np.zeros(30)
-        _lik = 0.
         e_ = np.zeros(len(ap))
         
         init_states_f_seas = np.zeros((self.m * 2 + len(ap), 4), dtype=np.float64)

@@ -41,7 +41,7 @@ def initstate(y, m, seasontype):
         states[:lags, 2] = seasonal_decompose(y, period=lags).seasonal[:lags]
         states[:lags, 3] = states[:lags, 2] / 1.1
     else:
-        raise Exception(f"Unkwon seasontype: {seasontype}")
+        raise Exception(f"Unknown seasontype: {seasontype}")
 
     return states
 
@@ -167,8 +167,10 @@ def optimize_ces_target_fn(
     opt_beta_0 = bool(optimize_params["beta_0"])
     opt_beta_1 = bool(optimize_params["beta_1"])
 
-    lower = np.array([0.01, 0.01, 0.01, 0.01], dtype=np.float64)
-    upper = np.array([1.8, 1.9, 1.5, 1.5], dtype=np.float64)
+    all_lower = np.array([0.01, 0.01, 0.01, 0.01], dtype=np.float64)
+    all_upper = np.array([1.8, 1.9, 1.5, 1.5], dtype=np.float64)
+    lower = all_lower[:len(x0)]
+    upper = all_upper[:len(x0)]
 
     opt_result = _ces.optimize(
         x0, lower, upper,
@@ -222,19 +224,19 @@ def cesmodel(
     )
     if fred is not None:
         fit_par = fred.x
-    j = 0
-    if optimize_params["alpha_0"]:
-        par["alpha_0"] = fit_par[j]
-        j += 1
-    if optimize_params["alpha_1"]:
-        par["alpha_1"] = fit_par[j]
-        j += 1
-    if optimize_params["beta_0"]:
-        par["beta_0"] = fit_par[j]
-        j += 1
-    if optimize_params["beta_1"]:
-        par["beta_1"] = fit_par[j]
-        j += 1
+        j = 0
+        if optimize_params["alpha_0"]:
+            par["alpha_0"] = fit_par[j]
+            j += 1
+        if optimize_params["alpha_1"]:
+            par["alpha_1"] = fit_par[j]
+            j += 1
+        if optimize_params["beta_0"]:
+            par["beta_0"] = fit_par[j]
+            j += 1
+        if optimize_params["beta_1"]:
+            par["beta_1"] = fit_par[j]
+            j += 1
 
     amse, e, states, lik = pegelsresid_ces(
         y=y,
@@ -298,13 +300,13 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 
 
 def _simulate_pred_intervals(model, h, level):
-    np.random.seed(1)
+    rng = np.random.default_rng(1)
     nsim = 5000
     y_path = np.zeros([nsim, h])
 
     season = switch_ces(model["seasontype"])
     for k in range(nsim):
-        e = np.random.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
+        e = rng.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
         states = model["states"]
         fcsts = np.zeros(h, dtype=np.float64)
         cesforecast(
@@ -456,8 +458,6 @@ def simulate_ces(
 
     # Set up random generator
     rng = np.random.default_rng(seed)
-    if seed is not None:
-        np.random.seed(seed)
 
     y_path = np.zeros([n_paths, h])
 

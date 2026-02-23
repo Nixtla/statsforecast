@@ -13,6 +13,13 @@ using Eigen::VectorXd;
 
 VectorXd compute_sigma2(const Eigen::Ref<const VectorXd> &x0,
                         const Eigen::Ref<const VectorXd> &x, int p, int q) {
+  if (x0.size() < 1 + p + q) {
+    throw std::invalid_argument(
+        "compute_sigma2: x0 must have at least 1 + p + q elements");
+  }
+  if (x.size() == 0) {
+    throw std::invalid_argument("compute_sigma2: x must be non-empty");
+  }
   double w = x0[0];
   VectorXd alpha = x0.segment(1, p);
   VectorXd beta = x0.segment(p + 1, q);
@@ -61,6 +68,9 @@ double loglik(const VectorXd &x0, const VectorXd &x, int p, int q) {
       mean_x += x[i];
       count++;
     }
+  }
+  if (count == 0) {
+    return std::numeric_limits<double>::infinity();
   }
   mean_x /= count;
 

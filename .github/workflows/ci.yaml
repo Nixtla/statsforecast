@@ -10,9 +10,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  NIXTLA_NUMBA_CACHE: "1"
-
 jobs:
   run-tests:
     name: Run tests for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
@@ -20,7 +17,6 @@ jobs:
     timeout-minutes: 60
     env:
       CIBW_BUILD_FRONTEND: build[uv]
-      CIBW_ENVIRONMENT: NIXTLA_NUMBA_CACHE=1
     strategy:
       fail-fast: false
       matrix:
@@ -111,7 +107,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install the library
-        run: pip install uv && uv pip install --system ".[dev]" "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git"
+        run: pip install uv && uv pip install --system ".[dev]" "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git@95a9ea44115b5ed6088e30f786aa0c39f9e094ac"
 
       - name: Run M3 experiment
         run: |
