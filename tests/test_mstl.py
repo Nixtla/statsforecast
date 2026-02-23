@@ -1,6 +1,36 @@
 import numpy as np
 import pandas as pd
 from statsforecast.mstl import mstl
+from statsforecast import StatsForecast
+from statsforecast.models import MSTL, Naive
+from utilsforecast.data import generate_series
+
+
+def test_mstl_cv_refit_false_short_windows():
+    """MSTL CV with refit=False skips early windows where train_size < season_length (issue #969)."""
+    freq = "MS"
+    season_length = 12
+    min_length = 25
+    df = generate_series(n_series=1, freq=freq, min_length=min_length, max_length=min_length)
+
+    sf = StatsForecast(
+        models=[MSTL(season_length=[season_length])],
+        freq=freq,
+        n_jobs=1,
+        fallback_model=Naive(),
+    )
+    cv_df = sf.cross_validation(
+        df=df,
+        h=12,
+        step_size=1,
+        n_windows=3,
+        refit=False,
+    )
+    # First window has 11 train obs (< season_length=12), so it is skipped
+    # We get 2 valid windows * 12 steps = 24 rows (not 36)
+    assert len(cv_df) == 24
+    assert "MSTL" in cv_df.columns
+    assert cv_df["MSTL"].notna().all()
 
 
 def test_mstl():
