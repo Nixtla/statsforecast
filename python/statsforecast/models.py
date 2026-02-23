@@ -5573,6 +5573,11 @@ class MSTL(_TS):
             self.trend_forecaster.prediction_intervals = prediction_intervals
         self.stl_kwargs = dict() if stl_kwargs is None else stl_kwargs
 
+    @property
+    def min_train_size(self) -> int:
+        """Minimum training length required for MSTL (max of season lengths)."""
+        return max(self.season_length)
+
     def fit(
         self,
         y: np.ndarray,
