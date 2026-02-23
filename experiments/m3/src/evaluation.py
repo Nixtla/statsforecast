@@ -2,7 +2,17 @@ from itertools import product
 
 import fire
 import pandas as pd
-from datasetsforecast.losses import mape, smape
+import numpy as np
+
+
+def mape(y, y_hat):
+    """Mean Absolute Percentage Error - numpy arrays, returns percentage (0-100)."""
+    return 100 * np.mean(np.abs((y - y_hat) / (np.where(y == 0, 1e-8, y))))
+
+
+def smape(y, y_hat):
+    """Symmetric MAPE - numpy arrays, returns percentage (0-100)."""
+    return 100 * np.mean(2 * np.abs(y_hat - y) / (np.abs(y) + np.abs(y_hat) + 1e-8))
 
 from src.data import get_data
 
