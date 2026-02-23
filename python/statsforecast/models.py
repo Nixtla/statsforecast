@@ -42,6 +42,7 @@ __all__ = [
 
 
 import warnings
+from math import trunc
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -5507,15 +5508,9 @@ def _predict_mstl_components(mstl_ob, h, season_length):
     for i in range(nseasons):
         mp = seasonal_periods[i]
         colname = seasoncolumns[i]
-        vals = mstl_ob[colname].values
-        n_avail = len(vals)
-        take = min(mp, n_avail)
-        if take == 0:
-            seascomp[:, i] = 0.0
-        else:
-            last_vals = vals[-take:]
-            n_repeat = int(np.ceil(h / take))
-            seascomp[:, i] = np.tile(last_vals, n_repeat)[:h]
+        seascomp[:, i] = np.tile(
+            mstl_ob[colname].values[-mp:], trunc(1 + (h - 1) / mp)
+        )[:h]
     return seascomp
 
 

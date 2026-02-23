@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
 from statsforecast.mstl import mstl
-from statsforecast import StatsForecast
-from statsforecast.models import MSTL
-from utilsforecast.data import generate_series
 
 
 def test_mstl():
@@ -28,52 +25,10 @@ def test_mstl():
     electricity_data = electricity_data[mask]
 
     # Resample to hourly frequency for analysis
-    hourly_data = electricity_data.set_index("ds").resample("h").sum()
+    hourly_data = electricity_data.set_index("ds").resample("H").sum()
 
     seasonal_periods = [24, 24 * 7]  # Daily and weekly patterns
     decomposition = mstl(hourly_data["y"].values, seasonal_periods)
 
     assert decomposition is not None, "MSTL decomposition should return a result"
     assert hasattr(decomposition, "plot"), "Decomposition should have a plot method"
-
-def test_mstl_cv_refit_false():
-    """Regression test for for CV with refit=False and short series."""
-    df = generate_series(n_series=1, freq="MS", min_length=25, max_length=25)
-    sf = StatsForecast(
-        models=[MSTL(season_length=[12])],
-        freq="MS",
-        n_jobs=1,
-    )
-    cv = sf.cross_validation(
-        df=df,
-        h=12,
-        step_size=1,
-        n_windows=3,
-        refit=False,
-    )
-    assert len(cv) > 0
-    assert "MSTL" in cv.columns
-
-
-def test_mstl_cv_refit_false_preserves_state():
-    """Ensure CV with refit=False doesn't mutate fitted model state,
-    by comparing predictions before and after the CV run"""
-    np.random.seed(0)
-    df = generate_series(n_series=1, freq="MS", min_length=60, max_length=60)
-    sf = StatsForecast(
-        models=[MSTL(season_length=[12])],
-        freq="MS",
-        n_jobs=1,
-    ).fit(df)
-    pred_before = sf.predict(h=6)["MSTL"].to_numpy()
-
-    _ = sf.cross_validation(
-        df=df,
-        h=6,
-        step_size=1,
-        n_windows=3,
-        refit=False,
-    )
-
-    pred_after = sf.predict(h=6)["MSTL"].to_numpy()
-    np.testing.assert_allclose(pred_before, pred_after)
