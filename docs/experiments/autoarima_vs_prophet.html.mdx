@@ -12,7 +12,7 @@ production and as a benchmark. However, the python implementation
 quickly iterating and deploying `AutoARIMA` in production for a large
 number of time series. In this notebook we present Nixtla’s `AutoARIMA`
 based on the R implementation (developed by Rob Hyndman) and optimized
-using `numba`.
+for high performance.
 
 ## Example
 
@@ -508,8 +508,8 @@ plot_series(train, test)
 
 ### Time
 
-Since `AutoARIMA` works with numba is useful to calculate the time for
-just one time series.
+It is useful to calculate the time for just one time series to
+understand scaling behavior.
 
 ```python
 fcst = StatsForecast(df=train.query('unique_id == "H1"'), 

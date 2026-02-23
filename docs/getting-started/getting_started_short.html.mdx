@@ -77,13 +77,6 @@ periods](https://robjhyndman.com/hyndsight/seasonal-periods/))
 Any settings are passed into the constructor. Then you call its fit
 method and pass in the historical data frame.
 
-> **Note**
->
-> StatsForecast achieves its blazing speed using JIT compiling through
-> Numba. The first time you call the statsforecast class, the fit method
-> should take around 5 seconds. The second time -once Numba compiled
-> your settings- it should take less than 0.2s.
-
 ```python
 from statsforecast import StatsForecast
 from statsforecast.models import AutoARIMA

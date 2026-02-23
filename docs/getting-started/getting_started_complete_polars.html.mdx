@@ -298,13 +298,6 @@ sf = StatsForecast(
 )
 ```
 
-> **Note**
->
-> StatsForecast achieves its blazing speed using JIT compiling through
-> Numba. The first time you call the statsforecast class, the fit method
-> should take around 5 seconds. The second time -once Numba compiled
-> your settings- it should take less than 0.2s.
-
 The `forecast` method takes two arguments: forecasts next `h` (horizon)
 and `level`.
 
