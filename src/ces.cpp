@@ -12,8 +12,6 @@
 namespace ces {
 namespace py = pybind11;
 using Eigen::VectorXd;
-using RowMajorMatrixXf =
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 using RowMajorMatrixXd =
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
@@ -33,52 +31,43 @@ int switch_ces(const std::string &x) {
   throw std::invalid_argument("Unknown season type: " + x);
 }
 
-void cesupdate(Eigen::Ref<RowMajorMatrixXf> states, Eigen::Index i, int m,
+void cesupdate(Eigen::Ref<RowMajorMatrixXd> states, Eigen::Index i, int m,
                int season, double alpha_0, double alpha_1, double beta_0,
-               double beta_1, float y) {
-  // Compute intermediate values in double to match Numba's float64 promotion.
-  // Only narrow to float on the final store into the float32 states matrix.
+               double beta_1, double y) {
   double e;
   if (season == NONE || season == PARTIAL || season == FULL) {
-    e = static_cast<double>(y) - static_cast<double>(states(i - 1, 0));
+    e = y - states(i - 1, 0);
   } else {
-    e = static_cast<double>(y) - static_cast<double>(states(i - m, 0));
+    e = y - states(i - m, 0);
   }
   if (season > SIMPLE) {
-    e -= static_cast<double>(states(i - m, 2));
+    e -= states(i - m, 2);
   }
 
   if (season == NONE || season == PARTIAL || season == FULL) {
     double s0 = states(i - 1, 0), s1 = states(i - 1, 1);
-    states(i, 0) = static_cast<float>(s0 - (1.0 - alpha_1) * s1 +
-                                       (alpha_0 - alpha_1) * e);
-    states(i, 1) = static_cast<float>(s0 + (1.0 - alpha_0) * s1 +
-                                       (alpha_0 + alpha_1) * e);
+    states(i, 0) = s0 - (1.0 - alpha_1) * s1 + (alpha_0 - alpha_1) * e;
+    states(i, 1) = s0 + (1.0 - alpha_0) * s1 + (alpha_0 + alpha_1) * e;
   } else {
     double s0 = states(i - m, 0), s1 = states(i - m, 1);
-    states(i, 0) = static_cast<float>(s0 - (1.0 - alpha_1) * s1 +
-                                       (alpha_0 - alpha_1) * e);
-    states(i, 1) = static_cast<float>(s0 + (1.0 - alpha_0) * s1 +
-                                       (alpha_0 + alpha_1) * e);
+    states(i, 0) = s0 - (1.0 - alpha_1) * s1 + (alpha_0 - alpha_1) * e;
+    states(i, 1) = s0 + (1.0 - alpha_0) * s1 + (alpha_0 + alpha_1) * e;
   }
 
   if (season == PARTIAL) {
-    states(i, 2) = static_cast<float>(
-        static_cast<double>(states(i - m, 2)) + beta_0 * e);
+    states(i, 2) = states(i - m, 2) + beta_0 * e;
   }
   if (season == FULL) {
     double s2 = states(i - m, 2), s3 = states(i - m, 3);
-    states(i, 2) = static_cast<float>(s2 - (1.0 - beta_1) * s3 +
-                                       (beta_0 - beta_1) * e);
-    states(i, 3) = static_cast<float>(s2 + (1.0 - beta_0) * s3 +
-                                       (beta_0 + beta_1) * e);
+    states(i, 2) = s2 - (1.0 - beta_1) * s3 + (beta_0 - beta_1) * e;
+    states(i, 3) = s2 + (1.0 - beta_0) * s3 + (beta_0 + beta_1) * e;
   }
 }
 
 // Forecast into a pre-allocated buffer. Writes into buf (must have >= m+h
 // rows). Returns a reference to buf for convenience.
-void cesfcst_buf(Eigen::Ref<RowMajorMatrixXf> buf,
-                 const Eigen::Ref<const RowMajorMatrixXf> &states,
+void cesfcst_buf(Eigen::Ref<RowMajorMatrixXd> buf,
+                 const Eigen::Ref<const RowMajorMatrixXd> &states,
                  Eigen::Index i, int m, int season, Eigen::Ref<VectorXd> f,
                  Eigen::Index h, double alpha_0, double alpha_1,
                  double beta_0, double beta_1) {
@@ -96,25 +85,25 @@ void cesfcst_buf(Eigen::Ref<RowMajorMatrixXf> buf,
       f[i_h - m] += buf(i_h - m, 2);
     }
     cesupdate(buf, i_h, m, season, alpha_0, alpha_1, beta_0, beta_1,
-              static_cast<float>(f[i_h - m]));
+              f[i_h - m]);
   }
 }
 
 // Allocating version (for the public forecast API where a buffer isn't reused)
-RowMajorMatrixXf cesfcst(const Eigen::Ref<const RowMajorMatrixXf> &states,
+RowMajorMatrixXd cesfcst(const Eigen::Ref<const RowMajorMatrixXd> &states,
                          Eigen::Index i, int m, int season,
                          Eigen::Ref<VectorXd> f, Eigen::Index h,
                          double alpha_0, double alpha_1, double beta_0,
                          double beta_1) {
   Eigen::Index cols = states.cols();
-  RowMajorMatrixXf new_states = RowMajorMatrixXf::Zero(m + h, cols);
+  RowMajorMatrixXd new_states = RowMajorMatrixXd::Zero(m + h, cols);
   cesfcst_buf(new_states, states, i, m, season, f, h, alpha_0, alpha_1, beta_0,
               beta_1);
   return new_states;
 }
 
 // Helper: reverse states rows in-place by swapping top/bottom rows
-static void reverse_rows_inplace(Eigen::Ref<RowMajorMatrixXf> mat) {
+static void reverse_rows_inplace(Eigen::Ref<RowMajorMatrixXd> mat) {
   Eigen::Index nrows = mat.rows();
   for (Eigen::Index i = 0; i < nrows / 2; ++i) {
     mat.row(i).swap(mat.row(nrows - 1 - i));
@@ -126,7 +115,7 @@ static void reverse_rows_inplace(Eigen::Ref<RowMajorMatrixXf> mat) {
 // error inside cesupdate is identically zero.  This reduces state propagation
 // to a pure linear recurrence that needs no matrix buffer.
 // Requires nmse <= m_eff for seasonal types (always true in practice).
-static void inline_forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
+static void inline_forecast(const Eigen::Ref<const RowMajorMatrixXd> &states,
                             Eigen::Index i, int m_eff, int season,
                             Eigen::Ref<VectorXd> f, int nmse, double a0,
                             double a1) {
@@ -168,7 +157,7 @@ static void inline_forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
 // Core inner loop used by cescalc for one pass (forward or backward).
 // Updates states, e, amse, denom in place. Returns accumulated lik.
 static double cescalc_pass(const VectorXd &y_mut,
-                           Eigen::Ref<RowMajorMatrixXf> states, int m_eff,
+                           Eigen::Ref<RowMajorMatrixXd> states, int m_eff,
                            int season, double alpha_0, double alpha_1,
                            double beta_0, double beta_1,
                            Eigen::Ref<VectorXd> e, Eigen::Ref<VectorXd> amse,
@@ -179,9 +168,9 @@ static double cescalc_pass(const VectorXd &y_mut,
   // inline_forecast is only valid for seasonal types when nmse <= m_eff.
   // Pre-allocate a fallback buffer for the rare case where nmse > m_eff.
   bool use_inline = (season <= SIMPLE || nmse <= m_eff);
-  RowMajorMatrixXf fcst_fallback;
+  RowMajorMatrixXd fcst_fallback;
   if (!use_inline) {
-    fcst_fallback = RowMajorMatrixXf::Zero(m_eff + nmse, states.cols());
+    fcst_fallback = RowMajorMatrixXd::Zero(m_eff + nmse, states.cols());
   }
 
   for (Eigen::Index i = m_eff; i < n + m_eff; ++i) {
@@ -206,25 +195,25 @@ static double cescalc_pass(const VectorXd &y_mut,
     }
     // Update state with actual observation
     cesupdate(states, i, m_eff, season, alpha_0, alpha_1, beta_0, beta_1,
-              static_cast<float>(y_mut[i - m_eff]));
+              y_mut[i - m_eff]);
     lik += e[i - m_eff] * e[i - m_eff];
   }
   return lik;
 }
 
 // Update trailing states after a pass
-static void update_trailing_states(Eigen::Ref<RowMajorMatrixXf> states,
+static void update_trailing_states(Eigen::Ref<RowMajorMatrixXd> states,
                                    Eigen::Index n, int m_eff, int season,
                                    VectorXd &f, double alpha_0, double alpha_1,
                                    double beta_0, double beta_1,
-                                   RowMajorMatrixXf &fcst_buf) {
+                                   RowMajorMatrixXd &fcst_buf) {
   cesfcst_buf(fcst_buf, states, n + m_eff, m_eff, season, f, m_eff, alpha_0,
               alpha_1, beta_0, beta_1);
   states.bottomRows(m_eff) = fcst_buf.middleRows(m_eff, m_eff);
 }
 
 double cescalc(const Eigen::Ref<const VectorXd> &y,
-               Eigen::Ref<RowMajorMatrixXf> states, int m, int season,
+               Eigen::Ref<RowMajorMatrixXd> states, int m, int season,
                double alpha_0, double alpha_1, double beta_0, double beta_1,
                Eigen::Ref<VectorXd> e, Eigen::Ref<VectorXd> amse, int nmse,
                int backfit) {
@@ -239,7 +228,7 @@ double cescalc(const Eigen::Ref<const VectorXd> &y,
   VectorXd y_mut = y;
 
   // Buffer only needed for update_trailing_states (not the inner loop)
-  RowMajorMatrixXf fcst_buf = RowMajorMatrixXf::Zero(2 * m_eff, cols);
+  RowMajorMatrixXd fcst_buf = RowMajorMatrixXd::Zero(2 * m_eff, cols);
 
   // First forward pass
   double lik = cescalc_pass(y_mut, states, m_eff, season, alpha_0, alpha_1,
@@ -289,10 +278,10 @@ double ces_target_fn(const VectorXd &optimal_param, double init_alpha_0,
                      double init_alpha_1, double init_beta_0,
                      double init_beta_1, bool opt_alpha_0, bool opt_alpha_1,
                      bool opt_beta_0, bool opt_beta_1, const VectorXd &y,
-                     int m, const RowMajorMatrixXf &init_states,
+                     int m, const RowMajorMatrixXd &init_states,
                      int n_components, int season, int nmse) {
   Eigen::Index n = y.size();
-  RowMajorMatrixXf states = RowMajorMatrixXf::Zero(n + 2 * m, n_components);
+  RowMajorMatrixXd states = RowMajorMatrixXd::Zero(n + 2 * m, n_components);
   states.topRows(m) = init_states;
 
   Eigen::Index j = 0;
@@ -325,11 +314,11 @@ optimize(const Eigen::Ref<const VectorXd> &x0,
          double init_alpha_1, double init_beta_0, double init_beta_1,
          bool opt_alpha_0, bool opt_alpha_1, bool opt_beta_0, bool opt_beta_1,
          const Eigen::Ref<const VectorXd> &y, int m,
-         const Eigen::Ref<const RowMajorMatrixXf> &init_states,
+         const Eigen::Ref<const RowMajorMatrixXd> &init_states,
          int n_components, const std::string &seasontype, int nmse) {
   int season = switch_ces(seasontype);
   // Make a copy of init_states since target_fn needs to copy it each iteration
-  RowMajorMatrixXf init_states_copy = init_states;
+  RowMajorMatrixXd init_states_copy = init_states;
   return nm::NelderMead(
       ces_target_fn, x0, lower, upper, 0.05, 1e-4, 1.0, 2.0, 0.5, 0.5, 1000,
       1e-4, true, init_alpha_0, init_alpha_1, init_beta_0, init_beta_1,
@@ -338,13 +327,13 @@ optimize(const Eigen::Ref<const VectorXd> &x0,
 }
 
 // Pegels residuals exposed to Python
-std::tuple<VectorXd, VectorXd, RowMajorMatrixXf, double>
+std::tuple<VectorXd, VectorXd, RowMajorMatrixXd, double>
 pegelsresid(const Eigen::Ref<const VectorXd> &y, int m,
-            const Eigen::Ref<const RowMajorMatrixXf> &init_states,
+            const Eigen::Ref<const RowMajorMatrixXd> &init_states,
             int n_components, const std::string &seasontype, double alpha_0,
             double alpha_1, double beta_0, double beta_1, int nmse) {
   Eigen::Index n = y.size();
-  RowMajorMatrixXf states = RowMajorMatrixXf::Zero(n + 2 * m, n_components);
+  RowMajorMatrixXd states = RowMajorMatrixXd::Zero(n + 2 * m, n_components);
   states.topRows(m) = init_states;
 
   VectorXd e =
@@ -365,7 +354,7 @@ pegelsresid(const Eigen::Ref<const VectorXd> &y, int m,
 }
 
 // Forecast function exposed to Python
-RowMajorMatrixXf forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
+RowMajorMatrixXd forecast(const Eigen::Ref<const RowMajorMatrixXd> &states,
                           Eigen::Index n, int m, const std::string &seasontype,
                           Eigen::Ref<VectorXd> f, Eigen::Index h,
                           double alpha_0, double alpha_1, double beta_0,
@@ -373,14 +362,14 @@ RowMajorMatrixXf forecast(const Eigen::Ref<const RowMajorMatrixXf> &states,
   int season = switch_ces(seasontype);
   int m_eff = (season == NONE) ? 1 : m;
   // Make mutable copy of states
-  RowMajorMatrixXf states_copy = states;
+  RowMajorMatrixXd states_copy = states;
   return cesfcst(states_copy, m_eff + n, m_eff, season, f, h, alpha_0,
                  alpha_1, beta_0, beta_1);
 }
 
 // cescalc exposed to Python (operates on pre-allocated arrays in place)
 double cescalc_py(const Eigen::Ref<const VectorXd> &y,
-                  Eigen::Ref<RowMajorMatrixXf> states, int m, int season,
+                  Eigen::Ref<RowMajorMatrixXd> states, int m, int season,
                   double alpha_0, double alpha_1, double beta_0, double beta_1,
                   Eigen::Ref<VectorXd> e, Eigen::Ref<VectorXd> amse, int nmse,
                   int backfit) {

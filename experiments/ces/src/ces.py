@@ -37,5 +37,5 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
 
 
 if __name__ == '__main__':
-    AutoCES(season_length=12).forecast(ap.astype(np.float32), h=12)
+    AutoCES(season_length=12).forecast(ap.astype(np.float64), h=12)
     fire.Fire(main)

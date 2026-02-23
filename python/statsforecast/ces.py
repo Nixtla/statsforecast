@@ -22,7 +22,7 @@ def initstate(y, m, seasontype):
     n = len(y)
     components = 2 + (seasontype == "P") + 2 * (seasontype == "F")
     lags = 1 if seasontype == "N" else m
-    states = np.zeros((lags, components), dtype=np.float32)
+    states = np.zeros((lags, components), dtype=np.float64)
     if seasontype == "N":
         idx = min(max(10, m), n)
         mean_ = np.mean(y[:idx])
@@ -126,7 +126,7 @@ def pegelsresid_ces(
     return _ces.pegelsresid(
         np.asarray(y, dtype=np.float64),
         m,
-        np.asarray(init_states, dtype=np.float32),
+        np.asarray(init_states, dtype=np.float64),
         n_components,
         seasontype,
         float(alpha_0),
@@ -140,10 +140,9 @@ def pegelsresid_ces(
 def cesforecast(states, n, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
     seasontype_map = {0: "N", 1: "S", 2: "P", 3: "F"}
     seasontype_str = seasontype_map[season]
-    # C++ expects float64 for f; convert and copy back if needed
     f_f64 = np.zeros(h, dtype=np.float64)
     _ces.forecast(
-        np.asarray(states, dtype=np.float32),
+        np.asarray(states, dtype=np.float64),
         n, m, seasontype_str, f_f64, h,
         float(alpha_0), float(alpha_1), float(beta_0), float(beta_1),
     )
@@ -176,7 +175,7 @@ def optimize_ces_target_fn(
         init_alpha_0, init_alpha_1, init_beta_0, init_beta_1,
         opt_alpha_0, opt_alpha_1, opt_beta_0, opt_beta_1,
         np.asarray(y, dtype=np.float64), m,
-        np.asarray(init_states, dtype=np.float32),
+        np.asarray(init_states, dtype=np.float64),
         n_components, seasontype, nmse,
     )
     # opt_result is (x, fn, nit, simplex) tuple from C++ Nelder-Mead
@@ -307,7 +306,7 @@ def _simulate_pred_intervals(model, h, level):
     for k in range(nsim):
         e = np.random.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
         states = model["states"]
-        fcsts = np.zeros(h, dtype=np.float32)
+        fcsts = np.zeros(h, dtype=np.float64)
         cesforecast(
             states=states + e,
             n=model["n"],
@@ -480,7 +479,7 @@ def simulate_ces(
             rng=rng,
         )
         states = model["states"]
-        fcsts = np.zeros(h, dtype=np.float32)
+        fcsts = np.zeros(h, dtype=np.float64)
         cesforecast(
             states=states + e,
             n=model["n"],
