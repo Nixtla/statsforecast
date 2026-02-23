@@ -9,7 +9,7 @@ The CES model has two main advantages over conventional exponential smoothing mo
 * it can model and forecast both stationary and non-stationary processes and
 * it can capture both level and trend cases
 
-Our implementation, optimized using numba, was tested on the M4 dataset (100k time series), getting similar accuracy and computational time results than the original implementation in R.
+Our implementation was tested on the M4 dataset (100k time series), getting similar accuracy and computational time results than the original implementation in R.
 
 Additionally, with StatsForecast you can easly build ensembles of all statstical models. In this experiment, we show how the ensemble between ETS and CES gives the best results.
 

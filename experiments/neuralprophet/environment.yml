@@ -7,7 +7,6 @@ dependencies:
   - python=3.8
   - pip==20.3.3
   - numpy
-  - numba
   - fire
   - pip:
     - git+https://github.com/ourownstory/neural_prophet.git@de24e5d
