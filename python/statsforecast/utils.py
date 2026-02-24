@@ -2,36 +2,16 @@ __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 
 import math
-import os
 from collections import namedtuple
 from typing import Dict
 
 import numpy as np
 import pandas as pd
-from numba import njit
 from scipy.stats import norm
 from utilsforecast.compat import DataFrame
 from utilsforecast.data import generate_series as utils_generate_series
 
-# Global variables
-NOGIL = bool(os.getenv("NIXTLA_NUMBA_RELEASE_GIL", ""))
-CACHE = bool(os.getenv("NIXTLA_NUMBA_CACHE", ""))
 results = namedtuple("results", "x fn nit simplex")
-
-
-@njit(nogil=NOGIL, cache=CACHE)
-def restrict_to_bounds(x, lower, upper):
-    new_x = np.full_like(x, fill_value=np.nan, dtype=x.dtype)
-    for i in range(x.size):
-        lo = lower[i]
-        up = upper[i]
-        if x[i] < lo:
-            new_x[i] = lo
-        elif x[i] > up:
-            new_x[i] = up
-        else:
-            new_x[i] = x[i]
-    return new_x
 
 
 def generate_series(
