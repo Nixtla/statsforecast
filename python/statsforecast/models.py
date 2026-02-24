@@ -46,7 +46,7 @@ from math import trunc
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from numba import njit
+from scipy.optimize import minimize_scalar
 from scipy.special import inv_boxcox
 
 from statsforecast.arima import (
@@ -64,9 +64,8 @@ from statsforecast.ets import (
     forecast_ets,
     forward_ets,
 )
+from statsforecast._lib import ses as _ses_lib
 from statsforecast.utils import (
-    CACHE,
-    NOGIL,
     ConformalIntervals,
     _calculate_intervals,
     _calculate_sigma,
@@ -2134,7 +2133,6 @@ class AutoRegressive(ARIMA):
         )
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _ses_sse(alpha: float, x: np.ndarray) -> float:
     r"""Compute the residual sum of squares for a simple exponential smoothing fit.
 
@@ -2145,18 +2143,9 @@ def _ses_sse(alpha: float, x: np.ndarray) -> float:
     Returns:
         sse (float): Residual sum of squares for the fit.
     """
-    complement = 1 - alpha
-    forecast = x[0]
-    sse = 0.0
-
-    for i in range(1, len(x)):
-        forecast = alpha * x[i - 1] + complement * forecast
-        sse += (x[i] - forecast) ** 2
-
-    return sse
+    return _ses_lib.ses_sse(alpha, x)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     r"""Compute the one-step ahead forecast for a simple exponential smoothing fit.
 
@@ -2167,18 +2156,7 @@ def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     Returns:
         tuple of (float, numpy.array): One-step ahead forecast and in-sample fitted values.
     """
-    complement = 1 - alpha
-    fitted = np.empty_like(x)
-    fitted[0] = x[0]
-    j = 0
-
-    for i in range(1, len(x)):
-        fitted[i] = alpha * x[j] + complement * fitted[j]
-        j += 1
-
-    forecast = alpha * x[j] + complement * fitted[j]
-    fitted[0] = np.nan
-    return forecast, fitted
+    return _ses_lib.ses_forecast(x, alpha)
 
 
 def _demand(x: np.ndarray) -> np.ndarray:
@@ -4536,44 +4514,12 @@ def _chunk_forecast(y, aggregation_level):
     return sums_forecast
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
-    out = np.empty_like(y)
-    out[0] = np.nan
-    fitted_idx = 0
-    for i in range(1, y.size):
-        if y[i - 1] > 0:
-            fitted_idx += 1
-            out[i] = fitted[fitted_idx]
-        elif fitted_idx > 0:
-            # if this entry is zero, the model didn't change
-            out[i] = out[i - 1]
-        else:
-            # if we haven't seen any demand, use naive
-            out[i] = y[i - 1]
-    return out
+    return _ses_lib.expand_fitted_demand(fitted, y)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _expand_fitted_intervals(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
-    out = np.empty_like(y)
-    out[0] = np.nan
-    fitted_idx = 0
-    for i in range(1, y.size):
-        if y[i - 1] != 0:
-            fitted_idx += 1
-            if fitted[fitted_idx] == 0:
-                # to avoid division by zero
-                out[i] = 1
-            else:
-                out[i] = fitted[fitted_idx]
-        elif fitted_idx > 0:
-            # if this entry is zero, the model didn't change
-            out[i] = out[i - 1]
-        else:
-            # if we haven't seen any intervals, use 1 to avoid division by zero
-            out[i] = 1
-    return out
+    return _ses_lib.expand_fitted_intervals(fitted, y)
 
 
 def _adida(

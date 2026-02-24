@@ -371,7 +371,6 @@ def auto_theta(
     decomposition_type="multiplicative",
 ):
     # converting params to floats
-    # to improve numba compilation
     if initial_smoothed is None:
         initial_smoothed = np.nan
     if alpha is None:
