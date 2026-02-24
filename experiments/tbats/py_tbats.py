@@ -1,9 +1,6 @@
-import os
 import time
 from multiprocessing import cpu_count
 import concurrent.futures
-os.environ['NIXTLA_NUMBA_RELEASE_GIL'] = '1'
-os.environ['NIXTLA_NUMBA_CACHE'] = '1'
 
 import fire
 import pandas as pd

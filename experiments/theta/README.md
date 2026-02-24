@@ -1,6 +1,6 @@
 # Theta Model
 
-The theta family of models has been shown to perform well in various datasets such as M3. `StatsForecast` includes four models of the family: `Theta`, `OptimizedTheta`, `DynamicTheta`, `DynamicOptimizedTheta`. The implementation is based on the [work of Jose A. Fioruccia, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, and Anne B.Koehlerf](https://www.sciencedirect.com/science/article/pii/S0169207016300243), and optimized using numba.
+The theta family of models has been shown to perform well in various datasets such as M3. `StatsForecast` includes four models of the family: `Theta`, `OptimizedTheta`, `DynamicTheta`, `DynamicOptimizedTheta`. The implementation is based on the [work of Jose A. Fioruccia, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, and Anne B.Koehlerf](https://www.sciencedirect.com/science/article/pii/S0169207016300243).
 
 
 ## Main Results

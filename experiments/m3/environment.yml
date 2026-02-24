@@ -7,7 +7,6 @@ dependencies:
   - python=3.7
   - pip==20.3.3
   - numpy==1.21.4
-  - numba
   - tabulate
   - scikit-learn
   - fire
