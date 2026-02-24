@@ -49,6 +49,116 @@ std::tuple<double, VectorXd> ses_forecast(const Eigen::Ref<const VectorXd> &x,
   return {forecast, fitted};
 }
 
+double golden_section_ses(const Eigen::Ref<const VectorXd> &x,
+                          double lower = 0.1, double upper = 0.3) {
+  const double gr = (std::sqrt(5.0) + 1.0) / 2.0;
+  double a = lower, b = upper;
+  double c = b - (b - a) / gr;
+  double d = a + (b - a) / gr;
+  double fc = ses_sse(c, x);
+  double fd = ses_sse(d, x);
+  for (int iter = 0; iter < 80; ++iter) {
+    if (std::abs(b - a) < 1e-12)
+      break;
+    if (fc < fd) {
+      b = d;
+      d = c;
+      fd = fc;
+      c = b - (b - a) / gr;
+      fc = ses_sse(c, x);
+    } else if (fd < fc) {
+      a = c;
+      c = d;
+      fc = fd;
+      d = a + (b - a) / gr;
+      fd = ses_sse(d, x);
+    } else {
+      break;
+    }
+  }
+  return (b + a) / 2.0;
+}
+
+double chunk_forecast(const Eigen::Ref<const VectorXd> &y,
+                      Eigen::Index aggregation_level) {
+  Eigen::Index n = y.size();
+  Eigen::Index lost = n % aggregation_level;
+  Eigen::Index n_cut = n - lost;
+  if (n_cut < aggregation_level) {
+    return y[n - 1];
+  }
+  Eigen::Index n_chunks = n_cut / aggregation_level;
+  VectorXd agg_sums(n_chunks);
+  for (Eigen::Index i = 0; i < n_chunks; ++i) {
+    double s = 0.0;
+    Eigen::Index base = lost + i * aggregation_level;
+    for (Eigen::Index j = 0; j < aggregation_level; ++j) {
+      s += y[base + j];
+    }
+    agg_sums[i] = s;
+  }
+  if (n_chunks <= 1) {
+    return agg_sums[0];
+  }
+  double alpha = golden_section_ses(agg_sums);
+  auto [forecast, fitted] = ses_forecast(agg_sums, alpha);
+  return forecast;
+}
+
+VectorXd adida_fitted_vals(const Eigen::Ref<const VectorXd> &y,
+                           const Eigen::Ref<const Eigen::VectorXi> &agg_levels) {
+  Eigen::Index n = y.size() - 1;
+  VectorXd sums_fitted(n);
+  for (Eigen::Index i = 0; i < n; ++i) {
+    sums_fitted[i] = chunk_forecast(y.head(i + 1), agg_levels[i]);
+  }
+  return sums_fitted;
+}
+
+VectorXd imapa_fitted_vals(const Eigen::Ref<const VectorXd> &y) {
+  Eigen::Index n = y.size();
+  VectorXd fitted_vals(n);
+  fitted_vals[0] = std::numeric_limits<double>::quiet_NaN();
+  for (Eigen::Index i = 1; i < n; ++i) {
+    // count non-zero elements and compute mean interval
+    int nonzero_count = 0;
+    for (Eigen::Index j = 0; j < i; ++j) {
+      if (y[j] != 0.0)
+        ++nonzero_count;
+    }
+    if (nonzero_count == 0) {
+      fitted_vals[i] = 0.0;
+      continue;
+    }
+    double intervals_sum = 0.0;
+    Eigen::Index prev = 0;
+    for (Eigen::Index j = 0; j < i; ++j) {
+      if (y[j] != 0.0) {
+        intervals_sum += static_cast<double>(j + 1 - prev);
+        prev = j + 1;
+      }
+    }
+    double mean_interval = intervals_sum / nonzero_count;
+    Eigen::Index max_agg =
+        std::max(static_cast<Eigen::Index>(1),
+                 static_cast<Eigen::Index>(std::round(mean_interval)));
+    max_agg = std::min(max_agg, i);
+    // average over aggregation levels
+    double forecast_sum = 0.0;
+    int count = 0;
+    auto prefix = y.head(i);
+    for (Eigen::Index agg_level = 1; agg_level <= max_agg; ++agg_level) {
+      if (agg_level > i)
+        continue;
+      double fcst = chunk_forecast(prefix, agg_level);
+      forecast_sum += fcst / static_cast<double>(agg_level);
+      ++count;
+    }
+    fitted_vals[i] = (count > 0) ? forecast_sum / count : 0.0;
+  }
+  return fitted_vals;
+}
+
 VectorXd expand_fitted_demand(const Eigen::Ref<const VectorXd> &fitted,
                               const Eigen::Ref<const VectorXd> &y) {
   VectorXd out(y.size());
@@ -110,6 +220,15 @@ void init(py::module_ &m) {
   ses_mod.def("ses_sse", &ses_sse,
               py::call_guard<py::gil_scoped_release>());
   ses_mod.def("ses_forecast", &ses_forecast,
+              py::call_guard<py::gil_scoped_release>());
+  ses_mod.def("golden_section_ses", &golden_section_ses,
+              py::arg("x"), py::arg("lower") = 0.1, py::arg("upper") = 0.3,
+              py::call_guard<py::gil_scoped_release>());
+  ses_mod.def("chunk_forecast", &chunk_forecast,
+              py::call_guard<py::gil_scoped_release>());
+  ses_mod.def("adida_fitted_vals", &adida_fitted_vals,
+              py::call_guard<py::gil_scoped_release>());
+  ses_mod.def("imapa_fitted_vals", &imapa_fitted_vals,
               py::call_guard<py::gil_scoped_release>());
   ses_mod.def("expand_fitted_demand", &expand_fitted_demand,
               py::call_guard<py::gil_scoped_release>());
