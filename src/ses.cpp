@@ -81,6 +81,10 @@ double golden_section_ses(const Eigen::Ref<const VectorXd> &x,
 
 double chunk_forecast(const Eigen::Ref<const VectorXd> &y,
                       Eigen::Index aggregation_level) {
+  if (aggregation_level <= 0) {
+    throw std::invalid_argument(
+        "chunk_forecast: aggregation_level must be >= 1");
+  }
   Eigen::Index n = y.size();
   Eigen::Index lost = n % aggregation_level;
   Eigen::Index n_cut = n - lost;

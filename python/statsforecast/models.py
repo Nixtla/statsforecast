@@ -4383,11 +4383,7 @@ class SeasonalWindowAverage(_TS):
 
 
 def _chunk_forecast(y, aggregation_level):
-    lost_remainder_data = len(y) % aggregation_level
-    y_cut = y[lost_remainder_data:]
-    aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-    sums_forecast, _, _ = _optimized_ses_forecast(aggregation_sums)
-    return sums_forecast
+    return _ses_lib.chunk_forecast(y, aggregation_level)
 
 
 def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
