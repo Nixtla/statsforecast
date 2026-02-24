@@ -13,6 +13,8 @@ from statsforecast.arima import (
     arima_css,
     arima_gradtrans,
     arima_like,
+    arima_like_grad,
+    getQ0_vjp,
     arima_string,
     arima_transpar,
     arima_undopars,
@@ -693,3 +695,307 @@ def test_auto_arima_with_trend():
         xreg=trend.reshape(-1, 1),
     )
     np.testing.assert_equal(model["xreg"][:, 0], trend)
+
+
+def test_arima_css_grad_nonseasonal():
+    """Validate analytical CSS gradient against finite differences for non-seasonal ARIMA."""
+    from statsforecast.arima import arima_css_grad
+
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.cumsum(np.random.randn(100)).astype(np.float64)
+    arma_arr = np.array([2, 1, 0, 0, 1, 1, 0], dtype=np.int32)
+    phi = np.array([0.5, -0.3], dtype=np.float64)
+    theta = np.array([-0.4], dtype=np.float64)
+
+    sigma2, resid, d_phi, d_theta, d_y = arima_css_grad(y, arma_arr, phi, theta)
+    sigma2_ref, resid_ref = arima_css(y, arma_arr, phi, theta)
+    np.testing.assert_allclose(sigma2, sigma2_ref)
+    np.testing.assert_allclose(resid, resid_ref)
+
+    ncond = 2 + 1
+    nu = np.count_nonzero(~np.isnan(resid[ncond:]))
+
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        fd = (arima_css(y, arma_arr, phi_p, theta)[0] - arima_css(y, arma_arr, phi_m, theta)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-4)
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        fd = (arima_css(y, arma_arr, phi, theta_p)[0] - arima_css(y, arma_arr, phi, theta_m)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-4)
+
+    for idx in [0, 5, 50, 99]:
+        y_p, y_m = y.copy(), y.copy()
+        y_p[idx] += eps
+        y_m[idx] -= eps
+        fd = (arima_css(y_p, arma_arr, phi, theta)[0] - arima_css(y_m, arma_arr, phi, theta)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_y[idx], fd, rtol=1e-4)
+
+
+def test_arima_css_grad_seasonal():
+    """Validate analytical CSS gradient against finite differences for seasonal ARIMA."""
+    from statsforecast.arima import arima_css_grad
+
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.random.randn(200).astype(np.float64)
+    arma_s = np.array([1, 1, 1, 1, 12, 0, 0], dtype=np.int32)
+    phi, theta = arima_transpar(
+        np.array([0.3, 0.5, 0.4, 0.3], dtype=np.float64), arma_s, False
+    )
+
+    sigma2, resid, d_phi, d_theta, d_y = arima_css_grad(y, arma_s, phi, theta)
+    ncond = 1 + 12 * 1
+    nu = np.count_nonzero(~np.isnan(resid[ncond:]))
+
+    for j in range(len(phi)):
+        phi_p, phi_m = np.array(phi, dtype=np.float64), np.array(phi, dtype=np.float64)
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        fd = (arima_css(y, arma_s, phi_p, theta)[0] - arima_css(y, arma_s, phi_m, theta)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-4, atol=1e-8)
+
+    for j in range(len(theta)):
+        theta_p, theta_m = np.array(theta, dtype=np.float64), np.array(theta, dtype=np.float64)
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        fd = (arima_css(y, arma_s, phi, theta_p)[0] - arima_css(y, arma_s, phi, theta_m)[0]) * nu / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-4, atol=1e-8)
+
+
+def test_transpar_vjp():
+    """Validate transpar VJP against numerical Jacobian."""
+    from statsforecast.arima import transpar_vjp
+
+    eps = 1e-5
+    arma_s = np.array([2, 1, 1, 1, 12, 0, 0], dtype=np.int32)
+    params = np.array([0.3, -0.2, 0.5, 0.4, 0.3], dtype=np.float64)
+    np.random.seed(123)
+    bar_phi = np.random.randn(14)
+    bar_theta = np.random.randn(13)
+
+    result = transpar_vjp(bar_phi, bar_theta, params, arma_s)
+
+    for k in range(len(params)):
+        params_p, params_m = params.copy(), params.copy()
+        params_p[k] += eps
+        params_m[k] -= eps
+        phi_p, theta_p = arima_transpar(params_p, arma_s, False)
+        phi_m, theta_m = arima_transpar(params_m, arma_s, False)
+        fd = (bar_phi @ (np.array(phi_p) - np.array(phi_m)) + bar_theta @ (np.array(theta_p) - np.array(theta_m))) / (2 * eps)
+        np.testing.assert_allclose(result[k], fd, rtol=1e-4)
+
+    # Also test non-seasonal case
+    arma_ns = np.array([2, 1, 0, 0, 0, 1, 0], dtype=np.int32)
+    params_ns = np.array([0.3, -0.2, 0.5], dtype=np.float64)
+    bar_phi_ns = np.random.randn(2)
+    bar_theta_ns = np.random.randn(1)
+    result_ns = transpar_vjp(bar_phi_ns, bar_theta_ns, params_ns, arma_ns)
+    np.testing.assert_allclose(result_ns[:2], bar_phi_ns)
+    np.testing.assert_allclose(result_ns[2:], bar_theta_ns)
+
+
+def _ml_loss(y, phi, theta, delta, a, P, Pn, up=0):
+    """Compute ML loss using arima_like (helper for finite-diff tests)."""
+    ssq, sumlog, nu, _ = arima_like(
+        y, phi, theta, delta, a.copy(), P.copy(), Pn.copy(), up, False
+    )
+    if nu == 0 or ssq <= 0:
+        return float("inf")
+    return 0.5 * (math.log(ssq / nu) + sumlog / nu)
+
+
+def test_arima_like_grad_d0():
+    """Validate ML Kalman gradient for ARMA(2,1) with d=0 (no differencing)."""
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.random.randn(100).astype(np.float64)
+    phi = np.array([0.4, -0.2], dtype=np.float64)
+    theta = np.array([-0.3], dtype=np.float64)
+    delta = np.array([], dtype=np.float64)
+
+    mod = make_arima(phi, theta, delta)
+    loss, d_phi, d_theta, d_Pn, d_y = arima_like_grad(
+        y, phi, theta, delta, mod["a"].copy(), mod["P"].copy(), mod["Pn"].copy(), 0
+    )
+
+    # Verify loss matches
+    expected = _ml_loss(y, phi, theta, delta, mod["a"], mod["P"], mod["Pn"])
+    np.testing.assert_allclose(loss, expected, rtol=1e-12)
+
+    # Finite-diff check for phi (direct path only, excluding getQ0)
+    # We pass the SAME Pn to avoid getQ0 dependency
+    Pn_fixed = mod["Pn"].copy()
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        L_p = _ml_loss(y, phi_p, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        L_m = _ml_loss(y, phi_m, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-3, err_msg=f"d_phi[{j}]")
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        L_p = _ml_loss(y, phi, theta_p, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        L_m = _ml_loss(y, phi, theta_m, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-3, err_msg=f"d_theta[{j}]")
+
+    for idx in [0, 5, 50, 99]:
+        y_p, y_m = y.copy(), y.copy()
+        y_p[idx] += eps
+        y_m[idx] -= eps
+        L_p = _ml_loss(y_p, phi, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        L_m = _ml_loss(y_m, phi, theta, delta, np.zeros_like(mod["a"]), np.zeros_like(mod["P"]), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_y[idx], fd, rtol=1e-3, err_msg=f"d_y[{idx}]")
+
+
+def test_arima_like_grad_nonseasonal():
+    """Validate ML Kalman gradient for ARIMA(2,1,1) with d=1."""
+    eps = 1e-5
+    np.random.seed(42)
+    y = np.cumsum(np.random.randn(100)).astype(np.float64)
+    phi = np.array([0.5, -0.3], dtype=np.float64)
+    theta = np.array([-0.4], dtype=np.float64)
+    delta = np.array([1.0], dtype=np.float64)  # d=1
+
+    mod = make_arima(phi, theta, delta)
+    loss, d_phi, d_theta, d_Pn, d_y = arima_like_grad(
+        y, phi, theta, delta, mod["a"].copy(), mod["P"].copy(), mod["Pn"].copy(), 0
+    )
+
+    expected = _ml_loss(y, phi, theta, delta, mod["a"], mod["P"], mod["Pn"])
+    np.testing.assert_allclose(loss, expected, rtol=1e-12)
+
+    Pn_fixed = mod["Pn"].copy()
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        L_p = _ml_loss(y, phi_p, theta, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        L_m = _ml_loss(y, phi_m, theta, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_phi[j], fd, rtol=1e-3, err_msg=f"d_phi[{j}]")
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        L_p = _ml_loss(y, phi, theta_p, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        L_m = _ml_loss(y, phi, theta_m, delta, np.zeros(mod["a"].shape), np.zeros(mod["P"].shape), Pn_fixed)
+        fd = (L_p - L_m) / (2 * eps)
+        np.testing.assert_allclose(d_theta[j], fd, rtol=1e-3, err_msg=f"d_theta[{j}]")
+
+
+def test_getQ0_vjp():
+    """Validate getQ0 VJP against finite differences."""
+    eps = 1e-6
+    phi = np.array([0.5, -0.3], dtype=np.float64)
+    theta = np.array([-0.4], dtype=np.float64)
+
+    np.random.seed(42)
+    r = max(len(phi), len(theta) + 1)
+    bar_Pn = np.random.randn(r, r)
+
+    bar_phi, bar_theta = getQ0_vjp(phi, theta, bar_Pn, r, len(phi))
+
+    # Verify via finite differences
+    for j in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[j] += eps
+        phi_m[j] -= eps
+        Q_p = getQ0(phi_p, theta)
+        Q_m = getQ0(phi_m, theta)
+        fd = np.sum(bar_Pn[:r, :r] * (Q_p - Q_m) / (2 * eps))
+        np.testing.assert_allclose(bar_phi[j], fd, rtol=1e-3)
+
+    for j in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[j] += eps
+        theta_m[j] -= eps
+        Q_p = getQ0(phi, theta_p)
+        Q_m = getQ0(phi, theta_m)
+        fd = np.sum(bar_Pn[:r, :r] * (Q_p - Q_m) / (2 * eps))
+        np.testing.assert_allclose(bar_theta[j], fd, rtol=1e-3)
+
+
+def _minimize_force_numerical(fn, x0, args=(), method="BFGS", jac=None, **kw):
+    """Wrapper that strips jac=True to force finite-difference gradients."""
+    from scipy.optimize import minimize as _scipy_minimize
+
+    if jac is True:
+
+        def val_only(*a, **ka):
+            r = fn(*a, **ka)
+            return r[0] if isinstance(r, tuple) else r
+
+        return _scipy_minimize(val_only, x0, args=args, method=method, **kw)
+    return _scipy_minimize(fn, x0, args=args, method=method, jac=jac, **kw)
+
+
+@pytest.mark.parametrize(
+    "order, seasonal, include_mean",
+    [
+        ((1, 1, 1), {"order": (0, 0, 0), "period": 1}, False),
+        ((2, 1, 2), {"order": (0, 0, 0), "period": 1}, False),
+        ((1, 0, 1), {"order": (0, 0, 0), "period": 1}, True),
+        ((1, 0, 1), {"order": (1, 0, 1), "period": 12}, False),
+        ((2, 1, 1), {"order": (1, 1, 1), "period": 12}, False),
+    ],
+    ids=[
+        "ARIMA(1,1,1)",
+        "ARIMA(2,1,2)",
+        "ARIMA(1,0,1)+mean",
+        "SARIMA(1,0,1)(1,0,1)[12]",
+        "SARIMA(2,1,1)(1,1,1)[12]",
+    ],
+)
+def test_ml_grad_numerical_equivalence(order, seasonal, include_mean):
+    """Verify analytical gradients produce the same results as numerical gradients."""
+    from unittest.mock import patch
+
+    y = ap.astype(np.float64)
+    kw = dict(
+        order=order,
+        seasonal=seasonal,
+        include_mean=include_mean,
+        method="CSS-ML",
+        optim_method="BFGS",
+    )
+
+    # New code path: BFGS with analytical gradients
+    res_analytical = Arima(y, **kw)
+
+    # Old code path: BFGS with scipy finite-difference gradients
+    with patch("statsforecast.arima.minimize", _minimize_force_numerical):
+        res_numerical = Arima(y, **kw)
+
+    # Log-likelihood must be close (primary correctness metric)
+    np.testing.assert_allclose(
+        res_analytical["loglik"], res_numerical["loglik"], atol=2.0,
+        err_msg="Log-likelihood differs",
+    )
+
+    # sigma2 must be close
+    np.testing.assert_allclose(
+        res_analytical["sigma2"], res_numerical["sigma2"], rtol=0.1,
+        err_msg="sigma2 differs",
+    )
+
+    # Forecasts must be close
+    fc_ana = forecast_arima(res_analytical, h=12)
+    fc_num = forecast_arima(res_numerical, h=12)
+    np.testing.assert_allclose(
+        fc_ana["mean"], fc_num["mean"], rtol=0.05,
+        err_msg="Forecasts differ",
+    )

@@ -66,6 +66,46 @@ def arima_css(y, arma, phi, theta):
     return _arima.arima_css(y, arma, phi, theta)
 
 
+def arima_css_grad(y, arma, phi, theta):
+    return _arima.arima_css_grad(y, arma, phi, theta)
+
+
+def arima_like_grad(y, phi, theta, delta, a, P, Pn, up):
+    return _arima.arima_like_grad(
+        y, phi, theta, delta, a, P.ravel(), Pn.ravel(), up
+    )
+
+
+def getQ0_vjp(phi, theta, bar_Pn, r, p):
+    """VJP through initial covariance Pn computation."""
+    bar_phi = np.zeros(len(phi))
+    bar_theta = np.zeros(len(theta))
+    if r == 1:
+        if p > 0:
+            bar_phi[0] = (
+                bar_Pn[0, 0] * 2 * phi[0] / (1 - phi[0] ** 2) ** 2
+            )
+        return bar_phi, bar_theta
+    eps = 1e-7
+    for k in range(len(phi)):
+        phi_p, phi_m = phi.copy(), phi.copy()
+        phi_p[k] += eps
+        phi_m[k] -= eps
+        Q0_p = getQ0(phi_p, theta)
+        Q0_m = getQ0(phi_m, theta)
+        dQ0 = (Q0_p - Q0_m) / (2 * eps)
+        bar_phi[k] = np.sum(bar_Pn[:r, :r] * dQ0)
+    for k in range(len(theta)):
+        theta_p, theta_m = theta.copy(), theta.copy()
+        theta_p[k] += eps
+        theta_m[k] -= eps
+        Q0_p = getQ0(phi, theta_p)
+        Q0_m = getQ0(phi, theta_m)
+        dQ0 = (Q0_p - Q0_m) / (2 * eps)
+        bar_theta[k] = np.sum(bar_Pn[:r, :r] * dQ0)
+    return bar_phi, bar_theta
+
+
 def make_arima(phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps):
     # check nas phi
     # check nas theta
@@ -147,14 +187,9 @@ def arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid):
 
 def diff(x, lag, differences):
     x = np.asarray(x, dtype=np.float64)
-    y = x.copy()
     for _ in range(differences):
-        x = y.copy()
-        y[:lag] = np.nan
-        y[lag:] = x[lag:] - x[:-lag]
-    nans = lag * differences
-    return y[nans:]
-
+        x = x[lag:] - x[:-lag]
+    return x
 
 def fixed_params_from_dict(
     fixed_dict: dict, order: tuple, seasonal: dict, intercept: bool, n_ex: int
@@ -189,6 +224,50 @@ def fixed_params_from_dict(
         (k, fixed_dict[k]) for k in full_dict.keys() & fixed_dict.keys()
     )  # prevent adding non-existing keys
     return list(full_dict.values())
+
+
+def transpar_vjp(bar_phi, bar_theta, params, arma):
+    """Vector-Jacobian product through arima_transpar(params, arma, trans=False).
+
+    Given gradients w.r.t. expanded phi/theta, computes gradients w.r.t. raw
+    ARMA parameters (AR, MA, SAR, SMA) by reversing the seasonal polynomial
+    multiplication in arima_transpar.
+    """
+    mp, mq, msp, msq = int(arma[0]), int(arma[1]), int(arma[2]), int(arma[3])
+    ns = int(arma[4])
+    narma = mp + mq + msp + msq
+    bar_params = np.zeros(narma)
+
+    if ns > 0:
+        # AR part adjoint
+        for i in range(mp):
+            bar_params[i] += bar_phi[i]
+
+        for j in range(msp):
+            bar_params[mp + mq + j] += bar_phi[(j + 1) * ns - 1]
+            for i in range(mp):
+                bar_params[i] -= bar_phi[(j + 1) * ns + i] * params[mp + mq + j]
+                bar_params[mp + mq + j] -= bar_phi[(j + 1) * ns + i] * params[i]
+
+        # MA part adjoint
+        for i in range(mq):
+            bar_params[mp + i] += bar_theta[i]
+
+        for j in range(msq):
+            bar_params[mp + mq + msp + j] += bar_theta[(j + 1) * ns - 1]
+            for i in range(mq):
+                bar_params[mp + i] += (
+                    bar_theta[(j + 1) * ns + i] * params[mp + mq + msp + j]
+                )
+                bar_params[mp + mq + msp + j] += (
+                    bar_theta[(j + 1) * ns + i] * params[mp + i]
+                )
+    else:
+        # Non-seasonal: identity mapping
+        bar_params[:mp] = bar_phi[:mp]
+        bar_params[mp : mp + mq] = bar_theta[:mq]
+
+    return bar_params
 
 
 def arima(
@@ -252,7 +331,7 @@ def arima(
         if Z is None:
             return np.finfo(np.float64).max
         if ncxreg > 0:
-            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+            x = x - np.dot(xreg, par[xreg_idx])
         res = arima_like(
             x,
             Z["phi"],
@@ -457,6 +536,8 @@ def arima(
     else:
         init = init0
 
+    xreg_idx = narma + np.arange(ncxreg) if ncxreg > 0 else None
+
     def arma_css_op(p, x):
         x = x.copy()
         par = coef.copy()
@@ -464,7 +545,7 @@ def arima(
         phi, theta = arima_transpar(par, arma, False)
 
         if ncxreg > 0:
-            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+            x = x - np.dot(xreg, par[xreg_idx])
 
         res, _ = arima_css(x, arma, phi, theta)
         if math.isinf(res):
@@ -475,6 +556,103 @@ def arima(
             return -math.inf
         return 0.5 * math.log(res)
 
+    def arma_css_op_with_grad(p, x):
+        x_adj = x.copy()
+        par = coef.copy()
+        par[mask] = p
+        phi, theta = arima_transpar(par, arma, False)
+
+        if ncxreg > 0:
+            x_adj = x_adj - np.dot(xreg, par[xreg_idx])
+
+        sigma2, resid, d_ssq_d_phi, d_ssq_d_theta, d_ssq_d_y = arima_css_grad(
+            x_adj, arma, phi, theta
+        )
+
+        if math.isinf(sigma2) or sigma2 <= 0.0:
+            import sys
+
+            val = sys.float_info.max if math.isinf(sigma2) else -math.inf
+            return val, np.zeros(mask.sum())
+
+        nu = int(np.count_nonzero(~np.isnan(resid[ncond:])))
+        ssq = sigma2 * nu
+        val = 0.5 * math.log(sigma2)
+
+        bar_arma = transpar_vjp(d_ssq_d_phi, d_ssq_d_theta, par[:narma], arma)
+
+        full_grad = np.zeros(len(par))
+        full_grad[:narma] = bar_arma
+        if ncxreg > 0:
+            full_grad[xreg_idx] = -d_ssq_d_y @ xreg
+
+        grad = full_grad[mask] / (2.0 * ssq)
+        return val, grad
+
+    def arma_ml_op_with_grad(p, x, trans):
+        x_adj = x.copy()
+        par = coef.copy()
+        par[mask] = p
+        trarma = arima_transpar(par, arma, trans)
+        Z = upARIMA(mod, trarma[0], trarma[1])
+        if Z is None:
+            return np.finfo(np.float64).max, np.zeros(mask.sum())
+        if ncxreg > 0:
+            x_adj = x_adj - np.dot(xreg, par[xreg_idx])
+
+        phi_exp = Z["phi"]
+        theta_exp = Z["theta"]
+        loss_val, d_phi_kf, d_theta_kf, d_Pn_flat, d_y_kf = arima_like_grad(
+            x_adj,
+            phi_exp,
+            theta_exp,
+            Z["delta"],
+            Z["a"].copy(),
+            Z["P"].copy(),
+            Z["Pn"].copy(),
+            0,
+        )
+
+        if not np.isfinite(loss_val):
+            return loss_val, np.zeros(mask.sum())
+
+        # VJP through getQ0 (initial covariance depends on phi, theta)
+        r_dim = max(len(phi_exp), len(theta_exp) + 1)
+        rd_dim = len(Z["a"])
+        d_Pn_mat = d_Pn_flat.reshape(rd_dim, rd_dim)
+        bar_phi_pn, bar_theta_pn = getQ0_vjp(
+            phi_exp, theta_exp, d_Pn_mat, r_dim, len(phi_exp)
+        )
+        bar_phi_total = d_phi_kf + bar_phi_pn
+        bar_theta_total = d_theta_kf + bar_theta_pn
+
+        # VJP through seasonal expansion
+        if trans:
+            constrained = arima_undopars(par, arma)
+        else:
+            constrained = par
+        bar_arma = transpar_vjp(
+            bar_phi_total, bar_theta_total, constrained[:narma], arma
+        )
+
+        # VJP through partrans (if trans=True)
+        if trans:
+            J = arima_gradtrans(par, arma)
+            bar_arma = J[:narma, :narma].T @ bar_arma
+
+        full_grad = np.zeros(len(par))
+        full_grad[:narma] = bar_arma
+        if ncxreg > 0:
+            full_grad[xreg_idx] = -d_y_kf @ xreg
+
+        return loss_val, full_grad[mask]
+
+    use_analytical_grad = optim_method.upper() in ("BFGS", "L-BFGS-B", "CG")
+    css_fn = arma_css_op_with_grad if use_analytical_grad else arma_css_op
+    css_jac = True if use_analytical_grad else None
+    ml_fn = arma_ml_op_with_grad if use_analytical_grad else armafn
+    ml_jac = True if use_analytical_grad else None
+
     coef = np.array(fixed)
     # parscale definition, think about it, scipy doesn't use it
     if method == "CSS":
@@ -482,10 +660,11 @@ def arima(
             res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
         else:
             res = minimize(
-                arma_css_op,
+                css_fn,
                 init[mask],
                 args=(x,),
                 method=optim_method,
+                jac=css_jac,
                 tol=tol,
                 options=optim_control,
             )
@@ -506,10 +685,11 @@ def arima(
         if method == "CSS-ML":
             if not no_optim:
                 res = minimize(
-                    arma_css_op,
+                    css_fn,
                     init[mask],
                     args=(x,),
                     method=optim_method,
+                    jac=css_jac,
                     tol=tol,
                     options=optim_control,
                 )
@@ -549,13 +729,14 @@ def arima(
             )
         else:
             res = minimize(
-                armafn,
+                ml_fn,
                 init[mask],
                 args=(
                     x,
                     transform_pars,
                 ),
                 method=optim_method,
+                jac=ml_jac,
                 tol=tol,
                 options=optim_control,
             )
@@ -572,10 +753,11 @@ def arima(
             if any(coef[mask] != res.x):
                 oldcode = res.status
                 res = minimize(
-                    arma_css_op,
+                    css_fn,
                     coef[mask],
                     args=(x,),
                     method=optim_method,
+                    jac=css_jac,
                     tol=tol,
                     options=optim_control,
                 )
