@@ -15,20 +15,18 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "cloudpickle",
     "coreforecast>=0.0.17",
     "numpy>=1.21.6",
     "pandas>=1.3.5",
-    "scipy>=1.7.3,<1.14 ; python_version < '3.10'",
-    "scipy>=1.7.3 ; python_version >= '3.10'",
+    "scipy>=1.7.3",
     "statsmodels>=0.14.5",
     "tqdm",
     "fugue>=0.8.1",
