@@ -16,6 +16,7 @@ References:
     - statsmodels documentation: https://www.statsmodels.org/stable/generated/statsmodels.tsa.statespace.structural.UnobservedComponents.html
 """
 
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
@@ -27,16 +28,19 @@ def _calculate_sigma(residuals: np.ndarray, n: int) -> float:
 
 
 def _add_fitted_pi(
-        res: Dict[str, Any], se: float, level: List[int]
+        res: Dict[str, Any], results: Any, level: List[int]
 ) -> Dict[str, Any]:
-    """Add prediction intervals to fitted values."""
-    from scipy.stats import norm
-
-    fitted = res["fitted"]
+    """Add Kalman-filter-based prediction intervals to fitted values."""
+    prediction = results.get_prediction(start=0, end=results.nobs - 1)
     for lv in level:
-        z = norm.ppf(0.5 + lv / 200)
-        res[f"lo-{lv}"] = fitted - z * se
-        res[f"hi-{lv}"] = fitted + z * se
+        alpha = 1 - lv / 100
+        ci = prediction.conf_int(alpha=alpha)
+        if hasattr(ci, "iloc"):
+            res[f"lo-{lv}"] = ci.iloc[:, 0].values
+            res[f"hi-{lv}"] = ci.iloc[:, 1].values
+        else:
+            res[f"lo-{lv}"] = np.asarray(ci[:, 0])
+            res[f"hi-{lv}"] = np.asarray(ci[:, 1])
     return res
 
 
@@ -242,9 +246,17 @@ class UCM:
 
         try:
             res = mod.fit(method=self.fit_method, maxiter=self.maxiter, disp=False)
-        except Exception:
-            # Fallback to powell optimizer if default fails
-            res = mod.fit(method="powell", maxiter=self.maxiter, disp=False)
+        except (np.linalg.LinAlgError, ValueError) as original_exc:
+            warnings.warn(
+                f"{self.fit_method} optimizer failed ({original_exc}); "
+                "falling back to powell.",
+                UserWarning,
+                stacklevel=2,
+            )
+            try:
+                res = mod.fit(method="powell", maxiter=self.maxiter, disp=False)
+            except Exception:
+                raise original_exc
 
         # Handle both pandas and numpy returns
         fitted_vals = res.fittedvalues
@@ -321,10 +333,10 @@ class UCM:
             level: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         r"""Access fitted UCM in-sample predictions.
-        
+
         Args:
             level (List[int], optional): Confidence levels (0-100) for prediction intervals.
-        
+
         Returns:
             dict: Dictionary with entries `fitted` for point predictions.
         """
@@ -336,7 +348,7 @@ class UCM:
         if level is not None:
             level = sorted(level)
             result = _add_fitted_pi(
-                res=result, se=self.model_["sigma"], level=level
+                res=result, results=self.model_["results"], level=level
             )
 
         return result
@@ -376,8 +388,17 @@ class UCM:
 
         try:
             res = mod.fit(method=self.fit_method, maxiter=self.maxiter, disp=False)
-        except Exception:
-            res = mod.fit(method="powell", maxiter=self.maxiter, disp=False)
+        except (np.linalg.LinAlgError, ValueError) as original_exc:
+            warnings.warn(
+                f"{self.fit_method} optimizer failed ({original_exc}); "
+                "falling back to powell.",
+                UserWarning,
+                stacklevel=2,
+            )
+            try:
+                res = mod.fit(method="powell", maxiter=self.maxiter, disp=False)
+            except Exception:
+                raise original_exc
 
         # Get forecast
         if X_future is not None:
