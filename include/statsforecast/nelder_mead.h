@@ -124,8 +124,10 @@ OptimResult NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
       }
     }
 
-    // Step6: Shrink
-    for (Eigen::Index j = 1; j < simplex.rows(); ++j) {
+    // Step6: Shrink (skip best_idx to avoid wasted function evaluation)
+    for (Eigen::Index j = 0; j < simplex.rows(); ++j) {
+      if (j == best_idx)
+        continue;
       simplex.row(j) = simplex.row(best_idx) +
                        sigma * (simplex.row(j) - simplex.row(best_idx));
       simplex.row(j) = Clamp(simplex.row(j), lower, upper);
