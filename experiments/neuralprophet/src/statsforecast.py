@@ -1,7 +1,5 @@
 import os
 import time
-os.environ['NIXTLA_NUMBA_RELEASE_GIL'] = '1'
-os.environ['NIXTLA_NUMBA_CACHE'] = '1'
 
 import fire
 import numpy as np
