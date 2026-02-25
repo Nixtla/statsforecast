@@ -20,7 +20,7 @@ Included algorithms range from commonly used statistical algorithms like Autoreg
 
 ### StatsForecast
 
-StatsForecast is an open-source python library from Nixtla. The library offers a collection of widely used univariate time series forecasting models, including automatic ARIMA, ETS, CES, and Theta modeling optimized for high performance using numba. It also includes a large battery of benchmarking models.
+StatsForecast is an open-source python library from Nixtla. The library offers a collection of widely used univariate time series forecasting models, including automatic ARIMA, ETS, CES, and Theta modeling optimized for high performance. It also includes a large battery of benchmarking models.
 
 For this experiment, we used a `c5d.24xlarge` EC2 instance and trained two simple statistical models: `AutoETS`, and `DynamicOptimizedTheta`. Finally, the `AutoETS` and `DynamicOptimizedTheta` models were ensembled using the median.
 

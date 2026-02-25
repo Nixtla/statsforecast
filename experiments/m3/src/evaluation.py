@@ -2,33 +2,22 @@ from itertools import product
 
 import fire
 import pandas as pd
-import numpy as np
-
-
-def mape(y, y_hat):
-    """Mean Absolute Percentage Error - numpy arrays, returns percentage (0-100)."""
-    return 100 * np.mean(np.abs((y - y_hat) / (np.where(y == 0, 1e-8, y))))
-
-
-def smape(y, y_hat):
-    """Symmetric MAPE - numpy arrays, returns percentage (0-100)."""
-    return 100 * np.mean(2 * np.abs(y_hat - y) / (np.abs(y) + np.abs(y_hat) + 1e-8))
+from utilsforecast.evaluation import evaluate as uf_evaluate
+from utilsforecast.losses import mape, smape
 
 from src.data import get_data
+
+# utilsforecast returns raw fractions; scale to standard percentages
+_METRIC_SCALE = {'mape': 100, 'smape': 200}
 
 
 def evaluate(lib: str, model: str, dataset: str, group: str):
     y_test, horizon, freq, seasonality = get_data('data/', dataset, group, False)
-    y_test = y_test['y'].values.reshape(-1, horizon)
+    forecast = pd.read_csv(f'data/{lib}-forecasts-{dataset}-{group}.csv', parse_dates=['ds'])
+    df = y_test.merge(forecast[['unique_id', 'ds', model]], on=['unique_id', 'ds'])
 
-    forecast = pd.read_csv(f'data/{lib}-forecasts-{dataset}-{group}.csv')
-    y_hat = forecast[model].values.reshape(-1, horizon)
-
-    evals = {}
-    for metric in (mape, smape):
-        metric_name = metric.__name__
-        loss = metric(y_test, y_hat)
-        evals[metric_name] = loss 
+    result = uf_evaluate(df, metrics=[mape, smape], models=[model], agg_fn='mean')
+    evals = {row['metric']: _METRIC_SCALE[row['metric']] * row[model] for _, row in result.iterrows()}
 
     evals = pd.DataFrame(evals, index=[f'{dataset}_{group}']).rename_axis('dataset').reset_index()
     times = pd.read_csv(f'data/{lib}-time-{dataset}-{group}.csv')
