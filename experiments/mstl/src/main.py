@@ -2,7 +2,7 @@ from time import time
 
 import pandas as pd
 import numpy as np
-from utilsforecast.losses import (
+from datasetsforecast.losses import (
     mae, mape, mase, rmse, smape
 )
 from fire import Fire

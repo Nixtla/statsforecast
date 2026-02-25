@@ -3,7 +3,7 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
-from utilsforecast.losses import mape, smape
+from datasetsforecast.losses import mape, smape
 
 from src.data import get_data
 
