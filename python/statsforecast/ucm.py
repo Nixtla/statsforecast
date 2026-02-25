@@ -197,6 +197,21 @@ class UCM:
         # as they may conflict with the string spec defaults
         if isinstance(self.level, str):
             kwargs["level"] = self.level
+            dropped = []
+            if not self.stochastic_level:
+                dropped.append("stochastic_level")
+            if not self.stochastic_trend:
+                dropped.append("stochastic_trend")
+            if self.trend:
+                dropped.append("trend")
+            if dropped:
+                warnings.warn(
+                    f"Parameters {dropped} are ignored when `level` is a string "
+                    f"specification ('{self.level}'). Use a bool `level` to control "
+                    "these parameters explicitly.",
+                    UserWarning,
+                    stacklevel=3,
+                )
             # Only pass irregular if it's explicitly False (to override string default)
             if not self.irregular:
                 kwargs["irregular"] = False
