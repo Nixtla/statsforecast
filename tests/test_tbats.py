@@ -34,7 +34,7 @@ def test_tbats_selection_and_forecast():
     assert mod["description"]["use_boxcox"] == True
     assert mod["description"]["use_trend"] == True
 
-    # Test fitted values shape and positivity
+    # Test fitted values transformation
     fitted_trans = mod["fitted"].ravel()
     if mod["BoxCox_lambda"] is not None:
         fitted_trans = inv_boxcox(fitted_trans, mod["BoxCox_lambda"])
