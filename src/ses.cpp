@@ -57,9 +57,7 @@ double golden_section_ses(const Eigen::Ref<const VectorXd> &x,
   double d = a + (b - a) / gr;
   double fc = ses_sse(c, x);
   double fd = ses_sse(d, x);
-  for (int iter = 0; iter < 80; ++iter) {
-    if (std::abs(b - a) < 1e-12)
-      break;
+  while (std::abs(b - a) >= 1e-12) {
     if (fc < fd) {
       b = d;
       d = c;
@@ -124,23 +122,20 @@ VectorXd imapa_fitted_vals(const Eigen::Ref<const VectorXd> &y) {
   VectorXd fitted_vals(n);
   fitted_vals[0] = std::numeric_limits<double>::quiet_NaN();
   for (Eigen::Index i = 1; i < n; ++i) {
-    // count non-zero elements and compute mean interval
+    // count non-zero elements and compute mean interval in a single pass
     int nonzero_count = 0;
-    for (Eigen::Index j = 0; j < i; ++j) {
-      if (y[j] != 0.0)
-        ++nonzero_count;
-    }
-    if (nonzero_count == 0) {
-      fitted_vals[i] = 0.0;
-      continue;
-    }
     double intervals_sum = 0.0;
     Eigen::Index prev = 0;
     for (Eigen::Index j = 0; j < i; ++j) {
       if (y[j] != 0.0) {
+        ++nonzero_count;
         intervals_sum += static_cast<double>(j + 1 - prev);
         prev = j + 1;
       }
+    }
+    if (nonzero_count == 0) {
+      fitted_vals[i] = 0.0;
+      continue;
     }
     double mean_interval = intervals_sum / nonzero_count;
     Eigen::Index max_agg =
@@ -152,13 +147,11 @@ VectorXd imapa_fitted_vals(const Eigen::Ref<const VectorXd> &y) {
     int count = 0;
     auto prefix = y.head(i);
     for (Eigen::Index agg_level = 1; agg_level <= max_agg; ++agg_level) {
-      if (agg_level > i)
-        continue;
       double fcst = chunk_forecast(prefix, agg_level);
       forecast_sum += fcst / static_cast<double>(agg_level);
       ++count;
     }
-    fitted_vals[i] = (count > 0) ? forecast_sum / count : 0.0;
+    fitted_vals[i] = forecast_sum / count;
   }
   return fitted_vals;
 }
