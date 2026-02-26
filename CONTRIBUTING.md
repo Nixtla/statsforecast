@@ -46,7 +46,7 @@ Branching in GitHub is a key strategy for effectively managing and isolating cha
 
 4. *Issue Branches*: For specific issues, use `git checkout -b issue/issue-number` or `git checkout -b issue/issue-description`.
 
-After testing, branches are merged back into the main branch via a pull request, and then typically deleted to maintain a clean repository. You can read more about github and branching [here](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-and-deleting-branches-within-your-repository).
+After testing, branches are merged back into the main branch via a pull request, and then typically deleted to maintain a clean repository.
 
 ## Set Up a Virtual Environment
 
