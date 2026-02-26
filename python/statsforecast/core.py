@@ -1,4 +1,4 @@
-__all__ = ['StatsForecast']
+__all__ = ["StatsForecast"]
 
 
 import datetime as dt
@@ -463,6 +463,71 @@ class GroupedArray(BaseGroupedArray):
             target_col=target_col,
         )
 
+    def simulate(
+        self,
+        h,
+        n_paths,
+        models,
+        X=None,
+        seed=None,
+        seeds=None,
+        error_distribution="normal",
+        error_params=None,
+    ):
+        n_groups = self.n_groups
+        n_models = len(models)
+        if seeds is None and seed is not None:
+            np.random.seed(seed)
+            seeds = np.random.randint(0, 2**31, size=n_groups)
+        out = np.full(
+            (n_groups * n_paths * h, n_models), fill_value=np.nan, dtype=self.data.dtype
+        )
+        for i_model, model in enumerate(models):
+            for i, grp in enumerate(self):
+                y = grp[:, 0] if grp.ndim == 2 else grp
+                X_in = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
+                if X is not None:
+                    X_future = X[i]
+                else:
+                    X_future = None
+
+                group_seed = seeds[i] if seeds is not None else None
+                paths = model.simulate(
+                    h=h,
+                    n_paths=n_paths,
+                    y=y,
+                    X=X_in,
+                    X_future=X_future,
+                    seed=group_seed,
+                    error_distribution=error_distribution,
+                    error_params=error_params,
+                )
+                out[i * n_paths * h : (i + 1) * n_paths * h, i_model] = paths.flatten()
+        return {"forecasts": out, "cols": [repr(m) for m in models]}
+
+    @_controller.wrap(limits=1)
+    def _single_threaded_simulate(
+        self,
+        h,
+        n_paths,
+        models,
+        X=None,
+        seed=None,
+        seeds=None,
+        error_distribution="normal",
+        error_params=None,
+    ):
+        return self.simulate(
+            h=h,
+            n_paths=n_paths,
+            models=models,
+            X=X,
+            seed=seed,
+            seeds=seeds,
+            error_distribution=error_distribution,
+            error_params=error_params,
+        )
+
 
 def _get_n_jobs(n_groups, n_jobs):
     if n_jobs == -1 or (n_jobs is None):
@@ -517,7 +582,6 @@ class _StatsForecast:
                 execution (when n_jobs=1).
 
         """
-        # TODO @fede: needed for residuals, think about it later
         self.models = models
         self._validate_model_names()
         self.freq = freq
@@ -874,6 +938,138 @@ class _StatsForecast:
         fcsts_df[cols] = fcsts
         self.forecast_times_ = res_fcsts["times"]
         return fcsts_df
+
+    def _simulate_parallel(
+        self, h, n_paths, X, seed, error_distribution="normal", error_params=None
+    ):
+        gas, Xs = self._get_gas_Xs(X=X, tasks_per_job=1)
+
+        # Pre-calculate seeds for each group to ensure consistency across models
+        # and different seeds across groups even in parallel
+        if seed is not None:
+            np.random.seed(seed)
+            all_seeds = np.random.randint(0, 2**31, size=self.ga.n_groups)
+        else:
+            all_seeds = None
+
+        results = [None] * len(gas)
+        cumsum_groups = np.cumsum([0] + [ga.n_groups for ga in gas])
+
+        with ProcessPoolExecutor(self.n_jobs) as executor:
+            future2pos = {
+                executor.submit(
+                    ga._single_threaded_simulate,
+                    h=h,
+                    n_paths=n_paths,
+                    models=self.models,
+                    X=X,
+                    seed=None,  # Already handled by passing seeds
+                    seeds=all_seeds[cumsum_groups[i] : cumsum_groups[i + 1]]
+                    if all_seeds is not None
+                    else None,
+                    error_distribution=error_distribution,
+                    error_params=error_params,
+                ): i
+                for i, (ga, X) in enumerate(zip(gas, Xs))
+            }
+            iterable = tqdm(
+                as_completed(future2pos),
+                disable=not self.verbose,
+                total=len(future2pos),
+                desc="Simulate",
+                bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [Elapsed: {elapsed}{postfix}]",
+            )
+            for future in iterable:
+                i = future2pos[future]
+                results[i] = future.result()
+
+        return {
+            "cols": results[0]["cols"],
+            "forecasts": np.vstack([r["forecasts"] for r in results]),
+        }
+
+    def simulate(
+        self,
+        h: int,
+        df: DataFrame,
+        X_df: Optional[DataFrame] = None,
+        n_paths: int = 1,
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
+        seed: Optional[int] = None,
+        error_distribution: str = "normal",
+        error_params: Optional[Dict] = None,
+    ) -> DataFrame:
+        """Generate sample trajectories (simulated paths).
+
+        This method generates `n_paths` simulated trajectories for each time series
+        in the input DataFrame. It's useful for scenario planning and risk analysis.
+
+        Args:
+            h (int): Forecast horizon.
+            df (DataFrame): Input DataFrame containing time series data.
+            X_df (DataFrame, optional): Future exogenous variables.
+            n_paths (int): Number of paths to simulate.
+            id_col (str): Name of the column containing unique identifiers.
+            time_col (str): Name of the column containing timestamps.
+            target_col (str): Name of the column containing target values.
+            seed (int, optional): Random seed for reproducibility.
+            error_distribution (str, optional): Error distribution for the simulation.
+                Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            error_params (dict, optional): Distribution-specific parameters.
+
+        Returns:
+            DataFrame with simulated paths, including a `sample_id` column.
+        """
+        self._prepare_fit(df, id_col, time_col, target_col)
+        total_points = len(self.uids) * n_paths * h
+        if total_points > 100_000:
+            warnings.warn(
+                f"Generating {total_points:,} simulation points. "
+                "Large simulations may consume significant memory and time."
+            )
+        self._validate_exog(X_df)
+        X, _ = self._parse_X_level(h, X_df, None)
+
+        if self.n_jobs == 1:
+            res_sim = self.ga.simulate(
+                h=h,
+                n_paths=n_paths,
+                models=self.models,
+                X=X,
+                seed=seed,
+                error_distribution=error_distribution,
+                error_params=error_params,
+            )
+        else:
+            res_sim = self._simulate_parallel(
+                h=h,
+                n_paths=n_paths,
+                X=X,
+                seed=seed,
+                error_distribution=error_distribution,
+                error_params=error_params,
+            )
+
+        fcsts = res_sim["forecasts"]
+        cols = res_sim["cols"]
+
+        uids = np.repeat(self.uids, n_paths * h)
+        dates = np.tile(
+            self._make_future_df(h)[self.time_col].to_numpy().reshape(-1, h),
+            (1, n_paths),
+        ).flatten()
+
+        res_dict = {
+            self.id_col: uids,
+            self.time_col: dates,
+            "sample_id": np.tile(np.repeat(np.arange(n_paths), h), len(self.uids)),
+        }
+        for i, col in enumerate(cols):
+            res_dict[col] = fcsts[:, i]
+
+        return self.df_constructor(res_dict)
 
     def forecast_fitted_values(self):
         """Retrieve in-sample predictions from the forecast method.
@@ -1594,6 +1790,72 @@ class StatsForecast(_StatsForecast):
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
+        )
+
+    def simulate(
+        self,
+        h: int,
+        df: Any,
+        X_df: Optional[DataFrame] = None,
+        n_paths: int = 1,
+        id_col: str = "unique_id",
+        time_col: str = "ds",
+        target_col: str = "y",
+        seed: Optional[int] = None,
+        error_distribution: str = "normal",
+        error_params: Optional[Dict] = None,
+    ) -> DataFrame:
+        """Generate sample trajectories (simulated paths).
+
+        This method generates `n_paths` simulated trajectories for each time series
+        in the input DataFrame. It's useful for scenario planning and risk analysis.
+
+        Args:
+            h (int): Forecast horizon, the number of time steps ahead to predict.
+            df (DataFrame): Input DataFrame containing time series data. Must have
+                columns for series identifiers, timestamps, and target values.
+            X_df (DataFrame, optional): DataFrame containing future exogenous variables.
+            n_paths (int): Number of paths to simulate.
+            id_col (str, optional): Name of the column containing unique identifiers.
+            time_col (str, optional): Name of the column containing timestamps.
+            target_col (str, optional): Name of the column containing target values.
+            seed (int, optional): Random seed for reproducibility.
+            error_distribution (str, optional): Error distribution for the simulation.
+                Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            error_params (dict, optional): Distribution-specific parameters.
+
+        Returns:
+            DataFrame with simulated paths, including a `sample_id` column.
+        """
+        if self._is_native(df=df):
+            return super().simulate(
+                h=h,
+                df=df,
+                X_df=X_df,
+                n_paths=n_paths,
+                id_col=id_col,
+                time_col=time_col,
+                target_col=target_col,
+                seed=seed,
+                error_distribution=error_distribution,
+                error_params=error_params,
+            )
+        assert df is not None
+        # Distributed simulation not implemented yet, fallback to native if possible or raise
+        warnings.warn(
+            "Distributed simulation is not yet implemented. Falling back to native execution."
+        )
+        return super().simulate(
+            h=h,
+            df=df,
+            X_df=X_df,
+            n_paths=n_paths,
+            id_col=id_col,
+            time_col=time_col,
+            target_col=target_col,
+            seed=seed,
+            error_distribution=error_distribution,
+            error_params=error_params,
         )
 
     def forecast_fitted_values(self):

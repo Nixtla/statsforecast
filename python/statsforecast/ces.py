@@ -1,14 +1,11 @@
-__all__ = ['ces_target_fn']
+__all__ = ["auto_ces", "simulate_ces"]
 
-
-import math
-from typing import Tuple
 
 import numpy as np
-from numba import njit
 from statsmodels.tsa.seasonal import seasonal_decompose
 
-from .utils import CACHE, NOGIL, restrict_to_bounds, results
+from ._lib import ces as _ces
+from .utils import results
 
 # Global variables
 NONE = 0
@@ -25,7 +22,7 @@ def initstate(y, m, seasontype):
     n = len(y)
     components = 2 + (seasontype == "P") + 2 * (seasontype == "F")
     lags = 1 if seasontype == "N" else m
-    states = np.zeros((lags, components), dtype=np.float32)
+    states = np.zeros((lags, components), dtype=np.float64)
     if seasontype == "N":
         idx = min(max(10, m), n)
         mean_ = np.mean(y[:idx])
@@ -44,206 +41,15 @@ def initstate(y, m, seasontype):
         states[:lags, 2] = seasonal_decompose(y, period=lags).seasonal[:lags]
         states[:lags, 3] = states[:lags, 2] / 1.1
     else:
-        raise Exception(f"Unkwon seasontype: {seasontype}")
+        raise Exception(f"Unknown seasontype: {seasontype}")
 
     return states
 
 
-@njit(nogil=NOGIL, cache=CACHE)
-def cescalc(
-    y: np.ndarray,
-    states: np.ndarray,  # states
-    m: int,
-    season: int,
-    alpha_0: float,
-    alpha_1: float,
-    beta_0: float,
-    beta_1: float,
-    e: np.ndarray,
-    amse: np.ndarray,
-    nmse: int,
-    backfit: int,
-) -> float:
-    denom = np.zeros(nmse)
-    m = 1 if season == NONE else m
-    f = np.zeros(max(nmse, m))
-    lik = 0.0
-    lik2 = 0.0
-    amse[:nmse] = 0.0
-    n = len(y)
-    for i in range(m, n + m):
-        # one step forecast
-        cesfcst(states, i, m, season, f, nmse, alpha_0, alpha_1, beta_0, beta_1)
-        if math.fabs(f[0] - NA) < TOL:
-            lik = NA
-            return lik
-        e[i - m] = y[i - m] - f[0]
-        for j in range(nmse):
-            if (i + j) < n:
-                denom[j] += 1.0
-                tmp = y[i + j] - f[j]
-                amse[j] = (amse[j] * (denom[j] - 1.0) + (tmp * tmp)) / denom[j]
-        # update state
-        cesupdate(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y[i - m])
-        lik = lik + e[i - m] * e[i - m]
-        lik2 += math.log(math.fabs(f[0]))
-    new_states = cesfcst(
-        states, n + m, m, season, f, m, alpha_0, alpha_1, beta_0, beta_1
-    )
-    states[-m:] = new_states[-m:]
-    lik = n * math.log(lik)
-    if not backfit:
-        return lik
-    y[:] = y[::-1]
-    states[:] = states[::-1]
-    e[:] = e[::-1]
-    lik = 0.0
-    lik2 = 0.0
-    for i in range(m, n + m):
-        # one step forecast
-        cesfcst(states, i, m, season, f, nmse, alpha_0, alpha_1, beta_0, beta_1)
-        if math.fabs(f[0] - NA) < TOL:
-            lik = NA
-            return lik
-        e[i - m] = y[i - m] - f[0]
-        for j in range(nmse):
-            if (i + j) < n:
-                denom[j] += 1.0
-                tmp = y[i + j] - f[j]
-                amse[j] = (amse[j] * (denom[j] - 1.0) + (tmp * tmp)) / denom[j]
-        # update state
-        cesupdate(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y[i - m])
-        lik = lik + e[i - m] * e[i - m]
-        lik2 += math.log(math.fabs(f[0]))
-    new_states = cesfcst(
-        states, n + m, m, season, f, m, alpha_0, alpha_1, beta_0, beta_1
-    )
-    states[-m:] = new_states[-m:]
-    # fit again
-    lik = 0.0
-    lik2 = 0.0
-    y[:] = y[::-1]
-    states[:] = states[::-1]
-    e[:] = e[::-1]
-    for i in range(m, n + m):
-        # one step forecast
-        cesfcst(states, i, m, season, f, nmse, alpha_0, alpha_1, beta_0, beta_1)
-        if math.fabs(f[0] - NA) < TOL:
-            lik = NA
-            return lik
-        e[i - m] = y[i - m] - f[0]
-        for j in range(nmse):
-            if (i + j) < n:
-                denom[j] += 1.0
-                tmp = y[i + j] - f[j]
-                amse[j] = (amse[j] * (denom[j] - 1.0) + (tmp * tmp)) / denom[j]
-        # update state
-        cesupdate(states, i, m, season, alpha_0, alpha_1, beta_0, beta_1, y[i - m])
-        lik = lik + e[i - m] * e[i - m]
-        lik2 += math.log(math.fabs(f[0]))
-    new_states = cesfcst(
-        states, n + m, m, season, f, m, alpha_0, alpha_1, beta_0, beta_1
-    )
-    states[-m:] = new_states[-m:]
-    lik = n * math.log(lik)
-    return lik
+def switch_ces(x: str):
+    return _ces.switch_ces(x)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
-def cesfcst(states, i, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
-    # obs:
-    # forecast are obtained in a recursive manner
-    # this is not standard, for example in ets
-    # forecasts
-    new_states = np.zeros((m + h, states.shape[1]), dtype=np.float32)
-    new_states[:m] = states[(i - m) : i]
-    for i_h in range(m, m + h):
-        if season in [NONE, PARTIAL, FULL]:
-            f[i_h - m] = new_states[i_h - 1, 0]
-        else:
-            f[i_h - m] = new_states[i_h - m, 0]
-        if season > SIMPLE:
-            f[i_h - m] += new_states[i_h - m, 2]
-        cesupdate(
-            new_states, i_h, m, season, alpha_0, alpha_1, beta_0, beta_1, f[i_h - m]
-        )
-    return new_states
-
-
-@njit(nogil=NOGIL, cache=CACHE)
-def cesupdate(
-    states,
-    i,
-    m,
-    season,
-    alpha_0,
-    alpha_1,
-    beta_0,
-    beta_1,
-    y,  # kind of season
-):
-    # season
-    if season in [NONE, PARTIAL, FULL]:
-        e = y - states[i - 1, 0]
-    else:
-        e = y - states[i - m, 0]
-    if season > SIMPLE:
-        e -= states[i - m, 2]
-
-    if season in [NONE, PARTIAL, FULL]:
-        states[i, 0] = (
-            states[i - 1, 0]
-            - (1.0 - alpha_1) * states[i - 1, 1]
-            + (alpha_0 - alpha_1) * e
-        )
-        states[i, 1] = (
-            states[i - 1, 0]
-            + (1.0 - alpha_0) * states[i - 1, 1]
-            + (alpha_0 + alpha_1) * e
-        )
-    else:
-        states[i, 0] = (
-            states[i - m, 0]
-            - (1.0 - alpha_1) * states[i - m, 1]
-            + (alpha_0 - alpha_1) * e
-        )
-        states[i, 1] = (
-            states[i - m, 0]
-            + (1.0 - alpha_0) * states[i - m, 1]
-            + (alpha_0 + alpha_1) * e
-        )
-
-    if season == PARTIAL:
-        states[i, 2] = states[i - m, 2] + beta_0 * e
-    if season == FULL:
-        states[i, 2] = (
-            states[i - m, 2] - (1 - beta_1) * states[i - m, 3] + (beta_0 - beta_1) * e
-        )
-        states[i, 3] = (
-            states[i - m, 2] + (1 - beta_0) * states[i - m, 3] + (beta_0 + beta_1) * e
-        )
-
-
-@njit(nogil=NOGIL, cache=CACHE)
-def cesforecast(states, n, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
-    # compute forecasts
-    m = 1 if season == NONE else m
-    new_states = cesfcst(
-        states=states,
-        i=m + n,
-        m=m,
-        season=season,
-        f=f,
-        h=h,
-        alpha_0=alpha_0,
-        alpha_1=alpha_1,
-        beta_0=beta_0,
-        beta_1=beta_1,
-    )
-    return new_states
-
-
-@njit(nogil=NOGIL, cache=CACHE)
 def initparamces(
     alpha_0: float, alpha_1: float, beta_0: float, beta_1: float, seasontype: str
 ):
@@ -294,12 +100,17 @@ def initparamces(
     }
 
 
-@njit(nogil=NOGIL, cache=CACHE)
-def switch_ces(x: str):
-    return {"N": 0, "S": 1, "P": 2, "F": 3}[x]
+def cescalc(y, states, m, season, alpha_0, alpha_1, beta_0, beta_1,
+            e, amse, nmse, backfit):
+    return _ces.cescalc(
+        np.asarray(y, dtype=np.float64),
+        states,
+        m, season,
+        float(alpha_0), float(alpha_1), float(beta_0), float(beta_1),
+        e, amse, nmse, backfit,
+    )
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def pegelsresid_ces(
     y: np.ndarray,
     m: int,
@@ -312,259 +123,65 @@ def pegelsresid_ces(
     beta_1: float,
     nmse: int,
 ):
-    states = np.zeros((len(y) + 2 * m, n_components), dtype=np.float32)
-    states[:m] = init_states
-    e = np.full_like(y, fill_value=np.nan)
-    amse = np.full(nmse, fill_value=np.nan)
-    lik = cescalc(
-        y=y,
-        states=states,
-        m=m,
-        season=switch_ces(seasontype),
-        alpha_0=alpha_0,
-        alpha_1=alpha_1,
-        beta_0=beta_0,
-        beta_1=beta_1,
-        e=e,
-        amse=amse,
-        nmse=nmse,
-        backfit=1,
+    return _ces.pegelsresid(
+        np.asarray(y, dtype=np.float64),
+        m,
+        np.asarray(init_states, dtype=np.float64),
+        n_components,
+        seasontype,
+        float(alpha_0),
+        float(alpha_1),
+        float(beta_0),
+        float(beta_1),
+        nmse,
     )
-    if not np.isnan(lik):
-        if np.abs(lik + 99999) < 1e-7:
-            lik = np.nan
-    return amse, e, states, lik
 
 
-@njit(nogil=NOGIL, cache=CACHE)
-def ces_target_fn(
-    optimal_param,
-    init_alpha_0,
-    init_alpha_1,
-    init_beta_0,
-    init_beta_1,
-    opt_alpha_0,
-    opt_alpha_1,
-    opt_beta_0,
-    opt_beta_1,
-    y,
-    m,
-    init_states,
-    n_components,
-    seasontype,
-    nmse,
-):
-    states = np.zeros((len(y) + 2 * m, n_components), dtype=np.float32)
-    states[:m] = init_states
-    j = 0
-    if opt_alpha_0:
-        alpha_0 = optimal_param[j]
-        j += 1
-    else:
-        alpha_0 = init_alpha_0
-
-    if opt_alpha_1:
-        alpha_1 = optimal_param[j]
-        j += 1
-    else:
-        alpha_1 = init_alpha_1
-
-    if opt_beta_0:
-        beta_0 = optimal_param[j]
-        j += 1
-    else:
-        beta_0 = init_beta_0
-
-    if opt_beta_1:
-        beta_1 = optimal_param[j]
-        j += 1
-    else:
-        beta_1 = init_beta_1
-
-    e = np.full_like(y, fill_value=np.nan)
-    amse = np.full(nmse, fill_value=np.nan)
-    lik = cescalc(
-        y=y,
-        states=states,
-        m=m,
-        season=switch_ces(seasontype),
-        alpha_0=alpha_0,
-        alpha_1=alpha_1,
-        beta_0=beta_0,
-        beta_1=beta_1,
-        e=e,
-        amse=amse,
-        nmse=nmse,
-        backfit=1,
+def cesforecast(states, n, m, season, f, h, alpha_0, alpha_1, beta_0, beta_1):
+    seasontype_map = {0: "N", 1: "S", 2: "P", 3: "F"}
+    seasontype_str = seasontype_map[season]
+    f_f64 = np.zeros(h, dtype=np.float64)
+    _ces.forecast(
+        np.asarray(states, dtype=np.float64),
+        n, m, seasontype_str, f_f64, h,
+        float(alpha_0), float(alpha_1), float(beta_0), float(beta_1),
     )
-    if lik < -1e10:
-        lik = -1e10
-    if math.isnan(lik):
-        lik = -np.inf
-    if math.fabs(lik + 99999) < 1e-7:
-        lik = -np.inf
-    return lik
-
-
-@njit(nogil=NOGIL, cache=CACHE)
-def nelder_mead_ces(
-    x0: np.ndarray,
-    args: Tuple = (),
-    lower: np.ndarray = np.empty(0),
-    upper: np.ndarray = np.empty(0),
-    init_step: float = 0.05,
-    zero_pert: float = 0.0001,
-    alpha: float = 1.0,
-    gamma: float = 2.0,
-    rho: float = 0.5,
-    sigma: float = 0.5,
-    max_iter: int = 2_000,
-    tol_std: float = 1e-10,
-    adaptive: bool = False,
-):
-    # We are trying to minimize the function fn(x, args)
-    # with initial point x0.
-    # Step 0:
-    # get x1, ..., x_{n+1}
-    # the original article suggested a simplex where an initial point is given as x0
-    # with the others generated with a fixed step along each dimension in turn.
-    bounds = len(lower) and len(upper)
-    if bounds:
-        x0 = restrict_to_bounds(x0, lower, upper)
-
-    n = x0.size
-    if adaptive:
-        gamma = 1.0 + 2.0 / n
-        rho = 0.75 - 1.0 / (2.0 * n)
-        sigma = 1.0 - 1.0 / n
-    simplex = np.full(
-        (n + 1, n), fill_value=np.nan, dtype=np.float64
-    )  # each row is x_j
-    simplex[:] = x0
-    # perturb simplex using `init_step`
-    diag = np.copy(np.diag(simplex))
-    diag[diag == 0.0] = zero_pert
-    diag[diag != 0.0] *= 1 + init_step
-    np.fill_diagonal(simplex, diag)
-    # restrict simplex to bounds if passed
-    if bounds:
-        for j in range(n + 1):
-            simplex[j] = restrict_to_bounds(simplex[j], lower, upper)
-    # array of the value of f
-    f_simplex = np.full(n + 1, fill_value=np.nan)
-    for j in range(n + 1):
-        f_simplex[j] = ces_target_fn(simplex[j], *args)
-    for it in range(max_iter):
-        # Step1: order of f_simplex
-        # print(simplex)
-        # print(f_simplex)
-        order_f = f_simplex.argsort()
-        best_idx = order_f[0]
-        worst_idx = order_f[-1]
-        second_worst_idx = order_f[-2]
-        # Check whether method should stop.
-        if np.std(f_simplex) < tol_std:
-            break
-        # calculate centroid except argmax f_simplex
-        x_o = simplex[np.delete(order_f, -1)].sum(axis=0) / n
-        # Step2: Reflection, Compute reflected point
-        x_r = x_o + alpha * (x_o - simplex[worst_idx])
-        # restrict x_r to bounds if passed
-        if bounds:
-            x_r = restrict_to_bounds(x_r, lower, upper)
-        f_r = ces_target_fn(x_r, *args)
-        if f_simplex[best_idx] <= f_r < f_simplex[second_worst_idx]:
-            simplex[worst_idx] = x_r
-            f_simplex[worst_idx] = f_r
-            continue
-        # Step3: Expansion, reflected point is the best point so far
-        if f_r < f_simplex[best_idx]:
-            x_e = x_o + gamma * (x_r - x_o)
-            # restrict x_e to bounds if passed
-            if bounds:
-                x_e = restrict_to_bounds(x_e, lower, upper)
-            f_e = ces_target_fn(x_e, *args)
-            if f_e < f_r:
-                simplex[worst_idx] = x_e
-                f_simplex[worst_idx] = f_e
-            else:
-                simplex[worst_idx] = x_r
-                f_simplex[worst_idx] = f_r
-            continue
-        # Step4: outside Contraction
-        if f_simplex[second_worst_idx] <= f_r < f_simplex[worst_idx]:
-            x_oc = x_o + rho * (x_r - x_o)
-            if bounds:
-                x_oc = restrict_to_bounds(x_oc, lower, upper)
-            f_oc = ces_target_fn(x_oc, *args)
-            if f_oc <= f_r:
-                simplex[worst_idx] = x_oc
-                f_simplex[worst_idx] = f_oc
-                continue
-        # step 5 inside contraction
-        else:
-            x_ic = x_o - rho * (x_r - x_o)
-            # restrict x_c to bounds if passed
-            if bounds:
-                x_ic = restrict_to_bounds(x_ic, lower, upper)
-            f_ic = ces_target_fn(x_ic, *args)
-            if f_ic < f_simplex[worst_idx]:
-                simplex[worst_idx] = x_ic
-                f_simplex[worst_idx] = f_ic
-                continue
-        # step 6: shrink
-        simplex[np.delete(order_f, 0)] = simplex[best_idx] + sigma * (
-            simplex[np.delete(order_f, 0)] - simplex[best_idx]
-        )
-        for i in np.delete(order_f, 0):
-            simplex[i] = restrict_to_bounds(simplex[i], lower, upper)
-            f_simplex[i] = ces_target_fn(simplex[i], *args)
-    return results(simplex[best_idx], f_simplex[best_idx], it + 1, simplex)
+    f[:] = f_f64.astype(f.dtype)
 
 
 def optimize_ces_target_fn(
     init_par, optimize_params, y, m, init_states, n_components, seasontype, nmse
 ):
     x0 = [init_par[key] for key, val in optimize_params.items() if val]
-    x0 = np.array(x0, dtype=np.float32)
+    x0 = np.array(x0, dtype=np.float64)
     if not len(x0):
         return
 
-    init_alpha_0 = init_par["alpha_0"]
-    init_alpha_1 = init_par["alpha_1"]
-    init_beta_0 = init_par["beta_0"]
-    init_beta_1 = init_par["beta_1"]
+    init_alpha_0 = float(init_par["alpha_0"])
+    init_alpha_1 = float(init_par["alpha_1"])
+    init_beta_0 = float(init_par["beta_0"])
+    init_beta_1 = float(init_par["beta_1"])
 
-    opt_alpha_0 = optimize_params["alpha_0"]
-    opt_alpha_1 = optimize_params["alpha_1"]
-    opt_beta_0 = optimize_params["beta_0"]
-    opt_beta_1 = optimize_params["beta_1"]
+    opt_alpha_0 = bool(optimize_params["alpha_0"])
+    opt_alpha_1 = bool(optimize_params["alpha_1"])
+    opt_beta_0 = bool(optimize_params["beta_0"])
+    opt_beta_1 = bool(optimize_params["beta_1"])
 
-    res = nelder_mead_ces(
-        x0,
-        args=(
-            init_alpha_0,
-            init_alpha_1,
-            init_beta_0,
-            init_beta_1,
-            opt_alpha_0,
-            opt_alpha_1,
-            opt_beta_0,
-            opt_beta_1,
-            y,
-            m,
-            init_states,
-            n_components,
-            seasontype,
-            nmse,
-        ),
-        tol_std=1e-4,
-        lower=np.array([0.01, 0.01, 0.01, 0.01]),
-        upper=np.array([1.8, 1.9, 1.5, 1.5]),
-        max_iter=1_000,
-        adaptive=True,
+    all_lower = np.array([0.01, 0.01, 0.01, 0.01], dtype=np.float64)
+    all_upper = np.array([1.8, 1.9, 1.5, 1.5], dtype=np.float64)
+    lower = all_lower[:len(x0)]
+    upper = all_upper[:len(x0)]
+
+    opt_result = _ces.optimize(
+        x0, lower, upper,
+        init_alpha_0, init_alpha_1, init_beta_0, init_beta_1,
+        opt_alpha_0, opt_alpha_1, opt_beta_0, opt_beta_1,
+        np.asarray(y, dtype=np.float64), m,
+        np.asarray(init_states, dtype=np.float64),
+        n_components, seasontype, nmse,
     )
-    return res
+    # opt_result is (x, fn, nit, simplex) tuple from C++ Nelder-Mead
+    return results(opt_result[0], opt_result[1], opt_result[2], opt_result[3])
 
 
 def cesmodel(
@@ -607,19 +224,19 @@ def cesmodel(
     )
     if fred is not None:
         fit_par = fred.x
-    j = 0
-    if optimize_params["alpha_0"]:
-        par["alpha_0"] = fit_par[j]
-        j += 1
-    if optimize_params["alpha_1"]:
-        par["alpha_1"] = fit_par[j]
-        j += 1
-    if optimize_params["beta_0"]:
-        par["beta_0"] = fit_par[j]
-        j += 1
-    if optimize_params["beta_1"]:
-        par["beta_1"] = fit_par[j]
-        j += 1
+        j = 0
+        if optimize_params["alpha_0"]:
+            par["alpha_0"] = fit_par[j]
+            j += 1
+        if optimize_params["alpha_1"]:
+            par["alpha_1"] = fit_par[j]
+            j += 1
+        if optimize_params["beta_0"]:
+            par["beta_0"] = fit_par[j]
+            j += 1
+        if optimize_params["beta_1"]:
+            par["beta_1"] = fit_par[j]
+            j += 1
 
     amse, e, states, lik = pegelsresid_ces(
         y=y,
@@ -669,11 +286,12 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
     m = obj["m"]
     n = obj["n"]
     states = obj["states"]
+    season = switch_ces(obj["seasontype"])
     cesforecast(
         states=states,
         n=n,
         m=m,
-        season=switch_ces(obj["seasontype"]),
+        season=season,
         h=h,
         f=forecast,
         **obj["par"],
@@ -682,19 +300,20 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 
 
 def _simulate_pred_intervals(model, h, level):
-    np.random.seed(1)
+    rng = np.random.default_rng(1)
     nsim = 5000
     y_path = np.zeros([nsim, h])
 
+    season = switch_ces(model["seasontype"])
     for k in range(nsim):
-        e = np.random.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
+        e = rng.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
         states = model["states"]
-        fcsts = np.zeros(h, dtype=np.float32)
+        fcsts = np.zeros(h, dtype=np.float64)
         cesforecast(
             states=states + e,
             n=model["n"],
             m=model["m"],
-            season=switch_ces(model["seasontype"]),
+            season=season,
             h=h,
             f=fcsts,
             **model["par"],
@@ -734,7 +353,6 @@ def auto_ces(
     ic="aicc",
 ):
     # converting params to floats
-    # to improve numba compilation
     if alpha_0 is None:
         alpha_0 = np.nan
     if alpha_1 is None:
@@ -802,3 +420,76 @@ def forward_ces(fitted_model, y):
         beta_0=beta_0,
         beta_1=beta_1,
     )
+
+
+def simulate_ces(
+    model,
+    h,
+    n_paths,
+    seed=None,
+    error_distribution="normal",
+    error_params=None,
+):
+    """
+    Simulate future paths from a fitted CES model.
+
+    Parameters
+    ----------
+    model : dict
+        Fitted CES model dictionary.
+    h : int
+        Forecast horizon.
+    n_paths : int
+        Number of simulation paths to generate.
+    seed : int, optional
+        Random seed for reproducibility.
+    error_distribution : str, default='normal'
+        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
+        'laplace', 'skew-normal', 'ged'.
+    error_params : dict, optional
+        Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
+
+    Returns
+    -------
+    np.ndarray
+        Simulated paths of shape (n_paths, h).
+    """
+    from statsforecast.simulation import sample_errors
+
+    # Set up random generator
+    rng = np.random.default_rng(seed)
+
+    y_path = np.zeros([n_paths, h])
+
+    sigma = np.sqrt(model["sigma2"])
+    states_shape = model["states"].shape
+
+    # Get residuals for bootstrap if needed
+    residuals = model.get("residuals", None)
+
+    season = switch_ces(model["seasontype"])
+    for k in range(n_paths):
+        # Sample state noise from specified distribution
+        e = sample_errors(
+            size=states_shape,
+            sigma=sigma,
+            distribution=error_distribution,
+            params=error_params,
+            residuals=residuals,
+            rng=rng,
+        )
+        states = model["states"]
+        fcsts = np.zeros(h, dtype=np.float64)
+        cesforecast(
+            states=states + e,
+            n=model["n"],
+            m=model["m"],
+            season=season,
+            h=h,
+            f=fcsts,
+            **model["par"],
+        )
+        y_path[k,] = fcsts
+
+    return y_path
+

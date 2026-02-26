@@ -38,7 +38,8 @@
           "docs/tutorials/mlflow.html",
           "docs/tutorials/multipleseasonalities.html",
           "docs/tutorials/statisticalneuralmethods.html",
-          "docs/tutorials/uncertaintyintervals.html"
+          "docs/tutorials/uncertaintyintervals.html",
+          "docs/tutorials/simulation.html"
         ]
       },
       {
@@ -47,8 +48,7 @@
           "docs/how-to-guides/automatic_forecasting.html",
           "docs/how-to-guides/exogenous.html",
           "docs/how-to-guides/generating_features.html",
-          "docs/how-to-guides/sklearn_models.html",
-          "docs/how-to-guides/numba_cache.html"
+          "docs/how-to-guides/sklearn_models.html"
         ]
       },
       {

@@ -15,26 +15,21 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "cloudpickle",
-    "coreforecast>=0.0.12",
-    "numba>=0.55.0 ; sys_platform != 'win32' or python_version < '3.10' or python_version >= '3.12'",
-    "numba>=0.58.0,<0.60.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
-    "llvmlite>=0.41.0,<0.43.0 ; sys_platform == 'win32' and python_version >= '3.10' and python_version < '3.12'",
+    "coreforecast>=0.0.17",
     "numpy>=1.21.6",
     "pandas>=1.3.5",
-    "scipy>=1.7.3,<1.14 ; python_version < '3.10'",
-    "scipy>=1.7.3 ; python_version >= '3.10'",
+    "scipy>=1.7.3",
     "statsmodels>=0.14.5",
     "tqdm",
-    "fugue>=0.8.1",
+    "fugue>=0.9.4",
     "utilsforecast>=0.1.4",
     "threadpoolctl>=3",
 ]
@@ -62,14 +57,15 @@ dev = [
     "scikit-learn",
     "setuptools<70",
     "supersmoother",
+    "xlrd",
     "yfinance",
     "pytest",
     "pytest-cov",
     "pip-licenses",
 ]
-dask = ["dask<=2024.12.1", "fugue[dask]>=0.8.1"]
+dask = ["dask<=2024.12.1", "fugue[dask]>=0.9.4"]
 ray = ["fugue[ray]>=0.9.4", "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'"]
-spark = ["fugue[spark]>=0.8.1", "pyspark<4.1.0; sys_platform == 'win32'"]
+spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
 plotly = ["plotly", "plotly-resampler"]
 polars = ["polars[numpy]"]
 docs = [
@@ -92,7 +88,7 @@ all = [
     "fire",
     "nbformat",
     "nbdev_plotly",
-    "pandas[plot]",
+    "pandas[plot]<3.0.0",
     "polars[numpy]",
     "pre-commit",
     "prophet",

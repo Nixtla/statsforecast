@@ -1,9 +1,6 @@
-import os
 import time
 from functools import partial
 from multiprocessing import cpu_count
-os.environ['NIXTLA_NUMBA_RELEASE_GIL'] = '1'
-os.environ['NIXTLA_NUMBA_CACHE'] = '1'
 
 import fire
 import numpy as np
@@ -37,5 +34,5 @@ def main(dataset: str = 'M3', group: str = 'Other') -> None:
 
 
 if __name__ == '__main__':
-    AutoCES(season_length=12).forecast(ap.astype(np.float32), h=12)
+    AutoCES(season_length=12).forecast(ap.astype(np.float64), h=12)
     fire.Fire(main)

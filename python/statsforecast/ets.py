@@ -1,4 +1,4 @@
-__all__ = ['ets_f']
+__all__ = ["ets_f", "simulate_ets"]
 
 
 import math
@@ -39,6 +39,7 @@ def etssimulate(
         m = 1
     # Copy initial state components
     l = x[0]
+    b = 0.0
     if trend != _ets.Component.Nothing:
         b = x[1]
     if season != _ets.Component.Nothing:
@@ -240,7 +241,6 @@ def fourier(x, period, K, h=None):
     if h is not None:
         times = np.arange(len(x) + 1, len(x) + h + 1)
     # compute periods of all fourier terms
-    # numba doesnt support list comprehension
     len_p = sum(K)
     p = np.full(len_p, fill_value=np.nan)
     idx = 0
@@ -701,7 +701,6 @@ def ets_f(
 ):
     y = y.astype(np.float64, copy=False)
     # converting params to floats
-    # to improve numba compilation
     if alpha is None:
         alpha = np.nan
     if beta is None:
@@ -720,7 +719,6 @@ def ets_f(
         upper = np.array([0.9999, 0.9999, 0.9999, _PHI_UPPER])
     if any(upper < lower):
         raise ValueError("Lower limits must be less than upper limits")
-    # check if y is contant
     if is_constant(y):
         return etsmodel(
             y=y,
@@ -1245,3 +1243,99 @@ def forecast_ets(obj, h, level=None):
 
 def forward_ets(fitted_model, y):
     return ets_f(y=y, m=fitted_model["m"], model=fitted_model)
+
+
+def simulate_ets(
+    model,
+    h,
+    n_paths,
+    seed=None,
+    error_distribution="normal",
+    error_params=None,
+):
+    """
+    Simulate future paths from a fitted ETS model.
+
+    Parameters
+    ----------
+    model : dict
+        Fitted ETS model dictionary.
+    h : int
+        Forecast horizon.
+    n_paths : int
+        Number of simulation paths to generate.
+    seed : int, optional
+        Random seed for reproducibility.
+    error_distribution : str, default='normal'
+        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
+        'laplace', 'skew-normal', 'ged'.
+    error_params : dict, optional
+        Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
+
+    Returns
+    -------
+    np.ndarray
+        Simulated paths of shape (n_paths, h).
+    """
+    from statsforecast.simulation import sample_errors
+
+    # Set up random generator
+    rng = np.random.default_rng(seed)
+    if seed is not None:
+        np.random.seed(seed)  # For backward compatibility
+
+    sigma = model["sigma2"]
+    season_length = model["m"]
+    last_state = model["states"][-1]
+    model_type = model["components"]
+    error = model_type[0]
+    trend = model_type[1]
+    seasonality = model_type[2]
+
+    # parameters
+    alpha = model["par"][0]
+    beta = model["par"][1]
+    gamma = model["par"][2]
+    phi = model["par"][3]
+
+    if math.isnan(beta):
+        beta = 0
+    if math.isnan(gamma):
+        gamma = 0
+    if math.isnan(phi):
+        phi = 0
+
+    y_path = np.zeros([n_paths, h])
+
+    # Get residuals for bootstrap if needed
+    residuals = model.get("residuals", None)
+
+    for k in range(n_paths):
+        # Sample errors from specified distribution
+        e = sample_errors(
+            size=h,
+            sigma=np.sqrt(sigma),
+            distribution=error_distribution,
+            params=error_params,
+            residuals=residuals,
+            rng=rng,
+        )
+        yhat = np.zeros(h)
+        etssimulate(
+            last_state,
+            season_length,
+            switch(error),
+            switch(trend),
+            switch(seasonality),
+            alpha,
+            beta,
+            gamma,
+            phi,
+            h,
+            yhat,
+            e,
+        )
+        y_path[k,] = yhat
+
+    return y_path
+
