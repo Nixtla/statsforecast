@@ -67,23 +67,18 @@ dev = [
     "pip-licenses",
 ]
 dask = ["dask<=2024.12.1", "fugue[dask]>=0.9.4"]
-ray = ["fugue[ray]>=0.9.4", "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'"]
+ray = [
+    "fugue[ray]>=0.9.4 ; sys_platform != 'win32' and python_version < '3.14'",
+    "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
+]
 spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
-plotly = ["plotly", "plotly-resampler"]
+plotly = ["plotly", "plotly-resampler ; python_version < '3.14'"]
 polars = ["polars[numpy]"]
 docs = [
     "griffe2md",
     "pyyaml",
     "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
 ]
-dask = ["dask<=2024.12.1", "fugue[dask]>=0.8.1"]
-ray = [
-    "fugue[ray]>=0.9.4 ; sys_platform != 'win32' and python_version < '3.14'",
-    "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
-]
-spark = ["fugue[spark]>=0.8.1", "pyspark<4.1.0; sys_platform == 'win32'"]
-plotly = ["plotly", "plotly-resampler ; python_version < '3.14'"]
-polars = ["polars[numpy]"]
 all = [
     "dask<=2024.12.1",
     "fugue[dask]>=0.9.4",
