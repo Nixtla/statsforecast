@@ -1,5 +1,5 @@
 ---
-title: End to End Walkthrough
+title: End to End Walkthrough | StatsForecast
 ---
 
 > Model training, evaluation and selection for multiple time series
@@ -254,6 +254,19 @@ sf = StatsForecast(
     n_jobs=-1,
 )
 ```
+
+`<<<<<<< HEAD`
+
+`=======`
+
+> **Note**
+>
+> StatsForecast achieves its blazing speed using JIT compiling through
+> Numba. The first time you call the statsforecast class, the fit method
+> should take around 5 seconds. The second time -once Numba compiled
+> your settings- it should take less than 0.2s.
+
+`>>>>>>> f262b71470cd5bd4105e3701c8088b848f98a7af`
 
 The `forecast` method takes two arguments: forecasts next `h` (horizon)
 and `level`.
