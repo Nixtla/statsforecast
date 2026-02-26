@@ -107,7 +107,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install the library
-        run: pip install uv && uv pip install --system ".[dev]" "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git@95a9ea44115b5ed6088e30f786aa0c39f9e094ac"
+        run: pip install uv && uv pip install --system ".[dev]"
 
       - name: Run M3 experiment
         run: |
