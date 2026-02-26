@@ -3,16 +3,22 @@ name: AI Issue Triage
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to triage"
+        required: true
+        type: number
 
 concurrency:
-  group: ai-triage-${{ github.event.issue.number }}
+  group: ai-triage-${{ github.event.issue.number || inputs.issue_number }}
   cancel-in-progress: true
 
 jobs:
   triage:
     name: Triage issue with Claude AI
     runs-on: ubuntu-latest
-    if: ${{ !contains(github.event.issue.user.login, '[bot]') }}
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.issue.user.login, '[bot]') }}
     permissions:
       issues: write
 
@@ -26,6 +32,6 @@ jobs:
           allowed_tools: "Bash(gh:*)"
           claude_env: |
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            ISSUE_NUMBER: ${{ github.event.issue.number }}
+            ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
             REPO: ${{ github.repository }}
           prompt_file: .github/ai-triage-prompt.md
