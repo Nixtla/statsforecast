@@ -1392,6 +1392,268 @@ class TestIMAPA:
         assert repr(IMAPA(alias="IMAPA_custom")) == "IMAPA_custom"
 
 
+class TestCppEquivalence:
+    """Verify that the C++ implementations produce the same results as
+    pure-Python reference implementations of the original algorithms."""
+
+    # -- pure-Python reference helpers -------------------------------------------
+
+    @staticmethod
+    def _ref_ses_sse(alpha, x):
+        """Original _ses_sse (was @njit)."""
+        complement = 1 - alpha
+        forecast = x[0]
+        sse = 0.0
+        for i in range(1, len(x)):
+            forecast = alpha * x[i - 1] + complement * forecast
+            sse += (x[i] - forecast) ** 2
+        return sse
+
+    @staticmethod
+    def _ref_ses_forecast(x, alpha):
+        """Original _ses_forecast (was @njit)."""
+        complement = 1 - alpha
+        fitted = np.empty_like(x)
+        fitted[0] = x[0]
+        j = 0
+        for i in range(1, len(x)):
+            fitted[i] = alpha * x[j] + complement * fitted[j]
+            j += 1
+        forecast = alpha * x[j] + complement * fitted[j]
+        fitted[0] = np.nan
+        return forecast, fitted
+
+    @classmethod
+    def _ref_golden_section_ses(cls, x, lower=0.1, upper=0.3):
+        """Pure-Python golden section search (same algorithm as C++)."""
+        import math
+
+        gr = (math.sqrt(5.0) + 1.0) / 2.0
+        a, b = lower, upper
+        c = b - (b - a) / gr
+        d = a + (b - a) / gr
+        fc = cls._ref_ses_sse(c, x)
+        fd = cls._ref_ses_sse(d, x)
+        for _ in range(80):
+            if abs(b - a) < 1e-12:
+                break
+            if fc < fd:
+                b = d
+                d = c
+                fd = fc
+                c = b - (b - a) / gr
+                fc = cls._ref_ses_sse(c, x)
+            elif fd < fc:
+                a = c
+                c = d
+                fc = fd
+                d = a + (b - a) / gr
+                fd = cls._ref_ses_sse(d, x)
+            else:
+                break
+        return (b + a) / 2.0
+
+    @classmethod
+    def _ref_chunk_forecast(cls, y, aggregation_level):
+        """Pure-Python chunk_forecast using golden section (same algo as C++)."""
+        n = len(y)
+        lost = n % aggregation_level
+        n_cut = n - lost
+        if n_cut < aggregation_level:
+            return y[n - 1]
+        n_chunks = n_cut // aggregation_level
+        agg_sums = np.empty(n_chunks, dtype=y.dtype)
+        for i in range(n_chunks):
+            s = 0.0
+            base = lost + i * aggregation_level
+            for j in range(aggregation_level):
+                s += y[base + j]
+            agg_sums[i] = s
+        if n_chunks <= 1:
+            return agg_sums[0]
+        alpha = cls._ref_golden_section_ses(agg_sums)
+        forecast, _ = cls._ref_ses_forecast(agg_sums, alpha)
+        return forecast
+
+    @classmethod
+    def _ref_expand_fitted_intervals(cls, fitted, y):
+        """Original _expand_fitted_intervals (was @njit)."""
+        out = np.empty_like(y)
+        out[0] = np.nan
+        fitted_idx = 0
+        for i in range(1, y.size):
+            if y[i - 1] != 0:
+                fitted_idx += 1
+                if fitted[fitted_idx] == 0:
+                    out[i] = 1
+                else:
+                    out[i] = fitted[fitted_idx]
+            elif fitted_idx > 0:
+                out[i] = out[i - 1]
+            else:
+                out[i] = 1
+        return out
+
+    @staticmethod
+    def _intervals(x):
+        nonzero_idxs = np.where(x != 0)[0]
+        return np.diff(nonzero_idxs + 1, prepend=0).astype(x.dtype)
+
+    @classmethod
+    def _ref_adida_fitted(cls, y):
+        """Pure-Python ADIDA fitted values loop (same algo as C++)."""
+        from statsforecast.utils import _ensure_float
+
+        y = _ensure_float(y)
+        y_intervals = cls._intervals(y)
+        fitted_aggregation_levels = np.round(
+            y_intervals.cumsum() / np.arange(1, y_intervals.size + 1)
+        )
+        fitted_aggregation_levels = cls._ref_expand_fitted_intervals(
+            np.append(np.nan, fitted_aggregation_levels), y
+        )[1:].astype(np.int32)
+        sums_fitted = np.empty(y.size - 1, dtype=y.dtype)
+        for i, agg_lvl in enumerate(fitted_aggregation_levels):
+            sums_fitted[i] = cls._ref_chunk_forecast(y[: i + 1], agg_lvl)
+        return np.append(np.nan, sums_fitted / fitted_aggregation_levels)
+
+    @classmethod
+    def _ref_imapa_fitted(cls, y):
+        """Pure-Python IMAPA fitted values loop (same algo as C++)."""
+        from statsforecast.utils import _ensure_float
+
+        y = _ensure_float(y)
+        fitted_vals = np.empty_like(y)
+        fitted_vals[0] = np.nan
+        for i in range(1, len(y)):
+            prefix = y[:i]
+            nonzero_count = np.count_nonzero(prefix)
+            if nonzero_count == 0:
+                fitted_vals[i] = 0.0
+                continue
+            intervals_sum = 0.0
+            prev = 0
+            for j in range(i):
+                if prefix[j] != 0.0:
+                    intervals_sum += (j + 1) - prev
+                    prev = j + 1
+            mean_interval = intervals_sum / nonzero_count
+            max_agg = max(1, round(mean_interval))
+            max_agg = min(max_agg, i)
+            forecast_sum = 0.0
+            count = 0
+            for agg_level in range(1, max_agg + 1):
+                if agg_level > i:
+                    continue
+                fcst = cls._ref_chunk_forecast(prefix, agg_level)
+                forecast_sum += fcst / agg_level
+                count += 1
+            fitted_vals[i] = forecast_sum / count if count > 0 else 0.0
+        return fitted_vals
+
+    @classmethod
+    def _ref_scipy_optimized_ses_forecast(cls, x, bounds=(0.1, 0.3)):
+        """Old optimizer: scipy.optimize.minimize_scalar (Brent's method)."""
+        from scipy.optimize import minimize_scalar
+
+        alpha = minimize_scalar(
+            fun=cls._ref_ses_sse, bounds=bounds, args=(x,),
+        ).x
+        forecast, fitted = cls._ref_ses_forecast(x, alpha)
+        return forecast, fitted, alpha
+
+    # -- test data ----------------------------------------------------------------
+
+    SPARSE_SERIES = [
+        np.array([2, 5, 0, 1, 3, 0, 1, 1, 0], dtype=np.float64),
+        np.array([0, 0, 1, 0, 0, 7, 1, 0, 1], dtype=np.float64),
+        np.array([0, 0, 1, 0, 0, 7, 1, 0, 0], dtype=np.float64),
+        np.array([1, 0, 0, 2, 0, 3, 0, 0, 4, 0, 5], dtype=np.float64),
+        ap,
+    ]
+
+    # -- low-level C++ vs pure-Python (exact match, same algorithm) ---------------
+
+    @pytest.mark.parametrize("y", SPARSE_SERIES, ids=lambda y: f"n={len(y)}")
+    def test_ses_sse_equivalence(self, y):
+        """C++ ses_sse must exactly match the pure-Python loop."""
+        from statsforecast._lib import ses as _ses_lib
+
+        for alpha in [0.1, 0.2, 0.5, 0.9]:
+            cpp_sse = _ses_lib.ses_sse(alpha, y)
+            ref_sse = self._ref_ses_sse(alpha, y)
+            np.testing.assert_allclose(cpp_sse, ref_sse, atol=1e-10)
+
+    @pytest.mark.parametrize("y", SPARSE_SERIES, ids=lambda y: f"n={len(y)}")
+    def test_ses_forecast_equivalence(self, y):
+        """C++ ses_forecast must exactly match the pure-Python loop."""
+        from statsforecast._lib import ses as _ses_lib
+
+        for alpha in [0.1, 0.2, 0.5, 0.9]:
+            cpp_fcst, cpp_fitted = _ses_lib.ses_forecast(y, alpha)
+            ref_fcst, ref_fitted = self._ref_ses_forecast(y, alpha)
+            np.testing.assert_allclose(cpp_fcst, ref_fcst, atol=1e-12)
+            np.testing.assert_allclose(cpp_fitted[1:], ref_fitted[1:], atol=1e-12)
+
+    @pytest.mark.parametrize("y", SPARSE_SERIES, ids=lambda y: f"n={len(y)}")
+    def test_golden_section_ses_equivalence(self, y):
+        """C++ golden_section_ses must match the pure-Python golden section."""
+        from statsforecast._lib import ses as _ses_lib
+
+        if (y == 0).all():
+            pytest.skip("all-zero series")
+        cpp_alpha = _ses_lib.golden_section_ses(y, 0.1, 0.3)
+        ref_alpha = self._ref_golden_section_ses(y, 0.1, 0.3)
+        np.testing.assert_allclose(cpp_alpha, ref_alpha, atol=1e-12)
+
+    @pytest.mark.parametrize("y", SPARSE_SERIES, ids=lambda y: f"n={len(y)}")
+    def test_chunk_forecast_equivalence(self, y):
+        """C++ chunk_forecast must match the pure-Python version."""
+        from statsforecast._lib import ses as _ses_lib
+
+        for agg_level in [1, 2, 3]:
+            cpp_fcst = _ses_lib.chunk_forecast(y, agg_level)
+            ref_fcst = self._ref_chunk_forecast(y, agg_level)
+            np.testing.assert_allclose(cpp_fcst, ref_fcst, atol=1e-10)
+
+    # -- ADIDA/IMAPA fitted values (C++ batch vs pure-Python loop) ----------------
+
+    @pytest.mark.parametrize("y", SPARSE_SERIES, ids=lambda y: f"n={len(y)}")
+    def test_adida_fitted_equivalence(self, y):
+        """ADIDA C++ fitted values must match the pure-Python loop."""
+        if (y == 0).all():
+            pytest.skip("all-zero series")
+        cpp_fitted = ADIDA().forecast(y=y, h=1, fitted=True)["fitted"]
+        ref_fitted = self._ref_adida_fitted(y)
+        np.testing.assert_allclose(cpp_fitted, ref_fitted, atol=1e-10)
+
+    @pytest.mark.parametrize("y", SPARSE_SERIES, ids=lambda y: f"n={len(y)}")
+    def test_imapa_fitted_equivalence(self, y):
+        """IMAPA C++ fitted values must match the pure-Python loop."""
+        if (y == 0).all():
+            pytest.skip("all-zero series")
+        cpp_fitted = IMAPA().forecast(y=y, h=1, fitted=True)["fitted"]
+        ref_fitted = self._ref_imapa_fitted(y)
+        np.testing.assert_allclose(cpp_fitted, ref_fitted, atol=1e-10)
+
+    # -- golden section vs scipy (different algorithms, approximate match) --------
+
+    @pytest.mark.parametrize("y", SPARSE_SERIES, ids=lambda y: f"n={len(y)}")
+    def test_golden_section_ses_vs_scipy(self, y):
+        """Golden section and scipy should find alphas with similar SSE."""
+        from statsforecast._lib import ses as _ses_lib
+
+        if (y == 0).all():
+            pytest.skip("all-zero series")
+        cpp_alpha = _ses_lib.golden_section_ses(y, 0.1, 0.3)
+        _, _, scipy_alpha = self._ref_scipy_optimized_ses_forecast(
+            y, bounds=(0.1, 0.3)
+        )
+        cpp_sse = self._ref_ses_sse(cpp_alpha, y)
+        scipy_sse = self._ref_ses_sse(scipy_alpha, y)
+        np.testing.assert_allclose(cpp_sse, scipy_sse, rtol=1e-5)
+
+
 class TestTSB:
     @classmethod
     def setup_class(cls):

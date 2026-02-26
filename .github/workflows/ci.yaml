@@ -21,7 +21,6 @@ jobs:
     timeout-minutes: 60
     env:
       CIBW_BUILD_FRONTEND: build[uv]
-      CIBW_ENVIRONMENT: NIXTLA_NUMBA_CACHE=1
     strategy:
       fail-fast: false
       matrix:
@@ -126,9 +125,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install the library
-        run: |
-          uv sync --group dev
-          uv add "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git"
+        run: uv sync --group dev
 
       - name: Run M3 experiment
         run: |

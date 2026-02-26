@@ -16,7 +16,7 @@ jobs:
           submodules: "true"
 
       - name: Set up python
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # 5.4.0
+        uses: actions/setup-python@v5.6.0
         with:
           python-version: "3.10"
 

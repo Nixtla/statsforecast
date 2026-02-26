@@ -36,7 +36,7 @@ dependencies = [
     "scipy>=1.7.3",
     "statsmodels>=0.14.5",
     "tqdm",
-    "fugue>=0.8.1",
+    "fugue>=0.9.4",
     "utilsforecast>=0.1.4",
     "threadpoolctl>=3",
 ]
@@ -61,9 +61,17 @@ dev = [
     "scikit-learn",
     "setuptools<70",
     "supersmoother",
+    "xlrd",
     "yfinance",
     "pytest-cov",
     "pip-licenses",
+]
+dask = ["dask<=2024.12.1", "fugue[dask]>=0.9.4"]
+ray = ["fugue[ray]>=0.9.4", "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'"]
+spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
+plotly = ["plotly", "plotly-resampler"]
+polars = ["polars[numpy]"]
+docs = [
     "griffe2md",
     "pyyaml",
     "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
