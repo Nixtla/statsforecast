@@ -3506,7 +3506,6 @@ class HistoricAverage(_TS):
         self,
         alias: str = "HistoricAverage",
         prediction_intervals: Optional[ConformalIntervals] = None,
-        distribution: Union[str, Any] = "gaussian",
     ):
         r"""HistoricAverage model.
 
@@ -3525,13 +3524,9 @@ class HistoricAverage(_TS):
             prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
                 By default, the model will compute the native prediction
                 intervals.
-            distribution (str or Distribution, default="gaussian"): Observation distribution for prediction intervals.
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.distribution = distribution
-        from .distributions import _get_distribution
-        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -3549,18 +3544,13 @@ class HistoricAverage(_TS):
         Returns:
             self: HistoricAverage fitted model.
         r"""
-        from .distributions import _get_distribution
         y = _ensure_float(y)
-        self._dist_ = _get_distribution(self.distribution)
-        self._dist_.validate(y)
         mod = _historic_average(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
         mod["sigma"] = _calculate_sigma(residuals, len(residuals) - 1)
         mod["residuals"] = residuals
         mod["n"] = len(y)
-        self._sigma_ = float(np.std(residuals))
-        self._aux_params_ = self._dist_.estimate_params(residuals)
         self.model_ = mod
         self._store_cs(y=y, X=X)
         return self
@@ -3581,25 +3571,19 @@ class HistoricAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         mean = _repeat_val(val=self.model_["mean"][0], h=h)
         res = {"mean": mean}
 
         if level is None:
             return res
         level = sorted(level)
-        if isinstance(self._dist_, Gaussian):
-            if self.prediction_intervals is not None:
-                res = self._add_predict_conformal_intervals(res, level)
-            else:
-                sigma = self.model_["sigma"]
-                sigmah = sigma * np.sqrt(1 + (1 / self.model_["n"]))
-                pred_int = _calculate_intervals(res, level, h, sigmah)
-                res = {**res, **pred_int}
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
         else:
-            res.update(self._dist_.predict_intervals(
-                mean, self._sigma_, level, **self._aux_params_
-            ))
+            sigma = self.model_["sigma"]
+            sigmah = sigma * np.sqrt(1 + (1 / self.model_["n"]))
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
 
         return res
 
@@ -3678,18 +3662,11 @@ class HistoricAverage(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions.
         """
-        from .distributions import Gaussian
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            if isinstance(self._dist_, Gaussian):
-                sigma = self.model_["sigma"]
-                sigmah = sigma * np.sqrt(1 + (1 / self.model_["n"]))
-                res = _add_fitted_pi(res, se=sigmah, level=level)
-            else:
-                level = sorted(level)
-                res.update(self._dist_.predict_intervals(
-                    self.model_["fitted"], self._sigma_, level, **self._aux_params_
-                ))
+            sigma = self.model_["sigma"]
+            sigmah = sigma * np.sqrt(1 + (1 / self.model_["n"]))
+            res = _add_fitted_pi(res, se=sigmah, level=level)
         return res
 
     def forecast(
@@ -3718,11 +3695,7 @@ class HistoricAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = self._dist_
-        if not isinstance(dist, Gaussian):
-            dist.validate(y)
         out = _historic_average(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
 
@@ -3730,25 +3703,19 @@ class HistoricAverage(_TS):
             res["fitted"] = out["fitted"]
         if level is not None:
             level = sorted(level)
-            if isinstance(dist, Gaussian):
-                if self.prediction_intervals is not None:
-                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-                else:
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
-                    sigmah = sigma * np.sqrt(1 + (1 / len(y)))
-                    pred_int = _calculate_intervals(out, level, h, sigmah)
-                    res = {**res, **pred_int}
-                if fitted:
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
-                    sigmah = sigma * np.sqrt(1 + (1 / len(y)))
-                    res = _add_fitted_pi(res=res, se=sigmah, level=level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
             else:
                 residuals = y - out["fitted"]
-                sigma = float(np.std(residuals))
-                aux = dist.estimate_params(residuals)
-                res.update(dist.predict_intervals(res["mean"], sigma, level, **aux))
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigmah = sigma * np.sqrt(1 + (1 / len(y)))
+                pred_int = _calculate_intervals(out, level, h, sigmah)
+                res = {**res, **pred_int}
+            if fitted:
+                residuals = y - out["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigmah = sigma * np.sqrt(1 + (1 / len(y)))
+                res = _add_fitted_pi(res=res, se=sigmah, level=level)
 
         return res
 
@@ -3758,7 +3725,6 @@ class Naive(_TS):
         self,
         alias: str = "Naive",
         prediction_intervals: Optional[ConformalIntervals] = None,
-        distribution: Union[str, Any] = "gaussian",
     ):
         r"""Naive model.
 
@@ -3772,13 +3738,9 @@ class Naive(_TS):
             alias (str, optional): Custom name of the model. Defaults to "Naive".
             prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
                 By default, the model will compute the native prediction intervals. Defaults to None.
-            distribution (str or Distribution, default="gaussian"): Observation distribution for prediction intervals.
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.distribution = distribution
-        from .distributions import _get_distribution
-        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -3796,18 +3758,12 @@ class Naive(_TS):
         Returns:
             self: Naive fitted model.
         """
-        from .distributions import _get_distribution
         y = _ensure_float(y)
-        self._dist_ = _get_distribution(self.distribution)
-        self._dist_.validate(y)
         mod = _naive(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals, len(residuals) - 1)
-        mod["sigma"] = sigma
+        mod["sigma"] = _calculate_sigma(residuals, len(residuals) - 1)
         mod["residuals"] = residuals
-        self._sigma_ = float(np.std(residuals))
-        self._aux_params_ = self._dist_.estimate_params(residuals)
         self.model_ = mod
         self._store_cs(y=y, X=X)
         return self
@@ -3894,26 +3850,20 @@ class Naive(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
 
         if level is None:
             return res
         level = sorted(level)
-        if isinstance(self._dist_, Gaussian):
-            if self.prediction_intervals is not None:
-                res = self._add_predict_conformal_intervals(res, level)
-            else:
-                steps = np.arange(1, h + 1)
-                sigma = self.model_["sigma"]
-                sigmah = sigma * np.sqrt(steps)
-                pred_int = _calculate_intervals(res, level, h, sigmah)
-                res = {**res, **pred_int}
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
         else:
-            res.update(self._dist_.predict_intervals(
-                mean, self._sigma_, level, **self._aux_params_
-            ))
+            steps = np.arange(1, h + 1)
+            sigma = self.model_["sigma"]
+            sigmah = sigma * np.sqrt(steps)
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
@@ -3925,16 +3875,9 @@ class Naive(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions.
         """
-        from .distributions import Gaussian
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            if isinstance(self._dist_, Gaussian):
-                res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
-            else:
-                level = sorted(level)
-                res.update(self._dist_.predict_intervals(
-                    self.model_["fitted"], self._sigma_, level, **self._aux_params_
-                ))
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
     def forecast(
@@ -3963,36 +3906,26 @@ class Naive(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = self._dist_
-        if not isinstance(dist, Gaussian):
-            dist.validate(y)
         out = _naive(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
         if fitted:
             res["fitted"] = out["fitted"]
         if level is not None:
             level = sorted(level)
-            if isinstance(dist, Gaussian):
-                if self.prediction_intervals is not None:
-                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-                else:
-                    steps = np.arange(1, h + 1)
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
-                    sigmah = sigma * np.sqrt(steps)
-                    pred_int = _calculate_intervals(out, level, h, sigmah)
-                    res = {**res, **pred_int}
-                if fitted:
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
-                    res = _add_fitted_pi(res=res, se=sigma, level=level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
             else:
+                steps = np.arange(1, h + 1)
                 residuals = y - out["fitted"]
-                sigma = float(np.std(residuals))
-                aux = dist.estimate_params(residuals)
-                res.update(dist.predict_intervals(res["mean"], sigma, level, **aux))
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigmah = sigma * np.sqrt(steps)
+                pred_int = _calculate_intervals(out, level, h, sigmah)
+                res = {**res, **pred_int}
+            if fitted:
+                residuals = y - out["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
     def forward(
@@ -4048,7 +3981,6 @@ class RandomWalkWithDrift(_TS):
         self,
         alias: str = "RWD",
         prediction_intervals: Optional[ConformalIntervals] = None,
-        distribution: Union[str, Any] = "gaussian",
     ):
         r"""RandomWalkWithDrift model.
 
@@ -4070,13 +4002,9 @@ class RandomWalkWithDrift(_TS):
             prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
                 By default, the model will compute the native prediction
                 intervals.
-            distribution (str or Distribution, default="gaussian"): Observation distribution for prediction intervals.
         """
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.distribution = distribution
-        from .distributions import _get_distribution
-        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -4093,19 +4021,13 @@ class RandomWalkWithDrift(_TS):
         Returns:
             self: RandomWalkWithDrift fitted model.
         r"""
-        from .distributions import _get_distribution
         y = _ensure_float(y)
-        self._dist_ = _get_distribution(self.distribution)
-        self._dist_.validate(y)
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals, len(residuals) - 1)
-        mod["sigma"] = sigma
+        mod["sigma"] = _calculate_sigma(residuals, len(residuals) - 1)
         mod["residuals"] = residuals
         mod["n"] = len(y)
-        self._sigma_ = float(np.std(residuals))
-        self._aux_params_ = self._dist_.estimate_params(residuals)
         self.model_ = mod
         self._store_cs(y=y, X=X)
         return self
@@ -4123,7 +4045,6 @@ class RandomWalkWithDrift(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         hrange = np.arange(h, dtype=self.model_["last_y"].dtype)
         mean = self.model_["slope"] * (1 + hrange) + self.model_["last_y"]
         res = {"mean": mean}
@@ -4131,19 +4052,14 @@ class RandomWalkWithDrift(_TS):
         if level is None:
             return res
         level = sorted(level)
-        if isinstance(self._dist_, Gaussian):
-            if self.prediction_intervals is not None:
-                res = self._add_predict_conformal_intervals(res, level)
-            else:
-                steps = np.arange(1, h + 1)
-                sigma = self.model_["sigma"]
-                sigmah = sigma * np.sqrt(steps * (1 + steps / (self.model_["n"] - 1)))
-                pred_int = _calculate_intervals(res, level, h, sigmah)
-                res = {**res, **pred_int}
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
         else:
-            res.update(self._dist_.predict_intervals(
-                mean, self._sigma_, level, **self._aux_params_
-            ))
+            steps = np.arange(1, h + 1)
+            sigma = self.model_["sigma"]
+            sigmah = sigma * np.sqrt(steps * (1 + steps / (self.model_["n"] - 1)))
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
         return res
 
     def simulate(
@@ -4226,16 +4142,9 @@ class RandomWalkWithDrift(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            if isinstance(self._dist_, Gaussian):
-                res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
-            else:
-                level = sorted(level)
-                res.update(self._dist_.predict_intervals(
-                    self.model_["fitted"], self._sigma_, level, **self._aux_params_
-                ))
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
     def forecast(
@@ -4264,11 +4173,7 @@ class RandomWalkWithDrift(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = self._dist_
-        if not isinstance(dist, Gaussian):
-            dist.validate(y)
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
 
@@ -4277,25 +4182,19 @@ class RandomWalkWithDrift(_TS):
 
         if level is not None:
             level = sorted(level)
-            if isinstance(dist, Gaussian):
-                if self.prediction_intervals is not None:
-                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-                else:
-                    steps = np.arange(1, h + 1)
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
-                    sigmah = sigma * np.sqrt(steps * (1 + steps / (len(y) - 1)))
-                    pred_int = _calculate_intervals(out, level, h, sigmah)
-                    res = {**res, **pred_int}
-                if fitted:
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(residuals) - 1)
-                    res = _add_fitted_pi(res=res, se=sigma, level=level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
             else:
+                steps = np.arange(1, h + 1)
                 residuals = y - out["fitted"]
-                sigma = float(np.std(residuals))
-                aux = dist.estimate_params(residuals)
-                res.update(dist.predict_intervals(res["mean"], sigma, level, **aux))
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigmah = sigma * np.sqrt(steps * (1 + steps / (len(y) - 1)))
+                pred_int = _calculate_intervals(out, level, h, sigmah)
+                res = {**res, **pred_int}
+            if fitted:
+                residuals = y - out["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
 
@@ -4305,7 +4204,6 @@ class SeasonalNaive(_TS):
         season_length: int,
         alias: str = "SeasonalNaive",
         prediction_intervals: Optional[ConformalIntervals] = None,
-        distribution: Union[str, Any] = "gaussian",
     ):
         r"""Seasonal naive model.
 
@@ -4320,14 +4218,10 @@ class SeasonalNaive(_TS):
             prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
                 By default, the model will compute the native prediction
                 intervals.
-            distribution (str or Distribution, default="gaussian"): Observation distribution for prediction intervals.
         """
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.distribution = distribution
-        from .distributions import _get_distribution
-        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -4345,10 +4239,7 @@ class SeasonalNaive(_TS):
         Returns:
             self: SeasonalNaive fitted model.
         r"""
-        from .distributions import _get_distribution
         y = _ensure_float(y)
-        self._dist_ = _get_distribution(self.distribution)
-        self._dist_.validate(y)
         mod = _seasonal_naive(
             y=y,
             season_length=self.season_length,
@@ -4359,8 +4250,6 @@ class SeasonalNaive(_TS):
         residuals = y - mod["fitted"]
         mod["sigma"] = _calculate_sigma(residuals, len(y) - self.season_length)
         mod["residuals"] = residuals
-        self._sigma_ = float(np.std(residuals))
-        self._aux_params_ = self._dist_.estimate_params(residuals)
         self.model_ = mod
         self._store_cs(y=y, X=X)
         return self
@@ -4453,26 +4342,20 @@ class SeasonalNaive(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         mean = _repeat_val_seas(season_vals=self.model_["mean"], h=h)
         res = {"mean": mean}
 
         if level is None:
             return res
         level = sorted(level)
-        if isinstance(self._dist_, Gaussian):
-            if self.prediction_intervals is not None:
-                res = self._add_predict_conformal_intervals(res, level)
-            else:
-                k = np.floor(np.arange(h) / self.season_length)
-                sigma = self.model_["sigma"]
-                sigmah = sigma * np.sqrt(k + 1)
-                pred_int = _calculate_intervals(res, level, h, sigmah)
-                res = {**res, **pred_int}
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
         else:
-            res.update(self._dist_.predict_intervals(
-                mean, self._sigma_, level, **self._aux_params_
-            ))
+            k = np.floor(np.arange(h) / self.season_length)
+            sigma = self.model_["sigma"]
+            sigmah = sigma * np.sqrt(k + 1)
+            pred_int = _calculate_intervals(res, level, h, sigmah)
+            res = {**res, **pred_int}
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
@@ -4484,17 +4367,10 @@ class SeasonalNaive(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         r"""
-        from .distributions import Gaussian
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            if isinstance(self._dist_, Gaussian):
-                level = sorted(level)
-                res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
-            else:
-                level = sorted(level)
-                res.update(self._dist_.predict_intervals(
-                    self.model_["fitted"], self._sigma_, level, **self._aux_params_
-                ))
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
     def forecast(
@@ -4523,11 +4399,7 @@ class SeasonalNaive(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = self._dist_
-        if not isinstance(dist, Gaussian):
-            dist.validate(y)
         out = _seasonal_naive(
             y=y,
             h=h,
@@ -4539,25 +4411,19 @@ class SeasonalNaive(_TS):
             res["fitted"] = out["fitted"]
         if level is not None:
             level = sorted(level)
-            if isinstance(dist, Gaussian):
-                if self.prediction_intervals is not None:
-                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-                else:
-                    k = np.floor(np.arange(h) / self.season_length)
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(y) - self.season_length)
-                    sigmah = sigma * np.sqrt(k + 1)
-                    pred_int = _calculate_intervals(out, level, h, sigmah)
-                    res = {**res, **pred_int}
-                if fitted:
-                    residuals = y - out["fitted"]
-                    sigma = _calculate_sigma(residuals, len(y) - self.season_length)
-                    res = _add_fitted_pi(res=res, se=sigma, level=level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
             else:
+                k = np.floor(np.arange(h) / self.season_length)
                 residuals = y - out["fitted"]
-                sigma = float(np.std(residuals))
-                aux = dist.estimate_params(residuals)
-                res.update(dist.predict_intervals(res["mean"], sigma, level, **aux))
+                sigma = _calculate_sigma(residuals, len(y) - self.season_length)
+                sigmah = sigma * np.sqrt(k + 1)
+                pred_int = _calculate_intervals(out, level, h, sigmah)
+                res = {**res, **pred_int}
+            if fitted:
+                residuals = y - out["fitted"]
+                sigma = _calculate_sigma(residuals, len(y) - self.season_length)
+                res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
     def forward(
@@ -4654,10 +4520,11 @@ class WindowAverage(_TS):
         Returns:
             self: WindowAverage fitted model.
         """
-        from .distributions import _get_distribution
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        self._dist_ = _get_distribution(self.distribution)
-        self._dist_.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         self.model_ = dict(mod)
         residuals = y - self.model_["mean"][0]
@@ -4826,10 +4693,11 @@ class SeasonalWindowAverage(_TS):
         Returns:
             SeasonalWindowAverage: SeasonalWindowAverage fitted model.
         """
-        from .distributions import _get_distribution
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        self._dist_ = _get_distribution(self.distribution)
-        self._dist_.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         mod = _seasonal_window_average(
             y=y,
             h=self.season_length,
