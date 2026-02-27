@@ -11,15 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: "true"
 
       - name: Set up python
         uses: actions/setup-python@v5.6.0
         with:
           python-version: "3.10"
 
-      - name: Install linters
-        run: pip install black "fastcore<1.8.0" "nbdev<2.3.26" pre-commit
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --group dev
 
       - name: Run pre-commit
-        run: pre-commit run --files python/statsforecast/*
+        run: uv run pre-commit run --files python/statsforecast/*
