@@ -8,7 +8,6 @@ dependencies:
   - pip==20.3.3
   - numpy==1.21.4
   - prophet
-  - numba
   - r-base
   - r-nloptr
   - tabulate

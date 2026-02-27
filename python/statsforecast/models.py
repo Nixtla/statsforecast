@@ -38,6 +38,7 @@ __all__ = [
     "ConstantModel",
     "ZeroModel",
     "NaNModel",
+    "UCM"
 ]
 
 
@@ -46,8 +47,6 @@ from math import trunc
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
-from numba import njit
-from scipy.optimize import minimize_scalar
 from scipy.special import inv_boxcox
 
 from statsforecast.arima import (
@@ -65,9 +64,8 @@ from statsforecast.ets import (
     forecast_ets,
     forward_ets,
 )
+from statsforecast._lib import ses as _ses_lib
 from statsforecast.utils import (
-    CACHE,
-    NOGIL,
     ConformalIntervals,
     _calculate_intervals,
     _calculate_sigma,
@@ -85,6 +83,7 @@ from .mfles import MFLES as _MFLES
 from .mstl import mstl
 from .tbats import _compute_sigmah, tbats_forecast, tbats_selection
 from .theta import auto_theta, forecast_theta, forward_theta
+from .ucm import UCM, LocalLevel, LocalLinearTrend, SmoothTrend  # noqa: F401
 
 
 def _add_fitted_pi(res, se, level):
@@ -2135,29 +2134,6 @@ class AutoRegressive(ARIMA):
         )
 
 
-@njit(nogil=NOGIL, cache=CACHE)
-def _ses_sse(alpha: float, x: np.ndarray) -> float:
-    r"""Compute the residual sum of squares for a simple exponential smoothing fit.
-
-    Args:
-        alpha (float): Smoothing parameter.
-        x (numpy.array): Clean time series of shape (n, ).
-
-    Returns:
-        sse (float): Residual sum of squares for the fit.
-    """
-    complement = 1 - alpha
-    forecast = x[0]
-    sse = 0.0
-
-    for i in range(1, len(x)):
-        forecast = alpha * x[i - 1] + complement * forecast
-        sse += (x[i] - forecast) ** 2
-
-    return sse
-
-
-@njit(nogil=NOGIL, cache=CACHE)
 def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     r"""Compute the one-step ahead forecast for a simple exponential smoothing fit.
 
@@ -2168,18 +2144,7 @@ def _ses_forecast(x: np.ndarray, alpha: float) -> Tuple[float, np.ndarray]:
     Returns:
         tuple of (float, numpy.array): One-step ahead forecast and in-sample fitted values.
     """
-    complement = 1 - alpha
-    fitted = np.empty_like(x)
-    fitted[0] = x[0]
-    j = 0
-
-    for i in range(1, len(x)):
-        fitted[i] = alpha * x[j] + complement * fitted[j]
-        j += 1
-
-    forecast = alpha * x[j] + complement * fitted[j]
-    fitted[0] = np.nan
-    return forecast, fitted
+    return _ses_lib.ses_forecast(x, alpha)
 
 
 def _demand(x: np.ndarray) -> np.ndarray:
@@ -2210,11 +2175,7 @@ def _optimized_ses_forecast(
     Returns:
         tuple of (float, numpy.array): One-step ahead forecast and in-sample fitted values.
     """
-    alpha = minimize_scalar(
-        fun=_ses_sse,
-        bounds=bounds,
-        args=(x,),
-    ).x
+    alpha = _ses_lib.golden_section_ses(x, bounds[0], bounds[1])
     forecast, fitted = _ses_forecast(x, alpha)
     return forecast, fitted, alpha
 
@@ -4424,51 +4385,15 @@ class SeasonalWindowAverage(_TS):
 
 
 def _chunk_forecast(y, aggregation_level):
-    lost_remainder_data = len(y) % aggregation_level
-    y_cut = y[lost_remainder_data:]
-    aggregation_sums = _chunk_sums(y_cut, aggregation_level)
-    sums_forecast, _, _ = _optimized_ses_forecast(aggregation_sums)
-    return sums_forecast
+    return _ses_lib.chunk_forecast(y, aggregation_level)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _expand_fitted_demand(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
-    out = np.empty_like(y)
-    out[0] = np.nan
-    fitted_idx = 0
-    for i in range(1, y.size):
-        if y[i - 1] > 0:
-            fitted_idx += 1
-            out[i] = fitted[fitted_idx]
-        elif fitted_idx > 0:
-            # if this entry is zero, the model didn't change
-            out[i] = out[i - 1]
-        else:
-            # if we haven't seen any demand, use naive
-            out[i] = y[i - 1]
-    return out
+    return _ses_lib.expand_fitted_demand(fitted, y)
 
 
-@njit(nogil=NOGIL, cache=CACHE)
 def _expand_fitted_intervals(fitted: np.ndarray, y: np.ndarray) -> np.ndarray:
-    out = np.empty_like(y)
-    out[0] = np.nan
-    fitted_idx = 0
-    for i in range(1, y.size):
-        if y[i - 1] != 0:
-            fitted_idx += 1
-            if fitted[fitted_idx] == 0:
-                # to avoid division by zero
-                out[i] = 1
-            else:
-                out[i] = fitted[fitted_idx]
-        elif fitted_idx > 0:
-            # if this entry is zero, the model didn't change
-            out[i] = out[i - 1]
-        else:
-            # if we haven't seen any intervals, use 1 to avoid division by zero
-            out[i] = 1
-    return out
+    return _ses_lib.expand_fitted_intervals(fitted, y)
 
 
 def _adida(
@@ -4490,7 +4415,6 @@ def _adida(
     forecast = sums_forecast / aggregation_level
     res = {"mean": _repeat_val(val=forecast, h=h)}
     if fitted:
-        warnings.warn("Computing fitted values for ADIDA is very expensive")
         fitted_aggregation_levels = np.round(
             y_intervals.cumsum() / np.arange(1, y_intervals.size + 1)
         )
@@ -4498,9 +4422,7 @@ def _adida(
             np.append(np.nan, fitted_aggregation_levels), y
         )[1:].astype(np.int32)
 
-        sums_fitted = np.empty(y.size - 1, dtype=y.dtype)
-        for i, agg_lvl in enumerate(fitted_aggregation_levels):
-            sums_fitted[i] = _chunk_forecast(y[: i + 1], agg_lvl)
+        sums_fitted = _ses_lib.adida_fitted_vals(y, fitted_aggregation_levels)
 
         res["fitted"] = np.append(np.nan, sums_fitted / fitted_aggregation_levels)
     return res
@@ -5176,12 +5098,7 @@ def _imapa(
     forecast = forecasts.mean()
     res = {"mean": _repeat_val(val=forecast, h=h)}
     if fitted:
-        warnings.warn("Computing fitted values for IMAPA is very expensive.")
-        fitted_vals = np.empty_like(y)
-        fitted_vals[0] = np.nan
-        for i in range(y.size - 1):
-            fitted_vals[i + 1] = _imapa(y[: i + 1], h=1, fitted=False)["mean"].item()
-        res["fitted"] = fitted_vals
+        res["fitted"] = _ses_lib.imapa_fitted_vals(y)
     return res
 
 
