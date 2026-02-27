@@ -3530,6 +3530,8 @@ class HistoricAverage(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -3716,10 +3718,11 @@ class HistoricAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = _get_distribution(self.distribution)
-        dist.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         out = _historic_average(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
 
@@ -3774,6 +3777,8 @@ class Naive(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -3958,10 +3963,11 @@ class Naive(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = _get_distribution(self.distribution)
-        dist.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         out = _naive(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
         if fitted:
@@ -4069,6 +4075,8 @@ class RandomWalkWithDrift(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -4256,10 +4264,11 @@ class RandomWalkWithDrift(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = _get_distribution(self.distribution)
-        dist.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         out = _random_walk_with_drift(y=y, h=h, fitted=fitted or (level is not None))
         res = {"mean": out["mean"]}
 
@@ -4317,6 +4326,8 @@ class SeasonalNaive(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
 
     def fit(
         self,
@@ -4512,10 +4523,11 @@ class SeasonalNaive(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = _get_distribution(self.distribution)
-        dist.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         out = _seasonal_naive(
             y=y,
             h=h,
@@ -4621,6 +4633,8 @@ class WindowAverage(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4722,10 +4736,11 @@ class WindowAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = _get_distribution(self.distribution)
-        dist.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         res = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         res = dict(res)
         if level is None:
@@ -4790,6 +4805,8 @@ class SeasonalWindowAverage(_TS):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4898,10 +4915,11 @@ class SeasonalWindowAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import Gaussian
         y = _ensure_float(y)
-        dist = _get_distribution(self.distribution)
-        dist.validate(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         res = _seasonal_window_average(
             y=y,
             h=h,

@@ -596,6 +596,7 @@ class _StatsForecast:
             for model in self.models:
                 if hasattr(model, "distribution"):
                     model.distribution = dist
+                    model._dist_ = dist
         self._validate_model_names()
         self.freq = freq
         self.n_jobs = n_jobs
