@@ -32,42 +32,7 @@ StatsForecast offers a wide variety of statistical forecasting models grouped in
 #### `AutoARIMA`
 
 ```python
-AutoARIMA(
-    d=None,
-    D=None,
-    max_p=5,
-    max_q=5,
-    max_P=2,
-    max_Q=2,
-    max_order=5,
-    max_d=2,
-    max_D=1,
-    start_p=2,
-    start_q=2,
-    start_P=1,
-    start_Q=1,
-    stationary=False,
-    seasonal=True,
-    ic="aicc",
-    stepwise=True,
-    nmodels=94,
-    trace=False,
-    approximation=False,
-    method=None,
-    truncate=None,
-    test="kpss",
-    test_kwargs=None,
-    seasonal_test="seas",
-    seasonal_test_kwargs=None,
-    allowdrift=True,
-    allowmean=True,
-    blambda=None,
-    biasadj=False,
-    season_length=1,
-    alias="AutoARIMA",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+AutoARIMA(d=None, D=None, max_p=5, max_q=5, max_P=2, max_Q=2, max_order=5, max_d=2, max_D=1, start_p=2, start_q=2, start_P=1, start_Q=1, stationary=False, seasonal=True, ic='aicc', stepwise=True, nmodels=94, trace=False, approximation=False, method=None, truncate=None, test='kpss', test_kwargs=None, seasonal_test='seas', seasonal_test_kwargs=None, allowdrift=True, allowmean=True, blambda=None, biasadj=False, season_length=1, alias='AutoARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -114,7 +79,6 @@ Name | Type | Description | Default
 `season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
 `alias` | <code>str, default="AutoARIMA"</code> | Custom name of the model. | <code>'AutoARIMA'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for fitting and prediction intervals. - "gaussian": Normal errors (default, no change). - "poisson": Count data; applies log1p link, Poisson PIs. - "negbin": Overdispersed count data; log1p link, NegBin PIs. - "student_t": Heavy-tailed data; t-distribution PIs. Can also pass a Distribution instance for custom behavior. | <code>'gaussian'</code>
 
 <details class="notes" open markdown="1">
 <summary>Notes</summary>
@@ -230,15 +194,7 @@ Name | Type | Description
 #### `AutoETS`
 
 ```python
-AutoETS(
-    season_length=1,
-    model="ZZZ",
-    damped=None,
-    phi=None,
-    alias="AutoETS",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+AutoETS(season_length=1, model='ZZZ', damped=None, phi=None, alias='AutoETS', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -267,7 +223,6 @@ Name | Type | Description | Default
 `phi` | <code>[float](#float)</code> | Smoothing parameter for trend damping. Only used when `damped=True`. | <code>None</code>
 `alias` | <code>str, default="AutoETS"</code> | Custom name of the model. | <code>'AutoETS'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for fitting and prediction intervals. - "gaussian": Normal errors (default, no change). - "poisson": Count data; applies log1p link, Poisson PIs. - "negbin": Overdispersed count data; log1p link, NegBin PIs. - "student_t": Heavy-tailed data; t-distribution PIs. Can also pass a Distribution instance for custom behavior. | <code>'gaussian'</code>
 
 <details class="notes" open markdown="1">
 <summary>Notes</summary>
@@ -384,13 +339,7 @@ Name | Type | Description
 #### `AutoCES`
 
 ```python
-AutoCES(
-    season_length=1,
-    model="Z",
-    alias="CES",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+AutoCES(season_length=1, model='Z', alias='CES', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -525,14 +474,7 @@ Name | Type | Description
 #### `AutoTheta`
 
 ```python
-AutoTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    model=None,
-    alias="AutoTheta",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+AutoTheta(season_length=1, decomposition_type='multiplicative', model=None, alias='AutoTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -552,7 +494,6 @@ Name | Type | Description | Default
 `model` | <code>[Optional](#typing.Optional)\[[str](#str)\]</code> | Controlling Theta Model. By default searchs the best model. | <code>None</code>
 `alias` | <code>str, default="AutoTheta"</code> | Custom name of the model. | <code>'AutoTheta'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for fitting and prediction intervals. - "gaussian": Normal errors (default, no change). - "poisson": Count data; applies log1p link, Poisson PIs. - "negbin": Overdispersed count data; log1p link, NegBin PIs. - "student_t": Heavy-tailed data; t-distribution PIs. Can also pass a Distribution instance for custom behavior. | <code>'gaussian'</code>
 
 <details class="references" open markdown="1">
 <summary>References</summary>
@@ -661,18 +602,7 @@ Name | Type | Description
 #### `AutoMFLES`
 
 ```python
-AutoMFLES(
-    test_size,
-    season_length=None,
-    n_windows=2,
-    config=None,
-    step_size=None,
-    metric="smape",
-    verbose=False,
-    prediction_intervals=None,
-    alias="AutoMFLES",
-    distribution="gaussian",
-)
+AutoMFLES(test_size, season_length=None, n_windows=2, config=None, step_size=None, metric='smape', verbose=False, prediction_intervals=None, alias='AutoMFLES')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -790,17 +720,7 @@ Name | Type | Description
 #### `AutoTBATS`
 
 ```python
-AutoTBATS(
-    season_length,
-    use_boxcox=None,
-    bc_lower_bound=0.0,
-    bc_upper_bound=1.0,
-    use_trend=None,
-    use_damped_trend=None,
-    use_arma_errors=True,
-    alias="AutoTBATS",
-    distribution="gaussian",
-)
+AutoTBATS(season_length, use_boxcox=None, bc_lower_bound=0.0, bc_upper_bound=1.0, use_trend=None, use_damped_trend=None, use_arma_errors=True, alias='AutoTBATS')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -930,21 +850,7 @@ Name | Type | Description
 #### `ARIMA`
 
 ```python
-ARIMA(
-    order=(0, 0, 0),
-    season_length=1,
-    seasonal_order=(0, 0, 0),
-    include_mean=True,
-    include_drift=False,
-    include_constant=None,
-    blambda=None,
-    biasadj=False,
-    method="CSS-ML",
-    fixed=None,
-    alias="ARIMA",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+ARIMA(order=(0, 0, 0), season_length=1, seasonal_order=(0, 0, 0), include_mean=True, include_drift=False, include_constant=None, blambda=None, biasadj=False, method='CSS-ML', fixed=None, alias='ARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -976,7 +882,6 @@ Name | Type | Description | Default
 `fixed` | <code>dict, optional, default=None</code> | Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys. | <code>None</code>
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'ARIMA'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for fitting and prediction intervals. - "gaussian": Normal errors (default, no change). - "poisson": Count data; applies log1p link, Poisson PIs. - "negbin": Overdispersed count data; log1p link, NegBin PIs. - "student_t": Heavy-tailed data; t-distribution PIs. Can also pass a Distribution instance for custom behavior. | <code>'gaussian'</code>
 
 ##### `ARIMA.fit`
 
@@ -1076,17 +981,7 @@ Name | Type | Description
 #### `AutoRegressive`
 
 ```python
-AutoRegressive(
-    lags,
-    include_mean=True,
-    include_drift=False,
-    blambda=None,
-    biasadj=False,
-    method="CSS-ML",
-    fixed=None,
-    alias="AutoRegressive",
-    prediction_intervals=None,
-)
+AutoRegressive(lags, include_mean=True, include_drift=False, blambda=None, biasadj=False, method='CSS-ML', fixed=None, alias='AutoRegressive', prediction_intervals=None)
 ```
 
 Bases: <code>[ARIMA](#statsforecast.models.ARIMA)</code>
@@ -1450,9 +1345,7 @@ Name | Type | Description
 #### `SeasonalExponentialSmoothing`
 
 ```python
-SeasonalExponentialSmoothing(
-    season_length, alpha, alias="SeasonalES", prediction_intervals=None
-)
+SeasonalExponentialSmoothing(season_length, alpha, alias='SeasonalES', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1583,9 +1476,7 @@ Name | Type | Description
 #### `SeasonalExponentialSmoothingOptimized`
 
 ```python
-SeasonalExponentialSmoothingOptimized(
-    season_length, alias="SeasESOpt", prediction_intervals=None
-)
+SeasonalExponentialSmoothingOptimized(season_length, alias='SeasESOpt', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1748,12 +1639,7 @@ Name | Type | Description | Default
 #### `HoltWinters`
 
 ```python
-HoltWinters(
-    season_length=1,
-    error_type="A",
-    alias="HoltWinters",
-    prediction_intervals=None,
-)
+HoltWinters(season_length=1, error_type='A', alias='HoltWinters', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoETS](#statsforecast.models.AutoETS)</code>
@@ -1786,9 +1672,7 @@ Name | Type | Description | Default
 #### `HistoricAverage`
 
 ```python
-HistoricAverage(
-    alias="HistoricAverage", prediction_intervals=None, distribution="gaussian"
-)
+HistoricAverage(alias='HistoricAverage', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1815,7 +1699,6 @@ Name | Type | Description | Default
 ---- | ---- | ----------- | -------
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'HistoricAverage'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `HistoricAverage.fit`
 
@@ -1918,7 +1801,7 @@ Name | Type | Description
 #### `Naive`
 
 ```python
-Naive(alias='Naive', prediction_intervals=None, distribution='gaussian')
+Naive(alias='Naive', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1941,7 +1824,6 @@ Name | Type | Description | Default
 ---- | ---- | ----------- | -------
 `alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "Naive". | <code>'Naive'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Defaults to None. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `Naive.fit`
 
@@ -2042,9 +1924,7 @@ Name | Type | Description
 #### `RandomWalkWithDrift`
 
 ```python
-RandomWalkWithDrift(
-    alias="RWD", prediction_intervals=None, distribution="gaussian"
-)
+RandomWalkWithDrift(alias='RWD', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -2074,7 +1954,6 @@ Name | Type | Description | Default
 ---- | ---- | ----------- | -------
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'RWD'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `RandomWalkWithDrift.fit`
 
@@ -2176,12 +2055,7 @@ Name | Type | Description
 #### `SeasonalNaive`
 
 ```python
-SeasonalNaive(
-    season_length,
-    alias="SeasonalNaive",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+SeasonalNaive(season_length, alias='SeasonalNaive', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -2204,7 +2078,6 @@ Name | Type | Description | Default
 `season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SeasonalNaive'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `SeasonalNaive.fit`
 
@@ -2309,12 +2182,7 @@ Name | Type | Description
 #### `WindowAverage`
 
 ```python
-WindowAverage(
-    window_size,
-    alias="WindowAverage",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+WindowAverage(window_size, alias='WindowAverage', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -2340,7 +2208,6 @@ Name | Type | Description | Default
 `window_size` | <code>[int](#int)</code> | Size of truncated series on which average is estimated. | *required*
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'WindowAverage'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 r
 
@@ -2444,13 +2311,7 @@ Name | Type | Description
 #### `SeasonalWindowAverage`
 
 ```python
-SeasonalWindowAverage(
-    season_length,
-    window_size,
-    alias="SeasWA",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+SeasonalWindowAverage(season_length, window_size, alias='SeasWA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -2474,7 +2335,6 @@ Name | Type | Description | Default
 `window_size` | <code>[int](#int)</code> | Size of truncated series on which average is estimated. | *required*
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SeasWA'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. This is required for generating future prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 r
 
@@ -3374,13 +3234,7 @@ Name | Type | Description
 #### `MSTL`
 
 ```python
-MSTL(
-    season_length,
-    trend_forecaster=AutoETS(model="ZZN"),
-    stl_kwargs=None,
-    alias="MSTL",
-    prediction_intervals=None,
-)
+MSTL(season_length, trend_forecaster=AutoETS(model='ZZN'), stl_kwargs=None, alias='MSTL', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -3507,31 +3361,7 @@ Name | Type | Description
 #### `MFLES`
 
 ```python
-MFLES(
-    season_length=None,
-    fourier_order=None,
-    max_rounds=50,
-    ma=None,
-    alpha=1.0,
-    decay=-1.0,
-    changepoints=True,
-    n_changepoints=0.25,
-    seasonal_lr=0.9,
-    trend_lr=0.9,
-    exogenous_lr=1.0,
-    residuals_lr=1.0,
-    cov_threshold=0.7,
-    moving_medians=False,
-    min_alpha=0.05,
-    max_alpha=1.0,
-    trend_penalty=True,
-    multiplicative=None,
-    smoother=False,
-    robust=None,
-    verbose=False,
-    prediction_intervals=None,
-    alias="MFLES",
-)
+MFLES(season_length=None, fourier_order=None, max_rounds=50, ma=None, alpha=1.0, decay=-1.0, changepoints=True, n_changepoints=0.25, seasonal_lr=0.9, trend_lr=0.9, exogenous_lr=1.0, residuals_lr=1.0, cov_threshold=0.7, moving_medians=False, min_alpha=0.05, max_alpha=1.0, trend_penalty=True, multiplicative=None, smoother=False, robust=None, verbose=False, prediction_intervals=None, alias='MFLES')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -3673,17 +3503,7 @@ Name | Type | Description
 #### `TBATS`
 
 ```python
-TBATS(
-    season_length,
-    use_boxcox=True,
-    bc_lower_bound=0.0,
-    bc_upper_bound=1.0,
-    use_trend=True,
-    use_damped_trend=False,
-    use_arma_errors=False,
-    alias="TBATS",
-    distribution="gaussian",
-)
+TBATS(season_length, use_boxcox=True, bc_lower_bound=0.0, bc_upper_bound=1.0, use_trend=True, use_damped_trend=False, use_arma_errors=False, alias='TBATS')
 ```
 
 Bases: <code>[AutoTBATS](#statsforecast.models.AutoTBATS)</code>
@@ -3722,13 +3542,7 @@ Name | Type | Description | Default
 #### `Theta`
 
 ```python
-Theta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="Theta",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+Theta(season_length=1, decomposition_type='multiplicative', alias='Theta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3756,13 +3570,7 @@ Name | Type | Description | Default
 #### `OptimizedTheta`
 
 ```python
-OptimizedTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="OptimizedTheta",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+OptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='OptimizedTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3790,13 +3598,7 @@ Name | Type | Description | Default
 #### `DynamicTheta`
 
 ```python
-DynamicTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="DynamicTheta",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+DynamicTheta(season_length=1, decomposition_type='multiplicative', alias='DynamicTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3818,20 +3620,13 @@ Name | Type | Description | Default
 `decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. | <code>'multiplicative'</code>
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'DynamicTheta'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for fitting and prediction intervals. | <code>'gaussian'</code>
 
 ### DynamicOptimizedTheta
 
 #### `DynamicOptimizedTheta`
 
 ```python
-DynamicOptimizedTheta(
-    season_length=1,
-    decomposition_type="multiplicative",
-    alias="DynamicOptimizedTheta",
-    prediction_intervals=None,
-    distribution="gaussian",
-)
+DynamicOptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='DynamicOptimizedTheta', prediction_intervals=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3853,7 +3648,6 @@ Name | Type | Description | Default
 `decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. | <code>'multiplicative'</code>
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'DynamicOptimizedTheta'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for fitting and prediction intervals. | <code>'gaussian'</code>
 
 ## ARCH/GARCH Family
 
