@@ -67,8 +67,6 @@ ray = [
     "protobuf>=3.15.3,<4.0.0 ; python_version < '3.12'",
 ]
 spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
-plotly = ["plotly", "plotly-resampler ; python_version < '3.14'"]
-polars = ["polars[numpy]"]
 all = [
     "dask<=2024.12.1",
     "fugue[dask]>=0.9.4",
