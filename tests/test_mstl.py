@@ -7,7 +7,7 @@ from utilsforecast.data import generate_series
 
 
 def test_mstl_cv_refit_false_short_windows():
-    """MSTL CV with refit=False skips early windows where train_size < season_length (issue #969)."""
+    """MSTL CV with refit=False returns NaNs for early short windows (issue #969)."""
     freq = "MS"
     season_length = 12
     min_length = 25
@@ -26,11 +26,12 @@ def test_mstl_cv_refit_false_short_windows():
         n_windows=3,
         refit=False,
     )
-    # First window has 11 train obs (< season_length=12), so it is skipped
-    # We get 2 valid windows * 12 steps = 24 rows (not 36)
-    assert len(cv_df) == 24
+    # First window has 11 train obs (< season_length=12), so it returns NaNs
+    # We get 3 windows * 12 steps = 36 rows
+    assert len(cv_df) == 36
     assert "MSTL" in cv_df.columns
-    assert cv_df["MSTL"].notna().all()
+    assert cv_df["MSTL"].isna().sum() == 12
+    assert cv_df["MSTL"].notna().sum() == 24
 
 
 def test_mstl():
