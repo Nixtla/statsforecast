@@ -257,6 +257,12 @@ class AutoARIMA(_TS):
         alias (str, default="AutoARIMA"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
+        distribution (str or Distribution, default="gaussian"): Observation distribution for fitting and prediction intervals.
+            - "gaussian": Normal errors (default, no change).
+            - "poisson": Count data; applies log1p link, Poisson PIs.
+            - "negbin": Overdispersed count data; log1p link, NegBin PIs.
+            - "student_t": Heavy-tailed data; t-distribution PIs.
+            Can also pass a Distribution instance for custom behavior.
 
     Notes:
         This implementation is a mirror of Hyndman's [forecast::auto.arima](https://github.com/robjhyndman/forecast).
@@ -302,6 +308,7 @@ class AutoARIMA(_TS):
         season_length: int = 1,
         alias: str = "AutoARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         self.d = d
         self.D = D
@@ -336,6 +343,7 @@ class AutoARIMA(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -354,10 +362,14 @@ class AutoARIMA(_TS):
         Returns:
             AutoARIMA: AutoARIMA fitted model.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
+        y_fit = self._dist_.transform(y)
         with np.errstate(invalid="ignore"):
             self.model_ = auto_arima_f(
-                x=y,
+                x=y_fit,
                 d=self.d,
                 D=self.D,
                 max_p=self.max_p,
@@ -391,7 +403,10 @@ class AutoARIMA(_TS):
                 biasadj=self.biasadj,
                 period=self.season_length,
             )
-
+        fitted_orig = self._dist_.inverse_transform(fitted_arima(self.model_))
+        residuals_orig = y - fitted_orig
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         self._store_cs(y=y, X=X)
         return self
 
@@ -411,20 +426,31 @@ class AutoARIMA(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
-        mean = fcst["mean"]
-        res = {"mean": mean}
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
+            mean = fcst["mean"]
+            res = {"mean": mean}
+            if level is None:
+                return res
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                res = {
+                    "mean": mean,
+                    **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
+                    **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
+                }
         else:
-            res = {
-                "mean": mean,
-                **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
-                **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
-            }
+            fcst = forecast_arima(self.model_, h=h, xreg=X, level=None)
+            mean = self._dist_.inverse_transform(fcst["mean"])
+            res = {"mean": mean}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    mean, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
@@ -436,11 +462,21 @@ class AutoARIMA(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = fitted_arima(self.model_)
-        res = {"fitted": mean}
-        if level is not None:
-            se = np.sqrt(self.model_["sigma2"])
-            res = _add_fitted_pi(res=res, se=se, level=level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            mean = fitted_arima(self.model_)
+            res = {"fitted": mean}
+            if level is not None:
+                se = np.sqrt(self.model_["sigma2"])
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            fitted_orig = self._dist_.inverse_transform(fitted_arima(self.model_))
+            res = {"fitted": fitted_orig}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    fitted_orig, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def forecast(
@@ -469,10 +505,14 @@ class AutoARIMA(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
+        y_fit = dist.transform(y)
         with np.errstate(invalid="ignore"):
             mod = auto_arima_f(
-                x=y,
+                x=y_fit,
                 d=self.d,
                 D=self.D,
                 max_p=self.max_p,
@@ -506,24 +546,37 @@ class AutoARIMA(_TS):
                 biasadj=self.biasadj,
                 period=self.season_length,
             )
-        fcst = forecast_arima(mod, h, xreg=X_future, level=level)
-        res = {"mean": fcst["mean"]}
-        if fitted:
-            res["fitted"] = fitted_arima(mod)
-        if level is not None:
-            level = sorted(level)
-            if self.prediction_intervals is not None:
-                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-            else:
-                res = {
-                    **res,
-                    **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
-                    **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
-                }
+        if isinstance(dist, Gaussian):
+            fcst = forecast_arima(mod, h, xreg=X_future, level=level)
+            res = {"mean": fcst["mean"]}
             if fitted:
-                # add prediction intervals for fitted values
-                se = np.sqrt(mod["sigma2"])
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                res["fitted"] = fitted_arima(mod)
+            if level is not None:
+                level = sorted(level)
+                if self.prediction_intervals is not None:
+                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+                else:
+                    res = {
+                        **res,
+                        **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
+                        **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
+                    }
+                if fitted:
+                    se = np.sqrt(mod["sigma2"])
+                    res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            raw_mean = forecast_arima(mod, h, xreg=X_future, level=None)["mean"]
+            mean = dist.inverse_transform(raw_mean)
+            res = {"mean": mean}
+            fitted_orig = dist.inverse_transform(fitted_arima(mod))
+            if fitted:
+                res["fitted"] = fitted_orig
+            if level is not None:
+                level = sorted(level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
         return res
 
     def forward(
@@ -691,6 +744,12 @@ class AutoETS(_TS):
         alias (str, default="AutoETS"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
+        distribution (str or Distribution, default="gaussian"): Observation distribution for fitting and prediction intervals.
+            - "gaussian": Normal errors (default, no change).
+            - "poisson": Count data; applies log1p link, Poisson PIs.
+            - "negbin": Overdispersed count data; log1p link, NegBin PIs.
+            - "student_t": Heavy-tailed data; t-distribution PIs.
+            Can also pass a Distribution instance for custom behavior.
 
     Notes:
         This implementation is a mirror of Hyndman's [forecast::ets](https://github.com/robjhyndman/forecast).
@@ -708,6 +767,7 @@ class AutoETS(_TS):
         phi: Optional[float] = None,
         alias: str = "AutoETS",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         self.season_length = season_length
         self.model = model
@@ -720,6 +780,7 @@ class AutoETS(_TS):
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -738,11 +799,19 @@ class AutoETS(_TS):
         Returns:
             AutoETS: Exponential Smoothing fitted model.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
+        y_fit = self._dist_.transform(y)
         self.model_ = ets_f(
-            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
+            y_fit, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
         )
-        self.model_["actual_residuals"] = y - self.model_["fitted"]
+        fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+        residuals_orig = y - fitted_orig
+        self.model_["actual_residuals"] = residuals_orig
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         self._store_cs(y=y, X=X)
         return self
 
@@ -759,19 +828,30 @@ class AutoETS(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        fcst = forecast_ets(self.model_, h=h, level=level)
-        res = {"mean": fcst["mean"]}
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            fcst = forecast_ets(self.model_, h=h, level=level)
+            res = {"mean": fcst["mean"]}
+            if level is None:
+                return res
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                res = {
+                    **res,
+                    **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
+                    **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
+                }
         else:
-            res = {
-                **res,
-                **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
-                **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
-            }
+            fcst = forecast_ets(self.model_, h=h, level=None)
+            mean = self._dist_.inverse_transform(fcst["mean"])
+            res = {"mean": mean}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    mean, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
@@ -783,11 +863,20 @@ class AutoETS(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"]}
-        if level is not None:
-            residuals = self.model_["actual_residuals"]
-            se = _calculate_sigma(residuals, len(residuals) - self.model_["n_params"])
-            res = _add_fitted_pi(res=res, se=se, level=level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            res = {"fitted": self.model_["fitted"]}
+            if level is not None:
+                residuals = self.model_["actual_residuals"]
+                se = _calculate_sigma(residuals, len(residuals) - self.model_["n_params"])
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+            res = {"fitted": fitted_orig}
+            if level is not None:
+                res.update(self._dist_.predict_intervals(
+                    fitted_orig, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def forecast(
@@ -816,29 +905,51 @@ class AutoETS(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
+        y_fit = dist.transform(y)
         mod = ets_f(
-            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
+            y_fit, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
         )
-        fcst = forecast_ets(mod, h=h, level=level)
-        keys = ["mean"]
-        if fitted:
-            keys.append("fitted")
-        res = {key: fcst[key] for key in keys}
-        if level is not None:
-            level = sorted(level)
-            if self.prediction_intervals is not None:
-                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-            else:
-                res = {
-                    **res,
-                    **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
-                    **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
-                }
+        if isinstance(dist, Gaussian):
+            fcst = forecast_ets(mod, h=h, level=level)
+            res = {"mean": fcst["mean"]}
             if fitted:
-                # add prediction intervals for fitted values
-                se = _calculate_sigma(y - mod["fitted"], len(y) - mod["n_params"])
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                res["fitted"] = mod["fitted"]
+            if level is not None:
+                level = sorted(level)
+                if self.prediction_intervals is not None:
+                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+                else:
+                    res = {
+                        **res,
+                        **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
+                        **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
+                    }
+                if fitted:
+                    se = _calculate_sigma(y - mod["fitted"], len(y) - mod["n_params"])
+                    res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            raw_mean = forecast_ets(mod, h=h, level=None)["mean"]
+            mean = dist.inverse_transform(raw_mean)
+            res = {"mean": mean}
+            fitted_orig = dist.inverse_transform(mod["fitted"])
+            if fitted:
+                res["fitted"] = fitted_orig
+            if level is not None:
+                level = sorted(level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
+                if fitted:
+                    res.update({
+                        k.replace("lo-", "fitted-lo-").replace("hi-", "fitted-hi-"):
+                        dist.predict_intervals(fitted_orig, sigma, level, **aux)[k]
+                        for k in dist.predict_intervals(fitted_orig, sigma, level, **aux)
+                    })
         return res
 
     def forward(
@@ -985,11 +1096,13 @@ class AutoCES(_TS):
         model: str = "Z",
         alias: str = "CES",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         self.season_length = season_length
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -1008,15 +1121,23 @@ class AutoCES(_TS):
         Returns:
             AutoCES: Complex Exponential Smoothing fitted model.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
         if is_constant(y):
             model = Naive(
                 alias=self.alias, prediction_intervals=self.prediction_intervals
             )
             model.fit(y=y, X=X)
             return model
-        self.model_ = auto_ces(y, m=self.season_length, model=self.model)
-        self.model_["actual_residuals"] = y - self.model_["fitted"]
+        y_fit = self._dist_.transform(y)
+        self.model_ = auto_ces(y_fit, m=self.season_length, model=self.model)
+        fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+        residuals_orig = y - fitted_orig
+        self.model_["actual_residuals"] = residuals_orig
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         self._store_cs(y=y, X=X)
         return self
 
@@ -1033,19 +1154,30 @@ class AutoCES(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        fcst = forecast_ces(self.model_, h=h, level=level)
-        res = {"mean": fcst["mean"]}
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            fcst = forecast_ces(self.model_, h=h, level=level)
+            res = {"mean": fcst["mean"]}
+            if level is None:
+                return res
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                res = {
+                    **res,
+                    **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
+                    **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
+                }
         else:
-            res = {
-                **res,
-                **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
-                **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
-            }
+            fcst = forecast_ces(self.model_, h=h, level=None)
+            mean = self._dist_.inverse_transform(fcst["mean"])
+            res = {"mean": mean}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    mean, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
@@ -1057,11 +1189,21 @@ class AutoCES(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"]}
-        if level is not None:
-            residuals = self.model_["actual_residuals"]
-            se = _calculate_sigma(residuals, self.model_["n"])
-            res = _add_fitted_pi(res=res, se=se, level=level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            res = {"fitted": self.model_["fitted"]}
+            if level is not None:
+                residuals = self.model_["actual_residuals"]
+                se = _calculate_sigma(residuals, self.model_["n"])
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+            res = {"fitted": fitted_orig}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    fitted_orig, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def forecast(
@@ -1090,7 +1232,10 @@ class AutoCES(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
         if is_constant(y):
             model = Naive(
                 alias=self.alias, prediction_intervals=self.prediction_intervals
@@ -1098,26 +1243,40 @@ class AutoCES(_TS):
             return model.forecast(
                 y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
             )
-        mod = auto_ces(y, m=self.season_length, model=self.model)
-        fcst = forecast_ces(mod, h, level=level)
-        keys = ["mean"]
-        if fitted:
-            keys.append("fitted")
-        res = {key: fcst[key] for key in keys}
-        if level is not None:
-            level = sorted(level)
-            if self.prediction_intervals is not None:
-                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-            else:
-                res = {
-                    **res,
-                    **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
-                    **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
-                }
+        y_fit = dist.transform(y)
+        mod = auto_ces(y_fit, m=self.season_length, model=self.model)
+        if isinstance(dist, Gaussian):
+            fcst = forecast_ces(mod, h, level=level)
+            keys = ["mean"]
             if fitted:
-                # add prediction intervals for fitted values
-                se = _calculate_sigma(y - mod["fitted"], len(y))
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                keys.append("fitted")
+            res = {key: fcst[key] for key in keys}
+            if level is not None:
+                level = sorted(level)
+                if self.prediction_intervals is not None:
+                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+                else:
+                    res = {
+                        **res,
+                        **{f"lo-{l}": fcst[f"lo-{l}"] for l in reversed(level)},
+                        **{f"hi-{l}": fcst[f"hi-{l}"] for l in level},
+                    }
+                if fitted:
+                    se = _calculate_sigma(y - mod["fitted"], len(y))
+                    res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            raw_mean = forecast_ces(mod, h, level=None)["mean"]
+            mean = dist.inverse_transform(raw_mean)
+            res = {"mean": mean}
+            fitted_orig = dist.inverse_transform(mod["fitted"])
+            if fitted:
+                res["fitted"] = fitted_orig
+            if level is not None:
+                level = sorted(level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
         return res
 
     def forward(
@@ -1250,6 +1409,12 @@ class AutoTheta(_TS):
         alias (str, default="AutoTheta"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
+        distribution (str or Distribution, default="gaussian"): Observation distribution for fitting and prediction intervals.
+            - "gaussian": Normal errors (default, no change).
+            - "poisson": Count data; applies log1p link, Poisson PIs.
+            - "negbin": Overdispersed count data; log1p link, NegBin PIs.
+            - "student_t": Heavy-tailed data; t-distribution PIs.
+            Can also pass a Distribution instance for custom behavior.
 
     References:
         - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -1262,12 +1427,14 @@ class AutoTheta(_TS):
         model: Optional[str] = None,
         alias: str = "AutoTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -1286,14 +1453,23 @@ class AutoTheta(_TS):
         Returns:
             AutoTheta: AutoTheta fitted model.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
+        y_fit = self._dist_.transform(y)
         self.model_ = auto_theta(
-            y=y,
+            y=y_fit,
             m=self.season_length,
             model=self.model,
             decomposition_type=self.decomposition_type,
         )
-        self.model_["fitted"] = y - self.model_["residuals"]
+        fitted_transformed = y_fit - self.model_["residuals"]
+        fitted_orig = self._dist_.inverse_transform(fitted_transformed)
+        self.model_["fitted"] = fitted_orig
+        residuals_orig = y - fitted_orig
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         self._store_cs(y, X)
         return self
 
@@ -1313,10 +1489,22 @@ class AutoTheta(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        fcst = forecast_theta(self.model_, h=h, level=level)
-        if self.prediction_intervals is not None and level is not None:
-            fcst = self._add_predict_conformal_intervals(fcst, level)
-        return fcst
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            fcst = forecast_theta(self.model_, h=h, level=level)
+            if self.prediction_intervals is not None and level is not None:
+                fcst = self._add_predict_conformal_intervals(fcst, level)
+            return fcst
+        else:
+            fcst = forecast_theta(self.model_, h=h, level=None)
+            mean = self._dist_.inverse_transform(fcst["mean"])
+            res = {"mean": mean}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    mean, self._sigma_, level, **self._aux_params_
+                ))
+            return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
         r"""Access fitted AutoTheta insample predictions.
@@ -1327,10 +1515,17 @@ class AutoTheta(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import Gaussian
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            se = np.std(self.model_["residuals"][3:], ddof=1)
-            res = _add_fitted_pi(res=res, se=se, level=level)
+            if isinstance(self._dist_, Gaussian):
+                se = np.std(self.model_["residuals"][3:], ddof=1)
+                res = _add_fitted_pi(res=res, se=se, level=level)
+            else:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    self.model_["fitted"], self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def simulate(
@@ -1432,22 +1627,40 @@ class AutoTheta(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
+        y_fit = dist.transform(y)
         mod = auto_theta(
-            y=y,
+            y=y_fit,
             m=self.season_length,
             model=self.model,
             decomposition_type=self.decomposition_type,
         )
-        res = forecast_theta(mod, h, level=level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        if fitted:
-            res["fitted"] = y - mod["residuals"]
-        if level is not None and fitted:
-            # add prediction intervals for fitted values
-            se = np.std(mod["residuals"][3:], ddof=1)
-            res = _add_fitted_pi(res=res, se=se, level=level)
+        if isinstance(dist, Gaussian):
+            res = forecast_theta(mod, h, level=level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            if fitted:
+                res["fitted"] = y_fit - mod["residuals"]
+            if level is not None and fitted:
+                se = np.std(mod["residuals"][3:], ddof=1)
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            raw_fcst = forecast_theta(mod, h, level=None)
+            mean = dist.inverse_transform(raw_fcst["mean"])
+            res = {"mean": mean}
+            fitted_transformed = y_fit - mod["residuals"]
+            fitted_orig = dist.inverse_transform(fitted_transformed)
+            if fitted:
+                res["fitted"] = fitted_orig
+            if level is not None:
+                level = sorted(level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
         return res
 
     def forward(
@@ -1516,6 +1729,7 @@ class AutoMFLES(_TS):
         verbose: bool = False,
         prediction_intervals: Optional[ConformalIntervals] = None,
         alias: str = "AutoMFLES",
+        distribution: Union[str, Any] = "gaussian",
     ):
         try:
             import sklearn  # noqa: F401
@@ -1530,6 +1744,7 @@ class AutoMFLES(_TS):
         self.verbose = verbose
         self.prediction_intervals = prediction_intervals
         self.alias = alias
+        self.distribution = distribution
 
     def _fit(self, y: np.ndarray, X: Optional[np.ndarray] = None) -> Dict[str, Any]:
         model = _MFLES(verbose=self.verbose)
@@ -1563,11 +1778,18 @@ class AutoMFLES(_TS):
         Returns:
             AutoMFLES: Fitted AutoMFLES object.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
-        self.model_ = self._fit(y=y, X=X)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
+        y_fit = self._dist_.transform(y)
+        self.model_ = self._fit(y=y_fit, X=X)
         self._store_cs(y=y, X=X)
-        residuals = y - self.model_["fitted"]
-        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+        residuals_orig = y - fitted_orig
+        self.model_["sigma"] = _calculate_sigma(residuals_orig, y.size)
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         return self
 
     def predict(
@@ -1586,14 +1808,22 @@ class AutoMFLES(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"mean": self.model_["model"].predict(forecast_horizon=h, X=X)}
+        from .distributions import Gaussian
+        raw_mean = self.model_["model"].predict(forecast_horizon=h, X=X)
+        mean = self._dist_.inverse_transform(raw_mean)
+        res = {"mean": mean}
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        if isinstance(self._dist_, Gaussian):
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
         else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+            res.update(self._dist_.predict_intervals(
+                mean, self._sigma_, level, **self._aux_params_
+            ))
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
@@ -1605,10 +1835,17 @@ class AutoMFLES(_TS):
         Returns:
             dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"]}
+        from .distributions import Gaussian
+        fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+        res = {"fitted": fitted_orig}
         if level is not None:
             level = sorted(level)
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            if isinstance(self._dist_, Gaussian):
+                res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            else:
+                res.update(self._dist_.predict_intervals(
+                    fitted_orig, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def forecast(
@@ -1637,21 +1874,34 @@ class AutoMFLES(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
-        model = self._fit(y=y, X=X)
-        res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
+        y_fit = dist.transform(y)
+        model = self._fit(y=y_fit, X=X)
+        raw_mean = model["model"].predict(forecast_horizon=h, X=X_future)
+        mean = dist.inverse_transform(raw_mean)
+        res = {"mean": mean}
+        fitted_orig = dist.inverse_transform(model["fitted"])
         if fitted:
-            res["fitted"] = model["fitted"]
+            res["fitted"] = fitted_orig
         if level is not None:
             level = sorted(level)
-            if self.prediction_intervals is not None:
-                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            if isinstance(dist, Gaussian):
+                if self.prediction_intervals is not None:
+                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+                else:
+                    raise Exception("You must pass `prediction_intervals` to compute them.")
+                if fitted:
+                    residuals = y - fitted_orig
+                    sigma = _calculate_sigma(residuals, y.size)
+                    res = _add_fitted_pi(res=res, se=sigma, level=level)
             else:
-                raise Exception("You must pass `prediction_intervals` to compute them.")
-            if fitted:
-                residuals = y - res["fitted"]
-                sigma = _calculate_sigma(residuals, y.size)
-                res = _add_fitted_pi(res=res, se=sigma, level=level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
         return res
 
 
@@ -1687,6 +1937,7 @@ class AutoTBATS(_TS):
         use_damped_trend: Optional[bool] = None,
         use_arma_errors: bool = True,
         alias: str = "AutoTBATS",
+        distribution: Union[str, Any] = "gaussian",
     ):
         if isinstance(season_length, int):
             season_length = [season_length]
@@ -1698,6 +1949,7 @@ class AutoTBATS(_TS):
         self.use_damped_trend = use_damped_trend
         self.use_arma_errors = use_arma_errors
         self.alias = alias
+        self.distribution = distribution
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         r"""Fit TBATS model.
@@ -1711,9 +1963,13 @@ class AutoTBATS(_TS):
         Returns:
             self: TBATS model.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
+        y_fit = self._dist_.transform(y)
         self.model_ = tbats_selection(
-            y=y,
+            y=y_fit,
             seasonal_periods=self.season_length,
             use_boxcox=self.use_boxcox,
             bc_lower_bound=self.bc_lower_bound,
@@ -1722,6 +1978,14 @@ class AutoTBATS(_TS):
             use_damped_trend=self.use_damped_trend,
             use_arma_errors=self.use_arma_errors,
         )
+        # Store sigma for distributional PIs (in original scale)
+        raw_fitted = self.model_["fitted"].ravel()
+        if self.model_["BoxCox_lambda"] is not None:
+            raw_fitted = inv_boxcox(raw_fitted, self.model_["BoxCox_lambda"])
+        fitted_orig = self._dist_.inverse_transform(raw_fitted)
+        residuals_orig = y - fitted_orig
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         return self
 
     def predict(
@@ -1736,22 +2000,38 @@ class AutoTBATS(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import Gaussian
         fcst = tbats_forecast(self.model_, h)
-        res = {"mean": fcst["mean"]}
-        if level is not None:
-            level = sorted(level)
-            sigmah = _compute_sigmah(self.model_, h)
-            pred_int = _calculate_intervals(res, level, h, sigmah)
-            res = {**res, **pred_int}
-        if self.model_["BoxCox_lambda"] is not None:
-            res_trans = {
-                k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
-            }
-            for k, v in res_trans.items():
-                res_trans[k] = np.where(np.isnan(v), res[k], v)
+        raw_mean = fcst["mean"]
+        if isinstance(self._dist_, Gaussian):
+            res = {"mean": raw_mean}
+            if level is not None:
+                level = sorted(level)
+                sigmah = _compute_sigmah(self.model_, h)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res = {**res, **pred_int}
+            if self.model_["BoxCox_lambda"] is not None:
+                res_trans = {
+                    k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
+                }
+                for k, v in res_trans.items():
+                    res_trans[k] = np.where(np.isnan(v), res[k], v)
+            else:
+                res_trans = res
+            return res_trans
         else:
-            res_trans = res
-        return res_trans
+            # Apply BoxCox back-transform, then distribution inverse transform
+            if self.model_["BoxCox_lambda"] is not None:
+                raw_mean = inv_boxcox(raw_mean, self.model_["BoxCox_lambda"])
+                raw_mean = np.where(np.isnan(raw_mean), fcst["mean"], raw_mean)
+            mean = self._dist_.inverse_transform(raw_mean)
+            res = {"mean": mean}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    mean, self._sigma_, level, **self._aux_params_
+                ))
+            return res
 
     def predict_in_sample(self, level: Optional[Tuple[int]] = None):
         r"""Access fitted TBATS model predictions.
@@ -1762,20 +2042,34 @@ class AutoTBATS(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"].ravel()}
-        if level is not None:
-            se = _calculate_sigma(self.model_["errors"], self.model_["errors"].shape[1])
-            fitted_pred_int = _add_fitted_pi(res, se, level)
-            res = {**res, **fitted_pred_int}
-        if self.model_["BoxCox_lambda"] is not None:
-            res_trans = {
-                k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
-            }
-            for k, v in res_trans.items():
-                res_trans[k] = np.where(np.isnan(v), res[k], v)
+        from .distributions import Gaussian
+        raw_fitted = self.model_["fitted"].ravel()
+        if isinstance(self._dist_, Gaussian):
+            res = {"fitted": raw_fitted}
+            if level is not None:
+                se = _calculate_sigma(self.model_["errors"], self.model_["errors"].shape[1])
+                fitted_pred_int = _add_fitted_pi(res, se, level)
+                res = {**res, **fitted_pred_int}
+            if self.model_["BoxCox_lambda"] is not None:
+                res_trans = {
+                    k: inv_boxcox(v, self.model_["BoxCox_lambda"]) for k, v in res.items()
+                }
+                for k, v in res_trans.items():
+                    res_trans[k] = np.where(np.isnan(v), res[k], v)
+            else:
+                res_trans = res
+            return res_trans
         else:
-            res_trans = res
-        return res_trans
+            if self.model_["BoxCox_lambda"] is not None:
+                raw_fitted = inv_boxcox(raw_fitted, self.model_["BoxCox_lambda"])
+            fitted_orig = self._dist_.inverse_transform(raw_fitted)
+            res = {"fitted": fitted_orig}
+            if level is not None:
+                sorted_level: List[int] = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    fitted_orig, self._sigma_, sorted_level, **self._aux_params_
+                ))
+            return res
 
     def forecast(
         self,
@@ -1801,9 +2095,13 @@ class AutoTBATS(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
+        y_fit = dist.transform(y)
         mod = tbats_selection(
-            y=y,
+            y=y_fit,
             seasonal_periods=self.season_length,
             use_boxcox=self.use_boxcox,
             bc_lower_bound=self.bc_lower_bound,
@@ -1813,25 +2111,46 @@ class AutoTBATS(_TS):
             use_arma_errors=self.use_arma_errors,
         )
         fcst = tbats_forecast(mod, h)
-        res = {"mean": fcst["mean"]}
-        if fitted:
-            res["fitted"] = mod["fitted"].ravel()
-        if level is not None:
-            level = sorted(level)
-            sigmah = _compute_sigmah(mod, h)
-            pred_int = _calculate_intervals(res, level, h, sigmah)
-            res = {**res, **pred_int}
+        if isinstance(dist, Gaussian):
+            res = {"mean": fcst["mean"]}
             if fitted:
-                se = _calculate_sigma(mod["errors"], mod["errors"].shape[1])
-                fitted_pred_int = _add_fitted_pi(res, se, level)
-                res = {**res, **fitted_pred_int}
-        if mod["BoxCox_lambda"] is not None:
-            res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
-            for k, v in res_trans.items():
-                res_trans[k] = np.where(np.isnan(v), res[k], v)
+                res["fitted"] = mod["fitted"].ravel()
+            if level is not None:
+                level = sorted(level)
+                sigmah = _compute_sigmah(mod, h)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res = {**res, **pred_int}
+                if fitted:
+                    se = _calculate_sigma(mod["errors"], mod["errors"].shape[1])
+                    fitted_pred_int = _add_fitted_pi(res, se, level)
+                    res = {**res, **fitted_pred_int}
+            if mod["BoxCox_lambda"] is not None:
+                res_trans = {k: inv_boxcox(v, mod["BoxCox_lambda"]) for k, v in res.items()}
+                for k, v in res_trans.items():
+                    res_trans[k] = np.where(np.isnan(v), res[k], v)
+            else:
+                res_trans = res
+            return res_trans
         else:
-            res_trans = res
-        return res_trans
+            raw_mean = fcst["mean"]
+            if mod["BoxCox_lambda"] is not None:
+                raw_mean = inv_boxcox(raw_mean, mod["BoxCox_lambda"])
+                raw_mean = np.where(np.isnan(raw_mean), fcst["mean"], raw_mean)
+            mean = dist.inverse_transform(raw_mean)
+            res = {"mean": mean}
+            raw_fitted = mod["fitted"].ravel()
+            if mod["BoxCox_lambda"] is not None:
+                raw_fitted = inv_boxcox(raw_fitted, mod["BoxCox_lambda"])
+            fitted_orig = dist.inverse_transform(raw_fitted)
+            if fitted:
+                res["fitted"] = fitted_orig
+            if level is not None:
+                level = sorted(level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
+            return res
 
 
 class ARIMA(_TS):
@@ -1855,6 +2174,12 @@ class ARIMA(_TS):
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
+        distribution (str or Distribution, default="gaussian"): Observation distribution for fitting and prediction intervals.
+            - "gaussian": Normal errors (default, no change).
+            - "poisson": Count data; applies log1p link, Poisson PIs.
+            - "negbin": Overdispersed count data; log1p link, NegBin PIs.
+            - "student_t": Heavy-tailed data; t-distribution PIs.
+            Can also pass a Distribution instance for custom behavior.
     """
 
     uses_exog = True
@@ -1873,6 +2198,7 @@ class ARIMA(_TS):
         fixed: Optional[dict] = None,
         alias: str = "ARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         self.order = order
         self.season_length = season_length
@@ -1886,6 +2212,7 @@ class ARIMA(_TS):
         self.fixed = fixed
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -1903,10 +2230,14 @@ class ARIMA(_TS):
         Returns:
             self: Fitted model.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
+        y_fit = self._dist_.transform(y)
         with np.errstate(invalid="ignore"):
             self.model_ = Arima(
-                x=y,
+                x=y_fit,
                 order=self.order,
                 seasonal={"order": self.seasonal_order, "period": self.season_length},
                 xreg=X,
@@ -1918,6 +2249,10 @@ class ARIMA(_TS):
                 method=self.method,
                 fixed=self.fixed,
             )
+        fitted_orig = self._dist_.inverse_transform(fitted_arima(self.model_))
+        residuals_orig = y - fitted_orig
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         self._store_cs(y=y, X=X)
         return self
 
@@ -1937,20 +2272,31 @@ class ARIMA(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
-        mean = fcst["mean"]
-        res = {"mean": mean}
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            fcst = forecast_arima(self.model_, h=h, xreg=X, level=level)
+            mean = fcst["mean"]
+            res = {"mean": mean}
+            if level is None:
+                return res
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                res = {
+                    "mean": mean,
+                    **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
+                    **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
+                }
         else:
-            res = {
-                "mean": mean,
-                **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
-                **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
-            }
+            fcst = forecast_arima(self.model_, h=h, xreg=X, level=None)
+            mean = self._dist_.inverse_transform(fcst["mean"])
+            res = {"mean": mean}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    mean, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
@@ -1962,11 +2308,21 @@ class ARIMA(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        mean = fitted_arima(self.model_)
-        res = {"fitted": mean}
-        if level is not None:
-            se = np.sqrt(self.model_["sigma2"])
-            res = _add_fitted_pi(res=res, se=se, level=level)
+        from .distributions import Gaussian
+        if isinstance(self._dist_, Gaussian):
+            mean = fitted_arima(self.model_)
+            res = {"fitted": mean}
+            if level is not None:
+                se = np.sqrt(self.model_["sigma2"])
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            fitted_orig = self._dist_.inverse_transform(fitted_arima(self.model_))
+            res = {"fitted": fitted_orig}
+            if level is not None:
+                level = sorted(level)
+                res.update(self._dist_.predict_intervals(
+                    fitted_orig, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def forecast(
@@ -1995,10 +2351,14 @@ class ARIMA(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
+        y_fit = dist.transform(y)
         with np.errstate(invalid="ignore"):
             mod = Arima(
-                x=y,
+                x=y_fit,
                 order=self.order,
                 seasonal={"order": self.seasonal_order, "period": self.season_length},
                 xreg=X,
@@ -2010,24 +2370,37 @@ class ARIMA(_TS):
                 method=self.method,
                 fixed=self.fixed,
             )
-        fcst = forecast_arima(mod, h, xreg=X_future, level=level)
-        res = {"mean": fcst["mean"]}
-        if fitted:
-            res["fitted"] = fitted_arima(mod)
-        if level is not None:
-            level = sorted(level)
-            if self.prediction_intervals is not None:
-                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-            else:
-                res = {
-                    **res,
-                    **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
-                    **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
-                }
+        if isinstance(dist, Gaussian):
+            fcst = forecast_arima(mod, h, xreg=X_future, level=level)
+            res = {"mean": fcst["mean"]}
             if fitted:
-                # add prediction intervals for fitted values
-                se = np.sqrt(mod["sigma2"])
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                res["fitted"] = fitted_arima(mod)
+            if level is not None:
+                level = sorted(level)
+                if self.prediction_intervals is not None:
+                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+                else:
+                    res = {
+                        **res,
+                        **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
+                        **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
+                    }
+                if fitted:
+                    se = np.sqrt(mod["sigma2"])
+                    res = _add_fitted_pi(res=res, se=se, level=level)
+        else:
+            raw_mean = forecast_arima(mod, h, xreg=X_future, level=None)["mean"]
+            mean = dist.inverse_transform(raw_mean)
+            res = {"mean": mean}
+            fitted_orig = dist.inverse_transform(fitted_arima(mod))
+            if fitted:
+                res["fitted"] = fitted_orig
+            if level is not None:
+                level = sorted(level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
         return res
 
     def forward(
@@ -3389,8 +3762,7 @@ class Naive(_TS):
         mod = _naive(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals, len(residuals) - 1)
-        mod["sigma"] = sigma
+        mod["sigma"] = _calculate_sigma(residuals, len(residuals) - 1)
         mod["residuals"] = residuals
         self.model_ = mod
         self._store_cs(y=y, X=X)
@@ -3653,8 +4025,7 @@ class RandomWalkWithDrift(_TS):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals, len(residuals) - 1)
-        mod["sigma"] = sigma
+        mod["sigma"] = _calculate_sigma(residuals, len(residuals) - 1)
         mod["residuals"] = residuals
         mod["n"] = len(y)
         self.model_ = mod
@@ -4105,6 +4476,7 @@ class WindowAverage(_TS):
         window_size: int,
         alias: str = "WindowAverage",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         r"""WindowAverage model.
 
@@ -4121,10 +4493,14 @@ class WindowAverage(_TS):
             alias (str): Custom name of the model.
             prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
                 This is required for generating future prediction intervals.
+            distribution (str or Distribution, default="gaussian"): Observation distribution for prediction intervals.
         r"""
         self.window_size = window_size
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4144,9 +4520,16 @@ class WindowAverage(_TS):
         Returns:
             self: WindowAverage fitted model.
         """
+        from .distributions import Gaussian
         y = _ensure_float(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         mod = _window_average(y=y, h=1, window_size=self.window_size, fitted=False)
         self.model_ = dict(mod)
+        residuals = y - self.model_["mean"][0]
+        self._sigma_ = float(np.std(residuals))
+        self._aux_params_ = self._dist_.estimate_params(residuals)
         self._store_cs(y=y, X=X)
         return self
 
@@ -4166,15 +4549,21 @@ class WindowAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import Gaussian
         mean = _repeat_val(self.model_["mean"][0], h=h)
         res = {"mean": mean}
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        if isinstance(self._dist_, Gaussian):
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
         else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+            res.update(self._dist_.predict_intervals(
+                mean, self._sigma_, level, **self._aux_params_
+            ))
         return res
 
     def predict_in_sample(self):
@@ -4214,16 +4603,26 @@ class WindowAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import Gaussian
         y = _ensure_float(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         res = _window_average(y=y, h=h, fitted=fitted, window_size=self.window_size)
         res = dict(res)
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        if isinstance(dist, Gaussian):
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
         else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+            residuals = y - res["mean"][0]
+            sigma = float(np.std(residuals))
+            aux = dist.estimate_params(residuals)
+            res.update(dist.predict_intervals(res["mean"], sigma, level, **aux))
         return res
 
 
@@ -4251,6 +4650,7 @@ class SeasonalWindowAverage(_TS):
         window_size: int,
         alias: str = "SeasWA",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         r"""SeasonalWindowAverage model.
 
@@ -4265,11 +4665,15 @@ class SeasonalWindowAverage(_TS):
             alias (str): Custom name of the model.
             prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
                 This is required for generating future prediction intervals.
+            distribution (str or Distribution, default="gaussian"): Observation distribution for prediction intervals.
         r"""
         self.season_length = season_length
         self.window_size = window_size
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
+        from .distributions import _get_distribution
+        self._dist_ = _get_distribution(distribution)
         self.only_conformal_intervals = True
 
     def fit(
@@ -4289,7 +4693,11 @@ class SeasonalWindowAverage(_TS):
         Returns:
             SeasonalWindowAverage: SeasonalWindowAverage fitted model.
         """
+        from .distributions import Gaussian
         y = _ensure_float(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         mod = _seasonal_window_average(
             y=y,
             h=self.season_length,
@@ -4298,6 +4706,10 @@ class SeasonalWindowAverage(_TS):
             window_size=self.window_size,
         )
         self.model_ = dict(mod)
+        seasonal_mean = _repeat_val_seas(season_vals=self.model_["mean"], h=len(y))
+        residuals = y - seasonal_mean
+        self._sigma_ = float(np.std(residuals))
+        self._aux_params_ = self._dist_.estimate_params(residuals)
         self._store_cs(y=y, X=X)
         return self
 
@@ -4317,15 +4729,21 @@ class SeasonalWindowAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import Gaussian
         mean = _repeat_val_seas(season_vals=self.model_["mean"], h=h)
         res = {"mean": mean}
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        if isinstance(self._dist_, Gaussian):
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
         else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+            res.update(self._dist_.predict_intervals(
+                mean, self._sigma_, level, **self._aux_params_
+            ))
         return res
 
     def predict_in_sample(self):
@@ -4365,7 +4783,11 @@ class SeasonalWindowAverage(_TS):
         Returns:
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import Gaussian
         y = _ensure_float(y)
+        dist = self._dist_
+        if not isinstance(dist, Gaussian):
+            dist.validate(y)
         res = _seasonal_window_average(
             y=y,
             h=h,
@@ -4377,10 +4799,17 @@ class SeasonalWindowAverage(_TS):
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+        if isinstance(dist, Gaussian):
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
         else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+            seasonal_mean = _repeat_val_seas(season_vals=res["mean"], h=len(y))
+            residuals = y - seasonal_mean
+            sigma = float(np.std(residuals))
+            aux = dist.estimate_params(residuals)
+            res.update(dist.predict_intervals(res["mean"], sigma, level, **aux))
         return res
 
 
@@ -5775,6 +6204,7 @@ class MFLES(_TS):
         self.verbose = verbose
         self.prediction_intervals = prediction_intervals
         self.alias = alias
+        self.distribution = "gaussian"
 
     def _fit(self, y: np.ndarray, X: Optional[np.ndarray]) -> Dict[str, Any]:
         model = _MFLES(verbose=self.verbose, robust=self.robust)
@@ -5813,11 +6243,18 @@ class MFLES(_TS):
         Returns:
             self (MFLES): Fitted MFLES object.
         """
+        from .distributions import _get_distribution
         y = _ensure_float(y)
-        self.model_ = self._fit(y=y, X=X)
+        self._dist_ = _get_distribution(self.distribution)
+        self._dist_.validate(y)
+        y_fit = self._dist_.transform(y)
+        self.model_ = self._fit(y=y_fit, X=X)
         self._store_cs(y=y, X=X)
-        residuals = y - self.model_["fitted"]
-        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
+        fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+        residuals_orig = y - fitted_orig
+        self.model_["sigma"] = _calculate_sigma(residuals_orig, y.size)
+        self._sigma_ = float(np.std(residuals_orig))
+        self._aux_params_ = self._dist_.estimate_params(residuals_orig)
         return self
 
     def predict(
@@ -5836,14 +6273,22 @@ class MFLES(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"mean": self.model_["model"].predict(forecast_horizon=h, X=X)}
+        from .distributions import Gaussian
+        raw_mean = self.model_["model"].predict(forecast_horizon=h, X=X)
+        mean = self._dist_.inverse_transform(raw_mean)
+        res = {"mean": mean}
         if level is None:
             return res
         level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_predict_conformal_intervals(res, level)
+        if isinstance(self._dist_, Gaussian):
+            if self.prediction_intervals is not None:
+                res = self._add_predict_conformal_intervals(res, level)
+            else:
+                raise Exception("You must pass `prediction_intervals` to compute them.")
         else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+            res.update(self._dist_.predict_intervals(
+                mean, self._sigma_, level, **self._aux_params_
+            ))
         return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None) -> Dict[str, Any]:
@@ -5855,10 +6300,17 @@ class MFLES(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        res = {"fitted": self.model_["fitted"]}
+        from .distributions import Gaussian
+        fitted_orig = self._dist_.inverse_transform(self.model_["fitted"])
+        res = {"fitted": fitted_orig}
         if level is not None:
             level = sorted(level)
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            if isinstance(self._dist_, Gaussian):
+                res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            else:
+                res.update(self._dist_.predict_intervals(
+                    fitted_orig, self._sigma_, level, **self._aux_params_
+                ))
         return res
 
     def forecast(
@@ -5887,21 +6339,34 @@ class MFLES(_TS):
         Returns:
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
+        from .distributions import _get_distribution, Gaussian
         y = _ensure_float(y)
-        model = self._fit(y=y, X=X)
-        res = {"mean": model["model"].predict(forecast_horizon=h, X=X_future)}
+        dist = _get_distribution(self.distribution)
+        dist.validate(y)
+        y_fit = dist.transform(y)
+        model = self._fit(y=y_fit, X=X)
+        raw_mean = model["model"].predict(forecast_horizon=h, X=X_future)
+        mean = dist.inverse_transform(raw_mean)
+        res = {"mean": mean}
+        fitted_orig = dist.inverse_transform(model["fitted"])
         if fitted:
-            res["fitted"] = model["fitted"]
+            res["fitted"] = fitted_orig
         if level is not None:
             level = sorted(level)
-            if self.prediction_intervals is not None:
-                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            if isinstance(dist, Gaussian):
+                if self.prediction_intervals is not None:
+                    res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+                else:
+                    raise Exception("You must pass `prediction_intervals` to compute them.")
+                if fitted:
+                    residuals = y - fitted_orig
+                    sigma = _calculate_sigma(residuals, y.size)
+                    res = _add_fitted_pi(res=res, se=sigma, level=level)
             else:
-                raise Exception("You must pass `prediction_intervals` to compute them.")
-            if fitted:
-                residuals = y - res["fitted"]
-                sigma = _calculate_sigma(residuals, y.size)
-                res = _add_fitted_pi(res=res, se=sigma, level=level)
+                residuals_orig = y - fitted_orig
+                sigma = float(np.std(residuals_orig))
+                aux = dist.estimate_params(residuals_orig)
+                res.update(dist.predict_intervals(mean, sigma, level, **aux))
         return res
 
 
@@ -5937,6 +6402,7 @@ class TBATS(AutoTBATS):
         use_damped_trend: Optional[bool] = False,
         use_arma_errors: bool = False,
         alias: str = "TBATS",
+        distribution: Union[str, Any] = "gaussian",
     ):
         super().__init__(
             season_length=season_length,
@@ -5947,6 +6413,7 @@ class TBATS(AutoTBATS):
             use_damped_trend=use_damped_trend,
             use_arma_errors=use_arma_errors,
             alias=alias,
+            distribution=distribution,
         )
 
 
@@ -5970,6 +6437,7 @@ class Theta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "Theta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         super().__init__(
             season_length=season_length,
@@ -5977,6 +6445,7 @@ class Theta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            distribution=distribution,
         )
 
 
@@ -6000,6 +6469,7 @@ class OptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "OptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         super().__init__(
             season_length=season_length,
@@ -6007,6 +6477,7 @@ class OptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            distribution=distribution,
         )
 
 
@@ -6023,6 +6494,7 @@ class DynamicTheta(AutoTheta):
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
+        distribution (str or Distribution, default="gaussian"): Observation distribution for fitting and prediction intervals.
     """
 
     def __init__(
@@ -6031,6 +6503,7 @@ class DynamicTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "DynamicTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         super().__init__(
             season_length=season_length,
@@ -6038,6 +6511,7 @@ class DynamicTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            distribution=distribution,
         )
 
 
@@ -6054,6 +6528,7 @@ class DynamicOptimizedTheta(AutoTheta):
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
+        distribution (str or Distribution, default="gaussian"): Observation distribution for fitting and prediction intervals.
     """
 
     def __init__(
@@ -6062,6 +6537,7 @@ class DynamicOptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "DynamicOptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: Union[str, Any] = "gaussian",
     ):
         super().__init__(
             season_length=season_length,
@@ -6069,6 +6545,7 @@ class DynamicOptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            distribution=distribution,
         )
 
 
