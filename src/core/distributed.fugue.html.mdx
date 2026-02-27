@@ -49,7 +49,21 @@ is available [here](https://fugue-tutorials.readthedocs.io/tutorials/quick_look/
 #### `FugueBackend.forecast`
 
 ```python
-forecast(*, df, freq, models, fallback_model, X_df, h, level, fitted, prediction_intervals, id_col, time_col, target_col)
+forecast(
+    *,
+    df,
+    freq,
+    models,
+    fallback_model,
+    X_df,
+    h,
+    level,
+    fitted,
+    prediction_intervals,
+    id_col,
+    time_col,
+    target_col
+)
 ```
 
 Memory Efficient core.StatsForecast predictions with FugueBackend.
@@ -92,7 +106,25 @@ Type | Description
 #### `FugueBackend.cross_validation`
 
 ```python
-cross_validation(*, df, freq, models, fallback_model, h, n_windows, step_size, test_size, input_size, level, refit, fitted, prediction_intervals, id_col, time_col, target_col)
+cross_validation(
+    *,
+    df,
+    freq,
+    models,
+    fallback_model,
+    h,
+    n_windows,
+    step_size,
+    test_size,
+    input_size,
+    level,
+    refit,
+    fitted,
+    prediction_intervals,
+    id_col,
+    time_col,
+    target_col
+)
 ```
 
 Temporal Cross-Validation with core.StatsForecast and FugueBackend.
