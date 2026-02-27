@@ -1676,7 +1676,7 @@ Name | Type | Description | Default
 #### `HistoricAverage`
 
 ```python
-HistoricAverage(alias='HistoricAverage', prediction_intervals=None, distribution='gaussian')
+HistoricAverage(alias='HistoricAverage', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1703,7 +1703,6 @@ Name | Type | Description | Default
 ---- | ---- | ----------- | -------
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'HistoricAverage'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `HistoricAverage.fit`
 
@@ -1806,7 +1805,7 @@ Name | Type | Description
 #### `Naive`
 
 ```python
-Naive(alias='Naive', prediction_intervals=None, distribution='gaussian')
+Naive(alias='Naive', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1829,7 +1828,6 @@ Name | Type | Description | Default
 ---- | ---- | ----------- | -------
 `alias` | <code>[str](#str)</code> | Custom name of the model. Defaults to "Naive". | <code>'Naive'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Defaults to None. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `Naive.fit`
 
@@ -1930,7 +1928,7 @@ Name | Type | Description
 #### `RandomWalkWithDrift`
 
 ```python
-RandomWalkWithDrift(alias='RWD', prediction_intervals=None, distribution='gaussian')
+RandomWalkWithDrift(alias='RWD', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -1960,7 +1958,6 @@ Name | Type | Description | Default
 ---- | ---- | ----------- | -------
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'RWD'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `RandomWalkWithDrift.fit`
 
@@ -2062,7 +2059,7 @@ Name | Type | Description
 #### `SeasonalNaive`
 
 ```python
-SeasonalNaive(season_length, alias='SeasonalNaive', prediction_intervals=None, distribution='gaussian')
+SeasonalNaive(season_length, alias='SeasonalNaive', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -2085,7 +2082,6 @@ Name | Type | Description | Default
 `season_length` | <code>[int](#int)</code> | Number of observations per unit of time. Ex: 24 Hourly data. | *required*
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'SeasonalNaive'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
-`distribution` | <code>str or Distribution, default="gaussian"</code> | Observation distribution for prediction intervals. | <code>'gaussian'</code>
 
 ##### `SeasonalNaive.fit`
 
