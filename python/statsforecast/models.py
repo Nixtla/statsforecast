@@ -2065,9 +2065,9 @@ class AutoTBATS(_TS):
             fitted_orig = self._dist_.inverse_transform(raw_fitted)
             res = {"fitted": fitted_orig}
             if level is not None:
-                level = sorted(level)
+                sorted_level: List[int] = sorted(level)
                 res.update(self._dist_.predict_intervals(
-                    fitted_orig, self._sigma_, level, **self._aux_params_
+                    fitted_orig, self._sigma_, sorted_level, **self._aux_params_
                 ))
             return res
 
