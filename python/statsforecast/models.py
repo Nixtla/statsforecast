@@ -362,7 +362,7 @@ class AutoARIMA(_TS):
         Returns:
             AutoARIMA: AutoARIMA fitted model.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import _get_distribution
         y = _ensure_float(y)
         self._dist_ = _get_distribution(self.distribution)
         self._dist_.validate(y)
@@ -799,7 +799,7 @@ class AutoETS(_TS):
         Returns:
             AutoETS: Exponential Smoothing fitted model.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import _get_distribution
         y = _ensure_float(y)
         self._dist_ = _get_distribution(self.distribution)
         self._dist_.validate(y)
@@ -1121,7 +1121,7 @@ class AutoCES(_TS):
         Returns:
             AutoCES: Complex Exponential Smoothing fitted model.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import _get_distribution
         y = _ensure_float(y)
         self._dist_ = _get_distribution(self.distribution)
         self._dist_.validate(y)
@@ -1453,7 +1453,7 @@ class AutoTheta(_TS):
         Returns:
             AutoTheta: AutoTheta fitted model.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import _get_distribution
         y = _ensure_float(y)
         self._dist_ = _get_distribution(self.distribution)
         self._dist_.validate(y)
@@ -1778,7 +1778,7 @@ class AutoMFLES(_TS):
         Returns:
             AutoMFLES: Fitted AutoMFLES object.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import _get_distribution
         y = _ensure_float(y)
         self._dist_ = _get_distribution(self.distribution)
         self._dist_.validate(y)
@@ -2230,7 +2230,7 @@ class ARIMA(_TS):
         Returns:
             self: Fitted model.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import _get_distribution
         y = _ensure_float(y)
         self._dist_ = _get_distribution(self.distribution)
         self._dist_.validate(y)
@@ -6357,7 +6357,7 @@ class MFLES(_TS):
         Returns:
             self (MFLES): Fitted MFLES object.
         """
-        from .distributions import _get_distribution, Gaussian
+        from .distributions import _get_distribution
         y = _ensure_float(y)
         self._dist_ = _get_distribution(self.distribution)
         self._dist_.validate(y)
