@@ -300,6 +300,14 @@ class GroupedArray(BaseGroupedArray):
                 y = grp[(cutoff - in_size_disp) : cutoff]
                 y_train = y[:, 0] if y.ndim == 2 else y
                 X_train = y[:, 1:] if (y.ndim == 2 and y.shape[1] > 1) else None
+                if (
+                    refit is False
+                    and fitted_models[0] is not None
+                    and getattr(fitted_models[0], "_short_train", False)
+                ):
+                    # If the initial fit was skipped due to short history,
+                    # retry the fit once enough data is available.
+                    should_fit = True
                 train_size = y_train.shape[0] if hasattr(y_train, "shape") else len(y_train)
                 if min_train_size is not None and train_size < min_train_size:
                     valid_mask[i_ts, i_window] = False
