@@ -42,8 +42,7 @@ Documentation = "https://nixtlaverse.nixtla.io/statsforecast/"
 [project.optional-dependencies]
 dev = [
     "black",
-    "datasetsforecast<=1.0.0 ; python_version < '3.10'",
-    "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git@v1.0.1 ; python_version >= '3.10'",
+    "datasetsforecast>=1.0.1",
     "fastcore<=1.7.29",
     "fire",
     "nbformat",
@@ -84,8 +83,7 @@ all = [
     "plotly-resampler",
     "polars[numpy]",
     "black",
-    "datasetsforecast<=1.0.0 ; python_version < '3.10'",
-    "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git@v1.0.1 ; python_version >= '3.10'",
+    "datasetsforecast>=1.0.1",
     "fastcore<=1.7.29",
     "fire",
     "nbformat",
