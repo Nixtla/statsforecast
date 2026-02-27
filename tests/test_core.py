@@ -135,6 +135,20 @@ class FailedFit:
         return "FailedFit"
 
 
+class _NoAliasModel:
+    """Simple model-like object without an `alias` attribute.
+
+    Used to validate that StatsForecast rejects duplicate output names even when
+    models don't expose an `alias` field.
+    """
+
+    def forecast(self):
+        pass
+
+    def __repr__(self):
+        return "NoAliasModel"
+
+
 class TestGroupedArray:
     def test_groupedArray_length(self, grouped_array_data):
         # test we can recover the
@@ -589,6 +603,13 @@ class TestModels:
             StatsForecast, "", models=[Naive(), Naive()], freq="D"
         )
         StatsForecast(models=[Naive(), Naive(alias="Naive2")], freq="D")
+        # test duplicates are detected even without `alias`
+        assert_raises_with_message(
+            StatsForecast,
+            "Model names must be unique",
+            models=[_NoAliasModel(), _NoAliasModel()],
+            freq="D",
+        )
         fig = StatsForecast.plot(panel_df, max_insample_length=10)
         fig
         assert_raises_with_message(
