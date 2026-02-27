@@ -114,6 +114,45 @@ def test_mstl_cv_refit_false_short_windows_skip_single_season():
     assert cv_df["MSTL"].notna().all()
 
 
+def test_mstl_forecast_short_train_nan():
+    """MSTL forecast returns NaNs for short train when configured."""
+    freq = "MS"
+    season_length = 12
+    min_length = 10
+    df = generate_series(n_series=1, freq=freq, min_length=min_length, max_length=min_length)
+
+    sf = StatsForecast(
+        models=[MSTL(season_length=[season_length], short_train_behavior="nan")],
+        freq=freq,
+        n_jobs=1,
+    )
+    fcst_df = sf.forecast(df=df, h=4)
+
+    assert len(fcst_df) == 4
+    assert "MSTL" in fcst_df.columns
+    assert fcst_df["MSTL"].isna().all()
+
+
+def test_mstl_forecast_short_train_skip_fallback():
+    """MSTL forecast uses fallback when short train is too small."""
+    freq = "MS"
+    season_length = 12
+    min_length = 10
+    df = generate_series(n_series=1, freq=freq, min_length=min_length, max_length=min_length)
+
+    sf = StatsForecast(
+        models=[MSTL(season_length=[season_length], short_train_behavior="skip")],
+        freq=freq,
+        n_jobs=1,
+        fallback_model=Naive(),
+    )
+    fcst_df = sf.forecast(df=df, h=4)
+
+    assert len(fcst_df) == 4
+    assert "MSTL" in fcst_df.columns
+    assert fcst_df["MSTL"].notna().all()
+
+
 def test_mstl():
     """Test MSTL decomposition with electricity demand data."""
 
