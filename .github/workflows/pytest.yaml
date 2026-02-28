@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
@@ -29,12 +29,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Set matplotlib backend (headless)
-        run: echo "MPLBACKEND=Agg" >> $GITHUB_ENV
-        shell: bash
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        run: pip install -e ".[all]"
+        run: uv sync --group all
 
       - name: Run pytest
-        run: pytest
+        run: uv run pytest
+        env:
+          MPLBACKEND: Agg
