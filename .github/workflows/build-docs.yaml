@@ -43,7 +43,7 @@ jobs:
       # setup quarto for rendering example/tutorial nbs
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
-          version: 1.4.515
+          version: 1.8.27
 
       - name: Build Docs
         run: uv run make all_docs
