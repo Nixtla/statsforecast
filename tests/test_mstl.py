@@ -115,7 +115,7 @@ def test_mstl_cv_refit_false_short_windows_skip_single_season():
 
 
 def test_mstl_forecast_short_train_nan():
-    """MSTL forecast returns NaNs for short train when configured."""
+    """MSTL forecast ignores short_train_behavior outside CV."""
     freq = "MS"
     season_length = 12
     min_length = 10
@@ -125,12 +125,13 @@ def test_mstl_forecast_short_train_nan():
         models=[MSTL(season_length=[season_length], short_train_behavior="nan")],
         freq=freq,
         n_jobs=1,
+        fallback_model=Naive(),
     )
     fcst_df = sf.forecast(df=df, h=4)
 
     assert len(fcst_df) == 4
     assert "MSTL" in fcst_df.columns
-    assert fcst_df["MSTL"].isna().all()
+    assert not fcst_df["MSTL"].isna().all()
 
 
 def test_mstl_forecast_short_train_skip_fallback():

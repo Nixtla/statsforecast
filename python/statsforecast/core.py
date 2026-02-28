@@ -1224,60 +1224,74 @@ class _StatsForecast:
         )
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         _, level = self._parse_X_level(h=h, X=None, level=level)
-        min_train_size = self._cv_min_train_size()
-        if self.n_jobs == 1:
-            res_fcsts = self.ga.cross_validation(
-                models=self.models,
+        cv_short_train_state = []
+        for model in self.models:
+            if hasattr(model, "short_train_behavior"):
+                had_flag = hasattr(model, "_cv_short_train_behavior")
+                prev_flag = getattr(model, "_cv_short_train_behavior", None)
+                cv_short_train_state.append((model, had_flag, prev_flag))
+                setattr(model, "_cv_short_train_behavior", True)
+        try:
+            min_train_size = self._cv_min_train_size()
+            if self.n_jobs == 1:
+                res_fcsts = self.ga.cross_validation(
+                    models=self.models,
+                    h=h,
+                    test_size=test_size,
+                    fallback_model=self.fallback_model,
+                    step_size=step_size,
+                    input_size=input_size,
+                    fitted=fitted,
+                    level=level,
+                    verbose=self.verbose,
+                    refit=refit,
+                    target_col=target_col,
+                    min_train_size=min_train_size,
+                )
+            else:
+                res_fcsts = self._cross_validation_parallel(
+                    h=h,
+                    test_size=test_size,
+                    step_size=step_size,
+                    input_size=input_size,
+                    fitted=fitted,
+                    level=level,
+                    refit=refit,
+                    target_col=target_col,
+                    min_train_size=min_train_size,
+                )
+            if fitted:
+                self.cv_fitted_values_ = res_fcsts["fitted"]
+                self.n_cv_ = n_windows
+            fcsts_df = ufp.cv_times(
+                times=self.og_dates,
+                uids=self.uids,
+                indptr=self.ga.indptr,
                 h=h,
                 test_size=test_size,
-                fallback_model=self.fallback_model,
                 step_size=step_size,
-                input_size=input_size,
-                fitted=fitted,
-                level=level,
-                verbose=self.verbose,
-                refit=refit,
-                target_col=target_col,
-                min_train_size=min_train_size,
+                id_col=id_col,
+                time_col=time_col,
             )
-        else:
-            res_fcsts = self._cross_validation_parallel(
-                h=h,
-                test_size=test_size,
-                step_size=step_size,
-                input_size=input_size,
-                fitted=fitted,
-                level=level,
-                refit=refit,
-                target_col=target_col,
-                min_train_size=min_train_size,
+            # the cv_times is sorted by window and then id
+            fcsts_df = ufp.sort(fcsts_df, [id_col, "cutoff", time_col])
+            fcsts_df = ufp.assign_columns(
+                fcsts_df, res_fcsts["cols"], res_fcsts["forecasts"]
             )
-        if fitted:
-            self.cv_fitted_values_ = res_fcsts["fitted"]
-            self.n_cv_ = n_windows
-        fcsts_df = ufp.cv_times(
-            times=self.og_dates,
-            uids=self.uids,
-            indptr=self.ga.indptr,
-            h=h,
-            test_size=test_size,
-            step_size=step_size,
-            id_col=id_col,
-            time_col=time_col,
-        )
-        # the cv_times is sorted by window and then id
-        fcsts_df = ufp.sort(fcsts_df, [id_col, "cutoff", time_col])
-        fcsts_df = ufp.assign_columns(
-            fcsts_df, res_fcsts["cols"], res_fcsts["forecasts"]
-        )
-        valid_mask = res_fcsts.get("valid_mask")
-        if valid_mask is not None:
-            n_valid = valid_mask.shape[0] * valid_mask.shape[1]
-            n_rows = res_fcsts["forecasts"].shape[0]
-            h = n_rows // n_valid if n_valid > 0 else 0
-            valid_row_mask = np.repeat(valid_mask.ravel(), h)
-            fcsts_df = ufp.filter_with_mask(fcsts_df, valid_row_mask)
-        return fcsts_df
+            valid_mask = res_fcsts.get("valid_mask")
+            if valid_mask is not None:
+                n_valid = valid_mask.shape[0] * valid_mask.shape[1]
+                n_rows = res_fcsts["forecasts"].shape[0]
+                h = n_rows // n_valid if n_valid > 0 else 0
+                valid_row_mask = np.repeat(valid_mask.ravel(), h)
+                fcsts_df = ufp.filter_with_mask(fcsts_df, valid_row_mask)
+            return fcsts_df
+        finally:
+            for model, had_flag, prev_flag in cv_short_train_state:
+                if had_flag:
+                    setattr(model, "_cv_short_train_behavior", prev_flag)
+                elif hasattr(model, "_cv_short_train_behavior"):
+                    delattr(model, "_cv_short_train_behavior")
 
     def cross_validation_fitted_values(self) -> DataFrame:
         """Retrieve in-sample predictions from cross-validation.

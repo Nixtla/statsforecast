@@ -5452,7 +5452,8 @@ class MSTL(_TS):
         stl_kwargs (dict): Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.STL.html#statsmodels.tsa.seasonal.STL).
             The `period` and `seasonal` arguments are reserved.
         short_train_behavior (str): Behavior when training window is shorter than the max season length.
-            Use "nan" to return NaN forecasts (default) or "skip" to skip those windows in cross validation.
+            This is only applied during cross-validation. Use "nan" to return NaN forecasts
+            (default) or "skip" to skip those windows in cross validation.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
@@ -5501,9 +5502,12 @@ class MSTL(_TS):
     @property
     def min_train_size(self) -> Optional[int]:
         """Minimum training length required for MSTL (max of season lengths)."""
-        if self.short_train_behavior == "skip":
+        if self.short_train_behavior == "skip" and self._use_short_train_behavior():
             return max(self.season_length)
         return None
+
+    def _use_short_train_behavior(self) -> bool:
+        return getattr(self, "_cv_short_train_behavior", False)
 
     def _is_short_train(self, y: np.ndarray) -> bool:
         return y.size < max(self.season_length)
@@ -5569,7 +5573,11 @@ class MSTL(_TS):
             self: MSTL fitted model.
         """
         y = _ensure_float(y)
-        if self.short_train_behavior == "nan" and self._is_short_train(y):
+        if (
+            self._use_short_train_behavior()
+            and self.short_train_behavior == "nan"
+            and self._is_short_train(y)
+        ):
             self._short_train = True
             self._short_train_size = y.size
             self._short_train_dtype = y.dtype
@@ -5671,7 +5679,11 @@ class MSTL(_TS):
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        if self.short_train_behavior == "nan" and self._is_short_train(y):
+        if (
+            self._use_short_train_behavior()
+            and self.short_train_behavior == "nan"
+            and self._is_short_train(y)
+        ):
             return self._nan_forecast(h=h, y=y, level=level, fitted=fitted)
         model_ = mstl(
             x=y,
@@ -5725,7 +5737,11 @@ class MSTL(_TS):
             forecasts (dict): Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        if self.short_train_behavior == "nan" and self._is_short_train(y):
+        if (
+            self._use_short_train_behavior()
+            and self.short_train_behavior == "nan"
+            and self._is_short_train(y)
+        ):
             return self._nan_forecast(h=h, y=y, level=level, fitted=fitted)
         if not hasattr(self.trend_forecaster, "model_"):
             raise Exception("You have to use the `fit` method first")
