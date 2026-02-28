@@ -5451,8 +5451,7 @@ class MSTL(_TS):
         trend_forecaster (model, default=AutoETS(model='ZZN')): StatsForecast model used to forecast the trend component.
         stl_kwargs (dict): Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.STL.html#statsmodels.tsa.seasonal.STL).
             The `period` and `seasonal` arguments are reserved.
-        short_train_behavior (str): Behavior when training window is shorter than the max season length.
-            This is only applied during cross-validation. Use "nan" to return NaN forecasts
+        short_train_behavior (str): Behavior when training window is shorter than the max season length, this is only applied during cross-validation. Use "nan" to return NaN forecasts
             (default) or "skip" to skip those windows in cross validation.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
