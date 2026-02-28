@@ -74,6 +74,9 @@ To setup the pre-commit hooks run: `pre-commit install`
 
 Install the library in editable mode using `uv pip install --no-build-isolation -e .` (this requires a C++ compiler).
 
+> [!NOTE]
+> When using `--no-build-isolation`, build dependencies are not installed automatically. If you encounter `error: invalid command 'bdist_wheel'`, install `wheel` first: `uv pip install wheel`
+
 By using the `-e` flag the package is linked directly to the source code, allowing any changes made to the source code to be immediately reflected in your Python environment without the need to reinstall the package. This is useful for testing changes during package development.
 
 ### Re-compiling the shared library
