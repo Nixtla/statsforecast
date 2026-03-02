@@ -645,6 +645,7 @@ def etsmodel(
     amse = np.mean(amse)
 
     fit_par = np.concatenate([[alpha, beta, gamma, phi], init_state])
+    fred = results(x=fit_par, fn=fred.fn, nit=fred.nit, simplex=fred.simplex)
     if errortype == "A":
         fits = y - e
     else:
