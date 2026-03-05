@@ -10,6 +10,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NIXTLA_NUMBA_CACHE: "1"
+  MPLBACKEND: Agg
+
 jobs:
   run-tests:
     name: Run tests for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
@@ -20,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [310, 311, 312, 313]
+        python-version: [310, 311, 312, 313, 314]
         os-platform:
           [
             [ubuntu-latest, manylinux_x86_64],
@@ -45,18 +49,26 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@f0ec1fc3b38f5e7cd731bb6ce540c5af426746bb # v6.1.0
         with:
-          version: "latest"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Build wheels and run all tests
         if: matrix.os-platform[0] == 'ubuntu-latest'
         uses: pypa/cibuildwheel@5f22145df44122af0f5a201f93cf0207171beca7 # v3.0.0
         env:
+          CIBW_ENABLE: cpython-prerelease
           CIBW_BUILD: cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
           CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_BEFORE_TEST: >
             yum install -y java-17-openjdk
           CIBW_TEST_COMMAND: >
-            uv pip install -r {project}/setup.py --extra all && pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov
+            if python -c "import sys; exit(0 if sys.version_info >= (3, 14) else 1)"; then
+              uv pip install pytest pytest-cov "dask<=2024.12.1" "fugue[dask]>=0.9.4" "fugue[spark]>=0.9.4" "pyspark" &&
+              pytest --durations=0 {project}/action_files -k "not efficiency and not ray" --no-cov;
+            else
+              uv pip install pytest pytest-cov "dask<=2024.12.1" "fugue[dask]>=0.9.4" "fugue[spark]>=0.9.4" "fugue[ray]>=0.9.4" "pyspark" &&
+              pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov;
+            fi
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: github.event_name == 'push'
@@ -106,13 +118,19 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Install the library
-        run: pip install uv && uv pip install --system ".[dev]" "datasetsforecast @ git+https://github.com/Nixtla/datasetsforecast.git@95a9ea44115b5ed6088e30f786aa0c39f9e094ac"
+        run: uv sync --group dev
 
       - name: Run M3 experiment
         run: |
-          python -m src.experiment
-          python -m src.evaluation --test
+          uv run python -m src.experiment
+          uv run python -m src.evaluation --test
         working-directory: ./experiments/m3
 
   efficiency-tests:
@@ -126,11 +144,17 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
       - name: Install dependencies
-        run: pip install uv && uv pip install --system . scikit-learn pytest-cov pytest-codspeed pytest-xdist
+        run: uv sync && uv pip install pytest-codspeed pytest-xdist
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # 3.5.0
         with:
           token: ${{ secrets.CODESPEED_TOKEN }}
-          run: pytest action_files/test_efficiency.py --codspeed -n 2 --no-cov
+          run: uv run pytest action_files/test_efficiency.py --codspeed -n 2 --no-cov
