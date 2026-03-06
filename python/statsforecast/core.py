@@ -29,6 +29,7 @@ from utilsforecast.compat import DataFrame, pl_DataFrame, pl_Series
 from utilsforecast.grouped_array import GroupedArray as BaseGroupedArray
 from utilsforecast.validation import ensure_time_dtype, validate_freq
 
+from .distributions import _get_distribution
 from .utils import ConformalIntervals, _ensure_float
 
 if __name__ == "__main__":
@@ -557,6 +558,7 @@ class _StatsForecast:
         n_jobs: int = 1,
         fallback_model: Optional[Any] = None,
         verbose: bool = False,
+        distribution: Optional[Union[str, Any]] = None,
     ):
         """Initialize StatsForecast with models and configuration.
 
@@ -580,9 +582,21 @@ class _StatsForecast:
                 methods. If None, exceptions from failing models will be raised.
             verbose (bool, optional): If True, displays TQDM progress bar during single-job
                 execution (when n_jobs=1).
+            distribution (str or Distribution, optional): Observation distribution to use
+                for all models that support it. Accepts the same values as individual model
+                ``distribution`` parameters (e.g. ``"gaussian"``, ``"poisson"``,
+                ``"negbin"``, ``"student_t"``).  When set, this overrides each supporting
+                model's own ``distribution`` setting.  Models that do not expose a
+                ``distribution`` attribute are left unchanged.
 
         """
         self.models = models
+        if distribution is not None:
+            dist = _get_distribution(distribution)
+            for model in self.models:
+                if hasattr(model, "distribution"):
+                    model.distribution = dist
+                    model._dist_ = dist
         self._validate_model_names()
         self.freq = freq
         self.n_jobs = n_jobs
