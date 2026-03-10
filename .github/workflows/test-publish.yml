@@ -3,6 +3,9 @@ name: Upload Python Package to TestPyPI
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build_wheels:
     name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}

@@ -19,6 +19,8 @@ on:
 
 jobs:
   build-docs:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
