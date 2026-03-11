@@ -22,7 +22,7 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.optimize import minimize
 from scipy.signal import convolve
-from scipy.stats import norm, laplace as laplace_dist, t as t_dist
+from scipy.stats import norm, laplace as laplace_dist, t as t_dist, skewnorm as skewnorm_dist
 
 from ._lib import arima as _arima
 from .mstl import mstl
@@ -352,6 +352,50 @@ def arima(
         )
         return obj
 
+    def armafn_skewnorm(p_ext, x, trans):
+        # p_ext = [arma_free..., log_sigma2, alpha]
+        n_arma_free = int(mask.sum())
+        p = p_ext[:n_arma_free]
+        log_sigma2 = p_ext[n_arma_free]
+        alpha = p_ext[n_arma_free + 1]
+        sigma = math.exp(0.5 * log_sigma2)
+        x = x.copy()
+        par = coef.copy()
+        par[mask] = p
+        trarma = arima_transpar(par, arma, trans)
+        Z = upARIMA(mod, trarma[0], trarma[1])
+        if Z is None:
+            return np.finfo(np.float64).max
+        if ncxreg > 0:
+            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+        res = arima_like(
+            x,
+            Z["phi"],
+            Z["theta"],
+            Z["delta"],
+            Z["a"],
+            Z["P"],
+            Z["Pn"],
+            0,
+            True,  # use_resid=True — need standardized innovations
+        )
+        if res[2] == 0.0:
+            return math.inf
+        n = res[2]
+        sumlog = res[1]
+        std_resid = res[3]  # eₜ = vₜ/√fₜ
+        # -ℓ/n for SN(0, σ², α):
+        # -ℓ/n = -log(2) + 0.5*log(2π) + 0.5*log(σ²) + Σeₜ²/(2nσ²)
+        #        - (1/n)*Σ log Φ(α*eₜ/σ) + 0.5*sumlog/n
+        obj = (
+            -math.log(2.0) + 0.5 * math.log(2.0 * math.pi)
+            + 0.5 * log_sigma2
+            + np.nansum(std_resid ** 2) / (2.0 * n * sigma ** 2)
+            - np.nansum(norm.logcdf(alpha * std_resid / sigma)) / n
+            + 0.5 * sumlog / n
+        )
+        return obj
+
     def arCheck(ar):
         p = np.argmax(np.append(1, -ar) != 0)
         if not p:
@@ -445,9 +489,9 @@ def arima(
         ncxreg += 1
         nmxreg = ["intercept"] + nmxreg
 
-    if distribution not in ("normal", "laplace", "t"):
+    if distribution not in ("normal", "laplace", "t", "skew-normal"):
         raise ValueError(
-            f"distribution must be 'normal', 'laplace', or 't', got {distribution!r}"
+            f"distribution must be 'normal', 'laplace', 't', or 'skew-normal', got {distribution!r}"
         )
     if distribution != "normal" and method == "CSS":
         raise ValueError(
@@ -631,7 +675,39 @@ def arima(
         ml_obj = armafn if distribution == "normal" else armafn_laplace
         nu_t = None
         sigma2_t = None
-        if distribution == "t":
+        alpha_sn = None
+        sigma2_sn = None
+        if distribution == "skew-normal":
+            # Always optimize [arma_free..., log_sigma2, alpha] jointly.
+            n_arma_free = int(mask.sum())
+            log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
+            alpha_init = 0.0  # start symmetric
+            init_sn = np.concatenate(
+                [init[mask], [log_sigma2_init, alpha_init]]
+            )
+            res_sn = minimize(
+                armafn_skewnorm,
+                init_sn,
+                args=(x, transform_pars),
+                method=optim_method,
+                tol=tol,
+                options=optim_control,
+            )
+            sigma2_sn = math.exp(res_sn.x[n_arma_free])
+            alpha_sn = res_sn.x[n_arma_free + 1]
+            hess_arma = (
+                res_sn.hess_inv[:n_arma_free, :n_arma_free]
+                if n_arma_free > 0 and np.ndim(res_sn.hess_inv) == 2
+                else np.array([])
+            )
+            res = OptimResult(
+                res_sn.success,
+                res_sn.status,
+                res_sn.x[:n_arma_free],
+                res_sn.fun,
+                hess_arma,
+            )
+        elif distribution == "t":
             # Always optimize [arma_free..., log_sigma2, log_nu_m2] jointly.
             n_arma_free = int(mask.sum())
             log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
@@ -721,18 +797,20 @@ def arima(
         elif distribution == "laplace":
             # sigma2 stores b̂ (the fitted Laplace scale)
             sigma2 = np.nansum(np.abs(val[1])) / n_used
-        else:  # t: sigma2 stores σ² (the fitted t scale)
+        elif distribution == "t":
             sigma2 = sigma2_t
+        else:  # skew-normal: sigma2 stores fitted σ²
+            sigma2 = sigma2_sn
 
     if distribution == "normal":
         value = 2 * n_used * res.fun + n_used + n_used * np.log(2 * np.pi)
     elif distribution == "laplace":
         # -2ℓ(b̂) = 2n·res.fun + n·(2 + log(4))
         value = 2 * n_used * res.fun + n_used * (2 + np.log(4))
-    else:  # t: obj = -ℓ/n, so -2ℓ = 2n·res.fun (no additive constant)
+    else:  # t / skew-normal: obj = -ℓ/n, so -2ℓ = 2n·res.fun (no additive constant)
         value = 2 * n_used * res.fun
-    # AIC = -2ℓ + 2k; k = arma_free + 1 (σ²) for normal/laplace, +2 (σ², ν) for t
-    n_dist_params = 2 if distribution == "t" else 1
+    # AIC = -2ℓ + 2k; normal/laplace: k=arma+1 (σ²); t/skew-normal: k=arma+2 (σ²+extra)
+    n_dist_params = 2 if distribution in ("t", "skew-normal") else 1
     aic = value + 2 * (sum(mask) + n_dist_params) if method != "CSS" else np.nan
 
     nm = []
@@ -775,6 +853,8 @@ def arima(
     }
     if distribution == "t" and nu_t is not None:
         ans["nu"] = nu_t
+    if distribution == "skew-normal" and alpha_sn is not None:
+        ans["alpha"] = alpha_sn
     return ans
 
 
@@ -1352,6 +1432,9 @@ def forecast_arima(
             elif dist == "t":
                 nu = model.get("nu", 5.0)
                 quantiles = t_dist.ppf(p, df=nu)
+            elif dist == "skew-normal":
+                alpha = model.get("alpha", 0.0)
+                quantiles = skewnorm_dist.ppf(p, a=alpha)
             else:
                 quantiles = norm.ppf(p)
             lower = pd.DataFrame(
