@@ -22,7 +22,7 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.optimize import minimize
 from scipy.signal import convolve
-from scipy.stats import norm, laplace as laplace_dist, t as t_dist, skewnorm as skewnorm_dist
+from scipy.stats import norm, laplace as laplace_dist, t as t_dist, skewnorm as skewnorm_dist, gennorm as gennorm_dist
 
 from ._lib import arima as _arima
 from .mstl import mstl
@@ -396,6 +396,51 @@ def arima(
         )
         return obj
 
+    def armafn_ged(p_ext, x, trans):
+        # p_ext = [arma_free..., log_sigma, log_beta]
+        # GED(0, σ, β): f(e) = β/(2σΓ(1/β)) * exp(-(|e|/σ)^β)
+        n_arma_free = int(mask.sum())
+        p = p_ext[:n_arma_free]
+        log_sigma = p_ext[n_arma_free]
+        log_beta = p_ext[n_arma_free + 1]
+        sigma = math.exp(log_sigma)
+        beta = math.exp(log_beta)
+        x = x.copy()
+        par = coef.copy()
+        par[mask] = p
+        trarma = arima_transpar(par, arma, trans)
+        Z = upARIMA(mod, trarma[0], trarma[1])
+        if Z is None:
+            return np.finfo(np.float64).max
+        if ncxreg > 0:
+            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+        res = arima_like(
+            x,
+            Z["phi"],
+            Z["theta"],
+            Z["delta"],
+            Z["a"],
+            Z["P"],
+            Z["Pn"],
+            0,
+            True,  # use_resid=True — need standardized innovations
+        )
+        if res[2] == 0.0:
+            return math.inf
+        n = res[2]
+        sumlog = res[1]
+        std_resid = res[3]  # eₜ = vₜ/√fₜ
+        # -ℓ/n for GED(0, σ, β):
+        # -ℓ/n = log(2) + log(σ) + lgamma(1/β) - log(β)
+        #        + (1/n)*Σ(|eₜ|/σ)^β + 0.5*sumlog/n
+        obj = (
+            math.log(2.0) + log_sigma
+            + math.lgamma(1.0 / beta) - log_beta
+            + np.nansum(np.abs(std_resid / sigma) ** beta) / n
+            + 0.5 * sumlog / n
+        )
+        return obj
+
     def arCheck(ar):
         p = np.argmax(np.append(1, -ar) != 0)
         if not p:
@@ -489,9 +534,9 @@ def arima(
         ncxreg += 1
         nmxreg = ["intercept"] + nmxreg
 
-    if distribution not in ("normal", "laplace", "t", "skew-normal"):
+    if distribution not in ("normal", "laplace", "t", "skew-normal", "ged"):
         raise ValueError(
-            f"distribution must be 'normal', 'laplace', 't', or 'skew-normal', got {distribution!r}"
+            f"distribution must be 'normal', 'laplace', 't', 'skew-normal', or 'ged', got {distribution!r}"
         )
     if distribution != "normal" and method == "CSS":
         raise ValueError(
@@ -677,6 +722,8 @@ def arima(
         sigma2_t = None
         alpha_sn = None
         sigma2_sn = None
+        beta_ged = None
+        sigma_ged = None
         if distribution == "skew-normal":
             # Always optimize [arma_free..., log_sigma2, alpha] jointly.
             n_arma_free = int(mask.sum())
@@ -735,6 +782,36 @@ def arima(
                 res_t.status,
                 res_t.x[:n_arma_free],
                 res_t.fun,
+                hess_arma,
+            )
+        elif distribution == "ged":
+            # Always optimize [arma_free..., log_sigma, log_beta] jointly.
+            n_arma_free = int(mask.sum())
+            log_sigma_init = 0.5 * np.log(max(float(np.nanvar(x)), 1e-10))
+            log_beta_init = math.log(2.0)  # start at β=2 (normal shape)
+            init_ged = np.concatenate(
+                [init[mask], [log_sigma_init, log_beta_init]]
+            )
+            res_ged = minimize(
+                armafn_ged,
+                init_ged,
+                args=(x, transform_pars),
+                method=optim_method,
+                tol=tol,
+                options=optim_control,
+            )
+            sigma_ged = math.exp(res_ged.x[n_arma_free])
+            beta_ged = math.exp(res_ged.x[n_arma_free + 1])
+            hess_arma = (
+                res_ged.hess_inv[:n_arma_free, :n_arma_free]
+                if n_arma_free > 0 and np.ndim(res_ged.hess_inv) == 2
+                else np.array([])
+            )
+            res = OptimResult(
+                res_ged.success,
+                res_ged.status,
+                res_ged.x[:n_arma_free],
+                res_ged.fun,
                 hess_arma,
             )
         elif no_optim:
@@ -799,8 +876,10 @@ def arima(
             sigma2 = np.nansum(np.abs(val[1])) / n_used
         elif distribution == "t":
             sigma2 = sigma2_t
-        else:  # skew-normal: sigma2 stores fitted σ²
+        elif distribution == "skew-normal":
             sigma2 = sigma2_sn
+        else:  # ged: sigma2 stores σ²
+            sigma2 = sigma_ged ** 2
 
     if distribution == "normal":
         value = 2 * n_used * res.fun + n_used + n_used * np.log(2 * np.pi)
@@ -809,8 +888,8 @@ def arima(
         value = 2 * n_used * res.fun + n_used * (2 + np.log(4))
     else:  # t / skew-normal: obj = -ℓ/n, so -2ℓ = 2n·res.fun (no additive constant)
         value = 2 * n_used * res.fun
-    # AIC = -2ℓ + 2k; normal/laplace: k=arma+1 (σ²); t/skew-normal: k=arma+2 (σ²+extra)
-    n_dist_params = 2 if distribution in ("t", "skew-normal") else 1
+    # AIC = -2ℓ + 2k; normal/laplace: k=arma+1 (σ²); t/skew-normal/ged: k=arma+2 (σ²+extra)
+    n_dist_params = 2 if distribution in ("t", "skew-normal", "ged") else 1
     aic = value + 2 * (sum(mask) + n_dist_params) if method != "CSS" else np.nan
 
     nm = []
@@ -855,6 +934,8 @@ def arima(
         ans["nu"] = nu_t
     if distribution == "skew-normal" and alpha_sn is not None:
         ans["alpha"] = alpha_sn
+    if distribution == "ged" and beta_ged is not None:
+        ans["beta"] = beta_ged
     return ans
 
 
@@ -1435,6 +1516,9 @@ def forecast_arima(
             elif dist == "skew-normal":
                 alpha = model.get("alpha", 0.0)
                 quantiles = skewnorm_dist.ppf(p, a=alpha)
+            elif dist == "ged":
+                beta = model.get("beta", 2.0)
+                quantiles = gennorm_dist.ppf(p, beta=beta)
             else:
                 quantiles = norm.ppf(p)
             lower = pd.DataFrame(
