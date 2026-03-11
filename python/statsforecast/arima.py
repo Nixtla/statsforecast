@@ -22,7 +22,7 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.optimize import minimize
 from scipy.signal import convolve
-from scipy.stats import norm, laplace as laplace_dist
+from scipy.stats import norm, laplace as laplace_dist, t as t_dist
 
 from ._lib import arima as _arima
 from .mstl import mstl
@@ -303,6 +303,55 @@ def arima(
         b_hat = sum_abs / res[2]
         return math.log(b_hat) + 0.5 * res[1] / res[2]
 
+    def armafn_t(p_ext, x, trans):
+        # p_ext = [arma_free..., log_sigma2, log_nu_m2]
+        n_arma_free = int(mask.sum())
+        p = p_ext[:n_arma_free]
+        log_sigma2 = p_ext[n_arma_free]
+        log_nu_m2 = p_ext[n_arma_free + 1]
+        sigma2 = math.exp(log_sigma2)
+        nu = math.exp(log_nu_m2) + 2.0  # nu > 2
+        x = x.copy()
+        par = coef.copy()
+        par[mask] = p
+        trarma = arima_transpar(par, arma, trans)
+        Z = upARIMA(mod, trarma[0], trarma[1])
+        if Z is None:
+            return np.finfo(np.float64).max
+        if ncxreg > 0:
+            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+        res = arima_like(
+            x,
+            Z["phi"],
+            Z["theta"],
+            Z["delta"],
+            Z["a"],
+            Z["P"],
+            Z["Pn"],
+            0,
+            True,  # use_resid=True — need standardized innovations
+        )
+        if res[2] == 0.0:
+            return math.inf
+        n = res[2]
+        sumlog = res[1]
+        std_resid = res[3]  # eₜ = vₜ/√fₜ
+        # Concentrated -ℓ/n for t(0, σ², ν):
+        # -ℓ/n = 0.5*log(σ²) + lgamma(ν/2) - lgamma((ν+1)/2) + 0.5*log(νπ)
+        #        + ((ν+1)/2n) * Σ log(1 + eₜ²/(νσ²)) + 0.5*sumlog/n
+        half_nu1 = 0.5 * (nu + 1.0)
+        sum_log_kernel = np.nansum(
+            np.log1p(std_resid ** 2 / (nu * sigma2))
+        )
+        obj = (
+            0.5 * log_sigma2
+            + math.lgamma(nu / 2.0) - math.lgamma(half_nu1)
+            + 0.5 * math.log(nu * math.pi)
+            + half_nu1 / n * sum_log_kernel
+            + 0.5 * sumlog / n
+        )
+        return obj
+
     def arCheck(ar):
         p = np.argmax(np.append(1, -ar) != 0)
         if not p:
@@ -396,9 +445,9 @@ def arima(
         ncxreg += 1
         nmxreg = ["intercept"] + nmxreg
 
-    if distribution not in ("normal", "laplace"):
+    if distribution not in ("normal", "laplace", "t"):
         raise ValueError(
-            f"distribution must be 'normal' or 'laplace', got {distribution!r}"
+            f"distribution must be 'normal', 'laplace', or 't', got {distribution!r}"
         )
     if distribution != "normal" and method == "CSS":
         raise ValueError(
@@ -580,7 +629,39 @@ def arima(
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         ml_obj = armafn if distribution == "normal" else armafn_laplace
-        if no_optim:
+        nu_t = None
+        sigma2_t = None
+        if distribution == "t":
+            # Always optimize [arma_free..., log_sigma2, log_nu_m2] jointly.
+            n_arma_free = int(mask.sum())
+            log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
+            log_nu_m2_init = np.log(3.0)  # initial nu = 5
+            init_t = np.concatenate(
+                [init[mask], [log_sigma2_init, log_nu_m2_init]]
+            )
+            res_t = minimize(
+                armafn_t,
+                init_t,
+                args=(x, transform_pars),
+                method=optim_method,
+                tol=tol,
+                options=optim_control,
+            )
+            sigma2_t = math.exp(res_t.x[n_arma_free])
+            nu_t = math.exp(res_t.x[n_arma_free + 1]) + 2.0
+            hess_arma = (
+                res_t.hess_inv[:n_arma_free, :n_arma_free]
+                if n_arma_free > 0 and np.ndim(res_t.hess_inv) == 2
+                else np.array([])
+            )
+            res = OptimResult(
+                res_t.success,
+                res_t.status,
+                res_t.x[:n_arma_free],
+                res_t.fun,
+                hess_arma,
+            )
+        elif no_optim:
             res = OptimResult(
                 True,
                 0,
@@ -637,15 +718,22 @@ def arima(
         val = (val[0], val[3])
         if distribution == "normal":
             sigma2 = val[0] / n_used
-        else:
-            # Laplace: sigma2 stores b̂ (the fitted Laplace scale)
+        elif distribution == "laplace":
+            # sigma2 stores b̂ (the fitted Laplace scale)
             sigma2 = np.nansum(np.abs(val[1])) / n_used
+        else:  # t: sigma2 stores σ² (the fitted t scale)
+            sigma2 = sigma2_t
 
     if distribution == "normal":
         value = 2 * n_used * res.fun + n_used + n_used * np.log(2 * np.pi)
-    else:  # laplace: -2ℓ(b̂) = 2n·res.fun + n·(2 + log(4))
+    elif distribution == "laplace":
+        # -2ℓ(b̂) = 2n·res.fun + n·(2 + log(4))
         value = 2 * n_used * res.fun + n_used * (2 + np.log(4))
-    aic = value + 2 * sum(mask) + 2 if method != "CSS" else np.nan
+    else:  # t: obj = -ℓ/n, so -2ℓ = 2n·res.fun (no additive constant)
+        value = 2 * n_used * res.fun
+    # AIC = -2ℓ + 2k; k = arma_free + 1 (σ²) for normal/laplace, +2 (σ², ν) for t
+    n_dist_params = 2 if distribution == "t" else 1
+    aic = value + 2 * (sum(mask) + n_dist_params) if method != "CSS" else np.nan
 
     nm = []
     if arma[0] > 0:
@@ -685,6 +773,8 @@ def arima(
         "model": mod,
         "distribution": distribution,
     }
+    if distribution == "t" and nu_t is not None:
+        ans["nu"] = nu_t
     return ans
 
 
@@ -1256,8 +1346,12 @@ def forecast_arima(
             raise NotImplementedError("bootstrap=True")
         else:
             p = 0.5 * (1 + np.asarray(level) / 100)
-            if model.get("distribution", "normal") == "laplace":
+            dist = model.get("distribution", "normal")
+            if dist == "laplace":
                 quantiles = laplace_dist.ppf(p)
+            elif dist == "t":
+                nu = model.get("nu", 5.0)
+                quantiles = t_dist.ppf(p, df=nu)
             else:
                 quantiles = norm.ppf(p)
             lower = pd.DataFrame(
@@ -2095,6 +2189,7 @@ def auto_arima_f(
                 approximation=False,
                 method=method,
                 xreg=xreg,
+                distribution=distribution,
             )
             if fit["ic"] < math.inf:
                 bestfit = fit
