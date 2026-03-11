@@ -22,7 +22,7 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.optimize import minimize
 from scipy.signal import convolve
-from scipy.stats import norm
+from scipy.stats import norm, laplace as laplace_dist
 
 from ._lib import arima as _arima
 from .mstl import mstl
@@ -206,6 +206,7 @@ def arima(
     kappa=1e6,
     tol=1e-8,
     optim_control={"maxiter": 100},
+    distribution="normal",
 ):
     SSG = SSinit == "Gardner1980"
     x = x.astype(np.float64, copy=True)
@@ -271,6 +272,36 @@ def arima(
         if s2 <= 0:
             return math.nan
         return 0.5 * (math.log(s2) + res[1] / res[2])
+
+    def armafn_laplace(p, x, trans):
+        x = x.copy()
+        par = coef.copy()
+        par[mask] = p
+        trarma = arima_transpar(par, arma, trans)
+        Z = upARIMA(mod, trarma[0], trarma[1])
+        if Z is None:
+            return np.finfo(np.float64).max
+        if ncxreg > 0:
+            x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
+        res = arima_like(
+            x,
+            Z["phi"],
+            Z["theta"],
+            Z["delta"],
+            Z["a"],
+            Z["P"],
+            Z["Pn"],
+            0,
+            True,  # use_resid=True — we need standardized innovations
+        )
+        if res[2] == 0.0:
+            return math.inf
+        std_resid = res[3]  # standardized innovations eₜ = vₜ/√fₜ
+        sum_abs = np.nansum(np.abs(std_resid))
+        if sum_abs <= 0:
+            return math.nan
+        b_hat = sum_abs / res[2]
+        return math.log(b_hat) + 0.5 * res[1] / res[2]
 
     def arCheck(ar):
         p = np.argmax(np.append(1, -ar) != 0)
@@ -364,6 +395,15 @@ def arima(
             xreg = np.concatenate([intercept, xreg], axis=1)
         ncxreg += 1
         nmxreg = ["intercept"] + nmxreg
+
+    if distribution not in ("normal", "laplace"):
+        raise ValueError(
+            f"distribution must be 'normal' or 'laplace', got {distribution!r}"
+        )
+    if distribution != "normal" and method == "CSS":
+        raise ValueError(
+            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
+        )
 
     # check nas for method CSS-ML
     if method == "CSS-ML":
@@ -539,17 +579,18 @@ def arima(
                     init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
+        ml_obj = armafn if distribution == "normal" else armafn_laplace
         if no_optim:
             res = OptimResult(
                 True,
                 0,
                 np.array([]),
-                armafn(np.array([]), x, transform_pars),
+                ml_obj(np.array([]), x, transform_pars),
                 np.array([]),
             )
         else:
             res = minimize(
-                armafn,
+                ml_obj,
                 init[mask],
                 args=(
                     x,
@@ -594,9 +635,16 @@ def arima(
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arimaSS(x, mod)
         val = (val[0], val[3])
-        sigma2 = val[0] / n_used
+        if distribution == "normal":
+            sigma2 = val[0] / n_used
+        else:
+            # Laplace: sigma2 stores b̂ (the fitted Laplace scale)
+            sigma2 = np.nansum(np.abs(val[1])) / n_used
 
-    value = 2 * n_used * res.fun + n_used + n_used * np.log(2 * np.pi)
+    if distribution == "normal":
+        value = 2 * n_used * res.fun + n_used + n_used * np.log(2 * np.pi)
+    else:  # laplace: -2ℓ(b̂) = 2n·res.fun + n·(2 + log(4))
+        value = 2 * n_used * res.fun + n_used * (2 + np.log(4))
     aic = value + 2 * sum(mask) + 2 if method != "CSS" else np.nan
 
     nm = []
@@ -635,6 +683,7 @@ def arima(
         "n_cond": ncond,
         "nobs": n_used,
         "model": mod,
+        "distribution": distribution,
     }
     return ans
 
@@ -755,6 +804,7 @@ def myarima(
     offset=0,
     xreg=None,
     method=None,
+    distribution="normal",
     **kwargs,
 ):
     missing = np.isnan(x)
@@ -779,17 +829,19 @@ def myarima(
             else:
                 xreg = drift
             if use_season:
-                fit = arima(x, order, seasonal, xreg, method=method)
+                fit = arima(x, order, seasonal, xreg, method=method, distribution=distribution)
             else:
-                fit = arima(x, order, xreg=xreg, method=method)
+                fit = arima(x, order, xreg=xreg, method=method, distribution=distribution)
             fit["coef"] = change_drift_name(fit["coef"])
         else:
             if use_season:
                 fit = arima(
-                    x, order, seasonal, include_mean=constant, method=method, xreg=xreg
+                    x, order, seasonal, include_mean=constant, method=method, xreg=xreg,
+                    distribution=distribution,
                 )
             else:
-                fit = arima(x, order, include_mean=constant, method=method, xreg=xreg)
+                fit = arima(x, order, include_mean=constant, method=method, xreg=xreg,
+                            distribution=distribution)
         # nxreg = 0 if xreg is None else xreg.shape[1]
         nstar = n - order[1] - seas_order[1] * m
         if diffs == 1 and constant:
@@ -809,7 +861,8 @@ def myarima(
             fit["ic"] = fit[ic]
         else:
             fit["ic"] = fit["aic"] = fit["bic"] = fit["aicc"] = math.inf
-        fit["sigma2"] = np.nansum(fit["residuals"] ** 2) / (nstar - npar + 1)
+        if distribution == "normal":
+            fit["sigma2"] = np.nansum(fit["residuals"] ** 2) / (nstar - npar + 1)
         minroot = 2
         if order[0] + seas_order[0] > 0:
             testvec = fit["model"]["phi"]
@@ -1097,7 +1150,7 @@ def Arima(
     tmp["xreg"] = xreg
     tmp["lambda"] = blambda
     tmp["x"] = origx
-    if model is None:
+    if model is None and kwargs.get("distribution", "normal") == "normal":
         tmp["sigma2"] = np.nansum(tmp["residuals"] ** 2) / (nstar - npar + 1)
     return tmp
 
@@ -1202,7 +1255,11 @@ def forecast_arima(
         if bootstrap:
             raise NotImplementedError("bootstrap=True")
         else:
-            quantiles = norm.ppf(0.5 * (1 + np.asarray(level) / 100))
+            p = 0.5 * (1 + np.asarray(level) / 100)
+            if model.get("distribution", "normal") == "laplace":
+                quantiles = laplace_dist.ppf(p)
+            else:
+                quantiles = norm.ppf(p)
             lower = pd.DataFrame(
                 pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
                 columns=[f"{l}%" for l in level],
@@ -1545,6 +1602,7 @@ def auto_arima_f(
     blambda=None,
     biasadj=False,
     period=1,
+    distribution="normal",
 ):
     if approximation is None:
         approximation = len(x) > 150 or period > 12
@@ -1779,6 +1837,7 @@ def auto_arima_f(
         offset=offset,
         xreg=xreg,
         method=method,
+        distribution=distribution,
     )
     bestfit = p_myarima(
         order=(p, d, q),
