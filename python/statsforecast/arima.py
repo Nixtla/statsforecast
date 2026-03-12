@@ -879,6 +879,7 @@ def arima(
         elif distribution == "skew-normal":
             sigma2 = sigma2_sn
         else:  # ged: sigma2 stores σ²
+            assert sigma_ged is not None
             sigma2 = sigma_ged ** 2
 
     if distribution == "normal":
