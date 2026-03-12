@@ -19,6 +19,7 @@ on:
 
 jobs:
   build-docs:
+    if: github.actor != 'dependabot[bot]'
     permissions:
       contents: write
     runs-on: ubuntu-latest
