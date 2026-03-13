@@ -872,8 +872,8 @@ def arima(
         if distribution == "normal":
             sigma2 = val[0] / n_used
         elif distribution == "laplace":
-            # sigma2 stores b̂ (the fitted Laplace scale)
-            sigma2 = np.nansum(np.abs(val[1])) / n_used
+            b_hat = np.nansum(np.abs(val[1])) / n_used
+            sigma2 = 2.0 * b_hat**2
         elif distribution == "t":
             sigma2 = sigma2_t
         elif distribution == "skew-normal":
@@ -2669,7 +2669,21 @@ class AutoARIMA:
             _level = sorted(_level)
             arr_level = np.asarray(_level)
             se = np.sqrt(self.model_.model["sigma2"])
-            quantiles = norm.ppf(0.5 * (1 + arr_level / 100))
+            p = 0.5 * (1 + arr_level / 100)
+            dist = self.model_.model.get("distribution", "normal")
+            if dist == "laplace":
+                quantiles = laplace_dist.ppf(p)
+            elif dist == "t":
+                nu = self.model_.model.get("nu", 5.0)
+                quantiles = t_dist.ppf(p, df=nu)
+            elif dist == "skew-normal":
+                alpha = self.model_.model.get("alpha", 0.0)
+                quantiles = skewnorm_dist.ppf(p, a=alpha)
+            elif dist == "ged":
+                beta = self.model_.model.get("beta", 2.0)
+                quantiles = gennorm_dist.ppf(p, beta=beta)
+            else:
+                quantiles = norm.ppf(p)
 
             lo = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
