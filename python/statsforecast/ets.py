@@ -9,7 +9,7 @@ from scipy.stats import skewnorm as skewnorm_dist, gennorm as gennorm_dist
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 from ._lib import ets as _ets
-from .utils import _calculate_intervals, results
+from .utils import _calculate_intervals, _VALID_DISTRIBUTIONS, results
 
 # Global variables
 _smalno = np.finfo(float).eps
@@ -365,7 +365,6 @@ def switch_criterion(x: str) -> _ets.Criterion:
     raise ValueError(f"Unknown crtierion {x}")
 
 
-_VALID_ETS_DISTS = ("normal", "laplace", "t", "skew-normal", "ged")
 
 
 def switch_distribution(x: str) -> "_ets.Distribution":
@@ -629,9 +628,9 @@ def etsmodel(
     trace: bool = False,
     distribution: str = "normal",
 ):
-    if distribution not in _VALID_ETS_DISTS:
+    if distribution not in _VALID_DISTRIBUTIONS:
         raise ValueError(
-            f"distribution must be one of {_VALID_ETS_DISTS}, got {distribution!r}"
+            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
         )
     if seasontype == "N":
         m = 1

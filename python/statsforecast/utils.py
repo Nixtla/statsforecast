@@ -268,6 +268,9 @@ def _naive(
     return fcst
 
 
+_VALID_DISTRIBUTIONS = ("normal", "laplace", "t", "skew-normal", "ged")
+
+
 # Functions used for calculating prediction intervals
 def _quantiles(level, distribution="normal", dist_params=None):
     p = 0.5 + np.asarray(level) / 200
