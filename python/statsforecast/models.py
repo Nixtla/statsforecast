@@ -708,6 +708,7 @@ class AutoETS(_TS):
         phi: Optional[float] = None,
         alias: str = "AutoETS",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: str = "normal",
     ):
         self.season_length = season_length
         self.model = model
@@ -720,6 +721,7 @@ class AutoETS(_TS):
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -740,7 +742,12 @@ class AutoETS(_TS):
         """
         y = _ensure_float(y)
         self.model_ = ets_f(
-            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
+            y,
+            m=self.season_length,
+            model=self.model,
+            damped=self.damped,
+            phi=self.phi,
+            distribution=self.distribution,
         )
         self.model_["actual_residuals"] = y - self.model_["fitted"]
         self._store_cs(y=y, X=X)
@@ -818,7 +825,12 @@ class AutoETS(_TS):
         """
         y = _ensure_float(y)
         mod = ets_f(
-            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
+            y,
+            m=self.season_length,
+            model=self.model,
+            damped=self.damped,
+            phi=self.phi,
+            distribution=self.distribution,
         )
         fcst = forecast_ets(mod, h=h, level=level)
         keys = ["mean"]

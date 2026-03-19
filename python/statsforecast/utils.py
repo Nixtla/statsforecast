@@ -273,8 +273,11 @@ def _quantiles(level):
     return z
 
 
-def _calculate_intervals(out, level, h, sigmah):
-    z = _quantiles(np.asarray(level))
+def _calculate_intervals(out, level, h, sigmah, quantiles=None):
+    if quantiles is not None:
+        z = np.asarray(quantiles)
+    else:
+        z = _quantiles(np.asarray(level))
     zz = np.repeat(z, h)
     zz = zz.reshape(z.shape[0], h)
     lower = out["mean"] - zz * sigmah
