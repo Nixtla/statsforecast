@@ -4,7 +4,7 @@ __all__ = ["ets_f", "simulate_ets"]
 import math
 
 import numpy as np
-from scipy.stats import norm, laplace as laplace_dist, t as t_dist
+from scipy.stats import laplace as laplace_dist, t as t_dist
 from scipy.stats import skewnorm as skewnorm_dist, gennorm as gennorm_dist
 from statsmodels.tsa.seasonal import seasonal_decompose
 
@@ -1444,19 +1444,9 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     if compute_intervals:
         dist = model.get("distribution", "normal")
-        p = 0.5 + np.asarray(level) / 200.0
-        if dist == "laplace":
-            quantiles = laplace_dist.ppf(p)
-        elif dist == "t":
-            quantiles = t_dist.ppf(p, df=model.get("nu", 5.0))
-        elif dist == "skew-normal":
-            quantiles = skewnorm_dist.ppf(p, a=model.get("alpha_dist", 0.0))
-        elif dist == "ged":
-            quantiles = gennorm_dist.ppf(p, beta=model.get("beta_dist", 2.0))
-        else:
-            quantiles = None
         pi = _calculate_intervals(
-            forecasts, level=level, h=h, sigmah=np.sqrt(sigmah), quantiles=quantiles
+            forecasts, level=level, h=h, sigmah=np.sqrt(sigmah),
+            distribution=dist, dist_params=model,
         )
 
     return pi

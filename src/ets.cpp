@@ -1,3 +1,4 @@
+#include <numbers>
 #include <pybind11/pybind11.h>
 
 #include "nelder_mead.h"
@@ -371,7 +372,7 @@ double ObjectiveFunctionDist(
         (e.array().square() / (nu * sigma2) + 1.0).log().sum();
     return (0.5 * log_sigma2
             + std::lgamma(nu / 2.0) - std::lgamma(half_nu1)
-            + 0.5 * std::log(nu * M_PI)
+            + 0.5 * std::log(nu * std::numbers::pi)
             + half_nu1 / static_cast<double>(n) * sum_log_kernel
             + sumlog_adj);
   }
@@ -381,10 +382,10 @@ double ObjectiveFunctionDist(
     double sigma = std::exp(0.5 * log_sigma2);
     double sum_log_cdf = 0.0;
     for (Eigen::Index i = 0; i < n; ++i) {
-      double z = alpha_sn * e[i] / (sigma * M_SQRT2);
+      double z = alpha_sn * e[i] / (sigma * std::numbers::sqrt2);
       sum_log_cdf += std::log(0.5 * std::erfc(-z) + 1e-30);
     }
-    return (-std::log(2.0) + 0.5 * std::log(2.0 * M_PI) + 0.5 * log_sigma2
+    return (-std::log(2.0) + 0.5 * std::log(2.0 * std::numbers::pi) + 0.5 * log_sigma2
             + e.array().square().sum() / (2.0 * static_cast<double>(n) * sigma * sigma)
             - sum_log_cdf / static_cast<double>(n)
             + sumlog_adj);
