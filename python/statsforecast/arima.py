@@ -2655,7 +2655,6 @@ class AutoARIMA:
         if level is not None:
             _level = [level] if isinstance(level, int) else level
             _level = sorted(_level)
-            arr_level = np.asarray(_level)
             se = np.sqrt(self.model_.model["sigma2"])
             dist = self.model_.model.get("distribution", "normal")
             quantiles = _quantiles(_level, distribution=dist, dist_params=self.model_.model)
