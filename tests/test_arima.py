@@ -716,9 +716,9 @@ def _simulate_ar1(phi, innovations):
 #   starting from alpha=0 the optimizer can converge to the wrong local minimum
 #   regardless of n. It is tested separately via AIC improvement (see below).
 _RECOVERY_CASES = [
-    ("t",   {"df": 5},     "nu",   5.0, 1.0,  1000),
-    ("ged", {"beta": 1.0}, "beta", 1.0, 0.25,  500),
-    ("ged", {"beta": 2.0}, "beta", 2.0, 0.30,  500),
+    ("t",   {"df": 5},     "nu",        5.0, 1.0,  1000),
+    ("ged", {"beta": 1.0}, "beta_dist", 1.0, 0.25,  500),
+    ("ged", {"beta": 2.0}, "beta_dist", 2.0, 0.30,  500),
 ]
 
 
@@ -757,7 +757,7 @@ def test_skewnorm_aic_improvement():
     assert fit_sn["aic"] < fit_n["aic"], (
         f"skew-normal AIC {fit_sn['aic']:.2f} should beat normal AIC {fit_n['aic']:.2f}"
     )
-    assert fit_sn["alpha"] > 0, "alpha should be positive for right-skewed data"
+    assert fit_sn["alpha_dist"] > 0, "alpha_dist should be positive for right-skewed data"
 
 
 def test_distribution_t_on_gaussian_gives_large_nu():
@@ -773,8 +773,8 @@ def test_distribution_ged_on_gaussian_gives_beta_near_2():
     rng = np.random.default_rng(2)
     y = _simulate_ar1(0.5, rng.standard_normal(500))
     fit = Arima(y, order=(1, 0, 0), distribution="ged", method="ML")
-    assert abs(fit["beta"] - 2.0) < 0.3, (
-        f"Expected beta≈2 on Gaussian data, got {fit['beta']:.4f}"
+    assert abs(fit["beta_dist"] - 2.0) < 0.3, (
+        f"Expected beta_dist≈2 on Gaussian data, got {fit['beta_dist']:.4f}"
     )
 
 
@@ -782,8 +782,8 @@ def test_distribution_ged_on_gaussian_gives_beta_near_2():
     ("normal",      None),
     ("laplace",     None),
     ("t",           "nu"),
-    ("skew-normal", "alpha"),
-    ("ged",         "beta"),
+    ("skew-normal", "alpha_dist"),
+    ("ged",         "beta_dist"),
 ])
 def test_distribution_model_dict_keys(distribution, extra_key):
     """Each distribution stores exactly the right extra key (and not others)."""
@@ -794,10 +794,10 @@ def test_distribution_model_dict_keys(distribution, extra_key):
     assert fit["distribution"] == distribution
     assert "sigma2" in fit
     assert "nu" not in fit["coef"], "'nu' must not be in coef (breaks predict_arima)"
-    assert "alpha" not in fit["coef"]
-    assert "beta" not in fit["coef"]
+    assert "alpha_dist" not in fit["coef"]
+    assert "beta_dist" not in fit["coef"]
 
-    for key in ("nu", "alpha", "beta"):
+    for key in ("nu", "alpha_dist", "beta_dist"):
         if key == extra_key:
             assert key in fit, f"Expected '{key}' in model for distribution='{distribution}'"
         else:
@@ -825,8 +825,8 @@ def test_distribution_invalid_name_raises():
 
 @pytest.mark.parametrize("distribution,param_key", [
     ("t",           "nu"),
-    ("skew-normal", "alpha"),
-    ("ged",         "beta"),
+    ("skew-normal", "alpha_dist"),
+    ("ged",         "beta_dist"),
 ])
 def test_distribution_no_arma_params(distribution, param_key):
     """ARIMA(0,1,0) has no free ARMA params; sigma and shape must still be estimated."""
@@ -842,8 +842,8 @@ def test_distribution_no_arma_params(distribution, param_key):
 
 @pytest.mark.parametrize("distribution,param_key", [
     ("t",           "nu"),
-    ("skew-normal", "alpha"),
-    ("ged",         "beta"),
+    ("skew-normal", "alpha_dist"),
+    ("ged",         "beta_dist"),
 ])
 def test_distribution_autoarima_threads(distribution, param_key):
     """auto_arima_f must carry distribution through the re-fitting step."""
@@ -858,8 +858,8 @@ def test_distribution_autoarima_threads(distribution, param_key):
 
 @pytest.mark.parametrize("distribution,param_key", [
     ("t",           "nu"),
-    ("skew-normal", "alpha"),
-    ("ged",         "beta"),
+    ("skew-normal", "alpha_dist"),
+    ("ged",         "beta_dist"),
 ])
 def test_distribution_forecast_intervals(distribution, param_key):
     """forecast_arima must produce finite, ordered intervals for every distribution."""

@@ -22,10 +22,11 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.optimize import minimize
 from scipy.signal import convolve
-from scipy.stats import norm, laplace as laplace_dist, t as t_dist, skewnorm as skewnorm_dist, gennorm as gennorm_dist
+from scipy.stats import norm
 
 from ._lib import arima as _arima
 from .mstl import mstl
+from .utils import _VALID_DISTRIBUTIONS, _quantiles
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
@@ -534,9 +535,9 @@ def arima(
         ncxreg += 1
         nmxreg = ["intercept"] + nmxreg
 
-    if distribution not in ("normal", "laplace", "t", "skew-normal", "ged"):
+    if distribution not in _VALID_DISTRIBUTIONS:
         raise ValueError(
-            f"distribution must be 'normal', 'laplace', 't', 'skew-normal', or 'ged', got {distribution!r}"
+            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
         )
     if distribution != "normal" and method == "CSS":
         raise ValueError(
@@ -934,9 +935,9 @@ def arima(
     if distribution == "t" and nu_t is not None:
         ans["nu"] = nu_t
     if distribution == "skew-normal" and alpha_sn is not None:
-        ans["alpha"] = alpha_sn
+        ans["alpha_dist"] = alpha_sn
     if distribution == "ged" and beta_ged is not None:
-        ans["beta"] = beta_ged
+        ans["beta_dist"] = beta_ged
     return ans
 
 
@@ -1507,21 +1508,8 @@ def forecast_arima(
         if bootstrap:
             raise NotImplementedError("bootstrap=True")
         else:
-            p = 0.5 * (1 + np.asarray(level) / 100)
             dist = model.get("distribution", "normal")
-            if dist == "laplace":
-                quantiles = laplace_dist.ppf(p)
-            elif dist == "t":
-                nu = model.get("nu", 5.0)
-                quantiles = t_dist.ppf(p, df=nu)
-            elif dist == "skew-normal":
-                alpha = model.get("alpha", 0.0)
-                quantiles = skewnorm_dist.ppf(p, a=alpha)
-            elif dist == "ged":
-                beta = model.get("beta", 2.0)
-                quantiles = gennorm_dist.ppf(p, beta=beta)
-            else:
-                quantiles = norm.ppf(p)
+            quantiles = _quantiles(level, distribution=dist, dist_params=model)
             lower = pd.DataFrame(
                 pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
                 columns=[f"{l}%" for l in level],
@@ -2669,21 +2657,8 @@ class AutoARIMA:
             _level = sorted(_level)
             arr_level = np.asarray(_level)
             se = np.sqrt(self.model_.model["sigma2"])
-            p = 0.5 * (1 + arr_level / 100)
             dist = self.model_.model.get("distribution", "normal")
-            if dist == "laplace":
-                quantiles = laplace_dist.ppf(p)
-            elif dist == "t":
-                nu = self.model_.model.get("nu", 5.0)
-                quantiles = t_dist.ppf(p, df=nu)
-            elif dist == "skew-normal":
-                alpha = self.model_.model.get("alpha", 0.0)
-                quantiles = skewnorm_dist.ppf(p, a=alpha)
-            elif dist == "ged":
-                beta = self.model_.model.get("beta", 2.0)
-                quantiles = gennorm_dist.ppf(p, beta=beta)
-            else:
-                quantiles = norm.ppf(p)
+            quantiles = _quantiles(_level, distribution=dist, dist_params=self.model_.model)
 
             lo = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
