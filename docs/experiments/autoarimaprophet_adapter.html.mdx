@@ -1,15 +1,15 @@
 ---
-title: AutoARIMA Comparison (Prophet and pmdarima)
+title: AutoARIMAProphet Adapter
 ---
 
-> AutoARIMA is faster and more accurate than FB-Prophet in most cases.
+> AutoArima is faster and more accurate than FB-Prophet in most cases.
 > Replace it with two lines of code.
 
 We benchmarked on more than 100K series and show that you can improve
 *MAPE* and *sMAPE* forecast accuracy by *17%* and *15%* with *37x* less
 computational time.
 
-Now you can replace prophet with two lines of code and verify it for
+Now you can replace Prophet with two lines of code and verify it for
 yourself.
 
 ### Install StatsForecast
@@ -18,24 +18,16 @@ yourself.
 pip install statsforecast
 ```
 
-### Replace prophet to make your forecast a lot faster
+### Replace FB-Prophet to make your forecast a lot faster
 
-<figure>
-<img src="./imgs_autoarima_vs_prophet/comparison-code.png"
-alt="comparison-code" />
-<figcaption aria-hidden="true">comparison-code</figcaption>
-</figure>
+<img src="/imgs/autoarimaprophet/comparison-code.png" alt="comparison-code" />
 
-We respected the original prophet syntax so your pipeline won’t get
+We respected the original Prophet syntax so your pipeline won’t get
 affected.
 
-## Results on M3, M4, Tourism and PeytonManning
+## Results on M3, M4, Tourism and Peyton Manning
 
-<figure>
-<img src="./imgs_autoarima_vs_prophet/comparison.png"
-alt="comparison" />
-<figcaption aria-hidden="true">comparison</figcaption>
-</figure>
+<img src="/imgs/autoarimaprophet/comparison.png" alt="comparison" />
 
 ## Background
 
@@ -70,10 +62,7 @@ cross-validation.
 The following table shows the MAPE, sMAPE and Time (in minutes)
 AutoARIMA improvements on Prophet for each dataset.
 
-<figure>
-<img src="./imgs_autoarima_vs_prophet/results-table.png" alt="table" />
-<figcaption aria-hidden="true">table</figcaption>
-</figure>
+<img src="/imgs/autoarimaprophet/results-table.png" alt="results-table" />
 
 ## Reproducibility
 
