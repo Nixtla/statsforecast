@@ -202,13 +202,6 @@ case, we are just fitting one model to one series. Check this guide to
 learn how to [fit many models to many
 series](../getting-started/2_Getting_Started_complete).
 
-> **Note**
->
-> StatsForecast achieves its blazing speed using JIT compiling through
-> Numba. The first time you call the statsforecast class, the fit method
-> should take around 10 seconds. The second time -once Numba compiled
-> your settings- it should take less than 5s.
-
 ```python
 sf = sf.fit(df=df)
 ```
@@ -333,13 +326,6 @@ the name of the model and the y hat values, as well as columns for the
 uncertainty intervals. Depending on your computer, this step should take
 around 1min. (If you want to speed things up to a couple of seconds,
 remove the AutoModels like ARIMA and Theta)
-
-> **Note**
->
-> StatsForecast achieves its blazing speed using JIT compiling through
-> Numba. The first time you call the statsforecast class, the fit method
-> should take around 10 seconds. The second time -once Numba compiled
-> your settings- it should take less than 5s.
 
 ```python
 forecasts_df = sf.forecast(df=df, h=24, level=[90])
