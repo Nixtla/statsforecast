@@ -143,6 +143,33 @@ def test_conformal_intervals():
     assert list(fcst_conformal.keys()) == ["mean", "lo-90", "lo-80", "hi-80", "hi-90"]
 
 
+def test_conformal_intervals_transform():
+    # Fix for the example in the issue to work with the library's current structure
+    np.random.seed(42)
+    n = 100
+    y = np.random.lognormal(mean=0, sigma=0.1, size=n)
+    y_log = np.log1p(y)
+
+    # Conformal intervals settings with transform and back_transform
+    # This simulates computing residuals in original space, then mapping back to log space
+    ci = ConformalIntervals(h=12, n_windows=2, transform=np.expm1, back_transform=np.log1p)
+    model = AutoARIMA(season_length=12, prediction_intervals=ci)
+
+    # Fit and Predict
+    model.fit(y_log)
+    level = [80, 95]
+    fcst = model.predict(h=12, level=level)
+
+    # Inverse transform
+    for col in ["mean", "lo-80", "hi-80", "lo-95", "hi-95"]:
+        fcst[col] = np.expm1(fcst[col])
+
+    # Check that intervals are reasonable
+    # Without the fix, hi-95 would be massive if errors were computed in log space
+    ratio = fcst["hi-95"] / fcst["mean"]
+    assert ratio.max() < 10  # A reasonable bound for this stable test
+
+
 def assert_class(
     cls_,
     x,
