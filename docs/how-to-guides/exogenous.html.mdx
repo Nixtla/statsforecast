@@ -9,7 +9,7 @@ title: Exogenous Regressors
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](../getting-started/1_Getting_Started_short)
+> Start](../getting-started/getting_started_short.html)
 
 ## Introduction
 
@@ -22,9 +22,10 @@ and by incorporating them into a forecasting model, they can improve the
 accuracy of our predictions.
 
 By the end of this tutorial, you’ll have a good understanding of how to
-incorporate exogenous regressors into [StatsForecast](../../models)’s
-models. Furthermore, you’ll see how to evaluate their performance and
-decide whether or not they can help enhance the forecast.
+incorporate exogenous regressors into
+[StatsForecast](../../src/core/models.html)’s models. Furthermore,
+you’ll see how to evaluate their performance and decide whether or not
+they can help enhance the forecast.
 
 **Outline**
 
@@ -45,7 +46,7 @@ decide whether or not they can help enhance the forecast.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](../getting-started/0_Installation).
+StatsForecast](../getting-started/installation.html).
 
 ```python
 # uncomment the following line to install the library
@@ -83,9 +84,9 @@ X_ts = pd.read_parquet(f'{base_url}/m5_x.parquet', filters=filters)
 
 We can plot the sales of this product-store combination with the
 `statsforecast.plot` method from the
-[StatsForecast](../../core#class-statsforecast) class. This method has
-multiple parameters, and the required ones to generate the plots in this
-notebook are explained below.
+[StatsForecast](../../src/core/core.html#statsforecast) class. This
+method has multiple parameters, and the required ones to generate the
+plots in this notebook are explained below.
 
 -   `df`: A pandas dataframe with columns \[`unique_id`, `ds`, `y`\].
 -   `forecasts_df`: A pandas dataframe with columns \[`unique_id`,
