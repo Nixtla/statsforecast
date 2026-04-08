@@ -15,9 +15,9 @@ ubiquity of this type of series, special methods have been developed to
 forecast them. The first was from [Croston (1972)](#ref), followed by
 several variants and by different aggregation frameworks.
 
-[StatsForecast](../../index) has implemented several models to forecast
-intermittent time series. By the end of this tutorial, you’ll have a
-good understanding of these models and how to use them.
+[StatsForecast](../../index.html) has implemented several models to
+forecast intermittent time series. By the end of this tutorial, you’ll
+have a good understanding of these models and how to use them.
 
 **Outline:**
 
@@ -41,7 +41,7 @@ good understanding of these models and how to use them.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](../getting-started/0_Installation)
+StatsForecast](../getting-started/installation.html)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -142,14 +142,14 @@ test = df[df['ds'] >= valid_start]
 
 StatsForecast has efficient implementations of multiple models for
 intermittent data. The complete list of models available is
-[here](../../models). In this notebook, we’ll use:
+[here](../../src/core/models.html). In this notebook, we’ll use:
 
 -   [Agregate-Dissagregate Intermittent Demand Approach
-    (ADIDA)](../models/ADIDA)
--   [Croston Classic](../models/CrostonClassic)
+    (ADIDA)](../../src/core/models.html#adida)
+-   [Croston Classic](../../src/core/models.html#crostonclassic)
 -   [Intermittent Multiple Aggregation Prediction Algorithm
-    (IMAPA)](../models/IMAPA)
--   [Teunter-Syntetos-Babai (TSB)](../models/TSB)
+    (IMAPA)](../../src/core/models.html#imapa)
+-   [Teunter-Syntetos-Babai (TSB)](../../src/core/models.html#tsb)
 
 To use these models, we first need to import them from
 `statsforecast.models` and then we need to instantiate them.
@@ -196,7 +196,8 @@ Now we’re ready to generate the forecast. To do this, we’ll use the
 
 The models for intermittent series that are currently available in
 StatsForecast can only generate point-forecasts. If prediction intervals
-are needed, then a [probabilisitic model](../../models) should be used.
+are needed, then a [probabilisitic model](../../src/core/models.html)
+should be used.
 
 ```python
 horizon = 28

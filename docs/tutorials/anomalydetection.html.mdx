@@ -9,7 +9,7 @@ title: Anomaly Detection
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](../getting-started/1_Getting_Started_short)
+> Start](../getting-started/getting_started_short.html)
 
 ## Introduction
 
@@ -29,7 +29,7 @@ patterns in energy usage.
 
 By the end of this tutorial, you’ll have a good understanding of how to
 detect anomalies in time series data using
-[StatsForecast](../../index)’s probabilistic models.
+[StatsForecast](../../index.html)’s probabilistic models.
 
 **Outline:**
 
@@ -56,7 +56,7 @@ detect anomalies in time series data using
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](../getting-started/0_Installation)
+StatsForecast](../getting-started/installation.html)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -135,12 +135,12 @@ plot_series(df)
 ## Train model
 
 To generate the forecast, we’ll use the
-[MSTL](../models/MultipleSeasonalTrend) model, which is well-suited for
-low-frequency data like the one used here. We first need to import it
-from `statsforecast.models` and then we need to instantiate it. Since
-we’re using hourly data, we have two seasonal periods: one every 24
-hours (hourly) and one every 24\*7 hours (daily). Hence, we need to set
-`season_length = [24, 24*7]`.
+[MSTL](../../src/core/models.html#multipleseasonaltrend) model, which is
+well-suited for low-frequency data like the one used here. We first need
+to import it from `statsforecast.models` and then we need to instantiate
+it. Since we’re using hourly data, we have two seasonal periods: one
+every 24 hours (hourly) and one every 24\*7 hours (daily). Hence, we
+need to set `season_length = [24, 24*7]`.
 
 ```python
 from statsforecast.models import MSTL
@@ -261,7 +261,7 @@ plot_series(forecasts_df=insample_forecasts, level=[99], plot_anomalies=True, id
 ![](AnomalyDetection_files/figure-markdown_strict/cell-16-output-1.png)
 
 Here we identified the anomalies in the data using the MSTL model, but
-any [probabilistic model](../../models) from StatsForecast can be used.
-We also selected the 99% prediction interval of the insample forecasts,
-but other confidence levels can be used as well.
+any [probabilistic model](../../src/core/models.html) from StatsForecast
+can be used. We also selected the 99% prediction interval of the
+insample forecasts, but other confidence levels can be used as well.
 

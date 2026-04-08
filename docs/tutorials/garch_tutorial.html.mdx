@@ -9,7 +9,7 @@ title: Volatility forecasting (GARCH & ARCH)
 >
 > This tutorial assumes basic familiarity with StatsForecast. For a
 > minimal example visit the [Quick
-> Start](../getting-started/1_Getting_Started_short)
+> Start](../getting-started/getting_started_short.html)
 
 ## Introduction
 
@@ -36,8 +36,9 @@ instruments. They’re also used in risk management to estimate the
 probability of large variations in the price of financial assets.
 
 By the end of this tutorial, you’ll have a good understanding of how to
-implement a GARCH or an ARCH model in [StatsForecast](../../index) and
-how they can be used to analyze and predict financial time series data.
+implement a GARCH or an ARCH model in [StatsForecast](../../index.html)
+and how they can be used to analyze and predict financial time series
+data.
 
 **Outline:**
 
@@ -57,7 +58,7 @@ how they can be used to analyze and predict financial time series data.
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](../getting-started/0_Installation)
+StatsForecast](../getting-started/installation.html)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -234,13 +235,14 @@ than the probability of a small one.
 
 ## Train models
 
-We first need to import the [GARCH](../models/GARCH) and the
-[ARCH](../models/ARCH) models from `statsforecast.models`, and then we
-need to fit them by instantiating a new StatsForecast object. Notice
-that we’ll be using different values of $p$ and $q$. In the next
-section, we’ll determine which ones produce the most accurate model
-using cross-validation. We’ll also import the
-[Naive](../../models#class-naive) model since we’ll use it as a
+We first need to import the
+[GARCH](../../src/core/models.html#GARCH.html) and the
+[ARCH](../../src/core/models.html#ARCH.html) models from
+`statsforecast.models`, and then we need to fit them by instantiating a
+new StatsForecast object. Notice that we’ll be using different values of
+$p$ and $q$. In the next section, we’ll determine which ones produce the
+most accurate model using cross-validation. We’ll also import the
+[Naive](../../src/core/models.html#naive) model since we’ll use it as a
 baseline.
 
 ```python
@@ -338,7 +340,8 @@ StatsForecast.plot(returns, cv_df.drop(['cutoff', 'actual'], axis=1))
 
 ![](GARCH_tutorial_files/figure-markdown_strict/cell-16-output-1.png)
 
-A tutorial on cross-validation can be found [here](./CrossValidation)
+A tutorial on cross-validation can be found
+[here](./crossvalidation.html)
 
 ## Evaluate results
 

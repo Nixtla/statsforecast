@@ -22,7 +22,7 @@ In this tutorial, you’ll discover how to:
 
 This tutorial assumes basic familiarity with StatsForecast. For a
 minimal example visit the [Quick
-Start](../getting-started/1_Getting_Started_short)
+Start](../getting-started/getting_started_short.html)
 
 ## What is Conformal Prediction?
 
@@ -71,7 +71,7 @@ list](https://github.com/valeman/awesome-conformal-prediction).
 ## Models with Native Prediction Intervals
 
 For models that already provide forecast distributions (like AutoARIMA,
-AutoETS), check [Prediction Intervals](./UncertaintyIntervals).
+AutoETS), check [Prediction Intervals](./uncertaintyintervals.html).
 Conformal prediction is particularly useful for models that only produce
 point forecasts, or when you want distribution-free intervals.
 
@@ -101,15 +101,15 @@ Conformal prediction is particularly valuable for:
 -   **Production models**: Any black-box forecasting model requiring
     uncertainty quantification
 
-[StatsForecast](../../index) implements conformal prediction for all
-available models, making it easy to add calibrated prediction intervals
-to any forecasting pipeline.
+[StatsForecast](../../index.html) implements conformal prediction for
+all available models, making it easy to add calibrated prediction
+intervals to any forecasting pipeline.
 
 ## Install libraries
 
 We assume that you have StatsForecast already installed. If not, check
 this guide for instructions on [how to install
-StatsForecast](../getting-started/0_Installation)
+StatsForecast](../getting-started/installation.html)
 
 Install the necessary packages using `pip install statsforecast`
 
@@ -190,12 +190,12 @@ StatsForecast makes it simple to add conformal prediction to any
 forecasting model. We’ll demonstrate with models that don’t natively
 provide prediction intervals:
 
--   **[SeasonalExponentialSmoothing](../models/SimpleExponentialSmoothing)**:
+-   **[SeasonalExponentialSmoothing](../../src/core/models.html#SimpleExponentialSmoothing)**:
     A simple smoothing model
--   **[ADIDA](../models/ADIDA)**: Aggregation method for intermittent
-    demand
--   **[ARIMA](../models/ARIMA)**: Traditional statistical model (to show
-    distribution-free intervals)
+-   **[ADIDA](../../src/core/models.html#adida)**: Aggregation method
+    for intermittent demand
+-   **[ARIMA](../../src/core/models.html#ARIMA)**: Traditional
+    statistical model (to show distribution-free intervals)
 
 ### Setting Up Conformal Intervals
 
@@ -382,7 +382,7 @@ please let us know by opening an issue on
 -   Experiment with different `n_windows` values for optimal calibration
 -   Compare with native prediction intervals from statistical models
 -   Explore [advanced uncertainty quantification
-    methods](./UncertaintyIntervals)
+    methods](./uncertaintyintervals.html)
 
 ## Acknowledgements
 

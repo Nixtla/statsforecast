@@ -144,7 +144,7 @@ Y_df['unique_id'] = Y_df['unique_id'].astype(str)
 
 Plot some series using the plot method from the `StatsForecast` class.
 This method prints 8 random series from the dataset and is useful for
-basic [EDA](../../core#method-plot).
+basic [EDA](../../src/core/core.html#plot).
 
 ```python
 from statsforecast import StatsForecast
@@ -494,7 +494,7 @@ Key features of `NeuralForecast` include:
 This machine doesn’t have GPU, but Google Colabs offers some for free.
 
 Using [Colab’s GPU to train
-NeuralForecast](../../../neuralforecast/docs/tutorials/11_intermittent_data).
+NeuralForecast](../../../neuralforecast/docs/tutorials/intermittent_data.html).
 
 ```python
 # Read the results from Colab
@@ -705,7 +705,7 @@ cv_mlf_df.head()
 This machine doesn’t have GPU, but Google Colabs offers some for free.
 
 Using [Colab’s GPU to train
-NeuralForecast](../../../neuralforecast/docs/tutorials/11_intermittent_data).
+NeuralForecast](../../../neuralforecast/docs/tutorials/intermittent_data.html).
 
 ```python
 cv_nf_df = pd.read_parquet('https://m5-benchmarks.s3.amazonaws.com/data/cross-validation-nf.parquet')
@@ -981,15 +981,17 @@ sf.plot(Y_df, fcst_df, max_insample_length=28 * 3)
 
 # Further materials
 
--   [Available Models StatsForecast](../../models)
--   [Available Models NeuralForecast](../../../neuralforecast/models)
--   [Scalers and Loss Functions](../../../neuralforecast/losses.pytorch)
+-   [Available Models StatsForecast](../../src/core/models.html)
+-   [Available Models
+    NeuralForecast](../../../neuralforecast/models.html)
+-   [Scalers and Loss
+    Functions](../../../neuralforecast/losses.pytorch.html)
 -   [Getting Started
-    NeuralForecast](../../../neuralforecast/tutorials/01_getting_started_complete)
+    NeuralForecast](../../../neuralforecast/tutorials/getting_started_complete.html)
 -   [Hierarchical
-    Reconciliation](../../../hierarchicalforecast/examples/TourismSmall)
+    Reconciliation](../../../hierarchicalforecast/examples/tourismsmall.html)
 -   [Distributed ML Forecast
-    (trees)](../../../mlforecast/docs/getting-started/quick_start_distributed)
+    (trees)](../../../mlforecast/docs/getting-started/quick_start_distributed.html)
 -   [Using StatsForecast to train millions of time
     series](https://www.anyscale.com/blog/how-nixtla-uses-ray-to-accurately-predict-more-than-a-million-time-series)
 -   [Intermittent Demand Forecasting With Nixtla on

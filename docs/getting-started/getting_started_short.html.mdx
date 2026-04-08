@@ -13,7 +13,7 @@ paramount and you want to explore the fitted values and parameters.
 >
 > If you want to forecast many series, we recommend using the `forecast`
 > method. Check this [Getting Started with multiple time
-> series](../../2_Getting_Started_complete) guide.
+> series](./getting_started_complete.html) guide.
 
 The input to StatsForecast is always a data frame in [long
 format](https://www.theanalysisfactor.com/wide-and-long-data/) with
@@ -34,7 +34,7 @@ to 1960. The CSV is available
 [here](https://www.kaggle.com/datasets/chirag19/air-passengers).
 
 We assume you have StatsForecast already installed. Check this guide for
-instructions on [how to install StatsForecast](../../0_Installation).
+instructions on [how to install StatsForecast](./installation.html).
 
 First, we’ll import the data:
 
@@ -63,11 +63,11 @@ df.head()
 | 4   | AirPassengers | 1949-05-01 | 121 |
 
 We fit the model by instantiating a new `StatsForecast` object with its
-[two required parameters](../../models): \* `models`: a list of models.
-Select the models you want from [models](../../models) and import them.
-For this example, we will use a `AutoARIMA` model. We set
-`season_length` to 12 because we expect seasonal effects every 12
-months. (See: [Seasonal
+[two required parameters](../../src/core/models.html): \* `models`: a
+list of models. Select the models you want from
+[models](../../src/core/models.html) and import them. For this example,
+we will use a `AutoARIMA` model. We set `season_length` to 12 because we
+expect seasonal effects every 12 months. (See: [Seasonal
 periods](https://robjhyndman.com/hyndsight/seasonal-periods/))
 
 -   `freq`: a string indicating the frequency of the data. (See [pandas
@@ -136,9 +136,10 @@ sf.plot(df, forecast_df, level=[90])
 > **Next Steps**
 >
 > -   Build and end-to-end forecasting pipeline following best practices
->     in [End to End Walkthrough](./2_Getting_Started_complete)
-> -   [Forecast millions of series](../experiments/Prophet_spark_m5) in
->     a scalable cluster in the cloud using Spark and Nixtla
-> -   [Detect anomalies](../tutorials/AnomalyDetection) in your past
->     observations
+>     in [End to End Walkthrough](./getting_started_complete.html)
+> -   [Forecast millions of
+>     series](../experiments/prophet_spark_m5.html) in a scalable
+>     cluster in the cloud using Spark and Nixtla
+> -   [Detect anomalies](../tutorials/anomalydetection.html) in your
+>     past observations
 
