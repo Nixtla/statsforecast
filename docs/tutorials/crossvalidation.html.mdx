@@ -118,7 +118,7 @@ method.
 StatsForecast.plot(df)
 ```
 
-![](CrossValidation_files/figure-markdown_strict/cell-7-output-1.png)
+![](./CrossValidation_files/figure-markdown_strict/cell-7-output-1.png)
 
 ## Train model
 
@@ -219,11 +219,11 @@ for k in range(len(cutoff)):
     display(StatsForecast.plot(df, cv.loc[:, cv.columns != 'cutoff']))
 ```
 
-![](CrossValidation_files/figure-markdown_strict/cell-13-output-1.png)
+![](./CrossValidation_files/figure-markdown_strict/cell-13-output-1.png)
 
-![](CrossValidation_files/figure-markdown_strict/cell-13-output-2.png)
+![](./CrossValidation_files/figure-markdown_strict/cell-13-output-2.png)
 
-![](CrossValidation_files/figure-markdown_strict/cell-13-output-3.png)
+![](./CrossValidation_files/figure-markdown_strict/cell-13-output-3.png)
 
 Notice that in each cutoff period, we generated a forecast for the next
 24 hours using only the data `y` before said period.

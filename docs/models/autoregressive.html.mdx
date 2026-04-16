@@ -521,7 +521,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](AutoRegressive_files/figure-markdown_strict/cell-9-output-1.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-9-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -649,7 +649,7 @@ def tsplot(y, lags=None, figsize=(12, 7), style='bmh'): # [3]
 tsplot(df["y"].diff().dropna(), lags=20);
 ```
 
-![](AutoRegressive_files/figure-markdown_strict/cell-15-output-1.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-15-output-1.png)
 
 As you can see, based on the blue background shaded area of the graph,
 the PACF shows the first, second, third, fourth, sixth, seventh, ninth,
@@ -718,7 +718,7 @@ sns.lineplot(test, x="ds", y="y", label="Test")
 plt.show()
 ```
 
-![](AutoRegressive_files/figure-markdown_strict/cell-18-output-1.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-18-output-1.png)
 
 # Implementation of AutoRegressive with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -845,7 +845,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](AutoRegressive_files/figure-markdown_strict/cell-26-output-1.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-26-output-1.png)
 
 ### Forecast Method
 
@@ -939,7 +939,7 @@ Y_hat1
 sf.plot(train, Y_hat1)
 ```
 
-![](AutoRegressive_files/figure-markdown_strict/cell-31-output-1.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-31-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -996,7 +996,7 @@ forecast_df
 sf.plot(train, test.merge(forecast_df), level=[95])
 ```
 
-![](AutoRegressive_files/figure-markdown_strict/cell-34-output-1.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-34-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -1092,15 +1092,15 @@ for k in range(len(cutoff)):
     display(StatsForecast.plot(df, cv.loc[:, cv.columns != 'cutoff']))
 ```
 
-![](AutoRegressive_files/figure-markdown_strict/cell-38-output-1.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-38-output-1.png)
 
-![](AutoRegressive_files/figure-markdown_strict/cell-38-output-2.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-38-output-2.png)
 
-![](AutoRegressive_files/figure-markdown_strict/cell-38-output-3.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-38-output-3.png)
 
-![](AutoRegressive_files/figure-markdown_strict/cell-38-output-4.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-38-output-4.png)
 
-![](AutoRegressive_files/figure-markdown_strict/cell-38-output-5.png)
+![](./AutoRegressive_files/figure-markdown_strict/cell-38-output-5.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 

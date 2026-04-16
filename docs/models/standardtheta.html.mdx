@@ -304,7 +304,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](StandardTheta_files/figure-markdown_strict/cell-8-output-1.png)
+![](./StandardTheta_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
 
@@ -320,7 +320,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](StandardTheta_files/figure-markdown_strict/cell-9-output-1.png)
+![](./StandardTheta_files/figure-markdown_strict/cell-9-output-1.png)
 
 ### Decomposition of the time series
 
@@ -383,7 +383,7 @@ a = seasonal_decompose(df["y"], model = "additive", period=12)
 a.plot();
 ```
 
-![](StandardTheta_files/figure-markdown_strict/cell-10-output-1.png)
+![](./StandardTheta_files/figure-markdown_strict/cell-10-output-1.png)
 
 ### Multiplicative
 
@@ -393,7 +393,7 @@ a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
 a.plot();
 ```
 
-![](StandardTheta_files/figure-markdown_strict/cell-11-output-1.png)
+![](./StandardTheta_files/figure-markdown_strict/cell-11-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -531,7 +531,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](StandardTheta_files/figure-markdown_strict/cell-20-output-1.png)
+![](./StandardTheta_files/figure-markdown_strict/cell-20-output-1.png)
 
 ### Forecast Method
 
@@ -608,7 +608,7 @@ sf.forecast(df=train, h=horizon, level=[95])
 sf.plot(train, Y_hat)
 ```
 
-![](StandardTheta_files/figure-markdown_strict/cell-24-output-1.png)
+![](./StandardTheta_files/figure-markdown_strict/cell-24-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -665,7 +665,7 @@ forecast_df
 sf.plot(train, test.merge(forecast_df), level=[80, 95])
 ```
 
-![](StandardTheta_files/figure-markdown_strict/cell-27-output-1.png)
+![](./StandardTheta_files/figure-markdown_strict/cell-27-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

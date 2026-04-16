@@ -152,7 +152,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(train, test, plot_random=False)
 ```
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-11-output-1.png)
+![](./UncertaintyIntervals_files/figure-markdown_strict/cell-11-output-1.png)
 
 ## Train models
 
@@ -262,7 +262,7 @@ specify the model and the levels that we want to plot.
 sf.plot(train, test, plot_random=False, models=['AutoETS'], level=levels)
 ```
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-17-output-1.png)
+![](./UncertaintyIntervals_files/figure-markdown_strict/cell-17-output-1.png)
 
 ### Historic Average
 
@@ -270,7 +270,7 @@ sf.plot(train, test, plot_random=False, models=['AutoETS'], level=levels)
 sf.plot(train, test, plot_random=False, models=['HistoricAverage'], level=levels)
 ```
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-18-output-1.png)
+![](./UncertaintyIntervals_files/figure-markdown_strict/cell-18-output-1.png)
 
 ### Naive
 
@@ -278,7 +278,7 @@ sf.plot(train, test, plot_random=False, models=['HistoricAverage'], level=levels
 sf.plot(train, test, plot_random=False, models=['Naive'], level=levels)
 ```
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-19-output-1.png)
+![](./UncertaintyIntervals_files/figure-markdown_strict/cell-19-output-1.png)
 
 ### Random Walk with Drift
 
@@ -286,7 +286,7 @@ sf.plot(train, test, plot_random=False, models=['Naive'], level=levels)
 sf.plot(train, test, plot_random=False, models=['RWD'], level=levels)
 ```
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-20-output-1.png)
+![](./UncertaintyIntervals_files/figure-markdown_strict/cell-20-output-1.png)
 
 ### Seasonal Naive
 
@@ -294,7 +294,7 @@ sf.plot(train, test, plot_random=False, models=['RWD'], level=levels)
 sf.plot(train, test, plot_random=False, models=['SeasonalNaive'], level=levels)
 ```
 
-![](UncertaintyIntervals_files/figure-markdown_strict/cell-21-output-1.png)
+![](./UncertaintyIntervals_files/figure-markdown_strict/cell-21-output-1.png)
 
 From these plots, we can conclude that the uncertainty around each
 forecast varies according to the model that is being used. For the same

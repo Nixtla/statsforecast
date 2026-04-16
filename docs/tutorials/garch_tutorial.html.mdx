@@ -178,7 +178,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(prices)
 ```
 
-![](GARCH_tutorial_files/figure-markdown_strict/cell-9-output-1.png)
+![](./GARCH_tutorial_files/figure-markdown_strict/cell-9-output-1.png)
 
 With the prices, we can compute the logarithmic returns of the S&P 500
 and the publicly traded companies. This is the variable we’re interested
@@ -225,7 +225,7 @@ returns
 StatsForecast.plot(returns)
 ```
 
-![](GARCH_tutorial_files/figure-markdown_strict/cell-11-output-1.png)
+![](./GARCH_tutorial_files/figure-markdown_strict/cell-11-output-1.png)
 
 From this plot, we can see that the returns seem suited for the GARCH
 framework, since large shocks *tend* to be followed by other large
@@ -338,7 +338,7 @@ cv_df.head()
 StatsForecast.plot(returns, cv_df.drop(['cutoff', 'actual'], axis=1))
 ```
 
-![](GARCH_tutorial_files/figure-markdown_strict/cell-16-output-1.png)
+![](./GARCH_tutorial_files/figure-markdown_strict/cell-16-output-1.png)
 
 A tutorial on cross-validation can be found
 [here](./crossvalidation.html)
@@ -446,7 +446,7 @@ method:
 StatsForecast.plot(returns, forecasts, max_insample_length=20)
 ```
 
-![](GARCH_tutorial_files/figure-markdown_strict/cell-22-output-1.png)
+![](./GARCH_tutorial_files/figure-markdown_strict/cell-22-output-1.png)
 
 ## References
 

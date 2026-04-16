@@ -167,7 +167,7 @@ StatsForecast.plot(Y_df, unique_ids=["FOODS_3_432_TX_2"])
 StatsForecast.plot(Y_df, unique_ids=["FOODS_3_432_TX_2"], engine ='matplotlib')
 ```
 
-![](StatisticalNeuralMethods_files/figure-markdown_strict/cell-9-output-1.png)
+![](./StatisticalNeuralMethods_files/figure-markdown_strict/cell-9-output-1.png)
 
 # Create forecasts with Stats, Ml and Neural methods.
 
@@ -912,7 +912,7 @@ evaluation_df_melted = pd.melt(evaluation_df, id_vars=['unique_id', 'cutoff', 'm
 sns.violinplot(evaluation_df_melted.query('metric=="smape"'), x='error', y='model')
 ```
 
-![](StatisticalNeuralMethods_files/figure-markdown_strict/cell-50-output-1.png)
+![](./StatisticalNeuralMethods_files/figure-markdown_strict/cell-50-output-1.png)
 
 ### Choose models for groups of series
 
@@ -932,7 +932,7 @@ count_best_model = evaluation_df.groupby(['cutoff', 'metric', 'best_model']).siz
 sns.barplot(count_best_model, x='n', y='best_model', hue='metric')
 ```
 
-![](StatisticalNeuralMethods_files/figure-markdown_strict/cell-51-output-1.png)
+![](./StatisticalNeuralMethods_files/figure-markdown_strict/cell-51-output-1.png)
 
 ### Et pluribus unum: an inclusive forecasting Pie.
 
@@ -945,7 +945,7 @@ plt.pie(counts_series, labels=counts_series.index, autopct='%.0f%%')
 plt.show()
 ```
 
-![](StatisticalNeuralMethods_files/figure-markdown_strict/cell-52-output-1.png)
+![](./StatisticalNeuralMethods_files/figure-markdown_strict/cell-52-output-1.png)
 
 ```python
 sf.plot(Y_df, cv_df.drop(columns=['cutoff', 'y']),

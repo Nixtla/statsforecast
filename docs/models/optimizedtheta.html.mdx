@@ -358,7 +358,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-8-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
 
@@ -374,7 +374,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-9-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-9-output-1.png)
 
 ### Decomposition of the time series
 
@@ -437,7 +437,7 @@ a = seasonal_decompose(df["y"], model = "additive", period=12)
 a.plot();
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-10-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-10-output-1.png)
 
 ### Multiplicative
 
@@ -447,7 +447,7 @@ a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
 a.plot();
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-11-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-11-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -586,7 +586,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-20-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-20-output-1.png)
 
 ### Forecast Method
 
@@ -649,7 +649,7 @@ values.head()
 StatsForecast.plot(values)
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-23-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-23-output-1.png)
 
 Adding 95% confidence interval with the forecast method
 
@@ -671,7 +671,7 @@ sf.forecast(df=train, h=horizon, level=[95])
 sf.plot(train, Y_hat)
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-25-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-25-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -728,7 +728,7 @@ forecast_df
 sf.plot(train, test.merge(forecast_df), level=[80, 95])
 ```
 
-![](OptimizedTheta_files/figure-markdown_strict/cell-28-output-1.png)
+![](./OptimizedTheta_files/figure-markdown_strict/cell-28-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

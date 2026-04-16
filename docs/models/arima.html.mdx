@@ -390,7 +390,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](ARIMA_files/figure-markdown_strict/cell-8-output-1.png)
+![](./ARIMA_files/figure-markdown_strict/cell-8-output-1.png)
 
 Looking at the plot we can observe there is an upward trend over the
 period of time.
@@ -411,7 +411,7 @@ max      83.346341
 Name: y, Length: 8, dtype: float64
 ```
 
-![](ARIMA_files/figure-markdown_strict/cell-9-output-2.png)
+![](./ARIMA_files/figure-markdown_strict/cell-9-output-2.png)
 
 ### Seasonal Decomposed
 
@@ -477,7 +477,7 @@ decomposed.plot()
 plt.show()
 ```
 
-![](ARIMA_files/figure-markdown_strict/cell-11-output-1.png)
+![](./ARIMA_files/figure-markdown_strict/cell-11-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -623,7 +623,7 @@ plot_acf(df1["y"].diff().dropna(), ax=axes[1, 1],lags=20)
 plt.show()
 ```
 
-![](ARIMA_files/figure-markdown_strict/cell-17-output-1.png)
+![](./ARIMA_files/figure-markdown_strict/cell-17-output-1.png)
 
 -   For the above data, we can see that the time series reaches
     stationarity with one orders of differencing.
@@ -664,7 +664,7 @@ plot_pacf(df1["y"].diff().dropna(), ax=axes[1],lags=20)
 plt.show()
 ```
 
-![](ARIMA_files/figure-markdown_strict/cell-18-output-1.png)
+![](./ARIMA_files/figure-markdown_strict/cell-18-output-1.png)
 
 -   We can see that the PACF lag 1 is quite significant since it is well
     above the significance line. So, we will fix the value of p as 1.
@@ -691,7 +691,7 @@ plot_acf(df["y"].diff().dropna(), ax=axes[1], lags=20)
 plt.show()
 ```
 
-![](ARIMA_files/figure-markdown_strict/cell-19-output-1.png)
+![](./ARIMA_files/figure-markdown_strict/cell-19-output-1.png)
 
 -   We can see that couple of lags are well above the significance line.
     So, we will fix q as 1. If there is any doubt, we will go with the
@@ -802,7 +802,7 @@ to see the generated behavior of our model.
 sf.plot(df, Y_hat_df, level=[95])
 ```
 
-![](ARIMA_files/figure-markdown_strict/cell-26-output-1.png)
+![](./ARIMA_files/figure-markdown_strict/cell-26-output-1.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 
