@@ -38,7 +38,10 @@ __all__ = [
     "ConstantModel",
     "ZeroModel",
     "NaNModel",
-    "UCM"
+    "UCM",
+    "LocalLevel",
+    "LocalLinearTrend",
+    "SmoothTrend",
 ]
 
 
