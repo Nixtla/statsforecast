@@ -178,6 +178,7 @@ class UCM:
         """Create a copy of the model."""
         b = type(self).__new__(type(self))
         b.__dict__.update(self.__dict__)
+        b.model_ = None
         return b
 
     def _build_model(self, y: np.ndarray, X: Optional[np.ndarray] = None):
