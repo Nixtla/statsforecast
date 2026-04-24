@@ -192,16 +192,12 @@ def ray_session():
         yield None
         return
 
-    # Initialize Ray with runtime environment to exclude large files
     if not ray.is_initialized():
         ray.init(
             num_cpus=2,
             ignore_reinit_error=True,
             include_dashboard=False,
             _metrics_export_port=None,
-            runtime_env={
-                "working_dir": None,  # Don't upload working directory for local testing
-            },
         )
 
     yield ray

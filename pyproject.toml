@@ -65,7 +65,7 @@ dask = ["dask", "fugue[dask]>=0.9.4"]
 ray = [
     "fugue[ray]>=0.9.4 ; sys_platform != 'win32'",
     "protobuf>=5.29.6 ; python_version < '3.12'",
-    "ray>=2.55.0 ; sys_platform != 'win32'",
+    "ray>=2.55.0 ; sys_platform != 'win32' and python_version >= '3.14'",
 ]
 spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
 all = [
@@ -73,7 +73,7 @@ all = [
     "fugue[dask]>=0.9.4",
     "fugue[spark]>=0.9.4",
     "fugue[ray]>=0.9.4 ; sys_platform != 'win32'",
-    "ray>=2.55.0 ; sys_platform != 'win32'",
+    "ray>=2.55.0 ; sys_platform != 'win32' and python_version >= '3.14'",
     "pyspark<4.1.0; sys_platform == 'win32'",
     "plotly",
     "plotly-resampler ; python_version < '3.14'",
