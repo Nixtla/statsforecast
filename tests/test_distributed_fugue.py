@@ -1,4 +1,6 @@
+import shutil
 import sys
+import tempfile
 
 import dask.dataframe as dd
 import numpy as np
@@ -192,19 +194,21 @@ def ray_session():
         yield None
         return
 
+    tmp_dir = tempfile.mkdtemp(prefix="ray_test_")
     if not ray.is_initialized():
         ray.init(
             num_cpus=2,
             ignore_reinit_error=True,
             include_dashboard=False,
             _metrics_export_port=None,
+            runtime_env={"working_dir": tmp_dir},
         )
 
     yield ray
 
-    # Cleanup: shutdown Ray after all tests in this module complete
     if ray.is_initialized():
         ray.shutdown()
+    shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 @pytest.fixture

@@ -3524,7 +3524,7 @@ all = [
     { name = "pyspark", marker = "sys_platform == 'win32'" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "ray", marker = "sys_platform != 'win32'" },
+    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
     { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "setuptools" },
@@ -3559,7 +3559,7 @@ dev = [
 ray = [
     { name = "fugue", extra = ["ray"], marker = "sys_platform != 'win32'" },
     { name = "protobuf", marker = "python_full_version < '3.12'" },
-    { name = "ray", marker = "sys_platform != 'win32'" },
+    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
 ]
 spark = [
     { name = "fugue", extra = ["spark"] },
@@ -3602,7 +3602,7 @@ all = [
     { name = "pyspark", marker = "sys_platform == 'win32'", specifier = "<4.1.0" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "ray", marker = "sys_platform != 'win32'", specifier = ">=2.55.0" },
+    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'", specifier = ">=2.55.0" },
     { name = "scikit-learn" },
     { name = "setuptools", specifier = "<79" },
     { name = "supersmoother" },
@@ -3635,7 +3635,7 @@ dev = [
 ray = [
     { name = "fugue", extras = ["ray"], marker = "sys_platform != 'win32'", specifier = ">=0.9.4" },
     { name = "protobuf", marker = "python_full_version < '3.12'", specifier = ">=5.29.6" },
-    { name = "ray", marker = "sys_platform != 'win32'", specifier = ">=2.55.0" },
+    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'", specifier = ">=2.55.0" },
 ]
 spark = [
     { name = "fugue", extras = ["spark"], specifier = ">=0.9.4" },
