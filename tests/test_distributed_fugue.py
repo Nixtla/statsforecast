@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 import tempfile
@@ -195,6 +196,10 @@ def ray_session():
         return
 
     tmp_dir = tempfile.mkdtemp(prefix="ray_test_")
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    pyproject = os.path.join(project_root, "pyproject.toml")
+    if os.path.exists(pyproject):
+        shutil.copy(pyproject, tmp_dir)
     if not ray.is_initialized():
         ray.init(
             num_cpus=2,
