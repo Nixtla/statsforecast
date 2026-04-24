@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-if sys.platform != "win32" and sys.version_info < (3, 14):
+if sys.platform != "win32":
     import ray
 from dask.distributed import Client
 from fugue_dask import DaskExecutionEngine
@@ -188,7 +188,7 @@ def test_distribute_cv_predictions(df):
 @pytest.fixture(scope="module")
 def ray_session():
     """Initialize Ray once for all tests in this module and shutdown afterwards."""
-    if sys.platform == "win32" or sys.version_info >= (3, 14):
+    if sys.platform == "win32":
         yield None
         return
 
@@ -214,8 +214,8 @@ def ray_session():
 @pytest.fixture
 def ray_df(ray_session):
     """Generate test data as Ray Dataset."""
-    if sys.platform == "win32" or sys.version_info >= (3, 14):
-        pytest.skip("Ray is not available on Windows or Python 3.14+.")
+    if sys.platform == "win32":
+        pytest.skip("Ray is not available on Windows")
 
     # Generate Synthetic Panel Data.
     df = generate_series(5).reset_index()
@@ -225,8 +225,8 @@ def ray_df(ray_session):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32" or sys.version_info >= (3, 14),
-    reason="Ray is not available on Windows or Python 3.14+.",
+    sys.platform == "win32",
+    reason="Ray is not available on Windows",
 )
 def test_ray_cv_predictions(ray_df):
     df = ray_df
@@ -262,8 +262,8 @@ def test_ray_cv_predictions(ray_df):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32" or sys.version_info >= (3, 14),
-    reason="Ray is not available on Windows or Python 3.14+.",
+    sys.platform == "win32",
+    reason="Ray is not available on Windows",
 )
 def test_ray_cv_fallback_model(ray_df):
     df = ray_df
@@ -282,8 +282,8 @@ def test_ray_cv_fallback_model(ray_df):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32" or sys.version_info >= (3, 14),
-    reason="Ray is not available on Windows or Python 3.14+.",
+    sys.platform == "win32",
+    reason="Ray is not available on Windows",
 )
 def test_ray_distributed_exogenous_regressors(df_w_ex):
     df_w_ex, train_df, test_df, xreg = df_w_ex
