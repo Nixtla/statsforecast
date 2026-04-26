@@ -286,7 +286,13 @@ def simulate_theta(
     if seed is not None:
         np.random.seed(seed)
 
-    sigma = np.std(model["residuals"][3:], ddof=1)
+    residuals_tail = model["residuals"][3:]
+    if len(residuals_tail) < 2:
+        import warnings
+        warnings.warn("Too few residuals after burn-in for sigma estimate; using all residuals")
+        sigma = np.std(model["residuals"], ddof=1)
+    else:
+        sigma = np.std(residuals_tail, ddof=1)
     residuals = model["residuals"][3:]  # For bootstrap
 
     samples = compute_pi_samples(
@@ -333,7 +339,13 @@ def forecast_theta(obj, h, level=None):
     res = {"mean": forecast}
 
     if level is not None:
-        sigma = np.std(obj["residuals"][3:], ddof=1)
+        residuals_tail = obj["residuals"][3:]
+        if len(residuals_tail) < 2:
+            import warnings
+            warnings.warn("Too few residuals after burn-in for sigma estimate; using all residuals")
+            sigma = np.std(obj["residuals"], ddof=1)
+        else:
+            sigma = np.std(residuals_tail, ddof=1)
         mean_y = obj["mean_y"]
         samples = compute_pi_samples(
             n=n,
