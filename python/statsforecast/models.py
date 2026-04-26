@@ -1,11 +1,13 @@
 __all__ = [
     "AutoARIMA",
+    "AutoMSARIMAX",
     "AutoETS",
     "AutoCES",
     "AutoTheta",
     "AutoMFLES",
     "AutoTBATS",
     "ARIMA",
+    "MSARIMAX",
     "AutoRegressive",
     "SimpleExponentialSmoothing",
     "SimpleExponentialSmoothingOptimized",
@@ -81,6 +83,12 @@ from .ces import auto_ces, forecast_ces, forward_ces
 from .garch import garch_forecast, garch_model
 from .mfles import MFLES as _MFLES
 from .mstl import mstl
+from .msarimax import (
+    auto_msarimax,
+    fitted_msarimax,
+    forecast_msarimax,
+    msarimax,
+)
 from .tbats import _compute_sigmah, tbats_forecast, tbats_selection
 from .theta import auto_theta, forecast_theta, forward_theta
 from .ucm import UCM, LocalLevel, LocalLinearTrend, SmoothTrend  # noqa: F401
@@ -2076,6 +2084,248 @@ class ARIMA(_TS):
                 se = np.sqrt(mod["sigma2"])
                 res = _add_fitted_pi(res=res, se=se, level=level)
         return res
+
+
+class MSARIMAX(_TS):
+    r"""Multiple-seasonal SARIMAX model.
+
+    Args:
+        lags (list, default=(1,)): Seasonal lag levels.
+        ar_order (int or list, default=0): Autoregressive order at each lag level.
+        i_order (int or list, default=1): Differencing order at each lag level.
+        ma_order (int or list, default=1): Moving-average order at each lag level.
+        include_constant (bool, default=False): Include a constant in the differenced
+            SARIMAX equation.
+        method (str, default="lbfgs"): statsmodels optimizer.
+        maxiter (int, default=200): Maximum optimizer iterations.
+        alias (str, default="MSARIMAX"): Custom name of the model.
+        prediction_intervals (Optional[ConformalIntervals]): Information to compute
+            conformal prediction intervals. By default, the model will compute native
+            prediction intervals.
+    """
+
+    uses_exog = True
+
+    def __init__(
+        self,
+        lags: Union[int, List[int], Tuple[int, ...]] = (1,),
+        ar_order: Union[int, List[int], Tuple[int, ...]] = 0,
+        i_order: Union[int, List[int], Tuple[int, ...]] = 1,
+        ma_order: Union[int, List[int], Tuple[int, ...]] = 1,
+        include_constant: bool = False,
+        method: str = "lbfgs",
+        maxiter: int = 200,
+        alias: str = "MSARIMAX",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
+        self.lags = lags
+        self.ar_order = ar_order
+        self.i_order = i_order
+        self.ma_order = ma_order
+        self.include_constant = include_constant
+        self.method = method
+        self.maxiter = maxiter
+        self.alias = alias
+        self.prediction_intervals = prediction_intervals
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
+        y = _ensure_float(y)
+        self.model_ = msarimax(
+            y=y,
+            lags=self.lags,
+            ar_order=self.ar_order,
+            i_order=self.i_order,
+            ma_order=self.ma_order,
+            xreg=X,
+            include_constant=self.include_constant,
+            method=self.method,
+            maxiter=self.maxiter,
+        )
+        self._store_cs(y=y, X=X)
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+    ):
+        fcst = forecast_msarimax(self.model_, h=h, xreg=X, level=level)
+        return self._format_forecast(fcst, level)
+
+    def predict_in_sample(self, level: Optional[List[int]] = None):
+        mean = fitted_msarimax(self.model_)
+        res = {"fitted": mean}
+        if level is not None:
+            se = np.sqrt(self.model_["sigma2"])
+            res = _add_fitted_pi(res=res, se=se, level=level)
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        y = _ensure_float(y)
+        mod = msarimax(
+            y=y,
+            lags=self.lags,
+            ar_order=self.ar_order,
+            i_order=self.i_order,
+            ma_order=self.ma_order,
+            xreg=X,
+            include_constant=self.include_constant,
+            method=self.method,
+            maxiter=self.maxiter,
+        )
+        fcst = forecast_msarimax(mod, h=h, xreg=X_future, level=level)
+        res = self._format_forecast(fcst, level)
+        if fitted:
+            res["fitted"] = fitted_msarimax(mod)
+        if level is not None:
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(
+                    fcst=res, y=y, X=X, level=sorted(level)
+                )
+            elif fitted:
+                se = np.sqrt(mod["sigma2"])
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        return res
+
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        return self.forecast(
+            y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
+        )
+
+    def _format_forecast(self, fcst: Dict, level: Optional[List[int]]):
+        mean = fcst["mean"]
+        res = {"mean": mean}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            return self._add_predict_conformal_intervals(res, level)
+        return {
+            "mean": mean,
+            **{f"lo-{l}": fcst["lower"][f"{l}%"] for l in reversed(level)},
+            **{f"hi-{l}": fcst["upper"][f"{l}%"] for l in level},
+        }
+
+
+class AutoMSARIMAX(MSARIMAX):
+    r"""Automatic multiple-seasonal SARIMAX model.
+
+    Searches over bounded AR, differencing and MA orders for each lag level and
+    selects the model with the best information criterion.
+
+    Args:
+        n_jobs (int, default=1): Number of parallel workers to use during the
+            candidate order search. Use -1 to use all available cores.
+    """
+
+    def __init__(
+        self,
+        lags: Union[int, List[int], Tuple[int, ...]] = (1,),
+        max_ar_order: Union[int, List[int], Tuple[int, ...]] = (3, 3),
+        max_i_order: Union[int, List[int], Tuple[int, ...]] = (2, 1),
+        max_ma_order: Union[int, List[int], Tuple[int, ...]] = (3, 3),
+        ic: str = "aicc",
+        include_constant: Union[bool, List[bool], Tuple[bool, ...]] = (False, True),
+        method: str = "lbfgs",
+        maxiter: int = 200,
+        n_jobs: int = 1,
+        alias: str = "AutoMSARIMAX",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
+        self.lags = lags
+        self.max_ar_order = max_ar_order
+        self.max_i_order = max_i_order
+        self.max_ma_order = max_ma_order
+        self.ic = ic
+        self.include_constant = include_constant
+        self.method = method
+        self.maxiter = maxiter
+        self.n_jobs = n_jobs
+        self.alias = alias
+        self.prediction_intervals = prediction_intervals
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
+        y = _ensure_float(y)
+        self.model_ = auto_msarimax(
+            y=y,
+            lags=self.lags,
+            max_ar_order=self.max_ar_order,
+            max_i_order=self.max_i_order,
+            max_ma_order=self.max_ma_order,
+            ic=self.ic,
+            xreg=X,
+            include_constant=self.include_constant,
+            method=self.method,
+            maxiter=self.maxiter,
+            n_jobs=self.n_jobs,
+        )
+        self._store_selected_orders()
+        self._store_cs(y=y, X=X)
+        return self
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        y = _ensure_float(y)
+        mod = auto_msarimax(
+            y=y,
+            lags=self.lags,
+            max_ar_order=self.max_ar_order,
+            max_i_order=self.max_i_order,
+            max_ma_order=self.max_ma_order,
+            ic=self.ic,
+            xreg=X,
+            include_constant=self.include_constant,
+            method=self.method,
+            maxiter=self.maxiter,
+            n_jobs=self.n_jobs,
+        )
+        fcst = forecast_msarimax(mod, h=h, xreg=X_future, level=level)
+        res = self._format_forecast(fcst, level)
+        if fitted:
+            res["fitted"] = fitted_msarimax(mod)
+        if level is not None:
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(
+                    fcst=res, y=y, X=X, level=sorted(level)
+                )
+            elif fitted:
+                se = np.sqrt(mod["sigma2"])
+                res = _add_fitted_pi(res=res, se=se, level=level)
+        return res
+
+    def _store_selected_orders(self):
+        order = self.model_["order"]
+        self.selected_orders_ = {
+            "lags": order.lags,
+            "ar_orders": order.ar_orders,
+            "i_orders": order.i_orders,
+            "ma_orders": order.ma_orders,
+            "include_constant": self.model_.get("include_constant", False),
+        }
 
 
 class AutoRegressive(ARIMA):

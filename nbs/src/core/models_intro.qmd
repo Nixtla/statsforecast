@@ -9,6 +9,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`AutoARIMA`](models.html#autoarima)|✅|✅|✅|✅|✅|
+|[`AutoMSARIMAX`](models.html#automsarimax)|✅|✅|✅|✅|✅|
 |[`AutoETS`](models.html#autoets)|✅|✅|✅|✅|✅|
 |[`AutoCES`](models.html#autoces)|✅|✅|✅|✅||
 |[`AutoTheta`](models.html#autotheta)|✅|✅|✅|✅|✅|
@@ -20,6 +21,7 @@ These models exploit the existing autocorrelations in the time series.
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
 |[`ARIMA`](models.html#arima)|✅|✅|✅|✅|✅|
+|[`MSARIMAX`](models.html#msarimax)|✅|✅|✅|✅|✅|
 |[`AutoRegressive`](models.html#autoregressive)|✅|✅|✅|✅|✅|
 
 
@@ -39,6 +41,7 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
+|[`MSARIMAX`](models.html#msarimax)|✅|✅|✅|✅|✅|
 |[`MSTL`](models.html#mstl)|✅|✅|✅|✅|✅|
 
 
@@ -86,6 +89,3 @@ Suited for series with very few non-zero observations
 |[`CrostonSBA`](models.html#crostonsba)|✅|||||
 |[`IMAPA`](models.html#imapa)|✅|||||
 |[`TSB`](models.html#tsb)|✅|||||
-
-
-
