@@ -6,6 +6,7 @@ from collections import namedtuple
 from typing import Dict
 
 import numpy as np
+import warnings
 import pandas as pd
 from scipy.stats import norm
 from utilsforecast.compat import DataFrame
@@ -236,8 +237,20 @@ def _seasonal_naive(
     y = _ensure_float(y)
     n = y.size
     season_vals = np.full(season_length, np.nan, dtype=y.dtype)
-    season_samples = min(season_length, n)
-    season_vals[:season_samples] = y[-season_samples:]
+    n_available = min(season_length, n)
+    if n < season_length:
+        # Partial season: align observations to their seasonal positions
+        # so that the forecast cycles correctly from the start of the season.
+        # y[-1] maps to the last position, filling backward.
+        warnings.warn(
+            f"Historical data ({n} obs) is shorter than season_length "
+            f"({season_length}). Forecasts for positions without "
+            f"corresponding observations will be NaN."
+        )
+        start_idx = season_length - n_available
+        season_vals[start_idx:] = y[-n_available:]
+    else:
+        season_vals[:n_available] = y[-n_available:]
     out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
     if fitted:
