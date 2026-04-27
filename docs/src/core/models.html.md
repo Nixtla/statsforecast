@@ -7,7 +7,7 @@ title: Models
 
 StatsForecast offers a wide variety of statistical forecasting models grouped into the following categories:
 
-- **Auto Forecast**: Automatic forecasting tools that search for the best parameters and select the best possible model. Useful for large collections of univariate time series. Includes: AutoARIMA, AutoETS, AutoTheta, AutoCES, AutoMFLES, AutoTBATS.
+- **Auto Forecast**: Automatic forecasting tools that search for the best parameters and select the best possible model. Useful for large collections of univariate time series. Includes: AutoARIMA, AutoMSARIMAX, AutoETS, AutoTheta, AutoCES, AutoMFLES, AutoTBATS.
 
 - **ARIMA Family**: AutoRegressive Integrated Moving Average models for capturing autocorrelations in time series data.
 
@@ -17,7 +17,7 @@ StatsForecast offers a wide variety of statistical forecasting models grouped in
 
 - **Sparse or Intermittent**: Models suited for series with very few non-zero observations: ADIDA, CrostonClassic, CrostonOptimized, CrostonSBA, IMAPA, TSB.
 
-- **Multiple Seasonalities**: Models suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs: MSTL, MFLES, TBATS.
+- **Multiple Seasonalities**: Models suited for signals with more than one clear seasonality. Useful for low-frequency data like electricity and logs: MSARIMAX, MSTL, MFLES, TBATS.
 
 - **Theta Models**: Fit two theta lines to a deseasonalized time series using different techniques: Theta, OptimizedTheta, DynamicTheta, DynamicOptimizedTheta.
 
@@ -30,6 +30,19 @@ StatsForecast offers a wide variety of statistical forecasting models grouped in
 ### AutoARIMA
 
 ::: statsforecast.models.AutoARIMA
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
+
+### AutoMSARIMAX
+
+::: statsforecast.models.AutoMSARIMAX
     options:
       show_source: true
       heading_level: 4
@@ -366,6 +379,19 @@ StatsForecast offers a wide variety of statistical forecasting models grouped in
         - forecast
 
 ## Multiple Seasonalities
+
+### MSARIMAX
+
+::: statsforecast.models.MSARIMAX
+    options:
+      show_source: true
+      heading_level: 4
+      members:
+        - __init__
+        - fit
+        - predict
+        - predict_in_sample
+        - forecast
 
 ### MSTL
 

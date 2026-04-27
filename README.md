@@ -110,6 +110,7 @@ Automatic forecasting tools search for the best parameters and select the best p
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
 |[AutoARIMA](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#autoarima)|✅|✅|✅|✅|✅|
+|[AutoMSARIMAX](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#automsarimax)|✅|✅|✅|✅|✅|
 |[AutoETS](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#autoets)|✅|✅|✅|✅||
 |[AutoCES](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#autoces)|✅|✅|✅|✅||
 |[AutoTheta](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#autotheta)|✅|✅|✅|✅||
@@ -123,6 +124,7 @@ These models exploit the existing autocorrelations in the time series.
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
 |[ARIMA](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#arima)|✅|✅|✅|✅|✅|
+|[MSARIMAX](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#msarimax)|✅|✅|✅|✅|✅|
 |[AutoRegressive](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#autoregressive)|✅|✅|✅|✅|✅|
 
 ### Theta Family
@@ -142,6 +144,7 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |Exogenous features|
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|:----------------:|
+|[MSARIMAX](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#msarimax)|✅|✅|✅|✅|✅|
 |[MSTL](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#mstl)|✅|✅|✅|✅|If trend forecaster supports|
 |[MFLES](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#mfles)|✅|✅|✅|✅|✅|
 |[TBATS](https://nixtlaverse.nixtla.io/statsforecast/src/core/models.html#tbats)|✅|✅|✅|✅||
