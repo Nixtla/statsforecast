@@ -6,6 +6,7 @@ from collections import namedtuple
 from typing import Dict
 
 import numpy as np
+import warnings
 import pandas as pd
 from scipy.stats import norm
 from utilsforecast.compat import DataFrame
@@ -241,6 +242,11 @@ def _seasonal_naive(
         # Partial season: align observations to their seasonal positions
         # so that the forecast cycles correctly from the start of the season.
         # y[-1] maps to the last position, filling backward.
+        warnings.warn(
+            f"Historical data ({n} obs) is shorter than season_length "
+            f"({season_length}). Forecasts for positions without "
+            f"corresponding observations will be NaN."
+        )
         start_idx = season_length - n_available
         season_vals[start_idx:] = y[-n_available:]
     else:
