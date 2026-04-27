@@ -22,11 +22,6 @@ from typing import Any, Dict, List, Optional, Union
 import numpy as np
 
 
-def _calculate_sigma(residuals: np.ndarray, n: int) -> float:
-    """Calculate standard error of residuals."""
-    return np.sqrt(np.sum(residuals ** 2) / max(n - 1, 1))
-
-
 def _add_fitted_pi(
         res: Dict[str, Any], results: Any, level: List[int]
 ) -> Dict[str, Any]:
@@ -286,10 +281,6 @@ class UCM:
             "y": y,
             "X": X,
         }
-
-        # Calculate sigma from residuals
-        residuals = y - fitted_vals
-        self.model_["sigma"] = _calculate_sigma(residuals, y.size)
 
         return self
 
