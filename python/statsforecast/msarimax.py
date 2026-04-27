@@ -102,18 +102,14 @@ def forecast_msarimax(model, h: int, xreg: Optional[np.ndarray] = None, level=No
     mean = invert_forecast_values(model["x"], mean_z, order.delta)
     out = {"mean": mean}
     if level is not None:
-        se = np.asarray(pred.se_mean, dtype=np.float64)
+        se = _original_scale_forecast_se(model["fit"], pred, h, order.delta)
         level = sorted(level)
         lower = {}
         upper = {}
         for lv in level:
             q = norm.ppf(0.5 + lv / 200)
-            lower[f"{lv}%"] = invert_forecast_values(
-                model["x"], mean_z - q * se, order.delta
-            )
-            upper[f"{lv}%"] = invert_forecast_values(
-                model["x"], mean_z + q * se, order.delta
-            )
+            lower[f"{lv}%"] = mean - q * se
+            upper[f"{lv}%"] = mean + q * se
         out["lower"] = lower
         out["upper"] = upper
     return out
@@ -307,11 +303,57 @@ def invert_forecast_values(
     return np.asarray(out, dtype=np.float64)
 
 
+def _original_scale_forecast_se(fit, pred, h: int, delta: np.ndarray) -> np.ndarray:
+    var_z = np.asarray(pred.var_pred_mean, dtype=np.float64)
+    if len(delta) == 1:
+        return np.sqrt(np.maximum(var_z, 0.0))
+    transform = _inverse_difference_matrix(h, delta)
+    cov_z = _forecast_error_covariance(fit, var_z, h)
+    var_y = np.diag(transform @ cov_z @ transform.T)
+    return np.sqrt(np.maximum(var_y, 0.0))
+
+
+def _inverse_difference_matrix(h: int, delta: np.ndarray) -> np.ndarray:
+    transform = np.empty((h, h), dtype=np.float64)
+    history = np.zeros(max(len(delta) - 1, 0), dtype=np.float64)
+    for i in range(h):
+        basis = np.zeros(h, dtype=np.float64)
+        basis[i] = 1.0
+        transform[:, i] = invert_forecast_values(history, basis, delta)
+    return transform
+
+
+def _forecast_error_covariance(fit, var_z: np.ndarray, h: int) -> np.ndarray:
+    if h == 0:
+        return np.empty((0, 0), dtype=np.float64)
+    impulse = np.asarray(fit.impulse_responses(steps=max(h - 1, 0)), dtype=np.float64)
+    impulse = impulse[:h]
+    if impulse.size != h or not np.isfinite(impulse).all() or abs(impulse[0]) <= 1e-12:
+        return np.diag(var_z)
+    sigma2 = var_z[0] / impulse[0] ** 2
+    cov = np.empty((h, h), dtype=np.float64)
+    for i in range(h):
+        for j in range(h):
+            common_shocks = min(i, j) + 1
+            offset = abs(i - j)
+            cov[i, j] = sigma2 * np.dot(
+                impulse[:common_shocks],
+                impulse[offset : offset + common_shocks],
+            )
+    cov.flat[:: h + 1] = var_z
+    return cov
+
+
 def _normalise_spec(lags, ar_order, i_order, ma_order):
     lags = _as_int_list(lags)
-    if not lags or lags[0] != 1:
+    prepend_lag_one = bool(lags) and lags[0] != 1
+    if not lags:
+        lags = [1]
+    elif lags[0] != 1:
         lags = [1] + lags
     orders = [_as_int_list(v) for v in (ar_order, i_order, ma_order)]
+    if prepend_lag_one:
+        orders = [[0] + v for v in orders]
     n = max(len(lags), *(len(v) for v in orders))
     lags = lags + [0] * (n - len(lags))
     orders = [v + [0] * (n - len(v)) for v in orders]

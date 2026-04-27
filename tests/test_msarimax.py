@@ -1,6 +1,7 @@
 import numpy as np
 
 from statsforecast.models import AutoMSARIMAX, MSARIMAX
+from statsforecast.msarimax import normalize_msarimax_orders
 
 
 def _seasonal_series(n=72):
@@ -52,6 +53,32 @@ def test_msarimax_with_exogenous_regressors():
 
     assert forecast["mean"].shape == (4,)
     assert np.isfinite(forecast["mean"]).all()
+
+
+def test_msarimax_prepended_lag_preserves_order_mapping():
+    order = normalize_msarimax_orders(
+        lags=[6, 12],
+        ar_order=[1, 2],
+        i_order=[1, 1],
+        ma_order=[0, 1],
+    )
+
+    assert order.lags == [1, 6, 12]
+    assert order.ar_orders == [0, 1, 2]
+    assert order.i_orders == [0, 1, 1]
+    assert order.ma_orders == [0, 0, 1]
+
+
+def test_msarimax_differenced_intervals_use_original_scale_variance():
+    rng = np.random.default_rng(1)
+    y = np.cumsum(rng.normal(size=120))
+
+    model = MSARIMAX(ar_order=0, i_order=1, ma_order=0, maxiter=50).fit(y)
+    forecast = model.predict(5, level=[80])
+
+    widths = forecast["hi-80"] - forecast["mean"]
+    expected = widths[0] * np.sqrt(np.arange(1, 6))
+    np.testing.assert_allclose(widths, expected, rtol=1e-6)
 
 
 def test_auto_msarimax_selects_orders():
