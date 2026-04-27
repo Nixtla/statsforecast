@@ -4,6 +4,9 @@ on:
   push:
     tags: ["v*"]
 
+permissions:
+  contents: read
+
 jobs:
   build_wheels:
     name: Build wheels for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
