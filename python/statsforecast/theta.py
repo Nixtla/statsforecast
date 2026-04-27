@@ -4,6 +4,7 @@ __all__ = ["forecast_theta", "auto_theta", "forward_theta", "simulate_theta"]
 import math
 
 import numpy as np
+import warnings
 from scipy.stats import norm
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
@@ -288,12 +289,13 @@ def simulate_theta(
 
     residuals_tail = model["residuals"][3:]
     if len(residuals_tail) < 2:
-        import warnings
         warnings.warn("Too few residuals after burn-in for sigma estimate; using all residuals")
         sigma = np.std(model["residuals"], ddof=1)
     else:
         sigma = np.std(residuals_tail, ddof=1)
-    residuals = model["residuals"][3:]  # For bootstrap
+    # Use same residual selection logic for bootstrap sampling
+    bootstrap_residuals = model["residuals"][3:] if len(model["residuals"][3:]) >= 2 else model["residuals"]
+    residuals = bootstrap_residuals  # For bootstrap
 
     samples = compute_pi_samples(
         n=model["n"],
@@ -341,7 +343,6 @@ def forecast_theta(obj, h, level=None):
     if level is not None:
         residuals_tail = obj["residuals"][3:]
         if len(residuals_tail) < 2:
-            import warnings
             warnings.warn("Too few residuals after burn-in for sigma estimate; using all residuals")
             sigma = np.std(obj["residuals"], ddof=1)
         else:
