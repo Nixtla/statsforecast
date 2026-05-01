@@ -103,6 +103,7 @@ def _add_conformal_distribution_intervals(
     fcst: Dict,
     cs: np.ndarray,
     level: List[Union[int, float]],
+    prediction_intervals: ConformalIntervals,
 ) -> Dict:
     r"""
     Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
@@ -113,13 +114,19 @@ def _add_conformal_distribution_intervals(
     cuts = [alpha / 200 for alpha in reversed(alphas)]
     cuts.extend(1 - alpha / 200 for alpha in alphas)
     mean = fcst["mean"].reshape(1, -1)
-    scores = np.vstack([mean - cs, mean + cs])
+    if prediction_intervals.transform is not None:
+        mean_transformed = prediction_intervals.transform(mean)
+    else:
+        mean_transformed = mean
+    scores = np.vstack([mean_transformed - cs, mean_transformed + cs])
     quantiles = np.quantile(
         scores,
         cuts,
         axis=0,
     )
     quantiles = quantiles.reshape(len(cuts), -1)
+    if prediction_intervals.back_transform is not None:
+        quantiles = prediction_intervals.back_transform(quantiles)
     lo_cols = [f"lo-{lv}" for lv in reversed(level)]
     hi_cols = [f"hi-{lv}" for lv in level]
     out_cols = lo_cols + hi_cols
@@ -181,7 +188,17 @@ class _TS:
                 X_train = None
                 X_test = None
             fcst_window = self.forecast(h=h, y=y_train, X=X_train, X_future=X_test)  # type: ignore[attr-defined]
-            cs[i_window] = np.abs(fcst_window["mean"] - y_test)
+            y_test_transformed = (
+                self.prediction_intervals.transform(y_test)
+                if self.prediction_intervals.transform is not None
+                else y_test
+            )
+            fcst_mean_transformed = (
+                self.prediction_intervals.transform(fcst_window["mean"])
+                if self.prediction_intervals.transform is not None
+                else fcst_window["mean"]
+            )
+            cs[i_window] = np.abs(fcst_mean_transformed - y_test_transformed)
         return cs
 
     @property
@@ -195,7 +212,12 @@ class _TS:
     def _add_conformal_intervals(self, fcst, y, X, level):
         if self.prediction_intervals is not None and level is not None:
             cs = self._conformity_scores(y, X) if y is not None else self._cs
-            res = self._conformal_method(fcst=fcst, cs=cs, level=level)
+            res = self._conformal_method(
+                fcst=fcst,
+                cs=cs,
+                level=level,
+                prediction_intervals=self.prediction_intervals,
+            )
             return res
         return fcst
 

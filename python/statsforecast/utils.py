@@ -3,7 +3,7 @@ __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 import math
 from collections import namedtuple
-from typing import Dict
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -303,6 +303,8 @@ class ConformalIntervals:
         n_windows (int, optional): Number of windows for conformal intervals. Defaults to 2.
         h (int, optional): Forecasting horizon. Defaults to 1.
         method (str, optional): Method for conformal intervals. Defaults to "conformal_distribution".
+        transform (callable, optional): Function to transform data before computing conformal scores.
+        back_transform (callable, optional): Function to back-transform conformal intervals.
     """
 
     def __init__(
@@ -310,6 +312,8 @@ class ConformalIntervals:
         n_windows: int = 2,
         h: int = 1,
         method: str = "conformal_distribution",
+        transform: Optional[callable] = None,
+        back_transform: Optional[callable] = None,
     ):
         if n_windows < 2:
             raise ValueError(
@@ -321,3 +325,5 @@ class ConformalIntervals:
         self.n_windows = n_windows
         self.h = h
         self.method = method
+        self.transform = transform
+        self.back_transform = back_transform
