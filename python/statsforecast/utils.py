@@ -3,6 +3,7 @@ __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 import math
 from collections import namedtuple
+from enum import Enum
 from typing import Dict
 
 import numpy as np
@@ -268,7 +269,21 @@ def _naive(
     return fcst
 
 
-_VALID_DISTRIBUTIONS = ("normal", "laplace", "t", "skew-normal", "ged")
+class Distribution(str, Enum):
+    NORMAL = "normal"
+    LAPLACE = "laplace"
+    T = "t"
+    SKEW_NORMAL = "skew-normal"
+    GED = "ged"
+
+
+class ArimaMethod(str, Enum):
+    CSS = "CSS"
+    ML = "ML"
+    CSS_ML = "CSS-ML"
+
+
+_VALID_DISTRIBUTIONS = tuple(Distribution)
 
 
 # Functions used for calculating prediction intervals
@@ -277,11 +292,11 @@ def _quantiles(level, distribution="normal", dist_params=None):
     if dist_params is None:
         dist_params = {}
     dist_ppf = {
-        "laplace": laplace_dist.ppf(p),
-        "t": t_dist.ppf(p, df=dist_params.get("nu", 5.0)),
-        "skew-normal": skewnorm_dist.ppf(p, a=dist_params.get("alpha_dist", 0.0)),
-        "ged": gennorm_dist.ppf(p, beta=dist_params.get("beta_dist", 2.0)),
-        "normal": norm.ppf(p)
+        Distribution.LAPLACE: laplace_dist.ppf(p),
+        Distribution.T: t_dist.ppf(p, df=dist_params.get("nu", 5.0)),
+        Distribution.SKEW_NORMAL: skewnorm_dist.ppf(p, a=dist_params.get("alpha_dist", 0.0)),
+        Distribution.GED: gennorm_dist.ppf(p, beta=dist_params.get("beta_dist", 2.0)),
+        Distribution.NORMAL: norm.ppf(p),
     }
     return dist_ppf[distribution]
 

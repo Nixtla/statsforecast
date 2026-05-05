@@ -26,7 +26,7 @@ from scipy.stats import norm
 
 from ._lib import arima as _arima
 from .mstl import mstl
-from .utils import _VALID_DISTRIBUTIONS, _quantiles
+from .utils import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
@@ -209,6 +209,15 @@ def arima(
     optim_control={"maxiter": 100},
     distribution="normal",
 ):
+    if distribution not in _VALID_DISTRIBUTIONS:
+        raise ValueError(
+            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+        )
+    if distribution != Distribution.NORMAL and method == ArimaMethod.CSS:
+        raise ValueError(
+            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
+        )
+
     SSG = SSinit == "Gardner1980"
     x = x.astype(np.float64, copy=True)
 
@@ -245,7 +254,7 @@ def arima(
             True,
         )
 
-    def armafn(p, x, trans):
+    def armafn(p, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         x = x.copy()
         par = coef.copy()
         par[mask] = p
@@ -274,7 +283,7 @@ def arima(
             return math.nan
         return 0.5 * (math.log(s2) + res[1] / res[2])
 
-    def armafn_laplace(p, x, trans):
+    def armafn_laplace(p, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         x = x.copy()
         par = coef.copy()
         par[mask] = p
@@ -304,7 +313,7 @@ def arima(
         b_hat = sum_abs / res[2]
         return math.log(b_hat) + 0.5 * res[1] / res[2]
 
-    def armafn_t(p_ext, x, trans):
+    def armafn_t(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, log_nu_m2]
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
@@ -353,7 +362,7 @@ def arima(
         )
         return obj
 
-    def armafn_skewnorm(p_ext, x, trans):
+    def armafn_skewnorm(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, alpha]
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
@@ -397,7 +406,7 @@ def arima(
         )
         return obj
 
-    def armafn_ged(p_ext, x, trans):
+    def armafn_ged(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma, log_beta]
         # GED(0, σ, β): f(e) = β/(2σΓ(1/β)) * exp(-(|e|/σ)^β)
         n_arma_free = int(mask.sum())
@@ -535,23 +544,14 @@ def arima(
         ncxreg += 1
         nmxreg = ["intercept"] + nmxreg
 
-    if distribution not in _VALID_DISTRIBUTIONS:
-        raise ValueError(
-            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
-        )
-    if distribution != "normal" and method == "CSS":
-        raise ValueError(
-            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
-        )
-
     # check nas for method CSS-ML
-    if method == "CSS-ML":
+    if method == ArimaMethod.CSS_ML:
         anyna = np.isnan(x).any()
         if ncxreg:
             anyna |= np.isnan(xreg).any()
         if anyna:
-            method = "ML"
-    if method in ["CSS", "CSS-ML"]:
+            method = ArimaMethod.ML
+    if method in [ArimaMethod.CSS, ArimaMethod.CSS_ML]:
         ncond = order[1] + seasonal["order"][1] * seasonal["period"]
         ncond1 = order[0] + seasonal["order"][0] * seasonal["period"]
         ncond = ncond + ncond1
@@ -623,7 +623,7 @@ def arima(
         nan_mask = np.isnan(init)
         if nan_mask.any():
             init[nan_mask] = init0[nan_mask]
-        if method == "ML":
+        if method == ArimaMethod.ML:
             # check stationarity
             if arma[0] > 0:
                 if not arCheck(init[: arma[0]]):
@@ -636,7 +636,7 @@ def arima(
     else:
         init = init0
 
-    def arma_css_op(p, x):
+    def arma_css_op(p, x, coef, mask, arma, ncxreg, xreg, narma):
         x = x.copy()
         par = coef.copy()
         par[mask] = p
@@ -656,14 +656,14 @@ def arima(
 
     coef = np.array(fixed)
     # parscale definition, think about it, scipy doesn't use it
-    if method == "CSS":
+    if method == ArimaMethod.CSS:
         if no_optim:
             res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
         else:
             res = minimize(
                 arma_css_op,
                 init[mask],
-                args=(x,),
+                args=(x, coef, mask, arma, ncxreg, xreg, narma),
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
@@ -682,12 +682,12 @@ def arima(
         sigma2 = val[0]
         var = None if no_optim else res.hess_inv / n_used
     else:
-        if method == "CSS-ML":
+        if method == ArimaMethod.CSS_ML:
             if not no_optim:
                 res = minimize(
                     arma_css_op,
                     init[mask],
-                    args=(x,),
+                    args=(x, coef, mask, arma, ncxreg, xreg, narma),
                     method=optim_method,
                     tol=tol,
                     options=optim_control,
@@ -718,14 +718,14 @@ def arima(
                     init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
-        ml_obj = armafn if distribution == "normal" else armafn_laplace
+        ml_obj = armafn if distribution == Distribution.NORMAL else armafn_laplace
         nu_t = None
         sigma2_t = None
         alpha_sn = None
         sigma2_sn = None
         beta_ged = None
         sigma_ged = None
-        if distribution == "skew-normal":
+        if distribution == Distribution.SKEW_NORMAL:
             # Always optimize [arma_free..., log_sigma2, alpha] jointly.
             n_arma_free = int(mask.sum())
             log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
@@ -736,7 +736,7 @@ def arima(
             res_sn = minimize(
                 armafn_skewnorm,
                 init_sn,
-                args=(x, transform_pars),
+                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
@@ -755,7 +755,7 @@ def arima(
                 res_sn.fun,
                 hess_arma,
             )
-        elif distribution == "t":
+        elif distribution == Distribution.T:
             # Always optimize [arma_free..., log_sigma2, log_nu_m2] jointly.
             n_arma_free = int(mask.sum())
             log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
@@ -766,7 +766,7 @@ def arima(
             res_t = minimize(
                 armafn_t,
                 init_t,
-                args=(x, transform_pars),
+                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
@@ -785,7 +785,7 @@ def arima(
                 res_t.fun,
                 hess_arma,
             )
-        elif distribution == "ged":
+        elif distribution == Distribution.GED:
             # Always optimize [arma_free..., log_sigma, log_beta] jointly.
             n_arma_free = int(mask.sum())
             log_sigma_init = 0.5 * np.log(max(float(np.nanvar(x)), 1e-10))
@@ -796,7 +796,7 @@ def arima(
             res_ged = minimize(
                 armafn_ged,
                 init_ged,
-                args=(x, transform_pars),
+                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
@@ -820,17 +820,14 @@ def arima(
                 True,
                 0,
                 np.array([]),
-                ml_obj(np.array([]), x, transform_pars),
+                ml_obj(np.array([]), x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
                 np.array([]),
             )
         else:
             res = minimize(
                 ml_obj,
                 init[mask],
-                args=(
-                    x,
-                    transform_pars,
-                ),
+                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
@@ -850,7 +847,7 @@ def arima(
                 res = minimize(
                     arma_css_op,
                     coef[mask],
-                    args=(x,),
+                    args=(x, coef, mask, arma, ncxreg, xreg, narma),
                     method=optim_method,
                     tol=tol,
                     options=optim_control,
@@ -870,29 +867,29 @@ def arima(
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arimaSS(x, mod)
         val = (val[0], val[3])
-        if distribution == "normal":
+        if distribution == Distribution.NORMAL:
             sigma2 = val[0] / n_used
-        elif distribution == "laplace":
+        elif distribution == Distribution.LAPLACE:
             b_hat = np.nansum(np.abs(val[1])) / n_used
             sigma2 = 2.0 * b_hat**2
-        elif distribution == "t":
+        elif distribution == Distribution.T:
             sigma2 = sigma2_t
-        elif distribution == "skew-normal":
+        elif distribution == Distribution.SKEW_NORMAL:
             sigma2 = sigma2_sn
         else:  # ged: sigma2 stores σ²
             assert sigma_ged is not None
             sigma2 = sigma_ged ** 2
 
-    if distribution == "normal":
+    if distribution == Distribution.NORMAL:
         value = 2 * n_used * res.fun + n_used + n_used * np.log(2 * np.pi)
-    elif distribution == "laplace":
+    elif distribution == Distribution.LAPLACE:
         # -2ℓ(b̂) = 2n·res.fun + n·(2 + log(4))
         value = 2 * n_used * res.fun + n_used * (2 + np.log(4))
     else:  # t / skew-normal: obj = -ℓ/n, so -2ℓ = 2n·res.fun (no additive constant)
         value = 2 * n_used * res.fun
     # AIC = -2ℓ + 2k; normal/laplace: k=arma+1 (σ²); t/skew-normal/ged: k=arma+2 (σ²+extra)
-    n_dist_params = 2 if distribution in ("t", "skew-normal", "ged") else 1
-    aic = value + 2 * (sum(mask) + n_dist_params) if method != "CSS" else np.nan
+    n_dist_params = 2 if distribution in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED) else 1
+    aic = value + 2 * (sum(mask) + n_dist_params) if method != ArimaMethod.CSS else np.nan
 
     nm = []
     if arma[0] > 0:
@@ -932,11 +929,11 @@ def arima(
         "model": mod,
         "distribution": distribution,
     }
-    if distribution == "t" and nu_t is not None:
+    if distribution == Distribution.T and nu_t is not None:
         ans["nu"] = nu_t
-    if distribution == "skew-normal" and alpha_sn is not None:
+    if distribution == Distribution.SKEW_NORMAL and alpha_sn is not None:
         ans["alpha_dist"] = alpha_sn
-    if distribution == "ged" and beta_ged is not None:
+    if distribution == Distribution.GED and beta_ged is not None:
         ans["beta_dist"] = beta_ged
     return ans
 
@@ -1071,9 +1068,9 @@ def myarima(
     diffs = order[1] + seas_order[1]
     if method is None:
         if approximation:
-            method = "CSS"
+            method = ArimaMethod.CSS
         else:
-            method = "CSS-ML"
+            method = ArimaMethod.CSS_ML
     try:
         if diffs == 1 and constant:
             drift = np.arange(1, x.size + 1, dtype=np.float64).reshape(-1, 1)  # drift
@@ -1100,7 +1097,7 @@ def myarima(
         if diffs == 1 and constant:
             fit["xreg"] = xreg
         npar = fit["mask"].sum() + 1
-        if method == "CSS":
+        if method == ArimaMethod.CSS:
             if fit["sigma2"] <= 0:
                 fit["aic"] = -math.inf
             else:
@@ -1114,7 +1111,7 @@ def myarima(
             fit["ic"] = fit[ic]
         else:
             fit["ic"] = fit["aic"] = fit["bic"] = fit["aicc"] = math.inf
-        if distribution == "normal":
+        if distribution == Distribution.NORMAL:
             fit["sigma2"] = np.nansum(fit["residuals"] ** 2) / (nstar - npar + 1)
         minroot = 2
         if order[0] + seas_order[0] > 0:
@@ -1326,6 +1323,7 @@ def Arima(
     biasadj=False,
     method="CSS",
     model=None,
+    distribution="normal",
     **kwargs,
 ):
     x = x.copy()
@@ -1376,6 +1374,7 @@ def Arima(
                 seasonal=seasonal,
                 include_mean=include_mean,
                 method=method,
+                distribution=distribution,
                 **kwargs,
             )
         else:
@@ -1386,6 +1385,7 @@ def Arima(
                 xreg=xreg,
                 include_mean=include_mean,
                 method=method,
+                distribution=distribution,
                 **kwargs,
             )
             if include_drift:
@@ -1403,7 +1403,7 @@ def Arima(
     tmp["xreg"] = xreg
     tmp["lambda"] = blambda
     tmp["x"] = origx
-    if model is None and kwargs.get("distribution", "normal") == "normal":
+    if model is None and distribution == Distribution.NORMAL:
         tmp["sigma2"] = np.nansum(tmp["residuals"] ** 2) / (nstar - npar + 1)
     return tmp
 
@@ -1508,7 +1508,7 @@ def forecast_arima(
         if bootstrap:
             raise NotImplementedError("bootstrap=True")
         else:
-            dist = model.get("distribution", "normal")
+            dist = model.get("distribution", Distribution.NORMAL)
             quantiles = _quantiles(level, distribution=dist, dist_params=model)
             lower = pd.DataFrame(
                 pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
@@ -2350,7 +2350,7 @@ def auto_arima_f(
             if fit["ic"] < math.inf:
                 bestfit = fit
                 break
-    if math.isinf(bestfit["ic"]) and method != "CSS":
+    if math.isinf(bestfit["ic"]) and method != ArimaMethod.CSS:
         raise ValueError("No suitable ARIMA model found")
 
     bestfit["x"] = origx
