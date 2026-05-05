@@ -278,10 +278,10 @@ def _quantiles(level, distribution="normal", dist_params=None):
         dist_params = {}
     dist_ppf = {
         "laplace": laplace_dist.ppf(p),
-        "t": t_dist.ppf(p, df=dist_params.get("nu", 5.0))
+        "t": t_dist.ppf(p, df=dist_params.get("nu", 5.0)),
         "skew-normal": skewnorm_dist.ppf(p, a=dist_params.get("alpha_dist", 0.0)),
-        "ged": gennorm_dist.ppf(p, beta=dist_params.get("beta_dist", 2.0))
-        "normal": "norm.ppf(p)
+        "ged": gennorm_dist.ppf(p, beta=dist_params.get("beta_dist", 2.0)),
+        "normal": norm.ppf(p)
     }
     return dist_ppf[distribution]
 
