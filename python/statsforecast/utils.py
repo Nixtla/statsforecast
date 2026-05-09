@@ -236,8 +236,18 @@ def _seasonal_naive(
     y = _ensure_float(y)
     n = y.size
     season_vals = np.full(season_length, np.nan, dtype=y.dtype)
-    season_samples = min(season_length, n)
-    season_vals[:season_samples] = y[-season_samples:]
+    if n >= season_length:
+        # Standard case: the last `season_length` observations form one
+        # complete season cycle. forecast[h] = season_vals[h % season_length]
+        # naturally aligns, since season_vals[k] holds y[n-season_length+k].
+        season_vals[:] = y[-season_length:]
+    else:
+        # Short-history case (#1140): right-align y in season_vals so the
+        # last observation lands in the last seasonal slot. Slots whose
+        # seasonal offset has no historical observation (index < 0) stay
+        # NaN. The previous behaviour left-aligned y[:n], which silently
+        # shifted every forecast by (season_length - n) periods.
+        season_vals[season_length - n:] = y
     out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
     if fitted:

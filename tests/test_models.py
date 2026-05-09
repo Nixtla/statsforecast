@@ -1163,6 +1163,26 @@ class TestSeasonalNaive:
             == "SeasonalNaive_custom"
         )
 
+    def test_short_history_seasonal_alignment(self):
+        """Regression for #1140 — when ``len(y) < season_length`` the previous
+        implementation left-aligned y[:n] in the season buffer, so the first
+        forecast was y[0] instead of NaN, shifting the entire seasonal
+        alignment by ``season_length - n`` periods. With y = 1..39 and
+        ``season_length=52``, horizon 0 has no historical match (NaN);
+        horizon 13 corresponds to the same seasonal slot as y[0] (=1.0);
+        horizon 51 corresponds to y[-1] (=39.0).
+        """
+        season_length = 52
+        n = 39
+        y = np.arange(1, n + 1, dtype=float)
+        sn = SeasonalNaive(season_length=season_length)
+        fc = sn.forecast(y=y, h=season_length, X=None, X_future=None, fitted=False)
+        mean = fc["mean"]
+        # First (season_length - n) horizons have no historical match → NaN.
+        assert np.all(np.isnan(mean[: season_length - n]))
+        # Subsequent horizons recover y, in order, ending at y[-1].
+        np.testing.assert_array_equal(mean[season_length - n :], y)
+
 
 class TestWindowAverage:
     def test_window_average(self):
