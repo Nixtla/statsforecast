@@ -333,7 +333,16 @@ def forecast_theta(obj, h, level=None):
     res = {"mean": forecast}
 
     if level is not None:
-        sigma = np.std(obj["residuals"][3:], ddof=1)
+        # The first 3 residuals are a burn-in matching `thetacalc`'s warm-up
+        # phase. For very short series (n <= 4) the burn-in leaves <2 samples,
+        # so std with ddof=1 yields NaN. Fall back to all residuals to keep
+        # PIs finite — the burn-in is an optimisation, not a correctness
+        # requirement, and on tiny series every observation matters.
+        residuals = obj["residuals"]
+        if residuals.size > 4:
+            sigma = np.std(residuals[3:], ddof=1)
+        else:
+            sigma = np.std(residuals, ddof=1)
         mean_y = obj["mean_y"]
         samples = compute_pi_samples(
             n=n,

@@ -504,3 +504,23 @@ class TestThetaModel:
         res_transfer = forward_theta(res, intermittent_series)
         for key in res_transfer["par"]:
             assert res["par"][key] == res_transfer["par"][key]
+
+    @pytest.mark.parametrize("n", [4, 5, 6])
+    def test_short_series_finite_intervals(self, n):
+        """Regression for #1135: AutoTheta PIs were NaN for n == 4 because the
+        residual burn-in `[3:]` left 1 sample, and ``np.std`` with ``ddof=1``
+        divided by zero. The fix falls back to all residuals when the burn-in
+        would leave too few. PIs must stay finite (and non-degenerate) on
+        short series.
+        """
+        from statsforecast.models import AutoTheta
+
+        rng = np.random.default_rng(0)
+        y = (np.arange(n).astype(float) * 0.3
+             + rng.standard_normal(n) * 0.2 + 10.0)
+        out = AutoTheta(season_length=1).forecast(y, h=3, level=[95])
+        assert np.all(np.isfinite(out["lo-95"])), out
+        assert np.all(np.isfinite(out["hi-95"])), out
+        # Width should be strictly positive — a degenerate zero-width interval
+        # would mean sigma collapsed to ~0.
+        assert (out["hi-95"] - out["lo-95"] > 0).all(), out
