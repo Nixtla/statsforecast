@@ -194,6 +194,10 @@ class _TS:
 
     def _add_conformal_intervals(self, fcst, y, X, level):
         if self.prediction_intervals is not None and level is not None:
+            # Validate before computing scores — bad levels would otherwise
+            # silently produce swapped lo/hi columns. See #482.
+            from statsforecast.utils import _check_level
+            _check_level(level)
             cs = self._conformity_scores(y, X) if y is not None else self._cs
             res = self._conformal_method(fcst=fcst, cs=cs, level=level)
             return res

@@ -267,6 +267,28 @@ def _naive(
 
 
 # Functions used for calculating prediction intervals
+def _check_level(level):
+    """Validate a confidence-level argument.
+
+    Each entry must be a real number in the open interval (0, 100). Negative
+    values are silently accepted by the rest of the pipeline (#482) and yield
+    swapped lo/hi columns whose names also contain a stray ``--`` (e.g.
+    ``lo--5``), so we reject them at the boundary instead.
+    """
+    if level is None:
+        return
+    arr = np.asarray(level, dtype=float).ravel()
+    if arr.size == 0:
+        return
+    if not np.all(np.isfinite(arr)):
+        raise ValueError(f"`level` must be finite, got {list(level)}")
+    if (arr <= 0).any() or (arr >= 100).any():
+        raise ValueError(
+            "`level` values must lie strictly between 0 and 100; "
+            f"got {list(level)}"
+        )
+
+
 def _quantiles(level):
     level = np.asarray(level)
     z = norm.ppf(0.5 + level / 200)
@@ -274,6 +296,7 @@ def _quantiles(level):
 
 
 def _calculate_intervals(out, level, h, sigmah):
+    _check_level(level)
     z = _quantiles(np.asarray(level))
     zz = np.repeat(z, h)
     zz = zz.reshape(z.shape[0], h)

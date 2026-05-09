@@ -2114,3 +2114,37 @@ class TestNaNModel:
     def test_alias_arg(self):
         assert repr(NaNModel()) == "NaNModel"
         assert repr(NaNModel(alias="NaN_custom")) == "NaN_custom"
+
+
+class TestLevelValidation:
+    """Regression for #482 — confidence levels outside (0, 100) used to be
+    silently accepted and produced ``lo--5`` columns whose ``lo > hi``. Each
+    case here failed on origin/main: ``predict`` returned a result instead of
+    raising.
+    """
+
+    @pytest.mark.parametrize("bad", [[-5], [-5, 5], [0], [100], [101], [200]])
+    def test_naive_predict_rejects_bad_levels(self, bad):
+        from statsforecast.models import Naive
+
+        model = Naive()
+        model.fit(y=ap)
+        with pytest.raises(ValueError, match="level"):
+            model.predict(h=4, level=bad)
+
+    @pytest.mark.parametrize("bad", [[-1, 95], [50, -1]])
+    def test_naive_forecast_rejects_bad_levels(self, bad):
+        from statsforecast.models import Naive
+
+        with pytest.raises(ValueError, match="level"):
+            Naive().forecast(y=ap, h=4, level=bad)
+
+    def test_valid_levels_still_work(self):
+        """Sanity check: valid levels still produce well-ordered intervals."""
+        from statsforecast.models import Naive
+
+        out = Naive().forecast(y=ap, h=4, level=[80, 95])
+        for lv in (80, 95):
+            # Every predicted lo must be <= the matching hi — this would be
+            # silently violated for negative levels on origin/main.
+            assert (out[f"lo-{lv}"] <= out[f"hi-{lv}"]).all()

@@ -715,6 +715,11 @@ class _StatsForecast:
     ):
         if level is None:
             level = []
+        # Reject impossible confidence levels at the entry point so the
+        # error surfaces with a clear message instead of silently producing
+        # `lo--5` / `hi--5` columns whose lo > hi (see #482).
+        from statsforecast.utils import _check_level
+        _check_level(level)
         if X is None:
             return X, level
         expected_shape = (h * len(self.ga), self.ga.data.shape[1] + 1)
