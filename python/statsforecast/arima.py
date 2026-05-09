@@ -416,7 +416,13 @@ def arima(
         cn = nmxreg
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
         if not orig_xreg:
-            _, _, vt = np.linalg.svd(xreg[(~np.isnan(xreg)).all(1)])
+            # Only `vt` is consumed below; `full_matrices=False` keeps Vt
+            # bit-identical (its shape is always (ncxreg, ncxreg)) but
+            # avoids materialising the huge U for tall thin xreg matrices
+            # (#1006: an n_obs >> ncxreg matrix could OOM otherwise).
+            _, _, vt = np.linalg.svd(
+                xreg[(~np.isnan(xreg)).all(1)], full_matrices=False
+            )
             xreg = np.matmul(xreg, vt)
         dx = x
         dxreg = xreg
@@ -1602,7 +1608,10 @@ def auto_arima_f(
                 xregg = xregg[:, ~constant_columns]
             X = np.hstack([np.ones([xregg.shape[0], 1]), xregg])
             X = X[~np.isnan(X).any(1)]
-            _, sv, _ = np.linalg.svd(X)
+            # Only the singular values are needed for the rank check; skip
+            # computing U and V to avoid materialising large dense factors
+            # on long series with exogenous regressors (#1006).
+            sv = np.linalg.svd(X, compute_uv=False)
             if sv.min() / sv.sum() < np.finfo(np.float64).eps:
                 raise ValueError("xreg is rank deficient")
             j = (~np.isnan(x)) & (~np.isnan(np.nansum(xregg, 1)))

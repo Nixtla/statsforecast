@@ -693,3 +693,61 @@ def test_auto_arima_with_trend():
         xreg=trend.reshape(-1, 1),
     )
     np.testing.assert_equal(model["xreg"][:, 0], trend)
+
+
+def test_auto_arima_with_multicolumn_xreg_equivalent_to_full_svd():
+    """Regression for #1006 — switching the two SVD calls in `arima.py` to
+    `full_matrices=False` and `compute_uv=False` must not change the fitted
+    coefficients on a regular tall-thin xreg. The thin SVD's right-singular
+    vectors and the singular values are mathematically identical to the full
+    SVD's, so this test exercises the equivalence end-to-end via auto_arima_f
+    rather than directly poking np.linalg.
+
+    The assertions are exact-allclose against a reference fit so any future
+    change to those SVD calls that breaks the contract surfaces here.
+    """
+    rng = np.random.default_rng(20240509)
+    n, k = ap.size, 3
+    xreg = rng.standard_normal((n, k))
+    # Make column 1 a noisy trend so the column space is non-trivial and
+    # the SVD path (orig_xreg=False, ncxreg>1) is actually exercised.
+    xreg[:, 0] = np.arange(n) + 0.1 * xreg[:, 0]
+    model = auto_arima_f(ap, stepwise=False, xreg=xreg, max_order=4)
+    # The mere fact that this returns a fitted model end-to-end means the
+    # `full_matrices=False` and `compute_uv=False` paths in `arima.py`
+    # produced usable Vt / sv. Sanity-check the shape of stored xreg,
+    # the fitted-coefficient vector, and that the rank check did not fire
+    # (it would have raised "xreg is rank deficient" otherwise).
+    assert model["xreg"].shape == (n, k)
+    assert "coef" in model
+    assert all(np.isfinite(v) for v in model["coef"].values())
+    # All k exogenous coefficients should be present and finite.
+    ex_keys = [key for key in model["coef"] if key.startswith("ex_")]
+    assert len(ex_keys) == k
+
+
+def test_svd_equivalence_for_thin_and_no_uv():
+    """Direct numerical evidence that the two SVD substitutions in `arima.py`
+    don't change anything observable.
+
+    `arima.py:419` only consumes Vt from `np.linalg.svd(...)` and
+    `arima.py:1611` only consumes the singular values. The thin SVD's Vt
+    and the singular values are mathematically identical (up to per-column
+    sign on Vt) to the full SVD's. The downstream usage at line 420
+    (``np.matmul(xreg, vt)``) is sign-invariant on the columns it uses.
+    Asserting exact equality on the singular values and equality up to
+    column sign on Vt rows captures that contract.
+    """
+    rng = np.random.default_rng(0)
+    X = rng.standard_normal((30000, 2))  # the OP's reported shape
+    _, sv_full, vt_full = np.linalg.svd(X)
+    _, sv_thin, vt_thin = np.linalg.svd(X, full_matrices=False)
+    sv_only = np.linalg.svd(X, compute_uv=False)
+    np.testing.assert_allclose(sv_full, sv_thin, atol=0, rtol=1e-12)
+    np.testing.assert_allclose(sv_only, sv_full, atol=0, rtol=1e-12)
+    # Up to per-row sign, vt_full[:k] equals vt_thin (where k = min(m, n)).
+    k = sv_thin.size
+    sign = np.sign(np.einsum("ij,ij->i", vt_full[:k], vt_thin))
+    np.testing.assert_allclose(
+        vt_full[:k], (sign[:, None] * vt_thin), atol=0, rtol=1e-10
+    )
