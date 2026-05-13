@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from statsforecast.utils import _seasonal_naive
 
@@ -55,30 +57,17 @@ def test_seasonal_naive():
     )
 
 def test_seasonal_naive_partial_season():
-    """Regression test for #1140: SeasonalNaive with len(y) < season_length."""
-    import numpy as np
-    from statsforecast.utils import _seasonal_naive
-    import warnings
-    
-    # 4 observations, 12-period season
+    # test seasonal naive when the number of observations is shorter than the season length 
     y = np.array([1.0, 2.0, 3.0, 4.0])
-    
+
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         result = _seasonal_naive(y=y, h=24, season_length=12, fitted=False)
-    
-    fcst = result["mean"]
-    
-    # Positions 0-7 should be NaN (no data for those seasonal positions)
-    assert np.isnan(fcst[0])
-    assert np.isnan(fcst[7])
-    
-    # Position 8-11 should be [1,2,3,4] (aligned correctly)
-    assert np.isclose(fcst[8], 1.0)
-    assert np.isclose(fcst[9], 2.0)
-    assert np.isclose(fcst[10], 3.0)
-    assert np.isclose(fcst[11], 4.0)
-    
-    # Warning should be emitted
-    assert len(w) >= 1, "No warning emitted for partial season"
-    assert "shorter than season_length" in str(w[0].message)
+
+    expected = np.array(
+        [np.nan] * 8 + [1.0, 2.0, 3.0, 4.0] + [np.nan] * 8 + [1.0, 2.0, 3.0, 4.0]
+    )
+    np.testing.assert_array_equal(result["mean"], expected)
+
+    assert len(w) >= 1
+    assert "shorter than season_length" in str(w[-1].message)
