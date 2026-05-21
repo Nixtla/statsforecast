@@ -703,6 +703,37 @@ def test_for_monthly_data():
     )
 
 
+def test_level_validation():
+    # confidence levels must be between 0 and 100, exclusive
+    sf = StatsForecast(models=[Naive()], freq="M", n_jobs=1)
+    msg = "Every value in `level` must be between 0 and 100"
+
+    assert_raises_with_message(
+        sf.forecast, msg, df=ap_df, h=12, level=[0, 100]
+    )
+    assert_raises_with_message(
+        sf.cross_validation, msg, df=ap_df, h=12, n_windows=1, level=[0, 100]
+    )
+    assert_raises_with_message(
+        sf.fit_predict, msg, df=ap_df, h=12, level=[0, 100]
+    )
+    sf.fit(ap_df)
+    assert_raises_with_message(sf.predict, msg, h=12, level=[0, 100])
+
+    fcst = sf.forecast(df=ap_df, h=12, level=[80, 95])
+    assert "Naive-lo-80" in fcst.columns and "Naive-hi-95" in fcst.columns
+
+    cv = sf.cross_validation(df=ap_df, h=12, n_windows=1, level=[80, 95])
+    assert "Naive-lo-80" in cv.columns and "Naive-hi-95" in cv.columns
+
+    fp = sf.fit_predict(df=ap_df, h=12, level=[80, 95])
+    assert "Naive-lo-80" in fp.columns and "Naive-hi-95" in fp.columns
+
+    pred = sf.predict(h=12, level=[80, 95])
+    assert "Naive-lo-80" in pred.columns and "Naive-hi-95" in pred.columns
+
+
+
 # # StatsForecast.forecast_fitted_values method usage example
 
 # # from statsforecast.core import StatsForecast
