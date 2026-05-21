@@ -714,7 +714,16 @@ class _StatsForecast:
     def _validate_level(level: Optional[List[int]]) -> None:
         if level is None or len(level) == 0:
             return
-        arr = np.asarray(level)
+        try:
+            arr = np.asarray(level, dtype=float)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Every value in `level` must be a finite real number. Got: {list(level)}"
+            )
+        if not np.isfinite(arr).all():
+            raise ValueError(
+                f"Every value in `level` must be a finite real number. Got: {list(level)}"
+            )
         if np.any((arr <= 0) | (arr >= 100)):
             raise ValueError(
                 "Every value in `level` must be between 0 and 100 (exclusive). "
