@@ -144,19 +144,19 @@ cv_results = sf.cross_validation(
 
 ## How It Works
 
-1. **Automatic Detection**: When you pass a Spark, Dask, or Ray DataFrame to StatsForecast methods, the FugueBackend is automatically used.
+1. __Automatic Detection__: When you pass a Spark, Dask, or Ray DataFrame to StatsForecast methods, the FugueBackend is automatically used.
 
-2. **Data Partitioning**: Data is partitioned by `unique_id`, allowing parallel processing across different time series.
+2. __Data Partitioning__: Data is partitioned by `unique_id`, allowing parallel processing across different time series.
 
-3. **Distributed Execution**: Each partition is processed independently using the standard StatsForecast logic.
+3. __Distributed Execution__: Each partition is processed independently using the standard StatsForecast logic.
 
-4. **Result Aggregation**: Results are collected and returned in the same format as the input (Spark/Dask/Ray DataFrame).
+4. __Result Aggregation__: Results are collected and returned in the same format as the input (Spark/Dask/Ray DataFrame).
 
 ## Supported Backends
 
-- **Apache Spark**: For large-scale distributed processing
-- **Dask**: For flexible distributed computing with Python
-- **Ray**: For modern distributed machine learning workloads
+- __Apache Spark__: For large-scale distributed processing
+- __Dask__: For flexible distributed computing with Python
+- __Ray__: For modern distributed machine learning workloads
 
 ## Notes
 
@@ -167,6 +167,6 @@ cv_results = sf.cross_validation(
 
 ## See Also
 
-- [Core StatsForecast Methods](core.html)
+- [Core StatsForecast Methods](./core.html)
 - [Distributed Computing Examples](https://github.com/Nixtla/statsforecast/tree/main/experiments/ray)
 - [Fugue Documentation](https://fugue-tutorials.readthedocs.io/)
