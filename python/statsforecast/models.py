@@ -83,7 +83,7 @@ from .mfles import MFLES as _MFLES
 from .mstl import mstl
 from .tbats import _compute_sigmah, tbats_forecast, tbats_selection
 from .theta import auto_theta, forecast_theta, forward_theta
-from .ucm import UCM, LocalLevel, LocalLinearTrend, SmoothTrend  # noqa: F401
+from .ucm import ucm_forecast, ucm_model
 
 
 def _add_fitted_pi(res, se, level):
@@ -6283,6 +6283,128 @@ class ARCH(GARCH):
         self.p = p
         self.alias = alias
         super().__init__(p, q=0, alias=alias)
+
+
+class UCM(_TS):
+    r"""Unobserved Components Model (UCM).
+
+    Also known as a Structural Time Series Model. 
+    This model decomposes a univariate series into a local linear trend (stochastic level + stochastic slope), a dummy-variable seasonal component and an irregular term:
+
+    ``` math
+    y_t = \mu_t + \gamma_t + \varepsilon_t
+    ```
+
+    The level and slope evolve as random walks and the seasonal effects are
+    constrained to sum to zero over a full cycle. The model is cast in state
+    space form and the component variances are estimated by maximum likelihood
+    using a univariate Kalman filter.
+
+    References:
+        - [Harvey, A. C. (1989). "Forecasting, Structural Time Series Models and the Kalman Filter". Cambridge University Press.](https://www.cambridge.org/core/books/forecasting-structural-time-series-models-and-the-kalman-filter/CE5E112570A56960601760E786A5E631)
+        - [Durbin, J. and Koopman, S. J. (2012). "Time Series Analysis by State Space Methods". 2nd ed. Oxford University Press.](https://academic.oup.com/book/16563)
+
+    Args:
+        season_length (int): Number of observations per seasonal cycle. Ex: 12 for monthly data. Use 1 for a trend-only model.
+        alias (str): Custom name of the model.
+        prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. 
+    """
+
+    def __init__(
+        self,
+        season_length: int = 1,
+        alias: str = "UCM",
+        prediction_intervals: Optional[ConformalIntervals] = None,
+    ):
+        self.season_length = season_length
+        self.alias = alias
+        self.prediction_intervals = prediction_intervals
+
+    def _no_pi(self, level: Optional[List[int]]):
+        if level is not None:
+            raise NotImplementedError(
+                "Prediction intervals are not yet supported for UCM."
+            )
+
+    def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
+        r"""Fit the UCM model.
+
+        Fit a UCM to a time series (numpy array) `y`.
+
+        Args:
+            y (numpy.array): Clean time series of shape (t, ).
+            X (array-like): Optional exogenous of shape (t, n_x). Currently ignored.
+
+        Returns:
+            self: UCM fitted model.
+        """
+        y = _ensure_float(y)
+        self.model_ = ucm_model(y, season_length=self.season_length)
+        return self
+
+    def predict(
+        self, h: int, X: Optional[np.ndarray] = None, level: Optional[List[int]] = None
+    ):
+        r"""Predict with fitted UCM.
+
+        Args:
+            h (int): Forecast horizon.
+            X (array-like): Optional exogenous of shape (h, n_x). Currently ignored.
+            level (List[float]): Confidence levels (0-100) for prediction intervals. Not yet supported.
+
+        Returns:
+            dict: Dictionary with entry `mean` for point predictions.
+        """
+        self._no_pi(level)
+        fcst = ucm_forecast(self.model_, h)
+        return {"mean": fcst["mean"]}
+
+    def predict_in_sample(self, level: Optional[List[int]] = None):
+        r"""Access fitted UCM insample predictions.
+
+        Args:
+            level (List[float]): Confidence levels (0-100) for prediction intervals. Not yet supported.
+
+        Returns:
+            dict: Dictionary with entry `fitted` for point predictions.
+        """
+        self._no_pi(level)
+        return {"fitted": self.model_["fitted"]}
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        r"""Memory Efficient UCM predictions.
+
+        This method avoids memory burden due from object storage.
+        It is analogous to `fit_predict` without storing information.
+        It assumes you know the forecast horizon in advance.
+
+        Args:
+            y (numpy.array): Clean time series of shape (n, ).
+            h (int): Forecast horizon.
+            X (array-like): Optional insample exogenous of shape (t, n_x). Currently ignored.
+            X_future (array-like): Optional exogenous of shape (h, n_x). Currently ignored.
+            level (List[float]): Confidence levels (0-100) for prediction intervals. Not yet supported.
+            fitted (bool): Whether or not to return insample predictions.
+
+        Returns:
+            dict: Dictionary with entry `mean` for point predictions and optionally `fitted` insample predictions.
+        """
+        self._no_pi(level)
+        y = _ensure_float(y)
+        mod = ucm_model(y, season_length=self.season_length)
+        fcst = ucm_forecast(mod, h)
+        res = {"mean": fcst["mean"]}
+        if fitted:
+            res["fitted"] = fcst["fitted"]
+        return res
 
 
 class SklearnModel(_TS):
