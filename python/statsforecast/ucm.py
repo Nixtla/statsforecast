@@ -56,7 +56,7 @@ def kalman_filter(
     H: float,
     a0: np.ndarray,
     P0: np.ndarray,
-) -> Tuple[float, np.ndarray, np.ndarray]:
+) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray]:
     """Run a univariate Kalman filter."""
     n = y.shape[0]
     z = Z[0]
@@ -91,7 +91,7 @@ def kalman_filter(
         a_pred = T @ a_filt
         P_pred = T @ P_filt @ T.T + RQRt
 
-    return loglik, a_filt, one_step_pred
+    return loglik, a_filt, P_filt, one_step_pred
 
 
 def _make_QH(theta: np.ndarray, has_seasonal: bool) -> Tuple[np.ndarray, float]:
@@ -116,7 +116,7 @@ def _nll(
 ) -> float:
     """Negative log-likelihood for a variance vector theta."""
     Q, H = _make_QH(theta, has_seasonal)
-    loglik, _, _ = kalman_filter(y, Z, T, R, Q, H, a0, P0)
+    loglik, _, _, _ = kalman_filter(y, Z, T, R, Q, H, a0, P0)
     if not np.isfinite(loglik):
         return 1e10
     return -loglik
@@ -152,7 +152,7 @@ def ucm_model(y: np.ndarray, season_length: int = 1) -> Dict:
     params = result.x
 
     Q, H = _make_QH(params, has_seasonal)
-    _, a_n, fitted = kalman_filter(y, Z, T, R, Q, H, a0, P0)
+    _, a_n, P_n, fitted = kalman_filter(y, Z, T, R, Q, H, a0, P0)
 
     residuals = y - fitted
     sigma = np.sqrt(np.sum(residuals**2) / max(len(y) - 1, 1))
@@ -165,6 +165,7 @@ def ucm_model(y: np.ndarray, season_length: int = 1) -> Dict:
         "Q": Q,
         "H": H,
         "a_n": a_n,
+        "P_n": P_n,
         "fitted": fitted,
         "sigma": sigma,
         "season_length": s,
@@ -173,15 +174,22 @@ def ucm_model(y: np.ndarray, season_length: int = 1) -> Dict:
 
 
 def ucm_forecast(mod: Dict, h: int) -> Dict:
-    """Produce h-step-ahead point forecasts from a fitted UCM."""
+    """Produce h-step-ahead point forecasts and forecast-error std from a UCM."""
     Z = mod["Z"]
     T = mod["T"]
+    H = mod["H"]
     z = Z[0]
     a = mod["a_n"].astype(np.float64).copy()
+    P = mod["P_n"].astype(np.float64).copy()
+    RQRt = mod["R"] @ mod["Q"] @ mod["R"].T
 
     mean = np.empty(h, dtype=np.float64)
+    sigma = np.empty(h, dtype=np.float64)
     for i in range(h):
         a = T @ a
+        P = T @ P @ T.T + RQRt
         mean[i] = z @ a
+        # Forecast error variance F = Z P Z' + H.
+        sigma[i] = np.sqrt(z @ (P @ z) + H)
 
-    return {"mean": mean, "fitted": mod["fitted"]}
+    return {"mean": mean, "sigma": sigma, "fitted": mod["fitted"]}

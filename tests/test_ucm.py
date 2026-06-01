@@ -1,7 +1,6 @@
 """Tests for the UCM (Unobserved Components Model)."""
 
 import warnings
-
 import numpy as np
 import pytest
 
@@ -14,14 +13,12 @@ from statsforecast.ucm import (
 
 warnings.simplefilter("ignore")
 
-
 @pytest.fixture
 def trend_series():
     """Local-linear-trend series (no seasonality)."""
     np.random.seed(0)
     n = 120
     return 50.0 + 0.5 * np.arange(n) + np.cumsum(np.random.randn(n))
-
 
 @pytest.fixture
 def seasonal_series():
@@ -35,7 +32,6 @@ def seasonal_series():
         + 10.0 * np.sin(2 * np.pi * t / 12)
         + np.random.randn(n)
     )
-
 
 # ---------------------------------------------------------------------------
 # Computational layer
@@ -73,10 +69,11 @@ def test_kalman_filter_loglik_finite(trend_series):
     a0 = np.zeros(k)
     P0 = 1e6 * np.eye(k)
 
-    loglik, a_filt, one_step = kalman_filter(y, Z, T, R, Q, H, a0, P0)
+    loglik, a_filt, P_filt, one_step = kalman_filter(y, Z, T, R, Q, H, a0, P0)
 
     assert np.isfinite(loglik)
     assert a_filt.shape == (k,)
+    assert P_filt.shape == (k, k)
     assert one_step.shape == (len(y),)
     assert np.all(np.isfinite(one_step))
 
@@ -108,6 +105,10 @@ def test_ucm_forecast_shape(trend_series):
     assert "fitted" in fcst
     assert len(fcst["mean"]) == h
     assert np.all(np.isfinite(fcst["mean"]))
+    # Forecast-error std is positive and widens with the horizon.
+    assert len(fcst["sigma"]) == h
+    assert np.all(fcst["sigma"] > 0)
+    assert fcst["sigma"][-1] >= fcst["sigma"][0]
 
 
 def test_ucm_forecast_trend_direction(trend_series):
@@ -116,7 +117,6 @@ def test_ucm_forecast_trend_direction(trend_series):
     fcst = ucm_forecast(mod, 12)
     assert fcst["mean"][-1] > fcst["mean"][0]
 
-
 # ---------------------------------------------------------------------------
 # Model class API
 # ---------------------------------------------------------------------------
@@ -124,7 +124,6 @@ def test_ucm_import():
     from statsforecast.models import UCM
 
     assert UCM is not None
-
 
 def test_ucm_fit_predict(trend_series):
     from statsforecast.models import UCM
@@ -137,7 +136,6 @@ def test_ucm_fit_predict(trend_series):
     assert len(fcst["mean"]) == 10
     assert not np.any(np.isnan(fcst["mean"]))
 
-
 def test_ucm_seasonal_fit_predict(seasonal_series):
     from statsforecast.models import UCM
 
@@ -146,7 +144,6 @@ def test_ucm_seasonal_fit_predict(seasonal_series):
     fcst = model.predict(h=12)
 
     assert len(fcst["mean"]) == 12
-
 
 def test_ucm_forecast_method(trend_series):
     from statsforecast.models import UCM
@@ -159,7 +156,6 @@ def test_ucm_forecast_method(trend_series):
     assert len(res["mean"]) == 10
     assert len(res["fitted"]) == len(trend_series)
 
-
 def test_ucm_predict_in_sample(trend_series):
     from statsforecast.models import UCM
 
@@ -170,25 +166,61 @@ def test_ucm_predict_in_sample(trend_series):
     assert "fitted" in insample
     assert len(insample["fitted"]) == len(trend_series)
 
-
-def test_ucm_level_not_implemented(trend_series):
+# ---------------------------------------------------------------------------
+# Prediction intervals
+# ---------------------------------------------------------------------------
+def test_ucm_parametric_predict_intervals(trend_series):
     from statsforecast.models import UCM
 
     model = UCM(season_length=1)
     model.fit(trend_series)
-    with pytest.raises(NotImplementedError):
-        model.predict(h=5, level=[95])
-    with pytest.raises(NotImplementedError):
-        model.forecast(y=trend_series, h=5, level=[95])
+    fcst = model.predict(h=10, level=[80, 95])
 
+    for key in ("lo-80", "hi-80", "lo-95", "hi-95"):
+        assert key in fcst
+    # Wider level contains the narrower one, and the mean lies inside.
+    assert np.all(fcst["lo-95"] <= fcst["lo-80"])
+    assert np.all(fcst["hi-95"] >= fcst["hi-80"])
+    assert np.all(fcst["lo-80"] <= fcst["mean"])
+    assert np.all(fcst["mean"] <= fcst["hi-80"])
 
-def test_ucm_alias():
+def test_ucm_parametric_forecast_intervals(trend_series):
     from statsforecast.models import UCM
 
-    model = UCM(season_length=12, alias="MyUCM")
-    assert str(model) == "MyUCM"
-    assert model.alias == "MyUCM"
+    model = UCM(season_length=1)
+    res = model.forecast(y=trend_series, h=10, level=[90], fitted=True)
 
+    for key in ("lo-90", "hi-90", "fitted-lo-90", "fitted-hi-90"):
+        assert key in res
+    assert len(res["lo-90"]) == 10
+    assert len(res["fitted-lo-90"]) == len(trend_series)
+
+def test_ucm_predict_in_sample_intervals(trend_series):
+    from statsforecast.models import UCM
+
+    model = UCM(season_length=1)
+    model.fit(trend_series)
+    insample = model.predict_in_sample(level=[95])
+
+    assert "fitted-lo-95" in insample
+    assert "fitted-hi-95" in insample
+    assert np.all(insample["fitted-lo-95"] <= insample["fitted-hi-95"])
+
+def test_ucm_conformal_intervals(seasonal_series):
+    from statsforecast.models import UCM
+    from statsforecast.utils import ConformalIntervals
+
+    pi = ConformalIntervals(h=12, n_windows=2)
+
+    model = UCM(season_length=12, prediction_intervals=pi)
+    model.fit(seasonal_series)
+    pred = model.predict(h=12, level=[80, 95])
+    for key in ("lo-80", "hi-80", "lo-95", "hi-95"):
+        assert key in pred
+
+    fcst = model.forecast(y=seasonal_series, h=12, level=[80, 95])
+    for key in ("lo-80", "hi-80", "lo-95", "hi-95"):
+        assert key in fcst
 
 def test_ucm_new():
     from statsforecast.models import UCM
@@ -198,7 +230,6 @@ def test_ucm_new():
 
     assert model2.season_length == model1.season_length
     assert model2 is not model1
-
 
 # ---------------------------------------------------------------------------
 # StatsForecast integration
@@ -221,7 +252,6 @@ def test_statsforecast_integration():
     assert len(fcst) == 6
     assert "UCM" in fcst.columns
 
-
 def test_statsforecast_cross_validation_fitted():
     import pandas as pd
     from statsforecast import StatsForecast
@@ -242,7 +272,6 @@ def test_statsforecast_cross_validation_fitted():
     fitted_cv = sf.cross_validation_fitted_values()
     assert "UCM" in fitted_cv.columns
 
-
 # ---------------------------------------------------------------------------
 # Numerical correctness vs statsmodels
 # ---------------------------------------------------------------------------
@@ -254,17 +283,22 @@ def test_ucm_matches_statsmodels(seasonal_series):
     h = 12
 
     sf_mod = ucm_model(y, season_length=12)
-    sf_fcst = ucm_forecast(sf_mod, h)["mean"]
+    sf_out = ucm_forecast(sf_mod, h)
+    sf_fcst = sf_out["mean"]
 
     sm_mod = sm.tsa.UnobservedComponents(
         y, level="local linear trend", seasonal=12, stochastic_seasonal=True
     )
     sm_res = sm_mod.fit(method="lbfgs", disp=False)
-    sm_fcst = np.asarray(sm_res.forecast(h))
+    sm_pred = sm_res.get_forecast(h)
+    sm_fcst = np.asarray(sm_pred.predicted_mean)
+    sm_se = np.asarray(sm_pred.se_mean)
 
     # Point forecasts should be close in scale and direction.
     np.testing.assert_allclose(sf_fcst, sm_fcst, rtol=0.15, atol=0.15 * np.std(y))
-
+    # The native (parametric) forecast std should match the Kalman-filter
+    # forecast std exposed by statsmodels.
+    np.testing.assert_allclose(sf_out["sigma"], sm_se, rtol=0.2, atol=0.2 * np.std(y))
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

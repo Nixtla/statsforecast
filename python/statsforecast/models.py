@@ -6307,7 +6307,7 @@ class UCM(_TS):
     Args:
         season_length (int): Number of observations per seasonal cycle. Ex: 12 for monthly data. Use 1 for a trend-only model.
         alias (str): Custom name of the model.
-        prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. 
+        prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model computes parametric (Gaussian) prediction intervals.
     """
 
     def __init__(
@@ -6319,12 +6319,6 @@ class UCM(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-
-    def _no_pi(self, level: Optional[List[int]]):
-        if level is not None:
-            raise NotImplementedError(
-                "Prediction intervals are not yet supported for UCM."
-            )
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         r"""Fit the UCM model.
@@ -6340,6 +6334,8 @@ class UCM(_TS):
         """
         y = _ensure_float(y)
         self.model_ = ucm_model(y, season_length=self.season_length)
+        self.model_["residuals"] = y - self.model_["fitted"]
+        self._store_cs(y, X)
         return self
 
     def predict(
@@ -6350,26 +6346,36 @@ class UCM(_TS):
         Args:
             h (int): Forecast horizon.
             X (array-like): Optional exogenous of shape (h, n_x). Currently ignored.
-            level (List[float]): Confidence levels (0-100) for prediction intervals. Not yet supported.
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
 
         Returns:
-            dict: Dictionary with entry `mean` for point predictions.
+            dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        self._no_pi(level)
         fcst = ucm_forecast(self.model_, h)
-        return {"mean": fcst["mean"]}
+        res = {"mean": fcst["mean"]}
+        if level is None:
+            return res
+        level = sorted(level)
+        if self.prediction_intervals is not None:
+            res = self._add_predict_conformal_intervals(res, level)
+        else:
+            res = {**res, **_calculate_intervals(res, level, h, fcst["sigma"])}
+        return res
 
     def predict_in_sample(self, level: Optional[List[int]] = None):
         r"""Access fitted UCM insample predictions.
 
         Args:
-            level (List[float]): Confidence levels (0-100) for prediction intervals. Not yet supported.
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
 
         Returns:
-            dict: Dictionary with entry `fitted` for point predictions.
+            dict: Dictionary with entries `fitted` for point predictions and `level_*` for probabilistic predictions.
         """
-        self._no_pi(level)
-        return {"fitted": self.model_["fitted"]}
+        res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            level = sorted(level)
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+        return res
 
     def forecast(
         self,
@@ -6391,19 +6397,27 @@ class UCM(_TS):
             h (int): Forecast horizon.
             X (array-like): Optional insample exogenous of shape (t, n_x). Currently ignored.
             X_future (array-like): Optional exogenous of shape (h, n_x). Currently ignored.
-            level (List[float]): Confidence levels (0-100) for prediction intervals. Not yet supported.
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
             fitted (bool): Whether or not to return insample predictions.
 
         Returns:
-            dict: Dictionary with entry `mean` for point predictions and optionally `fitted` insample predictions.
+            dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
-        self._no_pi(level)
         y = _ensure_float(y)
         mod = ucm_model(y, season_length=self.season_length)
         fcst = ucm_forecast(mod, h)
         res = {"mean": fcst["mean"]}
         if fitted:
             res["fitted"] = fcst["fitted"]
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                res = {**res, **_calculate_intervals(res, level, h, fcst["sigma"])}
+            if fitted:
+                se = _calculate_sigma(y - fcst["fitted"], len(y))
+                res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
 
