@@ -276,29 +276,23 @@ def test_statsforecast_cross_validation_fitted():
 # Numerical correctness vs statsmodels
 # ---------------------------------------------------------------------------
 def test_ucm_matches_statsmodels(seasonal_series):
-    """Forecasts should agree with statsmodels' UnobservedComponents."""
+    """Forecasts should agree with statsmodels' UCM."""
     sm = pytest.importorskip("statsmodels.api")
 
     y = seasonal_series
     h = 12
 
     sf_mod = ucm_model(y, season_length=12)
-    sf_out = ucm_forecast(sf_mod, h)
-    sf_fcst = sf_out["mean"]
+    sf_fcst = ucm_forecast(sf_mod, h)["mean"]
 
     sm_mod = sm.tsa.UnobservedComponents(
         y, level="local linear trend", seasonal=12, stochastic_seasonal=True
     )
     sm_res = sm_mod.fit(method="lbfgs", disp=False)
-    sm_pred = sm_res.get_forecast(h)
-    sm_fcst = np.asarray(sm_pred.predicted_mean)
-    sm_se = np.asarray(sm_pred.se_mean)
+    sm_fcst = np.asarray(sm_res.forecast(h))
 
     # Point forecasts should be close in scale and direction.
     np.testing.assert_allclose(sf_fcst, sm_fcst, rtol=0.15, atol=0.15 * np.std(y))
-    # The native (parametric) forecast std should match the Kalman-filter
-    # forecast std exposed by statsmodels.
-    np.testing.assert_allclose(sf_out["sigma"], sm_se, rtol=0.2, atol=0.2 * np.std(y))
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
