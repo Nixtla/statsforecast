@@ -126,6 +126,8 @@ def ucm_model(y: np.ndarray, season_length: int = 1) -> Dict:
     """Fit the minimal UCM by maximum likelihood."""
     y = np.asarray(y, dtype=np.float64)
     s = int(season_length)
+    if s < 1:
+        raise ValueError(f"season_length must be >= 1, got {season_length}.")
     has_seasonal = s > 1
 
     Z, T, R = _build_matrices(s)

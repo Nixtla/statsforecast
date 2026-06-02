@@ -6374,7 +6374,8 @@ class UCM(_TS):
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
             level = sorted(level)
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            se = self.model_["sigma"]
+            res = _add_fitted_pi(res=res, se=se, level=level)
         return res
 
     def forecast(
