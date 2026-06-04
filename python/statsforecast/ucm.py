@@ -1,5 +1,6 @@
 __all__ = ['ucm_model', 'ucm_forecast']
 
+import warnings
 import numpy as np
 from scipy.optimize import minimize
 from typing import Dict, Tuple
@@ -151,6 +152,9 @@ def ucm_model(y: np.ndarray, season_length: int = 1) -> Dict:
         method="L-BFGS-B",
         bounds=bounds,
     )
+    if not result.success:
+        warnings.warn(f"UCM optimization did not converge: {result.message}", UserWarning)
+    
     params = result.x
 
     Q, H = _make_QH(params, has_seasonal)
