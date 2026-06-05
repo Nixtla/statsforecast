@@ -45,7 +45,7 @@ __all__ = [
 
 import warnings
 from math import trunc
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy.special import inv_boxcox
@@ -4186,7 +4186,7 @@ class ConformalSeasonalPool(_TS):
         self.alias = alias
 
     def _intervals_from_samples(
-        self, samples: np.ndarray, level: List[Union[int, float]]
+        self, samples: np.ndarray, level: Sequence[Union[int, float]]
     ) -> Dict[str, np.ndarray]:
         cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
         cuts += [1 - (1 - lv / 100) / 2 for lv in level]
