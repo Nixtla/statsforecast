@@ -17,6 +17,7 @@ __all__ = [
     "Naive",
     "RandomWalkWithDrift",
     "SeasonalNaive",
+    "ConformalSeasonalPool",
     "WindowAverage",
     "SeasonalWindowAverage",
     "ADIDA",
@@ -4082,6 +4083,363 @@ class SeasonalNaive(_TS):
             y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
         )
         return res
+
+
+def _csp_sample_paths(
+    y: np.ndarray,
+    h: int,
+    m: int,
+    n_samples: int,
+    variant: str,
+    calib_frac: float,
+    decay: float,
+    rng,
+) -> Tuple[np.ndarray, np.ndarray]:
+    n = y.size
+
+    # Calibration pool: signed residuals y[t] - y[t-m] from recent history
+    calib_start = max(m, int(np.ceil(n * calib_frac)))
+    R = y[calib_start:] - y[calib_start - m : n - m]
+
+    # Seasonal naive point forecast: mu[j] = y[n - m + (j % m)]
+    season_vals = y[n - m : n]
+    mu = np.empty(h, dtype=y.dtype)
+    for j in range(h):
+        mu[j] = season_vals[j % m]
+
+    # Mixture weight
+    n_full_cycles = n // m
+    if m == 1:
+        w = 0.0
+    elif variant == "adaptive" and n_full_cycles < 3:
+        w = 0.3
+    else:
+        w = 0.5
+
+    # Per-horizon seasonal pool construction and mixture sampling
+    indices = np.arange(n)
+    samples = np.empty((n_samples, h), dtype=y.dtype)
+    for j in range(h):
+        phase_j = (n + j) % m
+        pool_vals = y[indices % m == phase_j]
+        k = pool_vals.size
+        t_norm = np.linspace(0.0, 1.0, k)
+        raw_w = np.exp(decay * t_norm)
+        pool_weights = raw_w / raw_w.sum()
+
+        use_pool = rng.random(n_samples) < w
+        pool_draws = rng.choice(pool_vals, size=n_samples, p=pool_weights)
+        resid_draws = rng.choice(R, size=n_samples) + mu[j]
+        samples[:, j] = np.where(use_pool, pool_draws, resid_draws)
+
+    return mu, samples
+
+
+class ConformalSeasonalPool(_TS):
+    def __init__(
+        self,
+        season_length: int,
+        n_samples: int = 100,
+        variant: str = "adaptive",
+        calib_frac: float = 0.5,
+        decay: float = 0.01,
+        alias: Optional[str] = None,
+    ):
+        r"""Conformal Seasonal Pool (CSP) model.
+
+        Sample-based probabilistic forecasting method that generates prediction
+        intervals by mixing draws from two pools:
+
+        1. A signed-residual calibration pool built from the recent training history.
+        2. An exponentially-weighted seasonal pool of historical observations at the
+           same seasonal phase as the forecast target.
+
+        Implements both CSP-Fixed (mixture weight w fixed at 0.5) and CSP-Adaptive
+        (w adjusts based on seasonality detection and history depth) via the
+        ``variant`` parameter.
+
+        References:
+            - [Conformal Seasonal Pool (arxiv 2605.03789)](https://arxiv.org/pdf/2605.03789)
+
+        Args:
+            season_length (int): Number of observations per unit of time. Ex: 12 for monthly data.
+            n_samples (int, default=100): Number of mixture samples used to estimate prediction intervals.
+            variant (str, default="adaptive"): ``"adaptive"`` adjusts the mixture weight based on
+                seasonality and history depth; ``"fixed"`` always uses w=0.5.
+            calib_frac (float, default=0.5): Fraction of training history used as calibration window.
+                The calibration start is ``max(season_length, ceil(n * calib_frac))``.
+            decay (float, default=0.01): Exponential recency rate λ for seasonal pool weights.
+                Weights are ``softmax(λ * linspace(0, 1, k))`` over normalised time indices,
+                so newer observations receive slightly higher sampling probability.
+            alias (str, optional): Custom name of the model. Defaults to ``"CSP-Adaptive"`` or
+                ``"CSP-Fixed"`` based on ``variant``.
+        """
+        if variant not in ("adaptive", "fixed"):
+            raise ValueError("variant must be 'adaptive' or 'fixed'")
+        self.season_length = season_length
+        self.n_samples = n_samples
+        self.variant = variant
+        self.calib_frac = calib_frac
+        self.decay = decay
+        if alias is None:
+            alias = "CSP-Adaptive" if variant == "adaptive" else "CSP-Fixed"
+        self.alias = alias
+
+    def _intervals_from_samples(
+        self, samples: np.ndarray, level: List[Union[int, float]]
+    ) -> Dict[str, np.ndarray]:
+        cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
+        cuts += [1 - (1 - lv / 100) / 2 for lv in level]
+        quantiles = np.quantile(samples, cuts, axis=0)
+        lo_cols = [f"lo-{lv}" for lv in reversed(level)]
+        hi_cols = [f"hi-{lv}" for lv in level]
+        return {col: quantiles[i] for i, col in enumerate(lo_cols + hi_cols)}
+
+    def fit(
+        self,
+        y: np.ndarray,
+        X: Optional[np.ndarray] = None,
+    ):
+        r"""Fit the ConformalSeasonalPool model.
+
+        Args:
+            y (numpy.array): Clean time series of shape (t, ).
+            X (array-like): Ignored. Present for API compatibility.
+
+        Returns:
+            self: ConformalSeasonalPool fitted model.
+        """
+        y = _ensure_float(y)
+        n = y.size
+        m = self.season_length
+        calib_start = max(m, int(np.ceil(n * self.calib_frac)))
+        R = y[calib_start:] - y[calib_start - m : n - m]
+        season_vals = y[n - m : n]
+        indices = np.arange(n)
+        y_by_phase = {phase: y[indices % m == phase] for phase in range(m)}
+        self.model_ = {
+            "y": y,
+            "calib_residuals": R,
+            "season_vals": season_vals,
+            "y_by_phase": y_by_phase,
+            "n_full_cycles": n // m,
+            "n": n,
+        }
+        return self
+
+    def predict(
+        self,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+    ):
+        r"""Predict with fitted ConformalSeasonalPool.
+
+        Args:
+            h (int): Forecast horizon.
+            X (array-like): Ignored. Present for API compatibility.
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
+
+        Returns:
+            dict: Dictionary with ``mean`` for point predictions and ``lo-{level}``/
+            ``hi-{level}`` for probabilistic predictions.
+        """
+        if not hasattr(self, "model_"):
+            raise ValueError("Call fit() before predict().")
+        rng = np.random.default_rng()
+        mu, samples = _csp_sample_paths(
+            y=self.model_["y"],
+            h=h,
+            m=self.season_length,
+            n_samples=self.n_samples,
+            variant=self.variant,
+            calib_frac=self.calib_frac,
+            decay=self.decay,
+            rng=rng,
+        )
+        res = {"mean": mu}
+        if level is not None:
+            level = sorted(level)
+            res.update(self._intervals_from_samples(samples, level))
+        return res
+
+    def predict_in_sample(self, level: Optional[List[int]] = None):
+        r"""Access fitted ConformalSeasonalPool in-sample predictions.
+
+        Point forecasts are seasonal naive fitted values. Prediction intervals
+        are constant-width bands derived from the empirical quantiles of the
+        calibration residuals R, centred on the fitted values.
+
+        Args:
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
+
+        Returns:
+            dict: Dictionary with ``fitted`` for point predictions and ``lo-{level}``/
+            ``hi-{level}`` for probabilistic predictions.
+        """
+        if not hasattr(self, "model_"):
+            raise ValueError("Call fit() before predict_in_sample().")
+        y = self.model_["y"]
+        n = y.size
+        m = self.season_length
+        fitted = np.empty_like(y)
+        fitted[:m] = np.nan
+        if n > m:
+            fitted[m:] = y[: n - m]
+        res = {"fitted": fitted}
+        if level is not None:
+            level = sorted(level)
+            R = self.model_["calib_residuals"]
+            for lv in level:
+                lo_q = (1 - lv / 100) / 2
+                hi_q = 1 - lo_q
+                lo_offset = float(np.quantile(R, lo_q))
+                hi_offset = float(np.quantile(R, hi_q))
+                res[f"lo-{lv}"] = fitted + lo_offset
+                res[f"hi-{lv}"] = fitted + hi_offset
+        return res
+
+    def forecast(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        r"""Memory efficient ConformalSeasonalPool predictions.
+
+        This method avoids memory overhead from object storage.
+        It is analogous to ``fit_predict`` without storing state.
+
+        Args:
+            y (numpy.array): Clean time series of shape (n, ).
+            h (int): Forecast horizon.
+            X (array-like): Ignored. Present for API compatibility.
+            X_future (array-like): Ignored. Present for API compatibility.
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
+            fitted (bool): Whether to also return in-sample fitted values.
+
+        Returns:
+            dict: Dictionary with ``mean`` for point predictions and ``lo-{level}``/
+            ``hi-{level}`` for probabilistic predictions.
+        """
+        y = _ensure_float(y)
+        rng = np.random.default_rng()
+        mu, samples = _csp_sample_paths(
+            y=y,
+            h=h,
+            m=self.season_length,
+            n_samples=self.n_samples,
+            variant=self.variant,
+            calib_frac=self.calib_frac,
+            decay=self.decay,
+            rng=rng,
+        )
+        res = {"mean": mu}
+        if level is not None:
+            level = sorted(level)
+            res.update(self._intervals_from_samples(samples, level))
+        if fitted:
+            n = y.size
+            m = self.season_length
+            fitted_vals = np.empty_like(y)
+            fitted_vals[:m] = np.nan
+            if n > m:
+                fitted_vals[m:] = y[: n - m]
+            res["fitted"] = fitted_vals
+        return res
+
+    def forward(
+        self,
+        y: np.ndarray,
+        h: int,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        level: Optional[List[int]] = None,
+        fitted: bool = False,
+    ):
+        r"""Apply fitted model to a new/updated series.
+
+        Args:
+            y (numpy.array): Clean time series of shape (n,).
+            h (int): Forecast horizon.
+            X (array-like): Ignored. Present for API compatibility.
+            X_future (array-like): Ignored. Present for API compatibility.
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
+            fitted (bool): Whether to also return in-sample fitted values.
+
+        Returns:
+            dict: Dictionary with ``mean`` for point predictions and ``lo-{level}``/
+            ``hi-{level}`` for probabilistic predictions.
+        """
+        y = _ensure_float(y)
+        return self.forecast(
+            y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
+        )
+
+    def simulate(
+        self,
+        h: int,
+        n_paths: int,
+        y: Optional[np.ndarray] = None,
+        X: Optional[np.ndarray] = None,
+        X_future: Optional[np.ndarray] = None,
+        seed: Optional[int] = None,
+        error_distribution: str = "normal",
+        error_params: Optional[Dict] = None,
+    ):
+        """Simulate future sample paths from a ConformalSeasonalPool model.
+
+        Parameters
+        ----------
+        h : int
+            Forecast horizon.
+        n_paths : int
+            Number of sample paths to generate.
+        y : np.ndarray, optional
+            Time series data. If provided, fits a new model; otherwise uses fitted model.
+        X : np.ndarray, optional
+            Ignored. Present for API compatibility.
+        X_future : np.ndarray, optional
+            Ignored. Present for API compatibility.
+        seed : int, optional
+            Random seed for reproducibility.
+        error_distribution : str, default='normal'
+            Ignored by CSP. A warning is emitted if a non-default value is passed.
+        error_params : dict, optional
+            Ignored by CSP. A warning is emitted if a non-None value is passed.
+
+        Returns
+        -------
+        np.ndarray
+            Sample paths of shape (n_paths, h).
+        """
+        if error_distribution != "normal" or error_params is not None:
+            import warnings as _warnings
+            _warnings.warn(
+                "ConformalSeasonalPool ignores error_distribution and error_params — "
+                "the predictive distribution is defined entirely by the CSP mixture sampling.",
+                UserWarning,
+                stacklevel=2,
+            )
+        if y is not None:
+            self.fit(y)
+        if not hasattr(self, "model_"):
+            raise ValueError("Call fit() or provide y to simulate().")
+        rng = np.random.default_rng(seed)
+        _, samples = _csp_sample_paths(
+            y=self.model_["y"],
+            h=h,
+            m=self.season_length,
+            n_samples=n_paths,
+            variant=self.variant,
+            calib_frac=self.calib_frac,
+            decay=self.decay,
+            rng=rng,
+        )
+        return samples
 
 
 def _window_average(
