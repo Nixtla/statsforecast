@@ -152,3 +152,19 @@ def test_alias_auto_derived():
 def test_invalid_variant_raises():
     with pytest.raises(ValueError, match="variant"):
         ConformalSeasonalPool(season_length=12, variant="bogus")
+
+
+def test_short_series_no_index_error():
+    """n < season_length: forecast must not raise and fills missing phases with NaN."""
+    m = 12
+    y_short = np.arange(1, 7, dtype=np.float32)  # only 6 obs, m=12
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = ConformalSeasonalPool(season_length=m).forecast(y_short, h=m, level=None)
+    mean = result["mean"]
+    assert mean.shape == (m,), f"expected shape ({m},), got {mean.shape}"
+    # _seasonal_naive fills missing phases at the start of the output with NaN
+    # (first 6 horizon steps map to phases with no history)
+    assert np.isnan(mean[:6]).all(), "phases without history should be NaN"
+    # last 6 horizon steps map to phases that have exactly one observation
+    assert not np.isnan(mean[6:]).any(), "phases with history should not be NaN"

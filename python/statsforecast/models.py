@@ -4094,18 +4094,13 @@ def _csp_sample_paths(
     calib_frac: float,
     decay: float,
     rng,
+    mu: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray]:
     n = y.size
 
     # Calibration pool: signed residuals y[t] - y[t-m] from recent history
     calib_start = max(m, int(np.ceil(n * calib_frac)))
     R = y[calib_start:] - y[calib_start - m : n - m]
-
-    # Seasonal naive point forecast: mu[j] = y[n - m + (j % m)]
-    season_vals = y[n - m : n]
-    mu = np.empty(h, dtype=y.dtype)
-    for j in range(h):
-        mu[j] = season_vals[j % m]
 
     # Mixture weight
     n_full_cycles = n // m
@@ -4123,6 +4118,11 @@ def _csp_sample_paths(
         phase_j = (n + j) % m
         pool_vals = y[indices % m == phase_j]
         k = pool_vals.size
+
+        if k == 0 or R.size == 0:
+            samples[:, j] = mu[j]
+            continue
+
         t_norm = np.linspace(0.0, 1.0, k)
         raw_w = np.exp(decay * t_norm)
         pool_weights = raw_w / raw_w.sum()
@@ -4214,16 +4214,17 @@ class ConformalSeasonalPool(_TS):
         m = self.season_length
         calib_start = max(m, int(np.ceil(n * self.calib_frac)))
         R = y[calib_start:] - y[calib_start - m : n - m]
-        season_vals = y[n - m : n]
         indices = np.arange(n)
         y_by_phase = {phase: y[indices % m == phase] for phase in range(m)}
+        mod = _seasonal_naive(y=y, h=m, fitted=True, season_length=m)
         self.model_ = {
             "y": y,
             "calib_residuals": R,
-            "season_vals": season_vals,
             "y_by_phase": y_by_phase,
             "n_full_cycles": n // m,
             "n": n,
+            "mean": mod["mean"],
+            "fitted": mod["fitted"],
         }
         return self
 
@@ -4246,8 +4247,9 @@ class ConformalSeasonalPool(_TS):
         """
         if not hasattr(self, "model_"):
             raise ValueError("Call fit() before predict().")
+        mu = _repeat_val_seas(self.model_["mean"], h=h)
         rng = np.random.default_rng()
-        mu, samples = _csp_sample_paths(
+        _, samples = _csp_sample_paths(
             y=self.model_["y"],
             h=h,
             m=self.season_length,
@@ -4256,6 +4258,7 @@ class ConformalSeasonalPool(_TS):
             calib_frac=self.calib_frac,
             decay=self.decay,
             rng=rng,
+            mu=mu,
         )
         res = {"mean": mu}
         if level is not None:
@@ -4279,13 +4282,7 @@ class ConformalSeasonalPool(_TS):
         """
         if not hasattr(self, "model_"):
             raise ValueError("Call fit() before predict_in_sample().")
-        y = self.model_["y"]
-        n = y.size
-        m = self.season_length
-        fitted = np.empty_like(y)
-        fitted[:m] = np.nan
-        if n > m:
-            fitted[m:] = y[: n - m]
+        fitted = self.model_["fitted"]
         res = {"fitted": fitted}
         if level is not None:
             level = sorted(level)
@@ -4326,29 +4323,27 @@ class ConformalSeasonalPool(_TS):
             ``hi-{level}`` for probabilistic predictions.
         """
         y = _ensure_float(y)
+        m = self.season_length
+        mod = _seasonal_naive(y=y, h=m, fitted=fitted, season_length=m)
+        mu = _repeat_val_seas(mod["mean"], h=h)
         rng = np.random.default_rng()
-        mu, samples = _csp_sample_paths(
+        _, samples = _csp_sample_paths(
             y=y,
             h=h,
-            m=self.season_length,
+            m=m,
             n_samples=self.n_samples,
             variant=self.variant,
             calib_frac=self.calib_frac,
             decay=self.decay,
             rng=rng,
+            mu=mu,
         )
         res = {"mean": mu}
         if level is not None:
             level = sorted(level)
             res.update(self._intervals_from_samples(samples, level))
         if fitted:
-            n = y.size
-            m = self.season_length
-            fitted_vals = np.empty_like(y)
-            fitted_vals[:m] = np.nan
-            if n > m:
-                fitted_vals[m:] = y[: n - m]
-            res["fitted"] = fitted_vals
+            res["fitted"] = mod["fitted"]
         return res
 
     def forward(
@@ -4428,6 +4423,7 @@ class ConformalSeasonalPool(_TS):
             self.fit(y)
         if not hasattr(self, "model_"):
             raise ValueError("Call fit() or provide y to simulate().")
+        mu = _repeat_val_seas(self.model_["mean"], h=h)
         rng = np.random.default_rng(seed)
         _, samples = _csp_sample_paths(
             y=self.model_["y"],
@@ -4438,6 +4434,7 @@ class ConformalSeasonalPool(_TS):
             calib_frac=self.calib_frac,
             decay=self.decay,
             rng=rng,
+            mu=mu,
         )
         return samples
 
