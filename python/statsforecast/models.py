@@ -4098,38 +4098,53 @@ def _csp_sample_paths(
 ) -> Tuple[np.ndarray, np.ndarray]:
     n = y.size
 
-    # Calibration pool: signed residuals y[t] - y[t-m] from recent history
-    calib_start = max(m, int(np.ceil(n * calib_frac)))
-    R = y[calib_start:] - y[calib_start - m : n - m]
+    # Calibration pool: most recent floor(calib_frac * n) signed residuals
+    t_cal = int(np.floor(calib_frac * n))
+    calib_start = max(m, n - t_cal)
+    R = y[calib_start:] - y[calib_start - m : max(0, n - m)]
 
-    # Mixture weight
-    n_full_cycles = n // m
-    if m == 1:
-        w = 0.0
-    elif variant == "adaptive" and n_full_cycles < 3:
-        w = 0.3
-    else:
-        w = 0.5
+    # NaN fallback for phases with no history (n < season_length): use latest observation
+    if np.any(np.isnan(mu)):
+        for i in np.where(np.isnan(mu))[0]:
+            mu[i] = y[-1]
 
     # Per-horizon seasonal pool construction and mixture sampling
     indices = np.arange(n)
     samples = np.empty((n_samples, h), dtype=y.dtype)
     for j in range(h):
         phase_j = (n + j) % m
-        pool_vals = y[indices % m == phase_j]
+        pool_idx = indices[indices % m == phase_j]
+        pool_vals = y[pool_idx]
         k = pool_vals.size
 
-        if k == 0 or R.size == 0:
+        if k == 0 and R.size == 0:
             samples[:, j] = mu[j]
             continue
 
-        t_norm = np.linspace(0.0, 1.0, k)
-        raw_w = np.exp(decay * t_norm)
-        pool_weights = raw_w / raw_w.sum()
+        # Per-horizon mixture weight (Algorithm 1)
+        if m <= 1 and variant == "adaptive":
+            w = 0.0
+        elif variant == "adaptive" and k < 3:
+            w = 0.3
+        else:
+            w = 0.5
+        # Clamp when one draw source is absent
+        if k == 0:
+            w = 0.0
+        elif R.size == 0:
+            w = 1.0
+
+        if k > 0:
+            ages = (n - 1) - pool_idx
+            raw_w = np.exp(-decay * ages)
+            pool_weights = raw_w / raw_w.sum()
+            pool_draws = rng.choice(pool_vals, size=n_samples, p=pool_weights)
+        else:
+            pool_draws = np.empty(n_samples, dtype=samples.dtype)  # w=0, never selected
+
+        resid_draws = rng.choice(R, size=n_samples) + mu[j] if R.size > 0 else pool_draws
 
         use_pool = rng.random(n_samples) < w
-        pool_draws = rng.choice(pool_vals, size=n_samples, p=pool_weights)
-        resid_draws = rng.choice(R, size=n_samples) + mu[j]
         samples[:, j] = np.where(use_pool, pool_draws, resid_draws)
 
     return mu, samples
@@ -4166,11 +4181,14 @@ class ConformalSeasonalPool(_TS):
             n_samples (int, default=100): Number of mixture samples used to estimate prediction intervals.
             variant (str, default="adaptive"): ``"adaptive"`` adjusts the mixture weight based on
                 seasonality and history depth; ``"fixed"`` always uses w=0.5.
-            calib_frac (float, default=0.5): Fraction of training history used as calibration window.
-                The calibration start is ``max(season_length, ceil(n * calib_frac))``.
+            calib_frac (float, default=0.5): Fraction of training history used for calibration
+                (most recent observations). The calibration pool contains the most recent
+                ``floor(calib_frac * n)`` signed seasonal residuals, starting from index
+                ``max(season_length, n - floor(calib_frac * n))``.
             decay (float, default=0.01): Exponential recency rate λ for seasonal pool weights.
-                Weights are ``softmax(λ * linspace(0, 1, k))`` over normalised time indices,
-                so newer observations receive slightly higher sampling probability.
+                Weights are proportional to ``exp(-λ * age)`` where ``age = (n-1) - t`` for
+                observation at time index ``t``, so newer same-phase observations receive
+                higher sampling probability and the differentiation grows with history length.
             alias (str, optional): Custom name of the model. Defaults to ``"CSP-Adaptive"`` or
                 ``"CSP-Fixed"`` based on ``variant``.
         """
@@ -4212,8 +4230,9 @@ class ConformalSeasonalPool(_TS):
         y = _ensure_float(y)
         n = y.size
         m = self.season_length
-        calib_start = max(m, int(np.ceil(n * self.calib_frac)))
-        R = y[calib_start:] - y[calib_start - m : n - m]
+        t_cal = int(np.floor(self.calib_frac * n))
+        calib_start = max(m, n - t_cal)
+        R = y[calib_start:] - y[calib_start - m : max(0, n - m)]
         indices = np.arange(n)
         y_by_phase = {phase: y[indices % m == phase] for phase in range(m)}
         mod = _seasonal_naive(y=y, h=m, fitted=True, season_length=m)
@@ -4260,6 +4279,8 @@ class ConformalSeasonalPool(_TS):
             rng=rng,
             mu=mu,
         )
+        # Point forecast is seasonal naive. Using sample median instead would let the
+        # mixture draws shift the point estimate, but that diverges from the paper original goal: probabilistic forecasting.
         res = {"mean": mu}
         if level is not None:
             level = sorted(level)
@@ -4290,8 +4311,11 @@ class ConformalSeasonalPool(_TS):
             for lv in level:
                 lo_q = (1 - lv / 100) / 2
                 hi_q = 1 - lo_q
-                lo_offset = float(np.quantile(R, lo_q))
-                hi_offset = float(np.quantile(R, hi_q))
+                if R.size > 0:
+                    lo_offset = float(np.quantile(R, lo_q))
+                    hi_offset = float(np.quantile(R, hi_q))
+                else:
+                    lo_offset = hi_offset = np.nan
                 res[f"lo-{lv}"] = fitted + lo_offset
                 res[f"hi-{lv}"] = fitted + hi_offset
         return res

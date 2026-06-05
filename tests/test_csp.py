@@ -155,16 +155,56 @@ def test_invalid_variant_raises():
 
 
 def test_short_series_no_index_error():
-    """n < season_length: forecast must not raise and fills missing phases with NaN."""
+    """n < season_length: forecast must not raise; NaN slots filled via latest-obs fallback."""
     m = 12
-    y_short = np.arange(1, 7, dtype=np.float32)  # only 6 obs, m=12
+    y_short = np.arange(1, 7, dtype=np.float32)  # only 6 obs, m=12 (n <= m/2)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         result = ConformalSeasonalPool(season_length=m).forecast(y_short, h=m, level=None)
     mean = result["mean"]
     assert mean.shape == (m,), f"expected shape ({m},), got {mean.shape}"
-    # _seasonal_naive fills missing phases at the start of the output with NaN
-    # (first 6 horizon steps map to phases with no history)
-    assert np.isnan(mean[:6]).all(), "phases without history should be NaN"
-    # last 6 horizon steps map to phases that have exactly one observation
-    assert not np.isnan(mean[6:]).any(), "phases with history should not be NaN"
+    assert not np.isnan(mean).any(), "all horizon steps should be non-NaN after latest-obs fallback"
+
+
+def test_short_series_between_half_and_full_season():
+    """n in (m/2, m): residual slice must not crash (negative index bug regression)."""
+    m = 12
+    y_short = np.arange(1, 9, dtype=np.float32)  # 8 obs, m=12, m/2 < n < m
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result = ConformalSeasonalPool(season_length=m).forecast(y_short, h=m, level=None)
+    mean = result["mean"]
+    assert mean.shape == (m,), f"expected shape ({m},), got {mean.shape}"
+    assert not np.isnan(mean).any(), "all horizon steps should be non-NaN"
+
+
+def test_empty_R_pool_draws_nondegenerate():
+    """R empty but pool k>=2: intervals must have non-zero width from pool draws alone.
+
+    Uses n=2*m with calib_frac≈0 to force R empty while each phase has k=2 observations.
+    The old `k==0 or R.size==0` guard collapsed to a point forecast in this case;
+    the corrected `k==0 and R.size==0` guard allows pure pool draws instead.
+    """
+    m = 12
+    rng_np = np.random.default_rng(42)
+    y = rng_np.standard_normal(2 * m).astype(np.float32)
+    # calib_frac=0.01 → t_cal=floor(0.01*24)=0 → R is empty; each phase has k=2 pool obs
+    result = ConformalSeasonalPool(
+        season_length=m, n_samples=500, calib_frac=0.01
+    ).forecast(y, h=m, level=[90])
+    lo, hi = result["lo-90"], result["hi-90"]
+    assert not np.isnan(lo).any(), "lo intervals should not be NaN"
+    assert not np.isnan(hi).any(), "hi intervals should not be NaN"
+    assert np.any(hi > lo), "pure pool draws from k=2 pool should produce non-zero width"
+
+
+def test_predict_in_sample_empty_R_returns_nan_intervals():
+    """n == m: fit stores empty R; predict_in_sample(level=...) must not raise."""
+    m = 12
+    rng = np.random.default_rng(1)
+    y = rng.standard_normal(m).astype(np.float32)
+    model = ConformalSeasonalPool(season_length=m).fit(y)
+    result = model.predict_in_sample(level=[90])
+    assert "lo-90" in result and "hi-90" in result
+    assert np.isnan(result["lo-90"]).all(), "offsets should be NaN when R is empty"
+    assert np.isnan(result["hi-90"]).all(), "offsets should be NaN when R is empty"
