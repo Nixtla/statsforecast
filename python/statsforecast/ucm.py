@@ -5,6 +5,8 @@ import numpy as np
 from scipy.optimize import minimize
 from typing import Dict, Tuple
 
+from ._lib import ucm as _ucm
+
 # Diffuse initialization: initial state mean is 0 and the initial state
 # covariance is a large multiple of the identity.
 _DIFFUSE_VARIANCE = 1e6
@@ -58,7 +60,9 @@ def kalman_filter(
     a0: np.ndarray,
     P0: np.ndarray,
 ) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray]:
-    """Run a univariate Kalman filter."""
+    """Run a univariate Kalman filter.
+    Pure-Python reference implementation, retained for validation. 
+    """
     n = y.shape[0]
     z = Z[0]
     RQRt = R @ Q @ R.T
@@ -117,7 +121,7 @@ def _nll(
 ) -> float:
     """Negative log-likelihood for a variance vector theta."""
     Q, H = _make_QH(theta, has_seasonal)
-    loglik, _, _, _ = kalman_filter(y, Z, T, R, Q, H, a0, P0)
+    loglik = _ucm.loglik(y, Z, T, R, Q, float(H), a0, P0)
     if not np.isfinite(loglik):
         return 1e10
     return -loglik
@@ -149,16 +153,17 @@ def ucm_model(y: np.ndarray, season_length: int = 1) -> Dict:
         _nll,
         x0,
         args=(y, Z, T, R, a0, P0, has_seasonal),
-        method="L-BFGS-B",
+        method="Nelder-Mead",
         bounds=bounds,
     )
+
     if not result.success:
         warnings.warn(f"UCM optimization did not converge: {result.message}", UserWarning)
     
     params = result.x
 
     Q, H = _make_QH(params, has_seasonal)
-    _, a_n, P_n, fitted = kalman_filter(y, Z, T, R, Q, H, a0, P0)
+    _, a_n, P_n, fitted = _ucm.filter(y, Z, T, R, Q, float(H), a0, P0)
 
     residuals = y - fitted
     sigma = np.sqrt(np.sum(residuals**2) / max(len(y) - 1, 1))

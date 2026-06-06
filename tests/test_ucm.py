@@ -78,6 +78,34 @@ def test_kalman_filter_loglik_finite(trend_series):
     assert np.all(np.isfinite(one_step))
 
 
+@pytest.mark.parametrize("season_length", [1, 12])
+def test_kalman_filter_cpp_matches_python(
+    season_length, trend_series, seasonal_series
+):
+    """The compiled Kalman filter must match the Python reference."""
+    from statsforecast._lib import ucm as _ucm
+
+    y = trend_series if season_length == 1 else seasonal_series
+    Z, T, R = _build_matrices(season_length=season_length)
+    k = T.shape[0]
+    n_shocks = R.shape[1]
+    Q = np.diag(np.linspace(1.0, 0.1, n_shocks))
+    H = 1.5
+    a0 = np.zeros(k)
+    P0 = 1e6 * np.eye(k)
+
+    py_ll, py_a, py_P, py_pred = kalman_filter(y, Z, T, R, Q, H, a0, P0)
+    cpp_ll, cpp_a, cpp_P, cpp_pred = _ucm.filter(y, Z, T, R, Q, H, a0, P0)
+
+    np.testing.assert_allclose(cpp_ll, py_ll, rtol=1e-7, atol=1e-7)
+    np.testing.assert_allclose(cpp_a, py_a, rtol=1e-7, atol=1e-7)
+    np.testing.assert_allclose(cpp_P, py_P, rtol=1e-6, atol=1e-6)
+    np.testing.assert_allclose(cpp_pred, py_pred, rtol=1e-7, atol=1e-7)
+    np.testing.assert_allclose(
+        _ucm.loglik(y, Z, T, R, Q, H, a0, P0), py_ll, rtol=1e-7, atol=1e-7
+    )
+
+
 def test_ucm_model_params_trend_only(trend_series):
     mod = ucm_model(trend_series, season_length=1)
     # [sigma2_eps, sigma2_eta, sigma2_zeta]

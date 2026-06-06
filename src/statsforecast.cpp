@@ -34,6 +34,10 @@ namespace mfles {
 void init(py::module_ &);
 }
 
+namespace ucm {
+void init(py::module_ &);
+}
+
 PYBIND11_MODULE(_lib, m) {
   arima::init(m);
   ets::init(m);
@@ -43,4 +47,5 @@ PYBIND11_MODULE(_lib, m) {
   ces::init(m);
   tbats_ns::init(m);
   mfles::init(m);
+  ucm::init(m);
 }
