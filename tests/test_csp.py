@@ -68,7 +68,10 @@ def test_thin_history_adaptive(y_short):
 
 
 # 4.6 — Variant comparison: fixed and adaptive differ on short series
-def test_variant_comparison_short_series(y_short):
+def test_variant_comparison_short_series(monkeypatch, y_short):
+    # Seed both calls identically so the only difference is the mixture weight logic.
+    rngs = iter([np.random.default_rng(0), np.random.default_rng(0)])
+    monkeypatch.setattr(np.random, "default_rng", lambda *a, **kw: next(rngs))
     fixed = ConformalSeasonalPool(
         season_length=12, variant="fixed", n_samples=500
     ).forecast(y_short, h=12, level=[80])
@@ -112,12 +115,12 @@ def test_predict_in_sample(y_monthly):
     model = ConformalSeasonalPool(season_length=12).fit(y_monthly)
     res = model.predict_in_sample(level=[90])
     assert "fitted" in res
-    assert "lo-90" in res
-    assert "hi-90" in res
+    assert "fitted-lo-90" in res
+    assert "fitted-hi-90" in res
     assert res["fitted"].shape == y_monthly.shape
-    assert res["lo-90"].shape == y_monthly.shape
+    assert res["fitted-lo-90"].shape == y_monthly.shape
     # Interval width must be constant (ignoring NaN positions)
-    width = res["hi-90"] - res["lo-90"]
+    width = res["fitted-hi-90"] - res["fitted-lo-90"]
     valid = ~np.isnan(width)
     assert np.allclose(width[valid], width[valid][0])
 
@@ -205,6 +208,6 @@ def test_predict_in_sample_empty_R_returns_nan_intervals():
     y = rng.standard_normal(m).astype(np.float32)
     model = ConformalSeasonalPool(season_length=m).fit(y)
     result = model.predict_in_sample(level=[90])
-    assert "lo-90" in result and "hi-90" in result
-    assert np.isnan(result["lo-90"]).all(), "offsets should be NaN when R is empty"
-    assert np.isnan(result["hi-90"]).all(), "offsets should be NaN when R is empty"
+    assert "fitted-lo-90" in result and "fitted-hi-90" in result
+    assert np.isnan(result["fitted-lo-90"]).all(), "offsets should be NaN when R is empty"
+    assert np.isnan(result["fitted-hi-90"]).all(), "offsets should be NaN when R is empty"

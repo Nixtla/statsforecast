@@ -4233,15 +4233,10 @@ class ConformalSeasonalPool(_TS):
         t_cal = int(np.floor(self.calib_frac * n))
         calib_start = max(m, n - t_cal)
         R = y[calib_start:] - y[calib_start - m : max(0, n - m)]
-        indices = np.arange(n)
-        y_by_phase = {phase: y[indices % m == phase] for phase in range(m)}
         mod = _seasonal_naive(y=y, h=m, fitted=True, season_length=m)
         self.model_ = {
             "y": y,
             "calib_residuals": R,
-            "y_by_phase": y_by_phase,
-            "n_full_cycles": n // m,
-            "n": n,
             "mean": mod["mean"],
             "fitted": mod["fitted"],
         }
@@ -4298,8 +4293,8 @@ class ConformalSeasonalPool(_TS):
             level (List[float]): Confidence levels (0-100) for prediction intervals.
 
         Returns:
-            dict: Dictionary with ``fitted`` for point predictions and ``lo-{level}``/
-            ``hi-{level}`` for probabilistic predictions.
+            dict: Dictionary with ``fitted`` for point predictions and
+            ``fitted-lo-{level}``/``fitted-hi-{level}`` for probabilistic predictions.
         """
         if not hasattr(self, "model_"):
             raise ValueError("Call fit() before predict_in_sample().")
@@ -4316,8 +4311,8 @@ class ConformalSeasonalPool(_TS):
                     hi_offset = float(np.quantile(R, hi_q))
                 else:
                     lo_offset = hi_offset = np.nan
-                res[f"lo-{lv}"] = fitted + lo_offset
-                res[f"hi-{lv}"] = fitted + hi_offset
+                res[f"fitted-lo-{lv}"] = fitted + lo_offset
+                res[f"fitted-hi-{lv}"] = fitted + hi_offset
         return res
 
     def forecast(
