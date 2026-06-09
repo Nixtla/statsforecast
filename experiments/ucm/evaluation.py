@@ -49,7 +49,7 @@ def main(dataset: str = 'M3'):
     evaluation = evaluation[['dataset', 'model', 'mae', 'rmse', 'smape', 'time']]
     evaluation['smape'] = evaluation['smape'] * 100
     evaluation['time'] = evaluation['time'] / 60
-    evaluation[['mae', 'rmse', 'smape', 'time']] = evaluation[['mae', 'rmse', 'smape', 'time']].round(2)
+    evaluation[['mae', 'rmse', 'smape', 'time']] = evaluation[['mae', 'rmse', 'smape', 'time']].round(3)
     evaluation = evaluation.sort_values(by=['dataset', 'model'])
     evaluation.to_csv(f'data/evaluation-{dataset}.csv', index=False)
     print(evaluation.to_markdown(index=False))

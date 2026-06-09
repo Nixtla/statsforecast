@@ -68,5 +68,7 @@ def main(dataset: str = 'M4', group: str = 'Monthly', n_workers: int = None) -> 
     time_df = pd.DataFrame({'time': [end - start], 'model': ['UCM-sm']})
     time_df.to_csv(f'data/UCM-sm-time-{dataset}-{group}.csv', index=False)
 
+    print(f'Dataset: {dataset} - Group: {group} with statsmodels completed in {end - start} seconds')
+
 if __name__ == '__main__':
     fire.Fire(main)
