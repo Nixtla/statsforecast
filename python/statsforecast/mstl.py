@@ -16,14 +16,16 @@ def mstl(
     s_window: Optional[np.ndarray] = None,  # seasonal window
     stl_kwargs: Dict = dict(),
 ):
-    if s_window is None:
-        s_window = 7 + 4 * np.arange(1, 7)
     origx = x
     n = len(x)
     if isinstance(period, int):
         msts = [period]
     else:
         msts = sorted(period)
+    if s_window is None:
+        # default seasonal windows 11, 15, 19, ... sized to the number of
+        # seasonal periods, as in R's forecast::mstl()
+        s_window = 7 + 4 * np.arange(1, len(msts) + 1)
     if len(msts) == 1:
         iterate = 1
     if x.ndim == 2:
