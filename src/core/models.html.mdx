@@ -32,7 +32,7 @@ StatsForecast offers a wide variety of statistical forecasting models grouped in
 #### `AutoARIMA`
 
 ```python
-AutoARIMA(d=None, D=None, max_p=5, max_q=5, max_P=2, max_Q=2, max_order=5, max_d=2, max_D=1, start_p=2, start_q=2, start_P=1, start_Q=1, stationary=False, seasonal=True, ic='aicc', stepwise=True, nmodels=94, trace=False, approximation=False, method=None, truncate=None, test='kpss', test_kwargs=None, seasonal_test='seas', seasonal_test_kwargs=None, allowdrift=True, allowmean=True, blambda=None, biasadj=False, season_length=1, alias='AutoARIMA', prediction_intervals=None)
+AutoARIMA(d=None, D=None, max_p=5, max_q=5, max_P=2, max_Q=2, max_order=5, max_d=2, max_D=1, start_p=2, start_q=2, start_P=1, start_Q=1, stationary=False, seasonal=True, ic='aicc', stepwise=True, nmodels=94, trace=False, approximation=False, method=None, truncate=None, test='kpss', test_kwargs=None, seasonal_test='seas', seasonal_test_kwargs=None, allowdrift=True, allowmean=True, blambda=None, biasadj=False, season_length=1, distribution='normal', alias='AutoARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -850,7 +850,7 @@ Name | Type | Description
 #### `ARIMA`
 
 ```python
-ARIMA(order=(0, 0, 0), season_length=1, seasonal_order=(0, 0, 0), include_mean=True, include_drift=False, include_constant=None, blambda=None, biasadj=False, method='CSS-ML', fixed=None, alias='ARIMA', prediction_intervals=None)
+ARIMA(order=(0, 0, 0), season_length=1, seasonal_order=(0, 0, 0), include_mean=True, include_drift=False, include_constant=None, blambda=None, biasadj=False, method='CSS-ML', fixed=None, distribution='normal', alias='ARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
