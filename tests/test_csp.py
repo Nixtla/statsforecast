@@ -233,8 +233,8 @@ def test_intervals_use_orientation_correction():
     result = model._intervals_from_samples(samples, level=[95])
 
     # At n=100, alpha=0.05: oriented lo = floor(101*0.025)/100 = 0.02 (not 0.025)
-    oriented_lo = float(np.quantile(samples, 0.02, axis=0))
-    plain_lo = float(np.quantile(samples, 0.025, axis=0))
+    oriented_lo = np.quantile(samples, 0.02, axis=0).item()
+    plain_lo = np.quantile(samples, 0.025, axis=0).item()
 
     np.testing.assert_allclose(result["lo-95"], [oriented_lo])
     # The two values must actually differ for this test to be meaningful
