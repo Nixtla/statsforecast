@@ -301,6 +301,7 @@ class AutoARIMA(_TS):
         blambda: Optional[float] = None,
         biasadj: bool = False,
         season_length: int = 1,
+        distribution: str = "normal",
         alias: str = "AutoARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -335,6 +336,7 @@ class AutoARIMA(_TS):
         self.blambda = blambda
         self.biasadj = biasadj
         self.season_length = season_length
+        self.distribution = distribution
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -391,6 +393,7 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                distribution=self.distribution,
             )
 
         self._store_cs(y=y, X=X)
@@ -1872,6 +1875,7 @@ class ARIMA(_TS):
         biasadj: bool = False,
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
+        distribution: str = "normal",
         alias: str = "ARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -1885,6 +1889,7 @@ class ARIMA(_TS):
         self.biasadj = biasadj
         self.method = method
         self.fixed = fixed
+        self.distribution = distribution
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -1918,6 +1923,7 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                distribution=self.distribution,
             )
         self._store_cs(y=y, X=X)
         return self
