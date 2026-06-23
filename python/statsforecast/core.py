@@ -710,9 +710,30 @@ class _StatsForecast:
             df = df.reset_index(drop=True)
         return df
 
+    @staticmethod
+    def _validate_level(level: Optional[List[int]]) -> None:
+        if level is None or len(level) == 0:
+            return
+        try:
+            arr = np.asarray(level, dtype=float)
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Every value in `level` must be a finite real number. Got: {list(level)}"
+            )
+        if not np.isfinite(arr).all():
+            raise ValueError(
+                f"Every value in `level` must be a finite real number. Got: {list(level)}"
+            )
+        if np.any((arr <= 0) | (arr >= 100)):
+            raise ValueError(
+                "Every value in `level` must be between 0 and 100 (exclusive). "
+                f"Got: {list(level)}"
+            )
+
     def _parse_X_level(
         self, h: int, X: Optional[DataFrame], level: Optional[List[int]]
     ):
+        self._validate_level(level)
         if level is None:
             level = []
         if X is None:
