@@ -4179,6 +4179,8 @@ class ConformalSeasonalPool(_TS):
         Args:
             season_length (int): Number of observations per unit of time. Ex: 12 for monthly data.
             n_samples (int, default=100): Number of mixture samples used to estimate prediction intervals.
+                For a level-L interval, at least ``ceil(2/(1 - L/100)) - 1`` samples are needed before
+                the orientation-corrected lower bound is non-degenerate (e.g., ≥40 for a 95% interval).
             variant (str, default="adaptive"): ``"adaptive"`` adjusts the mixture weight based on
                 seasonality and history depth; ``"fixed"`` always uses w=0.5.
             calib_frac (float, default=0.5): Fraction of training history used for calibration

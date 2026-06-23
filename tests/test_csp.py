@@ -239,3 +239,22 @@ def test_intervals_use_orientation_correction():
     np.testing.assert_allclose(result["lo-95"], [oriented_lo])
     # The two values must actually differ for this test to be meaningful
     assert abs(oriented_lo - plain_lo) > 1e-10
+
+
+def test_predict_in_sample_uses_orientation_correction():
+    """predict_in_sample applies conformal correction on R at n=R.size."""
+    rng = np.random.default_rng(0)
+    m = 12
+    # n=60, calib_frac=0.5 -> t_cal=30, calib_start=max(12,30)=30, R.size=30
+    y = rng.standard_normal(60).astype(np.float64)
+    model = ConformalSeasonalPool(season_length=m, calib_frac=0.5).fit(y)
+    R = model.model_["calib_residuals"]
+    n_r = R.size  # 30
+    # level=95: lo_q=0.025, oriented = floor(31*0.025)/30 = 0/30 = 0.0 != 0.025
+    oriented_lo = ConformalSeasonalPool._oriented_index(0.025, n_r)
+    plain_lo = 0.025
+    assert oriented_lo != plain_lo, "oriented and plain must differ for this test to be meaningful"
+    result = model.predict_in_sample(level=[95])
+    fitted = model.model_["fitted"]
+    expected_lo = fitted + float(np.quantile(R, oriented_lo))
+    np.testing.assert_allclose(result["fitted-lo-95"], expected_lo)
