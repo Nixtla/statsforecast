@@ -159,5 +159,6 @@ jobs:
       - name: Run benchmarks
         uses: CodSpeedHQ/action@63f3e98b61959fe67f146a3ff022e4136fe9bb9c # 4.17.6
         with:
+          mode: simulation
           token: ${{ secrets.CODESPEED_TOKEN }}
           run: uv run pytest action_files/test_efficiency.py --codspeed -n 2 --no-cov
