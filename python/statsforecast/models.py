@@ -4203,6 +4203,14 @@ class ConformalSeasonalPool(_TS):
             alias = "CSP-Adaptive" if variant == "adaptive" else "CSP-Fixed"
         self.alias = alias
 
+    @staticmethod
+    def _oriented_index(q: float, n: int) -> float:
+        if n <= 0:
+            return float(q)
+        if q < 0.5:
+            return max(0.0, float(np.floor((n + 1.0) * q)) / n)
+        return min(1.0, float(np.ceil((n + 1.0) * q)) / n)
+
     def _intervals_from_samples(
         self, samples: np.ndarray, level: Sequence[Union[int, float]]
     ) -> Dict[str, np.ndarray]:

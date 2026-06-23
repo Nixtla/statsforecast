@@ -211,3 +211,14 @@ def test_predict_in_sample_empty_R_returns_nan_intervals():
     assert "fitted-lo-90" in result and "fitted-hi-90" in result
     assert np.isnan(result["fitted-lo-90"]).all(), "offsets should be NaN when R is empty"
     assert np.isnan(result["fitted-hi-90"]).all(), "offsets should be NaN when R is empty"
+
+
+def test_oriented_index_values():
+    # alpha=0.05, n=100: floor(101*0.025)/100 = 2/100 = 0.02  (differs from plain 0.025)
+    assert ConformalSeasonalPool._oriented_index(0.025, 100) == pytest.approx(0.02)
+    # upper tail: ceil(101*0.975)/100 = 99/100 = 0.99  (differs from plain 0.975)
+    assert ConformalSeasonalPool._oriented_index(0.975, 100) == pytest.approx(0.99)
+    # alpha=0.10, n=100: floor(101*0.05)/100 = 5/100 = 0.05  (exact — no change)
+    assert ConformalSeasonalPool._oriented_index(0.05, 100) == pytest.approx(0.05)
+    # degenerate: n=0 returns q unchanged
+    assert ConformalSeasonalPool._oriented_index(0.025, 0) == pytest.approx(0.025)
