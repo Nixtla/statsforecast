@@ -4216,7 +4216,9 @@ class ConformalSeasonalPool(_TS):
     ) -> Dict[str, np.ndarray]:
         cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
         cuts += [1 - (1 - lv / 100) / 2 for lv in level]
-        quantiles = np.quantile(samples, cuts, axis=0)
+        n = samples.shape[0]
+        oriented = [self._oriented_index(c, n) for c in cuts]
+        quantiles = np.quantile(samples, oriented, axis=0)
         lo_cols = [f"lo-{lv}" for lv in reversed(level)]
         hi_cols = [f"hi-{lv}" for lv in level]
         return {col: quantiles[i] for i, col in enumerate(lo_cols + hi_cols)}
@@ -4315,8 +4317,9 @@ class ConformalSeasonalPool(_TS):
                 lo_q = (1 - lv / 100) / 2
                 hi_q = 1 - lo_q
                 if R.size > 0:
-                    lo_offset = float(np.quantile(R, lo_q))
-                    hi_offset = float(np.quantile(R, hi_q))
+                    n_r = R.size
+                    lo_offset = float(np.quantile(R, self._oriented_index(lo_q, n_r)))
+                    hi_offset = float(np.quantile(R, self._oriented_index(hi_q, n_r)))
                 else:
                     lo_offset = hi_offset = np.nan
                 res[f"fitted-lo-{lv}"] = fitted + lo_offset

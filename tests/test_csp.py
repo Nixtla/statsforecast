@@ -222,3 +222,20 @@ def test_oriented_index_values():
     assert ConformalSeasonalPool._oriented_index(0.05, 100) == pytest.approx(0.05)
     # degenerate: n=0 returns q unchanged
     assert ConformalSeasonalPool._oriented_index(0.025, 0) == pytest.approx(0.025)
+
+
+def test_intervals_use_orientation_correction():
+    """_intervals_from_samples applies orientation correction at alpha=0.05, n=100."""
+    rng = np.random.default_rng(0)
+    # (100, 1) sample matrix — 100 samples, horizon=1
+    samples = rng.standard_normal((100, 1))
+    model = ConformalSeasonalPool(season_length=12)
+    result = model._intervals_from_samples(samples, level=[95])
+
+    # At n=100, alpha=0.05: oriented lo = floor(101*0.025)/100 = 0.02 (not 0.025)
+    oriented_lo = float(np.quantile(samples, 0.02, axis=0))
+    plain_lo = float(np.quantile(samples, 0.025, axis=0))
+
+    np.testing.assert_allclose(result["lo-95"], [oriented_lo])
+    # The two values must actually differ for this test to be meaningful
+    assert abs(oriented_lo - plain_lo) > 1e-10
