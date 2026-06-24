@@ -140,7 +140,7 @@ def test_autoces_bootstrap():
     assert not res_bootstrap['CES'].isna().any()
 
 def test_t_distribution_invalid_df():
-    """Test that t-distribution with df <= 2 raises appropriate error."""
+    """Test that t-distribution with df=0 raises; df=1,2 now delegate to scipy."""
     df = pd.DataFrame({
         'unique_id': [1] * 10,
         'ds': pd.date_range('2000-01-01', periods=10),
@@ -150,23 +150,15 @@ def test_t_distribution_invalid_df():
     models = [Naive()]
     sf = StatsForecast(models=models, freq='D')
 
-    # Test with df = 2 (should fail)
-    with pytest.raises(ValueError, match="Degrees of freedom.*must be > 2"):
-        sf.simulate(h=3, df=df, n_paths=10, seed=42,
-                   error_distribution='t', error_params={'df': 2})
-
-    # Test with df = 1 (should fail)
-    with pytest.raises(ValueError, match="Degrees of freedom.*must be > 2"):
-        sf.simulate(h=3, df=df, n_paths=10, seed=42,
-                   error_distribution='t', error_params={'df': 1})
-
-    # Test with df = 0 (should fail)
-    with pytest.raises(ValueError, match="Degrees of freedom.*must be > 2"):
+    # df=2 and df=1 are valid for scipy.stats.t sampling (heavy tails, infinite variance
+    # but well-defined density). The factory delegates to scipy, so they no longer raise.
+    # Only df=0 is rejected by scipy's domain check.
+    with pytest.raises(ValueError):
         sf.simulate(h=3, df=df, n_paths=10, seed=42,
                    error_distribution='t', error_params={'df': 0})
 
 def test_ged_invalid_shape():
-    """Test that GED distribution with shape <= 0 raises appropriate error."""
+    """Test that GED distribution with shape <= 0 raises (via scipy domain check)."""
     df = pd.DataFrame({
         'unique_id': [1] * 10,
         'ds': pd.date_range('2000-01-01', periods=10),
@@ -176,13 +168,13 @@ def test_ged_invalid_shape():
     models = [Naive()]
     sf = StatsForecast(models=models, freq='D')
 
-    # Test with shape = 0 (should fail)
-    with pytest.raises(ValueError, match="GED shape parameter must be positive"):
+    # shape=0 and shape=-1 are rejected by scipy.stats.gennorm domain check.
+    # The factory delegates to scipy, so the error message is scipy's.
+    with pytest.raises(ValueError):
         sf.simulate(h=3, df=df, n_paths=10, seed=42,
                    error_distribution='ged', error_params={'shape': 0})
 
-    # Test with negative shape (should fail)
-    with pytest.raises(ValueError, match="GED shape parameter must be positive"):
+    with pytest.raises(ValueError):
         sf.simulate(h=3, df=df, n_paths=10, seed=42,
                    error_distribution='ged', error_params={'shape': -1})
 

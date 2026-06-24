@@ -309,3 +309,27 @@ def test_frozen_distribution_scale_convention(distribution, params, expected):
     from statsforecast.distributions import frozen_error_distribution
     d = frozen_error_distribution(sigma=2.0, distribution=distribution, params=params)
     np.testing.assert_allclose(d.ppf(0.975), expected)
+
+
+# ---------------------------------------------------------------------------
+# Task 3: sample_errors must use sigma as scale (not SD)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("distribution,params", [
+    ("t",           {"df": 5.0}),
+    ("skew-normal", {"skewness": 1.5}),
+    ("ged",         {"shape": 1.2}),
+])
+def test_sample_errors_uses_sigma_as_scale(distribution, params):
+    """MC samples must come from the same distribution as the analytic PPF path."""
+    from statsforecast.simulation import sample_errors
+    from statsforecast.distributions import frozen_error_distribution
+    sigma = 2.0
+    rng = np.random.default_rng(0)
+    samples = sample_errors(
+        size=100_000, sigma=sigma, distribution=distribution,
+        params=params, rng=rng,
+    )
+    analytic_p975 = frozen_error_distribution(sigma, distribution, params).ppf(0.975)
+    empirical_p975 = float(np.quantile(samples, 0.975))
+    np.testing.assert_allclose(empirical_p975, analytic_p975, rtol=0.02)
