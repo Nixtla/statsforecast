@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <stdexcept>
 #include <tuple>
 
@@ -7,6 +8,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
 
+#include "distributions.h"
 #include "nelder_mead.h"
 
 namespace ces {
@@ -326,6 +328,73 @@ optimize(const Eigen::Ref<const VectorXd> &x0,
       init_states_copy, n_components, season, nmse);
 }
 
+// Distribution-aware target function for optimization
+double ces_target_fn_dist(const VectorXd &optimal_param, double init_alpha_0,
+                          double init_alpha_1, double init_beta_0,
+                          double init_beta_1, bool opt_alpha_0, bool opt_alpha_1,
+                          bool opt_beta_0, bool opt_beta_1, const VectorXd &y,
+                          int m, const RowMajorMatrixXd &init_states,
+                          int n_components, int season, int nmse,
+                          dist::Distribution distribution) {
+  Eigen::Index n = y.size();
+  RowMajorMatrixXd states = RowMajorMatrixXd::Zero(n + 2 * m, n_components);
+  states.topRows(m) = init_states;
+
+  Eigen::Index j = 0;
+  double alpha_0 = opt_alpha_0 ? optimal_param[j++] : init_alpha_0;
+  double alpha_1 = opt_alpha_1 ? optimal_param[j++] : init_alpha_1;
+  double beta_0 = opt_beta_0 ? optimal_param[j++] : init_beta_0;
+  double beta_1 = opt_beta_1 ? optimal_param[j++] : init_beta_1;
+
+  VectorXd e = VectorXd::Constant(n, std::numeric_limits<double>::quiet_NaN());
+  VectorXd amse =
+      VectorXd::Constant(nmse, std::numeric_limits<double>::quiet_NaN());
+
+  double lik = cescalc(y, states, m, season, alpha_0, alpha_1, beta_0, beta_1,
+                       e, amse, nmse, 1);
+  if (std::isnan(lik) || std::fabs(lik + 99999) < 1e-7)
+    return std::numeric_limits<double>::infinity();
+
+  int nn = static_cast<int>(n);
+  int n_total = static_cast<int>(optimal_param.size());
+  switch (distribution) {
+  case dist::Distribution::Laplace:
+    return dist::negloglik_laplace(e.data(), nn);
+  case dist::Distribution::StudentT:
+    return dist::negloglik_t(e.data(), nn, optimal_param(n_total - 2),
+                             optimal_param(n_total - 1));
+  case dist::Distribution::SkewNormal:
+    return dist::negloglik_skewnorm(e.data(), nn, optimal_param(n_total - 2),
+                                    optimal_param(n_total - 1));
+  case dist::Distribution::GED:
+    return dist::negloglik_ged(e.data(), nn, optimal_param(n_total - 2),
+                               optimal_param(n_total - 1));
+  default:
+    return lik;
+  }
+}
+
+// Distribution-aware optimization function exposed to Python
+nm::OptimResult
+optimize_dist(const Eigen::Ref<const VectorXd> &x0,
+              const Eigen::Ref<const VectorXd> &lower,
+              const Eigen::Ref<const VectorXd> &upper, double init_alpha_0,
+              double init_alpha_1, double init_beta_0, double init_beta_1,
+              bool opt_alpha_0, bool opt_alpha_1, bool opt_beta_0,
+              bool opt_beta_1, const Eigen::Ref<const VectorXd> &y, int m,
+              const Eigen::Ref<const RowMajorMatrixXd> &init_states,
+              int n_components, const std::string &seasontype, int nmse,
+              dist::Distribution distribution) {
+  int season = switch_ces(seasontype);
+  RowMajorMatrixXd init_states_copy = init_states;
+  return nm::NelderMead(ces_target_fn_dist, x0, lower, upper, 0.05, 1e-4, 1.0,
+                        2.0, 0.5, 0.5, 1000, 1e-4, true, init_alpha_0,
+                        init_alpha_1, init_beta_0, init_beta_1, opt_alpha_0,
+                        opt_alpha_1, opt_beta_0, opt_beta_1, y, m,
+                        init_states_copy, n_components, season, nmse,
+                        distribution);
+}
+
 // Pegels residuals exposed to Python
 std::tuple<VectorXd, VectorXd, RowMajorMatrixXd, double>
 pegelsresid(const Eigen::Ref<const VectorXd> &y, int m,
@@ -387,6 +456,13 @@ void init(py::module_ &m) {
   ces_mod.def("forecast", &forecast,
               py::call_guard<py::gil_scoped_release>());
   ces_mod.def("cescalc", &cescalc_py,
+              py::call_guard<py::gil_scoped_release>());
+  // Expose the Distribution enum on the ces submodule.
+  // It is already registered on the ets submodule (same C++ type); pybind11
+  // forbids double-registration, so we look up the existing type handle.
+  ces_mod.attr("Distribution") =
+      py::detail::get_type_handle(typeid(dist::Distribution), true);
+  ces_mod.def("optimize_dist", &optimize_dist,
               py::call_guard<py::gil_scoped_release>());
 }
 

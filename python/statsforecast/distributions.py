@@ -24,6 +24,7 @@ __all__ = [
     "dist_init_params",
     "extract_dist_params",
     "aic_bic_aicc",
+    "error_params_from_model",
     "_quantiles",
     "_calculate_intervals",
 ]
@@ -100,6 +101,22 @@ def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict
         b_hat = float(np.nanmean(np.abs(residuals)))
         return {"sigma2": 2.0 * b_hat ** 2}
     return {}
+
+
+def error_params_from_model(model: dict):
+    """Map a fitted model dict's distribution params to sample_errors() params.
+
+    Returns a dict of extra kwargs for sample_errors(), or None if the
+    distribution needs no extra params (normal / laplace).
+    """
+    dist = model.get("distribution", "normal")
+    if dist == "t":
+        return {"df": model["nu"]}
+    if dist == "skew-normal":
+        return {"skewness": model["alpha_dist"]}
+    if dist == "ged":
+        return {"shape": model["beta_dist"]}
+    return None  # normal / laplace -> sample_errors derives scale from sigma
 
 
 def aic_bic_aicc(neg2logL: float, np_eff: int, n: int):

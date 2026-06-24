@@ -68,6 +68,7 @@ from statsforecast.ets import (
 from statsforecast._lib import ses as _ses_lib
 from statsforecast.utils import (
     ConformalIntervals,
+    _VALID_DISTRIBUTIONS,
     _calculate_intervals,
     _calculate_sigma,
     _ensure_float,
@@ -1001,11 +1002,17 @@ class AutoCES(_TS):
         model: str = "Z",
         alias: str = "CES",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: str = "normal",
     ):
         self.season_length = season_length
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        if distribution not in _VALID_DISTRIBUTIONS:
+            raise ValueError(
+                f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+            )
+        self.distribution = distribution
 
     def fit(
         self,
@@ -1031,7 +1038,8 @@ class AutoCES(_TS):
             )
             model.fit(y=y, X=X)
             return model
-        self.model_ = auto_ces(y, m=self.season_length, model=self.model)
+        self.model_ = auto_ces(y, m=self.season_length, model=self.model,
+                               distribution=self.distribution)
         self.model_["actual_residuals"] = y - self.model_["fitted"]
         self._store_cs(y=y, X=X)
         return self
@@ -1114,7 +1122,8 @@ class AutoCES(_TS):
             return model.forecast(
                 y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
             )
-        mod = auto_ces(y, m=self.season_length, model=self.model)
+        mod = auto_ces(y, m=self.season_length, model=self.model,
+                       distribution=self.distribution)
         fcst = forecast_ces(mod, h, level=level)
         keys = ["mean"]
         if fitted:
@@ -1234,7 +1243,8 @@ class AutoCES(_TS):
                     error_distribution=error_distribution,
                     error_params=error_params,
                 )
-            mod = auto_ces(y, m=self.season_length, model=self.model)
+            mod = auto_ces(y, m=self.season_length, model=self.model,
+                           distribution=self.distribution)
         else:
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")

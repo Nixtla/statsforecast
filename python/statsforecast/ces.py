@@ -6,6 +6,12 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 from ._lib import ces as _ces
 from .utils import results
+from .distributions import (
+    switch_distribution,
+    dist_init_params,
+    extract_dist_params,
+    aic_bic_aicc,
+)
 
 # Global variables
 NONE = 0
@@ -193,9 +199,19 @@ def cesmodel(
     beta_0: float,
     beta_1: float,
     nmse: int,
+    distribution: str = "normal",
 ):
     if seasontype == "N":
         m = 1
+    # Normalize None -> np.nan for initparamces
+    if alpha_0 is None:
+        alpha_0 = np.nan
+    if alpha_1 is None:
+        alpha_1 = np.nan
+    if beta_0 is None:
+        beta_0 = np.nan
+    if beta_1 is None:
+        beta_1 = np.nan
     # initial parameters
     par = initparamces(
         alpha_0=alpha_0,
@@ -211,32 +227,71 @@ def cesmodel(
     # initial states
     init_state = initstate(y, m, seasontype)
     n_components = init_state.shape[1]
-    # parameter optimization
-    fred = optimize_ces_target_fn(
-        init_par=par,
-        optimize_params=optimize_params,
-        y=y,
-        m=m,
-        init_states=init_state,
-        n_components=n_components,
-        seasontype=seasontype,
-        nmse=nmse,
-    )
-    if fred is not None:
-        fit_par = fred.x
-        j = 0
-        if optimize_params["alpha_0"]:
-            par["alpha_0"] = fit_par[j]
-            j += 1
-        if optimize_params["alpha_1"]:
-            par["alpha_1"] = fit_par[j]
-            j += 1
-        if optimize_params["beta_0"]:
-            par["beta_0"] = fit_par[j]
-            j += 1
-        if optimize_params["beta_1"]:
-            par["beta_1"] = fit_par[j]
-            j += 1
+
+    # parameter optimization — one-pass for non-normal, existing path for normal
+    if distribution == "normal":
+        fred = optimize_ces_target_fn(
+            init_par=par,
+            optimize_params=optimize_params,
+            y=y,
+            m=m,
+            init_states=init_state,
+            n_components=n_components,
+            seasontype=seasontype,
+            nmse=nmse,
+        )
+        if fred is not None:
+            fit_par = fred.x
+            j = 0
+            if optimize_params["alpha_0"]:
+                par["alpha_0"] = fit_par[j]
+                j += 1
+            if optimize_params["alpha_1"]:
+                par["alpha_1"] = fit_par[j]
+                j += 1
+            if optimize_params["beta_0"]:
+                par["beta_0"] = fit_par[j]
+                j += 1
+            if optimize_params["beta_1"]:
+                par["beta_1"] = fit_par[j]
+                j += 1
+        fit_par_dist = np.array([])
+    else:
+        # One-pass joint fit: [free smoothing params..., dist params...]
+        # Seed from the SAME initial par values (no normal warm-start)
+        smooth_x0 = np.array(
+            [par[k] for k in ("alpha_0", "alpha_1", "beta_0", "beta_1")
+             if optimize_params[k]],
+            dtype=np.float64,
+        )
+        var_init = max(float(np.nanvar(y)), 1e-10)
+        n_dist, dist_init = dist_init_params(distribution, var_init)
+        x0_ext = np.concatenate([smooth_x0, dist_init])
+        all_lower = np.array([0.01, 0.01, 0.01, 0.01])
+        all_upper = np.array([1.8, 1.9, 1.5, 1.5])
+        n_smooth = len(smooth_x0)
+        lower_ext = np.concatenate([all_lower[:n_smooth], np.full(n_dist, -np.inf)])
+        upper_ext = np.concatenate([all_upper[:n_smooth], np.full(n_dist, np.inf)])
+        opt_res = _ces.optimize_dist(
+            x0_ext, lower_ext, upper_ext,
+            float(par["alpha_0"]), float(par["alpha_1"]),
+            float(par["beta_0"]), float(par["beta_1"]),
+            bool(optimize_params["alpha_0"]), bool(optimize_params["alpha_1"]),
+            bool(optimize_params["beta_0"]), bool(optimize_params["beta_1"]),
+            np.asarray(y, dtype=np.float64), m,
+            np.asarray(init_state, dtype=np.float64),
+            n_components, seasontype, nmse,
+            switch_distribution(distribution, _ces),
+        )
+        fred = results(*opt_res)
+        fit_par = fred.x[:n_smooth] if n_smooth > 0 else fred.x
+        fit_par_dist = fred.x[-n_dist:] if n_dist > 0 else np.array([])
+        # Write the optimized smoothing params back into par
+        jj = 0
+        for key in ("alpha_0", "alpha_1", "beta_0", "beta_1"):
+            if optimize_params[key]:
+                par[key] = fit_par[jj]
+                jj += 1
 
     amse, e, states, lik = pegelsresid_ces(
         y=y,
@@ -247,23 +302,38 @@ def cesmodel(
         nmse=nmse,
         **par,
     )
-    np_ = n_components + 1
     ny = len(y)
-    aic = lik + 2 * np_
-    bic = lik + np.log(ny) * np_
-    if ny - np_ - 1 != 0.0:
-        aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
+
+    if distribution == "normal":
+        np_ = n_components + 1
+        aic = lik + 2 * np_
+        bic = lik + np.log(ny) * np_
+        if ny - np_ - 1 != 0.0:
+            aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
+        else:
+            aicc = np.inf
+        loglik = -0.5 * lik
+        sigma2 = np.sum(e ** 2) / (ny - np_ - 1)
+        dist_extra = {}
     else:
-        aicc = np.inf
+        n_dist_count = 1 if distribution == "laplace" else 2
+        np_ = n_components + n_dist_count
+        if distribution == "laplace":
+            neg2logL = 2 * ny * fred.fn + ny * (2 + np.log(4))
+        else:
+            neg2logL = 2 * ny * fred.fn
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_, ny)
+        loglik = -0.5 * neg2logL
+        dist_extra = extract_dist_params(distribution, fit_par_dist, residuals=e)
+        sigma2 = dist_extra.pop("sigma2")
 
     mse = amse[0]
     amse = np.mean(amse)
 
     fitted = y - e
-    sigma2 = np.sum(e**2) / (ny - np_ - 1)
 
     return dict(
-        loglik=-0.5 * lik,
+        loglik=loglik,
         aic=aic,
         bic=bic,
         aicc=aicc,
@@ -278,6 +348,8 @@ def cesmodel(
         n=len(y),
         seasontype=seasontype,
         sigma2=sigma2,
+        distribution=distribution,
+        **dist_extra,
     )
 
 
@@ -300,13 +372,26 @@ def pegelsfcast_C(h, obj, npaths=None, level=None, bootstrap=None):
 
 
 def _simulate_pred_intervals(model, h, level):
+    from statsforecast.simulation import sample_errors
+    from statsforecast.distributions import error_params_from_model
     rng = np.random.default_rng(1)
     nsim = 5000
+    dist = model.get("distribution", "normal")
+    sigma = np.sqrt(model["sigma2"])
+    params = error_params_from_model(model)
+    residuals = model.get("residuals", None)
     y_path = np.zeros([nsim, h])
 
     season = switch_ces(model["seasontype"])
     for k in range(nsim):
-        e = rng.normal(0, np.sqrt(model["sigma2"]), model["states"].shape)
+        e = sample_errors(
+            size=model["states"].shape,
+            sigma=sigma,
+            distribution=dist,
+            params=params,
+            residuals=residuals,
+            rng=rng,
+        )
         states = model["states"]
         fcsts = np.zeros(h, dtype=np.float64)
         cesforecast(
@@ -322,12 +407,10 @@ def _simulate_pred_intervals(model, h, level):
 
     lower = np.quantile(y_path, 0.5 - np.array(level) / 200, axis=0)
     upper = np.quantile(y_path, 0.5 + np.array(level) / 200, axis=0)
-    pi = {
+    return {
         **{f"lo-{lv}": lower[i] for i, lv in enumerate(level)},
         **{f"hi-{lv}": upper[i] for i, lv in enumerate(level)},
     }
-
-    return pi
 
 
 def forecast_ces(obj, h, level=None):
@@ -351,6 +434,7 @@ def auto_ces(
     opt_crit="lik",
     nmse=3,
     ic="aicc",
+    distribution="normal",
 ):
     # converting params to floats
     if alpha_0 is None:
@@ -393,6 +477,7 @@ def auto_ces(
             beta_0=beta_0,
             beta_1=beta_1,
             nmse=nmse,
+            distribution=distribution,
         )
         fit_ic = fit[ic]
         if not np.isnan(fit_ic):
