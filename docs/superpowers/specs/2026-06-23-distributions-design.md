@@ -51,11 +51,11 @@ tests/test_distributions.py            ← unified parametrized test suite
 ```
 
 Fitting flow for any method when `distribution != "normal"`:
-1. Python runs the normal C++ optimizer first to get warm-start model params and residuals
-2. Python builds extended `x0 = [warm_start_model_params..., dist_init_params...]` using `_distribution_init_params(distribution, residuals)`
-3. Python calls C++ `optimize_dist(x0_ext, y, ..., distribution)` which jointly fits model params + distribution params under the non-normal likelihood, using `negloglik_*` from the shared header
-4. Python extracts distribution params from the optimizer tail via `_distribution_extract_params()` and stores them in the model dict (`nu`, `alpha_dist`, `beta_dist`)
-5. Python prediction intervals: `_calculate_intervals()` or `sample_errors()` from `distributions.py` / `simulation.py` using stored params
+1. Python calls C++ `optimize_dist(x0_model_init, y, ..., distribution)` — a single call that handles both passes internally:
+   - **Pass 1 (C++):** runs the existing normal optimizer to get fitted model params and residuals
+   - **Pass 2 (C++):** initializes distribution params from residuals (`var(e)` for sigma2, etc.) via `distribution_init_params()` from the shared header; builds extended `x0 = [pass1_model_params..., dist_init...]`; runs Nelder-Mead jointly over model + distribution params under the non-normal likelihood
+2. Python extracts distribution params from the result tail via `_distribution_extract_params()` and stores them in the model dict (`nu`, `alpha_dist`, `beta_dist`)
+3. Python prediction intervals: `_calculate_intervals()` or `sample_errors()` from `distributions.py` / `simulation.py` using stored params
 
 ## C++ Layer — `include/statsforecast/distributions.h`
 
@@ -82,6 +82,20 @@ inline double negloglik_laplace(const double* e, int n);
 inline double negloglik_t(const double* e, int n, double log_sigma2, double log_nu_m2);
 inline double negloglik_skewnorm(const double* e, int n, double log_sigma2, double alpha);
 inline double negloglik_ged(const double* e, int n, double log_sigma2, double log_beta);
+
+// Initialise the distribution-param suffix of x0 from pass-1 residuals.
+// Called inside optimize_dist() in each .cpp — not from Python.
+inline VectorXd distribution_init_params(const VectorXd& e, Distribution d);
+```
+
+**Two-pass structure inside `optimize_dist()` in each `.cpp`:**
+```
+optimize_dist(x0_model_init, y, ..., distribution):
+    1. Call existing optimize(x0_model_init, y, ...)  → normal_params, residuals e
+    2. dist_x0 = distribution_init_params(e, distribution)  // from header
+    3. x0_ext  = concat(normal_params, dist_x0)
+    4. Run Nelder-Mead with ObjectiveFunctionDist over x0_ext
+    5. Return extended result vector
 ```
 
 **Optimizer vector layout (consistent across all methods):**
@@ -126,10 +140,6 @@ def _quantiles(level, distribution="normal", dist_params=None) -> np.ndarray: ..
 
 def _calculate_intervals(out, level, h, sigmah, distribution="normal", dist_params=None) -> dict: ...
 
-def _distribution_init_params(distribution: str, residuals: np.ndarray) -> list[float]: ...
-    # returns initial values for the extra optimizer params
-    # e.g. t → [log(var(residuals)), log(3.0)]  (nu_init = 5)
-
 def _distribution_extract_params(distribution: str, fit_par_dist: np.ndarray) -> dict: ...
     # converts optimizer tail → model dict keys
     # e.g. t → {"nu": exp(fit_par_dist[1]) + 2.0}
@@ -162,9 +172,8 @@ The same recipe applies to both:
 1. Add `distribution="normal"` to `cesmodel()` / `thetamodel()`
 2. Normal path: unchanged
 3. Non-normal path:
-   - Extend `x0` with `_distribution_init_params(distribution, residuals)`
-   - Call `_ces.optimize_dist` / `_theta.optimize_dist`
-   - Extract params with `_distribution_extract_params()`
+   - Call `_ces.optimize_dist(x0_model_init, y, ..., distribution)` — C++ handles both passes internally
+   - Extract distribution params from result tail with `_distribution_extract_params()`
    - Compute AIC/BIC/AICc with `_distribution_aic_correction()`
    - Store params in model dict
 4. Propagate `distribution=` through `ces_f()` / `theta_f()` to model class
