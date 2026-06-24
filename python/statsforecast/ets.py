@@ -1373,7 +1373,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
                 e = laplace_dist.rvs(scale=np.sqrt(sigma / 2.0), size=h)
             elif dist == "t":
                 nu = model.get("nu", 5.0)
-                e = t_dist.rvs(df=nu, scale=np.sqrt(sigma * (nu - 2) / nu), size=h)
+                e = t_dist.rvs(df=nu, scale=np.sqrt(sigma), size=h)
             elif dist == "skew-normal":
                 e = skewnorm_dist.rvs(
                     a=model.get("alpha_dist", 0.0), scale=np.sqrt(sigma), size=h
