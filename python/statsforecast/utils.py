@@ -288,6 +288,9 @@ class Distribution(str, Enum):
     SKEW_NORMAL = "skew-normal"
     GED = "ged"
 
+    def __str__(self):
+        return self.value
+
 
 class ArimaMethod(str, Enum):
     CSS = "CSS"
