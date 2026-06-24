@@ -292,3 +292,20 @@ def test_loglik_matches_scipy(distribution):
         f"{distribution}: stored loglik={stored:.6f}, scipy loglik={scipy_ll:.6f}, "
         f"diff={stored - scipy_ll:.6f}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Task 1: frozen_error_distribution factory — scale-convention contract
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("distribution,params,expected", [
+    ("normal",      {},                 stats.norm(scale=2.0).ppf(0.975)),
+    ("laplace",     {},                 stats.laplace(scale=2.0 / np.sqrt(2)).ppf(0.975)),
+    ("t",           {"df": 5.0},        stats.t(df=5.0, scale=2.0).ppf(0.975)),
+    ("skew-normal", {"skewness": 1.5},  stats.skewnorm(a=1.5, scale=2.0).ppf(0.975)),
+    ("ged",         {"shape": 1.2},     stats.gennorm(beta=1.2, scale=2.0).ppf(0.975)),
+])
+def test_frozen_distribution_scale_convention(distribution, params, expected):
+    from statsforecast.distributions import frozen_error_distribution
+    d = frozen_error_distribution(sigma=2.0, distribution=distribution, params=params)
+    np.testing.assert_allclose(d.ppf(0.975), expected)

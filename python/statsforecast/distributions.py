@@ -6,6 +6,7 @@ Re-exports the canonical Distribution enum and quantile utilities from
 """
 
 import numpy as np
+from scipy import stats as _scipy_stats  # aliased to avoid collision with the Distribution enum
 
 from .utils import (
     ArimaMethod,
@@ -27,6 +28,7 @@ __all__ = [
     "error_params_from_model",
     "_quantiles",
     "_calculate_intervals",
+    "frozen_error_distribution",
 ]
 
 VALID_DISTRIBUTIONS = _VALID_DISTRIBUTIONS
@@ -128,3 +130,26 @@ def aic_bic_aicc(neg2logL: float, np_eff: int, n: int):
     else:
         aicc = np.inf
     return aic, bic, aicc
+
+
+def frozen_error_distribution(sigma: float, distribution: str, params=None):
+    """Return a scipy frozen distribution with sigma as the scale parameter.
+
+    sigma  = sqrt(model["sigma2"]) — the MLE-fitted scale, NOT the SD.
+    params = human-readable keys: {"df": nu}, {"skewness": alpha}, {"shape": beta}.
+
+    Usage:
+        d = frozen_error_distribution(sigma, "t", {"df": 5})
+        d.ppf(0.975)          # analytic upper quantile
+        d.rvs(100, rng)       # 100 MC samples
+    """
+    p = params or {}
+    if distribution == "t":
+        return _scipy_stats.t(df=p.get("df", 5.0), scale=sigma)
+    if distribution == "laplace":
+        return _scipy_stats.laplace(scale=sigma / np.sqrt(2))
+    if distribution == "skew-normal":
+        return _scipy_stats.skewnorm(a=p.get("skewness", 0.0), scale=sigma)
+    if distribution == "ged":
+        return _scipy_stats.gennorm(beta=p.get("shape", 2.0), scale=sigma)
+    return _scipy_stats.norm(scale=sigma)  # normal (default)
