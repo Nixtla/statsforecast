@@ -147,3 +147,85 @@ def test_simulate_defaults_to_fitted_distribution():
         warnings.simplefilter("always")
         model.simulate(h=4, n_paths=10)  # no explicit error_distribution
         assert not any("distribution" in str(wi.message).lower() for wi in w)
+
+
+# ---------------------------------------------------------------------------
+# Task 8: Cross-method distribution key-contract matrix
+# ---------------------------------------------------------------------------
+
+NON_NORMAL = ["laplace", "t", "skew-normal", "ged"]
+
+# Each entry: (model_name, module_path, class_name, extra_kwargs)
+# AutoARIMA needs method="CSS-ML" for non-normal distributions (ML optimizer required).
+_MATRIX_CASES = [
+    ("AutoARIMA", "statsforecast.models", "AutoARIMA",
+     dict(season_length=12, method="CSS-ML")),
+    ("AutoETS", "statsforecast.models", "AutoETS",
+     dict(season_length=12, model="ANN")),
+    ("AutoCES", "statsforecast.models", "AutoCES",
+     dict(season_length=12, model="S")),
+    ("AutoTheta", "statsforecast.models", "AutoTheta",
+     dict(season_length=12, model="STM")),
+]
+
+_MATRIX_PARAMS = [
+    pytest.param(model_name, mod, cls, extra, dist, id=f"{model_name}-{dist}")
+    for (model_name, mod, cls, extra) in _MATRIX_CASES
+    for dist in (["normal"] + NON_NORMAL)
+]
+
+
+@pytest.mark.parametrize(
+    "model_name,mod_name,cls_name,extra_kwargs,distribution",
+    _MATRIX_PARAMS,
+)
+def test_cross_method_distribution_keys(
+    model_name, mod_name, cls_name, extra_kwargs, distribution
+):
+    import importlib
+
+    Model = getattr(importlib.import_module(mod_name), cls_name)
+    model = Model(**extra_kwargs, distribution=distribution)
+    model.fit(ap)
+    md = model.model_
+
+    # `distribution` key must be present and correct
+    assert md.get("distribution", "normal") == distribution
+
+    # Shape-parameter key contract
+    assert ("nu" in md) == (distribution == "t")
+    assert ("alpha_dist" in md) == (distribution == "skew-normal")
+    assert ("beta_dist" in md) == (distribution == "ged")
+
+    # For non-normal distributions all models must expose sigma2
+    if distribution != "normal":
+        assert md.get("sigma2") is not None, (
+            f"{model_name}/{distribution}: sigma2 missing from model dict"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Task 8: Heavy-tailed AIC sanity test
+# ---------------------------------------------------------------------------
+
+
+def test_ets_t_aic_better_than_normal_heavy_tails():
+    """On Student-t AR(1) data, ETS t-distribution AIC < normal AIC."""
+    from scipy import stats as scipy_stats
+    from statsforecast.ets import ets_f
+
+    rng = np.random.default_rng(42)
+    n = 300
+    e = scipy_stats.t.rvs(df=5, size=n, random_state=rng)
+    y = np.zeros(n)
+    y[0] = e[0]
+    for i in range(1, n):
+        y[i] = 0.8 * y[i - 1] + e[i]
+    y = y - y.min() + 1.0  # make strictly positive for ETS
+
+    m_normal = ets_f(y, m=1, model="ANN", distribution="normal")
+    m_t = ets_f(y, m=1, model="ANN", distribution="t")
+    assert m_t["aic"] < m_normal["aic"], (
+        f"Expected t-AIC ({m_t['aic']:.2f}) < normal-AIC ({m_normal['aic']:.2f})"
+        " on heavy-tailed data"
+    )
