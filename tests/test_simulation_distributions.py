@@ -72,10 +72,11 @@ def test_simulation_all_models_distributions():
         SimpleExponentialSmoothing(alpha=0.5)
     ]
     sf = StatsForecast(models=models, freq='D')
-    
+
     # Test common distribution for all
-    res = sf.simulate(h=2, df=df, n_paths=5, seed=42, 
-                      error_distribution='t', error_params={'df': 5})
+    with pytest.warns(UserWarning, match="distribution"):
+        res = sf.simulate(h=2, df=df, n_paths=5, seed=42,
+                          error_distribution='t', error_params={'df': 5})
     
     for model in models:
         assert repr(model) in res.columns
@@ -599,8 +600,9 @@ def test_integration_autoets_automatic_estimation():
     sf = StatsForecast(models=models, freq='D')
 
     # Simulate with laplace distribution WITHOUT explicit params
-    res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
-                      error_distribution='laplace')
+    with pytest.warns(UserWarning, match="distribution"):
+        res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
+                          error_distribution='laplace')
 
     assert 'AutoETS' in res.columns
     assert res.shape == (15, 4)
@@ -621,9 +623,16 @@ def test_integration_multiple_distributions_automatic():
     # Test different distributions with automatic estimation
     distributions = ['normal', 't', 'laplace', 'skew-normal', 'ged']
 
+    import warnings as _warnings
     for dist in distributions:
-        res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
-                          error_distribution=dist)
+        with _warnings.catch_warnings():
+            _warnings.filterwarnings(
+                "ignore",
+                message="Simulating with error_distribution",
+                category=UserWarning,
+            )
+            res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
+                              error_distribution=dist)
 
         assert 'AutoARIMA' in res.columns
         assert 'AutoETS' in res.columns
@@ -663,9 +672,16 @@ def test_all_models_all_distributions_automatic():
     h = 3
     n_paths = 5
 
+    import warnings as _warnings
     for dist in distributions:
-        res = sf.simulate(h=h, df=df, n_paths=n_paths, seed=42,
-                          error_distribution=dist)
+        with _warnings.catch_warnings():
+            _warnings.filterwarnings(
+                "ignore",
+                message="Simulating with error_distribution",
+                category=UserWarning,
+            )
+            res = sf.simulate(h=h, df=df, n_paths=n_paths, seed=42,
+                              error_distribution=dist)
 
         # Basic shape verification
         expected_rows = h * n_paths
