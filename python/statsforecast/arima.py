@@ -26,7 +26,7 @@ from scipy.stats import norm
 
 from ._lib import arima as _arima
 from .mstl import mstl
-from .utils import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles
+from .distributions import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
