@@ -724,6 +724,7 @@ def arima(
         alpha_sn = None
         sigma2_sn = None
         beta_ged = None
+        sigma2_ged = None
         if distribution == Distribution.SKEW_NORMAL:
             # Always optimize [arma_free..., log_sigma2, alpha] jointly.
             n_arma_free = int(mask.sum())
