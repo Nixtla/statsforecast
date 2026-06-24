@@ -416,13 +416,19 @@ def arima(
         cn = nmxreg
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
         if not orig_xreg:
-            # Only `vt` is consumed below; `full_matrices=False` keeps Vt
-            # bit-identical (its shape is always (ncxreg, ncxreg)) but
-            # avoids materialising the huge U for tall thin xreg matrices
-            # (#1006: an n_obs >> ncxreg matrix could OOM otherwise).
-            _, _, vt = np.linalg.svd(
-                xreg[(~np.isnan(xreg)).all(1)], full_matrices=False
-            )
+            xreg_nonnan = xreg[(~np.isnan(xreg)).all(1)]
+            thin = xreg_nonnan.shape[0] >= ncxreg
+            if not thin:
+                warnings.warn(
+                    f"xreg has {xreg_nonnan.shape[0]} fully-observed rows but "
+                    f"{ncxreg} columns; the model may be unidentifiable.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            # Only `vt` is consumed below; `full_matrices=False` avoids the
+            # O(m²) U matrix for tall-thin xreg. For fat matrices we
+            # fall back to full_matrices=True so vt is always (ncxreg, ncxreg).
+            _, _, vt = np.linalg.svd(xreg_nonnan, full_matrices=not thin)
             xreg = np.matmul(xreg, vt)
         dx = x
         dxreg = xreg
