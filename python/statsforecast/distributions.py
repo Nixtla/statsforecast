@@ -32,7 +32,7 @@ __all__ = [
 VALID_DISTRIBUTIONS = _VALID_DISTRIBUTIONS
 
 
-def distribution_n_extra_params(distribution) -> int:
+def distribution_n_extra_params(distribution: str) -> int:
     """Number of distribution params appended to the optimizer vector."""
     return 0 if distribution in ("laplace", "normal") else 2
 

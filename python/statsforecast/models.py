@@ -1023,7 +1023,7 @@ class AutoCES(_TS):
         self.prediction_intervals = prediction_intervals
         if distribution not in _VALID_DISTRIBUTIONS:
             raise ValueError(
-                f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+                f"distribution must be one of {tuple(d.value for d in _VALID_DISTRIBUTIONS)}, got {distribution!r}"
             )
         self.distribution = distribution
 
@@ -1318,7 +1318,7 @@ class AutoTheta(_TS):
     ):
         if distribution not in _VALID_DISTRIBUTIONS:
             raise ValueError(
-                f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+                f"distribution must be one of {tuple(d.value for d in _VALID_DISTRIBUTIONS)}, got {distribution!r}"
             )
         self.season_length = season_length
         self.decomposition_type = decomposition_type

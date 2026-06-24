@@ -18,7 +18,8 @@ from scipy import stats
 
 from statsforecast.distributions import VALID_DISTRIBUTIONS
 
-_SUPPORTED_SIMULATION_DISTRIBUTIONS = {str(d) for d in VALID_DISTRIBUTIONS} | {"bootstrap"}
+# use d.value (not str(d)) so this does not depend on Distribution.__str__
+_SUPPORTED_SIMULATION_DISTRIBUTIONS = {d.value for d in VALID_DISTRIBUTIONS} | {"bootstrap"}
 # Deprecated public alias (kept for backwards compatibility).
 SUPPORTED_DISTRIBUTIONS = frozenset(_SUPPORTED_SIMULATION_DISTRIBUTIONS)
 
