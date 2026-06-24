@@ -1,11 +1,13 @@
 #include <numbers>
 #include <pybind11/pybind11.h>
 
+#include "distributions.h"
 #include "nelder_mead.h"
 
 namespace ets {
 namespace py = pybind11;
 using Eigen::VectorXd;
+using dist::Distribution;
 
 enum class Component {
   Nothing = 0,
@@ -18,13 +20,6 @@ enum class Criterion {
   AMSE = 2,
   Sigma = 3,
   MAE = 4,
-};
-enum class Distribution {
-  Normal    = 0,
-  Laplace   = 1,
-  StudentT  = 2,
-  SkewNormal = 3,
-  GED       = 4,
 };
 constexpr double HUGE_N = 1e10;
 constexpr double NA = -99999.0;
@@ -357,50 +352,20 @@ double ObjectiveFunctionDist(
   }
 
   switch (distribution) {
-  case Distribution::Laplace: {
-    double b_hat = e.array().abs().mean();
-    if (b_hat <= 0) return std::numeric_limits<double>::infinity();
-    return std::log(b_hat) + sumlog_adj;
-  }
-  case Distribution::StudentT: {
-    double log_sigma2 = params(n_total - 2);
-    double log_nu_m2  = params(n_total - 1);
-    double sigma2 = std::exp(log_sigma2);
-    double nu = std::exp(log_nu_m2) + 2.0;
-    double half_nu1 = 0.5 * (nu + 1.0);
-    double sum_log_kernel =
-        (e.array().square() / (nu * sigma2) + 1.0).log().sum();
-    return (0.5 * log_sigma2
-            + std::lgamma(nu / 2.0) - std::lgamma(half_nu1)
-            + 0.5 * std::log(nu * std::numbers::pi)
-            + half_nu1 / static_cast<double>(n) * sum_log_kernel
-            + sumlog_adj);
-  }
-  case Distribution::SkewNormal: {
-    double log_sigma2 = params(n_total - 2);
-    double alpha_sn   = params(n_total - 1);
-    double sigma = std::exp(0.5 * log_sigma2);
-    double sum_log_cdf = 0.0;
-    for (Eigen::Index i = 0; i < n; ++i) {
-      double z = alpha_sn * e[i] / (sigma * std::numbers::sqrt2);
-      sum_log_cdf += std::log(0.5 * std::erfc(-z) + 1e-30);
-    }
-    return (-std::log(2.0) + 0.5 * std::log(2.0 * std::numbers::pi) + 0.5 * log_sigma2
-            + e.array().square().sum() / (2.0 * static_cast<double>(n) * sigma * sigma)
-            - sum_log_cdf / static_cast<double>(n)
-            + sumlog_adj);
-  }
-  case Distribution::GED: {
-    double log_sigma = params(n_total - 2);
-    double log_beta  = params(n_total - 1);
-    double sigma = std::exp(log_sigma);
-    double beta_ged  = std::exp(log_beta);
-    double sum_pow = (e.array().abs() / sigma).pow(beta_ged).sum();
-    return (std::log(2.0) + log_sigma
-            + std::lgamma(1.0 / beta_ged) - log_beta
-            + sum_pow / static_cast<double>(n)
-            + sumlog_adj);
-  }
+  case Distribution::Laplace:
+    return dist::negloglik_laplace(e.data(), static_cast<int>(n)) + sumlog_adj;
+  case Distribution::StudentT:
+    return dist::negloglik_t(e.data(), static_cast<int>(n),
+                             params(n_total - 2), params(n_total - 1)) +
+           sumlog_adj;
+  case Distribution::SkewNormal:
+    return dist::negloglik_skewnorm(e.data(), static_cast<int>(n),
+                                    params(n_total - 2), params(n_total - 1)) +
+           sumlog_adj;
+  case Distribution::GED:
+    return dist::negloglik_ged(e.data(), static_cast<int>(n),
+                               params(n_total - 2), params(n_total - 1)) +
+           sumlog_adj;
   default:
     return lik;
   }
@@ -450,12 +415,12 @@ void init(py::module_ &m) {
   ets.def("calc",
           &Calc<Eigen::Ref<VectorXd>, const Eigen::Ref<const VectorXd> &>);
   ets.def("optimize", &Optimize);
-  py::enum_<Distribution>(ets, "Distribution")
-      .value("Normal",     Distribution::Normal)
-      .value("Laplace",    Distribution::Laplace)
-      .value("StudentT",   Distribution::StudentT)
-      .value("SkewNormal", Distribution::SkewNormal)
-      .value("GED",        Distribution::GED);
+  py::enum_<dist::Distribution>(ets, "Distribution")
+      .value("Normal",     dist::Distribution::Normal)
+      .value("Laplace",    dist::Distribution::Laplace)
+      .value("StudentT",   dist::Distribution::StudentT)
+      .value("SkewNormal", dist::Distribution::SkewNormal)
+      .value("GED",        dist::Distribution::GED);
   ets.def("optimize_dist", &OptimizeDist);
 }
 } // namespace ets

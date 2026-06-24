@@ -9,6 +9,12 @@ from scipy.stats import skewnorm as skewnorm_dist, gennorm as gennorm_dist
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 from ._lib import ets as _ets
+from .distributions import (
+    switch_distribution,
+    dist_init_params,
+    extract_dist_params,
+    aic_bic_aicc,
+)
 from .utils import _calculate_intervals, _VALID_DISTRIBUTIONS, results
 
 # Global variables
@@ -367,20 +373,6 @@ def switch_criterion(x: str) -> _ets.Criterion:
 
 
 
-def switch_distribution(x: str) -> "_ets.Distribution":
-    if x == "normal":
-        return _ets.Distribution.Normal
-    if x == "laplace":
-        return _ets.Distribution.Laplace
-    if x == "t":
-        return _ets.Distribution.StudentT
-    if x == "skew-normal":
-        return _ets.Distribution.SkewNormal
-    if x == "ged":
-        return _ets.Distribution.GED
-    raise ValueError(f"Unknown distribution: {x!r}")
-
-
 def pegelsresid_C(
     y: np.ndarray,
     m: int,
@@ -601,7 +593,7 @@ def optimize_ets_dist_target_fn(
         1e-4,
         1_000,
         True,
-        switch_distribution(distribution),
+        switch_distribution(distribution, _ets),
     )
     return results(*opt_res)
 
@@ -711,16 +703,8 @@ def etsmodel(
         n_dist = 0
     else:
         # --- non-normal: extend param vector with distribution params ---
-        n_dist = 0 if distribution == "laplace" else 2
         var_init = max(float(np.nanvar(y)), 1e-10)
-        if distribution == "t":
-            dist_init = [np.log(var_init), np.log(3.0)]  # nu_init = 5
-        elif distribution == "skew-normal":
-            dist_init = [np.log(var_init), 0.0]
-        elif distribution == "ged":
-            dist_init = [0.5 * np.log(var_init), np.log(2.0)]
-        else:  # laplace
-            dist_init = []
+        n_dist, dist_init = dist_init_params(distribution, var_init)
 
         x0_ext = np.concatenate([par, dist_init])
         lower_ext = np.concatenate([lower, np.full(n_dist, -np.inf)])
@@ -792,42 +776,26 @@ def etsmodel(
 
     # --- sigma2, AIC, BIC, AICc ---
     if distribution == "normal":
-        np_ = np_ + 1
-        aic = lik + 2 * np_
-        bic = lik + np.log(ny) * np_
-        if ny - np_ - 1 != 0.0:
-            aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
-        else:
-            aicc = np.inf
-        sigma2 = np.sum(e**2) / (ny - np_ - 1)
-        loglik = -0.5 * lik
-    elif distribution == "laplace":
-        np_ = np_ + 1  # count b_hat as a parameter
-        b_hat = float(np.nanmean(np.abs(e)))
-        sigma2 = 2.0 * b_hat**2
-        neg2logL = 2 * ny * fred.fn + ny * (2 + np.log(4))
-        aic = neg2logL + 2 * np_
-        bic = neg2logL + np.log(ny) * np_
-        if ny - np_ - 1 != 0.0:
-            aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
-        else:
-            aicc = np.inf
+        np_eff = np_ + 1
+        neg2logL = lik
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, ny)
+        sigma2 = np.sum(e**2) / (ny - np_eff - 1)
         loglik = -0.5 * neg2logL
+        np_ = np_eff
+    elif distribution == "laplace":
+        np_eff = np_ + 1  # count b_hat as a parameter
+        neg2logL = 2 * ny * fred.fn + ny * (2 + np.log(4))
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, ny)
+        dist_params = extract_dist_params(distribution, fit_par_dist, residuals=e)
+        sigma2 = dist_params["sigma2"]
+        loglik = -0.5 * neg2logL
+        np_ = np_eff
     else:  # t, skew-normal, ged — two dist params in opt vector
         np_eff = np_ + 2  # n_smth_free + n_state + 2 dist params
-        if distribution == "t":
-            sigma2 = float(np.exp(fit_par_dist[0]))
-        elif distribution == "skew-normal":
-            sigma2 = float(np.exp(fit_par_dist[0]))
-        else:  # ged
-            sigma2 = float(np.exp(fit_par_dist[0])) ** 2
         neg2logL = 2 * ny * fred.fn
-        aic = neg2logL + 2 * np_eff
-        bic = neg2logL + np.log(ny) * np_eff
-        if ny - np_eff - 1 != 0.0:
-            aicc = aic + 2 * np_eff * (np_eff + 1) / (ny - np_eff - 1)
-        else:
-            aicc = np.inf
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, ny)
+        dist_params = extract_dist_params(distribution, fit_par_dist, residuals=e)
+        sigma2 = dist_params["sigma2"]
         loglik = -0.5 * neg2logL
         np_ = np_eff
 
@@ -861,12 +829,10 @@ def etsmodel(
     )
 
     # store distribution-specific params
-    if distribution == "t":
-        ans["nu"] = float(np.exp(fit_par_dist[1]) + 2.0)
-    elif distribution == "skew-normal":
-        ans["alpha_dist"] = float(fit_par_dist[1])
-    elif distribution == "ged":
-        ans["beta_dist"] = float(np.exp(fit_par_dist[1]))
+    if distribution in ("t", "skew-normal", "ged"):
+        for k, v in dist_params.items():
+            if k != "sigma2":
+                ans[k] = v
 
     return ans
 
