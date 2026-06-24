@@ -98,3 +98,29 @@ def test_ces_interval_ordering(distribution):
     assert np.all(pred["lo-80"] < pred["mean"])
     assert np.all(pred["mean"] < pred["hi-80"])
     assert np.all(pred["hi-80"] < pred["hi-95"])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "laplace", "t", "skew-normal", "ged"])
+def test_theta_distribution_keys(distribution):
+    from statsforecast.theta import thetamodel
+    m = thetamodel(ap, m=12, modeltype="STM", initial_smoothed=ap[0] / 2,
+                   alpha=0.5, theta=2.0, nmse=3, distribution=distribution)
+    assert m["distribution"] == distribution
+    if distribution != "normal":
+        assert np.isfinite(m["loglik"]) and np.isfinite(m["aic"])
+    assert ("nu" in m) == (distribution == "t")
+    assert ("alpha_dist" in m) == (distribution == "skew-normal")
+    assert ("beta_dist" in m) == (distribution == "ged")
+
+
+@pytest.mark.parametrize("distribution", ["normal", "laplace", "t", "skew-normal", "ged"])
+def test_theta_interval_ordering(distribution):
+    from statsforecast.models import AutoTheta
+    model = AutoTheta(season_length=12, model="STM", distribution=distribution)
+    model.fit(ap)
+    assert model.model_["distribution"] == distribution
+    pred = model.predict(h=12, level=[80, 95])
+    assert np.all(pred["lo-95"] < pred["lo-80"])
+    assert np.all(pred["lo-80"] < pred["mean"])
+    assert np.all(pred["mean"] < pred["hi-80"])
+    assert np.all(pred["hi-80"] < pred["hi-95"])

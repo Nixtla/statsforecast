@@ -1288,12 +1288,18 @@ class AutoTheta(_TS):
         model: Optional[str] = None,
         alias: str = "AutoTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: str = "normal",
     ):
+        if distribution not in _VALID_DISTRIBUTIONS:
+            raise ValueError(
+                f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+            )
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -1318,6 +1324,7 @@ class AutoTheta(_TS):
             m=self.season_length,
             model=self.model,
             decomposition_type=self.decomposition_type,
+            distribution=self.distribution,
         )
         self.model_["fitted"] = y - self.model_["residuals"]
         self._store_cs(y, X)
