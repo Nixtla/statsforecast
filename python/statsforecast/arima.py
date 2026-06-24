@@ -26,7 +26,7 @@ from scipy.stats import norm
 
 from ._lib import arima as _arima
 from .mstl import mstl
-from .distributions import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles
+from .distributions import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles, error_params_from_model
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
@@ -1509,7 +1509,7 @@ def forecast_arima(
             raise NotImplementedError("bootstrap=True")
         else:
             dist = model.get("distribution", Distribution.NORMAL)
-            quantiles = _quantiles(level, distribution=dist, dist_params=model)
+            quantiles = _quantiles(level, distribution=dist, dist_params=error_params_from_model(model))
             lower = pd.DataFrame(
                 pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
                 columns=[f"{l}%" for l in level],
@@ -2657,7 +2657,7 @@ class AutoARIMA:
             _level = sorted(_level)
             se = np.sqrt(self.model_.model["sigma2"])
             dist = self.model_.model.get("distribution", "normal")
-            quantiles = _quantiles(_level, distribution=dist, dist_params=self.model_.model)
+            quantiles = _quantiles(_level, distribution=dist, dist_params=error_params_from_model(self.model_.model))
 
             lo = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),

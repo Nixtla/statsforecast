@@ -9,9 +9,6 @@ from typing import Dict
 
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
-from scipy.stats import laplace as laplace_dist, t as t_dist
-from scipy.stats import skewnorm as skewnorm_dist, gennorm as gennorm_dist
 from utilsforecast.compat import DataFrame
 from utilsforecast.data import generate_series as utils_generate_series
 
@@ -303,17 +300,9 @@ _VALID_DISTRIBUTIONS = tuple(Distribution)
 
 # Functions used for calculating prediction intervals
 def _quantiles(level, distribution="normal", dist_params=None):
+    from .distributions import frozen_error_distribution
     p = 0.5 + np.asarray(level) / 200
-    if dist_params is None:
-        dist_params = {}
-    dist_ppf = {
-        Distribution.LAPLACE: laplace_dist.ppf(p),
-        Distribution.T: t_dist.ppf(p, df=dist_params.get("nu", 5.0)),
-        Distribution.SKEW_NORMAL: skewnorm_dist.ppf(p, a=dist_params.get("alpha_dist", 0.0)),
-        Distribution.GED: gennorm_dist.ppf(p, beta=dist_params.get("beta_dist", 2.0)),
-        Distribution.NORMAL: norm.ppf(p),
-    }
-    return dist_ppf[distribution]
+    return frozen_error_distribution(1.0, distribution, dist_params).ppf(p)
 
 
 def _calculate_intervals(out, level, h, sigmah, distribution="normal", dist_params=None):

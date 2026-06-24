@@ -14,6 +14,7 @@ from .distributions import (
     dist_init_params,
     extract_dist_params,
     aic_bic_aicc,
+    error_params_from_model,
 )
 from .utils import _calculate_intervals, _VALID_DISTRIBUTIONS, results
 
@@ -1411,7 +1412,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
         dist = model.get("distribution", "normal")
         pi = _calculate_intervals(
             forecasts, level=level, h=h, sigmah=np.sqrt(sigmah),
-            distribution=dist, dist_params=model,
+            distribution=dist, dist_params=error_params_from_model(model),
         )
 
     return pi
