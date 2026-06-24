@@ -230,7 +230,6 @@ def arima(
         return mod
 
     def arimaSS(y, mod):
-        # arima_like(y, phi, theta, delta, a, P, Pn, up, use_resid)
         return arima_like(
             y,
             mod["phi"],
@@ -513,30 +512,25 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-                # only update the initial parameters if they're valid
-                candidate = init.copy()
-                candidate[mask] = res.x
-                phi, _ = arima_transpar(candidate, arma, transform_pars)
-                if np.logical_and(phi > -math.pi / 2, phi < math.pi / 2).all():
-                    init = candidate
-            if arma[0] > 0:
-                if not arCheck(init[: arma[0]]):
-                    raise ValueError("non-stationary AR part from CSS")
-            if arma[2] > 0:
-                if not arCheck(init[np.sum(arma[:2])] + np.arange(arma[2])):
-                    raise ValueError("non-stationary seasonal AR part from CSS")
-            ncond = 0
+                if res.status != 1:
+                    # 0: successs
+                    # 2: desired error not reached
+                    init[mask] = res.x
+                if arma[0] > 0:
+                    if not arCheck(init[: arma[0]]):
+                        raise ValueError("non-stationary AR part from CSS")
+                if arma[2] > 0:
+                    if not arCheck(init[np.sum(arma[:2])] + np.arange(arma[2])):
+                        raise ValueError("non-stationary seasonal AR part from CSS")
+                ncond = 0
         if transform_pars:
-            candidate = ARIMA_invtrans(init, arma)
-            phi, _ = arima_transpar(candidate, arma, transform_pars)
-            if np.logical_and(phi > -math.pi / 2, phi < math.pi / 2).all():
-                init = candidate
-                if arma[1] > 0:
-                    ind = arma[0] + np.arange(arma[1])
-                    init[ind] = maInvert(init[ind])
-                if arma[3] > 0:
-                    ind = np.sum(arma[:3]) + np.arange(arma[3])
-                    init[ind] = maInvert(init[ind])
+            init = ARIMA_invtrans(init, arma)
+            if arma[1] > 0:
+                ind = arma[0] + np.arange(arma[1])
+                init[ind] = maInvert(init[ind])
+            if arma[3] > 0:
+                ind = np.sum(arma[:3]) + np.arange(arma[3])
+                init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         if no_optim:
@@ -778,18 +772,12 @@ def myarima(
                 xreg = np.concatenate([drift, xreg], axis=1)
             else:
                 xreg = drift
-            if use_season:
-                fit = arima(x, order, seasonal, xreg, method=method)
-            else:
-                fit = arima(x, order, xreg=xreg, method=method)
+            fit = arima(x, order, seasonal, xreg, method=method)
             fit["coef"] = change_drift_name(fit["coef"])
         else:
-            if use_season:
-                fit = arima(
-                    x, order, seasonal, include_mean=constant, method=method, xreg=xreg
-                )
-            else:
-                fit = arima(x, order, include_mean=constant, method=method, xreg=xreg)
+            fit = arima(
+                x, order, seasonal, include_mean=constant, method=method, xreg=xreg
+            )
         # nxreg = 0 if xreg is None else xreg.shape[1]
         nstar = n - order[1] - seas_order[1] * m
         if diffs == 1 and constant:
@@ -839,10 +827,23 @@ def myarima(
             fit["ic"] = math.inf
         fit["xreg"] = xreg
         if trace:
-            print(f"\n{arima_string(fit, padding=True)}:{fit['ic']}")
+            print(f"{arima_string(fit, padding=True)} : {fit['ic']}")
         return fit
-    except ValueError as e:
-        raise e
+    except ValueError:
+        if trace:
+            model_str = f"ARIMA({','.join(str(x) for x in order)})"
+            if use_season:
+                model_str += f"({','.join(str(x) for x in seas_order)})[{m}]"
+            if constant and diffs == 0:
+                model_str += " with non-zero mean"
+            elif constant and diffs == 1:
+                model_str += " with drift        "
+            elif not constant and diffs == 0:
+                model_str += " with zero mean    "
+            else:
+                model_str += "                   "
+            model_str += " : inf"
+            print(model_str)
         return {"ic": math.inf}
 
 
@@ -1109,7 +1110,7 @@ def arima_string(model, padding=False):
     if m > 1 and sum(order[3:6]) > 0:
         result += f"({order[3]},{order[4]},{order[5]})[{m}]"
     if padding and m > 1 and sum(order[3:6]) == 0:
-        n_spaces = 7 + len(str(m))
+        n_spaces = 9 + len(str(m))
         result += n_spaces * " "
 
     if model["xreg"] is not None:
@@ -1360,7 +1361,6 @@ def simulate_arima(
     return paths
 
 
-
 def fitted_arima(model, h=1):
     """Returns h-step forecasts for the data used in fitting the model.
 
@@ -1562,6 +1562,7 @@ def auto_arima_f(
     lastnonmiss = nonmissing_idxs.max() + 1
     series_len = int(np.sum(~missing[firstnonmiss:lastnonmiss]))
     x = x[firstnonmiss:]
+    m = period if seasonal else 1
     if xreg is not None:
         if xreg.dtype not in (np.float32, np.float64):
             raise ValueError("xreg should be a float array")
@@ -1570,13 +1571,22 @@ def auto_arima_f(
         if np.isnan(x).all():
             raise ValueError("all data are missing")
         if allowmean:
-            fit = Arima(x, order=(0, 0, 0), fixed=np.array([np.mean(x)]))
+            fit = Arima(
+                x,
+                order=(0, 0, 0),
+                seasonal={"order": (0, 0, 0), "period": m},
+                fixed=np.array([np.mean(x)]),
+            )
         else:
-            fit = Arima(x, order=(0, 0, 0), include_mean=False)
+            fit = Arima(
+                x,
+                order=(0, 0, 0),
+                seasonal={"order": (0, 0, 0), "period": m},
+                include_mean=False,
+            )
         fit["x"] = origx
         fit["constant"] = True
         return fit
-    m = period if seasonal else 1
     if m < 1:
         m = 1
     else:
@@ -1678,11 +1688,17 @@ def auto_arima_f(
                     method=method,
                 )
             elif d == 2:
-                fit = Arima(x, order=(0, d, 0), method=method)
+                fit = Arima(
+                    x,
+                    order=(0, d, 0),
+                    seasonal={"order": (0, 0, 0), "period": m},
+                    method=method,
+                )
             elif d < 2:
                 fit = Arima(
                     x,
                     order=(0, d, 0),
+                    seasonal={"order": (0, 0, 0), "period": m},
                     include_constant=True,
                     fixed=np.array([np.mean(dx)]),
                     method=method,
@@ -1701,7 +1717,13 @@ def auto_arima_f(
                     method=method,
                 )
             else:
-                fit = Arima(x, order=(0, d, 0), xreg=xreg, method=method)
+                fit = Arima(
+                    x,
+                    order=(0, d, 0),
+                    seasonal={"order": (0, 0, 0), "period": m},
+                    xreg=xreg,
+                    method=method,
+                )
         fit["x"] = origx
         return fit
     if m > 1:
@@ -1715,7 +1737,12 @@ def auto_arima_f(
                 x = x[-truncate:]
         try:
             if D == 0:
-                fit = arima(x, order=(0, d, 0), xreg=xreg)
+                fit = arima(
+                    x,
+                    order=(0, d, 0),
+                    seasonal={"order": (0, 0, 0), "period": m},
+                    xreg=xreg,
+                )
             else:
                 fit = arima(
                     x,
@@ -2018,7 +2045,7 @@ def auto_arima_f(
         warnings.warn(
             f"Stepwise search was stopped early due to reaching the model number limit: nmodels={nmodels}"
         )
-    if approximation or bestfit["arma"] is not None:
+    if approximation and bestfit["arma"] is not None:
         if trace:
             print("Now re-fitting the best model(s) without approximations...\n")
         icorder = np.argsort(results[:, 7])
