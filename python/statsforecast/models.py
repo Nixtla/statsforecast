@@ -913,7 +913,7 @@ class AutoETS(_TS):
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
         seed: Optional[int] = None,
-        error_distribution: str = "normal",
+        error_distribution: Optional[str] = None,
         error_params: Optional[Dict] = None,
     ):
         """
@@ -933,9 +933,10 @@ class AutoETS(_TS):
             Future exogenous regressors (unused, for API consistency).
         seed : int, optional
             Random seed for reproducibility.
-        error_distribution : str, default='normal'
-            Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-            'laplace', 'skew-normal', 'ged'.
+        error_distribution : str, optional
+            Distribution for error terms. Defaults to the fitted model's distribution.
+            Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            A UserWarning is emitted if this differs from the fitted distribution.
         error_params : dict, optional
             Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -957,6 +958,18 @@ class AutoETS(_TS):
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")
             mod = self.model_
+
+        fitted_dist = mod.get("distribution", "normal")
+        if error_distribution is None:
+            error_distribution = fitted_dist
+        elif error_distribution != fitted_dist:
+            import warnings
+            warnings.warn(
+                f"Simulating with error_distribution={error_distribution!r} but the model "
+                f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
+                f"the fitted distribution.",
+                UserWarning,
+            )
 
         from statsforecast.ets import simulate_ets
 
@@ -1200,7 +1213,7 @@ class AutoCES(_TS):
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
         seed: Optional[int] = None,
-        error_distribution: str = "normal",
+        error_distribution: Optional[str] = None,
         error_params: Optional[Dict] = None,
     ):
         """
@@ -1220,9 +1233,10 @@ class AutoCES(_TS):
             Future exogenous regressors (unused, for API consistency).
         seed : int, optional
             Random seed for reproducibility.
-        error_distribution : str, default='normal'
-            Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-            'laplace', 'skew-normal', 'ged'.
+        error_distribution : str, optional
+            Distribution for error terms. Defaults to the fitted model's distribution.
+            Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            A UserWarning is emitted if this differs from the fitted distribution.
         error_params : dict, optional
             Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -1249,6 +1263,18 @@ class AutoCES(_TS):
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")
             mod = self.model_
+
+        fitted_dist = mod.get("distribution", "normal")
+        if error_distribution is None:
+            error_distribution = fitted_dist
+        elif error_distribution != fitted_dist:
+            import warnings
+            warnings.warn(
+                f"Simulating with error_distribution={error_distribution!r} but the model "
+                f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
+                f"the fitted distribution.",
+                UserWarning,
+            )
 
         from statsforecast.ces import simulate_ces
 
@@ -1374,7 +1400,7 @@ class AutoTheta(_TS):
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
         seed: Optional[int] = None,
-        error_distribution: str = "normal",
+        error_distribution: Optional[str] = None,
         error_params: Optional[Dict] = None,
     ):
         """
@@ -1394,9 +1420,10 @@ class AutoTheta(_TS):
             Future exogenous regressors (unused, for API consistency).
         seed : int, optional
             Random seed for reproducibility.
-        error_distribution : str, default='normal'
-            Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-            'laplace', 'skew-normal', 'ged'.
+        error_distribution : str, optional
+            Distribution for error terms. Defaults to the fitted model's distribution.
+            Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            A UserWarning is emitted if this differs from the fitted distribution.
         error_params : dict, optional
             Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -1427,6 +1454,18 @@ class AutoTheta(_TS):
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")
             mod = self.model_
+
+        fitted_dist = mod.get("distribution", "normal")
+        if error_distribution is None:
+            error_distribution = fitted_dist
+        elif error_distribution != fitted_dist:
+            import warnings
+            warnings.warn(
+                f"Simulating with error_distribution={error_distribution!r} but the model "
+                f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
+                f"the fitted distribution.",
+                UserWarning,
+            )
 
         from statsforecast.theta import simulate_theta
 

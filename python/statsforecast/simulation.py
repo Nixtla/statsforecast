@@ -16,23 +16,19 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 from scipy import stats
 
+from statsforecast.distributions import VALID_DISTRIBUTIONS
 
-SUPPORTED_DISTRIBUTIONS = frozenset([
-    "normal",
-    "t",
-    "bootstrap",
-    "laplace",
-    "skew-normal",
-    "ged",
-])
+_SUPPORTED_SIMULATION_DISTRIBUTIONS = {str(d) for d in VALID_DISTRIBUTIONS} | {"bootstrap"}
+# Deprecated public alias (kept for backwards compatibility).
+SUPPORTED_DISTRIBUTIONS = frozenset(_SUPPORTED_SIMULATION_DISTRIBUTIONS)
 
 
 def _validate_distribution(distribution: str) -> None:
     """Validate that the distribution is supported."""
-    if distribution not in SUPPORTED_DISTRIBUTIONS:
+    if distribution not in _SUPPORTED_SIMULATION_DISTRIBUTIONS:
         raise ValueError(
             f"Unsupported error distribution: '{distribution}'. "
-            f"Supported distributions are: {sorted(SUPPORTED_DISTRIBUTIONS)}"
+            f"Supported distributions are: {sorted(_SUPPORTED_SIMULATION_DISTRIBUTIONS)}"
         )
 
 

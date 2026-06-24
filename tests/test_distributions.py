@@ -124,3 +124,26 @@ def test_theta_interval_ordering(distribution):
     assert np.all(pred["lo-80"] < pred["mean"])
     assert np.all(pred["mean"] < pred["hi-80"])
     assert np.all(pred["hi-80"] < pred["hi-95"])
+
+
+import warnings
+
+
+def test_simulate_distribution_mismatch_warns():
+    from statsforecast.models import AutoETS
+    model = AutoETS(season_length=12, model="ANN", distribution="t")
+    model.fit(ap)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        model.simulate(h=4, n_paths=10, error_distribution="laplace")
+        assert any("distribution" in str(wi.message).lower() for wi in w)
+
+
+def test_simulate_defaults_to_fitted_distribution():
+    from statsforecast.models import AutoETS
+    model = AutoETS(season_length=12, model="ANN", distribution="t")
+    model.fit(ap)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        model.simulate(h=4, n_paths=10)  # no explicit error_distribution
+        assert not any("distribution" in str(wi.message).lower() for wi in w)
