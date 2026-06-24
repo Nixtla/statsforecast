@@ -1,4 +1,5 @@
 import math
+import warnings
 
 import numpy as np
 import pytest
@@ -126,9 +127,6 @@ def test_theta_interval_ordering(distribution):
     assert np.all(pred["lo-80"] < pred["mean"])
     assert np.all(pred["mean"] < pred["hi-80"])
     assert np.all(pred["hi-80"] < pred["hi-95"])
-
-
-import warnings
 
 
 def test_simulate_distribution_mismatch_warns():

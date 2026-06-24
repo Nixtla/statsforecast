@@ -45,6 +45,18 @@ __all__ = [
 
 import warnings
 from math import trunc
+
+
+def _warn_distribution_mismatch(error_distribution, fitted_dist):
+    warnings.warn(
+        f"Simulating with error_distribution={error_distribution!r} but the model "
+        f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
+        f"the fitted distribution.",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -963,13 +975,7 @@ class AutoETS(_TS):
         if error_distribution is None:
             error_distribution = fitted_dist
         elif error_distribution != fitted_dist:
-            import warnings
-            warnings.warn(
-                f"Simulating with error_distribution={error_distribution!r} but the model "
-                f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
-                f"the fitted distribution.",
-                UserWarning,
-            )
+            _warn_distribution_mismatch(error_distribution, fitted_dist)
 
         from statsforecast.ets import simulate_ets
 
@@ -1268,13 +1274,7 @@ class AutoCES(_TS):
         if error_distribution is None:
             error_distribution = fitted_dist
         elif error_distribution != fitted_dist:
-            import warnings
-            warnings.warn(
-                f"Simulating with error_distribution={error_distribution!r} but the model "
-                f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
-                f"the fitted distribution.",
-                UserWarning,
-            )
+            _warn_distribution_mismatch(error_distribution, fitted_dist)
 
         from statsforecast.ces import simulate_ces
 
@@ -1460,13 +1460,7 @@ class AutoTheta(_TS):
         if error_distribution is None:
             error_distribution = fitted_dist
         elif error_distribution != fitted_dist:
-            import warnings
-            warnings.warn(
-                f"Simulating with error_distribution={error_distribution!r} but the model "
-                f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
-                f"the fitted distribution.",
-                UserWarning,
-            )
+            _warn_distribution_mismatch(error_distribution, fitted_dist)
 
         from statsforecast.theta import simulate_theta
 
