@@ -51,10 +51,11 @@ tests/test_distributions.py            ← unified parametrized test suite
 ```
 
 Fitting flow for any method when `distribution != "normal"`:
-1. C++ warm start via existing optimizer (Nelder-Mead)
-2. C++ `optimize_dist()` jointly fits model params + distribution params under the non-normal likelihood, using `negloglik_*` from the shared header
-3. Distribution params stored in model dict (`nu`, `alpha_dist`, `beta_dist`)
-4. Python prediction intervals: `_calculate_intervals()` or `sample_errors()` from `distributions.py` / `simulation.py` using stored params
+1. Python runs the normal C++ optimizer first to get warm-start model params and residuals
+2. Python builds extended `x0 = [warm_start_model_params..., dist_init_params...]` using `_distribution_init_params(distribution, residuals)`
+3. Python calls C++ `optimize_dist(x0_ext, y, ..., distribution)` which jointly fits model params + distribution params under the non-normal likelihood, using `negloglik_*` from the shared header
+4. Python extracts distribution params from the optimizer tail via `_distribution_extract_params()` and stores them in the model dict (`nu`, `alpha_dist`, `beta_dist`)
+5. Python prediction intervals: `_calculate_intervals()` or `sample_errors()` from `distributions.py` / `simulation.py` using stored params
 
 ## C++ Layer — `include/statsforecast/distributions.h`
 
@@ -140,7 +141,7 @@ def _distribution_aic_correction(distribution: str, n: int, np_base: int,
 
 **Backwards compatibility:**
 - `utils.py` re-exports `Distribution`, `_VALID_DISTRIBUTIONS`, `_quantiles`, `_calculate_intervals` from `distributions.py`
-- `simulation.py` keeps `sample_errors()` and its private `_fit_*_distribution()` helpers; imports `Distribution` from `distributions.py` instead of defining its own `SUPPORTED_DISTRIBUTIONS` frozenset. `bootstrap` stays in `simulation.py` (simulation-only, not a fitting distribution).
+- `simulation.py` keeps `sample_errors()` and its private `_fit_*_distribution()` helpers; imports `Distribution` from `distributions.py` instead of defining its own `SUPPORTED_DISTRIBUTIONS` frozenset. `bootstrap` stays in `simulation.py` (simulation-only, not a fitting distribution). `simulation.py` defines its own validation set internally: `_SUPPORTED_SIMULATION_DISTRIBUTIONS = set(VALID_DISTRIBUTIONS) | {"bootstrap"}` — this replaces the old `SUPPORTED_DISTRIBUTIONS` frozenset without exposing `bootstrap` as a fitting distribution.
 
 `switch_distribution()` consolidates the per-method helpers that currently exist in `arima.py` and `ets.py`. Takes the target module as argument so one function serves all methods.
 
