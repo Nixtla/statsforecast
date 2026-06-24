@@ -1449,6 +1449,7 @@ class AutoTheta(_TS):
                 m=self.season_length,
                 model=self.model,
                 decomposition_type=self.decomposition_type,
+                distribution=self.distribution,
             )
         else:
             if not hasattr(self, "model_"):
