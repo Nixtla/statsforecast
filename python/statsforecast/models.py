@@ -1254,7 +1254,7 @@ class AutoCES(_TS):
                     y=y,
                     X=X,
                     seed=seed,
-                    error_distribution=error_distribution,
+                    error_distribution=error_distribution or "normal",
                     error_params=error_params,
                 )
             mod = auto_ces(y, m=self.season_length, model=self.model,
@@ -1441,7 +1441,7 @@ class AutoTheta(_TS):
                     y=y,
                     X=X,
                     seed=seed,
-                    error_distribution=error_distribution,
+                    error_distribution=error_distribution or "normal",
                     error_params=error_params,
                 )
             mod = auto_theta(
