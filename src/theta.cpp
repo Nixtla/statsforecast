@@ -208,7 +208,7 @@ double target_fn_dist(const VectorXd &params, double init_level,
     return dist::negloglik_ged(e3, n_eff, params(n_total - 2),
                                params(n_total - 1));
   default:
-    return mse;
+    return std::numeric_limits<double>::infinity();
   }
 }
 

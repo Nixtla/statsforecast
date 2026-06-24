@@ -370,7 +370,7 @@ double ces_target_fn_dist(const VectorXd &optimal_param, double init_alpha_0,
     return dist::negloglik_ged(e.data(), nn, optimal_param(n_total - 2),
                                optimal_param(n_total - 1));
   default:
-    return lik;
+    return std::numeric_limits<double>::infinity();
   }
 }
 
