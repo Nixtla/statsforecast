@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pytest
 from scipy import stats
@@ -189,8 +191,9 @@ def test_cross_method_distribution_keys(
     model.fit(ap)
     md = model.model_
 
-    # `distribution` key must be present and correct
-    assert md.get("distribution", "normal") == distribution
+    # `distribution` key must be present and correct (direct access raises KeyError
+    # if the key is missing — a dropped key must not pass silently via default)
+    assert md["distribution"] == distribution
 
     # Shape-parameter key contract
     assert ("nu" in md) == (distribution == "t")
@@ -228,4 +231,64 @@ def test_ets_t_aic_better_than_normal_heavy_tails():
     assert m_t["aic"] < m_normal["aic"], (
         f"Expected t-AIC ({m_t['aic']:.2f}) < normal-AIC ({m_normal['aic']:.2f})"
         " on heavy-tailed data"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Task 8 (fix wave): scipy log-likelihood cross-check for ETS ANN
+# ---------------------------------------------------------------------------
+# For an additive-error ETS model (model="ANN"), the stored loglik equals the
+# sum of marginal log-densities over the residuals:
+#
+#   model["loglik"] == sum_i log f_dist(e_i; fitted_params)
+#
+# "normal" is EXCLUDED: the ETS normal backend uses the concentrated/profile
+# Gaussian likelihood (not the full marginal), so it does NOT equal
+# sum_i log N(e_i; 0, sigma2). This is by design and is not a bug.
+#
+# "skew-normal" is INCLUDED: empirical verification confirms the identity holds
+# with scipy.stats.skewnorm.logpdf(e, a=alpha_dist, loc=0, scale=sqrt(sigma2))
+# at rtol < 1e-6.
+_LOGLIK_SCIPY_CASES = ["laplace", "t", "ged", "skew-normal"]
+
+
+def _scipy_loglik(e, distribution, model):
+    """Recompute log-likelihood from residuals via scipy for ETS ANN."""
+    sigma2 = model["sigma2"]
+    if distribution == "laplace":
+        # sigma2 = 2*b^2  =>  b = sqrt(sigma2/2)
+        return float(np.sum(stats.laplace.logpdf(e, loc=0, scale=np.sqrt(sigma2 / 2))))
+    elif distribution == "t":
+        nu = model["nu"]
+        return float(np.sum(stats.t.logpdf(e, df=nu, loc=0, scale=np.sqrt(sigma2))))
+    elif distribution == "ged":
+        beta_dist = model["beta_dist"]
+        return float(
+            np.sum(stats.gennorm.logpdf(e, beta=beta_dist, loc=0, scale=np.sqrt(sigma2)))
+        )
+    elif distribution == "skew-normal":
+        alpha_dist = model["alpha_dist"]
+        return float(
+            np.sum(
+                stats.skewnorm.logpdf(e, a=alpha_dist, loc=0, scale=np.sqrt(sigma2))
+            )
+        )
+    raise ValueError(f"Unexpected distribution: {distribution!r}")
+
+
+@pytest.mark.parametrize("distribution", _LOGLIK_SCIPY_CASES)
+def test_loglik_matches_scipy(distribution):
+    """ETS ANN stored loglik == sum_i log f(e_i) recomputed via scipy."""
+    from statsforecast.ets import ets_f
+
+    model = ets_f(ap, m=1, model="ANN", distribution=distribution)
+    e = model["residuals"]
+    e = e[~np.isnan(e)]
+
+    stored = model["loglik"]
+    scipy_ll = _scipy_loglik(e, distribution, model)
+
+    assert math.isclose(stored, scipy_ll, rel_tol=1e-4, abs_tol=1e-4), (
+        f"{distribution}: stored loglik={stored:.6f}, scipy loglik={scipy_ll:.6f}, "
+        f"diff={stored - scipy_ll:.6f}"
     )
