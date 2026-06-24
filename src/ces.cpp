@@ -459,9 +459,9 @@ void init(py::module_ &m) {
               py::call_guard<py::gil_scoped_release>());
   // Expose the Distribution enum on the ces submodule.
   // It is already registered on the ets submodule (same C++ type); pybind11
-  // forbids double-registration, so we look up the existing type handle.
-  ces_mod.attr("Distribution") =
-      py::detail::get_type_handle(typeid(dist::Distribution), true);
+  // forbids double-registration, so we alias from the ets submodule attr
+  // using the public module attr API — no detail:: dependency.
+  ces_mod.attr("Distribution") = m.attr("ets").attr("Distribution");
   ces_mod.def("optimize_dist", &optimize_dist,
               py::call_guard<py::gil_scoped_release>());
 }

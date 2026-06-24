@@ -504,6 +504,7 @@ def forward_ces(fitted_model, y):
         alpha_1=alpha_1,
         beta_0=beta_0,
         beta_1=beta_1,
+        distribution=fitted_model.get("distribution", "normal"),
     )
 
 
