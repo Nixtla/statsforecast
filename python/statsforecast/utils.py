@@ -2,12 +2,16 @@ __all__ = ['AirPassengers', 'AirPassengersDF', 'generate_series']
 
 
 import math
+import warnings
 from collections import namedtuple
+from enum import Enum
 from typing import Dict
 
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+from scipy.stats import laplace as laplace_dist, t as t_dist
+from scipy.stats import skewnorm as skewnorm_dist, gennorm as gennorm_dist
 from utilsforecast.compat import DataFrame
 from utilsforecast.data import generate_series as utils_generate_series
 
@@ -236,8 +240,19 @@ def _seasonal_naive(
     y = _ensure_float(y)
     n = y.size
     season_vals = np.full(season_length, np.nan, dtype=y.dtype)
-    season_samples = min(season_length, n)
-    season_vals[:season_samples] = y[-season_samples:]
+    n_available = min(season_length, n)
+    if n < season_length:
+        # Partial season: align observations to their seasonal positions
+        # so that the forecast cycles correctly. 
+        warnings.warn(
+            f"Historical data ({n}) is shorter than season_length "
+            f"({season_length}). Forecasts for positions without "
+            f"observations will be filled with NaN."
+        )
+        start_idx = season_length - n_available
+        season_vals[start_idx:] = y[-n_available:]
+    else:
+        season_vals[:n_available] = y[-n_available:]
     out = _repeat_val_seas(season_vals=season_vals, h=h)
     fcst = {"mean": out}
     if fitted:
@@ -266,15 +281,40 @@ def _naive(
     return fcst
 
 
+class Distribution(str, Enum):
+    NORMAL = "normal"
+    LAPLACE = "laplace"
+    T = "t"
+    SKEW_NORMAL = "skew-normal"
+    GED = "ged"
+
+
+class ArimaMethod(str, Enum):
+    CSS = "CSS"
+    ML = "ML"
+    CSS_ML = "CSS-ML"
+
+
+_VALID_DISTRIBUTIONS = tuple(Distribution)
+
+
 # Functions used for calculating prediction intervals
-def _quantiles(level):
-    level = np.asarray(level)
-    z = norm.ppf(0.5 + level / 200)
-    return z
+def _quantiles(level, distribution="normal", dist_params=None):
+    p = 0.5 + np.asarray(level) / 200
+    if dist_params is None:
+        dist_params = {}
+    dist_ppf = {
+        Distribution.LAPLACE: laplace_dist.ppf(p),
+        Distribution.T: t_dist.ppf(p, df=dist_params.get("nu", 5.0)),
+        Distribution.SKEW_NORMAL: skewnorm_dist.ppf(p, a=dist_params.get("alpha_dist", 0.0)),
+        Distribution.GED: gennorm_dist.ppf(p, beta=dist_params.get("beta_dist", 2.0)),
+        Distribution.NORMAL: norm.ppf(p),
+    }
+    return dist_ppf[distribution]
 
 
-def _calculate_intervals(out, level, h, sigmah):
-    z = _quantiles(np.asarray(level))
+def _calculate_intervals(out, level, h, sigmah, distribution="normal", dist_params=None):
+    z = _quantiles(np.asarray(level), distribution=distribution, dist_params=dist_params)
     zz = np.repeat(z, h)
     zz = zz.reshape(z.shape[0], h)
     lower = out["mean"] - zz * sigmah
