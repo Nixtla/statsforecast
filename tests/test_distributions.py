@@ -56,13 +56,13 @@ def test_extract_dist_params():
 def test_quantiles_match_scipy():
     level = np.array([80, 95])
     p = 0.5 + level / 200
-    np.testing.assert_allclose(D._quantiles(level, "t", {"nu": 5.0}),
-                               stats.t.ppf(p, df=5.0))
+    np.testing.assert_allclose(D._quantiles(level, "t", {"df": 10.0}),
+                               stats.t.ppf(p, df=10.0))
     np.testing.assert_allclose(D._quantiles(level, "laplace"),
-                               stats.laplace.ppf(p))
-    np.testing.assert_allclose(D._quantiles(level, "skew-normal", {"alpha_dist": 1.5}),
+                               stats.laplace(scale=1 / np.sqrt(2)).ppf(p))
+    np.testing.assert_allclose(D._quantiles(level, "skew-normal", {"skewness": 1.5}),
                                stats.skewnorm.ppf(p, a=1.5))
-    np.testing.assert_allclose(D._quantiles(level, "ged", {"beta_dist": 1.2}),
+    np.testing.assert_allclose(D._quantiles(level, "ged", {"shape": 1.2}),
                                stats.gennorm.ppf(p, beta=1.2))
 
 
