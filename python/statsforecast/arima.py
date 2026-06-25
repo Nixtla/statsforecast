@@ -693,7 +693,8 @@ def arima(
                 )
                 if res.status != 1:
                     # 0: successs
-                    # 2: desired error not reached
+                    # 1: maximum number of iterations exceeded
+                    # 2: precision loss
                     init[mask] = res.x
                 if arma[0] > 0:
                     if not arCheck(init[: arma[0]]):
