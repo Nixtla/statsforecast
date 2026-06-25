@@ -881,7 +881,7 @@ def test_distribution_forecast_intervals(distribution, param_key):
     assert np.all(lower_95 < upper_95), "lower must be below upper"
 
 
-def test_issue_747(capsys):
+def test_issue_649(capsys):
     df = pd.read_csv("https://github.com/Nixtla/statsforecast/files/12664642/test.csv")
     y = df["y"].to_numpy()[:-2]
     m = AutoARIMA(season_length=12, trace=True).fit(y)
