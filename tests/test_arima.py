@@ -36,7 +36,7 @@ from statsforecast.arima import (
     print_statsforecast_ARIMA,
     seas_heuristic,
 )
-from statsforecast.models import AutoARIMA, ARIMA
+from statsforecast.models import ARIMA
 from statsforecast.utils import AirPassengers as ap
 
 warnings.simplefilter("ignore")
@@ -882,6 +882,8 @@ def test_distribution_forecast_intervals(distribution, param_key):
 
 
 def test_issue_649(capsys):
+    from statsforecast.models import AutoARIMA
+
     df = pd.read_csv("https://github.com/Nixtla/statsforecast/files/12664642/test.csv")
     y = df["y"].to_numpy()[:-2]
     m = AutoARIMA(season_length=12, trace=True).fit(y)
