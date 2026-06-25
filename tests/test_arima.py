@@ -887,15 +887,15 @@ def test_issue_747(capsys):
     m = AutoARIMA(season_length=12, trace=True).fit(y)
     captured = capsys.readouterr()
     expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : inf
-ARIMA(0,0,0)            with non-zero mean : 494.22368586879384
+ARIMA(0,0,0)            with non-zero mean : 494.2237
 ARIMA(1,0,0)(1,0,0)[12] with non-zero mean : inf
 ARIMA(0,0,1)(0,0,1)[12] with non-zero mean : inf
-ARIMA(0,0,0)            with zero mean     : 553.2571121107478
-ARIMA(0,0,0)(1,0,0)[12] with non-zero mean : 496.52344319788114
-ARIMA(0,0,0)(0,0,1)[12] with non-zero mean : 496.52258214199384
+ARIMA(0,0,0)            with zero mean     : 553.2571
+ARIMA(0,0,0)(1,0,0)[12] with non-zero mean : 496.5234
+ARIMA(0,0,0)(0,0,1)[12] with non-zero mean : 496.5226
 ARIMA(0,0,0)(1,0,1)[12] with non-zero mean : inf
 ARIMA(1,0,0)            with non-zero mean : inf
-ARIMA(0,0,1)            with non-zero mean : 494.37004566120896
+ARIMA(0,0,1)            with non-zero mean : 494.3700
 ARIMA(1,0,1)            with non-zero mean : inf
 """
     assert captured.out == expected_output

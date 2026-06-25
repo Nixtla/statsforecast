@@ -1129,7 +1129,7 @@ def myarima(
             fit["ic"] = math.inf
         fit["xreg"] = xreg
         if trace:
-            print(f"{arima_string(fit, padding=True)} : {fit['ic']}")
+            print(f"{arima_string(fit, padding=True)} : {fit['ic']:.4f}")
         return fit
     except ValueError:
         if trace:
