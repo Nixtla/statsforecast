@@ -97,7 +97,7 @@ jobs:
           pattern: "artifact-*"
           merge-multiple: true
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.10"
 
@@ -117,7 +117,7 @@ jobs:
           submodules: "true"
 
       - name: Set up environment
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.10"
 
@@ -143,7 +143,7 @@ jobs:
         with:
           submodules: "true"
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
 
@@ -157,7 +157,7 @@ jobs:
         run: uv sync && uv pip install pytest-codspeed pytest-xdist
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@63f3e98b61959fe67f146a3ff022e4136fe9bb9c # 4.17.6
+        uses: CodSpeedHQ/action@a4a36bb07c0638b0b4ca52bf1f3dad1b4289e52f # 4.18.1
         with:
           mode: simulation
           token: ${{ secrets.CODESPEED_TOKEN }}
