@@ -4,8 +4,6 @@ __all__ = ["ets_f", "simulate_ets"]
 import math
 
 import numpy as np
-from scipy.stats import laplace as laplace_dist, t as t_dist
-from scipy.stats import skewnorm as skewnorm_dist, gennorm as gennorm_dist
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 from ._lib import ets as _ets
@@ -15,6 +13,7 @@ from .distributions import (
     extract_dist_params,
     aic_bic_aicc,
     error_params_from_model,
+    frozen_error_distribution,
 )
 from .utils import _calculate_intervals, _VALID_DISTRIBUTIONS, results
 
@@ -1368,22 +1367,11 @@ def _compute_pred_intervals(model, forecasts, h, level):
             phi = 0
 
         dist = model.get("distribution", "normal")
+        error_dist = frozen_error_distribution(
+            np.sqrt(sigma), dist, error_params_from_model(model)
+        )
         for k in range(nsim):
-            if dist == "laplace":
-                e = laplace_dist.rvs(scale=np.sqrt(sigma / 2.0), size=h)
-            elif dist == "t":
-                nu = model.get("nu", 5.0)
-                e = t_dist.rvs(df=nu, scale=np.sqrt(sigma), size=h)
-            elif dist == "skew-normal":
-                e = skewnorm_dist.rvs(
-                    a=model.get("alpha_dist", 0.0), scale=np.sqrt(sigma), size=h
-                )
-            elif dist == "ged":
-                e = gennorm_dist.rvs(
-                    beta=model.get("beta_dist", 2.0), scale=np.sqrt(sigma), size=h
-                )
-            else:
-                e = np.random.normal(0, np.sqrt(sigma), h)
+            e = error_dist.rvs(size=h)
             yhat = np.zeros(h)
             etssimulate(
                 last_state,
