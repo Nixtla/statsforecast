@@ -23,8 +23,12 @@ def mstl(
     else:
         msts = sorted(period)
     if s_window is None:
-        # default seasonal windows 11, 15, 19, ... sized to the number of
-        # seasonal periods, as in R's forecast::mstl()
+        # default seasonal windows 11, 15, 19, ... following R's
+        # forecast::mstl() (7 + 4*k), see
+        # https://github.com/robjhyndman/forecast/blob/master/R/mstl.R#L29
+        # R hard-codes six windows and breaks beyond that; here we extend the
+        # pattern to len(msts) so any number of seasonal periods works.
+        # Values match R for up to six periods.
         s_window = 7 + 4 * np.arange(1, len(msts) + 1)
     if len(msts) == 1:
         iterate = 1
