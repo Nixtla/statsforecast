@@ -112,7 +112,7 @@ npm i -g mint
 For additional instructions, you can read about it &rarr; [this link](https://mintlify.com/docs/installation).
 
 ```sh
-uv pip install -e '.[dev, docs]'
+uv sync --group dev
 make all_docs
 ```
 

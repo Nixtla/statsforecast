@@ -64,6 +64,7 @@
         "pages": [
           "docs/experiments/amazonstatsforecast.html",
           "docs/experiments/autoarima_vs_prophet.html",
+          "docs/experiments/autoarimaprophet_adapter.html",
           "docs/experiments/ets_ray_m5.html",
           "docs/experiments/prophet_spark_m5.html"
         ]
