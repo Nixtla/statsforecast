@@ -13,7 +13,6 @@ from .distributions import (
     extract_dist_params,
     aic_bic_aicc,
     error_params_from_model,
-    frozen_error_distribution,
 )
 from .utils import _calculate_intervals, _VALID_DISTRIBUTIONS, results
 
@@ -1354,7 +1353,9 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     else:
         # Classes 4 and 5 models
-        np.random.seed(1)
+        from statsforecast.simulation import sample_errors
+
+        rng = np.random.default_rng(1)
         compute_intervals = False
         nsim = 5000
         y_path = np.zeros([nsim, h])
@@ -1367,11 +1368,17 @@ def _compute_pred_intervals(model, forecasts, h, level):
             phi = 0
 
         dist = model.get("distribution", "normal")
-        error_dist = frozen_error_distribution(
-            np.sqrt(sigma), dist, error_params_from_model(model)
-        )
+        params = error_params_from_model(model)
+        residuals = model.get("residuals", None)
         for k in range(nsim):
-            e = error_dist.rvs(size=h)
+            e = sample_errors(
+                size=h,
+                sigma=np.sqrt(sigma),
+                distribution=dist,
+                params=params,
+                residuals=residuals,
+                rng=rng,
+            )
             yhat = np.zeros(h)
             etssimulate(
                 last_state,
