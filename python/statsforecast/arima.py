@@ -595,7 +595,19 @@ def arima(
         cn = nmxreg
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
         if not orig_xreg:
-            _, _, vt = np.linalg.svd(xreg[(~np.isnan(xreg)).all(1)])
+            xreg_nonnan = xreg[(~np.isnan(xreg)).all(1)]
+            thin = xreg_nonnan.shape[0] >= ncxreg
+            if not thin:
+                warnings.warn(
+                    f"xreg has {xreg_nonnan.shape[0]} fully-observed rows but "
+                    f"{ncxreg} columns; the model may be unidentifiable.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            # Only `vt` is consumed below; `full_matrices=False` avoids the
+            # O(m²) U matrix for tall-thin xreg. For fat matrices we
+            # fall back to full_matrices=True so vt is always (ncxreg, ncxreg).
+            _, _, vt = np.linalg.svd(xreg_nonnan, full_matrices=not thin)
             xreg = np.matmul(xreg, vt)
         dx = x
         dxreg = xreg
@@ -1910,7 +1922,10 @@ def auto_arima_f(
                 xregg = xregg[:, ~constant_columns]
             X = np.hstack([np.ones([xregg.shape[0], 1]), xregg])
             X = X[~np.isnan(X).any(1)]
-            _, sv, _ = np.linalg.svd(X)
+            # Only the singular values are needed for the rank check; skip
+            # computing U and V to avoid materialising large dense factors
+            # on long series with exogenous regressors (#1006).
+            sv = np.linalg.svd(X, compute_uv=False)
             if sv.min() / sv.sum() < np.finfo(np.float64).eps:
                 raise ValueError("xreg is rank deficient")
             j = (~np.isnan(x)) & (~np.isnan(np.nansum(xregg, 1)))
