@@ -194,7 +194,7 @@ Name | Type | Description
 #### `AutoETS`
 
 ```python
-AutoETS(season_length=1, model='ZZZ', damped=None, phi=None, alias='AutoETS', prediction_intervals=None)
+AutoETS(season_length=1, model='ZZZ', damped=None, phi=None, alias='AutoETS', prediction_intervals=None, distribution='normal')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -339,7 +339,7 @@ Name | Type | Description
 #### `AutoCES`
 
 ```python
-AutoCES(season_length=1, model='Z', alias='CES', prediction_intervals=None)
+AutoCES(season_length=1, model='Z', alias='CES', prediction_intervals=None, distribution='normal')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -474,7 +474,7 @@ Name | Type | Description
 #### `AutoTheta`
 
 ```python
-AutoTheta(season_length=1, decomposition_type='multiplicative', model=None, alias='AutoTheta', prediction_intervals=None)
+AutoTheta(season_length=1, decomposition_type='multiplicative', model=None, alias='AutoTheta', prediction_intervals=None, distribution='normal')
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
