@@ -1,10 +1,13 @@
+#include <numbers>
 #include <pybind11/pybind11.h>
 
+#include "distributions.h"
 #include "nelder_mead.h"
 
 namespace ets {
 namespace py = pybind11;
 using Eigen::VectorXd;
+using dist::Distribution;
 
 enum class Component {
   Nothing = 0,
@@ -301,6 +304,95 @@ nm::OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
                         opt_gamma, opt_phi, alpha, beta, gamma, phi);
 }
 
+double ObjectiveFunctionDist(
+    const VectorXd &params, const VectorXd &y, int n_state,
+    Component error, Component trend, Component season,
+    int n_mse, int m, bool opt_alpha, bool opt_beta,
+    bool opt_gamma, bool opt_phi,
+    double alpha, double beta, double gamma, double phi,
+    Distribution distribution) {
+  int j = 0;
+  if (opt_alpha) alpha = params(j++);
+  if (opt_beta)  beta  = params(j++);
+  if (opt_gamma) gamma = params(j++);
+  if (opt_phi)   phi   = params(j++);
+
+  auto n = y.size();
+  int n_dist = (distribution == Distribution::Laplace) ? 0 : 2;
+  int n_total = static_cast<int>(params.size());
+  int p = n_state + (season != Component::Nothing);
+  VectorXd state = VectorXd::Zero(p * (n + 1));
+  std::copy(params.data() + n_total - n_dist - n_state,
+            params.data() + n_total - n_dist, state.data());
+  if (season != Component::Nothing) {
+    int start = 1 + (trend != Component::Nothing);
+    double sum = state(Eigen::seq(start, n_state - 1)).sum();
+    state(n_state) =
+        static_cast<double>(m * (season == Component::Multiplicative)) - sum;
+    if (season == Component::Multiplicative &&
+        state.tail(state.size() - start).minCoeff() < 0.0)
+      return std::numeric_limits<double>::infinity();
+  }
+
+  VectorXd a_mse = VectorXd::Zero(30);
+  VectorXd e = VectorXd::Zero(n);
+  double lik = Calc<VectorXd &, const VectorXd &>(
+      state, e, a_mse, n_mse, y, error, trend, season, alpha, beta, gamma, phi, m);
+  if (std::isnan(lik) || std::abs(lik + 99999.0) < 1e-7)
+    return std::numeric_limits<double>::infinity();
+
+  double sumlog_adj = 0.0;
+  if (error == Component::Multiplicative) {
+    for (Eigen::Index i = 0; i < n; ++i) {
+      double denom = 1.0 + e[i];
+      if (std::abs(denom) < 1e-10) denom = 1e-10;
+      double f_i = std::abs(y[i] / denom);
+      sumlog_adj += std::log(f_i < 1e-10 ? 1e-10 : f_i) / static_cast<double>(n);
+    }
+  }
+
+  switch (distribution) {
+  case Distribution::Laplace:
+    return dist::negloglik_laplace(e.data(), static_cast<int>(n)) + sumlog_adj;
+  case Distribution::StudentT:
+    return dist::negloglik_t(e.data(), static_cast<int>(n),
+                             params(n_total - 2), params(n_total - 1)) +
+           sumlog_adj;
+  case Distribution::SkewNormal:
+    return dist::negloglik_skewnorm(e.data(), static_cast<int>(n),
+                                    params(n_total - 2), params(n_total - 1)) +
+           sumlog_adj;
+  case Distribution::GED:
+    return dist::negloglik_ged(e.data(), static_cast<int>(n),
+                               params(n_total - 2), params(n_total - 1)) +
+           sumlog_adj;
+  default:
+    return lik;
+  }
+}
+
+nm::OptimResult OptimizeDist(
+    const Eigen::Ref<const VectorXd> &x0,
+    const Eigen::Ref<const VectorXd> &y, int n_state,
+    Component error, Component trend, Component season,
+    int n_mse, int m, bool opt_alpha, bool opt_beta,
+    bool opt_gamma, bool opt_phi,
+    double alpha, double beta, double gamma, double phi,
+    const Eigen::Ref<const VectorXd> &lower,
+    const Eigen::Ref<const VectorXd> &upper,
+    double tol_std, int max_iter, bool adaptive,
+    Distribution distribution) {
+  double init_step = 0.05, nm_alpha = 1.0, nm_gamma = 2.0;
+  double nm_rho = 0.5, nm_sigma = 0.5, zero_pert = 1e-4;
+  return nm::NelderMead(
+      ObjectiveFunctionDist, x0, lower, upper,
+      init_step, zero_pert, nm_alpha, nm_gamma, nm_rho, nm_sigma,
+      max_iter, tol_std, adaptive,
+      y, n_state, error, trend, season, n_mse, m,
+      opt_alpha, opt_beta, opt_gamma, opt_phi, alpha, beta, gamma, phi,
+      distribution);
+}
+
 void init(py::module_ &m) {
   py::module_ ets = m.def_submodule("ets");
   ets.attr("HUGE_N") = HUGE_N;
@@ -323,5 +415,12 @@ void init(py::module_ &m) {
   ets.def("calc",
           &Calc<Eigen::Ref<VectorXd>, const Eigen::Ref<const VectorXd> &>);
   ets.def("optimize", &Optimize);
+  py::enum_<dist::Distribution>(ets, "Distribution")
+      .value("Normal",     dist::Distribution::Normal)
+      .value("Laplace",    dist::Distribution::Laplace)
+      .value("StudentT",   dist::Distribution::StudentT)
+      .value("SkewNormal", dist::Distribution::SkewNormal)
+      .value("GED",        dist::Distribution::GED);
+  ets.def("optimize_dist", &OptimizeDist);
 }
 } // namespace ets

@@ -26,7 +26,7 @@ from scipy.stats import norm
 
 from ._lib import arima as _arima
 from .mstl import mstl
-from .utils import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles
+from .distributions import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles, error_params_from_model, extract_dist_params
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
@@ -724,7 +724,7 @@ def arima(
         alpha_sn = None
         sigma2_sn = None
         beta_ged = None
-        sigma_ged = None
+        sigma2_ged = None
         if distribution == Distribution.SKEW_NORMAL:
             # Always optimize [arma_free..., log_sigma2, alpha] jointly.
             n_arma_free = int(mask.sum())
@@ -741,8 +741,9 @@ def arima(
                 tol=tol,
                 options=optim_control,
             )
-            sigma2_sn = math.exp(res_sn.x[n_arma_free])
-            alpha_sn = res_sn.x[n_arma_free + 1]
+            _dp_sn = extract_dist_params("skew-normal", res_sn.x[n_arma_free:])
+            sigma2_sn = _dp_sn["sigma2"]
+            alpha_sn = _dp_sn["alpha_dist"]
             hess_arma = (
                 res_sn.hess_inv[:n_arma_free, :n_arma_free]
                 if n_arma_free > 0 and np.ndim(res_sn.hess_inv) == 2
@@ -771,8 +772,9 @@ def arima(
                 tol=tol,
                 options=optim_control,
             )
-            sigma2_t = math.exp(res_t.x[n_arma_free])
-            nu_t = math.exp(res_t.x[n_arma_free + 1]) + 2.0
+            _dp_t = extract_dist_params("t", res_t.x[n_arma_free:])
+            sigma2_t = _dp_t["sigma2"]
+            nu_t = _dp_t["nu"]
             hess_arma = (
                 res_t.hess_inv[:n_arma_free, :n_arma_free]
                 if n_arma_free > 0 and np.ndim(res_t.hess_inv) == 2
@@ -801,8 +803,9 @@ def arima(
                 tol=tol,
                 options=optim_control,
             )
-            sigma_ged = math.exp(res_ged.x[n_arma_free])
-            beta_ged = math.exp(res_ged.x[n_arma_free + 1])
+            _dp_ged = extract_dist_params("ged", res_ged.x[n_arma_free:])
+            sigma2_ged = _dp_ged["sigma2"]
+            beta_ged = _dp_ged["beta_dist"]
             hess_arma = (
                 res_ged.hess_inv[:n_arma_free, :n_arma_free]
                 if n_arma_free > 0 and np.ndim(res_ged.hess_inv) == 2
@@ -877,8 +880,7 @@ def arima(
         elif distribution == Distribution.SKEW_NORMAL:
             sigma2 = sigma2_sn
         else:  # ged: sigma2 stores σ²
-            assert sigma_ged is not None
-            sigma2 = sigma_ged ** 2
+            sigma2 = sigma2_ged
 
     if distribution == Distribution.NORMAL:
         value = 2 * n_used * res.fun + n_used + n_used * np.log(2 * np.pi)
@@ -1509,7 +1511,7 @@ def forecast_arima(
             raise NotImplementedError("bootstrap=True")
         else:
             dist = model.get("distribution", Distribution.NORMAL)
-            quantiles = _quantiles(level, distribution=dist, dist_params=model)
+            quantiles = _quantiles(level, distribution=dist, dist_params=error_params_from_model(model))
             lower = pd.DataFrame(
                 pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
                 columns=[f"{l}%" for l in level],
@@ -2657,7 +2659,7 @@ class AutoARIMA:
             _level = sorted(_level)
             se = np.sqrt(self.model_.model["sigma2"])
             dist = self.model_.model.get("distribution", "normal")
-            quantiles = _quantiles(_level, distribution=dist, dist_params=self.model_.model)
+            quantiles = _quantiles(_level, distribution=dist, dist_params=error_params_from_model(self.model_.model))
 
             lo = pd.DataFrame(
                 fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),

@@ -45,6 +45,18 @@ __all__ = [
 
 import warnings
 from math import trunc
+
+
+def _warn_distribution_mismatch(error_distribution, fitted_dist):
+    warnings.warn(
+        f"Simulating with error_distribution={error_distribution!r} but the model "
+        f"was fitted with distribution={fitted_dist!r}; sigma2 was optimised under "
+        f"the fitted distribution.",
+        UserWarning,
+        stacklevel=3,
+    )
+
+
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
@@ -68,6 +80,7 @@ from statsforecast.ets import (
 from statsforecast._lib import ses as _ses_lib
 from statsforecast.utils import (
     ConformalIntervals,
+    _VALID_DISTRIBUTIONS,
     _calculate_intervals,
     _calculate_sigma,
     _ensure_float,
@@ -712,6 +725,7 @@ class AutoETS(_TS):
         phi: Optional[float] = None,
         alias: str = "AutoETS",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: str = "normal",
     ):
         self.season_length = season_length
         self.model = model
@@ -724,6 +738,7 @@ class AutoETS(_TS):
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -744,7 +759,12 @@ class AutoETS(_TS):
         """
         y = _ensure_float(y)
         self.model_ = ets_f(
-            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
+            y,
+            m=self.season_length,
+            model=self.model,
+            damped=self.damped,
+            phi=self.phi,
+            distribution=self.distribution,
         )
         self.model_["actual_residuals"] = y - self.model_["fitted"]
         self._store_cs(y=y, X=X)
@@ -822,7 +842,12 @@ class AutoETS(_TS):
         """
         y = _ensure_float(y)
         mod = ets_f(
-            y, m=self.season_length, model=self.model, damped=self.damped, phi=self.phi
+            y,
+            m=self.season_length,
+            model=self.model,
+            damped=self.damped,
+            phi=self.phi,
+            distribution=self.distribution,
         )
         fcst = forecast_ets(mod, h=h, level=level)
         keys = ["mean"]
@@ -900,7 +925,7 @@ class AutoETS(_TS):
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
         seed: Optional[int] = None,
-        error_distribution: str = "normal",
+        error_distribution: Optional[str] = None,
         error_params: Optional[Dict] = None,
     ):
         """
@@ -920,9 +945,10 @@ class AutoETS(_TS):
             Future exogenous regressors (unused, for API consistency).
         seed : int, optional
             Random seed for reproducibility.
-        error_distribution : str, default='normal'
-            Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-            'laplace', 'skew-normal', 'ged'.
+        error_distribution : str, optional
+            Distribution for error terms. Defaults to the fitted model's distribution.
+            Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            A UserWarning is emitted if this differs from the fitted distribution.
         error_params : dict, optional
             Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -944,6 +970,12 @@ class AutoETS(_TS):
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")
             mod = self.model_
+
+        fitted_dist = mod.get("distribution", "normal")
+        if error_distribution is None:
+            error_distribution = fitted_dist
+        elif error_distribution != fitted_dist:
+            _warn_distribution_mismatch(error_distribution, fitted_dist)
 
         from statsforecast.ets import simulate_ets
 
@@ -989,11 +1021,17 @@ class AutoCES(_TS):
         model: str = "Z",
         alias: str = "CES",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: str = "normal",
     ):
         self.season_length = season_length
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        if distribution not in _VALID_DISTRIBUTIONS:
+            raise ValueError(
+                f"distribution must be one of {tuple(d.value for d in _VALID_DISTRIBUTIONS)}, got {distribution!r}"
+            )
+        self.distribution = distribution
 
     def fit(
         self,
@@ -1019,7 +1057,8 @@ class AutoCES(_TS):
             )
             model.fit(y=y, X=X)
             return model
-        self.model_ = auto_ces(y, m=self.season_length, model=self.model)
+        self.model_ = auto_ces(y, m=self.season_length, model=self.model,
+                               distribution=self.distribution)
         self.model_["actual_residuals"] = y - self.model_["fitted"]
         self._store_cs(y=y, X=X)
         return self
@@ -1102,7 +1141,8 @@ class AutoCES(_TS):
             return model.forecast(
                 y=y, h=h, X=X, X_future=X_future, level=level, fitted=fitted
             )
-        mod = auto_ces(y, m=self.season_length, model=self.model)
+        mod = auto_ces(y, m=self.season_length, model=self.model,
+                       distribution=self.distribution)
         fcst = forecast_ces(mod, h, level=level)
         keys = ["mean"]
         if fitted:
@@ -1179,7 +1219,7 @@ class AutoCES(_TS):
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
         seed: Optional[int] = None,
-        error_distribution: str = "normal",
+        error_distribution: Optional[str] = None,
         error_params: Optional[Dict] = None,
     ):
         """
@@ -1199,9 +1239,10 @@ class AutoCES(_TS):
             Future exogenous regressors (unused, for API consistency).
         seed : int, optional
             Random seed for reproducibility.
-        error_distribution : str, default='normal'
-            Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-            'laplace', 'skew-normal', 'ged'.
+        error_distribution : str, optional
+            Distribution for error terms. Defaults to the fitted model's distribution.
+            Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            A UserWarning is emitted if this differs from the fitted distribution.
         error_params : dict, optional
             Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -1219,14 +1260,21 @@ class AutoCES(_TS):
                     y=y,
                     X=X,
                     seed=seed,
-                    error_distribution=error_distribution,
+                    error_distribution=error_distribution or "normal",
                     error_params=error_params,
                 )
-            mod = auto_ces(y, m=self.season_length, model=self.model)
+            mod = auto_ces(y, m=self.season_length, model=self.model,
+                           distribution=self.distribution)
         else:
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")
             mod = self.model_
+
+        fitted_dist = mod.get("distribution", "normal")
+        if error_distribution is None:
+            error_distribution = fitted_dist
+        elif error_distribution != fitted_dist:
+            _warn_distribution_mismatch(error_distribution, fitted_dist)
 
         from statsforecast.ces import simulate_ces
 
@@ -1266,12 +1314,18 @@ class AutoTheta(_TS):
         model: Optional[str] = None,
         alias: str = "AutoTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        distribution: str = "normal",
     ):
+        if distribution not in _VALID_DISTRIBUTIONS:
+            raise ValueError(
+                f"distribution must be one of {tuple(d.value for d in _VALID_DISTRIBUTIONS)}, got {distribution!r}"
+            )
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
+        self.distribution = distribution
 
     def fit(
         self,
@@ -1296,6 +1350,7 @@ class AutoTheta(_TS):
             m=self.season_length,
             model=self.model,
             decomposition_type=self.decomposition_type,
+            distribution=self.distribution,
         )
         self.model_["fitted"] = y - self.model_["residuals"]
         self._store_cs(y, X)
@@ -1345,7 +1400,7 @@ class AutoTheta(_TS):
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
         seed: Optional[int] = None,
-        error_distribution: str = "normal",
+        error_distribution: Optional[str] = None,
         error_params: Optional[Dict] = None,
     ):
         """
@@ -1365,9 +1420,10 @@ class AutoTheta(_TS):
             Future exogenous regressors (unused, for API consistency).
         seed : int, optional
             Random seed for reproducibility.
-        error_distribution : str, default='normal'
-            Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-            'laplace', 'skew-normal', 'ged'.
+        error_distribution : str, optional
+            Distribution for error terms. Defaults to the fitted model's distribution.
+            Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            A UserWarning is emitted if this differs from the fitted distribution.
         error_params : dict, optional
             Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -1385,7 +1441,7 @@ class AutoTheta(_TS):
                     y=y,
                     X=X,
                     seed=seed,
-                    error_distribution=error_distribution,
+                    error_distribution=error_distribution or "normal",
                     error_params=error_params,
                 )
             mod = auto_theta(
@@ -1393,11 +1449,18 @@ class AutoTheta(_TS):
                 m=self.season_length,
                 model=self.model,
                 decomposition_type=self.decomposition_type,
+                distribution=self.distribution,
             )
         else:
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")
             mod = self.model_
+
+        fitted_dist = mod.get("distribution", "normal")
+        if error_distribution is None:
+            error_distribution = fitted_dist
+        elif error_distribution != fitted_dist:
+            _warn_distribution_mismatch(error_distribution, fitted_dist)
 
         from statsforecast.theta import simulate_theta
 
