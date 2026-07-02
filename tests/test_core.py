@@ -135,6 +135,20 @@ class FailedFit:
         return "FailedFit"
 
 
+class _NoAliasModel:
+    """Simple model-like object without an `alias` attribute.
+
+    Used to validate that StatsForecast rejects duplicate output names even when
+    models don't expose an `alias` field.
+    """
+
+    def forecast(self):
+        pass
+
+    def __repr__(self):
+        return "NoAliasModel"
+
+
 class TestGroupedArray:
     def test_groupedArray_length(self, grouped_array_data):
         # test we can recover the
@@ -589,6 +603,13 @@ class TestModels:
             StatsForecast, "", models=[Naive(), Naive()], freq="D"
         )
         StatsForecast(models=[Naive(), Naive(alias="Naive2")], freq="D")
+        # test duplicates are detected even without `alias`
+        assert_raises_with_message(
+            StatsForecast,
+            "Model names must be unique",
+            models=[_NoAliasModel(), _NoAliasModel()],
+            freq="D",
+        )
         fig = StatsForecast.plot(panel_df, max_insample_length=10)
         fig
         assert_raises_with_message(
@@ -701,6 +722,35 @@ def test_for_monthly_data():
         monthly_res.groupby("unique_id", observed=True)["ds"].max().values,
         pd.Series(fcst.last_dates) + 4 * pd.offsets.MonthEnd(),
     )
+
+
+def test_level_validation():
+    # confidence levels must be between 0 and 100, exclusive
+    sf = StatsForecast(models=[Naive()], freq="M", n_jobs=1)
+    msg = "Every value in `level` must be"
+    invalid_levels = [[0, 100], [-1], [101], [np.nan], [np.inf], ["a"]]
+
+    for level in invalid_levels:
+        assert_raises_with_message(sf.forecast, msg, df=ap_df, h=12, level=level)
+        assert_raises_with_message(sf.cross_validation, msg, df=ap_df, h=12, n_windows=1, level=level)
+        assert_raises_with_message(sf.fit_predict, msg, df=ap_df, h=12, level=level)
+    
+    sf.fit(ap_df)
+    for level in invalid_levels:
+        assert_raises_with_message(sf.predict, msg, h=12, level=level)
+
+    fcst = sf.forecast(df=ap_df, h=12, level=[80, 95])
+    assert "Naive-lo-80" in fcst.columns and "Naive-hi-95" in fcst.columns
+
+    cv = sf.cross_validation(df=ap_df, h=12, n_windows=1, level=[80, 95])
+    assert "Naive-lo-80" in cv.columns and "Naive-hi-95" in cv.columns
+
+    fp = sf.fit_predict(df=ap_df, h=12, level=[80, 95])
+    assert "Naive-lo-80" in fp.columns and "Naive-hi-95" in fp.columns
+
+    pred = sf.predict(h=12, level=[80, 95])
+    assert "Naive-lo-80" in pred.columns and "Naive-hi-95" in pred.columns
+
 
 
 # # StatsForecast.forecast_fitted_values method usage example

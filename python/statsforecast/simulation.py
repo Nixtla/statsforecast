@@ -16,23 +16,20 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 from scipy import stats
 
+from statsforecast.distributions import VALID_DISTRIBUTIONS, frozen_error_distribution
 
-SUPPORTED_DISTRIBUTIONS = frozenset([
-    "normal",
-    "t",
-    "bootstrap",
-    "laplace",
-    "skew-normal",
-    "ged",
-])
+# use d.value (not str(d)) so this does not depend on Distribution.__str__
+_SUPPORTED_SIMULATION_DISTRIBUTIONS = {d.value for d in VALID_DISTRIBUTIONS} | {"bootstrap"}
+# Deprecated public alias (kept for backwards compatibility).
+SUPPORTED_DISTRIBUTIONS = frozenset(_SUPPORTED_SIMULATION_DISTRIBUTIONS)
 
 
 def _validate_distribution(distribution: str) -> None:
     """Validate that the distribution is supported."""
-    if distribution not in SUPPORTED_DISTRIBUTIONS:
+    if distribution not in _SUPPORTED_SIMULATION_DISTRIBUTIONS:
         raise ValueError(
             f"Unsupported error distribution: '{distribution}'. "
-            f"Supported distributions are: {sorted(SUPPORTED_DISTRIBUTIONS)}"
+            f"Supported distributions are: {sorted(_SUPPORTED_SIMULATION_DISTRIBUTIONS)}"
         )
 
 
@@ -226,20 +223,8 @@ def sample_errors(
             )
 
     # Distribution-specific sampling with explicit params + sigma
-    if distribution == "normal":
-        return rng.normal(0, sigma, size)
-
-    elif distribution == "t":
-        df = params.get("df", 5)
-        if df <= 2:
-            raise ValueError("Degrees of freedom (df) must be > 2 for finite variance.")
-        # Scale t-distribution to have the desired standard deviation
-        # Var(t) = df / (df - 2) for df > 2
-        t_scale = sigma * np.sqrt((df - 2) / df)
-        return stats.t.rvs(df, scale=t_scale, size=size, random_state=rng)
-
-    elif distribution == "bootstrap":
-        # Bootstrap requires residuals (already validated above at lines 222-226)
+    if distribution == "bootstrap":
+        # Bootstrap requires residuals (already validated above)
         clean_residuals = residuals[~np.isnan(residuals)]  # type: ignore[index]
         if len(clean_residuals) == 0:
             raise ValueError("No valid residuals available for bootstrap sampling.")
@@ -250,38 +235,10 @@ def sample_errors(
         sampled = rng.choice(clean_residuals, size=total_size, replace=True)
         return sampled.reshape(size)
 
-    elif distribution == "laplace":
-        # Laplace scale parameter: sigma = scale * sqrt(2)
-        laplace_scale = sigma / np.sqrt(2)
-        return rng.laplace(0, laplace_scale, size)
-
-    elif distribution == "skew-normal":
-        skewness = params.get("skewness", 0)
-        # Sample from skew-normal and scale to desired sigma
-        # scipy's skewnorm uses 'a' as shape parameter (skewness)
-        raw_samples = stats.skewnorm.rvs(skewness, size=size, random_state=rng)
-        # Standardize and rescale
-        if np.std(raw_samples) > 0:
-            return raw_samples * sigma / np.std(raw_samples)
-        return raw_samples * sigma
-
-    elif distribution == "ged":
-        # Generalized Error Distribution (generalized normal)
-        # shape=2 -> normal, shape=1 -> Laplace, shape->inf -> uniform
-        shape = params.get("shape", 2)
-        if shape <= 0:
-            raise ValueError("GED shape parameter must be positive.")
-        # scipy's gennorm uses beta as the shape parameter
-        raw_samples = stats.gennorm.rvs(shape, size=size, random_state=rng)
-        # Scale to desired sigma
-        ged_var = stats.gennorm.var(shape)
-        if ged_var > 0:
-            return raw_samples * sigma / np.sqrt(ged_var)
-        return raw_samples * sigma
-
-    else:
-        # This should not be reached due to validation, but just in case
-        raise ValueError(f"Unknown distribution: {distribution}")
+    # All parametric distributions: delegate to the factory (sigma = scale)
+    return frozen_error_distribution(sigma, distribution, params).rvs(
+        size=size, random_state=rng
+    )
 
 
 def get_distribution_info(distribution: str) -> Dict:
