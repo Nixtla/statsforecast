@@ -40,3 +40,9 @@ nbs/_extensions
 
 *.png
 .coverage*
+
+
+# local 
+.cursor/
+instructions_chronax_comparison.md
+my_nbs/
