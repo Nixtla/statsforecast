@@ -56,6 +56,26 @@ def test_seasonal_naive():
         seas_naive_fcst["fitted"], np.hstack([np.full(12, np.nan), y[:11]])
     )
 
+
+def test_py_typed_marker_is_packaged():
+    """Regression for #1121 — PEP 561 requires a `py.typed` marker file at
+    the package root for type checkers (pyright/mypy) to honour the inline
+    annotations shipped in this codebase. Without it, importing
+    `statsforecast` triggers warnings such as ``Stub file not found for
+    "statsforecast"`` in pylance.
+
+    Assert the marker exists *next to* the imported package — the same
+    test wheel/install paths a user would hit.
+    """
+    import os
+    import statsforecast
+
+    pkg_dir = os.path.dirname(statsforecast.__file__)
+    marker = os.path.join(pkg_dir, "py.typed")
+    assert os.path.isfile(marker), (
+        f"py.typed marker not found at {marker}; PEP 561 type checkers "
+        "won't pick up `statsforecast`'s inline annotations."
+    )
 def test_seasonal_naive_partial_season():
     # test seasonal naive when the number of observations is shorter than the season length 
     y = np.array([1.0, 2.0, 3.0, 4.0])
