@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from statsforecast.utils import _seasonal_naive
 
@@ -74,3 +76,18 @@ def test_py_typed_marker_is_packaged():
         f"py.typed marker not found at {marker}; PEP 561 type checkers "
         "won't pick up `statsforecast`'s inline annotations."
     )
+def test_seasonal_naive_partial_season():
+    # test seasonal naive when the number of observations is shorter than the season length 
+    y = np.array([1.0, 2.0, 3.0, 4.0])
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = _seasonal_naive(y=y, h=24, season_length=12, fitted=False)
+
+    expected = np.array(
+        [np.nan] * 8 + [1.0, 2.0, 3.0, 4.0] + [np.nan] * 8 + [1.0, 2.0, 3.0, 4.0]
+    )
+    np.testing.assert_array_equal(result["mean"], expected)
+
+    assert len(w) >= 1
+    assert "shorter than season_length" in str(w[-1].message)

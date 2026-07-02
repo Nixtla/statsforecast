@@ -4,12 +4,20 @@ __all__ = ["forecast_theta", "auto_theta", "forward_theta", "simulate_theta"]
 import math
 
 import numpy as np
+import warnings
 from scipy.stats import norm
 from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.stattools import acf
 
 from ._lib import theta as _theta
 from .arima import is_constant
+from .distributions import (
+    switch_distribution,
+    dist_init_params,
+    extract_dist_params,
+    aic_bic_aicc,
+    error_params_from_model,
+)
 from .utils import _repeat_val_seas, _seasonal_naive, results
 
 
@@ -135,6 +143,7 @@ def thetamodel(
     alpha: float,
     theta: float,
     nmse: int,
+    distribution: str = "normal",
 ):
     y = y.astype(np.float64, copy=False)
     model_type = switch_theta(modeltype)
@@ -150,26 +159,59 @@ def thetamodel(
         key.replace("optimize_", ""): val for key, val in par.items() if "optim" in key
     }
     par = {key: val for key, val in par.items() if "optim" not in key}
-    # parameter optimization
-    fred = optimize_theta_target_fn(
-        init_par=par,
-        optimize_params=optimize_params,
-        y=y,
-        modeltype=model_type,
-        nmse=nmse,
-    )
-    if fred is not None:
-        fit_par = fred.x
-    j = 0
-    if optimize_params["initial_smoothed"]:
-        par["initial_smoothed"] = fit_par[j]
-        j += 1
-    if optimize_params["alpha"]:
-        par["alpha"] = fit_par[j]
-        j += 1
-    if optimize_params["theta"]:
-        par["theta"] = fit_par[j]
-        j += 1
+
+    if distribution == "normal":
+        # Normal path: UNCHANGED — optimize MSE-based objective
+        fred = optimize_theta_target_fn(
+            init_par=par,
+            optimize_params=optimize_params,
+            y=y,
+            modeltype=model_type,
+            nmse=nmse,
+        )
+        if fred is not None:
+            fit_par = fred.x
+        j = 0
+        if optimize_params["initial_smoothed"]:
+            par["initial_smoothed"] = fit_par[j]
+            j += 1
+        if optimize_params["alpha"]:
+            par["alpha"] = fit_par[j]
+            j += 1
+        if optimize_params["theta"]:
+            par["theta"] = fit_par[j]
+            j += 1
+    else:
+        # Non-normal path: one-pass likelihood-based optimization
+        struct_x0 = np.array(
+            [par[k] for k, v in optimize_params.items() if v], dtype=np.float64
+        )
+        n_struct = len(struct_x0)
+        var_init = max(float(np.nanvar(y)), 1e-10)
+        n_dist, dist_init = dist_init_params(distribution, var_init)
+        # structural bounds (same as optimize_theta_target_fn)
+        lb = {"initial_smoothed": -1e10, "alpha": 0.1, "theta": 1.0}
+        ub = {"initial_smoothed": 1e10, "alpha": 0.99, "theta": 1e10}
+        lower = [lb[k] for k, v in optimize_params.items() if v]
+        upper = [ub[k] for k, v in optimize_params.items() if v]
+        x0_ext = np.concatenate([struct_x0, dist_init])
+        lower_ext = np.concatenate([lower, np.full(n_dist, -np.inf)])
+        upper_ext = np.concatenate([upper, np.full(n_dist, np.inf)])
+        opt_res = _theta.optimize_dist(
+            x0_ext, lower_ext, upper_ext,
+            par["initial_smoothed"], par["alpha"], par["theta"],
+            optimize_params["initial_smoothed"], optimize_params["alpha"],
+            optimize_params["theta"], y, model_type, nmse,
+            switch_distribution(distribution, _theta),
+        )
+        fred = results(*opt_res)
+        fit_par = fred.x[:n_struct] if n_dist > 0 else fred.x
+        fit_par_dist = fred.x[-n_dist:] if n_dist > 0 else np.array([])
+        jj = 0
+        for key in ("initial_smoothed", "alpha", "theta"):
+            if optimize_params[key]:
+                par[key] = fit_par[jj]
+                jj += 1
 
     amse, e, states, mse = _theta.pegels_resid(
         y,
@@ -180,7 +222,7 @@ def thetamodel(
         nmse,
     )
 
-    return dict(
+    out = dict(
         mse=mse,
         amse=amse,
         fit=fred,
@@ -191,7 +233,28 @@ def thetamodel(
         n=len(y),
         modeltype=modeltype,
         mean_y=np.mean(y),
+        distribution=distribution,
     )
+
+    if distribution != "normal":
+        n_eff = len(y) - 3
+        n_free = sum(optimize_params.values())
+        n_dist_count = 1 if distribution == "laplace" else 2
+        np_eff = n_free + n_dist_count
+        if distribution == "laplace":
+            neg2logL = 2 * n_eff * fred.fn + n_eff * (2 + np.log(4))
+        else:
+            neg2logL = 2 * n_eff * fred.fn
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, n_eff)
+        loglik = -0.5 * neg2logL
+        dist_extra = extract_dist_params(distribution, fit_par_dist, residuals=e[3:])
+        out["aic"] = aic
+        out["bic"] = bic
+        out["aicc"] = aicc
+        out["loglik"] = loglik
+        out.update(dist_extra)
+
+    return out
 
 
 def compute_pi_samples(
@@ -286,8 +349,16 @@ def simulate_theta(
     if seed is not None:
         np.random.seed(seed)
 
-    sigma = np.std(model["residuals"][3:], ddof=1)
-    residuals = model["residuals"][3:]  # For bootstrap
+    residuals_tail = model["residuals"][3:]
+    if len(residuals_tail) < 2:
+        warnings.warn(
+            "Too few residuals after burn-in for sigma estimate; using all residuals",
+            stacklevel=2,
+        )
+        sigma = np.std(model["residuals"], ddof=1)
+    else:
+        sigma = np.std(residuals_tail, ddof=1)
+    residuals = residuals_tail if len(residuals_tail) >= 2 else model["residuals"]
 
     samples = compute_pi_samples(
         n=model["n"],
@@ -333,8 +404,17 @@ def forecast_theta(obj, h, level=None):
     res = {"mean": forecast}
 
     if level is not None:
-        sigma = np.std(obj["residuals"][3:], ddof=1)
+        residuals_tail = obj["residuals"][3:]
+        if len(residuals_tail) < 2:
+            warnings.warn(
+                "Too few residuals after burn-in for sigma estimate; using all residuals",
+                stacklevel=2,
+            )
+            sigma = np.std(obj["residuals"], ddof=1)
+        else:
+            sigma = np.std(residuals_tail, ddof=1)
         mean_y = obj["mean_y"]
+        dist = obj.get("distribution", "normal")
         samples = compute_pi_samples(
             n=n,
             h=h,
@@ -343,6 +423,9 @@ def forecast_theta(obj, h, level=None):
             alpha=alpha,
             theta=theta,
             mean_y=mean_y,
+            error_distribution=dist,
+            error_params=error_params_from_model(obj),
+            residuals=residuals_tail,
         )
         for lv in level:
             min_q = (100 - lv) / 200
@@ -369,6 +452,7 @@ def auto_theta(
     theta=None,
     nmse=3,
     decomposition_type="multiplicative",
+    distribution="normal",
 ):
     # converting params to floats
     if initial_smoothed is None:
@@ -389,6 +473,7 @@ def auto_theta(
             initial_smoothed=np.mean(y) / 2,
             alpha=0.5,
             theta=2.0,
+            distribution=distribution,
         )
     # seasonal decomposition if needed
     decompose = False
@@ -429,6 +514,7 @@ def auto_theta(
     else:
         modeltype = [model]
 
+    ic_key = "mse" if distribution == "normal" else "aic"
     best_ic = np.inf
     for mtype in modeltype:
         fit = thetamodel(
@@ -439,8 +525,9 @@ def auto_theta(
             initial_smoothed=initial_smoothed,
             alpha=alpha,
             theta=theta,
+            distribution=distribution,
         )
-        fit_ic = fit["mse"]
+        fit_ic = fit[ic_key]
         if not np.isnan(fit_ic):
             if fit_ic < best_ic:
                 model = fit

@@ -504,3 +504,16 @@ class TestThetaModel:
         res_transfer = forward_theta(res, intermittent_series)
         for key in res_transfer["par"]:
             assert res["par"][key] == res_transfer["par"][key]
+
+def test_theta_short_series_no_nan_intervals():
+    """Regression test for #1135: theta should not produce NaN intervals for short series."""
+    import numpy as np
+    from statsforecast.models import AutoTheta
+    
+    y = np.array([10.0, 12.0, 11.0, 13.0])
+    model = AutoTheta(season_length=1)
+    out = model.forecast(y=y, h=3, level=[95])
+    
+    assert not np.isnan(out["lo-95"]).any(), "NaN in lower prediction interval"
+    assert not np.isnan(out["hi-95"]).any(), "NaN in upper prediction interval"
+    assert not np.isnan(out["mean"]).any(), "NaN in point forecast"
