@@ -152,11 +152,11 @@ def _add_conformal_error_intervals(
     `level` should be already sorted. This strategy uses the quantiles of the
     conformity scores as the error margin for the prediction intervals.
     """
+    quantiles = {lv: np.quantile(cs, lv / 100, axis=0) for lv in level}
+    for lv in reversed(level):
+        fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
     for lv in level:
-        alpha = 100 - lv
-        margin = np.quantile(cs, 1 - alpha / 200, axis=0)
-        fcst[f"lo-{lv}"] = fcst["mean"] - margin
-        fcst[f"hi-{lv}"] = fcst["mean"] + margin
+        fcst[f"hi-{lv}"] = fcst["mean"] + quantiles[lv]
     return fcst
 
 
