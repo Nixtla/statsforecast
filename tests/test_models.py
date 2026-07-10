@@ -157,10 +157,11 @@ def test_conformal_error_intervals():
     assert np.all(fcst["hi-90"] >= fcst["hi-80"])
     # Exact-value check: for ZeroModel (mean=0), conformal_error intervals
     # should match the lv/100 quantile of the conformity scores.
-    zero_model2 = ZeroModel(ConformalIntervals(h=12, n_windows=10, method="conformal_error"))
-    cs = zero_model2._conformity_scores(ap)
+    cs = zero_model._conformity_scores(ap)
     np.testing.assert_allclose(fcst["hi-90"], np.quantile(cs, 0.9, axis=0))
     np.testing.assert_allclose(fcst["hi-80"], np.quantile(cs, 0.8, axis=0))
+    np.testing.assert_allclose(fcst["lo-90"], -np.quantile(cs, 0.9, axis=0))
+    np.testing.assert_allclose(fcst["lo-80"], -np.quantile(cs, 0.8, axis=0))
 
 
 def assert_class(
