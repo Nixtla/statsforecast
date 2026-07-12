@@ -1,9 +1,11 @@
 #include <pybind11/pybind11.h>
 
 #include <algorithm>
+#include <limits>
 #include <numeric>
 #include <ranges>
 
+#include "distributions.h"
 #include "nelder_mead.h"
 
 namespace theta {
@@ -174,6 +176,56 @@ nm::OptimResult optimize(const Eigen::Ref<const VectorXd> &x0,
                         opt_alpha, opt_theta, y, model_type, nmse);
 }
 
+double target_fn_dist(const VectorXd &params, double init_level,
+                      double init_alpha, double init_theta, bool opt_level,
+                      bool opt_alpha, bool opt_theta, const VectorXd &y,
+                      ModelType model_type, size_t nmse,
+                      dist::Distribution distribution) {
+  RowMajorMatrixXd states = RowMajorMatrixXd::Zero(y.size(), 5);
+  size_t j = 0;
+  double level = opt_level ? params[j++] : init_level;
+  double alpha = opt_alpha ? params[j++] : init_alpha;
+  double theta = opt_theta ? params[j++] : init_theta;
+  VectorXd e = VectorXd::Zero(y.size());
+  VectorXd amse = VectorXd::Zero(nmse);
+  double mse = calc(y, states, model_type, level, alpha, theta, e, amse, nmse);
+  if (std::isnan(mse) || std::abs(mse + 99999) < 1e-7)
+    return std::numeric_limits<double>::infinity();
+
+  int n_eff = static_cast<int>(y.size()) - 3;
+  const double *e3 = e.data() + 3;
+  int n_total = static_cast<int>(params.size());
+  switch (distribution) {
+  case dist::Distribution::Laplace:
+    return dist::negloglik_laplace(e3, n_eff);
+  case dist::Distribution::StudentT:
+    return dist::negloglik_t(e3, n_eff, params(n_total - 2),
+                             params(n_total - 1));
+  case dist::Distribution::SkewNormal:
+    return dist::negloglik_skewnorm(e3, n_eff, params(n_total - 2),
+                                    params(n_total - 1));
+  case dist::Distribution::GED:
+    return dist::negloglik_ged(e3, n_eff, params(n_total - 2),
+                               params(n_total - 1));
+  default:
+    return std::numeric_limits<double>::infinity();
+  }
+}
+
+nm::OptimResult optimize_dist(const Eigen::Ref<const VectorXd> &x0,
+                              const Eigen::Ref<const VectorXd> &lower,
+                              const Eigen::Ref<const VectorXd> &upper,
+                              double init_level, double init_alpha,
+                              double init_theta, bool opt_level, bool opt_alpha,
+                              bool opt_theta, const Eigen::Ref<const VectorXd> &y,
+                              ModelType model_type, size_t nmse,
+                              dist::Distribution distribution) {
+  return nm::NelderMead(target_fn_dist, x0, lower, upper, 0.05, 1e-4, 1.0,
+                        2.0, 0.5, 0.5, 1000, 1e-4, true, init_level,
+                        init_alpha, init_theta, opt_level, opt_alpha, opt_theta,
+                        y, model_type, nmse, distribution);
+}
+
 void init(py::module_ &m) {
   py::module_ theta = m.def_submodule("theta");
   theta.attr("HUGE_N") = HUGE_N;
@@ -190,6 +242,10 @@ void init(py::module_ &m) {
   theta.def("update", &update);
   theta.def("optimize", &optimize);
   theta.def("pegels_resid", &pegels_resid);
+  // Distribution enum: alias from ets (already registered there; re-registering
+  // would throw). ets::init runs before theta::init in statsforecast.cpp.
+  theta.attr("Distribution") = m.attr("ets").attr("Distribution");
+  theta.def("optimize_dist", &optimize_dist);
 }
 
 } // namespace theta

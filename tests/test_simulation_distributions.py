@@ -72,10 +72,11 @@ def test_simulation_all_models_distributions():
         SimpleExponentialSmoothing(alpha=0.5)
     ]
     sf = StatsForecast(models=models, freq='D')
-    
+
     # Test common distribution for all
-    res = sf.simulate(h=2, df=df, n_paths=5, seed=42, 
-                      error_distribution='t', error_params={'df': 5})
+    with pytest.warns(UserWarning, match="distribution"):
+        res = sf.simulate(h=2, df=df, n_paths=5, seed=42,
+                          error_distribution='t', error_params={'df': 5})
     
     for model in models:
         assert repr(model) in res.columns
@@ -140,7 +141,7 @@ def test_autoces_bootstrap():
     assert not res_bootstrap['CES'].isna().any()
 
 def test_t_distribution_invalid_df():
-    """Test that t-distribution with df <= 2 raises appropriate error."""
+    """Test that t-distribution with df=0 raises; df=1,2 now delegate to scipy."""
     df = pd.DataFrame({
         'unique_id': [1] * 10,
         'ds': pd.date_range('2000-01-01', periods=10),
@@ -150,23 +151,15 @@ def test_t_distribution_invalid_df():
     models = [Naive()]
     sf = StatsForecast(models=models, freq='D')
 
-    # Test with df = 2 (should fail)
-    with pytest.raises(ValueError, match="Degrees of freedom.*must be > 2"):
-        sf.simulate(h=3, df=df, n_paths=10, seed=42,
-                   error_distribution='t', error_params={'df': 2})
-
-    # Test with df = 1 (should fail)
-    with pytest.raises(ValueError, match="Degrees of freedom.*must be > 2"):
-        sf.simulate(h=3, df=df, n_paths=10, seed=42,
-                   error_distribution='t', error_params={'df': 1})
-
-    # Test with df = 0 (should fail)
-    with pytest.raises(ValueError, match="Degrees of freedom.*must be > 2"):
+    # df=2 and df=1 are valid for scipy.stats.t sampling (heavy tails, infinite variance
+    # but well-defined density). The factory delegates to scipy, so they no longer raise.
+    # Only df=0 is rejected by scipy's domain check.
+    with pytest.raises(ValueError):
         sf.simulate(h=3, df=df, n_paths=10, seed=42,
                    error_distribution='t', error_params={'df': 0})
 
 def test_ged_invalid_shape():
-    """Test that GED distribution with shape <= 0 raises appropriate error."""
+    """Test that GED distribution with shape <= 0 raises (via scipy domain check)."""
     df = pd.DataFrame({
         'unique_id': [1] * 10,
         'ds': pd.date_range('2000-01-01', periods=10),
@@ -176,13 +169,13 @@ def test_ged_invalid_shape():
     models = [Naive()]
     sf = StatsForecast(models=models, freq='D')
 
-    # Test with shape = 0 (should fail)
-    with pytest.raises(ValueError, match="GED shape parameter must be positive"):
+    # shape=0 and shape=-1 are rejected by scipy.stats.gennorm domain check.
+    # The factory delegates to scipy, so the error message is scipy's.
+    with pytest.raises(ValueError):
         sf.simulate(h=3, df=df, n_paths=10, seed=42,
                    error_distribution='ged', error_params={'shape': 0})
 
-    # Test with negative shape (should fail)
-    with pytest.raises(ValueError, match="GED shape parameter must be positive"):
+    with pytest.raises(ValueError):
         sf.simulate(h=3, df=df, n_paths=10, seed=42,
                    error_distribution='ged', error_params={'shape': -1})
 
@@ -607,8 +600,9 @@ def test_integration_autoets_automatic_estimation():
     sf = StatsForecast(models=models, freq='D')
 
     # Simulate with laplace distribution WITHOUT explicit params
-    res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
-                      error_distribution='laplace')
+    with pytest.warns(UserWarning, match="distribution"):
+        res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
+                          error_distribution='laplace')
 
     assert 'AutoETS' in res.columns
     assert res.shape == (15, 4)
@@ -629,9 +623,16 @@ def test_integration_multiple_distributions_automatic():
     # Test different distributions with automatic estimation
     distributions = ['normal', 't', 'laplace', 'skew-normal', 'ged']
 
+    import warnings as _warnings
     for dist in distributions:
-        res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
-                          error_distribution=dist)
+        with _warnings.catch_warnings():
+            _warnings.filterwarnings(
+                "ignore",
+                message="Simulating with error_distribution",
+                category=UserWarning,
+            )
+            res = sf.simulate(h=3, df=df, n_paths=5, seed=42,
+                              error_distribution=dist)
 
         assert 'AutoARIMA' in res.columns
         assert 'AutoETS' in res.columns
@@ -671,9 +672,16 @@ def test_all_models_all_distributions_automatic():
     h = 3
     n_paths = 5
 
+    import warnings as _warnings
     for dist in distributions:
-        res = sf.simulate(h=h, df=df, n_paths=n_paths, seed=42,
-                          error_distribution=dist)
+        with _warnings.catch_warnings():
+            _warnings.filterwarnings(
+                "ignore",
+                message="Simulating with error_distribution",
+                category=UserWarning,
+            )
+            res = sf.simulate(h=h, df=df, n_paths=n_paths, seed=42,
+                              error_distribution=dist)
 
         # Basic shape verification
         expected_rows = h * n_paths

@@ -1808,6 +1808,23 @@ class TestMSTL:
             test_forward=True,
         )
 
+    def test_mstl_more_than_six_seasonal_periods(self):
+        # https://github.com/Nixtla/statsforecast/issues/1154
+        # the default seasonal windows were hard-coded to 6 entries,
+        # raising IndexError for more than 6 seasonal periods
+        season_length = [2, 3, 4, 5, 6, 7, 8]
+        rng = np.random.default_rng(0)
+        n = 120
+        y = (
+            np.arange(n) % 7
+            + 0.1 * np.arange(n)
+            + rng.normal(size=n)
+        )
+        mstl_model = MSTL(season_length=season_length)
+        mstl_model.fit(y=y)
+        fcst = mstl_model.predict(h=8)
+        assert np.isfinite(fcst["mean"]).all()
+
     def test_mstl_seasonal_trend_forecaster_failure(self):
         # fail with seasonal trend forecasters
         with pytest.raises(Exception, match="should not adjust seasonal"):

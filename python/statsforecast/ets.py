@@ -7,7 +7,14 @@ import numpy as np
 from statsmodels.tsa.seasonal import seasonal_decompose
 
 from ._lib import ets as _ets
-from .utils import _calculate_intervals, results
+from .distributions import (
+    switch_distribution,
+    dist_init_params,
+    extract_dist_params,
+    aic_bic_aicc,
+    error_params_from_model,
+)
+from .utils import _calculate_intervals, _VALID_DISTRIBUTIONS, results
 
 # Global variables
 _smalno = np.finfo(float).eps
@@ -363,6 +370,8 @@ def switch_criterion(x: str) -> _ets.Criterion:
     raise ValueError(f"Unknown crtierion {x}")
 
 
+
+
 def pegelsresid_C(
     y: np.ndarray,
     m: int,
@@ -500,6 +509,94 @@ def optimize_ets_target_fn(
     return results(*opt_res)
 
 
+def optimize_ets_dist_target_fn(
+    x0,
+    par,
+    y,
+    nstate,
+    errortype,
+    trendtype,
+    seasontype,
+    damped,
+    par_noopt,
+    lowerb,
+    upperb,
+    nmse,
+    m,
+    pnames,
+    pnames2,
+    distribution,
+):
+    alpha = par_noopt["alpha"] if np.isnan(par["alpha"]) else par["alpha"]
+    if np.isnan(alpha):
+        raise ValueError("alpha problem!")
+    if trendtype != "N":
+        beta = par_noopt["beta"] if np.isnan(par["beta"]) else par["beta"]
+        if np.isnan(beta):
+            raise ValueError("beta problem!")
+    else:
+        beta = np.nan
+    if seasontype != "N":
+        gamma = par_noopt["gamma"] if np.isnan(par["gamma"]) else par["gamma"]
+        if np.isnan(gamma):
+            raise ValueError("gamma problem!")
+    else:
+        m = 1
+        gamma = np.nan
+    if damped:
+        phi = par_noopt["phi"] if np.isnan(par["phi"]) else par["phi"]
+        if np.isnan(phi):
+            raise ValueError("phi problem!")
+    else:
+        phi = np.nan
+
+    optAlpha = not np.isnan(alpha)
+    optBeta = not np.isnan(beta)
+    optGamma = not np.isnan(gamma)
+    optPhi = not np.isnan(phi)
+
+    if not np.isnan(par_noopt["alpha"]):
+        optAlpha = False
+    if not np.isnan(par_noopt["beta"]):
+        optBeta = False
+    if not np.isnan(par_noopt["gamma"]):
+        optGamma = False
+    if not np.isnan(par_noopt["phi"]):
+        optPhi = False
+
+    if not damped:
+        phi = 1.0
+    if trendtype == "N":
+        beta = 0.0
+    if seasontype == "N":
+        gamma = 0.0
+    opt_res = _ets.optimize_dist(
+        x0,
+        y,
+        nstate,
+        switch(errortype),
+        switch(trendtype),
+        switch(seasontype),
+        nmse,
+        m,
+        optAlpha,
+        optBeta,
+        optGamma,
+        optPhi,
+        alpha,
+        beta,
+        gamma,
+        phi,
+        lowerb,
+        upperb,
+        1e-4,
+        1_000,
+        True,
+        switch_distribution(distribution, _ets),
+    )
+    return results(*opt_res)
+
+
 def etsmodel(
     y: np.ndarray,
     m: int,
@@ -520,7 +617,12 @@ def etsmodel(
     control=None,
     seed=None,
     trace: bool = False,
+    distribution: str = "normal",
 ):
+    if distribution not in _VALID_DISTRIBUTIONS:
+        raise ValueError(
+            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+        )
     if seasontype == "N":
         m = 1
     # if not np.isnan(alpha):
@@ -573,26 +675,63 @@ def etsmodel(
             par=par,
             states=init_state,
         )
-    fred = optimize_ets_target_fn(
-        x0=par,
-        par=par_,
-        y=y,
-        nstate=nstate,
-        errortype=errortype,
-        trendtype=trendtype,
-        seasontype=seasontype,
-        damped=damped,
-        par_noopt=par_noopt,
-        lowerb=lower,
-        upperb=upper,
-        opt_crit=opt_crit,
-        nmse=nmse,
-        bounds=bounds,
-        m=m,
-        pnames=par_.keys(),
-        pnames2=par_noopt.keys(),
-    )
-    fit_par = fred.x
+
+    # --- normal distribution: existing C++ optimize path ---
+    if distribution == "normal":
+        fred = optimize_ets_target_fn(
+            x0=par,
+            par=par_,
+            y=y,
+            nstate=nstate,
+            errortype=errortype,
+            trendtype=trendtype,
+            seasontype=seasontype,
+            damped=damped,
+            par_noopt=par_noopt,
+            lowerb=lower,
+            upperb=upper,
+            opt_crit=opt_crit,
+            nmse=nmse,
+            bounds=bounds,
+            m=m,
+            pnames=par_.keys(),
+            pnames2=par_noopt.keys(),
+        )
+        fit_par = fred.x
+        fit_par_dist = np.array([])
+        n_dist = 0
+    else:
+        # --- non-normal: extend param vector with distribution params ---
+        var_init = max(float(np.nanvar(y)), 1e-10)
+        n_dist, dist_init = dist_init_params(distribution, var_init)
+
+        x0_ext = np.concatenate([par, dist_init])
+        lower_ext = np.concatenate([lower, np.full(n_dist, -np.inf)])
+        upper_ext = np.concatenate([upper, np.full(n_dist, np.inf)])
+
+        fred = optimize_ets_dist_target_fn(
+            x0=x0_ext,
+            par=par_,
+            y=y,
+            nstate=nstate,
+            errortype=errortype,
+            trendtype=trendtype,
+            seasontype=seasontype,
+            damped=damped,
+            par_noopt=par_noopt,
+            lowerb=lower_ext,
+            upperb=upper_ext,
+            nmse=nmse,
+            m=m,
+            pnames=par_.keys(),
+            pnames2=par_noopt.keys(),
+            distribution=distribution,
+        )
+        fit_par_ets = fred.x[:-n_dist] if n_dist > 0 else fred.x
+        fit_par_dist = fred.x[-n_dist:] if n_dist > 0 else np.array([])
+        fit_par = fit_par_ets
+
+    # --- extract ETS params from fit_par ---
     init_state = fit_par[-nstate:]
     if seasontype != "N":
         init_state = np.hstack(
@@ -632,14 +771,32 @@ def etsmodel(
         phi,
         nmse,
     )
-    np_ = np_ + 1
     ny = len(y)
-    aic = lik + 2 * np_
-    bic = lik + np.log(ny) * np_
-    if ny - np_ - 1 != 0.0:
-        aicc = aic + 2 * np_ * (np_ + 1) / (ny - np_ - 1)
-    else:
-        aicc = np.inf
+
+    # --- sigma2, AIC, BIC, AICc ---
+    if distribution == "normal":
+        np_eff = np_ + 1
+        neg2logL = lik
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, ny)
+        sigma2 = np.sum(e**2) / (ny - np_eff - 1)
+        loglik = -0.5 * neg2logL
+        np_ = np_eff
+    elif distribution == "laplace":
+        np_eff = np_ + 1  # count b_hat as a parameter
+        neg2logL = 2 * ny * fred.fn + ny * (2 + np.log(4))
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, ny)
+        dist_params = extract_dist_params(distribution, fit_par_dist, residuals=e)
+        sigma2 = dist_params["sigma2"]
+        loglik = -0.5 * neg2logL
+        np_ = np_eff
+    else:  # t, skew-normal, ged — two dist params in opt vector
+        np_eff = np_ + 2  # n_smth_free + n_state + 2 dist params
+        neg2logL = 2 * ny * fred.fn
+        aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, ny)
+        dist_params = extract_dist_params(distribution, fit_par_dist, residuals=e)
+        sigma2 = dist_params["sigma2"]
+        loglik = -0.5 * neg2logL
+        np_ = np_eff
 
     mse = amse[0]
     amse = np.mean(amse)
@@ -650,10 +807,8 @@ def etsmodel(
     else:
         fits = y / (1 + e)
 
-    sigma2 = np.sum(e**2) / (ny - np_ - 1)
-
-    return dict(
-        loglik=-0.5 * lik,
+    ans = dict(
+        loglik=loglik,
         aic=aic,
         bic=bic,
         aicc=aicc,
@@ -669,7 +824,16 @@ def etsmodel(
         par=fit_par,
         sigma2=sigma2,
         n_params=np_,
+        distribution=distribution,
     )
+
+    # store distribution-specific params
+    if distribution in ("t", "skew-normal", "ged"):
+        for k, v in dist_params.items():
+            if k != "sigma2":
+                ans[k] = v
+
+    return ans
 
 
 def is_constant(x):
@@ -698,6 +862,7 @@ def ets_f(
     allow_multiplicative_trend=False,
     use_initial_values=False,
     maxit=2_000,
+    distribution="normal",
 ):
     y = y.astype(np.float64, copy=False)
     # converting params to floats
@@ -737,6 +902,7 @@ def ets_f(
             nmse=nmse,
             bounds=bounds,
             maxit=maxit,
+            distribution=distribution,
         )
 
     if isinstance(model, dict):
@@ -902,6 +1068,7 @@ def ets_f(
                         nmse=nmse,
                         bounds=bounds,
                         maxit=maxit,
+                        distribution=distribution,
                     )
                     fit_ic = fit[ic]
                     if not np.isnan(fit_ic):
@@ -1186,7 +1353,9 @@ def _compute_pred_intervals(model, forecasts, h, level):
 
     else:
         # Classes 4 and 5 models
-        np.random.seed(1)
+        from statsforecast.simulation import sample_errors
+
+        rng = np.random.default_rng(1)
         compute_intervals = False
         nsim = 5000
         y_path = np.zeros([nsim, h])
@@ -1198,8 +1367,18 @@ def _compute_pred_intervals(model, forecasts, h, level):
         if math.isnan(phi):
             phi = 0
 
+        dist = model.get("distribution", "normal")
+        params = error_params_from_model(model)
+        residuals = model.get("residuals", None)
         for k in range(nsim):
-            e = np.random.normal(0, np.sqrt(sigma), h)
+            e = sample_errors(
+                size=h,
+                sigma=np.sqrt(sigma),
+                distribution=dist,
+                params=params,
+                residuals=residuals,
+                rng=rng,
+            )
             yhat = np.zeros(h)
             etssimulate(
                 last_state,
@@ -1225,7 +1404,11 @@ def _compute_pred_intervals(model, forecasts, h, level):
         }
 
     if compute_intervals:
-        pi = _calculate_intervals(forecasts, level=level, h=h, sigmah=np.sqrt(sigmah))
+        dist = model.get("distribution", "normal")
+        pi = _calculate_intervals(
+            forecasts, level=level, h=h, sigmah=np.sqrt(sigmah),
+            distribution=dist, dist_params=error_params_from_model(model),
+        )
 
     return pi
 

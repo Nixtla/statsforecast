@@ -40,3 +40,5 @@ nbs/_extensions
 
 *.png
 .coverage*
+# Internal superpowers spec/plan artifacts (kept locally, not committed)
+docs/superpowers/
