@@ -80,6 +80,7 @@
           "docs/models/autoets.html",
           "docs/models/autoregressive.html",
           "docs/models/autotheta.html",
+          "docs/models/conformalseasonalpool.html",
           "docs/models/crostonclassic.html",
           "docs/models/crostonoptimized.html",
           "docs/models/crostonsba.html",
