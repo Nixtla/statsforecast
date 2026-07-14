@@ -2,87 +2,91 @@
 title: Conformal Seasonal Pool (CSP)
 ---
 
-> Step-by-step guide on using the `ConformalSeasonalPool` model with
-> `Statsforecast`.
+> Step-by-step guide on using the `ConformalSeasonalPool` model in
+> `StatsForecast`.
 
 The Conformal Seasonal Pool (CSP) is a **training-free probabilistic
 forecaster** introduced in [Manokhin (2026), *Training-Free
 Probabilistic Time-Series Forecasting with Conformal Seasonal
 Pools*](https://arxiv.org/abs/2605.03789). It produces a seasonal naive
-point forecast together with **well-calibrated prediction intervals**,
-without estimating a single parameter: the predictive distribution is
-built entirely from empirical draws of the training history.
+point forecast with **empirically well-calibrated prediction
+intervals**. It does this without estimating a single parameter, as the
+predictive distribution is built entirely from empirical draws of the
+training history.
 
 In the paper’s benchmark, CSP matches or beats deep probabilistic
 baselines such as DeepNPTS on CRPS while keeping empirical coverage
-close to the nominal level — and runs **orders of magnitude faster**
-(seconds instead of hours), since there is nothing to train.
+close to the nominal level. It also runs **orders of magnitude faster**
+(seconds instead of hours) because there is nothing to train.
 
-In this notebook we walk through the model on the [UCI
+In this notebook, we walk through the model on the [UCI
 ElectricityLoadDiagrams20112014
-dataset](https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014)
-— the raw source of the electricity benchmark used in the paper — and
-reproduce the paper’s rolling-origin evaluation protocol to confirm that
+dataset](https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014),
+the raw source of the electricity benchmark used in the paper, and
+mirrors the paper’s rolling-origin evaluation protocol to confirm that
 the intervals are calibrated.
 
 ## How the model works
 
 The point forecast is exactly a [Seasonal
-Naive](../../src/core/models.html#seasonalnaive) forecast $\mu_h$: the
-value observed one seasonal period ago. All of the model’s machinery
-goes into the **predictive distribution around** $\mu_h$, which is
-estimated from `n_samples` draws of a two-component mixture:
+Naive](../../src/core/models.html#seasonalnaive) forecast $\mu_h$, which
+is the value observed one seasonal period ago. All of the model’s
+machinery goes into the **predictive distribution around** $\mu_h$. The
+distribution is estimated from `n_samples` draws of a two-component
+mixture.
 
 1.  **Seasonal pool.** Historical observations at the *same seasonal
     phase* as the forecast target (e.g., all past 3 PM values when
-    forecasting 3 PM), sampled with exponential recency weights
+    forecasting 3 PM), sampled with exponentially decaying weights
     $\propto e^{-\lambda \cdot \text{age}}$ so that newer observations
     are drawn more often (`decay` = $\lambda$).
-2.  **Calibration residuals.** Signed seasonal-naive errors
+2.  **Calibration residuals.** Signed seasonal naive errors
     $r_t = y_t - y_{t-m}$ computed on the most recent `calib_frac`
-    fraction of the history, added back to the point forecast:
+    fraction of the history and added back to the point forecast as
     $\mu_h + r$.
 
 Each sample comes from the seasonal pool with probability $w$ and from
 the residual component with probability $1-w$. The `variant` parameter
-controls $w$:
+controls $w$.
 
--   `"fixed"` (**CSP-Fixed**): $w = 0.5$ always.
--   `"adaptive"` (**CSP-Adaptive**): $w = 0$ when there is no
+-   `"fixed"` (**CSP-Fixed**) uses $w = 0.5$ always.
+-   `"adaptive"` (**CSP-Adaptive**) uses $w = 0$ when there is no
     seasonality (`season_length` ≤ 1), $w = 0.3$ when the seasonal pool
     is thin (fewer than 3 same-phase observations), and $w = 0.5$
     otherwise.
 
 Prediction intervals are empirical quantiles of the samples with a
-**finite-sample conformal correction**: the lower cut uses
-$\lfloor(n+1)q\rfloor/n$ and the upper cut $\lceil(n+1)q\rceil/n$, which
-orients the quantile estimates conservatively so that nominal coverage
-is respected even with a modest sample budget.
+**finite-sample conformal correction**. The lower cut uses
+$\lfloor(n+1)q\rfloor/n$ and the upper cut uses $\lceil(n+1)q\rceil/n$,
+which orients the quantile estimates conservatively and helps keep
+empirical coverage close to the nominal level, even with a modest sample
+budget.
 
 **Hyperparameters**
 
 | Parameter       | Default      | Meaning                                                                                                                                    |
 |------------------------|------------------------|------------------------|
-| `season_length` | —            | Observations per seasonal cycle (24 for hourly data with a daily cycle).                                                                   |
-| `n_samples`     | 100          | Mixture samples used to estimate the intervals. A level-$L$ interval needs at least $\lceil 2/(1-L/100)\rceil - 1$ samples (≥ 40 for 95%). |
+| `season_length` | Required     | Observations per seasonal cycle (24 for hourly data with a daily cycle).                                                                   |
+| `n_samples`     | 100          | Mixture samples used to estimate the intervals. A level-$L$ interval needs at least $\lceil 2/(1-L/100)\rceil - 1$ samples (≥ 39 for 95%). |
 | `variant`       | `"adaptive"` | `"adaptive"` or `"fixed"` mixture weight (see above).                                                                                      |
 | `calib_frac`    | 0.5          | Fraction of the most recent history used for the calibration residual pool.                                                                |
 | `decay`         | 0.01         | Exponential recency rate for the seasonal pool weights.                                                                                    |
 
-**When to use CSP.** Strongly seasonal series where you need calibrated
-prediction intervals at essentially zero computational cost — for
-example as a probabilistic baseline before reaching for heavier models,
-or in large-scale settings where per-series training is too expensive.
+**When to use CSP?**
+
+Strongly seasonal series where you need calibrated prediction intervals
+at essentially zero computational cost, for example as a probabilistic
+baseline before reaching for heavier models, or in large-scale settings
+where per-series training is too expensive.
 
 ## Loading libraries and data
 
 > **Tip**
 >
-> Statsforecast will be needed. To install, see
-> [instructions](../getting-started/installation.html).
+> You need StatsForecast to run this notebook. To install it, follow
+> these [instructions](../getting-started/installation.html).
 
 ```python
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -94,9 +98,9 @@ from statsforecast.models import ConformalSeasonalPool, SeasonalNaive
 
 We use the
 [ElectricityLoadDiagrams20112014](https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014)
-dataset from the UCI Machine Learning Repository: electricity
-consumption (kW) of 370 Portuguese clients, recorded every 15 minutes
-from 2011 to 2014. This is the raw source behind the hourly
+dataset from the UCI Machine Learning Repository, which contains the
+electricity consumption (kW) of 370 Portuguese clients, recorded every
+15 minutes from 2011 to 2014. This is the raw source behind the hourly
 `electricity` benchmark on which the CSP paper is evaluated.
 
 > **Warning**
@@ -127,8 +131,8 @@ marks the end of a 15-minute interval, so we aggregate to hourly totals
 (the convention used by the GluonTS `electricity` benchmark). To keep
 the notebook fast we work with ten clients over the last three months of
 2014, keeping only clients that are active (non-zero) throughout the
-window — some clients joined after 2011 and their earlier readings are
-recorded as zero.
+window, since some clients joined after 2011 and their earlier readings
+are recorded as zero.
 
 ```python
 raw = pd.read_csv(txt_path, sep=";", decimal=",", index_col=0, parse_dates=True)
@@ -146,20 +150,19 @@ df = (
 df
 ```
 
-|       | ds                  | unique_id | y          |
-|-------|---------------------|-----------|------------|
-| 0     | 2014-10-01 00:00:00 | MT_002    | 92.460882  |
-| 1     | 2014-10-01 01:00:00 | MT_002    | 79.658606  |
-| 2     | 2014-10-01 02:00:00 | MT_002    | 77.524893  |
-| ...   | ...                 | ...       | ...        |
-| 22077 | 2014-12-31 21:00:00 | MT_012    | 727.659574 |
-| 22078 | 2014-12-31 22:00:00 | MT_012    | 691.489362 |
-| 22079 | 2014-12-31 23:00:00 | MT_012    | 665.957447 |
+|       | ds                  | unique_id | y      |
+|-------|---------------------|-----------|--------|
+| 0     | 2014-10-01 00:00:00 | MT_002    | 92.46  |
+| 1     | 2014-10-01 01:00:00 | MT_002    | 79.66  |
+| 2     | 2014-10-01 02:00:00 | MT_002    | 77.52  |
+| ...   | ...                 | ...       | ...    |
+| 22077 | 2014-12-31 21:00:00 | MT_012    | 727.66 |
+| 22078 | 2014-12-31 22:00:00 | MT_012    | 691.49 |
+| 22079 | 2014-12-31 23:00:00 | MT_012    | 665.96 |
 
 ### Explore the data
 
-The hourly load shows the strong daily seasonality that CSP exploits
-(`season_length=24`).
+The hourly load shows the strong daily seasonality that CSP exploits.
 
 ```python
 StatsForecast.plot(df, max_insample_length=24 * 7)
@@ -171,8 +174,8 @@ StatsForecast.plot(df, max_insample_length=24 * 7)
 
 We instantiate `ConformalSeasonalPool` alongside `SeasonalNaive` and
 forecast the next day (`h=24`) with 80% and 95% prediction intervals.
-The default `n_samples=100` comfortably exceeds the minimum of 40
-samples required for a non-degenerate 95% interval. Note that CSP
+The default `n_samples=100` comfortably exceeds the minimum number of
+samples required for non-degenerate 80% and 95% intervals. Note that CSP
 requires no training, so `forecast` returns almost instantly.
 
 ```python
@@ -193,16 +196,16 @@ fcst
 
 |     | unique_id | ds                  | CSP-Adaptive | CSP-Adaptive-lo-95 | CSP-Adaptive-lo-80 | CSP-Adaptive-hi-80 | CSP-Adaptive-hi-95 | SeasonalNaive | SeasonalNaive-lo-80 | SeasonalNaive-lo-95 | SeasonalNaive-hi-80 | SeasonalNaive-hi-95 |
 |-----|-----------|---------------------|--------------|--------------------|--------------------|--------------------|--------------------|---------------|---------------------|---------------------|---------------------|---------------------|
-| 0   | MT_002    | 2015-01-01 00:00:00 | 78.947368    | 62.588905          | 75.391181          | 82.503556          | 93.250356          | 78.947368     | 69.046924           | 63.805945           | 88.847813           | 94.088792           |
-| 1   | MT_002    | 2015-01-01 01:00:00 | 73.257468    | 63.911807          | 69.701280          | 79.658606          | 84.736842          | 73.257468     | 63.357024           | 58.116045           | 83.157912           | 88.398891           |
-| 2   | MT_002    | 2015-01-01 02:00:00 | 68.990043    | 55.277383          | 64.722617          | 71.187767          | 76.842105          | 68.990043     | 59.089598           | 53.848620           | 78.890487           | 84.131466           |
+| 0   | MT_002    | 2015-01-01 00:00:00 | 78.95        | 65.38              | 75.32              | 81.79              | 94.02              | 78.95         | 69.05               | 63.81               | 88.85               | 94.09               |
+| 1   | MT_002    | 2015-01-01 01:00:00 | 73.26        | 60.46              | 68.85              | 79.79              | 83.94              | 73.26         | 63.36               | 58.12               | 83.16               | 88.40               |
+| 2   | MT_002    | 2015-01-01 02:00:00 | 68.99        | 58.29              | 66.07              | 75.39              | 91.04              | 68.99         | 59.09               | 53.85               | 78.89               | 84.13               |
 | ... | ...       | ...                 | ...          | ...                | ...                | ...                | ...                | ...           | ...                 | ...                 | ...                 | ...                 |
-| 237 | MT_012    | 2015-01-01 21:00:00 | 727.659574   | 610.468085         | 631.489362         | 813.531915         | 1046.191489        | 727.659574    | 589.712550          | 516.687806          | 865.606599          | 938.631343          |
-| 238 | MT_012    | 2015-01-01 22:00:00 | 691.489362   | 599.914894         | 634.042553         | 744.680851         | 853.276596         | 691.489362    | 553.542337          | 480.517594          | 829.436386          | 902.461130          |
-| 239 | MT_012    | 2015-01-01 23:00:00 | 665.957447   | 529.404255         | 553.191489         | 823.000000         | 957.702128         | 665.957447    | 528.010422          | 454.985679          | 803.904471          | 876.929215          |
+| 237 | MT_012    | 2015-01-01 21:00:00 | 727.66       | 569.32             | 637.23             | 812.77             | 936.60             | 727.66        | 589.71              | 516.69              | 865.61              | 938.63              |
+| 238 | MT_012    | 2015-01-01 22:00:00 | 691.49       | 482.98             | 595.53             | 783.36             | 951.49             | 691.49        | 553.54              | 480.52              | 829.44              | 902.46              |
+| 239 | MT_012    | 2015-01-01 23:00:00 | 665.96       | 435.57             | 553.19             | 721.66             | 910.26             | 665.96        | 528.01              | 454.99              | 803.90              | 876.93              |
 
-The point forecast of CSP is *exactly* the seasonal naive forecast — the
-value the model adds is the calibrated intervals around it:
+The point forecast of CSP is *exactly* the seasonal naive forecast, and
+the value the model adds is the calibrated intervals around it:
 
 ```python
 np.allclose(fcst["CSP-Adaptive"], fcst["SeasonalNaive"])
@@ -220,13 +223,13 @@ sf.plot(df, fcst, level=[80, 95], max_insample_length=24 * 4, models=["CSP-Adapt
 
 ## Evaluating calibration with the paper’s protocol
 
-The paper evaluates each method with a **rolling-origin protocol**: 7
-non-overlapping evaluation windows per series, each one day long
-(`h=24`, stride 24). `StatsForecast.cross_validation` implements exactly
-this. We request the levels `[20, 40, 60, 80]`, whose interval bounds
-correspond to the quantile grid $q \in \{0.1, 0.2, \ldots, 0.9\}$ used
-by the paper’s CRPS and quantile-loss metrics, plus level 95 for the
-coverage check.
+The paper evaluates each method with a **rolling-origin protocol** using
+7 non-overlapping evaluation windows per series, each one day long
+(`h=24`). `StatsForecast.cross_validation` implements exactly this. We
+request the levels `[20, 40, 60, 80]`, whose interval bounds correspond
+to the quantile grid $q \in \{0.1, 0.2, \ldots, 0.9\}$ used by the
+paper’s CRPS and quantile-loss metrics, plus level 95 for the coverage
+check.
 
 ```python
 %%time
@@ -241,34 +244,37 @@ cv_df
 ```
 
 ``` text
-CPU times: user 58.9 ms, sys: 739 μs, total: 59.6 ms
-Wall time: 59.5 ms
+CPU times: user 116 ms, sys: 4.05 ms, total: 120 ms
+Wall time: 122 ms
 ```
 
-|      | unique_id | ds                  | cutoff              | y          | CSP-Adaptive | CSP-Adaptive-lo-95 | CSP-Adaptive-lo-80 | CSP-Adaptive-lo-60 | CSP-Adaptive-lo-40 | CSP-Adaptive-lo-20 | ... | SeasonalNaive-lo-20 | SeasonalNaive-lo-40 | SeasonalNaive-lo-60 | SeasonalNaive-lo-80 | SeasonalNaive-lo-95 | SeasonalNaive-hi-20 | SeasonalNaive-hi-40 | SeasonalNaive-hi-60 | SeasonalNaive-hi-80 | SeasonalNaive-hi-95 |
-|------|-----------|---------------------|---------------------|------------|--------------|--------------------|--------------------|--------------------|--------------------|--------------------|-----|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|
-| 0    | MT_002    | 2014-12-25 00:00:00 | 2014-12-24 23:00:00 | 79.658606  | 81.792319    | 71.820768          | 74.679943          | 76.102418          | 76.102418          | 76.813656          | ... | 79.832977           | 77.736697           | 75.283368           | 71.881024           | 66.634301           | 83.751661           | 85.847940           | 88.301269           | 91.703613           | 96.950336           |
-| 1    | MT_002    | 2014-12-25 01:00:00 | 2014-12-24 23:00:00 | 81.081081  | 72.546230    | 63.911807          | 68.278805          | 69.701280          | 69.701280          | 71.123755          | ... | 70.586888           | 68.490609           | 66.037280           | 62.634936           | 57.388213           | 74.505572           | 76.601852           | 79.055181           | 82.457525           | 87.704248           |
-| 2    | MT_002    | 2014-12-25 02:00:00 | 2014-12-24 23:00:00 | 76.102418  | 68.278805    | 55.462304          | 64.011380          | 66.856330          | 66.856330          | 66.856330          | ... | 66.319463           | 64.223184           | 61.769854           | 58.367510           | 53.120788           | 70.238147           | 72.334427           | 74.787756           | 78.190100           | 83.436822           |
-| ...  | ...       | ...                 | ...                 | ...        | ...          | ...                | ...                | ...                | ...                | ...                | ... | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 |
-| 1677 | MT_012    | 2014-12-31 21:00:00 | 2014-12-30 23:00:00 | 727.659574 | 806.382979   | 546.808511         | 638.297872         | 700.000000         | 744.255319         | 762.978723         | ... | 779.073326          | 749.855015          | 715.660080          | 668.237614          | 595.107875          | 833.692631          | 862.910942          | 897.105877          | 944.528344          | 1017.658083         |
-| 1678 | MT_012    | 2014-12-31 22:00:00 | 2014-12-30 23:00:00 | 691.489362 | 744.680851   | 480.765957         | 618.936170         | 653.191489         | 692.553191         | 712.765957         | ... | 717.371198          | 688.152887          | 653.957953          | 606.535486          | 533.405747          | 771.990504          | 801.208815          | 835.403750          | 882.826216          | 955.955955          |
-| 1679 | MT_012    | 2014-12-31 23:00:00 | 2014-12-30 23:00:00 | 665.957447 | 661.702128   | 539.872340         | 567.872340         | 595.319149         | 629.148936         | 648.936170         | ... | 634.392475          | 605.174164          | 570.979229          | 523.556763          | 450.427024          | 689.011780          | 718.230091          | 752.425026          | 799.847493          | 872.977232          |
+|      | unique_id | ds                  | cutoff              | y      | CSP-Adaptive | CSP-Adaptive-lo-95 | CSP-Adaptive-lo-80 | CSP-Adaptive-lo-60 | CSP-Adaptive-lo-40 | CSP-Adaptive-lo-20 | ... | SeasonalNaive-lo-20 | SeasonalNaive-lo-40 | SeasonalNaive-lo-60 | SeasonalNaive-lo-80 | SeasonalNaive-lo-95 | SeasonalNaive-hi-20 | SeasonalNaive-hi-40 | SeasonalNaive-hi-60 | SeasonalNaive-hi-80 | SeasonalNaive-hi-95 |
+|------|-----------|---------------------|---------------------|--------|--------------|--------------------|--------------------|--------------------|--------------------|--------------------|-----|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|---------------------|
+| 0    | MT_002    | 2014-12-25 00:00:00 | 2014-12-24 23:00:00 | 79.66  | 81.79        | 72.50              | 75.39              | 76.81              | 76.81              | 77.95              | ... | 79.83               | 77.74               | 75.28               | 71.88               | 66.63               | 83.75               | 85.85               | 88.30               | 91.70               | 96.95               |
+| 1    | MT_002    | 2014-12-25 01:00:00 | 2014-12-24 23:00:00 | 81.08  | 72.55        | 66.09              | 68.28              | 69.70              | 69.70              | 71.12              | ... | 70.59               | 68.49               | 66.04               | 62.63               | 57.39               | 74.51               | 76.60               | 79.06               | 82.46               | 87.70               |
+| 2    | MT_002    | 2014-12-25 02:00:00 | 2014-12-24 23:00:00 | 76.10  | 68.28        | 55.85              | 62.59              | 66.86              | 66.86              | 66.86              | ... | 66.32               | 64.22               | 61.77               | 58.37               | 53.12               | 70.24               | 72.33               | 74.79               | 78.19               | 83.44               |
+| ...  | ...       | ...                 | ...                 | ...    | ...          | ...                | ...                | ...                | ...                | ...                | ... | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 | ...                 |
+| 1677 | MT_012    | 2014-12-31 21:00:00 | 2014-12-30 23:00:00 | 727.66 | 806.38       | 597.53             | 634.47             | 696.60             | 761.70             | 768.09             | ... | 779.07              | 749.86              | 715.66              | 668.24              | 595.11              | 833.69              | 862.91              | 897.11              | 944.53              | 1017.66             |
+| 1678 | MT_012    | 2014-12-31 22:00:00 | 2014-12-30 23:00:00 | 691.49 | 744.68       | 550.21             | 616.17             | 653.19             | 666.17             | 716.17             | ... | 717.37              | 688.15              | 653.96              | 606.54              | 533.41              | 771.99              | 801.21              | 835.40              | 882.83              | 955.96              |
+| 1679 | MT_012    | 2014-12-31 23:00:00 | 2014-12-30 23:00:00 | 665.96 | 661.70       | 468.09             | 553.19             | 592.77             | 608.51             | 640.85             | ... | 634.39              | 605.17              | 570.98              | 523.56              | 450.43              | 689.01              | 718.23              | 752.43              | 799.85              | 872.98              |
 
-Note the wall-clock time above: the full 7-window evaluation of both
-models over ten series runs in well under a second on CPU — the
-training-free speed the paper reports (its deep baseline needs hours for
-the same protocol).
+Note the wall-clock time above. The full 7-window evaluation of both
+models over ten series runs in about a second on CPU, matching the
+training-free speed the paper reports, while its deep baseline needs
+hours for the same protocol.
 
 We now compute the paper’s metrics with
-[utilsforecast](https://nixtlaverse.nixtla.io/utilsforecast):
+[utilsforecast](https://nixtlaverse.nixtla.io/utilsforecast).
 
 -   **Scaled CRPS** and **mean quantile loss** over
-    $q \in \{0.1, \ldots, 0.9\}$ — the headline distributional accuracy
-    metrics;
--   **Empirical 95% coverage** — the fraction of observations inside the
-    95% interval, which should be close to 0.95 for a calibrated model;
--   **Mean 95% interval width** — the sharpness of the intervals.
+    $q \in \{0.1, \ldots, 0.9\}$ are the headline distributional
+    accuracy metrics.
+
+-   **Empirical 95% coverage** is the fraction of observations inside
+    the 95% interval, which should be close to 0.95 for a calibrated
+    model.
+
+-   **Mean 95% interval width** measures the sharpness of the intervals.
 
 ```python
 import utilsforecast.losses as ufl
@@ -286,8 +292,8 @@ accuracy.groupby("metric")[["CSP-Adaptive", "SeasonalNaive"]].mean()
 |             | CSP-Adaptive | SeasonalNaive |
 |-------------|--------------|---------------|
 | metric      |              |               |
-| mqloss      | 22.820591    | 28.767123     |
-| scaled_crps | 0.100693     | 0.125018      |
+| mqloss      | 22.66        | 28.77         |
+| scaled_crps | 0.10         | 0.13          |
 
 ```python
 coverage = evaluate(cv_df, metrics=[ufl.coverage], level=[95], agg_fn="mean")
@@ -302,29 +308,28 @@ summary
 |                         | CSP-Adaptive | SeasonalNaive |
 |-------------------------|--------------|---------------|
 | metric                  |              |               |
-| coverage_level95        | 0.939286     | 0.838690      |
-| mean 95% interval width | 306.329187   | 257.117391    |
+| coverage_level95        | 0.93         | 0.84          |
+| mean 95% interval width | 306.75       | 257.12        |
 
 The results mirror the paper’s findings:
 
--   **CSP’s empirical 95% coverage is close to the nominal level** (the
-    paper reports a mean of 0.89 across its six datasets), while the
-    parametric Gaussian intervals of `SeasonalNaive` undercover
-    noticeably.
+**CSP’s empirical 95% coverage is close to the nominal level** (the
+paper reports a mean of 0.89 across its six datasets), while the
+parametric Gaussian intervals of `SeasonalNaive` undercover noticeably.
 
 All of this comes from a model with **zero trained parameters** that
 evaluates in a fraction of a second.
 
 ## Fixed vs. adaptive variant
 
-With `variant="fixed"` the mixture weight is always $w=0.5$; the
+With `variant="fixed"`, the mixture weight is always $w=0.5$. The
 adaptive variant only deviates from this when seasonality is absent
 (`season_length` ≤ 1) or the seasonal pool is thin. On a series this
-long the two variants behave identically, so to see the adaptive rule
-act we forecast from a **short history** — two and a half days, so each
-hour of the day has been observed at most 3 times and the adaptive rule
+long, the two variants behave identically. To see the adaptive rule act,
+we now forecast from a **short history** of two and a half days. Each
+hour of the day has been observed at most 3 times, and the adaptive rule
 shrinks the seasonal pool’s weight to 0.3, leaning more on the
-calibration residuals:
+calibration residuals.
 
 ```python
 short_series = df.query("unique_id == 'MT_002'").tail(60)  # 2.5 days of history
@@ -348,16 +353,16 @@ pd.DataFrame({
 
 |              | mean 95% width |
 |--------------|----------------|
-| CSP-Adaptive | 31.175616      |
-| CSP-Fixed    | 30.991287      |
+| CSP-Adaptive | 31.06          |
+| CSP-Fixed    | 29.96          |
 
-On this well-behaved series the resulting widths are similar — the two
-sampling pools happen to agree. The adaptive safeguard matters when they
-don’t: with only a couple of same-season observations, a single outlier
-in the seasonal pool can distort the intervals, and down-weighting the
-pool keeps them stable. If in doubt, keep the default
-`variant="adaptive"`; it reduces to the fixed rule whenever the history
-is rich enough.
+On this well-behaved series, the resulting widths are similar because
+the two sampling pools happen to agree. The adaptive safeguard matters
+when they don’t. With only a couple of same-season observations, a
+single outlier in the seasonal pool can distort the intervals, and
+down-weighting the pool keeps them stable. If in doubt, keep the default
+`variant="adaptive"`, as it reduces to the fixed rule whenever the
+history is rich enough.
 
 ## References
 
@@ -370,8 +375,8 @@ is rich enough.
     reference.](../../src/core/models.html#seasonalnaive)
 -   [Conformal prediction intervals for any StatsForecast
     model.](../tutorials/conformalprediction.html) CSP is *natively*
-    conformal — for models that are not, the `ConformalIntervals`
-    wrapper described in that tutorial adds conformal intervals on top.
+    conformal. For models that are not, the `ConformalIntervals` wrapper
+    described in that tutorial adds conformal intervals on top.
 -   [Trindade, Artur (2015). “ElectricityLoadDiagrams20112014”. UCI
     Machine Learning
     Repository.](https://archive.ics.uci.edu/dataset/321/electricityloaddiagrams20112014)
