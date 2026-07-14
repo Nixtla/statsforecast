@@ -752,6 +752,38 @@ def test_level_validation():
     assert "Naive-lo-80" in pred.columns and "Naive-hi-95" in pred.columns
 
 
+def test_conformal_error_end_to_end():
+    # end-to-end: conformal_error intervals flow through AutoARIMA and
+    # StatsForecast.forecast, producing valid, symmetric, monotone intervals
+    h = 12
+    level = [80, 90]
+    model = AutoARIMA(
+        season_length=12,
+        prediction_intervals=ConformalIntervals(
+            h=h, n_windows=2, method="conformal_error"
+        ),
+    )
+    sf = StatsForecast(models=[model], freq="M", n_jobs=1)
+    fcst = sf.forecast(df=ap_df, h=h, level=level)
+
+    m = repr(model)  # "AutoARIMA"
+    for lv in level:
+        assert f"{m}-lo-{lv}" in fcst.columns
+        assert f"{m}-hi-{lv}" in fcst.columns
+
+    mean = fcst[m].to_numpy()
+    lo80, hi80 = fcst[f"{m}-lo-80"].to_numpy(), fcst[f"{m}-hi-80"].to_numpy()
+    lo90, hi90 = fcst[f"{m}-lo-90"].to_numpy(), fcst[f"{m}-hi-90"].to_numpy()
+
+    # mean is bracketed by every interval
+    assert np.all(lo90 <= mean) and np.all(mean <= hi90)
+    # wider level => wider interval
+    assert np.all(hi90 >= hi80) and np.all(lo90 <= lo80)
+    # conformal_error adds a symmetric margin around the mean
+    np.testing.assert_allclose(hi80 - mean, mean - lo80)
+    np.testing.assert_allclose(hi90 - mean, mean - lo90)
+
+
 
 # # StatsForecast.forecast_fitted_values method usage example
 

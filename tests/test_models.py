@@ -143,6 +143,30 @@ def test_conformal_intervals():
     assert list(fcst_conformal.keys()) == ["mean", "lo-90", "lo-80", "hi-80", "hi-90"]
 
 
+def test_conformal_error_intervals():
+    """Test conformal_error method produces valid intervals."""
+    conf_intervals = ConformalIntervals(h=12, n_windows=2, method="conformal_error")
+    zero_model = ZeroModel(conf_intervals)
+    fcst = zero_model.forecast(ap, h=12, level=[80, 90])
+    # Check keys
+    assert list(fcst.keys()) == ["mean", "lo-90", "lo-80", "hi-80", "hi-90"]
+    # For ZeroModel (mean=0), intervals should be symmetric around 0
+    np.testing.assert_array_equal(fcst["lo-90"], -fcst["hi-90"])
+    np.testing.assert_array_equal(fcst["lo-80"], -fcst["hi-80"])
+    # Higher confidence = wider intervals
+    assert np.all(fcst["hi-90"] >= fcst["hi-80"])
+    # Hi and lo are anti-symmetric (implied by the exact-value checks below).
+    # Exact-value check: for ZeroModel (mean=0), conformal_error intervals
+    # should match the lv/100 quantile of the conformity scores.
+    cs = zero_model._conformity_scores(ap)
+    q90 = np.quantile(cs, 0.9, axis=0)
+    q80 = np.quantile(cs, 0.8, axis=0)
+    np.testing.assert_allclose(fcst["hi-90"], q90)
+    np.testing.assert_allclose(fcst["hi-80"], q80)
+    np.testing.assert_allclose(fcst["lo-90"], -q90)
+    np.testing.assert_allclose(fcst["lo-80"], -q80)
+
+
 def assert_class(
     cls_,
     x,

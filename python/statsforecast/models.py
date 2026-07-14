@@ -142,15 +142,34 @@ def _add_conformal_distribution_intervals(
     return fcst
 
 
+def _add_conformal_error_intervals(
+    fcst: Dict,
+    cs: np.ndarray,
+    level: List[Union[int, float]],
+) -> Dict:
+    r"""
+    Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
+    `level` should be already sorted. Uses the `lv / 100` quantile of the
+    absolute conformity scores as the error margin around `fcst["mean"]`.
+    Returns the modified `fcst` dict.
+    """
+    quantiles = {lv: np.quantile(cs, lv / 100, axis=0) for lv in level}
+    for lv in reversed(level):
+        fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
+    for lv in level:
+        fcst[f"hi-{lv}"] = fcst["mean"] + quantiles[lv]
+    return fcst
+
+
 def _get_conformal_method(method: str):
     available_methods = {
         "conformal_distribution": _add_conformal_distribution_intervals,
-        # "conformal_error": _add_conformal_error_intervals,
+        "conformal_error": _add_conformal_error_intervals,
     }
-    if method not in available_methods.keys():
+    if method not in available_methods:
         raise ValueError(
             f"prediction intervals method {method} not supported "
-            f"please choose one of {', '.join(available_methods.keys())}"
+            f"please choose one of {', '.join(available_methods)}"
         )
     return available_methods[method]
 
