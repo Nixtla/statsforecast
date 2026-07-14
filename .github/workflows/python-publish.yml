@@ -20,8 +20,8 @@ jobs:
             [ubuntu-latest, manylinux_x86_64],
             [ubuntu-latest, manylinux_aarch64],
             [windows-latest, win_amd64],
-            [macos-13, macosx_x86_64],
-            [macos-14, macosx_arm64],
+            [macos-15-intel, macosx_x86_64],
+            [macos-latest, macosx_arm64],
           ]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
