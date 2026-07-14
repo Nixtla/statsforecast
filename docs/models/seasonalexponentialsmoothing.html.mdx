@@ -289,7 +289,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-8-output-1.png)
+![](./SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### The Augmented Dickey-Fuller Test
 
@@ -413,7 +413,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-11-output-1.png)
+![](./SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-11-output-1.png)
 
 ### Decomposition of the time series
 
@@ -476,7 +476,7 @@ a = seasonal_decompose(df["y"], model = "additive", period=12)
 a.plot();
 ```
 
-![](SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-12-output-1.png)
+![](./SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-12-output-1.png)
 
 ### Multiplicative
 
@@ -486,7 +486,7 @@ a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
 a.plot();
 ```
 
-![](SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-13-output-1.png)
+![](./SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-13-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -521,7 +521,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-16-output-1.png)
+![](./SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-16-output-1.png)
 
 ## Implementation of SeasonalExponentialSmoothing with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -663,7 +663,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-23-output-1.png)
+![](./SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-23-output-1.png)
 
 ### Forecast Method
 
@@ -717,7 +717,7 @@ values.head()
 sf.plot(train, Y_hat)
 ```
 
-![](SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-26-output-1.png)
+![](./SeasonalExponentialSmoothing_files/figure-markdown_strict/cell-26-output-1.png)
 
 ### Predict method with confidence interval
 

@@ -145,7 +145,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(Y_df)
 ```
 
-![](getting_Started_complete_files/figure-markdown_strict/cell-8-output-1.png)
+![](./getting_Started_complete_files/figure-markdown_strict/cell-8-output-1.png)
 
 ## Train multiple models for many series
 
@@ -315,7 +315,7 @@ method.
 sf.plot(Y_df,forecasts_df)
 ```
 
-![](getting_Started_complete_files/figure-markdown_strict/cell-13-output-1.png)
+![](./getting_Started_complete_files/figure-markdown_strict/cell-13-output-1.png)
 
 The `StatsForecast.plot` allows for further customization. For example,
 plot the results of the different models and unique ids.
@@ -325,14 +325,14 @@ plot the results of the different models and unique ids.
 sf.plot(Y_df, forecasts_df, models=["HoltWinters","DynamicOptimizedTheta"], unique_ids=["H10", "H105"], level=[90])
 ```
 
-![](getting_Started_complete_files/figure-markdown_strict/cell-14-output-1.png)
+![](./getting_Started_complete_files/figure-markdown_strict/cell-14-output-1.png)
 
 ```python
 # Explore other models 
 sf.plot(Y_df, forecasts_df, models=["SeasonalNaive"], unique_ids=["H10", "H105"], level=[90])
 ```
 
-![](getting_Started_complete_files/figure-markdown_strict/cell-15-output-1.png)
+![](./getting_Started_complete_files/figure-markdown_strict/cell-15-output-1.png)
 
 ## Evaluate the model’s performance
 
@@ -490,7 +490,7 @@ seasonal_ids = evaluation_df.query('best_model == "SeasonalNaive"')['unique_id']
 sf.plot(Y_df,forecasts_df, unique_ids=seasonal_ids, models=["SeasonalNaive","DynamicOptimizedTheta"])
 ```
 
-![](getting_Started_complete_files/figure-markdown_strict/cell-22-output-1.png)
+![](./getting_Started_complete_files/figure-markdown_strict/cell-22-output-1.png)
 
 ## Select the best model for every unique series
 
@@ -529,5 +529,5 @@ Plot the results.
 sf.plot(Y_df, prod_forecasts_df, level=[90])
 ```
 
-![](getting_Started_complete_files/figure-markdown_strict/cell-25-output-1.png)
+![](./getting_Started_complete_files/figure-markdown_strict/cell-25-output-1.png)
 

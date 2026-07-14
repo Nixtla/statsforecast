@@ -182,7 +182,7 @@ from utilsforecast.plotting import plot_series
 plot_series(train, test, plot_random=False)
 ```
 
-![](ConformalPrediction_files/figure-markdown_strict/cell-9-output-1.png)
+![](./ConformalPrediction_files/figure-markdown_strict/cell-9-output-1.png)
 
 ## Implementing Conformal Prediction in Python
 
@@ -287,7 +287,7 @@ prediction intervals.
 plot_series(train, forecasts, level=levels, ids=['H105'], models=['SeasonalES'])
 ```
 
-![](ConformalPrediction_files/figure-markdown_strict/cell-13-output-1.png)
+![](./ConformalPrediction_files/figure-markdown_strict/cell-13-output-1.png)
 
 ### ADIDA: Wider Intervals for Weaker Models
 
@@ -300,7 +300,7 @@ informative intervals.
 plot_series(train, forecasts, level=levels, ids=['H105'], models=['ADIDA'])
 ```
 
-![](ConformalPrediction_files/figure-markdown_strict/cell-14-output-1.png)
+![](./ConformalPrediction_files/figure-markdown_strict/cell-14-output-1.png)
 
 ### ARIMA: Distribution-Free Alternative
 
@@ -313,7 +313,7 @@ valuable when the normality assumption is questionable.
 plot_series(train, forecasts, level=levels, ids=['H105'], models=['ARIMA'])
 ```
 
-![](ConformalPrediction_files/figure-markdown_strict/cell-15-output-1.png)
+![](./ConformalPrediction_files/figure-markdown_strict/cell-15-output-1.png)
 
 ## Alternative: Setting Conformal Intervals on StatsForecast Object
 

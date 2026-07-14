@@ -308,7 +308,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-8-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
 
@@ -359,7 +359,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-9-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-9-output-1.png)
 
 ### Decomposition of the time series
 
@@ -487,7 +487,7 @@ plt.xlabel("Hours")
 plt.show()
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-14-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-14-output-1.png)
 
 ## Implementation of MSTL Method with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -576,7 +576,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-20-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-20-output-1.png)
 
 ### Forecast Method
 
@@ -637,7 +637,7 @@ values.head()
 StatsForecast.plot(values)
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-23-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-23-output-1.png)
 
 Adding 95% confidence interval with the forecast method
 
@@ -659,7 +659,7 @@ sf.forecast(df=train, h=horizon, level=[95])
 sf.plot(train, Y_hat)
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-25-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-25-output-1.png)
 
 ### Predict method with confidence interval
 
@@ -716,7 +716,7 @@ forecast_df
 sf.plot(train, forecast_df, level=[80, 95])
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-28-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-28-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 
@@ -810,15 +810,15 @@ for k in range(len(cutoff)):
     display(StatsForecast.plot(df, cv.loc[:, cv.columns != 'cutoff']))
 ```
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-1.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-1.png)
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-2.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-2.png)
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-3.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-3.png)
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-4.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-4.png)
 
-![](MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-5.png)
+![](./MultipleSeasonalTrend_files/figure-markdown_strict/cell-31-output-5.png)
 
 ## Model Evaluation <a class="anchor" id="evaluate"></a>
 

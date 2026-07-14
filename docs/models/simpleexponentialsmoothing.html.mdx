@@ -289,7 +289,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](SimpleExponentialSmoothing_files/figure-markdown_strict/cell-8-output-1.png)
+![](./SimpleExponentialSmoothing_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
 
@@ -303,11 +303,11 @@ axs[0].set_title("Autocorrelation");
 plot_pacf(df["y"],  lags=30, ax=axs[1],color="lime")
 axs[1].set_title('Partial Autocorrelation')
 
-#plt.savefig("Gráfico de Densidad y qq")
+#plt.savefig("Density and QQ Plot")
 plt.show();
 ```
 
-![](SimpleExponentialSmoothing_files/figure-markdown_strict/cell-9-output-1.png)
+![](./SimpleExponentialSmoothing_files/figure-markdown_strict/cell-9-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -472,7 +472,7 @@ plt.title("Ads watched (hourly data)");
 plt.show()
 ```
 
-![](SimpleExponentialSmoothing_files/figure-markdown_strict/cell-18-output-1.png)
+![](./SimpleExponentialSmoothing_files/figure-markdown_strict/cell-18-output-1.png)
 
 ### Forecast Method
 
@@ -554,7 +554,7 @@ forecast_df
 sf.plot(train, forecast_df)
 ```
 
-![](SimpleExponentialSmoothing_files/figure-markdown_strict/cell-22-output-1.png)
+![](./SimpleExponentialSmoothing_files/figure-markdown_strict/cell-22-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

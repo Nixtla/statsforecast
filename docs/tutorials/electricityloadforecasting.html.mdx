@@ -93,7 +93,7 @@ df.tail()
 plot_series(df)
 ```
 
-![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-8-output-1.png)
+![](./ElectricityLoadForecasting_files/figure-markdown_strict/cell-8-output-1.png)
 
 We clearly observe that the time series exhibits seasonal patterns.
 Moreover, the time series contains `32,896` observations, so it is
@@ -194,7 +194,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-14-output-1.png)
+![](./ElectricityLoadForecasting_files/figure-markdown_strict/cell-14-output-1.png)
 
 We observe that there is a clear trend towards the high (orange line).
 This component would be predicted with the
@@ -231,7 +231,7 @@ Let’s look at our forecasts graphically.
 plot_series(df, forecasts, level=[90], max_insample_length=24*7)
 ```
 
-![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-16-output-1.png)
+![](./ElectricityLoadForecasting_files/figure-markdown_strict/cell-16-output-1.png)
 
 In the next section we will plot different models so it is convenient to
 reuse the previous code with the following function.
@@ -329,7 +329,7 @@ values.
 plot_series(df_train, df_test.merge(forecasts_test), level=[90], max_insample_length=24*7)
 ```
 
-![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-23-output-1.png)
+![](./ElectricityLoadForecasting_files/figure-markdown_strict/cell-23-output-1.png)
 
 Let’s look at those produced only by `MSTL`.
 
@@ -337,7 +337,7 @@ Let’s look at those produced only by `MSTL`.
 plot_series(df_train, df_test.merge(forecasts_test), level=[90], max_insample_length=24*7, models=['MSTL'])
 ```
 
-![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-24-output-1.png)
+![](./ElectricityLoadForecasting_files/figure-markdown_strict/cell-24-output-1.png)
 
 We note that `MSTL` produces very accurate forecasts that follow the
 behavior of the time series. Now let us calculate numerically the
@@ -451,7 +451,7 @@ forecasts_test = forecasts_test.merge(forecast_prophet, how='left', on=['unique_
 plot_series(df_train, forecasts_test, max_insample_length=24*7, level=[90])
 ```
 
-![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-33-output-1.png)
+![](./ElectricityLoadForecasting_files/figure-markdown_strict/cell-33-output-1.png)
 
 We note that `Prophet` is able to capture the overall behavior of the
 time series. However, in some cases it produces forecasts well below the
@@ -583,7 +583,7 @@ forecasts_test = forecasts_test.merge(forecast_np, how='left', on=['unique_id', 
 plot_series(df_train, forecasts_test, max_insample_length=24*7, level=[90])
 ```
 
-![](ElectricityLoadForecasting_files/figure-markdown_strict/cell-41-output-1.png)
+![](./ElectricityLoadForecasting_files/figure-markdown_strict/cell-41-output-1.png)
 
 The forecasts graph shows that `NeuralProphet` generates very similar
 results to `Prophet`, as expected.

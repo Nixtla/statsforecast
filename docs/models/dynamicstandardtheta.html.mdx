@@ -147,7 +147,7 @@ from statsforecast import StatsForecast
 StatsForecast.plot(df)
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-8-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-8-output-1.png)
 
 ### Autocorrelation plots
 
@@ -163,7 +163,7 @@ axs[1].set_title('Partial Autocorrelation')
 plt.show();
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-9-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-9-output-1.png)
 
 ### Decomposition of the time series
 
@@ -226,7 +226,7 @@ a = seasonal_decompose(df["y"], model = "additive", period=12)
 a.plot();
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-10-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-10-output-1.png)
 
 ### Multiplicative
 
@@ -236,7 +236,7 @@ a = seasonal_decompose(df["y"], model = "Multiplicative", period=12)
 a.plot();
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-11-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-11-output-1.png)
 
 ## Split the data into training and testing<a class="anchor" id="splitting"></a>
 
@@ -269,7 +269,7 @@ plt.title("Monthly Milk Production")
 plt.show()
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-14-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-14-output-1.png)
 
 ## Implementation of DynamicStandardTheta with StatsForecast <a class="anchor" id="implementation"></a>
 
@@ -385,7 +385,7 @@ axs[1,1].set_title("Autocorrelation");
 plt.show();
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-21-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-21-output-1.png)
 
 ### Forecast Method
 
@@ -445,7 +445,7 @@ values.head()
 StatsForecast.plot(values)
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-24-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-24-output-1.png)
 
 Adding 95% confidence interval with the forecast method
 
@@ -518,7 +518,7 @@ forecast_df
 sf.plot(train, test.merge(forecast_df), level=[80, 95])
 ```
 
-![](DynamicStandardTheta_files/figure-markdown_strict/cell-28-output-1.png)
+![](./DynamicStandardTheta_files/figure-markdown_strict/cell-28-output-1.png)
 
 ## Cross-validation <a class="anchor" id="cross_validate"></a>
 

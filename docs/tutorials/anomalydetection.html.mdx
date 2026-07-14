@@ -130,7 +130,7 @@ from utilsforecast.plotting import plot_series
 plot_series(df)
 ```
 
-![](AnomalyDetection_files/figure-markdown_strict/cell-7-output-1.png)
+![](./AnomalyDetection_files/figure-markdown_strict/cell-7-output-1.png)
 
 ## Train model
 
@@ -204,7 +204,7 @@ We can plot the forecasts using the `plot_series` function from before.
 plot_series(df, fcst)
 ```
 
-![](AnomalyDetection_files/figure-markdown_strict/cell-12-output-1.png)
+![](./AnomalyDetection_files/figure-markdown_strict/cell-12-output-1.png)
 
 ## Recover insample forecasts and identify anomalies
 
@@ -249,7 +249,7 @@ We can plot the anomalies by setting the `level` and the
 plot_series(forecasts_df=insample_forecasts, level=levels, plot_anomalies=True)
 ```
 
-![](AnomalyDetection_files/figure-markdown_strict/cell-15-output-1.png)
+![](./AnomalyDetection_files/figure-markdown_strict/cell-15-output-1.png)
 
 If we want to take a closer look, we can use the `ids` argument to
 select one particular time series, for example, `H10`.
@@ -258,7 +258,7 @@ select one particular time series, for example, `H10`.
 plot_series(forecasts_df=insample_forecasts, level=[99], plot_anomalies=True, ids=['H10'])
 ```
 
-![](AnomalyDetection_files/figure-markdown_strict/cell-16-output-1.png)
+![](./AnomalyDetection_files/figure-markdown_strict/cell-16-output-1.png)
 
 Here we identified the anomalies in the data using the MSTL model, but
 any [probabilistic model](../../src/core/models.html) from StatsForecast
