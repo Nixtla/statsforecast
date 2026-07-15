@@ -884,9 +884,8 @@ def test_distribution_forecast_intervals(distribution, param_key):
 def test_issue_649(capsys):
     from statsforecast.models import AutoARIMA
 
-    df = pd.read_csv("https://github.com/Nixtla/statsforecast/files/12664642/test.csv")
-    y = df["y"].to_numpy()[:-2]
-    m = AutoARIMA(season_length=12, trace=True).fit(y)
+    y = np.array(42 * [100] + [119, 525])
+    AutoARIMA(season_length=12, trace=True).fit(y)
     captured = capsys.readouterr()
     expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : inf
 ARIMA(0,0,0)            with non-zero mean : 494.2237

@@ -2353,7 +2353,7 @@ def auto_arima_f(
         warnings.warn(
             f"Stepwise search was stopped early due to reaching the model number limit: nmodels={nmodels}"
         )
-    if approximation and bestfit["arma"] is not None:
+    if approximation and "arma" in bestfit:
         if trace:
             print("Now re-fitting the best model(s) without approximations...\n")
         icorder = np.argsort(results[:, 7])
