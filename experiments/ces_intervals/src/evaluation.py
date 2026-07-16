@@ -1,3 +1,4 @@
+import os
 from itertools import product
 
 import numpy as np
@@ -5,6 +6,8 @@ import pandas as pd
 from datasetsforecast.m4 import M4Info 
 
 from data import get_data
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 
 def evaluate_ws(lib: str, group: str): 
     
@@ -14,7 +17,7 @@ def evaluate_ws(lib: str, group: str):
     
     # Load forecast 
     try:
-        forecast = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ces_intervals/data/{lib}-ces-forecasts-M4-{group}-pred-int.csv') 
+        forecast = pd.read_csv(f'{DATA_DIR}/{lib}-ces-forecasts-M4-{group}-pred-int.csv') 
         forecast = forecast.sort_values('unique_id')
         lowerb = forecast.loc[:, forecast.columns.str.contains('lowerb')].values.reshape(-1, len(levels)) 
         upperb = forecast.loc[:, forecast.columns.str.contains('upperb')].values.reshape(-1, len(levels))
@@ -23,7 +26,7 @@ def evaluate_ws(lib: str, group: str):
     
     # Load actual data 
     try: 
-        test_set = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ces_intervals/data/m4/datasets/{group}-test.csv') 
+        test_set = pd.read_csv(f'{DATA_DIR}/m4/datasets/{group}-test.csv') 
         test_set = test_set.sort_values('V1')
         test = test_set.drop(test_set.columns[[0]], axis = 1)
         test = test.values.reshape(-1, horizon) 
@@ -48,7 +51,7 @@ def evaluate_ws(lib: str, group: str):
         wk = wk/(len(actual)*len(levels))
         ws[k] = wk # Winkler score for series Y_k 
         
-    times = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ces_intervals/data/{lib}-ces-time-M4-{group}-pred-int.csv')
+    times = pd.read_csv(f'{DATA_DIR}/{lib}-ces-time-M4-{group}-pred-int.csv')
     evals = times
     evals['Winkler-score (with mean)'] = ws.mean()
     evals['Winkler-score (with median)'] = np.median(ws)
