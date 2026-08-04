@@ -1224,7 +1224,8 @@ ray = [
     { name = "duckdb", marker = "sys_platform != 'win32'" },
     { name = "pandas", marker = "sys_platform != 'win32'" },
     { name = "pyarrow", marker = "sys_platform != 'win32'" },
-    { name = "ray", extra = ["data"], marker = "sys_platform != 'win32'" },
+    { name = "ray", version = "2.55.0", source = { registry = "https://pypi.org/simple" }, extra = ["data"], marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "ray", version = "2.56.1", source = { registry = "https://pypi.org/simple" }, extra = ["data"], marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
 ]
 spark = [
     { name = "pyspark" },
@@ -2944,15 +2945,21 @@ wheels = [
 name = "ray"
 version = "2.55.0"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and sys_platform != 'win32'",
+    "python_full_version == '3.12.*' and sys_platform != 'win32'",
+    "python_full_version == '3.11.*' and sys_platform != 'win32'",
+    "python_full_version < '3.11' and sys_platform != 'win32'",
+]
 dependencies = [
-    { name = "click", marker = "sys_platform != 'win32'" },
-    { name = "filelock", marker = "sys_platform != 'win32'" },
-    { name = "jsonschema", marker = "sys_platform != 'win32'" },
-    { name = "msgpack", marker = "sys_platform != 'win32'" },
-    { name = "packaging", marker = "sys_platform != 'win32'" },
-    { name = "protobuf", marker = "sys_platform != 'win32'" },
-    { name = "pyyaml", marker = "sys_platform != 'win32'" },
-    { name = "requests", marker = "sys_platform != 'win32'" },
+    { name = "click", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "filelock", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "jsonschema", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "msgpack", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "packaging", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "protobuf", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "pyyaml", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "requests", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ae/bb/9f8a45a866b454fd9d8eb6070a916b38cee1bd1a19606b5a952f63d75940/ray-2.55.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:c1bc110d39edfa8f8ed85fbab0086dc7e4a8b8c0d784a74ff39eac5e73580d62", size = 65829544, upload-time = "2026-04-15T04:31:24.774Z" },
@@ -2974,11 +2981,54 @@ wheels = [
 
 [package.optional-dependencies]
 data = [
-    { name = "fsspec", marker = "sys_platform != 'win32'" },
+    { name = "fsspec", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
     { name = "numpy", version = "1.26.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13' and sys_platform != 'win32'" },
-    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13' and sys_platform != 'win32'" },
-    { name = "pandas", marker = "sys_platform != 'win32'" },
-    { name = "pyarrow", marker = "sys_platform != 'win32'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.13.*' and sys_platform != 'win32'" },
+    { name = "pandas", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+    { name = "pyarrow", marker = "python_full_version < '3.14' and sys_platform != 'win32'" },
+]
+
+[[package]]
+name = "ray"
+version = "2.56.1"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.14' and sys_platform != 'win32'",
+]
+dependencies = [
+    { name = "click", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "filelock", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "jsonschema", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "msgpack", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "packaging", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "protobuf", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "pyyaml", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "requests", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/f5/89dc8571f35355a7f889cd4709b440abf6db2c5fc8b5427b614d5084e9cb/ray-2.56.1-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:58b8c037a9f2b7b7866439cb6fe19d452ba3961f2b62d0a247dc3adf2ca45265", size = 66364186, upload-time = "2026-07-17T21:27:58.09Z" },
+    { url = "https://files.pythonhosted.org/packages/46/45/379f08c1084a3b22e002a00a4d303fb35c3f99bcd6bb36ebdce532ef14fc/ray-2.56.1-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:7005a13785c7478c3d183b6f1e7a344c069c4c4fb187707c4fc31ca8c84d8d9f", size = 73214320, upload-time = "2026-07-17T21:28:04.344Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/68/df1dd97a12bdab93e89050830b37ff601230c010075a04b0ebeb87767ef4/ray-2.56.1-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:49aa1f8aa1799a6b63adc8e4edd600b949b2bb648461abedcbcccd56c8ef0f82", size = 74069243, upload-time = "2026-07-17T21:28:09.657Z" },
+    { url = "https://files.pythonhosted.org/packages/60/61/4374f94492dd5927f30bb0f4c2ef8419faefbd85636b7d991f83056d2c02/ray-2.56.1-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:5eebd776cd461edebc5874d2dfba3005147b6b45645d8a16a6549311c5efffea", size = 66356353, upload-time = "2026-07-17T21:28:19.148Z" },
+    { url = "https://files.pythonhosted.org/packages/79/3c/787e104f7b167e99e8283fac59b37938999ce44cd7312aab7e327bbec071/ray-2.56.1-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:4df45f33cc176b11c69191efdcfb4aceaeea22fecfa784f6485b6504ef8c8b26", size = 73301425, upload-time = "2026-07-17T21:28:24.269Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/bd/4a704cfe4321d732c363093bb03798b027982f3828495b27bfbbb86c0fc5/ray-2.56.1-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:e7003a47a42ef2ad33ec0b34dc5b6afb03f63fe59465e6f4c8f6d05492d9e4a6", size = 74145394, upload-time = "2026-07-17T21:28:29.532Z" },
+    { url = "https://files.pythonhosted.org/packages/50/d9/a17feef16a123f5d32d4c5fa7de853c59ba702f8404cf452a7ce20faca13/ray-2.56.1-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:44bc0000c5bfad85b2ff6e0ef91e95f901d1a2d2fdd72f94f08a046eb494cd61", size = 66346989, upload-time = "2026-07-17T21:28:39.4Z" },
+    { url = "https://files.pythonhosted.org/packages/05/19/c3b1bcccd09decaf2a2e3370041ae67070bb1a8638f2665d36edfbb0261d/ray-2.56.1-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:8fdd6b096215906cf1f9acdc7898c9d6140606f2d27245778b8385a9f19e6cb0", size = 73319289, upload-time = "2026-07-17T21:28:44.502Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/7f/577a61bf2c8eff26e942afe53a6b03f4dbf5b4f233b832c228417d0c954e/ray-2.56.1-cp312-cp312-manylinux2014_x86_64.whl", hash = "sha256:e5d3173696831134c76bd09451dfe95c32d72c271253b0d6b09d2df9994aa660", size = 74194147, upload-time = "2026-07-17T21:28:50.567Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/58/fab4cf69ec9be22210a6634f9310acf0b40c1c5a0f65d380f8cd11aa661e/ray-2.56.1-cp313-cp313-macosx_12_0_arm64.whl", hash = "sha256:93dedab658334af81877b6ed840c4e5f85e2e0b1b3641b20eaaee37cad835cc6", size = 66291122, upload-time = "2026-07-17T21:28:59.906Z" },
+    { url = "https://files.pythonhosted.org/packages/68/9b/622d4f77fc65e9e2ee1a9d2480a1bde4b244edf65eda1f0c488dc8818e57/ray-2.56.1-cp313-cp313-manylinux2014_aarch64.whl", hash = "sha256:7fdc47de4e230f0db7c6c668a9e161f864dac548bd32230986e0b0c36e386eb5", size = 73253432, upload-time = "2026-07-17T21:29:05.445Z" },
+    { url = "https://files.pythonhosted.org/packages/43/ab/649395a3b286c4be86cfe4e8072a746f4d6b6dc68d78396f462d8b94795e/ray-2.56.1-cp313-cp313-manylinux2014_x86_64.whl", hash = "sha256:81f2db202cc31bc3f5c4acf9ef154d10f1f39ece602d9d2d3108875c49bf01c3", size = 74131273, upload-time = "2026-07-17T21:29:10.547Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/71/e921682f4027459f261a8db2a56a25760458e12c95359f1ce56d525a28d3/ray-2.56.1-cp314-cp314-macosx_12_0_arm64.whl", hash = "sha256:76f6268a669c1d9910f1d7b73903de3ede9850ed94d3e28318d495559bd37d0e", size = 66300044, upload-time = "2026-07-17T21:29:15.61Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/94/066849822fdd1c7a9221f3e2f9130e2a5eda83f47efc685211fb178b5a58/ray-2.56.1-cp314-cp314-manylinux2014_aarch64.whl", hash = "sha256:ea372c7f95b14f1f76f0bdd2abc9602c56e88bc30699d2228f78133e7749b2f1", size = 73243912, upload-time = "2026-07-17T21:29:20.98Z" },
+    { url = "https://files.pythonhosted.org/packages/63/ac/74597352f729f9f7d998a93c6dd1de5efca3e6a5750f720d04a42f22bb3e/ray-2.56.1-cp314-cp314-manylinux2014_x86_64.whl", hash = "sha256:ae91fe578fadea38c13a208a0fec27e1ced238ccdf5fff95ef3e30ac3071dec9", size = 74099698, upload-time = "2026-07-17T21:29:26.649Z" },
+]
+
+[package.optional-dependencies]
+data = [
+    { name = "fsspec", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "pandas", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "pyarrow", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
 ]
 
 [[package]]
@@ -3478,7 +3528,7 @@ all = [
     { name = "pyspark", marker = "sys_platform == 'win32'" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "ray", version = "2.56.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
     { name = "scikit-learn", version = "1.7.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scikit-learn", version = "1.8.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "setuptools" },
@@ -3512,7 +3562,7 @@ dev = [
 ray = [
     { name = "fugue", extra = ["ray"], marker = "sys_platform != 'win32'" },
     { name = "protobuf", marker = "python_full_version < '3.12'" },
-    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
+    { name = "ray", version = "2.56.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.14' and sys_platform != 'win32'" },
 ]
 spark = [
     { name = "fugue", extra = ["spark"] },
@@ -3554,7 +3604,7 @@ all = [
     { name = "pyspark", marker = "sys_platform == 'win32'", specifier = "<4.1.0" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'", specifier = ">=2.55.0" },
+    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'", specifier = ">=2.56.0" },
     { name = "scikit-learn" },
     { name = "setuptools", specifier = "<84" },
     { name = "supersmoother" },
@@ -3586,7 +3636,7 @@ dev = [
 ray = [
     { name = "fugue", extras = ["ray"], marker = "sys_platform != 'win32'", specifier = ">=0.9.4" },
     { name = "protobuf", marker = "python_full_version < '3.12'", specifier = ">=5.29.6" },
-    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'", specifier = ">=2.55.0" },
+    { name = "ray", marker = "python_full_version >= '3.14' and sys_platform != 'win32'", specifier = ">=2.56.0" },
 ]
 spark = [
     { name = "fugue", extras = ["spark"], specifier = ">=0.9.4" },
