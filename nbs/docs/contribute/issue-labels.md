@@ -9,25 +9,19 @@ This segment delves into the variety of issue labels used within the [Nixtla Git
 
 Should you be a contributor now or in the future, it's important to take note of issues flagged with these labels.
 
-### The `first-timers-only` Label
-
-For those who have not yet contributed to Nixtla, start by looking for issues tagged as `first-timers-only`.
-
-Please review the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) before opening a pull request.
-
-You can browse all `first-timers-only` issues [here](https://github.com/Nixtla/statsforecast/labels/first-timers-only).
+Before opening a pull request, review the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and sign our [Contributor License Agreement](https://cla-assistant.io/Nixtla/statsforecast).
 
 ### The `good first issue` Label
 
 Issues labeled as `good first issue` are ideal for newcomers.
 
-You can browse all `good first issue` issues [here](https://github.com/Nixtla/statsforecast/labels/good%20first%20issue).
+You can browse all `good first issue` issues [here](https://github.com/nixtla/nixtla/labels/good%20first%20issue).
 
 ### The `help wanted` Label
 
 Issues tagged as `help wanted` are open to anyone who wishes to contribute to Nixtla.
 
-You can browse all `help wanted` issues [here](https://github.com/Nixtla/statsforecast/labels/help%20wanted).
+You can browse all `help wanted` issues [here](https://github.com/nixtla/nixtla/labels/help%20wanted).
 
 ### The `bug` Label
 
