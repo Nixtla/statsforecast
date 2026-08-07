@@ -3,13 +3,13 @@ title: Submit an Issue 📢
 sidebarTitle: Submit an Issue
 ---
 
-To report a bug, request a feature, propose a new integration, or suggest documentation improvements, please visit the [Nixtla GitHub issues page](https://github.com/nixtla/nixtla/issues). Before submitting a new issue, kindly check if it has already been reported.
+To report a bug, request a feature, propose a new integration, or suggest documentation improvements, please visit the [StatsForecast GitHub issues page](https://github.com/Nixtla/statsforecast/issues). Before submitting a new issue, kindly check if it has already been reported.
 
 ## Steps to Submit an Issue
 
 Here's a step-by-step guide on submitting an issue to the Nixtla repository.
 
-Visit [our GitHub issues page](https://github.com/nixtla/nixtla/issues) and click on the _New issue_ button.
+Visit [our GitHub issues page](https://github.com/Nixtla/statsforecast/issues) and click on the _New issue_ button.
 
 A list of available issue types will be displayed.
 
@@ -27,7 +27,7 @@ The form to report the bug will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
@@ -46,7 +46,7 @@ The feature request form will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
@@ -64,7 +64,7 @@ A form for suggesting improvements will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
@@ -87,7 +87,7 @@ A form for your proposal will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
