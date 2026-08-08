@@ -14,7 +14,7 @@ def evaluate_ws(lib: str, group: str):
     
     # Load forecast 
     try:
-        forecast = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ets_intervals/data/{lib}-forecasts-M4-{group}-pred-int.csv') 
+        forecast = pd.read_csv(f'data/{lib}-forecasts-M4-{group}-pred-int.csv') 
         forecast = forecast.sort_values('unique_id')
         lowerb = forecast.loc[:, forecast.columns.str.contains('lowerb')].values.reshape(-1, len(levels)) 
         upperb = forecast.loc[:, forecast.columns.str.contains('upperb')].values.reshape(-1, len(levels))
@@ -23,7 +23,7 @@ def evaluate_ws(lib: str, group: str):
     
     # Load actual data 
     try: 
-        test_set = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ets_intervals/data/m4/datasets/{group}-test.csv') 
+        test_set = pd.read_csv(f'data/m4/datasets/{group}-test.csv') 
         test_set = test_set.sort_values('V1')
         test = test_set.drop(test_set.columns[[0]], axis = 1)
         test = test.values.reshape(-1, horizon) 
@@ -48,7 +48,7 @@ def evaluate_ws(lib: str, group: str):
         wk = wk/(len(actual)*len(levels))
         ws[k] = wk # Winkler score for series Y_k 
         
-    times = pd.read_csv(f'/home/ubuntu/statsforecast/experiments/ets_intervals/data/{lib}-time-M4-{group}-pred-int.csv')
+    times = pd.read_csv(f'data/{lib}-time-M4-{group}-pred-int.csv')
     evals = times
     evals['Winkler-score (mean)'] = ws.mean()
     evals['Winkler-score (median)'] = np.median(ws)
