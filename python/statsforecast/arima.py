@@ -20,7 +20,7 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from scipy.linalg import cho_factor, cho_solve
+from scipy.linalg import cho_factor, cho_solve, lu_factor, lu_solve
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
@@ -704,6 +704,7 @@ def arima(
                     # 0: successs
                     # 1: maximum number of iterations exceeded
                     # 2: precision loss
+                    # 3: NaN result encountered
                     init[mask] = opt_res.x
                 if arma[0] > 0:
                     if not arCheck(init[: arma[0]]):
@@ -856,13 +857,21 @@ def arima(
                     oldcode,
                     opt_res.x,
                     opt_res.fun,
-                    approx_hess3(res.x, obj_fn, epsilon=1e-3),
+                    approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
                 )
                 coef[mask] = res.x
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
-            c, lower = cho_factor((res.hess + res.hess.T) / 2)
-            var = A.T @ cho_solve((c, lower), A) / n_used
+            if np.isnan(res.hess).any():
+                var = np.full_like(res.hess, np.nan)
+            else:
+                try:
+                    dec_a, dec_b = cho_factor(res.hess)
+                    solve_fn = cho_solve
+                except np.linalg.LinAlgError:
+                    dec_a, dec_b = lu_factor(res.hess)
+                    solve_fn = lu_solve
+                var = A.T @ solve_fn((dec_a, dec_b), A) / n_used
             coef = arima_undopars(coef, arma)
         else:
             var = None if no_optim else np.linalg.inv(n_used * res.hess)
