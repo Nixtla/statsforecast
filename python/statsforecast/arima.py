@@ -20,7 +20,7 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-from scipy.linalg import cho_factor, cho_solve, lu_factor, lu_solve
+from scipy.linalg import cho_factor, cho_solve
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
@@ -226,10 +226,13 @@ def arima(
     def upARIMA(mod, phi, theta):
         p = len(phi)
         q = len(theta)
+        mod = {**mod}
         mod["phi"] = phi
         mod["theta"] = theta
         r = max(p, q + 1)
+        mod["Pn"] = mod["Pn"].copy()
         if p > 0:
+            mod["T"] = mod["T"].copy()
             mod["T"][:p, 0] = phi
         if r > 1:
             if SSG:
@@ -239,7 +242,7 @@ def arima(
                 # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
         else:
             mod["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
-        mod["a"][:] = 0  # a es vector?
+        mod["a"] = np.zeros_like(mod["a"])
         return mod
 
     def arimaSS(y, mod):
@@ -870,13 +873,8 @@ def arima(
             if np.isnan(res.hess).any():
                 var = np.full_like(res.hess, np.nan)
             else:
-                try:
-                    dec_a, dec_b = cho_factor(res.hess)
-                    solve_fn = cho_solve
-                except np.linalg.LinAlgError:
-                    dec_a, dec_b = lu_factor(res.hess)
-                    solve_fn = lu_solve
-                var = A.T @ solve_fn((dec_a, dec_b), A) / n_used
+                c, lower = cho_factor(res.hess)
+                var = A.T @ cho_solve((c, lower), A) / n_used
             coef = arima_undopars(coef, arma)
         else:
             if no_optim:
