@@ -692,7 +692,7 @@ def arima(
     else:
         if method == ArimaMethod.CSS_ML:
             if not no_optim:
-                opt_res = minimize(
+                res = minimize(
                     arma_css_op,
                     init[mask],
                     args=(x, coef, mask, arma, ncxreg, xreg, narma),
@@ -700,12 +700,11 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-                if opt_res.status != 1:
+                if res.status != 1:
                     # 0: successs
                     # 1: maximum number of iterations exceeded
                     # 2: precision loss
-                    # 3: NaN result encountered
-                    init[mask] = opt_res.x
+                    init[mask] = res.x
                 if arma[0] > 0:
                     if not arCheck(init[: arma[0]]):
                         raise ValueError("non-stationary AR part from CSS")
