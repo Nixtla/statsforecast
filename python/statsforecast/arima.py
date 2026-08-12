@@ -688,7 +688,13 @@ def arima(
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arima_css(x, arma, phi, theta)
         sigma2 = val[0]
-        var = None if no_optim else np.linalg.inv(n_used * res.hess)
+        if no_optim:
+            var = None
+        else:
+            try:
+                var = np.linalg.inv(n_used * res.hess)
+            except np.linalg.LinAlgError:
+                var = np.full_like(res.hess, np.nan)
     else:
         if method == ArimaMethod.CSS_ML:
             if not no_optim:
@@ -873,7 +879,13 @@ def arima(
                 var = A.T @ solve_fn((dec_a, dec_b), A) / n_used
             coef = arima_undopars(coef, arma)
         else:
-            var = None if no_optim else np.linalg.inv(n_used * res.hess)
+            if no_optim:
+                var = None
+            else:
+                try:
+                    var = np.linalg.inv(n_used * res.hess)
+                except np.linalg.LinAlgError:
+                    var = np.full_like(res.hess, np.nan)
         trarma = arima_transpar(coef, arma, False)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         if ncxreg > 0:
