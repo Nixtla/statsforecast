@@ -525,6 +525,26 @@ def test_forecast_arima_confidence_intervals(res_Arima_s):
     assert fcst["upper"].shape[1] == 17
 
 
+def test_forecast_arima_bootstrap_intervals(res_Arima_s):
+    """bootstrap=True yields empirical prediction intervals instead of raising (#1191)."""
+    fcst = forecast_arima(
+        res_Arima_s, h=12, level=(80, 95), bootstrap=True, npaths=2000
+    )
+    assert fcst["lower"].columns.tolist() == ["80%", "95%"]
+    assert fcst["upper"].columns.tolist() == ["80%", "95%"]
+
+    lower80 = fcst["lower"]["80%"].to_numpy()
+    lower95 = fcst["lower"]["95%"].to_numpy()
+    upper80 = fcst["upper"]["80%"].to_numpy()
+    upper95 = fcst["upper"]["95%"].to_numpy()
+    mean = np.asarray(fcst["mean"])
+
+    # Finite, brackets the mean, and the 80% band sits inside the 95% band.
+    assert np.all(np.isfinite(lower95)) and np.all(np.isfinite(upper95))
+    assert np.all(lower95 <= mean) and np.all(mean <= upper95)
+    assert np.all(lower95 <= lower80) and np.all(upper80 <= upper95)
+
+
 def test_fitted_arima_lengths(res_Arima, res_Arima_ex, res_Arima_s):
     """Test that fitted_arima returns correct lengths for different models."""
 
