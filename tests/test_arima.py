@@ -374,17 +374,17 @@ def test_Arima_fixed_argument(method, drift_xreg):
         Arima(
             ap,
             order=(2, 0, 1),
-            fixed=[0.0, np.nan, 0.0, 8, np.nan, 9],
+            fixed=[0.0, np.nan, 0.0, 8, np.nan, np.nan, 9],
             include_drift=True,
-            xreg=xreg[:, 1:],
+            xreg=xreg,
             method=method,
         )["coef"]
         == Arima(
             ap,
             order=(2, 0, 1),
-            fixed={"ar1": 0, "ma1": 0, "intercept": 8, "ex_1": 9},
+            fixed={"ar1": 0, "ma1": 0, "intercept": 8, "ex_2": 9},
             include_drift=True,
-            xreg=xreg[:, 1:],
+            xreg=xreg,
             method=method,
         )["coef"]
     )
@@ -393,17 +393,17 @@ def test_Arima_fixed_argument(method, drift_xreg):
         Arima(
             ap,
             order=(2, 0, 1),
-            fixed=[0.0, np.nan, 0.0, 8, 8.5, 9],
+            fixed=[0.0, np.nan, 0.0, 8, 8.5, np.nan, 9],
             include_drift=True,
-            xreg=xreg[:, 1:],
+            xreg=xreg,
             method=method,
         )["coef"]
         == Arima(
             ap,
             order=(2, 0, 1),
-            fixed={"ar1": 0, "ma1": 0, "intercept": 8, "drift": 8.5, "ex_1": 9},
+            fixed={"ar1": 0, "ma1": 0, "intercept": 8, "ex_2": 9, "drift": 8.5},
             include_drift=True,
-            xreg=xreg[:, 1:],
+            xreg=xreg,
             method=method,
         )["coef"]
     )
