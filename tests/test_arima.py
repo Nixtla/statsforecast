@@ -912,3 +912,18 @@ def test_issue_1167():
     assert math.isclose(coef["ar1"], 1.8, abs_tol=0.1)
     assert math.isclose(coef["ar2"], -0.9, abs_tol=0.1)
     assert math.isclose(mdl.model_["sigma2"], 0.9, abs_tol=0.1)
+
+
+def test_coef_stderr():
+    m = ARIMA(
+        order=(2, 1, 1),
+        seasonal_order=(0, 1, 0),
+        season_length=12,
+        method="CSS-ML",
+    ).fit(ap)
+    coef_stderr = np.sqrt(np.diagonal(m.model_["var_coef"]))
+    np.testing.assert_allclose(
+        coef_stderr,
+        np.array([0.088, 0.088, 0.029]),
+        atol=2e-3,
+    )
