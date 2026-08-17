@@ -1480,6 +1480,11 @@ def forecast_arima(
     if fan:
         level = np.arange(51, 100, 3)
 
+    # Future regressors as provided by the caller, before the drift column is
+    # appended below. simulate_arima adds the drift term itself, so bootstrap
+    # intervals must pass these regressors, not the drift-augmented ones.
+    orig_xreg = xreg
+
     if use_drift:
         n = len(x)
         drift = np.arange(1, h + 1, dtype=np.float64).reshape(-1, 1)
@@ -1508,7 +1513,31 @@ def forecast_arima(
     if level is not None:
         # nint = len(level)
         if bootstrap:
-            raise NotImplementedError("bootstrap=True")
+            # Empirical prediction intervals: simulate future sample paths by
+            # resampling the in-sample residuals (the standard bootstrap PI
+            # method), then take the empirical quantiles. Uses the existing
+            # simulate_arima infrastructure instead of the parametric formula.
+            if model.get("residuals") is None:
+                raise ValueError(
+                    "bootstrap=True requires the fitted model to store residuals"
+                )
+            paths = simulate_arima(
+                model,
+                h=h,
+                n_paths=npaths,
+                xreg=orig_xreg,
+                error_distribution="bootstrap",
+            )
+            lower_q = [(1 - lv / 100) / 2 for lv in level]
+            upper_q = [(1 + lv / 100) / 2 for lv in level]
+            lower = pd.DataFrame(
+                np.quantile(paths, lower_q, axis=0).T,
+                columns=[f"{l}%" for l in level],
+            )
+            upper = pd.DataFrame(
+                np.quantile(paths, upper_q, axis=0).T,
+                columns=[f"{l}%" for l in level],
+            )
         else:
             dist = model.get("distribution", Distribution.NORMAL)
             quantiles = _quantiles(level, distribution=dist, dist_params=error_params_from_model(model))
