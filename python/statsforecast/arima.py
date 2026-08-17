@@ -20,6 +20,7 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
@@ -1313,6 +1314,108 @@ def arima2(x, model, xreg, method):
     return refit
 
 
+def _resolve_blambda(x, blambda, period):
+    """Resolve the Box-Cox parameter, which can be a float or the string 'auto'.
+
+    'auto' is resolved as forecast::BoxCox does, with Guerrero's method over
+    [-0.9, 2]. Missing values are left in place, since they're accounted for
+    when computing the coefficient of variation of each subseries.
+
+    Args:
+        x (np.ndarray): The series the parameter is selected from.
+        blambda (float or str): Box-Cox transformation parameter, or 'auto' to
+            select it from `x`.
+        period (int): Number of observations per unit of time. Subseries of at
+            least two observations are used, regardless of this value.
+
+    Returns:
+        float: The resolved Box-Cox transformation parameter.
+
+    Raises:
+        ValueError: If `blambda` is a string other than 'auto'.
+    """
+    if isinstance(blambda, str):
+        if blambda != "auto":
+            raise ValueError(f"blambda must be a float or 'auto', got '{blambda}'")
+        if np.any(x <= 0):
+            warnings.warn(
+                "Guerrero's method for selecting a Box-Cox parameter (lambda) "
+                "is given for strictly positive data."
+            )
+        blambda = boxcox_lambda(
+            x, method="guerrero", season_length=max(period, 2), lower=-0.9, upper=2.0
+        )
+    return float(blambda)
+
+
+def _boxcox(x, blambda):
+    """Apply the Box-Cox transformation.
+
+    Args:
+        x (np.ndarray): Array with the data to transform.
+        blambda (float): Box-Cox transformation parameter.
+
+    Returns:
+        np.ndarray: The transformed data, with the same shape as `x`. Entries
+            that aren't strictly positive are nan when `blambda` < 0, where the
+            transformation is undefined.
+    """
+    # the transformations read the buffer directly, so they need contiguous input
+    x = np.ascontiguousarray(x)
+    if blambda < 0:
+        x = np.where(x <= 0, np.nan, x)
+    return boxcox(x, blambda)
+
+
+def _inv_boxcox(x, blambda):
+    """Reverse the Box-Cox transformation.
+
+    Args:
+        x (np.ndarray): Array with the transformed data.
+        blambda (float): Box-Cox transformation parameter.
+
+    Returns:
+        np.ndarray: The data on the original scale, with the same shape as `x`.
+            When `blambda` < 0 the transformation has an asymptote at
+            -1/blambda, so entries at or above it are nan.
+    """
+    x = np.ascontiguousarray(x)
+    out = inv_boxcox(x, blambda).reshape(x.shape)
+    if blambda < 0:
+        out = np.where(x >= -1 / blambda, np.nan, out)
+    return out
+
+
+def _inv_boxcox_mean(x, blambda, fvar=None, biasadj=False):
+    """Back-transform a Box-Cox transformed mean.
+
+    A plain back transformation yields medians, so when `biasadj` is True the
+    second order Taylor approximation of forecast::InvBoxCox is used to turn
+    them into means.
+
+    Args:
+        x (np.ndarray): Array with the transformed means.
+        blambda (float): Box-Cox transformation parameter.
+        fvar (float or np.ndarray, optional): Variance on the transformed
+            scale. Only required when `biasadj=True`. Defaults to None.
+        biasadj (bool, optional): Whether to adjust the back-transformed
+            medians to produce means. Defaults to False.
+
+    Returns:
+        np.ndarray: The means on the original scale.
+
+    Raises:
+        ValueError: If `biasadj=True` and no `fvar` is provided.
+    """
+    out = _inv_boxcox(x, blambda)
+    if biasadj:
+        if fvar is None:
+            raise ValueError("`fvar` is required when `biasadj=True`")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            out = out * (1 + 0.5 * fvar * (1 - blambda) / out ** (2 * blambda))
+    return out
+
+
 def Arima(
     x,
     order=(0, 0, 0),
@@ -1331,11 +1434,13 @@ def Arima(
     x = x.copy()
     origx = x.copy()
     seas_order = seasonal["order"]
+    if model is not None and blambda is None:
+        # keep the transformation of the model we're applying to the new data
+        blambda = model["lambda"]
+        biasadj = model.get("biasadj", biasadj)
     if blambda is not None:
-        raise NotImplementedError("blambda != None")
-        # x = boxcox(x, blambda)
-        # if not hasattr(blambda, 'biasadj'):
-        #    setattr(blambda, 'biasadj', biasadj)
+        blambda = _resolve_blambda(x, blambda, seasonal["period"])
+        x = _boxcox(x, blambda)
     if xreg is not None:
         if xreg.dtype not in (np.float32, np.float64):
             raise ValueError("xreg should be a float array")
@@ -1404,6 +1509,7 @@ def Arima(
     tmp["bic"] = tmp["aic"] + npar * (math.log(nstar) - 2)
     tmp["xreg"] = xreg
     tmp["lambda"] = blambda
+    tmp["biasadj"] = biasadj
     tmp["x"] = origx
     if model is None and distribution == Distribution.NORMAL:
         tmp["sigma2"] = np.nansum(tmp["residuals"] ** 2) / (nstar - npar + 1)
@@ -1459,6 +1565,8 @@ def forecast_arima(
         h = 2 * model["arma"][4] if model["arma"][4] > 1 else 10
     if blambda is None:
         blambda = model["lambda"]
+    if biasadj is None:
+        biasadj = model.get("biasadj", False)
 
     use_drift = "drift" in model["coef"].keys()
     x = model["x"]
@@ -1493,6 +1601,8 @@ def forecast_arima(
     if is_constant(x):
         pred = np.repeat(x[0], h)
         se = np.repeat(0, h)
+        # `x` is kept on the original scale, so there's nothing to back transform
+        blambda = None
     elif usexreg:
         if xreg is None:
             raise Exception("No regressors provided")
@@ -1523,6 +1633,16 @@ def forecast_arima(
     else:
         lower = None
         upper = None
+
+    if blambda is not None:
+        if lower is not None and upper is not None:
+            lower = pd.DataFrame(
+                _inv_boxcox(lower.to_numpy(), blambda), columns=lower.columns
+            )
+            upper = pd.DataFrame(
+                _inv_boxcox(upper.to_numpy(), blambda), columns=upper.columns
+            )
+        pred = _inv_boxcox_mean(pred, blambda, fvar=se**2, biasadj=biasadj)
 
     ans = {
         "method": None,
@@ -1666,6 +1786,10 @@ def simulate_arima(
     if not isinstance(xm, int):
         paths += xm
 
+    if model.get("lambda") is not None:
+        # the model was fitted on the transformed scale, so are the paths
+        paths = _inv_boxcox(paths, model["lambda"])
+
     return paths
 
 
@@ -1688,9 +1812,36 @@ def fitted_arima(model, h=1):
         elif model.get("lambda") is None:
             return x - model["residuals"]
         else:
-            raise NotImplementedError("lambda not None")
+            blambda = model["lambda"]
+            # residuals are on the transformed scale
+            fits = _boxcox(x, blambda) - model["residuals"]
+            return _inv_boxcox_mean(
+                fits,
+                blambda,
+                fvar=model["sigma2"],
+                biasadj=model.get("biasadj", False),
+            )
     else:
         raise NotImplementedError("h > 1")
+
+
+def _transformed_fitted_arima(model):
+    """Return the in-sample predictions on the Box-Cox transformed scale.
+
+    Prediction intervals are built on this scale, where `sigma2` lives, and
+    then back transformed.
+
+    Args:
+        model: The fitted ARIMA model.
+
+    Returns:
+        np.ndarray: Fitted values on the transformed scale, or None if the
+            model was fitted without a Box-Cox transformation.
+    """
+    blambda = model.get("lambda")
+    if blambda is None:
+        return None
+    return _boxcox(model["x"], blambda) - model["residuals"]
 
 
 def seas_heuristic(x, period):
@@ -1907,9 +2058,8 @@ def auto_arima_f(
     if series_len <= 3:
         ic = "aic"
     if blambda is not None:
-        raise NotImplementedError("blambda != None")
-        # x = boxcox(x, blambda)
-        # setattr(blambda, 'biasadj', biasadj)
+        blambda = _resolve_blambda(x, blambda, period)
+        x = _boxcox(x, blambda)
     if xreg is not None:
         xx = x.copy()
         xregg = xreg.copy()
@@ -2034,6 +2184,8 @@ def auto_arima_f(
                     method=method,
                 )
         fit["x"] = origx
+        fit["lambda"] = blambda
+        fit["biasadj"] = biasadj
         return fit
     if m > 1:
         if max_p > 0:
@@ -2091,6 +2243,7 @@ def auto_arima_f(
             period=m,
         )
         bestfit["lambda"] = blambda
+        bestfit["biasadj"] = biasadj
         bestfit["x"] = origx
         if trace:
             print(f"Best model: {arima_string(bestfit, padding=True)}\n\n")
@@ -2384,6 +2537,7 @@ def auto_arima_f(
     bestfit["x"] = origx
     bestfit["ic"] = None
     bestfit["lambda"] = blambda
+    bestfit["biasadj"] = biasadj
 
     return bestfit
 
@@ -2496,9 +2650,9 @@ class AutoARIMA:
             unit root test. See nsdiffs for details. Defaults to None.
         allowdrift (bool): If True, models with drift terms are considered. Defaults to True.
         allowmean (bool): If True, models with a non-zero mean are considered. Defaults to True.
-        blambda (float, optional): Box-Cox transformation parameter.
-            If lambda="auto", then a transformation is automatically
-            selected using BoxCox.lambda.
+        blambda (float or str, optional): Box-Cox transformation parameter.
+            If 'auto', the parameter is automatically selected with the
+            Guerrero method over [-0.9, 2].
             The transformation is ignored if None.
             Otherwise, data transformed before model is estimated. Defaults to None.
         biasadj (bool): Use adjusted back-transformed mean for Box-Cox transformations.
@@ -2546,7 +2700,7 @@ class AutoARIMA:
         seasonal_test_kwargs: Optional[Dict] = None,
         allowdrift: bool = True,
         allowmean: bool = True,
-        blambda: Optional[float] = None,
+        blambda: Optional[Union[float, str]] = None,
         biasadj: bool = False,
         period: int = 1,
     ):
@@ -2687,15 +2841,21 @@ class AutoARIMA:
             dist = self.model_.model.get("distribution", "normal")
             quantiles = _quantiles(_level, distribution=dist, dist_params=error_params_from_model(self.model_.model))
 
-            lo = pd.DataFrame(
-                fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
-                columns=[f"lo_{l}%" for l in _level],
-            )
+            # intervals are built on the scale the model was fitted on
+            blambda = self.model_.model.get("lambda")
+            trans_fitted = _transformed_fitted_arima(self.model_.model)
+            center = (
+                fitted_values.values if trans_fitted is None else trans_fitted
+            ).reshape(-1, 1)
+
+            lo = center - quantiles * se.reshape(-1, 1)
+            hi = center + quantiles * se.reshape(-1, 1)
+            if blambda is not None:
+                lo = _inv_boxcox(lo, blambda)
+                hi = _inv_boxcox(hi, blambda)
+            lo = pd.DataFrame(lo, columns=[f"lo_{l}%" for l in _level])
             lo = lo.iloc[:, ::-1]
-            hi = pd.DataFrame(
-                fitted_values.values.reshape(-1, 1) + quantiles * se.reshape(-1, 1),
-                columns=[f"hi_{l}%" for l in _level],
-            )
+            hi = pd.DataFrame(hi, columns=[f"hi_{l}%" for l in _level])
 
             return pd.concat([lo, fitted_values, hi], axis=1)
 
