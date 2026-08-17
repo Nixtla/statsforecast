@@ -475,6 +475,18 @@ def test_Arima_drift_and_residuals():
     )
 
 
+def test_fitted_arima_constant_series():
+    """Fitted values of a constant series must be the constant, not zeros.
+
+    A zero-mean model (allowmean=False) fitted to a constant series has
+    residuals equal to the series, so the previous ``x - residuals`` returned
+    all zeros instead of the constant.
+    """
+    x = np.full(36, 7.0)
+    model = auto_arima_f(x, allowmean=False)
+    np.testing.assert_allclose(fitted_arima(model), x)
+
+
 def test_Arima_with_exogenous_variables(res_Arima_ex):
     """Test Arima model with exogenous variables and residuals consistency."""
     drift = np.arange(1, ap.size + 1).reshape(-1, 1)

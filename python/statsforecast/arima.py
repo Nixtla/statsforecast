@@ -1685,6 +1685,11 @@ def fitted_arima(model, h=1):
             return model.get("fitted")
         elif x is None:
             return None
+        elif is_constant(x):
+            # A zero-mean model fitted to a constant series has residuals equal
+            # to the series, so ``x - residuals`` would be all zeros. The fitted
+            # values are the constant itself, matching forecast_arima.
+            return np.repeat(x[0], len(x))
         elif model.get("lambda") is None:
             return x - model["residuals"]
         else:
