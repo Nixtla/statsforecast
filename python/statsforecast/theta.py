@@ -270,6 +270,7 @@ def compute_pi_samples(
     error_distribution="normal",
     error_params=None,
     residuals=None,
+    modeltype=None,
 ):
     """
     Compute prediction interval samples for Theta model.
@@ -290,6 +291,15 @@ def compute_pi_samples(
     # states: level, meany, An, Bn, mu
     smoothed, _, A, B, _ = states[-1]
 
+    # The drift terms A and B only evolve for the dynamic models (DSTM/DOTM);
+    # for STM/OTM they are held constant, matching the update() reference in
+    # src/theta.cpp. modeltype=None keeps the previous behaviour for any
+    # external caller that does not pass it.
+    update_ab = modeltype is None or modeltype in (
+        _theta.ModelType.DSTM,
+        _theta.ModelType.DOTM,
+    )
+
     rng = np.random.default_rng(seed)
 
     for i in range(n, n + h):
@@ -307,9 +317,12 @@ def compute_pi_samples(
         )
         samples[i - n] += errors
         smoothed = alpha * samples[i - n] + (1 - alpha) * smoothed
-        mean_y = (i * mean_y + samples[i - n]) / (i + 1)
-        B = ((i - 1) * B + 6 * (samples[i - n] - mean_y) / (i + 1)) / (i + 2)
-        A = mean_y - B * (i + 2) / 2
+        new_mean_y = (i * mean_y + samples[i - n]) / (i + 1)
+        if update_ab:
+            # B uses the pre-update mean_y, matching src/theta.cpp.
+            B = ((i - 1) * B + 6 * (samples[i - n] - mean_y) / (i + 1)) / (i + 2)
+            A = new_mean_y - B * (i + 2) / 2
+        mean_y = new_mean_y
     return samples
 
 
@@ -373,6 +386,7 @@ def simulate_theta(
         error_distribution=error_distribution,
         error_params=error_params,
         residuals=residuals,
+        modeltype=switch_theta(model["modeltype"]),
     )
 
     res = samples.T
@@ -426,6 +440,7 @@ def forecast_theta(obj, h, level=None):
             error_distribution=dist,
             error_params=error_params_from_model(obj),
             residuals=residuals_tail,
+            modeltype=switch_theta(obj["modeltype"]),
         )
         for lv in level:
             min_q = (100 - lv) / 200
