@@ -70,6 +70,8 @@ from statsforecast.arima import (
     forward_arima,
     is_constant,
 )
+from statsforecast.arima import _inv_boxcox as _arima_inv_boxcox
+from statsforecast.arima import _transformed_fitted_arima
 from statsforecast.ets import (
     _PHI_LOWER,
     _PHI_UPPER,
@@ -111,6 +113,38 @@ def _add_fitted_pi(res, se, level):
     hi = {f"fitted-hi-{l}": hi[:, i] for i, l in enumerate(level)}
     res = {**res, **lo, **hi}
     return res
+
+
+def _add_arima_fitted_pi(res, model, level):
+    r"""
+    Adds in-sample intervals for ARIMA models to the `res` dict.
+    When the model was fitted with a Box-Cox transformation the intervals are
+    computed on the transformed scale and then back transformed, since that's
+    the scale `sigma2` refers to.
+
+    Args:
+        res (dict): Dictionary with an entry `fitted` for the in-sample
+            predictions, on the original scale.
+        model (dict): The fitted ARIMA model.
+        level (List[float]): Confidence levels (0-100) for prediction intervals.
+
+    Returns:
+        dict: `res` with the `fitted-lo-{level}` and `fitted-hi-{level}` entries
+            added.
+    """
+    se = np.sqrt(model["sigma2"])
+    trans_fitted = _transformed_fitted_arima(model)
+    if trans_fitted is None:
+        return _add_fitted_pi(res=res, se=se, level=level)
+    pi = _add_fitted_pi(res={"fitted": trans_fitted}, se=se, level=level)
+    return {
+        **res,
+        **{
+            k: _arima_inv_boxcox(v, model["lambda"])
+            for k, v in pi.items()
+            if k != "fitted"
+        },
+    }
 
 
 def _add_conformal_distribution_intervals(
@@ -284,7 +318,7 @@ class AutoARIMA(_TS):
         seasonal_test_kwargs (Optional[dict], optional): Seasonal unit root test arguments.
         allowdrift (bool, default=True): If True, drift models terms considered.
         allowmean (bool, default=True): If True, non-zero mean models considered.
-        blambda (Optional[float], optional): Box-Cox transformation parameter.
+        blambda (Optional[Union[float, str]], default=None): Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None.
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         season_length (int, default=1): Number of observations per unit of time. Ex: 24 Hourly data.
         alias (str, default="AutoARIMA"): Custom name of the model.
@@ -330,7 +364,7 @@ class AutoARIMA(_TS):
         seasonal_test_kwargs: Optional[Dict] = None,
         allowdrift: bool = True,
         allowmean: bool = True,
-        blambda: Optional[float] = None,
+        blambda: Optional[Union[float, str]] = None,
         biasadj: bool = False,
         season_length: int = 1,
         distribution: str = "normal",
@@ -475,8 +509,7 @@ class AutoARIMA(_TS):
         mean = fitted_arima(self.model_)
         res = {"fitted": mean}
         if level is not None:
-            se = np.sqrt(self.model_["sigma2"])
-            res = _add_fitted_pi(res=res, se=se, level=level)
+            res = _add_arima_fitted_pi(res=res, model=self.model_, level=level)
         return res
 
     def forecast(
@@ -558,8 +591,7 @@ class AutoARIMA(_TS):
                 }
             if fitted:
                 # add prediction intervals for fitted values
-                se = np.sqrt(mod["sigma2"])
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                res = _add_arima_fitted_pi(res=res, model=mod, level=level)
         return res
 
     def forward(
@@ -605,8 +637,7 @@ class AutoARIMA(_TS):
                 }
             if fitted:
                 # add prediction intervals for fitted values
-                se = np.sqrt(mod["sigma2"])
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                res = _add_arima_fitted_pi(res=res, model=mod, level=level)
         return res
 
     def simulate(
@@ -1935,7 +1966,7 @@ class ARIMA(_TS):
         include_mean (bool, default=True): Should the ARIMA model include a mean term? The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions).
         include_drift (bool, default=False): Should the ARIMA model include a linear drift term? (i.e., a linear regression with ARIMA errors is fitted.)
         include_constant (bool, optional, default=None): If True, then includ_mean is set to be True for undifferenced series and include_drift is set to be True for differenced series. Note that if there is more than one difference taken, no constant is included regardless of the value of this argument. This is deliberate as otherwise quadratic and higher order polynomial trends would be induced.
-        blambda (float, optional, default=None): Box-Cox transformation parameter.
+        blambda (Optional[Union[float, str]], default=None): Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None.
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys.
@@ -1953,7 +1984,7 @@ class ARIMA(_TS):
         include_mean: bool = True,
         include_drift: bool = False,
         include_constant: Optional[bool] = None,
-        blambda: Optional[float] = None,
+        blambda: Optional[Union[float, str]] = None,
         biasadj: bool = False,
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
@@ -2054,8 +2085,7 @@ class ARIMA(_TS):
         mean = fitted_arima(self.model_)
         res = {"fitted": mean}
         if level is not None:
-            se = np.sqrt(self.model_["sigma2"])
-            res = _add_fitted_pi(res=res, se=se, level=level)
+            res = _add_arima_fitted_pi(res=res, model=self.model_, level=level)
         return res
 
     def forecast(
@@ -2115,8 +2145,7 @@ class ARIMA(_TS):
                 }
             if fitted:
                 # add prediction intervals for fitted values
-                se = np.sqrt(mod["sigma2"])
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                res = _add_arima_fitted_pi(res=res, model=mod, level=level)
         return res
 
     def forward(
@@ -2162,8 +2191,7 @@ class ARIMA(_TS):
                 }
             if fitted:
                 # add prediction intervals for fitted values
-                se = np.sqrt(mod["sigma2"])
-                res = _add_fitted_pi(res=res, se=se, level=level)
+                res = _add_arima_fitted_pi(res=res, model=mod, level=level)
         return res
 
 
@@ -2174,7 +2202,7 @@ class AutoRegressive(ARIMA):
         lags (int or list): Number of lags to include in the model. If an int is passed then all lags up to `lags` are considered. If a list, only the elements of the list are considered as lags.
         include_mean (bool, default=True): Should the AutoRegressive model include a mean term? The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions).
         include_drift (bool, default=False): Should the AutoRegressive model include a linear drift term? (i.e., a linear regression with AutoRegressive errors is fitted.)
-        blambda (float, optional, default=None): Box-Cox transformation parameter.
+        blambda (Optional[Union[float, str]], default=None): Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None.
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys.
@@ -2189,7 +2217,7 @@ class AutoRegressive(ARIMA):
         lags: Tuple[int, List],
         include_mean: bool = True,
         include_drift: bool = False,
-        blambda: Optional[float] = None,
+        blambda: Optional[Union[float, str]] = None,
         biasadj: bool = False,
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,

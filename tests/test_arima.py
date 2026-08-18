@@ -35,6 +35,7 @@ from statsforecast.arima import (
     predict_arima,
     print_statsforecast_ARIMA,
     seas_heuristic,
+    simulate_arima,
 )
 from statsforecast.models import ARIMA
 from statsforecast.utils import AirPassengers as ap
@@ -912,3 +913,220 @@ def test_issue_1167():
     assert math.isclose(coef["ar1"], 1.8, abs_tol=0.1)
     assert math.isclose(coef["ar2"], -0.9, abs_tol=0.1)
     assert math.isclose(mdl.model_["sigma2"], 0.9, abs_tol=0.1)
+
+
+@pytest.fixture
+def boxcox_series():
+    """Positive, trending and seasonal series, where a Box-Cox helps."""
+    rng = np.random.default_rng(0)
+    t = np.arange(120)
+    return np.exp(
+        0.02 * t + 0.3 * np.sin(2 * np.pi * t / 12) + rng.normal(scale=0.1, size=120)
+    )
+
+
+def test_boxcox_matches_manual_transform(boxcox_series):
+    """blambda=l is equivalent to fitting on the transformed series by hand."""
+    from coreforecast.scalers import boxcox, inv_boxcox
+
+    blambda = 0.3
+    direct = Arima(boxcox_series, order=(1, 1, 1), blambda=blambda)
+    manual = Arima(boxcox(boxcox_series, blambda), order=(1, 1, 1))
+
+    assert direct["lambda"] == blambda
+    assert manual["lambda"] is None
+    np.testing.assert_allclose(
+        list(direct["coef"].values()), list(manual["coef"].values())
+    )
+    # the series is kept on the original scale
+    np.testing.assert_allclose(direct["x"], boxcox_series)
+
+    fcst_direct = forecast_arima(direct, h=8, level=(80,))
+    fcst_manual = forecast_arima(manual, h=8, level=(80,))
+    np.testing.assert_allclose(
+        fcst_direct["mean"], inv_boxcox(fcst_manual["mean"], blambda), rtol=1e-6
+    )
+    for bound in ("lower", "upper"):
+        np.testing.assert_allclose(
+            fcst_direct[bound]["80%"].to_numpy(),
+            inv_boxcox(fcst_manual[bound]["80%"].to_numpy(), blambda),
+            rtol=1e-6,
+        )
+    np.testing.assert_allclose(
+        fitted_arima(direct), inv_boxcox(fitted_arima(manual), blambda), rtol=1e-6
+    )
+
+
+def test_boxcox_auto_lambda(boxcox_series):
+    model = Arima(boxcox_series, order=(1, 1, 1), blambda="auto")
+    assert isinstance(model["lambda"], float)
+    assert -0.9 <= model["lambda"] <= 2.0
+
+    auto_model = auto_arima_f(boxcox_series, period=12, blambda="auto")
+    assert isinstance(auto_model["lambda"], float)
+
+    with pytest.raises(ValueError, match="blambda must be a float or 'auto'"):
+        Arima(boxcox_series, order=(1, 1, 1), blambda="guerrero")
+
+
+def test_boxcox_biasadj(boxcox_series):
+    """Bias adjusted forecasts are means, so they're above the medians."""
+    median_fcst = forecast_arima(
+        Arima(boxcox_series, order=(1, 1, 1), blambda=0.0, biasadj=False), h=8
+    )["mean"]
+    mean_fcst = forecast_arima(
+        Arima(boxcox_series, order=(1, 1, 1), blambda=0.0, biasadj=True), h=8
+    )["mean"]
+    assert np.all(mean_fcst > median_fcst)
+
+    # biasadj can also be set when forecasting
+    model = Arima(boxcox_series, order=(1, 1, 1), blambda=0.0)
+    np.testing.assert_allclose(
+        forecast_arima(model, h=8, biasadj=True)["mean"], mean_fcst
+    )
+    np.testing.assert_allclose(forecast_arima(model, h=8)["mean"], median_fcst)
+
+
+def test_auto_arima_f_boxcox(boxcox_series):
+    model = auto_arima_f(boxcox_series, period=12, blambda=0.0)
+
+    assert model["lambda"] == 0.0
+    np.testing.assert_allclose(model["x"], boxcox_series)
+
+    fcst = forecast_arima(model, h=12, level=(80, 95))
+    # a log transform can't produce negative forecasts nor bounds
+    assert np.all(fcst["mean"] > 0)
+    assert np.all(fcst["lower"]["95%"] > 0)
+    assert np.all(fcst["lower"]["95%"] < fcst["lower"]["80%"])
+    assert np.all(fcst["upper"]["80%"] < fcst["upper"]["95%"])
+    assert np.all(fcst["lower"]["80%"] < fcst["mean"])
+    assert np.all(fcst["mean"] < fcst["upper"]["80%"])
+
+    fitted = fitted_arima(model)
+    assert len(fitted) == len(boxcox_series)
+    assert np.all(fitted > 0)
+
+
+def test_forward_arima_keeps_boxcox(boxcox_series):
+    """Applying a fitted model to new data keeps its transformation."""
+    model = Arima(boxcox_series, order=(1, 1, 1), blambda=0.5)
+    new_y = 1.1 * boxcox_series
+    forwarded = forward_arima(model, y=new_y)
+
+    assert forwarded["lambda"] == 0.5
+    np.testing.assert_allclose(forwarded["x"], new_y)
+    np.testing.assert_allclose(
+        list(forwarded["coef"].values()), list(model["coef"].values())
+    )
+    assert np.all(forecast_arima(forwarded, h=6)["mean"] > 0)
+
+
+def test_boxcox_constant_series():
+    """A constant series is forecast on the original scale."""
+    y = np.full(30, 5.0)
+    model = Arima(y, order=(0, 0, 0), blambda=0.0)
+    np.testing.assert_allclose(forecast_arima(model, h=4)["mean"], 5.0)
+
+
+def test_simulate_arima_boxcox(boxcox_series):
+    model = Arima(boxcox_series, order=(1, 1, 1), blambda=0.0)
+    paths = simulate_arima(model, h=6, n_paths=200, seed=0)
+
+    assert paths.shape == (200, 6)
+    # a log transform can't produce negative paths
+    assert np.all(paths > 0)
+    fcst = forecast_arima(model, h=6)["mean"]
+    np.testing.assert_allclose(np.median(paths, axis=0), fcst, rtol=0.5)
+
+
+def test_autoarima_class_boxcox(boxcox_series):
+    model = AutoARIMA(period=12, blambda=0.0).fit(boxcox_series)
+
+    assert model.model_.model["lambda"] == 0.0
+    assert np.all(model.predict(h=12, level=80)["mean"] > 0)
+
+    insample = model.predict_in_sample(level=80)
+    assert np.all(insample["lo_80%"] < insample["mean"])
+    assert np.all(insample["mean"] < insample["hi_80%"])
+    assert np.all(insample["lo_80%"] > 0)
+
+
+@pytest.mark.parametrize("blambda", [0.0, 0.5, "auto"])
+def test_arima_model_boxcox(boxcox_series, blambda):
+    """The Box-Cox parameter works through the whole public API."""
+    model = ARIMA(order=(1, 1, 1), season_length=12, blambda=blambda)
+    level = [80, 95]
+
+    fcst = model.forecast(boxcox_series, h=6, level=level, fitted=True)
+    assert np.all(fcst["lo-95"] < fcst["lo-80"])
+    assert np.all(fcst["lo-80"] < fcst["mean"])
+    assert np.all(fcst["mean"] < fcst["hi-80"])
+    assert np.all(fcst["hi-80"] < fcst["hi-95"])
+    assert len(fcst["fitted"]) == len(boxcox_series)
+    assert np.all(fcst["fitted-lo-80"] < fcst["fitted"])
+    assert np.all(fcst["fitted"] < fcst["fitted-hi-80"])
+
+    model.fit(boxcox_series)
+    np.testing.assert_allclose(model.predict(h=6, level=level)["mean"], fcst["mean"])
+
+    insample = model.predict_in_sample(level=level)
+    np.testing.assert_allclose(insample["fitted"], fcst["fitted"])
+    np.testing.assert_allclose(insample["fitted-lo-80"], fcst["fitted-lo-80"])
+
+    forwarded = model.forward(1.1 * boxcox_series, h=6, level=level, fitted=True)
+    assert np.all(forwarded["lo-80"] < forwarded["mean"])
+    assert np.all(forwarded["mean"] < forwarded["hi-80"])
+
+
+def test_boxcox_auto_lambda_matches_forecast_package():
+    """forecast::BoxCox(AirPassengers, 'auto') selects -0.294724."""
+    model = auto_arima_f(np.asarray(ap, dtype=np.float64), period=12, blambda="auto")
+    assert model["lambda"] == pytest.approx(-0.294724, rel=1e-3)
+
+
+def test_boxcox_auto_lambda_with_missing_values(boxcox_series):
+    """Missing values are accounted for, not dropped, when selecting lambda."""
+    from coreforecast.scalers import boxcox_lambda
+    from statsforecast.arima import _resolve_blambda
+
+    y = boxcox_series.copy()
+    y[[5, 40, 77]] = np.nan
+    expected = boxcox_lambda(
+        y, method="guerrero", season_length=12, lower=-0.9, upper=2.0
+    )
+
+    assert _resolve_blambda(y, "auto", 12) == pytest.approx(expected)
+    # dropping the missing values would shift the subseries and change the estimate
+    dropped = boxcox_lambda(
+        y[~np.isnan(y)], method="guerrero", season_length=12, lower=-0.9, upper=2.0
+    )
+    assert abs(dropped - expected) > 1e-3
+
+
+def test_boxcox_negative_lambda_domain():
+    """With a negative lambda the back transformation is undefined past -1/lambda."""
+    from statsforecast.arima import _boxcox, _inv_boxcox
+
+    blambda = -0.5
+    limit = -1 / blambda
+
+    # the asymptote itself is undefined too: sign(0) * abs(0) ** (1 / blambda)
+    y = np.array([-4.0, 0.5, limit - 0.1, limit, limit + 0.1, 6.0])
+    out = _inv_boxcox(y, blambda)
+    assert np.isfinite(out[:3]).all()
+    assert np.isnan(out[3:]).all()
+
+    # and the forward transformation is undefined for negative values
+    assert np.isnan(_boxcox(np.array([-3.0, 0.0]), blambda)).all()
+    np.testing.assert_allclose(_boxcox(np.array([2.0]), blambda), [0.5857864376])
+
+
+def test_boxcox_auto_lambda_warns_on_non_positive_data():
+    """Guerrero's method is only defined for strictly positive data."""
+    from statsforecast.arima import _resolve_blambda
+
+    y = np.random.default_rng(0).normal(0, 5, 80)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _resolve_blambda(y, "auto", 4)
+    assert any("strictly positive data" in str(w.message) for w in caught)
