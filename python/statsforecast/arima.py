@@ -706,7 +706,7 @@ def arima(
                     if not arCheck(init[: arma[0]]):
                         raise ValueError("non-stationary AR part from CSS")
                 if arma[2] > 0:
-                    if not arCheck(init[np.sum(arma[:2])] + np.arange(arma[2])):
+                    if not arCheck(init[np.sum(arma[:2]) + np.arange(arma[2])]):
                         raise ValueError("non-stationary seasonal AR part from CSS")
                 ncond = 0
         if transform_pars:
