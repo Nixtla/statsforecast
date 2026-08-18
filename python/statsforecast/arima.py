@@ -224,21 +224,25 @@ def arima(
     def upARIMA(mod, phi, theta):
         p = len(phi)
         q = len(theta)
-        mod["phi"] = phi
-        mod["theta"] = theta
         r = max(p, q + 1)
-        if p > 0:
-            mod["T"][:p, 0] = phi
+
+        Pn = mod["Pn"].copy()
         if r > 1:
             if SSG:
-                mod["Pn"][:r, :r] = getQ0(phi, theta)
+                Pn[:r, :r] = getQ0(phi, theta)
             else:
                 raise NotImplementedError('SSinit != "Gardner1980"')
                 # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
         else:
-            mod["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
-        mod["a"][:] = 0  # a es vector?
-        return mod
+            Pn[0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
+        return {
+            "phi": phi,
+            "theta": theta,
+            "delta": mod["delta"],
+            "a": np.zeros_like(mod["a"]),
+            "P": mod["P"],
+            "Pn": Pn,
+        }
 
     def arimaSS(y, mod):
         return arima_like(
@@ -451,30 +455,32 @@ def arima(
         return obj
 
     def arCheck(ar):
-        p = np.argmax(np.append(1, -ar) != 0)
-        if not p:
+        non_zeros = np.where(np.append(1, -ar) != 0)[0]
+        if non_zeros.size == 0:
             return True
+        p = non_zeros[-1]
         coefs = np.append(1, -ar[:p])
         roots = np.polynomial.polynomial.polyroots(coefs)
         return all(np.abs(roots) > 1)
 
     def maInvert(ma):
         q = len(ma)
-        q0 = np.argmax(np.append(1, ma) != 0)
-        if not q0:
+        non_zeros = np.where(np.append(1, ma) != 0)[0]
+        if non_zeros.size == 0:
             return ma
+        q0 = non_zeros[-1]
         coefs = np.append(1, ma[:q0])
         roots = np.polynomial.polynomial.polyroots(coefs)
         ind = np.abs(roots) < 1
-        if any(ind):
+        if not any(ind):
             return ma
         if q0 == 1:
             return np.append(1 / ma[0], np.repeat(0, q - q0))
         roots[ind] = 1 / roots[ind]
-        x = 1
+        x = np.array([1.0], dtype=np.complex128)
         for r in roots:
             x = np.append(x, 0) - np.append(0, x) / r
-        return x.real[1:], np.repeat(0, q - q0)
+        return np.append(x.real[1:], np.repeat(0, q - q0))
 
     if x.ndim > 1:
         raise ValueError("Only implemented for univariate time series")
@@ -843,12 +849,12 @@ def arima(
             if any(coef[mask] != res.x):
                 oldcode = res.status
                 res = minimize(
-                    arma_css_op,
+                    ml_obj,
                     coef[mask],
-                    args=(x, coef, mask, arma, ncxreg, xreg, narma),
+                    args=(x, True, coef, mask, arma, mod, ncxreg, xreg, narma),
                     method=optim_method,
                     tol=tol,
-                    options=optim_control,
+                    options={"maxiter": 0},
                 )
                 res = OptimResult(res.success, oldcode, res.x, res.fun, res.hess_inv)
                 coef[mask] = res.x
@@ -1108,9 +1114,6 @@ def myarima(
             k = abs(testvec) > 1e-8
             if k.sum() > 0:
                 last_nonzero = np.max(np.where(k)[0])
-            else:
-                last_nonzero = 0
-            if last_nonzero > 0:
                 testvec = testvec[: (last_nonzero + 1)]
                 proots = np.polynomial.polynomial.polyroots(np.append(1, -testvec))
                 if proots.size > 0:
@@ -1120,9 +1123,6 @@ def myarima(
             k = abs(testvec) > 1e-8
             if np.sum(k) > 0:
                 last_nonzero = np.max(np.where(k)[0])
-            else:
-                last_nonzero = 0
-            if last_nonzero > 0:
                 testvec = testvec[: (last_nonzero + 1)]
                 proots = np.polynomial.polynomial.polyroots(np.append(1, testvec))
                 if proots.size > 0:
