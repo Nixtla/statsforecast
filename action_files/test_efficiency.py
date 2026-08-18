@@ -72,7 +72,11 @@ _extra_kwargs = {
 
 @pytest.fixture(scope="module")
 def y():
-    return np.arange(24)[np.arange(200) % 24]
+    rng = np.random.default_rng(0)
+    trend = np.linspace(10, 20, 200)
+    season = 5 * np.sin(2 * np.pi * np.arange(200) / 24)
+    noise = rng.normal(0, 1, 200)
+    return trend + season + noise
 
 
 @pytest.mark.parametrize("model_cls", models)
