@@ -463,6 +463,12 @@ def arima(
         roots = np.polynomial.polynomial.polyroots(coefs)
         return all(np.abs(roots) > 1)
 
+    def stationary_ar_checks(arma, init):
+        if arma[0] > 0 and not arCheck(init[: arma[0]]):
+            raise ValueError("non-stationary AR part")
+        if arma[2] > 0 and not arCheck(init[arma[:2].sum() + np.arange(arma[2])]):
+            raise ValueError("non-stationary seasonal AR part")
+
     def maInvert(ma):
         q = len(ma)
         non_zeros = np.where(np.append(1, ma) != 0)[0]
@@ -629,15 +635,9 @@ def arima(
         if nan_mask.any():
             init[nan_mask] = init0[nan_mask]
         if method == ArimaMethod.ML:
-            # check stationarity
-            if arma[0] > 0:
-                if not arCheck(init[: arma[0]]):
-                    raise ValueError("non-stationary AR part")
-                if arma[2] > 0:
-                    if not arCheck(init[arma[:2]].sum() + np.arange(arma[2])):
-                        raise ValueError("non-stationary seasonal AR part")
-                if transform_pars:
-                    init = ARIMA_invtrans(init, arma)
+            stationary_ar_checks(arma, init)
+            if transform_pars:
+                init = ARIMA_invtrans(init, arma)
     else:
         init = init0
 
@@ -698,16 +698,16 @@ def arima(
                     options=optim_control,
                 )
                 if res.status != 1:
-                    # 0: successs
+                    # 0: success
                     # 1: maximum number of iterations exceeded
                     # 2: precision loss
-                    init[mask] = res.x
-                if arma[0] > 0:
-                    if not arCheck(init[: arma[0]]):
-                        raise ValueError("non-stationary AR part from CSS")
-                if arma[2] > 0:
-                    if not arCheck(init[np.sum(arma[:2]) + np.arange(arma[2])]):
-                        raise ValueError("non-stationary seasonal AR part from CSS")
+                    try:
+                        stationary_ar_checks(arma, res.x)
+                        init[mask] = res.x
+                    except ValueError:
+                        stationary_ar_checks(arma, init)
+                else:
+                    stationary_ar_checks(arma, init)
                 ncond = 0
         if transform_pars:
             init = ARIMA_invtrans(init, arma)
@@ -1804,7 +1804,7 @@ def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
         return d
     while dodiff and d < max_d:
         d += 1
-        x = diff(x, 1, 1)[1:]
+        x = diff(x, 1, 1)
         if is_constant(x):
             return d
         dodiff = run_tests(x, test, alpha)
