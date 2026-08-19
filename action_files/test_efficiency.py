@@ -72,7 +72,8 @@ _extra_kwargs = {
 
 @pytest.fixture(scope="module")
 def y():
-    return np.arange(24)[np.arange(200) % 24]
+    rng = np.random.default_rng(0)
+    return np.arange(24)[np.arange(200) % 24] + rng.normal(0, 1, 200)
 
 
 @pytest.mark.parametrize("model_cls", models)

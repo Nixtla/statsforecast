@@ -889,15 +889,15 @@ def test_issue_649(capsys):
     captured = capsys.readouterr()
     expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : inf
 ARIMA(0,0,0)            with non-zero mean : 494.2237
-ARIMA(1,0,0)(1,0,0)[12] with non-zero mean : inf
-ARIMA(0,0,1)(0,0,1)[12] with non-zero mean : inf
+ARIMA(1,0,0)(1,0,0)[12] with non-zero mean : 496.9135
+ARIMA(0,0,1)(0,0,1)[12] with non-zero mean : 496.7905
 ARIMA(0,0,0)            with zero mean     : 553.2571
 ARIMA(0,0,0)(1,0,0)[12] with non-zero mean : 496.5234
 ARIMA(0,0,0)(0,0,1)[12] with non-zero mean : 496.5226
 ARIMA(0,0,0)(1,0,1)[12] with non-zero mean : inf
-ARIMA(1,0,0)            with non-zero mean : inf
+ARIMA(1,0,0)            with non-zero mean : 494.4937
 ARIMA(0,0,1)            with non-zero mean : 494.3700
-ARIMA(1,0,1)            with non-zero mean : inf
+ARIMA(1,0,1)            with non-zero mean : 495.5334
 """
     assert captured.out == expected_output
 
