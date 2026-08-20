@@ -20,6 +20,7 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from scipy.linalg import solve_discrete_lyapunov
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
@@ -54,9 +55,11 @@ def getQ0(phi, theta):
     p = len(phi)
     q = len(theta)
     r = max(p, q + 1)
-    res = np.zeros(r * r, dtype=np.float64)
-    _arima.getQ0(phi, theta, res)
-    return res.reshape(r, r)
+    transition = np.zeros((r, r))
+    transition[:p, 0] = phi
+    transition[:-1, 1:] = np.eye(r - 1)
+    noise = np.pad(np.concatenate(([1.0], theta)), (0, r - q - 1))
+    return solve_discrete_lyapunov(transition, np.outer(noise, noise))
 
 
 def arima_transpar(params_in, arma, trans):
