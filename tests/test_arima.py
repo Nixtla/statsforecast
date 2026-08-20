@@ -101,6 +101,20 @@ def test_getQ0():
     np.testing.assert_allclose(expected_getQ0, getQ0(x, x))
 
 
+def test_arima_high_seasonal_order():
+    fixed = {"sar1": 0.1, **{f"sma{i}": 0.01 for i in range(1, 8)}}
+    y = np.sin(np.arange(96) * 2 * np.pi / 48)
+    model = ARIMA(
+        order=(0, 0, 0),
+        season_length=48,
+        seasonal_order=(1, 1, 7),
+        method="ML",
+        fixed=fixed,
+    ).fit(y)
+
+    assert np.isfinite(model.predict(1)["mean"]).all()
+
+
 @pytest.fixture
 def expected_arima_transpar_f():
     expected_arima_transpar_f = (
