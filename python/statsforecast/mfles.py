@@ -422,7 +422,7 @@ class MFLES:
             ma_cycle = itertools.cycle(ma)
         if seasonal_period is not None:
             seasons_cycle = itertools.cycle(list(range(len(seasonal_period))))
-            self.seasonality = np.zeros(max(seasonal_period))
+            self.seasonality = np.zeros(np.lcm.reduce(seasonal_period))
             fourier_series = []
             for period in seasonal_period:
                 if fourier_order is None:
