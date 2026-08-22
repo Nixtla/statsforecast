@@ -1,6 +1,11 @@
 import numpy as np
 import pytest
-from statsforecast.ets import ets_f, forecast_ets, forward_ets
+from statsforecast.ets import (
+    _compute_pred_intervals,
+    ets_f,
+    forecast_ets,
+    forward_ets,
+)
 from statsforecast.utils import AirPassengers as ap
 
 
@@ -262,3 +267,26 @@ def test_autoets_distribution():
     pred = model.predict(h=12, level=[95])
     assert "lo-95" in pred and "hi-95" in pred
     assert np.all(pred["lo-95"] < pred["hi-95"])
+
+
+def test_maa_pred_intervals_match_damped_limit():
+    # ETS(M,A,A) is the phi -> 1 limit of ETS(M,Ad,A), so the two branches
+    # must produce the same prediction intervals there.
+    h, season_length, phi = 12, 4, 1 - 1e-9
+    forecasts = {"mean": 100 + 2.0 * np.arange(1, h + 1)}
+    states = np.tile(np.array([100.0, 2.0, 1.5, -0.5, -1.0, 0.0]), (3, 1))
+
+    def model(damped):
+        return {
+            "sigma2": 0.02,
+            "m": season_length,
+            "components": ["M", "A", "A", damped],
+            "states": states,
+            "par": np.array([0.4, 0.05, 0.3, phi]),
+        }
+
+    undamped = _compute_pred_intervals(model("N"), forecasts, h, [95])
+    damped = _compute_pred_intervals(model("D"), forecasts, h, [95])
+
+    np.testing.assert_allclose(undamped["lo-95"], damped["lo-95"], rtol=1e-6)
+    np.testing.assert_allclose(undamped["hi-95"], damped["hi-95"], rtol=1e-6)

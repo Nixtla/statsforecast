@@ -1316,7 +1316,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
             val = k % season_length
             if val == 0:
                 dvals[k - 1] = 1
-        cvals = alpha * beta * steps + gamma * dvals
+        cvals = alpha + beta * steps + gamma * dvals
         sigmah = _compute_sigmah(pf, h, sigma, cvals)
 
     elif error == "M" and trend == "A" and seasonality == "A" and damped == "D":
