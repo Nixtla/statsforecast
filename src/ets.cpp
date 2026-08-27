@@ -118,7 +118,7 @@ void Forecast(Ref f, double l, double b, CRef s, int m, Component trend,
       if (std::abs(phi - 1.0) < TOL) {
         phistar += 1.0;
       } else {
-        phistar += std::pow(phi, i + 1);
+        phistar += std::pow(phi, i + 2);
       }
     }
   }
