@@ -273,7 +273,7 @@ def test_autoets_distribution():
 
 # ---- Class 3 prediction interval tests ----
 # `_class3models` computes the forecast variance for models with multiplicative
-# error and multiplicative seasonality (MNM, MAM, MAdM, MMM, MMdM), and is reached
+# error and multiplicative seasonality (MNM, MAM, MAdM), and is reached
 # through `_compute_pred_intervals`. Its `Mh` moment-matrix recursion must run inside
 # the horizon loop; when it does not, `mu` stays frozen at its 1-step value and the
 # variance no longer tracks the seasonal pattern of the point forecasts.
@@ -283,8 +283,6 @@ CLASS3_SPECS = [
     ("MNM", "MNM", False),
     ("MAM", "MAM", False),
     ("MAdM", "MAM", True),
-    ("MMM", "MMM", False),
-    ("MMdM", "MMM", True),
 ]
 
 

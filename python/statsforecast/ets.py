@@ -1332,7 +1332,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
             cvals[k - 1] = alpha + beta * sum_phi + gamma * dvals[k - 1]
         sigmah = _compute_sigmah(pf, h, sigma, cvals)
 
-    elif error == "M" and seasonality == "M":
+    elif error == "M" and trend != "M" and seasonality == "M":
         # Class 3 models
         sigmah = _class3models(
             h,
