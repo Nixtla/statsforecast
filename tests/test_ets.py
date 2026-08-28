@@ -1,6 +1,13 @@
 import numpy as np
 import pytest
-from statsforecast.ets import ets_f, forecast_ets, forward_ets
+from statsforecast.ets import (
+    _class3models,
+    ets_f,
+    etssimulate,
+    forecast_ets,
+    forward_ets,
+    switch,
+)
 from statsforecast.utils import AirPassengers as ap
 
 
@@ -262,3 +269,164 @@ def test_autoets_distribution():
     pred = model.predict(h=12, level=[95])
     assert "lo-95" in pred and "hi-95" in pred
     assert np.all(pred["lo-95"] < pred["hi-95"])
+
+
+# ---- Class 3 prediction interval tests ----
+# `_class3models` computes the forecast variance for models with multiplicative
+# error and multiplicative seasonality (MNM, MAM, MAdM, MMM, MMdM), and is reached
+# through `_compute_pred_intervals`. Its `Mh` moment-matrix recursion must run inside
+# the horizon loop; when it does not, `mu` stays frozen at its 1-step value and the
+# variance no longer tracks the seasonal pattern of the point forecasts.
+
+# (label, model string, damped)
+CLASS3_SPECS = [
+    ("MNM", "MNM", False),
+    ("MAM", "MAM", False),
+    ("MAdM", "MAM", True),
+    ("MMM", "MMM", False),
+    ("MMdM", "MMM", True),
+]
+
+
+def fit_class3(model, damped):
+    """Fit a class 3 model on AirPassengers and unpack the `_class3models` arguments."""
+    # restrict=False is required to fit the multiplicative trend specifications
+    mod = ets_f(
+        np.asarray(ap, dtype=np.float64),
+        m=12,
+        model=model,
+        damped=damped,
+        restrict=False,
+    )
+    _, trend, _, damped_code = mod["components"]
+    alpha, beta, gamma, phi = mod["par"][:4]
+    args = dict(
+        sigma=mod["sigma2"],
+        last_state=mod["states"][-1],
+        season_length=mod["m"],
+        trend=trend,
+        damped=damped_code,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+        phi=phi,
+    )
+    return mod, args
+
+
+@pytest.mark.parametrize("label,model,damped", CLASS3_SPECS)
+def test_class3_variance_tracks_seasonal_mean(label, model, damped):
+    """Variance must scale with the squared point forecast for multiplicative errors."""
+    h = 24
+    mod, args = fit_class3(model, damped)
+    var = _class3models(h, **args)
+
+    assert np.all(np.isfinite(var)), f"{label}: non-finite variance"
+    assert np.all(var > 0), f"{label}: non-positive variance"
+
+    mean = forecast_ets(mod, h=h)["mean"]
+    corr = np.corrcoef(var, mean**2)[0, 1]
+    # With the recursion frozen outside the loop this correlation collapses to ~0.
+    assert corr > 0.5, f"{label}: var/mean**2 correlation {corr:.4f} too low"
+
+
+def test_class3_interval_width_tracks_forecast():
+    """The user-visible interval width follows the seasonal pattern of the forecast."""
+    from statsforecast.models import AutoETS
+
+    h = 24
+    model = AutoETS(season_length=12, model="MAM")
+    model.fit(np.asarray(ap, dtype=np.float64))
+    pred = model.predict(h=h, level=[80])
+
+    mean, lo, hi = pred["mean"], pred["lo-80"], pred["hi-80"]
+    assert np.all(lo < mean)
+    assert np.all(mean < hi)
+
+    half_width = (hi - lo) / 2
+    corr = np.corrcoef(half_width, mean)[0, 1]
+    assert corr > 0.5, f"interval width/mean correlation {corr:.4f} too low"
+
+
+def test_class3_matches_simulation():
+    """Analytic MNM variance agrees with simulated paths across the whole horizon."""
+    h = 24
+    nsim = 20_000
+    mod, args = fit_class3("MNM", False)
+    var = _class3models(h, **args)
+
+    error, trend, seasonality, _ = mod["components"]
+    # par holds nan for components the model does not use; etssimulate needs the
+    # neutral values instead (a trend of 0 and an undamped phi of 1).
+    beta = 0.0 if np.isnan(args["beta"]) else args["beta"]
+    phi = 1.0 if np.isnan(args["phi"]) else args["phi"]
+
+    rng = np.random.default_rng(0)
+    errors = rng.standard_normal((nsim, h)) * np.sqrt(args["sigma"])
+    paths = np.empty((nsim, h))
+    for k in range(nsim):
+        y_path = np.zeros(h)
+        etssimulate(
+            args["last_state"],
+            args["season_length"],
+            switch(error),
+            switch(trend),
+            switch(seasonality),
+            args["alpha"],
+            beta,
+            args["gamma"],
+            phi,
+            h,
+            y_path,
+            errors[k],
+        )
+        paths[k] = y_path
+
+    rel_err = np.max(np.abs(var / paths.var(axis=0) - 1))
+    assert rel_err < 0.06, f"analytic variance deviates from simulation by {rel_err:.2%}"
+
+
+# Captured from the fixed implementation on AirPassengers (m=12, h=12) and
+# corroborated by the simulation and correlation tests above.
+expected_class3_var = {
+    "MNM": np.array([
+         487.115787,  517.599801,  766.705319,  794.800167,
+         871.540585, 1192.776260, 1619.868664, 1705.262837,
+        1360.096714, 1102.476187,  886.853397, 1168.650677,
+    ]),
+    "MAM": np.array([
+         697.177283,  680.731069,  893.131531,  844.463569,
+         847.824675, 1095.124178, 1365.869500, 1358.976906,
+        1041.877007,  815.211436,  632.588431,  802.507673,
+    ]),
+}  # fmt: skip
+
+
+@pytest.mark.parametrize("model", ["MNM", "MAM"])
+def test_class3_variance_regression(model):
+    """Pin the exact variances so future changes to the recursion are caught."""
+    _, args = fit_class3(model, False)
+    var = _class3models(12, **args)
+    np.testing.assert_allclose(var, expected_class3_var[model], rtol=1e-6)
+
+
+def test_class3models_signature():
+    """`_class3models` takes exactly these ten parameters, in this order.
+
+    The single call site passes them positionally, so a signature change that is not
+    mirrored there would silently shift arguments rather than raise.
+    """
+    _, args = fit_class3("MAM", False)
+    positional = _class3models(
+        12,
+        args["sigma"],
+        args["last_state"],
+        args["season_length"],
+        args["trend"],
+        args["damped"],
+        args["alpha"],
+        args["beta"],
+        args["gamma"],
+        args["phi"],
+    )
+    np.testing.assert_array_equal(positional, _class3models(h=12, **args))
