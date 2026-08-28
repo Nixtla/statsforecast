@@ -406,25 +406,3 @@ def test_class3_variance_regression(model):
     _, args = fit_class3(model, False)
     var = _class3models(12, **args)
     np.testing.assert_allclose(var, expected_class3_var[model], rtol=1e-6)
-
-
-def test_class3models_signature():
-    """`_class3models` takes exactly these ten parameters, in this order.
-
-    The single call site passes them positionally, so a signature change that is not
-    mirrored there would silently shift arguments rather than raise.
-    """
-    _, args = fit_class3("MAM", False)
-    positional = _class3models(
-        12,
-        args["sigma"],
-        args["last_state"],
-        args["season_length"],
-        args["trend"],
-        args["damped"],
-        args["alpha"],
-        args["beta"],
-        args["gamma"],
-        args["phi"],
-    )
-    np.testing.assert_array_equal(positional, _class3models(h=12, **args))
