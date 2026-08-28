@@ -351,6 +351,8 @@ class ConformalIntervals:
         # Keep in sync with _get_conformal_method's available_methods dict in models.py
         if method not in allowed_methods:
             raise ValueError(f"method must be one of {allowed_methods}")
+        if h < 1:
+            raise ValueError(f"h must be at least 1, got {h}")
         self.n_windows = n_windows
         self.h = h
         self.method = method
