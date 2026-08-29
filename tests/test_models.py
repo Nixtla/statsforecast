@@ -143,6 +143,13 @@ def test_conformal_intervals():
     assert list(fcst_conformal.keys()) == ["mean", "lo-90", "lo-80", "hi-80", "hi-90"]
 
 
+def test_conformal_intervals_invalid_h():
+    """ConformalIntervals must reject h < 1 at construction (gh-1221)."""
+    for bad_h in (0, -3):
+        with pytest.raises(ValueError, match="at least one"):
+            ConformalIntervals(h=bad_h)
+
+
 def test_conformal_error_intervals():
     """Test conformal_error method produces valid intervals."""
     conf_intervals = ConformalIntervals(h=12, n_windows=2, method="conformal_error")

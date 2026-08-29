@@ -347,6 +347,10 @@ class ConformalIntervals:
             raise ValueError(
                 "You need at least two windows to compute conformal intervals"
             )
+        if h < 1:
+            raise ValueError(
+                "h must be at least one to compute conformal intervals"
+            )
         allowed_methods = ["conformal_distribution", "conformal_error"]
         # Keep in sync with _get_conformal_method's available_methods dict in models.py
         if method not in allowed_methods:
