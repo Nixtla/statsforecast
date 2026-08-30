@@ -4267,8 +4267,9 @@ class ConformalSeasonalPool(_TS):
         Args:
             season_length (int): Number of observations per unit of time. Ex: 12 for monthly data.
             n_samples (int, default=100): Number of mixture samples used to estimate prediction intervals.
-                For a level-L interval, at least ``ceil(2/(1 - L/100)) - 1`` samples are needed before
-                the orientation-corrected lower bound is non-degenerate (e.g., ≥40 for a 95% interval).
+                For a level-L interval (with ``a = 1 - L/100``), at least ``ceil(2/a) - 1`` samples are
+                needed before the orientation-corrected lower bound is non-degenerate, and ``ceil(4/a) - 1``
+                before the upper bound is (e.g., ≥39 and ≥79 respectively for a 95% interval).
             variant (str, default="adaptive"): ``"adaptive"`` adjusts the mixture weight based on
                 seasonality and history depth; ``"fixed"`` always uses w=0.5.
             calib_frac (float, default=0.5): Fraction of training history used for calibration
@@ -4284,6 +4285,8 @@ class ConformalSeasonalPool(_TS):
         """
         if variant not in ("adaptive", "fixed"):
             raise ValueError("variant must be 'adaptive' or 'fixed'")
+        if n_samples < 1:
+            raise ValueError("n_samples must be a positive integer")
         self.season_length = season_length
         self.n_samples = n_samples
         self.variant = variant
@@ -4388,6 +4391,13 @@ class ConformalSeasonalPool(_TS):
         Point forecasts are seasonal naive fitted values. Prediction intervals
         are constant-width bands derived from the empirical quantiles of the
         calibration residuals R, centred on the fitted values.
+
+        Note:
+            The interval width here depends on the calibration pool size ``R.size``
+            (set by ``calib_frac`` and the history length), not on ``n_samples``.
+            For a level-L interval (with ``a = 1 - L/100``), the orientation-corrected
+            offsets are non-degenerate only once ``R.size`` reaches ``ceil(2/a) - 1``
+            (lower) and ``ceil(4/a) - 1`` (upper).
 
         Args:
             level (List[float]): Confidence levels (0-100) for prediction intervals.

@@ -157,6 +157,13 @@ def test_invalid_variant_raises():
         ConformalSeasonalPool(season_length=12, variant="bogus")
 
 
+# n_samples below 1 is rejected (see #1202); n_samples=1 stays allowed
+@pytest.mark.parametrize("n_samples", [0, -1])
+def test_invalid_n_samples_raises(n_samples):
+    with pytest.raises(ValueError, match="n_samples"):
+        ConformalSeasonalPool(season_length=12, n_samples=n_samples)
+
+
 def test_short_series_no_index_error():
     """n < season_length: forecast must not raise; NaN slots filled via latest-obs fallback."""
     m = 12
