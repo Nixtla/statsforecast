@@ -2802,7 +2802,8 @@ class SeasonalExponentialSmoothing(_TS):
             m = self.season_length
             steps = np.arange(1, h + 1)
             k = ((steps - 1) // m) + 1
-            sigmah = sigma * np.sqrt(1 + (k - 1) * alpha**2)
+            alpha_h = alpha[(steps - 1) % m]
+            sigmah = sigma * np.sqrt(1 + (k - 1) * alpha_h**2)
             pred_int = _calculate_intervals(res, level, h, sigmah)
             res = {**res, **pred_int}
         return res
@@ -2852,7 +2853,9 @@ class SeasonalExponentialSmoothing(_TS):
         for i in range(h):
             s_idx = i % m
             paths[:, i] = levels[:, s_idx] + errors[:, i]
-            levels[:, s_idx] = alpha * paths[:, i] + (1 - alpha) * levels[:, s_idx]
+            levels[:, s_idx] = (
+                alpha[s_idx] * paths[:, i] + (1 - alpha[s_idx]) * levels[:, s_idx]
+            )
 
         return paths
 
@@ -3030,7 +3033,8 @@ class SeasonalExponentialSmoothingOptimized(_TS):
             m = self.season_length
             steps = np.arange(1, h + 1)
             k = ((steps - 1) // m) + 1
-            sigmah = sigma * np.sqrt(1 + (k - 1) * alpha**2)
+            alpha_h = alpha[(steps - 1) % m]
+            sigmah = sigma * np.sqrt(1 + (k - 1) * alpha_h**2)
             pred_int = _calculate_intervals(res, level, h, sigmah)
             res = {**res, **pred_int}
         return res
@@ -3080,7 +3084,9 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         for i in range(h):
             s_idx = i % m
             paths[:, i] = levels[:, s_idx] + errors[:, i]
-            levels[:, s_idx] = alpha * paths[:, i] + (1 - alpha) * levels[:, s_idx]
+            levels[:, s_idx] = (
+                alpha[s_idx] * paths[:, i] + (1 - alpha[s_idx]) * levels[:, s_idx]
+            )
 
         return paths
 
