@@ -84,15 +84,6 @@ If you're working on the C++ code, you'll need to re-compile the shared library:
 uv sync --group dev --reinstall-package statsforecast
 ```
 
-`--reinstall-package` rebuilds the extension from scratch every time, whether or not anything changed, so it always picks up your edits. Pass the same `--group` you set the environment up with: `uv sync` removes packages outside the selected groups (add `--inexact` if you want to keep them).
-
-Two things to know about the alternatives:
-
-- A plain `uv sync` **never** rebuilds the extension. It only checks that the package is installed, so your C++ changes will not show up.
-- `python setup.py build_ext --inplace` compiles into the `build` directory and copies the result to the python package location. It is an incremental build, so it is much faster while you iterate on a single `.cpp`, but **it does not track headers**: if you edit anything under `include/statsforecast/`, it is a silent no-op that leaves a stale extension behind and Python keeps reporting the previous build's values. Run `touch src/*.cpp` first to force a full rebuild after a header change.
-
-A stale extension is worth avoiding rather than debugging: some values are defined in the headers and read from Python through the compiled module (see `python/statsforecast/distributions.py`), so a stale build makes the two sides disagree silently.
-
 ## Set Up your Notebook based development environment
 
 Notebooks are only used in the project for how-to-guides and code-walkthroughs.
