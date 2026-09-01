@@ -744,6 +744,11 @@ def arima(
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         ml_obj = armafn if distribution == Distribution.NORMAL else armafn_laplace
+        # objective actually optimized for t/skew-normal/ged (ml_obj is only the
+        # normal/laplace one) and its fitted [log_scale, shape] tail, so the
+        # post-maInvert re-evaluation below scores the right likelihood.
+        dist_objfn = None
+        dist_tail_fit = None
         nu_t = None
         sigma2_t = None
         alpha_sn = None
@@ -767,6 +772,8 @@ def arima(
                 options=optim_control,
             )
             _dp_sn = extract_dist_params("skew-normal", res_sn.x[n_arma_free:])
+            dist_objfn = armafn_skewnorm
+            dist_tail_fit = res_sn.x[n_arma_free:]
             sigma2_sn = _dp_sn["sigma2"]
             alpha_sn = _dp_sn["alpha_dist"]
             hess_arma = (
@@ -798,6 +805,8 @@ def arima(
                 options=optim_control,
             )
             _dp_t = extract_dist_params("t", res_t.x[n_arma_free:])
+            dist_objfn = armafn_t
+            dist_tail_fit = res_t.x[n_arma_free:]
             sigma2_t = _dp_t["sigma2"]
             nu_t = _dp_t["nu"]
             hess_arma = (
@@ -829,6 +838,8 @@ def arima(
                 options=optim_control,
             )
             _dp_ged = extract_dist_params("ged", res_ged.x[n_arma_free:])
+            dist_objfn = armafn_ged
+            dist_tail_fit = res_ged.x[n_arma_free:]
             sigma2_ged = _dp_ged["sigma2"]
             beta_ged = _dp_ged["beta_dist"]
             hess_arma = (
@@ -871,17 +882,33 @@ def arima(
                 if mask[ind].all():
                     coef[ind] = maInvert(coef[ind])
             if any(coef[mask] != res.x):
-                oldcode = res.status
-                res = minimize(
-                    ml_obj,
-                    coef[mask],
-                    args=(x, True, coef, mask, arma, mod, ncxreg, xreg, narma),
-                    method=optim_method,
-                    tol=tol,
-                    options={"maxiter": 0},
+                # maInvert re-parameterised the MA part; re-evaluate the objective
+                # there so res.fun (and hence loglik/aic below) matches the
+                # coefficients we report.  R does optim(..., maxit = 0L,
+                # hessian = TRUE); scipy's maxiter=0 leaves x untouched and returns
+                # hess_inv = I, so evaluate directly and keep the BFGS approximation
+                # from the actual fit -- maInvert is a reparameterisation at the same
+                # likelihood, so it is far better than the identity.
+                if dist_objfn is None:
+                    new_fun = ml_obj(
+                        coef[mask], x, True, coef, mask, arma, mod, ncxreg, xreg, narma
+                    )
+                else:
+                    new_fun = dist_objfn(
+                        np.concatenate([coef[mask], dist_tail_fit]),
+                        x,
+                        True,
+                        coef,
+                        mask,
+                        arma,
+                        mod,
+                        ncxreg,
+                        xreg,
+                        narma,
+                    )
+                res = OptimResult(
+                    res.success, res.status, coef[mask], new_fun, res.hess_inv
                 )
-                res = OptimResult(res.success, oldcode, res.x, res.fun, res.hess_inv)
-                coef[mask] = res.x
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
             sol = np.matmul(res.hess_inv, A) / n_used
