@@ -80,6 +80,24 @@ By using the `-e` flag the package is linked directly to the source code, allowi
 
 If you're working on the C++ code, you'll need to re-compile the shared library, which can be done with: `python setup.py build_ext --inplace` (this will compile it into the `build` directory and copy it to the python package location).
 
+That is an incremental build: it only recompiles a `.cpp` whose timestamp is newer than its object file in `build`, so editing one source file is quick.
+
+**It does not track headers.** If you edit anything under `include/statsforecast/`, the build is a no-op and you are left with a stale extension and no warning — Python keeps reporting the values from the previous build, which is easy to mistake for a bug in your change. Some limits are defined in the headers and read from Python through the compiled module (see `python/statsforecast/distributions.py`), so a stale build makes the two sides disagree.
+
+After a header change, force a full rebuild with either:
+
+```bash
+touch src/*.cpp && python setup.py build_ext --inplace
+```
+
+or
+
+```bash
+uv sync --group all --reinstall-package statsforecast
+```
+
+`--reinstall-package` always rebuilds the extension from scratch, whether or not anything changed, so it is the safe option when in doubt. A plain `uv sync` never rebuilds it — it only checks that the package is installed.
+
 ## Set Up your Notebook based development environment
 
 Notebooks are only used in the project for how-to-guides and code-walkthroughs.
