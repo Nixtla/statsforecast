@@ -64,8 +64,7 @@ def test_guard_dist_tail_is_identity_inside_the_box():
 
 
 def test_guard_dist_tail_projects_diverging_line_search_step():
-    # exact p_ext tail from the macOS-arm64 / numpy>=2 AutoARIMA-ged blow-up:
-    # exp(-1008.17) underflows to 0.0 -> 1.0 / beta raised ZeroDivisionError
+    # tail from the macOS AutoARIMA-ged blow-up: exp(-1008.17) underflowed to 0.0
     safe, penalty = D.guard_dist_tail("ged", [-1094.78, -1008.17])
     sigma = math.exp(safe[0])
     beta = math.exp(safe[1])
@@ -77,7 +76,7 @@ def test_guard_dist_tail_projects_diverging_line_search_step():
 
 @pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
 def test_dist_tail_box_corners_keep_transcendentals_finite(distribution):
-    """Every corner of the safe box must keep exp/lgamma inside double range."""
+    """Every corner of the box must keep exp/lgamma inside double range."""
     lo, hi = D.dist_tail_bounds(distribution)
     for a in (lo[0], hi[0]):
         for b in (lo[1], hi[1]):
@@ -105,18 +104,14 @@ def test_extract_dist_params_clips_runaway_tail():
 
 
 def test_dist_tail_bounds_come_from_the_cpp_header():
-    """The limits are defined once in include/statsforecast/distributions.h.
-
-    The C++ likelihood cores clamp with them and Python reads them from the
-    compiled module, so this pins that the two cannot drift apart.
-    """
+    """The Python table must match the limits compiled into the C++ cores."""
     from statsforecast._lib import distributions as _lib_dist
 
     for name in D.VALID_DISTRIBUTIONS:
         lower, upper = _lib_dist.tail_bounds(D.switch_distribution(str(name), _lib_dist))
         assert D._DIST_TAIL_BOUNDS[str(name)] == tuple(zip(lower, upper))
 
-    # normal/laplace carry no tail, so their box is unbounded and guarding is a no-op
+    # normal/laplace have no tail: unbounded box, guarding is a no-op
     for name in ("normal", "laplace"):
         assert D._DIST_TAIL_BOUNDS[name] == ((-math.inf, math.inf), (-math.inf, math.inf))
         safe, penalty = D.guard_dist_tail(name, [1e9, -1e9])

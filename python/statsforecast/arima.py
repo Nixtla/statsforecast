@@ -473,8 +473,7 @@ def arima(
             + 0.5 * sumlog / n
             + tail_penalty
         )
-        if not math.isfinite(obj):
-            # e.g. (|e|/sigma)**beta overflowed even inside the box
+        if not math.isfinite(obj):  # e.g. (|e|/sigma)**beta overflowed
             return np.finfo(np.float64).max
         return obj
 
@@ -729,7 +728,10 @@ def arima(
                         stationary_ar_checks(arma, res.x)
                         init[mask] = res.x
                     except ValueError:
-                        stationary_ar_checks(arma, init)
+                        if transform_pars:
+                            stationary_ar_checks(arma, init)
+                        else:
+                            init[mask] = res.x
                 else:
                     stationary_ar_checks(arma, init)
                 ncond = 0
@@ -744,9 +746,7 @@ def arima(
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         ml_obj = armafn if distribution == Distribution.NORMAL else armafn_laplace
-        # objective actually optimized for t/skew-normal/ged (ml_obj is only the
-        # normal/laplace one) and its fitted [log_scale, shape] tail, so the
-        # post-maInvert re-evaluation below scores the right likelihood.
+        # objective actually optimized for t/skew-normal/ged, plus its fitted tail
         dist_objfn = None
         dist_tail_fit = None
         nu_t = None
@@ -882,13 +882,10 @@ def arima(
                 if mask[ind].all():
                     coef[ind] = maInvert(coef[ind])
             if any(coef[mask] != res.x):
-                # maInvert re-parameterised the MA part; re-evaluate the objective
-                # there so res.fun (and hence loglik/aic below) matches the
-                # coefficients we report.  R does optim(..., maxit = 0L,
-                # hessian = TRUE); scipy's maxiter=0 leaves x untouched and returns
-                # hess_inv = I, so evaluate directly and keep the BFGS approximation
-                # from the actual fit -- maInvert is a reparameterisation at the same
-                # likelihood, so it is far better than the identity.
+                # maInvert re-parameterised the MA part; re-score there so res.fun
+                # (and loglik/aic below) matches the coefficients we report.
+                # scipy's maxiter=0 would return hess_inv = I, so evaluate
+                # directly and keep the approximation from the actual fit.
                 if dist_objfn is None:
                     new_fun = ml_obj(
                         coef[mask], x, True, coef, mask, arma, mod, ncxreg, xreg, narma

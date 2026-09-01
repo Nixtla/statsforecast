@@ -45,13 +45,9 @@ PYBIND11_MODULE(_lib, m) {
   tbats_ns::init(m);
   mfles::init(m);
 
-  // Error-distribution helpers shared by every model family. The numeric limits
-  // are defined once in include/statsforecast/distributions.h and read from
-  // here by python/statsforecast/distributions.py, so the C++ likelihood cores
-  // and the Python ARIMA objectives cannot drift apart.
+  // Tail bounds from distributions.h, read by statsforecast/distributions.py.
   py::module_ distributions = m.def_submodule("distributions");
-  // The Distribution enum is already registered on the ets submodule (same C++
-  // type); pybind11 forbids double-registration, so alias it as ces/theta do.
+  // Enum is already registered on ets (same C++ type); alias it as ces/theta do.
   distributions.attr("Distribution") = m.attr("ets").attr("Distribution");
   distributions.def(
       "tail_bounds",
@@ -61,6 +57,6 @@ PYBIND11_MODULE(_lib, m) {
                               py::make_tuple(b.scale_hi, b.shape_hi));
       },
       py::arg("distribution"),
-      "(lower, upper) for the [log_scale, shape] optimizer tail. Normal and "
-      "Laplace have no tail and get an unbounded box.");
+      "(lower, upper) for the [log_scale, shape] tail; unbounded for "
+      "Normal/Laplace.");
 }

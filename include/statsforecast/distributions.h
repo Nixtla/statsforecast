@@ -20,25 +20,13 @@ inline int distribution_n_extra_params(Distribution d) {
   return (d == Distribution::Laplace) ? 0 : 2;
 }
 
-// Numerically safe box for the optimizer tail: [log_scale, shape].
-//
-// This is THE definition of those limits for the whole project. The Python side
-// reads it through _lib.distributions.tail_bounds() rather than repeating the
-// numbers (see python/statsforecast/distributions.py), so the two can never
-// drift apart.
-//
-// The tail entries are unconstrained by construction (they are logs), so an
-// unbounded line search can propose values that make exp()/lgamma()/pow()
-// overflow or underflow. Observed on macOS-arm64 + numpy>=2 in AutoARIMA+ged:
-// log_beta = -1008 -> exp() underflows to 0.0 -> ZeroDivisionError in
-// lgamma(1.0 / beta) on the Python side.
-//
-// Scale bounds are numeric-safety only (they cannot bind for any real series):
-// they keep exp(x) in [2.7e-109, 3.7e108] and exp(x)**2 in [7.4e-218, 1.4e217]
-// (ged stores log_sigma and reports sigma2 = exp(log_sigma)**2).
-// Shape bounds are statistical: outside them the fitted shape is unusable by
-// scipy's frozen gennorm/t when building prediction intervals.
-inline constexpr double kLogScaleMin = -250.0;
+// Safe box for the optimizer tail. The entries are logs, so an unbounded line
+// search can overflow/underflow exp()/lgamma()/pow(): exp(-1008) == 0.0 then
+// 1.0/beta. Python reads these through _lib.distributions.tail_bounds(), so the
+// two sides cannot drift apart.
+// Scale bounds are numeric-safety only and cannot bind for a real series; shape
+// bounds also keep the fit usable by scipy's gennorm/t.
+inline constexpr double kLogScaleMin = -250.0;  // exp -> [2.7e-109, 3.7e108]
 inline constexpr double kLogScaleMax = 250.0;
 inline constexpr double kLogNuM2Min = -15.0;  // log(nu-2): nu in (2, 1098.6]
 inline constexpr double kLogNuM2Max = 7.0;
@@ -47,8 +35,7 @@ inline constexpr double kAlphaMax = 100.0;
 inline constexpr double kLogBetaMin = -3.0;  // log(beta): beta in [0.05, 50]
 inline constexpr double kLogBetaMax = 3.912023005428146;
 
-// (lo, hi) for each of the two tail entries. Normal/Laplace have no tail, so
-// they get an unbounded box.
+// (lo, hi) per tail entry; Normal/Laplace are unbounded.
 struct TailBounds {
   double scale_lo, scale_hi, shape_lo, shape_hi;
 };

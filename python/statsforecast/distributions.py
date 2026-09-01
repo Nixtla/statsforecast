@@ -77,11 +77,9 @@ def dist_init_params(distribution: str, var_init: float):
     return 0, []  # laplace / normal
 
 
-# Numerically safe box for the optimizer tail, as {name: ((lo, hi), (lo, hi))}
-# for [log_scale, shape].  The limits themselves are defined once in
-# include/statsforecast/distributions.h -- where the C++ likelihood cores clamp
-# with them -- and read from here, so the two sides cannot drift apart.  Cached
-# at import because guard_dist_tail() runs in the optimizer's inner loop.
+# {name: ((lo, hi), (lo, hi))} for [log_scale, shape], defined in
+# include/statsforecast/distributions.h. Cached because guard_dist_tail() runs in
+# the optimizer's inner loop.
 _DIST_TAIL_BOUNDS = {
     str(name): tuple(zip(*_lib_dist.tail_bounds(switch_distribution(name, _lib_dist))))
     for name in _VALID_DISTRIBUTIONS
@@ -90,7 +88,7 @@ _TAIL_PENALTY_SCALE = 1.0
 
 
 def dist_tail_bounds(distribution, n_dist: int = 2):
-    """(lower, upper) arrays for the optimizer tail, for box-constrained solvers."""
+    """(lower, upper) arrays for the tail, for box-constrained solvers."""
     bounds = _DIST_TAIL_BOUNDS.get(str(distribution))
     if bounds is None or n_dist == 0:
         return np.full(n_dist, -np.inf), np.full(n_dist, np.inf)
@@ -101,17 +99,12 @@ def dist_tail_bounds(distribution, n_dist: int = 2):
 
 
 def guard_dist_tail(distribution, tail):
-    """Project the optimizer tail into its numerically safe box.
+    """Project the optimizer tail into its safe box.
 
-    Returns `(safe_tail, penalty)`. `penalty` is 0.0 inside the box and grows
-    quadratically outside it, so an unbounded optimizer that proposes a wild step
-    gets a large *finite* objective whose gradient points back into the feasible
-    region, instead of an OverflowError / ZeroDivisionError.
-
-    Normal and Laplace have no tail and an unbounded box, so this is the
-    identity for them.
-
-    Precondition: `tail` is finite (callers reject non-finite trial points).
+    Returns `(safe_tail, penalty)`. The penalty is 0 inside the box and
+    quadratic outside it, so a diverging step gets a large finite objective
+    whose gradient points back in, rather than raising in exp()/lgamma().
+    Identity for normal/laplace, which have no tail. `tail` must be finite.
     """
     bounds = _DIST_TAIL_BOUNDS.get(str(distribution))
     if bounds is None:
