@@ -104,6 +104,25 @@ def test_extract_dist_params_clips_runaway_tail():
     assert out["beta_dist"] > 0.0
 
 
+def test_dist_tail_bounds_come_from_the_cpp_header():
+    """The limits are defined once in include/statsforecast/distributions.h.
+
+    The C++ likelihood cores clamp with them and Python reads them from the
+    compiled module, so this pins that the two cannot drift apart.
+    """
+    from statsforecast._lib import distributions as _lib_dist
+
+    for name in D.VALID_DISTRIBUTIONS:
+        lower, upper = _lib_dist.tail_bounds(D.switch_distribution(str(name), _lib_dist))
+        assert D._DIST_TAIL_BOUNDS[str(name)] == tuple(zip(lower, upper))
+
+    # normal/laplace carry no tail, so their box is unbounded and guarding is a no-op
+    for name in ("normal", "laplace"):
+        assert D._DIST_TAIL_BOUNDS[name] == ((-math.inf, math.inf), (-math.inf, math.inf))
+        safe, penalty = D.guard_dist_tail(name, [1e9, -1e9])
+        assert penalty == 0.0 and safe == [1e9, -1e9]
+
+
 def test_quantiles_match_scipy():
     level = np.array([80, 95])
     p = 0.5 + level / 200

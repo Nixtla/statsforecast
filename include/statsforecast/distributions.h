@@ -20,19 +20,52 @@ inline int distribution_n_extra_params(Distribution d) {
   return (d == Distribution::Laplace) ? 0 : 2;
 }
 
-// Numerically safe box for the optimizer tail, mirroring _DIST_TAIL_BOUNDS in
-// python/statsforecast/distributions.py.  Callers pass these as Nelder-Mead
-// bounds, but the cores clamp too so they stay safe for any caller: outside the
-// box exp()/lgamma()/pow() lose all precision or return inf, and the fitted
-// shape is unusable by scipy's frozen gennorm/t for prediction intervals.
-inline constexpr double kLogScaleMin = -250.0;  // exp(x) in [2.7e-109, 3.7e108]
+// Numerically safe box for the optimizer tail: [log_scale, shape].
+//
+// This is THE definition of those limits for the whole project. The Python side
+// reads it through _lib.distributions.tail_bounds() rather than repeating the
+// numbers (see python/statsforecast/distributions.py), so the two can never
+// drift apart.
+//
+// The tail entries are unconstrained by construction (they are logs), so an
+// unbounded line search can propose values that make exp()/lgamma()/pow()
+// overflow or underflow. Observed on macOS-arm64 + numpy>=2 in AutoARIMA+ged:
+// log_beta = -1008 -> exp() underflows to 0.0 -> ZeroDivisionError in
+// lgamma(1.0 / beta) on the Python side.
+//
+// Scale bounds are numeric-safety only (they cannot bind for any real series):
+// they keep exp(x) in [2.7e-109, 3.7e108] and exp(x)**2 in [7.4e-218, 1.4e217]
+// (ged stores log_sigma and reports sigma2 = exp(log_sigma)**2).
+// Shape bounds are statistical: outside them the fitted shape is unusable by
+// scipy's frozen gennorm/t when building prediction intervals.
+inline constexpr double kLogScaleMin = -250.0;
 inline constexpr double kLogScaleMax = 250.0;
-inline constexpr double kLogNuM2Min = -15.0;  // nu in (2, 1098.6]
+inline constexpr double kLogNuM2Min = -15.0;  // log(nu-2): nu in (2, 1098.6]
 inline constexpr double kLogNuM2Max = 7.0;
 inline constexpr double kAlphaMin = -100.0;
 inline constexpr double kAlphaMax = 100.0;
-inline constexpr double kLogBetaMin = -3.0;  // beta in [0.05, 50]
+inline constexpr double kLogBetaMin = -3.0;  // log(beta): beta in [0.05, 50]
 inline constexpr double kLogBetaMax = 3.912023005428146;
+
+// (lo, hi) for each of the two tail entries. Normal/Laplace have no tail, so
+// they get an unbounded box.
+struct TailBounds {
+  double scale_lo, scale_hi, shape_lo, shape_hi;
+};
+
+inline constexpr TailBounds tail_bounds(Distribution d) {
+  constexpr double kInf = std::numeric_limits<double>::infinity();
+  switch (d) {
+  case Distribution::StudentT:
+    return {kLogScaleMin, kLogScaleMax, kLogNuM2Min, kLogNuM2Max};
+  case Distribution::SkewNormal:
+    return {kLogScaleMin, kLogScaleMax, kAlphaMin, kAlphaMax};
+  case Distribution::GED:
+    return {kLogScaleMin, kLogScaleMax, kLogBetaMin, kLogBetaMax};
+  default:
+    return {-kInf, kInf, -kInf, kInf};
+  }
+}
 
 inline constexpr double Clamp(double x, double lo, double hi) {
   return x < lo ? lo : (x > hi ? hi : x);
@@ -53,8 +86,9 @@ inline double negloglik_laplace(const double *e, int n) {
 
 inline double negloglik_t(const double *e, int n, double log_sigma2,
                           double log_nu_m2) {
-  log_sigma2 = Clamp(log_sigma2, kLogScaleMin, kLogScaleMax);
-  log_nu_m2 = Clamp(log_nu_m2, kLogNuM2Min, kLogNuM2Max);
+  constexpr TailBounds b = tail_bounds(Distribution::StudentT);
+  log_sigma2 = Clamp(log_sigma2, b.scale_lo, b.scale_hi);
+  log_nu_m2 = Clamp(log_nu_m2, b.shape_lo, b.shape_hi);
   double sigma2 = std::exp(log_sigma2);
   double nu = std::exp(log_nu_m2) + 2.0;
   double half_nu1 = 0.5 * (nu + 1.0);
@@ -68,8 +102,9 @@ inline double negloglik_t(const double *e, int n, double log_sigma2,
 
 inline double negloglik_skewnorm(const double *e, int n, double log_sigma2,
                                  double alpha) {
-  log_sigma2 = Clamp(log_sigma2, kLogScaleMin, kLogScaleMax);
-  alpha = Clamp(alpha, kAlphaMin, kAlphaMax);
+  constexpr TailBounds b = tail_bounds(Distribution::SkewNormal);
+  log_sigma2 = Clamp(log_sigma2, b.scale_lo, b.scale_hi);
+  alpha = Clamp(alpha, b.shape_lo, b.shape_hi);
   double sigma = std::exp(0.5 * log_sigma2);
   double sum_sq = 0.0;
   double sum_log_cdf = 0.0;
@@ -86,8 +121,9 @@ inline double negloglik_skewnorm(const double *e, int n, double log_sigma2,
 
 inline double negloglik_ged(const double *e, int n, double log_sigma,
                             double log_beta) {
-  log_sigma = Clamp(log_sigma, kLogScaleMin, kLogScaleMax);
-  log_beta = Clamp(log_beta, kLogBetaMin, kLogBetaMax);
+  constexpr TailBounds b = tail_bounds(Distribution::GED);
+  log_sigma = Clamp(log_sigma, b.scale_lo, b.scale_hi);
+  log_beta = Clamp(log_beta, b.shape_lo, b.shape_hi);
   double sigma = std::exp(log_sigma);
   double beta_ged = std::exp(log_beta);
   double sum_pow = 0.0;

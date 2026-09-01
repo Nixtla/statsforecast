@@ -8,6 +8,7 @@ Re-exports the canonical Distribution enum and quantile utilities from
 import numpy as np
 from scipy import stats as _scipy_stats  # aliased to avoid collision with the Distribution enum
 
+from ._lib import distributions as _lib_dist
 from .utils import (
     ArimaMethod,
     Distribution,
@@ -76,22 +77,14 @@ def dist_init_params(distribution: str, var_init: float):
     return 0, []  # laplace / normal
 
 
-# Optimizer-tail entries are unconstrained by construction (they are logs), so an
-# unbounded line search can propose values that make exp()/lgamma()/** overflow or
-# underflow.  Observed on macOS-arm64 + numpy>=2 in AutoARIMA+ged: log_beta = -1008
-# -> exp() underflows to 0.0 -> ZeroDivisionError in lgamma(1.0 / beta).
-# Scale bounds are numeric-safety only (they cannot bind for any real series).
-# Shape bounds are statistical: outside them scipy's frozen gennorm/t used by
-# frozen_error_distribution() cannot produce usable prediction intervals.
-# Layout must match dist_init_params() and include/statsforecast/distributions.h.
-# Scale box is chosen so that every derived quantity stays strictly positive and
-# finite: exp(x) in [2.7e-109, 3.7e108] and exp(x)**2 in [7.4e-218, 1.4e217]
-# (ged stores log_sigma and reports sigma2 = exp(log_sigma)**2).
-_LOG_SCALE_BOX = (-250.0, 250.0)
+# Numerically safe box for the optimizer tail, as {name: ((lo, hi), (lo, hi))}
+# for [log_scale, shape].  The limits themselves are defined once in
+# include/statsforecast/distributions.h -- where the C++ likelihood cores clamp
+# with them -- and read from here, so the two sides cannot drift apart.  Cached
+# at import because guard_dist_tail() runs in the optimizer's inner loop.
 _DIST_TAIL_BOUNDS = {
-    "t": (_LOG_SCALE_BOX, (-15.0, 7.0)),  # log(nu-2): nu in (2, 1098.6]
-    "skew-normal": (_LOG_SCALE_BOX, (-100.0, 100.0)),  # alpha
-    "ged": (_LOG_SCALE_BOX, (-3.0, 3.912023005428146)),  # log(beta): beta in [0.05, 50]
+    str(name): tuple(zip(*_lib_dist.tail_bounds(switch_distribution(name, _lib_dist))))
+    for name in _VALID_DISTRIBUTIONS
 }
 _TAIL_PENALTY_SCALE = 1.0
 
@@ -114,6 +107,9 @@ def guard_dist_tail(distribution, tail):
     quadratically outside it, so an unbounded optimizer that proposes a wild step
     gets a large *finite* objective whose gradient points back into the feasible
     region, instead of an OverflowError / ZeroDivisionError.
+
+    Normal and Laplace have no tail and an unbounded box, so this is the
+    identity for them.
 
     Precondition: `tail` is finite (callers reject non-finite trial points).
     """
