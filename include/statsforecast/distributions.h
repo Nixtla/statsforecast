@@ -20,6 +20,24 @@ inline int distribution_n_extra_params(Distribution d) {
   return (d == Distribution::Laplace) ? 0 : 2;
 }
 
+// Numerically safe box for the optimizer tail, mirroring _DIST_TAIL_BOUNDS in
+// python/statsforecast/distributions.py.  Callers pass these as Nelder-Mead
+// bounds, but the cores clamp too so they stay safe for any caller: outside the
+// box exp()/lgamma()/pow() lose all precision or return inf, and the fitted
+// shape is unusable by scipy's frozen gennorm/t for prediction intervals.
+inline constexpr double kLogScaleMin = -250.0;  // exp(x) in [2.7e-109, 3.7e108]
+inline constexpr double kLogScaleMax = 250.0;
+inline constexpr double kLogNuM2Min = -15.0;  // nu in (2, 1098.6]
+inline constexpr double kLogNuM2Max = 7.0;
+inline constexpr double kAlphaMin = -100.0;
+inline constexpr double kAlphaMax = 100.0;
+inline constexpr double kLogBetaMin = -3.0;  // beta in [0.05, 50]
+inline constexpr double kLogBetaMax = 3.912023005428146;
+
+inline constexpr double Clamp(double x, double lo, double hi) {
+  return x < lo ? lo : (x > hi ? hi : x);
+}
+
 // Per-observation negative log-likelihood CORES.
 // e: residual array (additive errors), length n. Returns +inf on degeneracy.
 
@@ -35,6 +53,8 @@ inline double negloglik_laplace(const double *e, int n) {
 
 inline double negloglik_t(const double *e, int n, double log_sigma2,
                           double log_nu_m2) {
+  log_sigma2 = Clamp(log_sigma2, kLogScaleMin, kLogScaleMax);
+  log_nu_m2 = Clamp(log_nu_m2, kLogNuM2Min, kLogNuM2Max);
   double sigma2 = std::exp(log_sigma2);
   double nu = std::exp(log_nu_m2) + 2.0;
   double half_nu1 = 0.5 * (nu + 1.0);
@@ -48,6 +68,8 @@ inline double negloglik_t(const double *e, int n, double log_sigma2,
 
 inline double negloglik_skewnorm(const double *e, int n, double log_sigma2,
                                  double alpha) {
+  log_sigma2 = Clamp(log_sigma2, kLogScaleMin, kLogScaleMax);
+  alpha = Clamp(alpha, kAlphaMin, kAlphaMax);
   double sigma = std::exp(0.5 * log_sigma2);
   double sum_sq = 0.0;
   double sum_log_cdf = 0.0;
@@ -64,6 +86,8 @@ inline double negloglik_skewnorm(const double *e, int n, double log_sigma2,
 
 inline double negloglik_ged(const double *e, int n, double log_sigma,
                             double log_beta) {
+  log_sigma = Clamp(log_sigma, kLogScaleMin, kLogScaleMax);
+  log_beta = Clamp(log_beta, kLogBetaMin, kLogBetaMax);
   double sigma = std::exp(log_sigma);
   double beta_ged = std::exp(log_beta);
   double sum_pow = 0.0;

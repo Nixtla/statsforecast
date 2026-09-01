@@ -10,6 +10,7 @@ from ._lib import ets as _ets
 from .distributions import (
     switch_distribution,
     dist_init_params,
+    dist_tail_bounds,
     extract_dist_params,
     aic_bic_aicc,
     error_params_from_model,
@@ -706,8 +707,9 @@ def etsmodel(
         n_dist, dist_init = dist_init_params(distribution, var_init)
 
         x0_ext = np.concatenate([par, dist_init])
-        lower_ext = np.concatenate([lower, np.full(n_dist, -np.inf)])
-        upper_ext = np.concatenate([upper, np.full(n_dist, np.inf)])
+        dist_lower, dist_upper = dist_tail_bounds(distribution, n_dist)
+        lower_ext = np.concatenate([lower, dist_lower])
+        upper_ext = np.concatenate([upper, dist_upper])
 
         fred = optimize_ets_dist_target_fn(
             x0=x0_ext,
