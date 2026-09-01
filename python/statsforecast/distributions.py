@@ -23,6 +23,8 @@ __all__ = [
     "distribution_n_extra_params",
     "switch_distribution",
     "dist_init_params",
+    "dist_tail_bounds",
+    "guard_dist_tail",
     "extract_dist_params",
     "aic_bic_aicc",
     "error_params_from_model",
@@ -74,6 +76,64 @@ def dist_init_params(distribution: str, var_init: float):
     return 0, []  # laplace / normal
 
 
+# Optimizer-tail entries are unconstrained by construction (they are logs), so an
+# unbounded line search can propose values that make exp()/lgamma()/** overflow or
+# underflow.  Observed on macOS-arm64 + numpy>=2 in AutoARIMA+ged: log_beta = -1008
+# -> exp() underflows to 0.0 -> ZeroDivisionError in lgamma(1.0 / beta).
+# Scale bounds are numeric-safety only (they cannot bind for any real series).
+# Shape bounds are statistical: outside them scipy's frozen gennorm/t used by
+# frozen_error_distribution() cannot produce usable prediction intervals.
+# Layout must match dist_init_params() and include/statsforecast/distributions.h.
+# Scale box is chosen so that every derived quantity stays strictly positive and
+# finite: exp(x) in [2.7e-109, 3.7e108] and exp(x)**2 in [7.4e-218, 1.4e217]
+# (ged stores log_sigma and reports sigma2 = exp(log_sigma)**2).
+_LOG_SCALE_BOX = (-250.0, 250.0)
+_DIST_TAIL_BOUNDS = {
+    "t": (_LOG_SCALE_BOX, (-15.0, 7.0)),  # log(nu-2): nu in (2, 1098.6]
+    "skew-normal": (_LOG_SCALE_BOX, (-100.0, 100.0)),  # alpha
+    "ged": (_LOG_SCALE_BOX, (-3.0, 3.912023005428146)),  # log(beta): beta in [0.05, 50]
+}
+_TAIL_PENALTY_SCALE = 1.0
+
+
+def dist_tail_bounds(distribution, n_dist: int = 2):
+    """(lower, upper) arrays for the optimizer tail, for box-constrained solvers."""
+    bounds = _DIST_TAIL_BOUNDS.get(str(distribution))
+    if bounds is None or n_dist == 0:
+        return np.full(n_dist, -np.inf), np.full(n_dist, np.inf)
+    return (
+        np.array([b[0] for b in bounds[:n_dist]]),
+        np.array([b[1] for b in bounds[:n_dist]]),
+    )
+
+
+def guard_dist_tail(distribution, tail):
+    """Project the optimizer tail into its numerically safe box.
+
+    Returns `(safe_tail, penalty)`. `penalty` is 0.0 inside the box and grows
+    quadratically outside it, so an unbounded optimizer that proposes a wild step
+    gets a large *finite* objective whose gradient points back into the feasible
+    region, instead of an OverflowError / ZeroDivisionError.
+
+    Precondition: `tail` is finite (callers reject non-finite trial points).
+    """
+    bounds = _DIST_TAIL_BOUNDS.get(str(distribution))
+    if bounds is None:
+        return list(tail), 0.0
+    safe = []
+    penalty = 0.0
+    for value, (lo, hi) in zip(tail, bounds):
+        value = float(value)
+        if value < lo:
+            penalty += (value - lo) ** 2
+            value = lo
+        elif value > hi:
+            penalty += (value - hi) ** 2
+            value = hi
+        safe.append(value)
+    return safe, _TAIL_PENALTY_SCALE * penalty
+
+
 def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict:
     """Convert the fitted optimizer tail into model-dict keys.
 
@@ -84,6 +144,8 @@ def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict
       laplace     -> {"sigma2"}                  # from residuals; b_hat = mean(|e|)
       normal      -> {}
     """
+    if distribution in ("t", "skew-normal", "ged"):
+        fit_par_dist, _ = guard_dist_tail(distribution, fit_par_dist)
     if distribution == "t":
         return {
             "nu": float(np.exp(fit_par_dist[1]) + 2.0),

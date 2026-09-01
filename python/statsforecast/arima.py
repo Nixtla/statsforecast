@@ -26,7 +26,15 @@ from scipy.stats import norm
 
 from ._lib import arima as _arima
 from .mstl import mstl
-from .distributions import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles, error_params_from_model, extract_dist_params
+from .distributions import (
+    ArimaMethod,
+    Distribution,
+    _VALID_DISTRIBUTIONS,
+    _quantiles,
+    error_params_from_model,
+    extract_dist_params,
+    guard_dist_tail,
+)
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
@@ -318,10 +326,12 @@ def arima(
 
     def armafn_t(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, log_nu_m2]
+        if not np.all(np.isfinite(p_ext)):
+            return np.finfo(np.float64).max
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
-        log_sigma2 = p_ext[n_arma_free]
-        log_nu_m2 = p_ext[n_arma_free + 1]
+        tail, tail_penalty = guard_dist_tail("t", p_ext[n_arma_free:])
+        log_sigma2, log_nu_m2 = tail
         sigma2 = math.exp(log_sigma2)
         nu = math.exp(log_nu_m2) + 2.0  # nu > 2
         x = x.copy()
@@ -362,15 +372,20 @@ def arima(
             + 0.5 * math.log(nu * math.pi)
             + half_nu1 / n * sum_log_kernel
             + 0.5 * sumlog / n
+            + tail_penalty
         )
+        if not math.isfinite(obj):
+            return np.finfo(np.float64).max
         return obj
 
     def armafn_skewnorm(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, alpha]
+        if not np.all(np.isfinite(p_ext)):
+            return np.finfo(np.float64).max
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
-        log_sigma2 = p_ext[n_arma_free]
-        alpha = p_ext[n_arma_free + 1]
+        tail, tail_penalty = guard_dist_tail("skew-normal", p_ext[n_arma_free:])
+        log_sigma2, alpha = tail
         sigma = math.exp(0.5 * log_sigma2)
         x = x.copy()
         par = coef.copy()
@@ -406,16 +421,21 @@ def arima(
             + np.nansum(std_resid ** 2) / (2.0 * n * sigma ** 2)
             - np.nansum(norm.logcdf(alpha * std_resid / sigma)) / n
             + 0.5 * sumlog / n
+            + tail_penalty
         )
+        if not math.isfinite(obj):
+            return np.finfo(np.float64).max
         return obj
 
     def armafn_ged(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma, log_beta]
         # GED(0, σ, β): f(e) = β/(2σΓ(1/β)) * exp(-(|e|/σ)^β)
+        if not np.all(np.isfinite(p_ext)):
+            return np.finfo(np.float64).max
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
-        log_sigma = p_ext[n_arma_free]
-        log_beta = p_ext[n_arma_free + 1]
+        tail, tail_penalty = guard_dist_tail("ged", p_ext[n_arma_free:])
+        log_sigma, log_beta = tail
         sigma = math.exp(log_sigma)
         beta = math.exp(log_beta)
         x = x.copy()
@@ -451,7 +471,11 @@ def arima(
             + math.lgamma(1.0 / beta) - log_beta
             + np.nansum(np.abs(std_resid / sigma) ** beta) / n
             + 0.5 * sumlog / n
+            + tail_penalty
         )
+        if not math.isfinite(obj):
+            # e.g. (|e|/sigma)**beta overflowed even inside the box
+            return np.finfo(np.float64).max
         return obj
 
     def arCheck(ar):

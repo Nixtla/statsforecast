@@ -54,6 +54,56 @@ def test_extract_dist_params():
     assert out["sigma2"] == pytest.approx(2.0)  # 2 * b_hat**2, b_hat = 1
 
 
+def test_guard_dist_tail_is_identity_inside_the_box():
+    for dist, tail in (("t", [np.log(4.0), np.log(3.0)]),
+                       ("skew-normal", [np.log(4.0), 1.5]),
+                       ("ged", [0.5 * np.log(4.0), np.log(2.0)])):
+        safe, penalty = D.guard_dist_tail(dist, tail)
+        assert penalty == 0.0
+        assert list(safe) == [float(v) for v in tail]
+
+
+def test_guard_dist_tail_projects_diverging_line_search_step():
+    # exact p_ext tail from the macOS-arm64 / numpy>=2 AutoARIMA-ged blow-up:
+    # exp(-1008.17) underflows to 0.0 -> 1.0 / beta raised ZeroDivisionError
+    safe, penalty = D.guard_dist_tail("ged", [-1094.78, -1008.17])
+    sigma = math.exp(safe[0])
+    beta = math.exp(safe[1])
+    assert sigma > 0.0
+    assert beta > 0.0
+    assert math.isfinite(math.lgamma(1.0 / beta))  # the exact crash site
+    assert math.isfinite(penalty) and penalty > 0.0
+
+
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+def test_dist_tail_box_corners_keep_transcendentals_finite(distribution):
+    """Every corner of the safe box must keep exp/lgamma inside double range."""
+    lo, hi = D.dist_tail_bounds(distribution)
+    for a in (lo[0], hi[0]):
+        for b in (lo[1], hi[1]):
+            if distribution == "ged":
+                sigma, beta = math.exp(a), math.exp(b)
+                assert 0.0 < sigma < math.inf and 0.0 < beta < math.inf
+                assert 0.0 < sigma ** 2 < math.inf
+                assert math.isfinite(math.lgamma(1.0 / beta))
+            elif distribution == "t":
+                sigma2, nu = math.exp(a), math.exp(b) + 2.0
+                assert 0.0 < sigma2 < math.inf and 2.0 < nu < math.inf
+                assert math.isfinite(math.lgamma(nu / 2.0))
+                assert math.isfinite(math.lgamma(0.5 * (nu + 1.0)))
+            else:
+                sigma = math.exp(0.5 * a)
+                assert 0.0 < sigma < math.inf and math.isfinite(sigma ** 2)
+                assert math.isfinite(b)
+
+
+def test_extract_dist_params_clips_runaway_tail():
+    # without the clip this returns beta_dist == 0.0 and sigma2 == 0.0
+    out = D.extract_dist_params("ged", np.array([-1094.78, -1008.17]))
+    assert out["sigma2"] > 0.0
+    assert out["beta_dist"] > 0.0
+
+
 def test_quantiles_match_scipy():
     level = np.array([80, 95])
     p = 0.5 + level / 200
@@ -203,6 +253,11 @@ def test_cross_method_distribution_keys(
         assert md.get("sigma2") is not None, (
             f"{model_name}/{distribution}: sigma2 missing from model dict"
         )
+        # a diverged optimizer used to leave sigma2/shape at 0.0 or non-finite
+        assert md["sigma2"] > 0.0
+        for key in ("nu", "alpha_dist", "beta_dist"):
+            if key in md:
+                assert math.isfinite(md[key]) and md[key] != 0.0
 
 
 # ---------------------------------------------------------------------------
