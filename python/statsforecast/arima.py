@@ -15,7 +15,7 @@ import math
 import warnings
 from collections import namedtuple
 from functools import partial
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -229,28 +229,36 @@ def arima(
     SSG = SSinit == "Gardner1980"
     x = x.astype(np.float64, copy=True)
 
+    # upARIMA runs on every objective evaluation, so it reuses one result dict
+    # and one pair of a/Pn buffers instead of allocating. arima_like() treats a
+    # and Pn as scratch space and both are fully rewritten below, and callers
+    # hand the dict straight to arima_like without holding on to it.
+    cache: Dict[str, Any] = {}
+
     def upARIMA(mod, phi, theta):
         p = len(phi)
         q = len(theta)
         r = max(p, q + 1)
 
-        Pn = mod["Pn"].copy()
+        if not SSG:
+            raise NotImplementedError('SSinit != "Gardner1980"')
+            # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
+        if cache.get("mod") is not mod:
+            cache["mod"] = mod
+            cache["Z"] = {
+                **mod,
+                "a": np.empty_like(mod["a"]),
+                "Pn": np.empty_like(mod["Pn"]),
+            }
+        Z = cache["Z"]
+        Z["phi"], Z["theta"] = phi, theta
+        Z["a"][:] = 0.0
+        Z["Pn"][:] = mod["Pn"]
         if r > 1:
-            if SSG:
-                Pn[:r, :r] = getQ0(phi, theta)
-            else:
-                raise NotImplementedError('SSinit != "Gardner1980"')
-                # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
+            Z["Pn"][:r, :r] = getQ0(phi, theta)
         else:
-            Pn[0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
-        return {
-            "phi": phi,
-            "theta": theta,
-            "delta": mod["delta"],
-            "a": np.zeros_like(mod["a"]),
-            "P": mod["P"],
-            "Pn": Pn,
-        }
+            Z["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
+        return Z
 
     def arimaSS(y, mod):
         return arima_like(
@@ -326,7 +334,7 @@ def arima(
 
     def armafn_t(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, log_nu_m2]
-        if not np.all(np.isfinite(p_ext)):
+        if not np.isfinite(p_ext).all():
             return np.finfo(np.float64).max
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
@@ -380,7 +388,7 @@ def arima(
 
     def armafn_skewnorm(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, alpha]
-        if not np.all(np.isfinite(p_ext)):
+        if not np.isfinite(p_ext).all():
             return np.finfo(np.float64).max
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
@@ -430,7 +438,7 @@ def arima(
     def armafn_ged(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma, log_beta]
         # GED(0, σ, β): f(e) = β/(2σΓ(1/β)) * exp(-(|e|/σ)^β)
-        if not np.all(np.isfinite(p_ext)):
+        if not np.isfinite(p_ext).all():
             return np.finfo(np.float64).max
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
@@ -478,26 +486,32 @@ def arima(
         return obj
 
     def arCheck(ar):
-        non_zeros = np.where(np.append(1, -ar) != 0)[0]
-        if non_zeros.size == 0:
+        # last non-zero index: the AR order with trailing zeros trimmed
+        p = np.flatnonzero(np.append(1, -ar))[-1]
+        if not p:
             return True
-        p = non_zeros[-1]
         coefs = np.append(1, -ar[:p])
         roots = np.polynomial.polynomial.polyroots(coefs)
         return all(np.abs(roots) > 1)
 
-    def stationary_ar_checks(arma, init):
-        if arma[0] > 0 and not arCheck(init[: arma[0]]):
-            raise ValueError("non-stationary AR part")
-        if arma[2] > 0 and not arCheck(init[arma[:2].sum() + np.arange(arma[2])]):
-            raise ValueError("non-stationary seasonal AR part")
+    def ar_stationarity_error(arma, pars):
+        """Message for a non-stationary (seasonal) AR part, or None."""
+        if arma[0] > 0 and not arCheck(pars[: arma[0]]):
+            return "non-stationary AR part"
+        if arma[2] > 0 and not arCheck(pars[arma[:2].sum() + np.arange(arma[2])]):
+            return "non-stationary seasonal AR part"
+        return None
+
+    def stationary_ar_checks(arma, pars):
+        error = ar_stationarity_error(arma, pars)
+        if error is not None:
+            raise ValueError(error)
 
     def maInvert(ma):
         q = len(ma)
-        non_zeros = np.where(np.append(1, ma) != 0)[0]
-        if non_zeros.size == 0:
+        q0 = np.flatnonzero(np.append(1, ma))[-1]
+        if not q0:
             return ma
-        q0 = non_zeros[-1]
         coefs = np.append(1, ma[:q0])
         roots = np.polynomial.polynomial.polyroots(coefs)
         ind = np.abs(roots) < 1
@@ -506,10 +520,10 @@ def arima(
         if q0 == 1:
             return np.append(1 / ma[0], np.repeat(0, q - q0))
         roots[ind] = 1 / roots[ind]
-        x = np.array([1.0], dtype=np.complex128)
+        poly = np.array([1.0], dtype=np.complex128)
         for r in roots:
-            x = np.append(x, 0) - np.append(0, x) / r
-        return np.append(x.real[1:], np.repeat(0, q - q0))
+            poly = np.append(poly, 0) - np.append(0, poly) / r
+        return np.append(poly.real[1:], np.repeat(0, q - q0))
 
     if x.ndim > 1:
         raise ValueError("Only implemented for univariate time series")
@@ -720,18 +734,15 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-                if res.status != 1:
-                    # 0: success
-                    # 1: maximum number of iterations exceeded
-                    # 2: precision loss
-                    try:
-                        stationary_ar_checks(arma, res.x)
-                        init[mask] = res.x
-                    except ValueError:
-                        if transform_pars:
-                            stationary_ar_checks(arma, init)
-                        else:
-                            init[mask] = res.x
+                # status 1 is "maximum number of iterations exceeded"; 0 is
+                # success and 2 precision loss. Without transform_pars ML is
+                # unconstrained, so a non-stationary CSS estimate is still a
+                # better start than init.
+                converged = res.status != 1
+                if converged and (
+                    not transform_pars or ar_stationarity_error(arma, res.x) is None
+                ):
+                    init[mask] = res.x
                 else:
                     stationary_ar_checks(arma, init)
                 ncond = 0
@@ -745,10 +756,11 @@ def arima(
                 init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
+        ml_args = (x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma)
+        # objective actually optimized, plus the tail appended to the arma params
+        # (empty for normal/laplace, which concentrate their scale out)
         ml_obj = armafn if distribution == Distribution.NORMAL else armafn_laplace
-        # objective actually optimized for t/skew-normal/ged, plus its fitted tail
-        dist_objfn = None
-        dist_tail_fit = None
+        dist_tail_fit = np.array([])
         nu_t = None
         sigma2_t = None
         alpha_sn = None
@@ -766,14 +778,14 @@ def arima(
             res_sn = minimize(
                 armafn_skewnorm,
                 init_sn,
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
-            _dp_sn = extract_dist_params("skew-normal", res_sn.x[n_arma_free:])
-            dist_objfn = armafn_skewnorm
+            ml_obj = armafn_skewnorm
             dist_tail_fit = res_sn.x[n_arma_free:]
+            _dp_sn = extract_dist_params("skew-normal", dist_tail_fit)
             sigma2_sn = _dp_sn["sigma2"]
             alpha_sn = _dp_sn["alpha_dist"]
             hess_arma = (
@@ -799,14 +811,14 @@ def arima(
             res_t = minimize(
                 armafn_t,
                 init_t,
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
-            _dp_t = extract_dist_params("t", res_t.x[n_arma_free:])
-            dist_objfn = armafn_t
+            ml_obj = armafn_t
             dist_tail_fit = res_t.x[n_arma_free:]
+            _dp_t = extract_dist_params("t", dist_tail_fit)
             sigma2_t = _dp_t["sigma2"]
             nu_t = _dp_t["nu"]
             hess_arma = (
@@ -832,14 +844,14 @@ def arima(
             res_ged = minimize(
                 armafn_ged,
                 init_ged,
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
-            _dp_ged = extract_dist_params("ged", res_ged.x[n_arma_free:])
-            dist_objfn = armafn_ged
+            ml_obj = armafn_ged
             dist_tail_fit = res_ged.x[n_arma_free:]
+            _dp_ged = extract_dist_params("ged", dist_tail_fit)
             sigma2_ged = _dp_ged["sigma2"]
             beta_ged = _dp_ged["beta_dist"]
             hess_arma = (
@@ -859,14 +871,14 @@ def arima(
                 True,
                 0,
                 np.array([]),
-                ml_obj(np.array([]), x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                ml_obj(np.array([]), *ml_args),
                 np.array([]),
             )
         else:
             res = minimize(
                 ml_obj,
                 init[mask],
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
@@ -886,23 +898,7 @@ def arima(
                 # (and loglik/aic below) matches the coefficients we report.
                 # scipy's maxiter=0 would return hess_inv = I, so evaluate
                 # directly and keep the approximation from the actual fit.
-                if dist_objfn is None:
-                    new_fun = ml_obj(
-                        coef[mask], x, True, coef, mask, arma, mod, ncxreg, xreg, narma
-                    )
-                else:
-                    new_fun = dist_objfn(
-                        np.concatenate([coef[mask], dist_tail_fit]),
-                        x,
-                        True,
-                        coef,
-                        mask,
-                        arma,
-                        mod,
-                        ncxreg,
-                        xreg,
-                        narma,
-                    )
+                new_fun = ml_obj(np.concatenate([coef[mask], dist_tail_fit]), *ml_args)
                 res = OptimResult(
                     res.success, res.status, coef[mask], new_fun, res.hess_inv
                 )

@@ -779,8 +779,12 @@ def test_distribution_ged_on_gaussian_gives_beta_near_2():
     )
 
 
-@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
-def test_distribution_near_degenerate_series_does_not_blow_up(distribution):
+@pytest.mark.parametrize("distribution,param_key", [
+    ("t",           "nu"),
+    ("skew-normal", "alpha_dist"),
+    ("ged",         "beta_dist"),
+])
+def test_distribution_near_degenerate_series_does_not_blow_up(distribution, param_key):
     """A near-constant series drives sigma -> 0, which must be projected back
     into the safe box rather than raising ZeroDivisionError/OverflowError."""
     rng = np.random.default_rng(0)
@@ -789,8 +793,7 @@ def test_distribution_near_degenerate_series_does_not_blow_up(distribution):
     fit = arima(y, order=(1, 0, 0), method="ML", distribution=distribution)
     assert math.isfinite(fit["aic"])
     assert fit["sigma2"] > 0.0
-    key = {"t": "nu", "skew-normal": "alpha_dist", "ged": "beta_dist"}[distribution]
-    assert math.isfinite(fit[key])
+    assert math.isfinite(fit[param_key])
 
 
 @pytest.mark.parametrize("distribution,extra_key", [

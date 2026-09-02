@@ -20,44 +20,6 @@ inline int distribution_n_extra_params(Distribution d) {
   return (d == Distribution::Laplace) ? 0 : 2;
 }
 
-// Safe box for the optimizer tail. The entries are logs, so an unbounded line
-// search can overflow/underflow exp()/lgamma()/pow(): exp(-1008) == 0.0 then
-// 1.0/beta. Python reads these through _lib.distributions.tail_bounds(), so the
-// two sides cannot drift apart.
-// Scale bounds are numeric-safety only and cannot bind for a real series; shape
-// bounds also keep the fit usable by scipy's gennorm/t.
-inline constexpr double kLogScaleMin = -250.0;  // exp -> [2.7e-109, 3.7e108]
-inline constexpr double kLogScaleMax = 250.0;
-inline constexpr double kLogNuM2Min = -15.0;  // log(nu-2): nu in (2, 1098.6]
-inline constexpr double kLogNuM2Max = 7.0;
-inline constexpr double kAlphaMin = -100.0;
-inline constexpr double kAlphaMax = 100.0;
-inline constexpr double kLogBetaMin = -3.0;  // log(beta): beta in [0.05, 50]
-inline constexpr double kLogBetaMax = 3.912023005428146;
-
-// (lo, hi) per tail entry; Normal/Laplace are unbounded.
-struct TailBounds {
-  double scale_lo, scale_hi, shape_lo, shape_hi;
-};
-
-inline constexpr TailBounds tail_bounds(Distribution d) {
-  constexpr double kInf = std::numeric_limits<double>::infinity();
-  switch (d) {
-  case Distribution::StudentT:
-    return {kLogScaleMin, kLogScaleMax, kLogNuM2Min, kLogNuM2Max};
-  case Distribution::SkewNormal:
-    return {kLogScaleMin, kLogScaleMax, kAlphaMin, kAlphaMax};
-  case Distribution::GED:
-    return {kLogScaleMin, kLogScaleMax, kLogBetaMin, kLogBetaMax};
-  default:
-    return {-kInf, kInf, -kInf, kInf};
-  }
-}
-
-inline constexpr double Clamp(double x, double lo, double hi) {
-  return x < lo ? lo : (x > hi ? hi : x);
-}
-
 // Per-observation negative log-likelihood CORES.
 // e: residual array (additive errors), length n. Returns +inf on degeneracy.
 
@@ -73,9 +35,6 @@ inline double negloglik_laplace(const double *e, int n) {
 
 inline double negloglik_t(const double *e, int n, double log_sigma2,
                           double log_nu_m2) {
-  constexpr TailBounds b = tail_bounds(Distribution::StudentT);
-  log_sigma2 = Clamp(log_sigma2, b.scale_lo, b.scale_hi);
-  log_nu_m2 = Clamp(log_nu_m2, b.shape_lo, b.shape_hi);
   double sigma2 = std::exp(log_sigma2);
   double nu = std::exp(log_nu_m2) + 2.0;
   double half_nu1 = 0.5 * (nu + 1.0);
@@ -89,9 +48,6 @@ inline double negloglik_t(const double *e, int n, double log_sigma2,
 
 inline double negloglik_skewnorm(const double *e, int n, double log_sigma2,
                                  double alpha) {
-  constexpr TailBounds b = tail_bounds(Distribution::SkewNormal);
-  log_sigma2 = Clamp(log_sigma2, b.scale_lo, b.scale_hi);
-  alpha = Clamp(alpha, b.shape_lo, b.shape_hi);
   double sigma = std::exp(0.5 * log_sigma2);
   double sum_sq = 0.0;
   double sum_log_cdf = 0.0;
@@ -108,9 +64,6 @@ inline double negloglik_skewnorm(const double *e, int n, double log_sigma2,
 
 inline double negloglik_ged(const double *e, int n, double log_sigma,
                             double log_beta) {
-  constexpr TailBounds b = tail_bounds(Distribution::GED);
-  log_sigma = Clamp(log_sigma, b.scale_lo, b.scale_hi);
-  log_beta = Clamp(log_beta, b.shape_lo, b.shape_hi);
   double sigma = std::exp(log_sigma);
   double beta_ged = std::exp(log_beta);
   double sum_pow = 0.0;

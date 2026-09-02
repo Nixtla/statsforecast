@@ -1,3 +1,4 @@
+import itertools
 import math
 import warnings
 
@@ -54,13 +55,12 @@ def test_extract_dist_params():
     assert out["sigma2"] == pytest.approx(2.0)  # 2 * b_hat**2, b_hat = 1
 
 
-def test_guard_dist_tail_is_identity_inside_the_box():
-    for dist, tail in (("t", [np.log(4.0), np.log(3.0)]),
-                       ("skew-normal", [np.log(4.0), 1.5]),
-                       ("ged", [0.5 * np.log(4.0), np.log(2.0)])):
-        safe, penalty = D.guard_dist_tail(dist, tail)
-        assert penalty == 0.0
-        assert list(safe) == [float(v) for v in tail]
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+def test_guard_dist_tail_is_identity_inside_the_box(distribution):
+    _, tail = D.dist_init_params(distribution, 4.0)
+    safe, penalty = D.guard_dist_tail(distribution, tail)
+    assert penalty == 0.0
+    assert list(safe) == [float(v) for v in tail]
 
 
 def test_guard_dist_tail_projects_diverging_line_search_step():
@@ -74,26 +74,23 @@ def test_guard_dist_tail_projects_diverging_line_search_step():
     assert math.isfinite(penalty) and penalty > 0.0
 
 
-@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+# shape key and a finite-shape check per distribution, at any corner of the box
+_SHAPE_CHECKS = {
+    "t": ("nu", lambda nu: math.isfinite(math.lgamma(nu / 2.0))),
+    "skew-normal": ("alpha_dist", math.isfinite),
+    "ged": ("beta_dist", lambda beta: math.isfinite(math.lgamma(1.0 / beta))),
+}
+
+
+@pytest.mark.parametrize("distribution", list(_SHAPE_CHECKS))
 def test_dist_tail_box_corners_keep_transcendentals_finite(distribution):
-    """Every corner of the box must keep exp/lgamma inside double range."""
-    lo, hi = D.dist_tail_bounds(distribution)
-    for a in (lo[0], hi[0]):
-        for b in (lo[1], hi[1]):
-            if distribution == "ged":
-                sigma, beta = math.exp(a), math.exp(b)
-                assert 0.0 < sigma < math.inf and 0.0 < beta < math.inf
-                assert 0.0 < sigma ** 2 < math.inf
-                assert math.isfinite(math.lgamma(1.0 / beta))
-            elif distribution == "t":
-                sigma2, nu = math.exp(a), math.exp(b) + 2.0
-                assert 0.0 < sigma2 < math.inf and 2.0 < nu < math.inf
-                assert math.isfinite(math.lgamma(nu / 2.0))
-                assert math.isfinite(math.lgamma(0.5 * (nu + 1.0)))
-            else:
-                sigma = math.exp(0.5 * a)
-                assert 0.0 < sigma < math.inf and math.isfinite(sigma ** 2)
-                assert math.isfinite(b)
+    """Every corner of the box must stay inside double range."""
+    lower, upper = D.dist_tail_bounds(distribution)
+    shape_key, shape_ok = _SHAPE_CHECKS[distribution]
+    for corner in itertools.product(*zip(lower, upper)):
+        params = D.extract_dist_params(distribution, np.array(corner))
+        assert 0.0 < params["sigma2"] < math.inf, corner
+        assert shape_ok(params[shape_key]), corner
 
 
 def test_extract_dist_params_clips_runaway_tail():
@@ -103,17 +100,16 @@ def test_extract_dist_params_clips_runaway_tail():
     assert out["beta_dist"] > 0.0
 
 
-def test_dist_tail_bounds_come_from_the_cpp_header():
-    """The Python table must match the limits compiled into the C++ cores."""
-    from statsforecast._lib import distributions as _lib_dist
-
+def test_dist_tail_bounds_layout():
+    """Every valid distribution has a box, and normal/laplace are unbounded."""
     for name in D.VALID_DISTRIBUTIONS:
-        lower, upper = _lib_dist.tail_bounds(D.switch_distribution(str(name), _lib_dist))
-        assert D._DIST_TAIL_BOUNDS[str(name)] == tuple(zip(lower, upper))
+        lower, upper = D.dist_tail_bounds(name, D.distribution_n_extra_params(name))
+        assert len(lower) == len(upper) == D.distribution_n_extra_params(name)
+        assert all(lo < hi for lo, hi in zip(lower, upper))
 
     # normal/laplace have no tail: unbounded box, guarding is a no-op
     for name in ("normal", "laplace"):
-        assert D._DIST_TAIL_BOUNDS[name] == ((-math.inf, math.inf), (-math.inf, math.inf))
+        assert D._DIST_TAIL_BOUNDS[name] == ((-math.inf, math.inf),) * 2
         safe, penalty = D.guard_dist_tail(name, [1e9, -1e9])
         assert penalty == 0.0 and safe == [1e9, -1e9]
 

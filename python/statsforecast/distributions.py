@@ -8,7 +8,6 @@ Re-exports the canonical Distribution enum and quantile utilities from
 import numpy as np
 from scipy import stats as _scipy_stats  # aliased to avoid collision with the Distribution enum
 
-from ._lib import distributions as _lib_dist
 from .utils import (
     ArimaMethod,
     Distribution,
@@ -77,25 +76,27 @@ def dist_init_params(distribution: str, var_init: float):
     return 0, []  # laplace / normal
 
 
-# {name: ((lo, hi), (lo, hi))} for [log_scale, shape], defined in
-# include/statsforecast/distributions.h. Cached because guard_dist_tail() runs in
-# the optimizer's inner loop.
+# Safe (lo, hi) box for each entry of the [log_scale, shape] optimizer tail.
+# The entries are logs, so an unbounded line search can overflow/underflow
+# exp()/lgamma()/pow(): exp(-1008) is 0.0, and then 1.0/beta raises. Scale
+# bounds are numeric-safety only and cannot bind for a real series; shape bounds
+# also keep the fitted shape usable by scipy's gennorm/t. Normal and laplace
+# have no tail, so their box is unbounded and guarding them is a no-op.
+_LOG_SCALE = (-250.0, 250.0)  # exp -> [2.7e-109, 3.7e108]; exp**2 stays finite
+_UNBOUNDED = ((-np.inf, np.inf), (-np.inf, np.inf))
 _DIST_TAIL_BOUNDS = {
-    str(name): tuple(zip(*_lib_dist.tail_bounds(switch_distribution(name, _lib_dist))))
-    for name in _VALID_DISTRIBUTIONS
+    "normal": _UNBOUNDED,
+    "laplace": _UNBOUNDED,
+    "t": (_LOG_SCALE, (-15.0, 7.0)),  # log(nu - 2): nu in (2, 1098.6]
+    "skew-normal": (_LOG_SCALE, (-100.0, 100.0)),  # alpha
+    "ged": (_LOG_SCALE, (-3.0, 3.912023005428146)),  # log(beta): beta in [0.05, 50]
 }
-_TAIL_PENALTY_SCALE = 1.0
 
 
 def dist_tail_bounds(distribution, n_dist: int = 2):
     """(lower, upper) arrays for the tail, for box-constrained solvers."""
-    bounds = _DIST_TAIL_BOUNDS.get(str(distribution))
-    if bounds is None or n_dist == 0:
-        return np.full(n_dist, -np.inf), np.full(n_dist, np.inf)
-    return (
-        np.array([b[0] for b in bounds[:n_dist]]),
-        np.array([b[1] for b in bounds[:n_dist]]),
-    )
+    box = _DIST_TAIL_BOUNDS[str(distribution)][:n_dist]
+    return np.array([lo for lo, _ in box]), np.array([hi for _, hi in box])
 
 
 def guard_dist_tail(distribution, tail):
@@ -106,12 +107,10 @@ def guard_dist_tail(distribution, tail):
     whose gradient points back in, rather than raising in exp()/lgamma().
     Identity for normal/laplace, which have no tail. `tail` must be finite.
     """
-    bounds = _DIST_TAIL_BOUNDS.get(str(distribution))
-    if bounds is None:
-        return list(tail), 0.0
+    box = _DIST_TAIL_BOUNDS[str(distribution)]
     safe = []
     penalty = 0.0
-    for value, (lo, hi) in zip(tail, bounds):
+    for value, (lo, hi) in zip(tail, box):
         value = float(value)
         if value < lo:
             penalty += (value - lo) ** 2
@@ -120,7 +119,7 @@ def guard_dist_tail(distribution, tail):
             penalty += (value - hi) ** 2
             value = hi
         safe.append(value)
-    return safe, _TAIL_PENALTY_SCALE * penalty
+    return safe, penalty
 
 
 def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict:
@@ -133,7 +132,7 @@ def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict
       laplace     -> {"sigma2"}                  # from residuals; b_hat = mean(|e|)
       normal      -> {}
     """
-    if distribution in ("t", "skew-normal", "ged"):
+    if distribution_n_extra_params(distribution):
         fit_par_dist, _ = guard_dist_tail(distribution, fit_par_dist)
     if distribution == "t":
         return {
