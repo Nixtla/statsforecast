@@ -36,6 +36,10 @@ from .distributions import (
     guard_dist_tail,
 )
 
+# Finite stand-in for an undefined objective. An inf or nan makes scipy's line
+# search derive a NaN trial step and abort the fit, so keep the objective bounded.
+_UNDEFINED_OBJ = np.finfo(np.float64).max
+
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
 
@@ -280,7 +284,7 @@ def arima(
         trarma = arima_transpar(par, arma, trans)
         Z = upARIMA(mod, trarma[0], trarma[1])
         if Z is None:
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         if ncxreg > 0:
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
         res = arima_like(
@@ -295,11 +299,11 @@ def arima(
             False,
         )
         if res[2] == 0.0:
-            return math.inf
+            return _UNDEFINED_OBJ
 
         s2 = res[0] / res[2]
         if s2 <= 0:
-            return math.nan
+            return _UNDEFINED_OBJ
         return 0.5 * (math.log(s2) + res[1] / res[2])
 
     def armafn_laplace(p, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
@@ -309,7 +313,7 @@ def arima(
         trarma = arima_transpar(par, arma, trans)
         Z = upARIMA(mod, trarma[0], trarma[1])
         if Z is None:
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         if ncxreg > 0:
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
         res = arima_like(
@@ -324,18 +328,18 @@ def arima(
             True,  # use_resid=True — we need standardized innovations
         )
         if res[2] == 0.0:
-            return math.inf
+            return _UNDEFINED_OBJ
         std_resid = res[3]  # standardized innovations eₜ = vₜ/√fₜ
         sum_abs = np.nansum(np.abs(std_resid))
         if sum_abs <= 0:
-            return math.nan
+            return _UNDEFINED_OBJ
         b_hat = sum_abs / res[2]
         return math.log(b_hat) + 0.5 * res[1] / res[2]
 
     def armafn_t(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, log_nu_m2]
         if not np.isfinite(p_ext).all():
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
         tail, tail_penalty = guard_dist_tail("t", p_ext[n_arma_free:])
@@ -348,7 +352,7 @@ def arima(
         trarma = arima_transpar(par, arma, trans)
         Z = upARIMA(mod, trarma[0], trarma[1])
         if Z is None:
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         if ncxreg > 0:
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
         res = arima_like(
@@ -363,7 +367,7 @@ def arima(
             True,  # use_resid=True — need standardized innovations
         )
         if res[2] == 0.0:
-            return math.inf
+            return _UNDEFINED_OBJ
         n = res[2]
         sumlog = res[1]
         std_resid = res[3]  # eₜ = vₜ/√fₜ
@@ -383,13 +387,13 @@ def arima(
             + tail_penalty
         )
         if not math.isfinite(obj):
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         return obj
 
     def armafn_skewnorm(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, alpha]
         if not np.isfinite(p_ext).all():
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
         tail, tail_penalty = guard_dist_tail("skew-normal", p_ext[n_arma_free:])
@@ -401,7 +405,7 @@ def arima(
         trarma = arima_transpar(par, arma, trans)
         Z = upARIMA(mod, trarma[0], trarma[1])
         if Z is None:
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         if ncxreg > 0:
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
         res = arima_like(
@@ -416,7 +420,7 @@ def arima(
             True,  # use_resid=True — need standardized innovations
         )
         if res[2] == 0.0:
-            return math.inf
+            return _UNDEFINED_OBJ
         n = res[2]
         sumlog = res[1]
         std_resid = res[3]  # eₜ = vₜ/√fₜ
@@ -432,14 +436,14 @@ def arima(
             + tail_penalty
         )
         if not math.isfinite(obj):
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         return obj
 
     def armafn_ged(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma, log_beta]
         # GED(0, σ, β): f(e) = β/(2σΓ(1/β)) * exp(-(|e|/σ)^β)
         if not np.isfinite(p_ext).all():
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
         tail, tail_penalty = guard_dist_tail("ged", p_ext[n_arma_free:])
@@ -452,7 +456,7 @@ def arima(
         trarma = arima_transpar(par, arma, trans)
         Z = upARIMA(mod, trarma[0], trarma[1])
         if Z is None:
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         if ncxreg > 0:
             x -= np.dot(xreg, par[narma + np.arange(ncxreg)])
         res = arima_like(
@@ -467,7 +471,7 @@ def arima(
             True,  # use_resid=True — need standardized innovations
         )
         if res[2] == 0.0:
-            return math.inf
+            return _UNDEFINED_OBJ
         n = res[2]
         sumlog = res[1]
         std_resid = res[3]  # eₜ = vₜ/√fₜ
@@ -482,7 +486,7 @@ def arima(
             + tail_penalty
         )
         if not math.isfinite(obj):  # e.g. (|e|/sigma)**beta overflowed
-            return np.finfo(np.float64).max
+            return _UNDEFINED_OBJ
         return obj
 
     def arCheck(ar):
