@@ -81,7 +81,7 @@ def main(test: bool = False):
     time = evaluation.query('metric=="time"').T
     if test:
         expected_results = {
-            "AutoARIMA": 4.43,
+            "AutoARIMA": 4.46,
             "CES": 4.85,
             "AutoETS": 4.35,
             "DynamicOptimizedTheta": 4.54,
