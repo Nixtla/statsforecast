@@ -1,5 +1,4 @@
 #include <pybind11/pybind11.h>
-#include "distributions.h"
 
 namespace py = pybind11;
 

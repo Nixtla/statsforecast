@@ -78,7 +78,11 @@ By using the `-e` flag the package is linked directly to the source code, allowi
 
 ### Re-compiling the shared library
 
-If you're working on the C++ code, you'll need to re-compile the shared library, which can be done with: `python setup.py build_ext --inplace` (this will compile it into the `build` directory and copy it to the python package location).
+If you're working on the C++ code, you'll need to re-compile the shared library:
+
+```sh
+uv sync --group dev --reinstall-package statsforecast
+```
 
 ## Set Up your Notebook based development environment
 
