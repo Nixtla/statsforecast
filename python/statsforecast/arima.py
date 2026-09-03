@@ -240,9 +240,6 @@ def arima(
         q = len(theta)
         r = max(p, q + 1)
 
-        if not SSG:
-            raise NotImplementedError('SSinit != "Gardner1980"')
-            # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
         if cache.get("mod") is not mod:
             cache["mod"] = mod
             cache["Z"] = {
@@ -255,7 +252,11 @@ def arima(
         Z["a"][:] = 0.0
         Z["Pn"][:] = mod["Pn"]
         if r > 1:
-            Z["Pn"][:r, :r] = getQ0(phi, theta)
+            if SSG:
+                Z["Pn"][:r, :r] = getQ0(phi, theta)
+            else:
+                raise NotImplementedError('SSinit != "Gardner1980"')
+                # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
         else:
             Z["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
         return Z
