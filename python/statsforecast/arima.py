@@ -12,6 +12,7 @@ __all__ = [
 
 
 import math
+import numbers
 import warnings
 from collections import namedtuple
 from functools import partial
@@ -1314,6 +1315,26 @@ def arima2(x, model, xreg, method):
     return refit
 
 
+def _check_blambda(blambda):
+    """Validate a Box-Cox parameter without resolving it.
+
+    Lets the models reject an invalid `blambda` when they're built, instead of
+    failing deep inside the fit.
+
+    Args:
+        blambda (None, float or str): Box-Cox transformation parameter, 'auto'
+            to select it from the data, or None for no transformation.
+
+    Raises:
+        ValueError: If `blambda` isn't None, a real number or 'auto'.
+    """
+    if blambda is None or isinstance(blambda, numbers.Real):
+        return
+    if isinstance(blambda, str) and blambda == "auto":
+        return
+    raise ValueError(f"blambda must be a float or 'auto', got {blambda!r}")
+
+
 def _resolve_blambda(x, blambda, period):
     """Resolve the Box-Cox parameter, which can be a float or the string 'auto'.
 
@@ -1332,11 +1353,10 @@ def _resolve_blambda(x, blambda, period):
         float: The resolved Box-Cox transformation parameter.
 
     Raises:
-        ValueError: If `blambda` is a string other than 'auto'.
+        ValueError: If `blambda` isn't a real number or 'auto'.
     """
+    _check_blambda(blambda)
     if isinstance(blambda, str):
-        if blambda != "auto":
-            raise ValueError(f"blambda must be a float or 'auto', got '{blambda}'")
         if np.any(x <= 0):
             warnings.warn(
                 "Guerrero's method for selecting a Box-Cox parameter (lambda) "
@@ -1364,7 +1384,8 @@ def _boxcox(x, blambda):
     x = np.ascontiguousarray(x)
     if blambda < 0:
         x = np.where(x <= 0, np.nan, x)
-    return boxcox(x, blambda)
+    # coreforecast flattens its input, so the shape has to be restored
+    return boxcox(x, blambda).reshape(x.shape)
 
 
 def _inv_boxcox(x, blambda):
@@ -1380,9 +1401,18 @@ def _inv_boxcox(x, blambda):
             -1/blambda, so entries at or above it are nan.
     """
     x = np.ascontiguousarray(x)
+    # coreforecast flattens its input, so the shape has to be restored
     out = inv_boxcox(x, blambda).reshape(x.shape)
     if blambda < 0:
-        out = np.where(x >= -1 / blambda, np.nan, out)
+        undefined = x >= -1 / blambda
+        if undefined.any():
+            # no count in the message, so repeats collapse under the default filter
+            warnings.warn(
+                f"The Box-Cox back transformation with lambda={blambda:.6g} is "
+                f"undefined at and beyond {-1 / blambda:.6g}; the values there "
+                f"were set to nan."
+            )
+        out = np.where(undefined, np.nan, out)
     return out
 
 
@@ -2732,6 +2762,7 @@ class AutoARIMA:
         self.seasonal_test_kwargs = seasonal_test_kwargs
         self.allowdrift = allowdrift
         self.allowmean = allowmean
+        _check_blambda(blambda)
         self.blambda = blambda
         self.biasadj = biasadj
         self.period = period

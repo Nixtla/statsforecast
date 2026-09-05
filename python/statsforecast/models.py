@@ -64,14 +64,15 @@ from scipy.special import inv_boxcox
 
 from statsforecast.arima import (
     Arima,
+    _check_blambda,
+    _inv_boxcox as _arima_inv_boxcox,
+    _transformed_fitted_arima,
     auto_arima_f,
     fitted_arima,
     forecast_arima,
     forward_arima,
     is_constant,
 )
-from statsforecast.arima import _inv_boxcox as _arima_inv_boxcox
-from statsforecast.arima import _transformed_fitted_arima
 from statsforecast.ets import (
     _PHI_LOWER,
     _PHI_UPPER,
@@ -399,6 +400,7 @@ class AutoARIMA(_TS):
         self.seasonal_test_kwargs = seasonal_test_kwargs
         self.allowdrift = allowdrift
         self.allowmean = allowmean
+        _check_blambda(blambda)
         self.blambda = blambda
         self.biasadj = biasadj
         self.season_length = season_length
@@ -1998,6 +2000,7 @@ class ARIMA(_TS):
         self.include_mean = include_mean
         self.include_drift = include_drift
         self.include_constant = include_constant
+        _check_blambda(blambda)
         self.blambda = blambda
         self.biasadj = biasadj
         self.method = method
