@@ -786,6 +786,23 @@ def test_distribution_ged_on_gaussian_gives_beta_near_2():
     )
 
 
+@pytest.mark.parametrize("distribution,param_key", [
+    ("t",           "nu"),
+    ("skew-normal", "alpha_dist"),
+    ("ged",         "beta_dist"),
+])
+def test_distribution_near_degenerate_series_does_not_blow_up(distribution, param_key):
+    """A near-constant series drives sigma -> 0, which must be projected back
+    into the safe box rather than raising ZeroDivisionError/OverflowError."""
+    rng = np.random.default_rng(0)
+    y = np.ones(80) + 1e-9 * rng.standard_normal(80)
+    y[40] += 1.0
+    fit = arima(y, order=(1, 0, 0), method="ML", distribution=distribution)
+    assert math.isfinite(fit["aic"])
+    assert fit["sigma2"] > 0.0
+    assert math.isfinite(fit[param_key])
+
+
 @pytest.mark.parametrize("distribution,extra_key", [
     ("normal",      None),
     ("laplace",     None),
@@ -896,15 +913,15 @@ def test_issue_649(capsys):
     captured = capsys.readouterr()
     expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : inf
 ARIMA(0,0,0)            with non-zero mean : 494.2237
-ARIMA(1,0,0)(1,0,0)[12] with non-zero mean : inf
-ARIMA(0,0,1)(0,0,1)[12] with non-zero mean : inf
+ARIMA(1,0,0)(1,0,0)[12] with non-zero mean : 496.9135
+ARIMA(0,0,1)(0,0,1)[12] with non-zero mean : 496.7905
 ARIMA(0,0,0)            with zero mean     : 553.2571
 ARIMA(0,0,0)(1,0,0)[12] with non-zero mean : 496.5234
 ARIMA(0,0,0)(0,0,1)[12] with non-zero mean : 496.5226
 ARIMA(0,0,0)(1,0,1)[12] with non-zero mean : inf
-ARIMA(1,0,0)            with non-zero mean : inf
+ARIMA(1,0,0)            with non-zero mean : 494.4937
 ARIMA(0,0,1)            with non-zero mean : 494.3700
-ARIMA(1,0,1)            with non-zero mean : inf
+ARIMA(1,0,1)            with non-zero mean : 495.5334
 """
     assert captured.out == expected_output
 

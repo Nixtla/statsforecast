@@ -9,6 +9,7 @@ from .utils import results
 from .distributions import (
     switch_distribution,
     dist_init_params,
+    dist_tail_bounds,
     extract_dist_params,
     aic_bic_aicc,
 )
@@ -270,8 +271,9 @@ def cesmodel(
         all_lower = np.array([0.01, 0.01, 0.01, 0.01])
         all_upper = np.array([1.8, 1.9, 1.5, 1.5])
         n_smooth = len(smooth_x0)
-        lower_ext = np.concatenate([all_lower[:n_smooth], np.full(n_dist, -np.inf)])
-        upper_ext = np.concatenate([all_upper[:n_smooth], np.full(n_dist, np.inf)])
+        dist_lower, dist_upper = dist_tail_bounds(distribution, n_dist)
+        lower_ext = np.concatenate([all_lower[:n_smooth], dist_lower])
+        upper_ext = np.concatenate([all_upper[:n_smooth], dist_upper])
         opt_res = _ces.optimize_dist(
             x0_ext, lower_ext, upper_ext,
             float(par["alpha_0"]), float(par["alpha_1"]),
