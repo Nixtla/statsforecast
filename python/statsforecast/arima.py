@@ -1372,8 +1372,9 @@ def _resolve_blambda(x, blambda, period):
     """Resolve the Box-Cox parameter, which can be a float or the string 'auto'.
 
     'auto' is resolved as forecast::BoxCox does, with Guerrero's method over
-    [-0.9, 2]. Missing values are left in place, since they're accounted for
-    when computing the coefficient of variation of each subseries.
+    [-0.9, 2], or over [0, 2] when `x` isn't strictly positive. Missing values
+    are left in place, since they're accounted for when computing the
+    coefficient of variation of each subseries.
 
     Args:
         x (np.ndarray): The series the parameter is selected from.
@@ -1390,13 +1391,17 @@ def _resolve_blambda(x, blambda, period):
     """
     _check_blambda(blambda)
     if isinstance(blambda, str):
+        lower = -0.9
         if np.any(x <= 0):
             warnings.warn(
                 "Guerrero's method for selecting a Box-Cox parameter (lambda) "
                 "is given for strictly positive data."
             )
+            # a negative lambda would turn every non-positive value into nan,
+            # so the search is restricted to where the transformation is defined
+            lower = 0.0
         blambda = boxcox_lambda(
-            x, method="guerrero", season_length=max(period, 2), lower=-0.9, upper=2.0
+            x, method="guerrero", season_length=max(period, 2), lower=lower, upper=2.0
         )
     return float(blambda)
 
@@ -1488,7 +1493,7 @@ def Arima(
     include_drift=False,
     include_constant=None,
     blambda=None,
-    biasadj=False,
+    biasadj=None,
     method="CSS",
     model=None,
     distribution="normal",
@@ -1500,7 +1505,9 @@ def Arima(
     if model is not None and blambda is None:
         # keep the transformation of the model we're applying to the new data
         blambda = model["lambda"]
-        biasadj = model.get("biasadj", biasadj)
+        if biasadj is None:
+            biasadj = model.get("biasadj")
+    biasadj = bool(biasadj)
     if blambda is not None:
         blambda = _resolve_blambda(x, blambda, seasonal["period"])
         x = _boxcox(x, blambda)

@@ -10,6 +10,7 @@ from scipy.signal import lfilter
 from scipy.stats import gennorm, skewnorm
 from scipy.stats import t as t_dist
 
+import statsforecast.arima as arima_module
 from statsforecast.arima import (
     Arima,
     ARIMA_invtrans,
@@ -1375,3 +1376,45 @@ def test_boxcox_auto_lambda_uses_tail_aligned_subseries(n):
         guer_cv, bounds=(-0.9, 2.0), method="bounded", options={"xatol": 1e-8}
     ).x
     assert _resolve_blambda(y, "auto", period) == pytest.approx(expected, abs=1e-3)
+
+
+def test_boxcox_explicit_biasadj_overrides_the_reused_model(boxcox_series):
+    """An explicit biasadj wins over the value stored on the model being reused."""
+    median_model = Arima(boxcox_series, order=(1, 1, 1), blambda=0.0, biasadj=False)
+    mean_model = Arima(boxcox_series, order=(1, 1, 1), blambda=0.0, biasadj=True)
+
+    assert Arima(boxcox_series, order=(1, 1, 1), model=median_model, biasadj=True)[
+        "biasadj"
+    ]
+    assert not Arima(boxcox_series, order=(1, 1, 1), model=mean_model, biasadj=False)[
+        "biasadj"
+    ]
+    # when it isn't given, the model's value is inherited
+    assert Arima(boxcox_series, order=(1, 1, 1), model=mean_model)["biasadj"]
+    assert not Arima(boxcox_series, order=(1, 1, 1), model=median_model)["biasadj"]
+
+
+def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch):
+    """forecast::BoxCox.lambda raises `lower` to 0 when the data isn't positive.
+
+    coreforecast's Guerrero doesn't currently return a negative lambda for such
+    a series, so the bound is pinned at the call rather than at the estimate: a
+    negative lambda would silently turn every non-positive observation into nan
+    inside `_boxcox`.
+    """
+    seen = {}
+
+    def spy(x, **kwargs):
+        seen.update(kwargs)
+        return 0.5
+
+    monkeypatch.setattr(arima_module, "boxcox_lambda", spy)
+
+    positive = np.array([1.0, 2.0, 3.0, 4.0] * 8)
+    _resolve_blambda(positive, "auto", 4)
+    assert seen["lower"] == -0.9
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        _resolve_blambda(np.where(positive == 2.0, 0.0, positive), "auto", 4)
+    assert seen["lower"] == 0.0
