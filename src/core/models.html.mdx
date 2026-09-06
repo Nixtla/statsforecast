@@ -74,7 +74,7 @@ Name | Type | Description | Default
 `seasonal_test_kwargs` | <code>[Optional](#typing.Optional)\[[dict](#dict)\]</code> | Seasonal unit root test arguments. | <code>None</code>
 `allowdrift` | <code>bool, default=True</code> | If True, drift models terms considered. | <code>True</code>
 `allowmean` | <code>bool, default=True</code> | If True, non-zero mean models considered. | <code>True</code>
-`blambda` | <code>[Optional](#typing.Optional)\[[float](#float)\]</code> | Box-Cox transformation parameter. | <code>None</code>
+`blambda` | <code>Optional\[Union[float, str]\], default=None</code> | Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None. | <code>None</code>
 `biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
 `season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
 `alias` | <code>str, default="AutoARIMA"</code> | Custom name of the model. | <code>'AutoARIMA'</code>
@@ -876,7 +876,7 @@ Name | Type | Description | Default
 `include_mean` | <code>bool, default=True</code> | Should the ARIMA model include a mean term? The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions). | <code>True</code>
 `include_drift` | <code>bool, default=False</code> | Should the ARIMA model include a linear drift term? (i.e., a linear regression with ARIMA errors is fitted.) | <code>False</code>
 `include_constant` | <code>bool, optional, default=None</code> | If True, then includ_mean is set to be True for undifferenced series and include_drift is set to be True for differenced series. Note that if there is more than one difference taken, no constant is included regardless of the value of this argument. This is deliberate as otherwise quadratic and higher order polynomial trends would be induced. | <code>None</code>
-`blambda` | <code>float, optional, default=None</code> | Box-Cox transformation parameter. | <code>None</code>
+`blambda` | <code>Optional\[Union[float, str]\], default=None</code> | Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None. | <code>None</code>
 `biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
 `method` | <code>str, default='CSS-ML'</code> | Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. | <code>'CSS-ML'</code>
 `fixed` | <code>dict, optional, default=None</code> | Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys. | <code>None</code>
@@ -995,7 +995,7 @@ Name | Type | Description | Default
 `lags` | <code>[int](#int) or [list](#list)</code> | Number of lags to include in the model. If an int is passed then all lags up to `lags` are considered. If a list, only the elements of the list are considered as lags. | *required*
 `include_mean` | <code>bool, default=True</code> | Should the AutoRegressive model include a mean term? The default is True for undifferenced series, False for differenced ones (where a mean would not affect the fit nor predictions). | <code>True</code>
 `include_drift` | <code>bool, default=False</code> | Should the AutoRegressive model include a linear drift term? (i.e., a linear regression with AutoRegressive errors is fitted.) | <code>False</code>
-`blambda` | <code>float, optional, default=None</code> | Box-Cox transformation parameter. | <code>None</code>
+`blambda` | <code>Optional\[Union[float, str]\], default=None</code> | Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None. | <code>None</code>
 `biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
 `method` | <code>str, default='CSS-ML'</code> | Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. | <code>'CSS-ML'</code>
 `fixed` | <code>dict, optional, default=None</code> | Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys. | <code>None</code>
