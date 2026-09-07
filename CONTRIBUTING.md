@@ -9,7 +9,7 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
 - [Step-by-step Contribution Guide](#step-by-step-contribution-guide)
   - [Table of Contents 📚](#table-of-contents-)
   - [Prerequisites](#prerequisites)
-  - [Git `fork-and-pull` worklow](#git-fork-and-pull-worklow)
+  - [Git `fork-and-pull` workflow](#git-fork-and-pull-workflow)
   - [Set Up a Virtual Environment](#set-up-a-virtual-environment)
   - [Install required libraries for development](#install-required-libraries-for-development)
     - [Setup pre-commit hooks](#setup-pre-commit-hooks)
@@ -26,7 +26,7 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
 - **GitHub**: You should already have a GitHub account and a basic understanding of its functionalities. Alternatively check [this guide](https://docs.github.com/en/get-started).
 - **uv**: You need to have `uv` installed. You can refer to the [docs](https://docs.astral.sh/uv/getting-started/installation/) in order to install it.
 
-## Git `fork-and-pull` worklow
+## Git `fork-and-pull` workflow
 
 **1. Fork the Project:**
 Start by forking the Nixtla repository to your own GitHub account. This creates a personal copy of the project where you can make changes without affecting the main repository.
@@ -78,7 +78,11 @@ By using the `-e` flag the package is linked directly to the source code, allowi
 
 ### Re-compiling the shared library
 
-If you're working on the C++ code, you'll need to re-compile the shared library, which can be done with: `python setup.py build_ext --inplace` (this will compile it into the `build` directory and copy it to the python package location).
+If you're working on the C++ code, you'll need to re-compile the shared library:
+
+```sh
+uv sync --group dev --reinstall-package statsforecast
+```
 
 ## Set Up your Notebook based development environment
 
