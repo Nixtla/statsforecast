@@ -12,21 +12,31 @@ __all__ = [
 
 
 import math
+import numbers
 import warnings
 from collections import namedtuple
 from functools import partial
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
 
 from ._lib import arima as _arima
 from .mstl import mstl
-from .distributions import ArimaMethod, Distribution, _VALID_DISTRIBUTIONS, _quantiles, error_params_from_model, extract_dist_params
+from .distributions import (
+    ArimaMethod,
+    Distribution,
+    _VALID_DISTRIBUTIONS,
+    _quantiles,
+    error_params_from_model,
+    extract_dist_params,
+    guard_dist_tail,
+)
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
@@ -221,24 +231,37 @@ def arima(
     SSG = SSinit == "Gardner1980"
     x = x.astype(np.float64, copy=True)
 
+    # upARIMA runs on every objective evaluation, so it reuses one result dict
+    # and one pair of a/Pn buffers instead of allocating. arima_like() treats a
+    # and Pn as scratch space and both are fully rewritten below, and callers
+    # hand the dict straight to arima_like without holding on to it.
+    cache: Dict[str, Any] = {}
+
     def upARIMA(mod, phi, theta):
         p = len(phi)
         q = len(theta)
-        mod["phi"] = phi
-        mod["theta"] = theta
         r = max(p, q + 1)
-        if p > 0:
-            mod["T"][:p, 0] = phi
+
+        if cache.get("mod") is not mod:
+            cache["mod"] = mod
+            cache["Z"] = {
+                **mod,
+                "a": np.empty_like(mod["a"]),
+                "Pn": np.empty_like(mod["Pn"]),
+            }
+        Z = cache["Z"]
+        Z["phi"], Z["theta"] = phi, theta
+        Z["a"][:] = 0.0
+        Z["Pn"][:] = mod["Pn"]
         if r > 1:
             if SSG:
-                mod["Pn"][:r, :r] = getQ0(phi, theta)
+                Z["Pn"][:r, :r] = getQ0(phi, theta)
             else:
                 raise NotImplementedError('SSinit != "Gardner1980"')
                 # mod['Pn'][:r, :r] = getQ0bis(phi, theta, tol=0)
         else:
-            mod["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
-        mod["a"][:] = 0  # a es vector?
-        return mod
+            Z["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
+        return Z
 
     def arimaSS(y, mod):
         return arima_like(
@@ -316,8 +339,8 @@ def arima(
         # p_ext = [arma_free..., log_sigma2, log_nu_m2]
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
-        log_sigma2 = p_ext[n_arma_free]
-        log_nu_m2 = p_ext[n_arma_free + 1]
+        tail, tail_penalty = guard_dist_tail("t", p_ext[n_arma_free:])
+        log_sigma2, log_nu_m2 = tail
         sigma2 = math.exp(log_sigma2)
         nu = math.exp(log_nu_m2) + 2.0  # nu > 2
         x = x.copy()
@@ -358,6 +381,7 @@ def arima(
             + 0.5 * math.log(nu * math.pi)
             + half_nu1 / n * sum_log_kernel
             + 0.5 * sumlog / n
+            + tail_penalty
         )
         return obj
 
@@ -365,8 +389,8 @@ def arima(
         # p_ext = [arma_free..., log_sigma2, alpha]
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
-        log_sigma2 = p_ext[n_arma_free]
-        alpha = p_ext[n_arma_free + 1]
+        tail, tail_penalty = guard_dist_tail("skew-normal", p_ext[n_arma_free:])
+        log_sigma2, alpha = tail
         sigma = math.exp(0.5 * log_sigma2)
         x = x.copy()
         par = coef.copy()
@@ -402,6 +426,7 @@ def arima(
             + np.nansum(std_resid ** 2) / (2.0 * n * sigma ** 2)
             - np.nansum(norm.logcdf(alpha * std_resid / sigma)) / n
             + 0.5 * sumlog / n
+            + tail_penalty
         )
         return obj
 
@@ -410,8 +435,8 @@ def arima(
         # GED(0, σ, β): f(e) = β/(2σΓ(1/β)) * exp(-(|e|/σ)^β)
         n_arma_free = int(mask.sum())
         p = p_ext[:n_arma_free]
-        log_sigma = p_ext[n_arma_free]
-        log_beta = p_ext[n_arma_free + 1]
+        tail, tail_penalty = guard_dist_tail("ged", p_ext[n_arma_free:])
+        log_sigma, log_beta = tail
         sigma = math.exp(log_sigma)
         beta = math.exp(log_beta)
         x = x.copy()
@@ -447,34 +472,49 @@ def arima(
             + math.lgamma(1.0 / beta) - log_beta
             + np.nansum(np.abs(std_resid / sigma) ** beta) / n
             + 0.5 * sumlog / n
+            + tail_penalty
         )
         return obj
 
     def arCheck(ar):
-        p = np.argmax(np.append(1, -ar) != 0)
+        # last non-zero index: the AR order with trailing zeros trimmed
+        p = np.flatnonzero(np.append(1, -ar))[-1]
         if not p:
             return True
         coefs = np.append(1, -ar[:p])
         roots = np.polynomial.polynomial.polyroots(coefs)
         return all(np.abs(roots) > 1)
 
+    def ar_stationarity_error(arma, pars):
+        """Message for a non-stationary (seasonal) AR part, or None."""
+        if arma[0] > 0 and not arCheck(pars[: arma[0]]):
+            return "non-stationary AR part"
+        if arma[2] > 0 and not arCheck(pars[arma[:2].sum() + np.arange(arma[2])]):
+            return "non-stationary seasonal AR part"
+        return None
+
+    def stationary_ar_checks(arma, pars):
+        error = ar_stationarity_error(arma, pars)
+        if error is not None:
+            raise ValueError(error)
+
     def maInvert(ma):
         q = len(ma)
-        q0 = np.argmax(np.append(1, ma) != 0)
+        q0 = np.flatnonzero(np.append(1, ma))[-1]
         if not q0:
             return ma
         coefs = np.append(1, ma[:q0])
         roots = np.polynomial.polynomial.polyroots(coefs)
         ind = np.abs(roots) < 1
-        if any(ind):
+        if not any(ind):
             return ma
         if q0 == 1:
             return np.append(1 / ma[0], np.repeat(0, q - q0))
         roots[ind] = 1 / roots[ind]
-        x = 1
+        poly = np.array([1.0], dtype=np.complex128)
         for r in roots:
-            x = np.append(x, 0) - np.append(0, x) / r
-        return x.real[1:], np.repeat(0, q - q0)
+            poly = np.append(poly, 0) - np.append(0, poly) / r
+        return np.append(poly.real[1:], np.repeat(0, q - q0))
 
     if x.ndim > 1:
         raise ValueError("Only implemented for univariate time series")
@@ -623,15 +663,9 @@ def arima(
         if nan_mask.any():
             init[nan_mask] = init0[nan_mask]
         if method == ArimaMethod.ML:
-            # check stationarity
-            if arma[0] > 0:
-                if not arCheck(init[: arma[0]]):
-                    raise ValueError("non-stationary AR part")
-                if arma[2] > 0:
-                    if not arCheck(init[arma[:2]].sum() + np.arange(arma[2])):
-                        raise ValueError("non-stationary seasonal AR part")
-                if transform_pars:
-                    init = ARIMA_invtrans(init, arma)
+            stationary_ar_checks(arma, init)
+            if transform_pars:
+                init = ARIMA_invtrans(init, arma)
     else:
         init = init0
 
@@ -691,17 +725,17 @@ def arima(
                     tol=tol,
                     options=optim_control,
                 )
-                if res.status != 1:
-                    # 0: successs
-                    # 1: maximum number of iterations exceeded
-                    # 2: precision loss
+                # status 1 is "maximum number of iterations exceeded"; 0 is
+                # success and 2 precision loss. Without transform_pars ML is
+                # unconstrained, so a non-stationary CSS estimate is still a
+                # better start than init.
+                converged = res.status != 1
+                if converged and (
+                    not transform_pars or ar_stationarity_error(arma, res.x) is None
+                ):
                     init[mask] = res.x
-                if arma[0] > 0:
-                    if not arCheck(init[: arma[0]]):
-                        raise ValueError("non-stationary AR part from CSS")
-                if arma[2] > 0:
-                    if not arCheck(init[np.sum(arma[:2])] + np.arange(arma[2])):
-                        raise ValueError("non-stationary seasonal AR part from CSS")
+                else:
+                    stationary_ar_checks(arma, init)
                 ncond = 0
         if transform_pars:
             init = ARIMA_invtrans(init, arma)
@@ -713,7 +747,11 @@ def arima(
                 init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
+        ml_args = (x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma)
+        # objective actually optimized, plus the tail appended to the arma params
+        # (empty for normal/laplace, which concentrate their scale out)
         ml_obj = armafn if distribution == Distribution.NORMAL else armafn_laplace
+        dist_tail_fit = np.array([])
         nu_t = None
         sigma2_t = None
         alpha_sn = None
@@ -731,12 +769,14 @@ def arima(
             res_sn = minimize(
                 armafn_skewnorm,
                 init_sn,
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
-            _dp_sn = extract_dist_params("skew-normal", res_sn.x[n_arma_free:])
+            ml_obj = armafn_skewnorm
+            dist_tail_fit = res_sn.x[n_arma_free:]
+            _dp_sn = extract_dist_params("skew-normal", dist_tail_fit)
             sigma2_sn = _dp_sn["sigma2"]
             alpha_sn = _dp_sn["alpha_dist"]
             hess_arma = (
@@ -762,12 +802,14 @@ def arima(
             res_t = minimize(
                 armafn_t,
                 init_t,
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
-            _dp_t = extract_dist_params("t", res_t.x[n_arma_free:])
+            ml_obj = armafn_t
+            dist_tail_fit = res_t.x[n_arma_free:]
+            _dp_t = extract_dist_params("t", dist_tail_fit)
             sigma2_t = _dp_t["sigma2"]
             nu_t = _dp_t["nu"]
             hess_arma = (
@@ -793,12 +835,14 @@ def arima(
             res_ged = minimize(
                 armafn_ged,
                 init_ged,
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
-            _dp_ged = extract_dist_params("ged", res_ged.x[n_arma_free:])
+            ml_obj = armafn_ged
+            dist_tail_fit = res_ged.x[n_arma_free:]
+            _dp_ged = extract_dist_params("ged", dist_tail_fit)
             sigma2_ged = _dp_ged["sigma2"]
             beta_ged = _dp_ged["beta_dist"]
             hess_arma = (
@@ -818,14 +862,14 @@ def arima(
                 True,
                 0,
                 np.array([]),
-                ml_obj(np.array([]), x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                ml_obj(np.array([]), *ml_args),
                 np.array([]),
             )
         else:
             res = minimize(
                 ml_obj,
                 init[mask],
-                args=(x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma),
+                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
@@ -841,17 +885,14 @@ def arima(
                 if mask[ind].all():
                     coef[ind] = maInvert(coef[ind])
             if any(coef[mask] != res.x):
-                oldcode = res.status
-                res = minimize(
-                    arma_css_op,
-                    coef[mask],
-                    args=(x, coef, mask, arma, ncxreg, xreg, narma),
-                    method=optim_method,
-                    tol=tol,
-                    options=optim_control,
+                # maInvert re-parameterised the MA part; re-score there so res.fun
+                # (and loglik/aic below) matches the coefficients we report.
+                # scipy's maxiter=0 would return hess_inv = I, so evaluate
+                # directly and keep the approximation from the actual fit.
+                new_fun = ml_obj(np.concatenate([coef[mask], dist_tail_fit]), *ml_args)
+                res = OptimResult(
+                    res.success, res.status, coef[mask], new_fun, res.hess_inv
                 )
-                res = OptimResult(res.success, oldcode, res.x, res.fun, res.hess_inv)
-                coef[mask] = res.x
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
             sol = np.matmul(res.hess_inv, A) / n_used
@@ -1108,9 +1149,6 @@ def myarima(
             k = abs(testvec) > 1e-8
             if k.sum() > 0:
                 last_nonzero = np.max(np.where(k)[0])
-            else:
-                last_nonzero = 0
-            if last_nonzero > 0:
                 testvec = testvec[: (last_nonzero + 1)]
                 proots = np.polynomial.polynomial.polyroots(np.append(1, -testvec))
                 if proots.size > 0:
@@ -1120,9 +1158,6 @@ def myarima(
             k = abs(testvec) > 1e-8
             if np.sum(k) > 0:
                 last_nonzero = np.max(np.where(k)[0])
-            else:
-                last_nonzero = 0
-            if last_nonzero > 0:
                 testvec = testvec[: (last_nonzero + 1)]
                 proots = np.polynomial.polynomial.polyroots(np.append(1, testvec))
                 if proots.size > 0:
@@ -1313,6 +1348,142 @@ def arima2(x, model, xreg, method):
     return refit
 
 
+def _check_blambda(blambda):
+    """Validate a Box-Cox parameter without resolving it.
+
+    Lets the models reject an invalid `blambda` when they're built, instead of
+    failing deep inside the fit.
+
+    Args:
+        blambda (None, float or str): Box-Cox transformation parameter, 'auto'
+            to select it from the data, or None for no transformation.
+
+    Raises:
+        ValueError: If `blambda` isn't None, a real number or 'auto'.
+    """
+    if blambda is None or isinstance(blambda, numbers.Real):
+        return
+    if isinstance(blambda, str) and blambda == "auto":
+        return
+    raise ValueError(f"blambda must be a float or 'auto', got {blambda!r}")
+
+
+def _resolve_blambda(x, blambda, period):
+    """Resolve the Box-Cox parameter, which can be a float or the string 'auto'.
+
+    'auto' is resolved as forecast::BoxCox does, with Guerrero's method over
+    [-0.9, 2], or over [0, 2] when `x` isn't strictly positive. Missing values
+    are left in place, since they're accounted for when computing the
+    coefficient of variation of each subseries.
+
+    Args:
+        x (np.ndarray): The series the parameter is selected from.
+        blambda (float or str): Box-Cox transformation parameter, or 'auto' to
+            select it from `x`.
+        period (int): Number of observations per unit of time. Subseries of at
+            least two observations are used, regardless of this value.
+
+    Returns:
+        float: The resolved Box-Cox transformation parameter.
+
+    Raises:
+        ValueError: If `blambda` isn't a real number or 'auto'.
+    """
+    _check_blambda(blambda)
+    if isinstance(blambda, str):
+        lower = -0.9
+        if np.any(x <= 0):
+            warnings.warn(
+                "Guerrero's method for selecting a Box-Cox parameter (lambda) "
+                "is given for strictly positive data."
+            )
+            # a negative lambda would turn every non-positive value into nan,
+            # so the search is restricted to where the transformation is defined
+            lower = 0.0
+        blambda = boxcox_lambda(
+            x, method="guerrero", season_length=max(period, 2), lower=lower, upper=2.0
+        )
+    return float(blambda)
+
+
+def _boxcox(x, blambda):
+    """Apply the Box-Cox transformation.
+
+    Args:
+        x (np.ndarray): Array with the data to transform.
+        blambda (float): Box-Cox transformation parameter.
+
+    Returns:
+        np.ndarray: The transformed data, with the same shape as `x`. Entries
+            that aren't strictly positive are nan when `blambda` < 0, where the
+            transformation is undefined.
+    """
+    # the transformations read the buffer directly, so they need contiguous input
+    x = np.ascontiguousarray(x)
+    if blambda < 0:
+        x = np.where(x <= 0, np.nan, x)
+    # coreforecast flattens its input, so the shape has to be restored
+    return boxcox(x, blambda).reshape(x.shape)
+
+
+def _inv_boxcox(x, blambda):
+    """Reverse the Box-Cox transformation.
+
+    Args:
+        x (np.ndarray): Array with the transformed data.
+        blambda (float): Box-Cox transformation parameter.
+
+    Returns:
+        np.ndarray: The data on the original scale, with the same shape as `x`.
+            When `blambda` < 0 the transformation has an asymptote at
+            -1/blambda, so entries at or above it are nan.
+    """
+    x = np.ascontiguousarray(x)
+    # coreforecast flattens its input, so the shape has to be restored
+    out = inv_boxcox(x, blambda).reshape(x.shape)
+    if blambda < 0:
+        undefined = x >= -1 / blambda
+        if undefined.any():
+            # no count in the message, so repeats collapse under the default filter
+            warnings.warn(
+                f"The Box-Cox back transformation with lambda={blambda:.6g} is "
+                f"undefined at and beyond {-1 / blambda:.6g}; the values there "
+                f"were set to nan."
+            )
+        out = np.where(undefined, np.nan, out)
+    return out
+
+
+def _inv_boxcox_mean(x, blambda, fvar=None, biasadj=False):
+    """Back-transform a Box-Cox transformed mean.
+
+    A plain back transformation yields medians, so when `biasadj` is True the
+    second order Taylor approximation of forecast::InvBoxCox is used to turn
+    them into means.
+
+    Args:
+        x (np.ndarray): Array with the transformed means.
+        blambda (float): Box-Cox transformation parameter.
+        fvar (float or np.ndarray, optional): Variance on the transformed
+            scale. Only required when `biasadj=True`. Defaults to None.
+        biasadj (bool, optional): Whether to adjust the back-transformed
+            medians to produce means. Defaults to False.
+
+    Returns:
+        np.ndarray: The means on the original scale.
+
+    Raises:
+        ValueError: If `biasadj=True` and no `fvar` is provided.
+    """
+    out = _inv_boxcox(x, blambda)
+    if biasadj:
+        if fvar is None:
+            raise ValueError("`fvar` is required when `biasadj=True`")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            out = out * (1 + 0.5 * fvar * (1 - blambda) / out ** (2 * blambda))
+    return out
+
+
 def Arima(
     x,
     order=(0, 0, 0),
@@ -1322,7 +1493,7 @@ def Arima(
     include_drift=False,
     include_constant=None,
     blambda=None,
-    biasadj=False,
+    biasadj=None,
     method="CSS",
     model=None,
     distribution="normal",
@@ -1331,11 +1502,15 @@ def Arima(
     x = x.copy()
     origx = x.copy()
     seas_order = seasonal["order"]
+    if model is not None and blambda is None:
+        # keep the transformation of the model we're applying to the new data
+        blambda = model["lambda"]
+        if biasadj is None:
+            biasadj = model.get("biasadj")
+    biasadj = bool(biasadj)
     if blambda is not None:
-        raise NotImplementedError("blambda != None")
-        # x = boxcox(x, blambda)
-        # if not hasattr(blambda, 'biasadj'):
-        #    setattr(blambda, 'biasadj', biasadj)
+        blambda = _resolve_blambda(x, blambda, seasonal["period"])
+        x = _boxcox(x, blambda)
     if xreg is not None:
         if xreg.dtype not in (np.float32, np.float64):
             raise ValueError("xreg should be a float array")
@@ -1404,6 +1579,7 @@ def Arima(
     tmp["bic"] = tmp["aic"] + npar * (math.log(nstar) - 2)
     tmp["xreg"] = xreg
     tmp["lambda"] = blambda
+    tmp["biasadj"] = biasadj
     tmp["x"] = origx
     if model is None and distribution == Distribution.NORMAL:
         tmp["sigma2"] = np.nansum(tmp["residuals"] ** 2) / (nstar - npar + 1)
@@ -1459,6 +1635,8 @@ def forecast_arima(
         h = 2 * model["arma"][4] if model["arma"][4] > 1 else 10
     if blambda is None:
         blambda = model["lambda"]
+    if biasadj is None:
+        biasadj = model.get("biasadj", False)
 
     use_drift = "drift" in model["coef"].keys()
     x = model["x"]
@@ -1493,6 +1671,8 @@ def forecast_arima(
     if is_constant(x):
         pred = np.repeat(x[0], h)
         se = np.repeat(0, h)
+        # `x` is kept on the original scale, so there's nothing to back transform
+        blambda = None
     elif usexreg:
         if xreg is None:
             raise Exception("No regressors provided")
@@ -1523,6 +1703,16 @@ def forecast_arima(
     else:
         lower = None
         upper = None
+
+    if blambda is not None:
+        if lower is not None and upper is not None:
+            lower = pd.DataFrame(
+                _inv_boxcox(lower.to_numpy(), blambda), columns=lower.columns
+            )
+            upper = pd.DataFrame(
+                _inv_boxcox(upper.to_numpy(), blambda), columns=upper.columns
+            )
+        pred = _inv_boxcox_mean(pred, blambda, fvar=se**2, biasadj=biasadj)
 
     ans = {
         "method": None,
@@ -1666,6 +1856,10 @@ def simulate_arima(
     if not isinstance(xm, int):
         paths += xm
 
+    if model.get("lambda") is not None:
+        # the model was fitted on the transformed scale, so are the paths
+        paths = _inv_boxcox(paths, model["lambda"])
+
     return paths
 
 
@@ -1688,9 +1882,36 @@ def fitted_arima(model, h=1):
         elif model.get("lambda") is None:
             return x - model["residuals"]
         else:
-            raise NotImplementedError("lambda not None")
+            blambda = model["lambda"]
+            # residuals are on the transformed scale
+            fits = _boxcox(x, blambda) - model["residuals"]
+            return _inv_boxcox_mean(
+                fits,
+                blambda,
+                fvar=model["sigma2"],
+                biasadj=model.get("biasadj", False),
+            )
     else:
         raise NotImplementedError("h > 1")
+
+
+def _transformed_fitted_arima(model):
+    """Return the in-sample predictions on the Box-Cox transformed scale.
+
+    Prediction intervals are built on this scale, where `sigma2` lives, and
+    then back transformed.
+
+    Args:
+        model: The fitted ARIMA model.
+
+    Returns:
+        np.ndarray: Fitted values on the transformed scale, or None if the
+            model was fitted without a Box-Cox transformation.
+    """
+    blambda = model.get("lambda")
+    if blambda is None:
+        return None
+    return _boxcox(model["x"], blambda) - model["residuals"]
 
 
 def seas_heuristic(x, period):
@@ -1804,7 +2025,7 @@ def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
         return d
     while dodiff and d < max_d:
         d += 1
-        x = diff(x, 1, 1)[1:]
+        x = diff(x, 1, 1)
         if is_constant(x):
             return d
         dodiff = run_tests(x, test, alpha)
@@ -1907,9 +2128,8 @@ def auto_arima_f(
     if series_len <= 3:
         ic = "aic"
     if blambda is not None:
-        raise NotImplementedError("blambda != None")
-        # x = boxcox(x, blambda)
-        # setattr(blambda, 'biasadj', biasadj)
+        blambda = _resolve_blambda(x, blambda, period)
+        x = _boxcox(x, blambda)
     if xreg is not None:
         xx = x.copy()
         xregg = xreg.copy()
@@ -2034,6 +2254,8 @@ def auto_arima_f(
                     method=method,
                 )
         fit["x"] = origx
+        fit["lambda"] = blambda
+        fit["biasadj"] = biasadj
         return fit
     if m > 1:
         if max_p > 0:
@@ -2091,6 +2313,7 @@ def auto_arima_f(
             period=m,
         )
         bestfit["lambda"] = blambda
+        bestfit["biasadj"] = biasadj
         bestfit["x"] = origx
         if trace:
             print(f"Best model: {arima_string(bestfit, padding=True)}\n\n")
@@ -2384,6 +2607,7 @@ def auto_arima_f(
     bestfit["x"] = origx
     bestfit["ic"] = None
     bestfit["lambda"] = blambda
+    bestfit["biasadj"] = biasadj
 
     return bestfit
 
@@ -2496,9 +2720,9 @@ class AutoARIMA:
             unit root test. See nsdiffs for details. Defaults to None.
         allowdrift (bool): If True, models with drift terms are considered. Defaults to True.
         allowmean (bool): If True, models with a non-zero mean are considered. Defaults to True.
-        blambda (float, optional): Box-Cox transformation parameter.
-            If lambda="auto", then a transformation is automatically
-            selected using BoxCox.lambda.
+        blambda (float or str, optional): Box-Cox transformation parameter.
+            If 'auto', the parameter is automatically selected with the
+            Guerrero method over [-0.9, 2].
             The transformation is ignored if None.
             Otherwise, data transformed before model is estimated. Defaults to None.
         biasadj (bool): Use adjusted back-transformed mean for Box-Cox transformations.
@@ -2546,7 +2770,7 @@ class AutoARIMA:
         seasonal_test_kwargs: Optional[Dict] = None,
         allowdrift: bool = True,
         allowmean: bool = True,
-        blambda: Optional[float] = None,
+        blambda: Optional[Union[float, str]] = None,
         biasadj: bool = False,
         period: int = 1,
     ):
@@ -2578,6 +2802,7 @@ class AutoARIMA:
         self.seasonal_test_kwargs = seasonal_test_kwargs
         self.allowdrift = allowdrift
         self.allowmean = allowmean
+        _check_blambda(blambda)
         self.blambda = blambda
         self.biasadj = biasadj
         self.period = period
@@ -2687,15 +2912,21 @@ class AutoARIMA:
             dist = self.model_.model.get("distribution", "normal")
             quantiles = _quantiles(_level, distribution=dist, dist_params=error_params_from_model(self.model_.model))
 
-            lo = pd.DataFrame(
-                fitted_values.values.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
-                columns=[f"lo_{l}%" for l in _level],
-            )
+            # intervals are built on the scale the model was fitted on
+            blambda = self.model_.model.get("lambda")
+            trans_fitted = _transformed_fitted_arima(self.model_.model)
+            center = (
+                fitted_values.values if trans_fitted is None else trans_fitted
+            ).reshape(-1, 1)
+
+            lo = center - quantiles * se.reshape(-1, 1)
+            hi = center + quantiles * se.reshape(-1, 1)
+            if blambda is not None:
+                lo = _inv_boxcox(lo, blambda)
+                hi = _inv_boxcox(hi, blambda)
+            lo = pd.DataFrame(lo, columns=[f"lo_{l}%" for l in _level])
             lo = lo.iloc[:, ::-1]
-            hi = pd.DataFrame(
-                fitted_values.values.reshape(-1, 1) + quantiles * se.reshape(-1, 1),
-                columns=[f"hi_{l}%" for l in _level],
-            )
+            hi = pd.DataFrame(hi, columns=[f"hi_{l}%" for l in _level])
 
             return pd.concat([lo, fitted_values, hi], axis=1)
 
