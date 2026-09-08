@@ -23,6 +23,8 @@ __all__ = [
     "distribution_n_extra_params",
     "switch_distribution",
     "dist_init_params",
+    "dist_tail_bounds",
+    "guard_dist_tail",
     "extract_dist_params",
     "aic_bic_aicc",
     "error_params_from_model",
@@ -74,6 +76,52 @@ def dist_init_params(distribution: str, var_init: float):
     return 0, []  # laplace / normal
 
 
+# Safe (lo, hi) box for each entry of the [log_scale, shape] optimizer tail.
+# The entries are logs, so an unbounded line search can overflow/underflow
+# exp()/lgamma()/pow(): exp(-1008) is 0.0, and then 1.0/beta raises. Scale
+# bounds are numeric-safety only and cannot bind for a real series; shape bounds
+# also keep the fitted shape usable by scipy's gennorm/t. Normal and laplace
+# have no tail, so their box is unbounded and guarding them is a no-op.
+_LOG_SCALE = (-250.0, 250.0)  # exp -> [2.7e-109, 3.7e108]; exp**2 stays finite
+_UNBOUNDED = ((-np.inf, np.inf), (-np.inf, np.inf))
+_DIST_TAIL_BOUNDS = {
+    "normal": _UNBOUNDED,
+    "laplace": _UNBOUNDED,
+    "t": (_LOG_SCALE, (-15.0, 7.0)),  # log(nu - 2): nu in (2, 1098.6]
+    "skew-normal": (_LOG_SCALE, (-100.0, 100.0)),  # alpha
+    "ged": (_LOG_SCALE, (-3.0, 3.912023005428146)),  # log(beta): beta in [0.05, 50]
+}
+
+
+def dist_tail_bounds(distribution, n_dist: int = 2):
+    """(lower, upper) arrays for the tail, for box-constrained solvers."""
+    box = _DIST_TAIL_BOUNDS[str(distribution)][:n_dist]
+    return np.array([lo for lo, _ in box]), np.array([hi for _, hi in box])
+
+
+def guard_dist_tail(distribution, tail):
+    """Project the optimizer tail into its safe box.
+
+    Returns `(safe_tail, penalty)`. The penalty is 0 inside the box and
+    quadratic outside it, so a diverging step gets a large finite objective
+    whose gradient points back in, rather than raising in exp()/lgamma().
+    Identity for normal/laplace, which have no tail. `tail` must be finite.
+    """
+    box = _DIST_TAIL_BOUNDS[str(distribution)]
+    safe = []
+    penalty = 0.0
+    for value, (lo, hi) in zip(tail, box):
+        value = float(value)
+        if value < lo:
+            penalty += (value - lo) ** 2
+            value = lo
+        elif value > hi:
+            penalty += (value - hi) ** 2
+            value = hi
+        safe.append(value)
+    return safe, penalty
+
+
 def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict:
     """Convert the fitted optimizer tail into model-dict keys.
 
@@ -84,6 +132,8 @@ def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict
       laplace     -> {"sigma2"}                  # from residuals; b_hat = mean(|e|)
       normal      -> {}
     """
+    if distribution_n_extra_params(distribution):
+        fit_par_dist, _ = guard_dist_tail(distribution, fit_par_dist)
     if distribution == "t":
         return {
             "nu": float(np.exp(fit_par_dist[1]) + 2.0),

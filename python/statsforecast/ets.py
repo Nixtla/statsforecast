@@ -10,6 +10,7 @@ from ._lib import ets as _ets
 from .distributions import (
     switch_distribution,
     dist_init_params,
+    dist_tail_bounds,
     extract_dist_params,
     aic_bic_aicc,
     error_params_from_model,
@@ -706,8 +707,9 @@ def etsmodel(
         n_dist, dist_init = dist_init_params(distribution, var_init)
 
         x0_ext = np.concatenate([par, dist_init])
-        lower_ext = np.concatenate([lower, np.full(n_dist, -np.inf)])
-        upper_ext = np.concatenate([upper, np.full(n_dist, np.inf)])
+        dist_lower, dist_upper = dist_tail_bounds(distribution, n_dist)
+        lower_ext = np.concatenate([lower, dist_lower])
+        upper_ext = np.concatenate([upper, dist_upper])
 
         fred = optimize_ets_dist_target_fn(
             x0=x0_ext,
@@ -1111,9 +1113,7 @@ def _class3models(
     sigma,
     last_state,
     season_length,
-    error,
     trend,
-    seasonality,
     damped,
     alpha,
     beta,
@@ -1192,16 +1192,16 @@ def _class3models(
         )
         Vh = exp1 + sigma * (exp2 + exp3 + exp4 + exp5)
 
-    if trend == "N":
-        Mh = (
-            F1 * np.matmul(Mh, np.transpose(F2))
-            + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
-        )
-    else:
-        Mh = (
-            np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
-            + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
-        )
+        if trend == "N":
+            Mh = (
+                F1 * np.matmul(Mh, np.transpose(F2))
+                + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
+            )
+        else:
+            Mh = (
+                np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
+                + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
+            )
 
     return var
 
@@ -1316,7 +1316,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
             val = k % season_length
             if val == 0:
                 dvals[k - 1] = 1
-        cvals = alpha * beta * steps + gamma * dvals
+        cvals = alpha + beta * steps + gamma * dvals
         sigmah = _compute_sigmah(pf, h, sigma, cvals)
 
     elif error == "M" and trend == "A" and seasonality == "A" and damped == "D":
@@ -1334,16 +1334,14 @@ def _compute_pred_intervals(model, forecasts, h, level):
             cvals[k - 1] = alpha + beta * sum_phi + gamma * dvals[k - 1]
         sigmah = _compute_sigmah(pf, h, sigma, cvals)
 
-    elif error == "M" and seasonality == "M":
+    elif error == "M" and trend != "M" and seasonality == "M":
         # Class 3 models
         sigmah = _class3models(
             h,
             sigma,
             last_state,
             season_length,
-            error,
             trend,
-            seasonality,
             damped,
             alpha,
             beta,

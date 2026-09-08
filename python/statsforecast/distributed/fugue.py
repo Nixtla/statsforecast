@@ -53,7 +53,7 @@ def _cotransform(
 
 class FugueBackend(ParallelBackend):
     """FugueBackend for Distributed Computation.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
+    [Source code](https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/distributed/fugue.py).
 
     This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
     computation on Spark, Dask and Ray without any rewrites.

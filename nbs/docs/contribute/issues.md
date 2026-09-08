@@ -27,7 +27,7 @@ The form to report the bug will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
@@ -46,7 +46,7 @@ The feature request form will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
@@ -64,7 +64,7 @@ A form for suggesting improvements will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
@@ -87,7 +87,7 @@ A form for your proposal will appear.
 
 <Info>
 
-Please ensure that your contributions abide by the [contributing guidelines](https://github.com/nixtla/nixtla/blob/staging/CONTRIBUTING.md) and [code of conduct](https://github.com/nixtla/nixtla/blob/staging/CODE_OF_CONDUCT.md).
+Please ensure that your contributions abide by the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Nixtla/statsforecast/blob/main/CODE_OF_CONDUCT.md).
 
 </Info>
 
