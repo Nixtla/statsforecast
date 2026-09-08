@@ -124,12 +124,16 @@ void Forecast(Ref f, double l, double b, CRef s, int m, Component trend,
   }
 }
 
+// Workhorse taking caller-owned scratch: s and old_s must hold max(m, 24)
+// entries, denom and f 30. Only denom is re-zeroed here; every other buffer is
+// fully written before it is read.
 template <typename Ref, typename CRef>
-double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
-            Component trend, Component season, double alpha, double beta,
-            double gamma, double phi, int m) {
+double CalcBuf(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
+               Component trend, Component season, double alpha, double beta,
+               double gamma, double phi, int m, std::vector<double> &s,
+               std::vector<double> &old_s, std::vector<double> &denom,
+               std::vector<double> &f) {
   auto n = y.size();
-  int n_s = std::max(m, 24);
   m = std::max(m, 1);
   n_mse = std::min(n_mse, 30);
   int n_states =
@@ -138,16 +142,13 @@ double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
   // copy initial state components
   double l = x[0];
   double b = (trend != Component::Nothing) ? x[1] : 0.0;
-  auto s = std::vector<double>(n_s);
   if (season != Component::Nothing) {
     std::copy(x.data() + 1 + (trend != Component::Nothing),
               x.data() + 1 + (trend != Component::Nothing) + m, s.data());
   }
 
   std::fill(a_mse.data(), a_mse.data() + n_mse, 0.0);
-  auto old_s = std::vector<double>(n_s);
-  auto denom = std::vector<double>(30);
-  auto f = std::vector<double>(30);
+  std::fill(denom.data(), denom.data() + n_mse, 0.0);
   double old_b = 0.0;
   double lik = 0.0;
   double lik2 = 0.0;
@@ -216,6 +217,20 @@ double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
     lik += 2 * lik2;
   }
   return lik;
+}
+
+// Allocating version (for the public calc API where the scratch isn't reused)
+template <typename Ref, typename CRef>
+double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
+            Component trend, Component season, double alpha, double beta,
+            double gamma, double phi, int m) {
+  int n_s = std::max(m, 24);
+  auto s = std::vector<double>(n_s);
+  auto old_s = std::vector<double>(n_s);
+  auto denom = std::vector<double>(30);
+  auto f = std::vector<double>(30);
+  return CalcBuf<Ref, CRef>(x, e, a_mse, n_mse, y, error, trend, season, alpha,
+                            beta, gamma, phi, m, s, old_s, denom, f);
 }
 
 double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
