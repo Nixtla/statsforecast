@@ -9,7 +9,7 @@ find_package(pybind11 CONFIG REQUIRED)
 include_directories(
   include/statsforecast
   external_libs/eigen)
-file(GLOB SOURCES src/*.cpp)
+file(GLOB SOURCES CONFIGURE_DEPENDS src/*.cpp)
 pybind11_add_module(_lib ${SOURCES})
 
 install(TARGETS _lib DESTINATION .)

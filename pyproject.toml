@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=1.0.3", "pybind11>=3"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
-build-dir = "build"
+build-dir = "build/{wheel_tag}"
 build.verbose = true
 editable.rebuild = false
 logging.level = "INFO"
