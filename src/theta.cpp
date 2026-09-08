@@ -1,6 +1,7 @@
 #include <pybind11/pybind11.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <numeric>
 #include <ranges>
@@ -39,39 +40,51 @@ Eigen::Vector<double, 5> init_state(const Eigen::Ref<const VectorXd> &y,
   return {alpha * y[0] + (1 - alpha) * initial_smoothed, y[0], An, Bn, mu};
 }
 
-void update(Eigen::Ref<RowMajorMatrixXd> states, size_t i, ModelType model_type,
-            double alpha, double theta, double y, bool usemu) {
-  double level = states(i - 1, 0);
-  double meany = states(i - 1, 1);
-  double An = states(i - 1, 2);
-  double Bn = states(i - 1, 3);
-  states(i, 4) =
+// One state transition, reading the previous row and writing the next one.
+// `i` enters the equations only as the time index.
+void update_step(const double *prev, double *cur, size_t i,
+                 ModelType model_type, double alpha, double theta, double y,
+                 bool usemu) {
+  double level = prev[0];
+  double meany = prev[1];
+  double An = prev[2];
+  double Bn = prev[3];
+  cur[4] =
       level + (1 - 1 / theta) * (An * std::pow(1 - alpha, i) +
                                  Bn * (1 - std::pow(1 - alpha, i + 1)) / alpha);
   if (usemu) {
-    y = states(i, 4);
+    y = cur[4];
   }
-  states(i, 0) = alpha * y + (1 - alpha) * level;
-  states(i, 1) = (i * meany + y) / (i + 1);
+  cur[0] = alpha * y + (1 - alpha) * level;
+  cur[1] = (i * meany + y) / (i + 1);
   if (model_type == ModelType::DSTM || model_type == ModelType::DOTM) {
-    states(i, 3) = ((i - 1) * Bn + 6 * (y - meany) / (i + 1)) / (i + 2);
-    states(i, 2) = states(i, 1) - states(i, 3) * (i + 2) / 2;
+    cur[3] = ((i - 1) * Bn + 6 * (y - meany) / (i + 1)) / (i + 2);
+    cur[2] = cur[1] - cur[3] * (i + 2) / 2;
   } else {
-    states(i, 2) = An;
-    states(i, 3) = Bn;
+    cur[2] = An;
+    cur[3] = Bn;
   }
+}
+
+void update(Eigen::Ref<RowMajorMatrixXd> states, size_t i, ModelType model_type,
+            double alpha, double theta, double y, bool usemu) {
+  update_step(states.row(i - 1).data(), states.row(i).data(), i, model_type,
+              alpha, theta, y, usemu);
 }
 
 void forecast(const Eigen::Ref<const RowMajorMatrixXd> &states, size_t i,
               ModelType model_type, Eigen::Ref<VectorXd> f, double alpha,
               double theta) {
   size_t h = f.size();
-  RowMajorMatrixXd new_states = RowMajorMatrixXd::Zero(i + h, states.cols());
-  std::copy(states.data(), states.data() + i * states.cols(),
-            new_states.data());
+  // Each step reads only the row before it, so two rolling rows stand in for
+  // the (i + h) x 5 matrix this used to allocate and copy the history into.
+  std::array<double, 5> prev, cur;
+  std::copy_n(states.row(i - 1).data(), prev.size(), prev.data());
   for (size_t j = 0; j < h; ++j) {
-    update(new_states, i + j, model_type, alpha, theta, double{}, true);
-    f[j] = new_states(i + j, 4);
+    update_step(prev.data(), cur.data(), i + j, model_type, alpha, theta,
+                double{}, true);
+    f[j] = cur[4];
+    prev = cur;
   }
 }
 
