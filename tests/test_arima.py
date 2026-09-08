@@ -939,19 +939,53 @@ def test_issue_1167():
     assert math.isclose(mdl.model_["sigma2"], 0.9, abs_tol=0.1)
 
 
-def test_coef_stderr():
+@pytest.mark.parametrize("method", ["CSS-ML", "ML"])
+def test_coef_stderr(method):
+    """Reference values from R:
+    arima(AirPassengers, order=c(2,1,1), seasonal=list(order=c(0,1,0), period=12))
+    """
     m = ARIMA(
         order=(2, 1, 1),
         seasonal_order=(0, 1, 0),
         season_length=12,
-        method="CSS-ML",
+        method=method,
     ).fit(ap)
     coef_stderr = np.sqrt(np.diagonal(m.model_["var_coef"]))
     np.testing.assert_allclose(
         coef_stderr,
-        np.array([0.088, 0.088, 0.029]),
-        atol=2e-3,
+        np.array([0.08881822, 0.08796576, 0.02920142]),
+        atol=1e-4,
     )
+
+
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+def test_var_coef_marginalises_dist_params(distribution, monkeypatch):
+    """The scale/shape parameters are estimated jointly with the arma ones, so
+    var_coef must invert the full Hessian and then take the arma block; taking the
+    block first would report variances conditional on them, which are too small."""
+    hessians = []
+    approx_hess3 = arima_module.approx_hess3
+    monkeypatch.setattr(
+        arima_module,
+        "approx_hess3",
+        lambda x, f, **kwargs: hessians.append(approx_hess3(x, f, **kwargs))
+        or hessians[-1],
+    )
+    rng = np.random.default_rng(0)
+    y = _simulate_ar1(0.6, rng.standard_normal(300))
+    fit = arima(
+        y,
+        order=(1, 0, 0),
+        method="ML",
+        distribution=distribution,
+        transform_pars=False,
+    )
+
+    hess = hessians[-1]
+    n_free = hess.shape[0] - 2
+    expected = np.linalg.inv(fit["nobs"] * hess)[:n_free, :n_free]
+    assert np.isfinite(expected).all()
+    np.testing.assert_allclose(fit["var_coef"], expected)
 
 
 @pytest.fixture

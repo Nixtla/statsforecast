@@ -22,7 +22,6 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
-from scipy.linalg import cho_factor, cho_solve
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
@@ -40,7 +39,23 @@ from .distributions import (
     guard_dist_tail,
 )
 
+# `hess` covers every optimized parameter, including the nuisance distribution
+# ones that `x` drops; `_coef_var` marginalises them out.
 OptimResult = namedtuple("OptimResult", "success status x fun hess")
+
+
+def _coef_var(hess, n_used, n_free, A=None):
+    """Coefficient covariance from the objective's Hessian at the optimum.
+
+    Nuisance distribution parameters are marginalised out by inverting the full
+    Hessian before taking the arma block, and `A` maps the parameters back when
+    they were optimized in transformed space. NaN if the Hessian is singular.
+    """
+    try:
+        var = np.linalg.inv(n_used * hess)[:n_free, :n_free]
+    except np.linalg.LinAlgError:
+        var = np.full((n_free, n_free), np.nan)
+    return var if A is None else A.T @ var @ A
 
 
 def arima_gradtrans(x, arma):
@@ -615,6 +630,7 @@ def arima(
     mask = np.isnan(fixed)
 
     no_optim = not mask.any()
+    n_arma_free = int(mask.sum())
 
     if no_optim:
         transform_pars = False
@@ -722,13 +738,7 @@ def arima(
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arima_css(x, arma, phi, theta)
         sigma2 = val[0]
-        if no_optim:
-            var = None
-        else:
-            try:
-                var = np.linalg.inv(n_used * res.hess)
-            except np.linalg.LinAlgError:
-                var = np.full_like(res.hess, np.nan)
+        var = None if no_optim else _coef_var(res.hess, n_used, n_arma_free)
     else:
         if method == ArimaMethod.CSS_ML:
             if not no_optim:
@@ -775,7 +785,6 @@ def arima(
         sigma2_ged = None
         if distribution == Distribution.SKEW_NORMAL:
             # Always optimize [arma_free..., log_sigma2, alpha] jointly.
-            n_arma_free = int(mask.sum())
             log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
             alpha_init = 0.0  # start symmetric
             init_sn = np.concatenate(
@@ -799,11 +808,10 @@ def arima(
                 opt_res.status,
                 opt_res.x[:n_arma_free],
                 opt_res.fun,
-                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3)[:n_arma_free, :n_arma_free],
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
         elif distribution == Distribution.T:
             # Always optimize [arma_free..., log_sigma2, log_nu_m2] jointly.
-            n_arma_free = int(mask.sum())
             log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
             log_nu_m2_init = np.log(3.0)  # initial nu = 5
             init_t = np.concatenate(
@@ -827,11 +835,10 @@ def arima(
                 opt_res.status,
                 opt_res.x[:n_arma_free],
                 opt_res.fun,
-                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3)[:n_arma_free, :n_arma_free],
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
         elif distribution == Distribution.GED:
             # Always optimize [arma_free..., log_sigma, log_beta] jointly.
-            n_arma_free = int(mask.sum())
             log_sigma_init = 0.5 * np.log(max(float(np.nanvar(x)), 1e-10))
             log_beta_init = math.log(2.0)  # start at β=2 (normal shape)
             init_ged = np.concatenate(
@@ -855,7 +862,7 @@ def arima(
                 opt_res.status,
                 opt_res.x[:n_arma_free],
                 opt_res.fun,
-                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3)[:n_arma_free, :n_arma_free],
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
         elif no_optim:
             res = OptimResult(
@@ -892,32 +899,24 @@ def arima(
                 if mask[ind].all():
                     coef[ind] = maInvert(coef[ind])
             if any(coef[mask] != res.x):
-                # maInvert re-parameterised the MA part; re-score there so res.fun
-                # (and loglik/aic below) matches the coefficients we report, keeping
-                # the Hessian estimated at the actual fit.
-                new_fun = ml_obj(np.concatenate([coef[mask], dist_tail_fit]), *ml_args)
+                # maInvert re-parameterised the MA part; re-score and re-estimate
+                # the Hessian there so res.fun (and loglik/aic below) and the
+                # variances describe the coefficients we report, as R's
+                # optim(maxit = 0, hessian = TRUE) does.
+                new_pars = np.concatenate([coef[mask], dist_tail_fit])
                 res = OptimResult(
-                    res.success, res.status, coef[mask], new_fun, res.hess
+                    res.success,
+                    res.status,
+                    coef[mask],
+                    obj_fn(new_pars),
+                    approx_hess3(new_pars, obj_fn, epsilon=1e-3),
                 )
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
-            if np.isnan(res.hess).any():
-                var = np.full_like(res.hess, np.nan)
-            else:
-                try:
-                    c, lower = cho_factor(res.hess)
-                    var = A.T @ cho_solve((c, lower), A) / n_used
-                except np.linalg.LinAlgError:
-                    var = np.full_like(res.hess, np.nan)
+            var = _coef_var(res.hess, n_used, n_arma_free, A)
             coef = arima_undopars(coef, arma)
         else:
-            if no_optim:
-                var = None
-            else:
-                try:
-                    var = np.linalg.inv(n_used * res.hess)
-                except np.linalg.LinAlgError:
-                    var = np.full_like(res.hess, np.nan)
+            var = None if no_optim else _coef_var(res.hess, n_used, n_arma_free)
         trarma = arima_transpar(coef, arma, False)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         if ncxreg > 0:
