@@ -1113,9 +1113,7 @@ def _class3models(
     sigma,
     last_state,
     season_length,
-    error,
     trend,
-    seasonality,
     damped,
     alpha,
     beta,
@@ -1194,16 +1192,16 @@ def _class3models(
         )
         Vh = exp1 + sigma * (exp2 + exp3 + exp4 + exp5)
 
-    if trend == "N":
-        Mh = (
-            F1 * np.matmul(Mh, np.transpose(F2))
-            + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
-        )
-    else:
-        Mh = (
-            np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
-            + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
-        )
+        if trend == "N":
+            Mh = (
+                F1 * np.matmul(Mh, np.transpose(F2))
+                + G1 * np.matmul(Mh, np.transpose(G2)) * sigma
+            )
+        else:
+            Mh = (
+                np.matmul(F1, np.matmul(Mh, np.transpose(F2)))
+                + np.matmul(G1, np.matmul(Mh, np.transpose(G2))) * sigma
+            )
 
     return var
 
@@ -1336,16 +1334,14 @@ def _compute_pred_intervals(model, forecasts, h, level):
             cvals[k - 1] = alpha + beta * sum_phi + gamma * dvals[k - 1]
         sigmah = _compute_sigmah(pf, h, sigma, cvals)
 
-    elif error == "M" and seasonality == "M":
+    elif error == "M" and trend != "M" and seasonality == "M":
         # Class 3 models
         sigmah = _class3models(
             h,
             sigma,
             last_state,
             season_length,
-            error,
             trend,
-            seasonality,
             damped,
             alpha,
             beta,
