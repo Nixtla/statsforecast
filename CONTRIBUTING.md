@@ -62,7 +62,7 @@ Activate your new environment with `source .venv/bin/activate` for MacOS and Lin
 
 ## Install required libraries for development
 
-The `setup.py` file contains all the dependencies required for the project. To install these dependencies you can use `uv pip install -r setup.py --extra dev`
+The `pyproject.toml` file contains all the dependencies required for the project. To install these dependencies you can use `uv sync --group dev`
 
 ### Setup pre-commit hooks
 

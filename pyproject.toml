@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11>=3"]
+requires = ["scikit-build-core>=1.0.3", "pybind11>=3"]
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
@@ -7,7 +7,9 @@ build-dir = "build"
 build.verbose = true
 editable.rebuild = false
 logging.level = "INFO"
-sdist.include = ["external_libs", "include", "python", "pyproject.toml", "src", "LICENSE", "README.md"]
+minimum-version = "1.0"
+sdist.exclude = ["**/__pycache__", "**/*.pyc", "**/*.egg-info"]
+sdist.include = ["CMakeLists.txt", "external_libs", "include", "python", "pyproject.toml", "src", "LICENSE", "README.md"]
 sdist.inclusion-mode = "explicit"
 sdist.reproducible = true
 wheel.exclude = ["Release"]
@@ -55,9 +57,11 @@ Documentation = "https://nixtlaverse.nixtla.io/statsforecast/"
 
 [dependency-groups]
 dev = [
+    "cmake",
     "datasetsforecast",
     "fire",
     "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
+    "ninja",
     "pandas[plot]<3.0.0",
     "polars[numpy]",
     "pre-commit",
@@ -82,11 +86,13 @@ ray = [
 ]
 spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
 all = [
+    "cmake",
     "datasetsforecast",
     "dask",
     "fire",
     "fugue[dask,spark]>=0.9.4",
     "fugue[ray]>=0.9.4 ; sys_platform != 'win32'",
+    "ninja",
     "numpy",
     "pandas[plot]<3.0.0",
     "plotly",
@@ -106,18 +112,6 @@ all = [
     "supersmoother",
     "yfinance",
 ]
-
-[tool.setuptools]
-packages = ["statsforecast"]
-
-[tool.setuptools.dynamic]
-version = { attr = "statsforecast.__version__" }
-
-[tool.setuptools.package-dir]
-"" = "python"
-
-[tool.setuptools.package-data]
-"*" = ["**/*"]
 
 [tool.cibuildwheel]
 archs = "all"
