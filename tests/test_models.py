@@ -144,7 +144,7 @@ def test_conformal_intervals():
 
 
 def test_conformal_intervals_invalid_h():
-    """ConformalIntervals must reject h < 1 at construction (gh-1221)."""
+    """ConformalIntervals must reject h < 1 at construction."""
     with pytest.raises(ValueError, match="h >= 1"):
         ConformalIntervals(h=0)
 
