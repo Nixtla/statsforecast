@@ -8,7 +8,7 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
 ## Table of Contents 📚
 
 1. [Prerequisites](#prerequisites)
-2. [Git `fork-and-pull` worklow](#git-fork-and-pull-worklow)
+2. [Git `fork-and-pull` workflow](#git-fork-and-pull-workflow)
 3. [Set Up a Conda Environment](#set-up-a-conda-environment)
 4. [Install required libraries for development](#install-required-libraries-for-development)
 5. [Start editable mode](#start-editable-mode)
@@ -22,7 +22,7 @@ Sometimes, diving into a new technology can be challenging and overwhelming. We'
 - *Python*: Python should be installed on your system. Alternatively check [this guide](https://www.python.org/downloads/). 
 - *conda*: You need to have conda installed, along with a good grasp of fundamental operations such as creating environments, and activating and deactivating them.  Alternatively check [this guide](https://conda.io/projects/conda/en/latest/user-guide/install/index.html). 
 
-## Git `fork-and-pull` worklow
+## Git `fork-and-pull` workflow
 
 **1. Fork the Project:** 
 Start by forking the Nixtla repository to your own GitHub account. This creates a personal copy of the project where you can make changes without affecting the main repository.
