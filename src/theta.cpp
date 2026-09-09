@@ -159,10 +159,11 @@ struct Scratch {
       : states(n, 5), e(n), amse(nmse), denom(nmse), f(nmse) {}
 };
 
-double target_fn(const VectorXd &params, Scratch &ws, double init_level,
-                 double init_alpha, double init_theta, bool opt_level,
-                 bool opt_alpha, bool opt_theta, const VectorXd &y,
-                 ModelType model_type, size_t nmse) {
+double target_fn(const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+                 double init_level, double init_alpha, double init_theta,
+                 bool opt_level, bool opt_alpha, bool opt_theta,
+                 const Eigen::Ref<const VectorXd> &y, ModelType model_type,
+                 size_t nmse) {
   size_t j = 0;
   double level, alpha, theta;
   if (opt_level) {
@@ -212,9 +213,10 @@ nm::OptimResult optimize(const Eigen::Ref<const VectorXd> &x0,
                         opt_alpha, opt_theta, y, model_type, nmse);
 }
 
-double target_fn_dist(const VectorXd &params, Scratch &ws, double init_level,
-                      double init_alpha, double init_theta, bool opt_level,
-                      bool opt_alpha, bool opt_theta, const VectorXd &y,
+double target_fn_dist(const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+                      double init_level, double init_alpha, double init_theta,
+                      bool opt_level, bool opt_alpha, bool opt_theta,
+                      const Eigen::Ref<const VectorXd> &y,
                       ModelType model_type, size_t nmse,
                       dist::Distribution distribution) {
   size_t j = 0;

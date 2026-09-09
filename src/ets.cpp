@@ -248,12 +248,12 @@ struct Scratch {
         denom(30), f(30) {}
 };
 
-double ObjectiveFunction(const VectorXd &params, Scratch &ws, const VectorXd &y,
-                         int n_state, Component error, Component trend,
-                         Component season, Criterion opt_crit, int n_mse, int m,
-                         bool opt_alpha, bool opt_beta, bool opt_gamma,
-                         bool opt_phi, double alpha, double beta, double gamma,
-                         double phi) {
+double ObjectiveFunction(const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+                         const Eigen::Ref<const VectorXd> &y, int n_state,
+                         Component error, Component trend, Component season,
+                         Criterion opt_crit, int n_mse, int m, bool opt_alpha,
+                         bool opt_beta, bool opt_gamma, bool opt_phi,
+                         double alpha, double beta, double gamma, double phi) {
   int j = 0;
   if (opt_alpha) {
     alpha = params(j++);
@@ -288,7 +288,7 @@ double ObjectiveFunction(const VectorXd &params, Scratch &ws, const VectorXd &y,
   // CalcBuf can return early, leaving e's tail untouched; Sigma and MAE read
   // all of it.
   e.setZero();
-  double lik = CalcBuf<VectorXd &, const VectorXd &>(
+  double lik = CalcBuf<VectorXd &, const Eigen::Ref<const VectorXd> &>(
       state, e, a_mse, n_mse, y, error, trend, season, alpha, beta, gamma, phi,
       m, ws.s, ws.old_s, ws.denom, ws.f);
   lik = std::max(lik, -1e10);
@@ -339,7 +339,8 @@ nm::OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
 }
 
 double ObjectiveFunctionDist(
-    const VectorXd &params, Scratch &ws, const VectorXd &y, int n_state,
+    const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+    const Eigen::Ref<const VectorXd> &y, int n_state,
     Component error, Component trend, Component season,
     int n_mse, int m, bool opt_alpha, bool opt_beta,
     bool opt_gamma, bool opt_phi,
@@ -370,7 +371,7 @@ double ObjectiveFunctionDist(
 
   // e is only read past the guard below, by when CalcBuf has written all of it
   VectorXd &e = ws.e;
-  double lik = CalcBuf<VectorXd &, const VectorXd &>(
+  double lik = CalcBuf<VectorXd &, const Eigen::Ref<const VectorXd> &>(
       state, e, ws.a_mse, n_mse, y, error, trend, season, alpha, beta, gamma,
       phi, m, ws.s, ws.old_s, ws.denom, ws.f);
   if (std::isnan(lik) || std::abs(lik + 99999.0) < 1e-7)
