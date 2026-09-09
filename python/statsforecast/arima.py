@@ -49,12 +49,28 @@ def _coef_var(hess, n_used, n_free, A=None):
 
     Nuisance distribution parameters are marginalised out by inverting the full
     Hessian before taking the arma block, and `A` maps the parameters back when
-    they were optimized in transformed space. NaN if the Hessian is singular.
+    they were optimized in transformed space. NaN if the Hessian describes a
+    saddle rather than a minimum.
     """
+    H = np.asarray(hess, dtype=float)
+    if H.size == 0:
+        return H
     try:
-        var = np.linalg.inv(n_used * hess)[:n_free, :n_free]
+        w, V = np.linalg.eigh(n_used * (H + H.T) / 2)
     except np.linalg.LinAlgError:
+        return np.full((n_free, n_free), np.nan)
+    # approx_hess3's central differences only resolve the Hessian to about
+    # sqrt(eps), so eigenvalues under that are indistinguishable from zero. One
+    # below -tol is a genuine saddle and has no covariance to report; the flat
+    # ones are directions collinear xreg leaves unidentified, and inverting
+    # those is what produces the negative variances checkarima rejects on, so
+    # invert over the identified subspace instead.
+    tol = math.sqrt(np.finfo(float).eps) * abs(w[-1])
+    keep = w > tol
+    if w[0] < -tol or not keep.any():
         var = np.full((n_free, n_free), np.nan)
+    else:
+        var = ((V[:, keep] / w[keep]) @ V[:, keep].T)[:n_free, :n_free]
     return var if A is None else A.T @ var @ A
 
 
