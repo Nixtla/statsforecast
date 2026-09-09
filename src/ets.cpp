@@ -369,8 +369,10 @@ double ObjectiveFunctionDist(
       return std::numeric_limits<double>::infinity();
   }
 
-  // e is only read past the guard below, by when CalcBuf has written all of it
   VectorXd &e = ws.e;
+  // CalcBuf can return early, leaving e's tail untouched; negloglik_* reads
+  // all of it.
+  e.setZero();
   double lik = CalcBuf<VectorXd &, const Eigen::Ref<const VectorXd> &>(
       state, e, ws.a_mse, n_mse, y, error, trend, season, alpha, beta, gamma,
       phi, m, ws.s, ws.old_s, ws.denom, ws.f);

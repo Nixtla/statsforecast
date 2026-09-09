@@ -223,8 +223,10 @@ double target_fn_dist(const Eigen::Ref<const VectorXd> &params, Scratch &ws,
   double level = opt_level ? params[j++] : init_level;
   double alpha = opt_alpha ? params[j++] : init_alpha;
   double theta = opt_theta ? params[j++] : init_theta;
-  // e is only read past the guard below, by when calc_buf has written all of it
   VectorXd &e = ws.e;
+  // calc_buf can return early, leaving e's tail untouched; negloglik_* reads
+  // from it.
+  e.setZero();
   double mse = calc_buf(y, ws.states, model_type, level, alpha, theta, e,
                         ws.amse, nmse, ws.denom, ws.f);
   if (std::isnan(mse) || std::abs(mse + 99999) < 1e-7)
