@@ -635,7 +635,7 @@ def arima(
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
         if not orig_xreg:
             _, _, vt = np.linalg.svd(xreg[(~np.isnan(xreg)).all(1)])
-            xreg = np.matmul(xreg, vt)
+            xreg = np.matmul(xreg, vt.T)
         dx = x
         dxreg = xreg
         if order[1] > 0:
@@ -942,9 +942,9 @@ def arima(
         nm += cn
         if not orig_xreg and (var is not None):
             ind = narma + np.arange(ncxreg)
-            coef[ind] = np.matmul(vt, coef[ind])
+            coef[ind] = np.matmul(vt.T, coef[ind])
             A = np.identity(narma + ncxreg)
-            A[np.ix_(ind, ind)] = vt
+            A[np.ix_(ind, ind)] = vt.T
             A = A[np.ix_(mask, mask)]
             var = np.matmul(np.matmul(A, var), A.T)
     # if no_optim:
