@@ -133,6 +133,23 @@ def intermitent_series():
     return intermitent_series
 
 
+@pytest.mark.parametrize("model", ["AAN", "AAA", "ANA", "MAA", "MNA", "MAM"])
+@pytest.mark.parametrize("bounds", ["usual", "both"])
+def test_usual_constraints_enforced(model, bounds):
+    """Fits must satisfy fable's usual-space constraints beta <= alpha and gamma <= 1-alpha."""
+    mod = ets_f(np.asarray(ap, dtype=np.float64), m=12, model=model, bounds=bounds)
+    alpha, beta, gamma, _phi = mod["par"][:4]
+    _err, trend, season, _damped = mod["components"]
+    if trend != "N":
+        assert beta <= alpha + 1e-12, (
+            f"{model}: beta={beta:.6f} > alpha={alpha:.6f}"
+        )
+    if season != "N":
+        assert gamma <= 1.0 - alpha + 1e-12, (
+            f"{model}: gamma={gamma:.6f} > 1-alpha={1.0 - alpha:.6f}"
+        )
+
+
 def test_forward_ets(intermitent_series):
     res = ets_f(ap, m=12)
     assert (

@@ -118,7 +118,7 @@ void Forecast(Ref f, double l, double b, CRef s, int m, Component trend,
       if (std::abs(phi - 1.0) < TOL) {
         phistar += 1.0;
       } else {
-        phistar += std::pow(phi, i + 1);
+        phistar += std::pow(phi, i + 2);
       }
     }
   }
@@ -218,11 +218,21 @@ double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
   return lik;
 }
 
+// Constraints: beta <= alpha and gamma <= 1 - alpha. 
+bool CheckParams(double alpha, double beta, double gamma, Component trend,
+                 Component season) {
+  if (trend != Component::Nothing && beta > alpha) {
+    return false;
+  }
+  return season == Component::Nothing || gamma <= 1.0 - alpha;
+}
+
 double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
                          Component error, Component trend, Component season,
                          Criterion opt_crit, int n_mse, int m, bool opt_alpha,
                          bool opt_beta, bool opt_gamma, bool opt_phi,
-                         double alpha, double beta, double gamma, double phi) {
+                         double alpha, double beta, double gamma, double phi,
+                         bool enforce_usual) {
   int j = 0;
   if (opt_alpha) {
     alpha = params(j++);
@@ -235,6 +245,9 @@ double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
   }
   if (opt_phi) {
     phi = params(j++);
+  }
+  if (enforce_usual && !CheckParams(alpha, beta, gamma, trend, season)) {
+    return std::numeric_limits<double>::infinity();
   }
   auto n_params = params.size();
   auto n = y.size();
@@ -290,7 +303,8 @@ nm::OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
                          double alpha, double beta, double gamma, double phi,
                          const Eigen::Ref<const VectorXd> &lower,
                          const Eigen::Ref<const VectorXd> &upper,
-                         double tol_std, int max_iter, bool adaptive) {
+                         double tol_std, int max_iter, bool adaptive,
+                         bool enforce_usual) {
   double init_step = 0.05;
   double nm_alpha = 1.0;
   double nm_gamma = 2.0;
@@ -301,7 +315,8 @@ nm::OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
                         zero_pert, nm_alpha, nm_gamma, nm_rho, nm_sigma,
                         max_iter, tol_std, adaptive, y, n_state, error, trend,
                         season, opt_crit, n_mse, m, opt_alpha, opt_beta,
-                        opt_gamma, opt_phi, alpha, beta, gamma, phi);
+                        opt_gamma, opt_phi, alpha, beta, gamma, phi,
+                        enforce_usual);
 }
 
 double ObjectiveFunctionDist(
@@ -310,12 +325,15 @@ double ObjectiveFunctionDist(
     int n_mse, int m, bool opt_alpha, bool opt_beta,
     bool opt_gamma, bool opt_phi,
     double alpha, double beta, double gamma, double phi,
-    Distribution distribution) {
+    Distribution distribution, bool enforce_usual) {
   int j = 0;
   if (opt_alpha) alpha = params(j++);
   if (opt_beta)  beta  = params(j++);
   if (opt_gamma) gamma = params(j++);
   if (opt_phi)   phi   = params(j++);
+  if (enforce_usual && !CheckParams(alpha, beta, gamma, trend, season)) {
+    return std::numeric_limits<double>::infinity();
+  }
 
   auto n = y.size();
   int n_dist = (distribution == Distribution::Laplace) ? 0 : 2;
@@ -381,7 +399,7 @@ nm::OptimResult OptimizeDist(
     const Eigen::Ref<const VectorXd> &lower,
     const Eigen::Ref<const VectorXd> &upper,
     double tol_std, int max_iter, bool adaptive,
-    Distribution distribution) {
+    Distribution distribution, bool enforce_usual) {
   double init_step = 0.05, nm_alpha = 1.0, nm_gamma = 2.0;
   double nm_rho = 0.5, nm_sigma = 0.5, zero_pert = 1e-4;
   return nm::NelderMead(
@@ -390,7 +408,7 @@ nm::OptimResult OptimizeDist(
       max_iter, tol_std, adaptive,
       y, n_state, error, trend, season, n_mse, m,
       opt_alpha, opt_beta, opt_gamma, opt_phi, alpha, beta, gamma, phi,
-      distribution);
+      distribution, enforce_usual);
 }
 
 void init(py::module_ &m) {

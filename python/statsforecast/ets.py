@@ -506,6 +506,7 @@ def optimize_ets_target_fn(
         1e-4,
         1_000,
         True,
+        bounds != "admissible",
     )
     return results(*opt_res)
 
@@ -523,6 +524,7 @@ def optimize_ets_dist_target_fn(
     lowerb,
     upperb,
     nmse,
+    bounds,
     m,
     pnames,
     pnames2,
@@ -594,6 +596,7 @@ def optimize_ets_dist_target_fn(
         1_000,
         True,
         switch_distribution(distribution, _ets),
+        bounds != "admissible",
     )
     return results(*opt_res)
 
@@ -724,6 +727,7 @@ def etsmodel(
             lowerb=lower_ext,
             upperb=upper_ext,
             nmse=nmse,
+            bounds=bounds,
             m=m,
             pnames=par_.keys(),
             pnames2=par_noopt.keys(),
