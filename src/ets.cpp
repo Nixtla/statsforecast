@@ -218,6 +218,7 @@ double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
   return lik;
 }
 
+// Constraints: beta <= alpha and gamma <= 1 - alpha. 
 bool CheckParams(double alpha, double beta, double gamma, Component trend,
                  Component season) {
   if (trend != Component::Nothing && beta > alpha) {
