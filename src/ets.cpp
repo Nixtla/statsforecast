@@ -124,12 +124,16 @@ void Forecast(Ref f, double l, double b, CRef s, int m, Component trend,
   }
 }
 
+// Workhorse taking caller-owned scratch: s and old_s must hold max(m, 24)
+// entries, denom and f 30. Only denom is re-zeroed here; every other buffer is
+// fully written before it is read.
 template <typename Ref, typename CRef>
-double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
-            Component trend, Component season, double alpha, double beta,
-            double gamma, double phi, int m) {
+double CalcBuf(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
+               Component trend, Component season, double alpha, double beta,
+               double gamma, double phi, int m, std::vector<double> &s,
+               std::vector<double> &old_s, std::vector<double> &denom,
+               std::vector<double> &f) {
   auto n = y.size();
-  int n_s = std::max(m, 24);
   m = std::max(m, 1);
   n_mse = std::min(n_mse, 30);
   int n_states =
@@ -138,16 +142,13 @@ double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
   // copy initial state components
   double l = x[0];
   double b = (trend != Component::Nothing) ? x[1] : 0.0;
-  auto s = std::vector<double>(n_s);
   if (season != Component::Nothing) {
     std::copy(x.data() + 1 + (trend != Component::Nothing),
               x.data() + 1 + (trend != Component::Nothing) + m, s.data());
   }
 
   std::fill(a_mse.data(), a_mse.data() + n_mse, 0.0);
-  auto old_s = std::vector<double>(n_s);
-  auto denom = std::vector<double>(30);
-  auto f = std::vector<double>(30);
+  std::fill(denom.data(), denom.data() + n_mse, 0.0);
   double old_b = 0.0;
   double lik = 0.0;
   double lik2 = 0.0;
@@ -218,7 +219,37 @@ double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
   return lik;
 }
 
-double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
+// Allocating version (for the public calc API where the scratch isn't reused)
+template <typename Ref, typename CRef>
+double Calc(Ref x, Ref e, Ref a_mse, int n_mse, CRef y, Component error,
+            Component trend, Component season, double alpha, double beta,
+            double gamma, double phi, int m) {
+  int n_s = std::max(m, 24);
+  auto s = std::vector<double>(n_s);
+  auto old_s = std::vector<double>(n_s);
+  auto denom = std::vector<double>(30);
+  auto f = std::vector<double>(30);
+  return CalcBuf<Ref, CRef>(x, e, a_mse, n_mse, y, error, trend, season, alpha,
+                            beta, gamma, phi, m, s, old_s, denom, f);
+}
+
+// Buffers shared by the objective evaluations of a single Optimize() call.
+// Function-local, never static: fits may run concurrently.
+struct Scratch {
+  VectorXd state;
+  VectorXd e;
+  VectorXd a_mse;
+  std::vector<double> s, old_s, denom, f;
+
+  Scratch(Eigen::Index n, Eigen::Index p, int m)
+      : state(p * (n + 1)), e(n),
+        // CalcBuf only refills a_mse's first n_mse entries
+        a_mse(VectorXd::Zero(30)), s(std::max(m, 24)), old_s(std::max(m, 24)),
+        denom(30), f(30) {}
+};
+
+double ObjectiveFunction(const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+                         const Eigen::Ref<const VectorXd> &y, int n_state,
                          Component error, Component trend, Component season,
                          Criterion opt_crit, int n_mse, int m, bool opt_alpha,
                          bool opt_beta, bool opt_gamma, bool opt_phi,
@@ -237,9 +268,8 @@ double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
     phi = params(j++);
   }
   auto n_params = params.size();
-  auto n = y.size();
   int p = n_state + (season != Component::Nothing);
-  VectorXd state = VectorXd::Zero(p * (n + 1));
+  VectorXd &state = ws.state;
   std::copy(params.data() + n_params - n_state, params.data() + n_params,
             state.data());
   if (season != Component::Nothing) {
@@ -249,15 +279,18 @@ double ObjectiveFunction(const VectorXd &params, const VectorXd &y, int n_state,
     state(n_state) =
         static_cast<double>(m * (season == Component::Multiplicative)) - sum;
     if (season == Component::Multiplicative &&
-        state.tail(state.size() - start).minCoeff() < 0.0) {
+        state.segment(start, p - start).minCoeff() < 0.0) {
       return std::numeric_limits<double>::infinity();
     }
   }
-  VectorXd a_mse = VectorXd::Zero(30);
-  VectorXd e = VectorXd::Zero(n);
-  double lik = Calc<VectorXd &, const VectorXd &>(state, e, a_mse, n_mse, y,
-                                                  error, trend, season, alpha,
-                                                  beta, gamma, phi, m);
+  VectorXd &a_mse = ws.a_mse;
+  VectorXd &e = ws.e;
+  // CalcBuf can return early, leaving e's tail untouched; Sigma and MAE read
+  // all of it.
+  e.setZero();
+  double lik = CalcBuf<VectorXd &, const Eigen::Ref<const VectorXd> &>(
+      state, e, a_mse, n_mse, y, error, trend, season, alpha, beta, gamma, phi,
+      m, ws.s, ws.old_s, ws.denom, ws.f);
   lik = std::max(lik, -1e10);
   if (std::isnan(lik) || std::abs(lik + 99999.0) < 1e-7) {
     lik = -std::numeric_limits<double>::infinity();
@@ -297,15 +330,17 @@ nm::OptimResult Optimize(const Eigen::Ref<const VectorXd> &x0,
   double nm_rho = 0.5;
   double nm_sigma = 0.5;
   double zero_pert = 1.0e-4;
+  Scratch ws(y.size(), n_state + (season != Component::Nothing), m);
   return nm::NelderMead(ObjectiveFunction, x0, lower, upper, init_step,
                         zero_pert, nm_alpha, nm_gamma, nm_rho, nm_sigma,
-                        max_iter, tol_std, adaptive, y, n_state, error, trend,
-                        season, opt_crit, n_mse, m, opt_alpha, opt_beta,
+                        max_iter, tol_std, adaptive, ws, y, n_state, error,
+                        trend, season, opt_crit, n_mse, m, opt_alpha, opt_beta,
                         opt_gamma, opt_phi, alpha, beta, gamma, phi);
 }
 
 double ObjectiveFunctionDist(
-    const VectorXd &params, const VectorXd &y, int n_state,
+    const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+    const Eigen::Ref<const VectorXd> &y, int n_state,
     Component error, Component trend, Component season,
     int n_mse, int m, bool opt_alpha, bool opt_beta,
     bool opt_gamma, bool opt_phi,
@@ -321,7 +356,7 @@ double ObjectiveFunctionDist(
   int n_dist = (distribution == Distribution::Laplace) ? 0 : 2;
   int n_total = static_cast<int>(params.size());
   int p = n_state + (season != Component::Nothing);
-  VectorXd state = VectorXd::Zero(p * (n + 1));
+  VectorXd &state = ws.state;
   std::copy(params.data() + n_total - n_dist - n_state,
             params.data() + n_total - n_dist, state.data());
   if (season != Component::Nothing) {
@@ -330,14 +365,17 @@ double ObjectiveFunctionDist(
     state(n_state) =
         static_cast<double>(m * (season == Component::Multiplicative)) - sum;
     if (season == Component::Multiplicative &&
-        state.tail(state.size() - start).minCoeff() < 0.0)
+        state.segment(start, p - start).minCoeff() < 0.0)
       return std::numeric_limits<double>::infinity();
   }
 
-  VectorXd a_mse = VectorXd::Zero(30);
-  VectorXd e = VectorXd::Zero(n);
-  double lik = Calc<VectorXd &, const VectorXd &>(
-      state, e, a_mse, n_mse, y, error, trend, season, alpha, beta, gamma, phi, m);
+  VectorXd &e = ws.e;
+  // CalcBuf can return early, leaving e's tail untouched; negloglik_* reads
+  // all of it.
+  e.setZero();
+  double lik = CalcBuf<VectorXd &, const Eigen::Ref<const VectorXd> &>(
+      state, e, ws.a_mse, n_mse, y, error, trend, season, alpha, beta, gamma,
+      phi, m, ws.s, ws.old_s, ws.denom, ws.f);
   if (std::isnan(lik) || std::abs(lik + 99999.0) < 1e-7)
     return std::numeric_limits<double>::infinity();
 
@@ -384,10 +422,11 @@ nm::OptimResult OptimizeDist(
     Distribution distribution) {
   double init_step = 0.05, nm_alpha = 1.0, nm_gamma = 2.0;
   double nm_rho = 0.5, nm_sigma = 0.5, zero_pert = 1e-4;
+  Scratch ws(y.size(), n_state + (season != Component::Nothing), m);
   return nm::NelderMead(
       ObjectiveFunctionDist, x0, lower, upper,
       init_step, zero_pert, nm_alpha, nm_gamma, nm_rho, nm_sigma,
-      max_iter, tol_std, adaptive,
+      max_iter, tol_std, adaptive, ws,
       y, n_state, error, trend, season, n_mse, m,
       opt_alpha, opt_beta, opt_gamma, opt_phi, alpha, beta, gamma, phi,
       distribution);
