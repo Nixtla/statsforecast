@@ -734,10 +734,28 @@ class _StatsForecast:
                 f"Got: {list(level)}"
             )
 
+    def _validate_level_support(self, level: Optional[List[int]]) -> None:
+        if level is None or len(level) == 0:
+            return
+        unsupported = [
+            repr(model)
+            for model in self.models
+            if getattr(model, "only_conformal_intervals", False)
+            and getattr(model, "prediction_intervals", None) is None
+        ]
+        if unsupported:
+            raise ValueError(
+                "`level` was provided but the following models can only compute "
+                f"prediction intervals through conformal prediction: {unsupported}. "
+                "Configure `prediction_intervals=ConformalIntervals(...)` before "
+                "requesting `level`, or remove `level`."
+            )
+
     def _parse_X_level(
         self, h: int, X: Optional[DataFrame], level: Optional[List[int]]
     ):
         self._validate_level(level)
+        self._validate_level_support(level)
         if level is None:
             level = []
         if X is None:
