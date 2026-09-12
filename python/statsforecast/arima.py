@@ -25,6 +25,7 @@ from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
+from statsmodels.tools.numdiff import approx_hess3
 
 from ._lib import arima as _arima
 from .mstl import mstl
@@ -38,7 +39,39 @@ from .distributions import (
     guard_dist_tail,
 )
 
-OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
+# `hess` covers every optimized parameter, including the nuisance distribution
+# ones that `x` drops; `_coef_var` marginalises them out.
+OptimResult = namedtuple("OptimResult", "success status x fun hess")
+
+
+def _coef_var(hess, n_used, n_free, A=None):
+    """Coefficient covariance from the objective's Hessian at the optimum.
+
+    Nuisance distribution parameters are marginalised out by inverting the full
+    Hessian before taking the arma block, and `A` maps the parameters back when
+    they were optimized in transformed space. NaN if the Hessian describes a
+    saddle rather than a minimum.
+    """
+    H = np.asarray(hess, dtype=float)
+    if H.size == 0:
+        return H
+    try:
+        w, V = np.linalg.eigh(n_used * (H + H.T) / 2)
+    except np.linalg.LinAlgError:
+        return np.full((n_free, n_free), np.nan)
+    # approx_hess3's central differences only resolve the Hessian to about
+    # sqrt(eps), so eigenvalues under that are indistinguishable from zero. One
+    # below -tol is a genuine saddle and has no covariance to report; the flat
+    # ones are directions collinear xreg leaves unidentified, and inverting
+    # those is what produces the negative variances checkarima rejects on, so
+    # invert over the identified subspace instead.
+    tol = math.sqrt(np.finfo(float).eps) * abs(w[-1])
+    keep = w > tol
+    if w[0] < -tol or not keep.any():
+        var = np.full((n_free, n_free), np.nan)
+    else:
+        var = ((V[:, keep] / w[keep]) @ V[:, keep].T)[:n_free, :n_free]
+    return var if A is None else A.T @ var @ A
 
 
 def arima_gradtrans(x, arma):
@@ -613,6 +646,7 @@ def arima(
     mask = np.isnan(fixed)
 
     no_optim = not mask.any()
+    n_arma_free = int(mask.sum())
 
     if no_optim:
         transform_pars = False
@@ -693,13 +727,20 @@ def arima(
         if no_optim:
             res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
         else:
-            res = minimize(
-                arma_css_op,
+            obj_fn = partial(arma_css_op, x=x, coef=coef, mask=mask, arma=arma, ncxreg=ncxreg, xreg=xreg, narma=narma)
+            opt_res = minimize(
+                obj_fn,
                 init[mask],
-                args=(x, coef, mask, arma, ncxreg, xreg, narma),
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
+            )
+            res = OptimResult(
+                opt_res.success,
+                opt_res.status,
+                opt_res.x,
+                opt_res.fun,
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
 
         if res.status > 0:
@@ -713,7 +754,7 @@ def arima(
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arima_css(x, arma, phi, theta)
         sigma2 = val[0]
-        var = None if no_optim else res.hess_inv / n_used
+        var = None if no_optim else _coef_var(res.hess, n_used, n_arma_free)
     else:
         if method == ArimaMethod.CSS_ML:
             if not no_optim:
@@ -760,102 +801,84 @@ def arima(
         sigma2_ged = None
         if distribution == Distribution.SKEW_NORMAL:
             # Always optimize [arma_free..., log_sigma2, alpha] jointly.
-            n_arma_free = int(mask.sum())
             log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
             alpha_init = 0.0  # start symmetric
             init_sn = np.concatenate(
                 [init[mask], [log_sigma2_init, alpha_init]]
             )
-            res_sn = minimize(
-                armafn_skewnorm,
+            obj_fn = partial(armafn_skewnorm, x=x, trans=transform_pars, coef=coef, mask=mask, arma=arma, mod=mod, ncxreg=ncxreg, xreg=xreg, narma=narma)
+            opt_res = minimize(
+                obj_fn,
                 init_sn,
-                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
             ml_obj = armafn_skewnorm
-            dist_tail_fit = res_sn.x[n_arma_free:]
+            dist_tail_fit = opt_res.x[n_arma_free:]
             _dp_sn = extract_dist_params("skew-normal", dist_tail_fit)
             sigma2_sn = _dp_sn["sigma2"]
             alpha_sn = _dp_sn["alpha_dist"]
-            hess_arma = (
-                res_sn.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0 and np.ndim(res_sn.hess_inv) == 2
-                else np.array([])
-            )
             res = OptimResult(
-                res_sn.success,
-                res_sn.status,
-                res_sn.x[:n_arma_free],
-                res_sn.fun,
-                hess_arma,
+                opt_res.success,
+                opt_res.status,
+                opt_res.x[:n_arma_free],
+                opt_res.fun,
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
         elif distribution == Distribution.T:
             # Always optimize [arma_free..., log_sigma2, log_nu_m2] jointly.
-            n_arma_free = int(mask.sum())
             log_sigma2_init = np.log(max(float(np.nanvar(x)), 1e-10))
             log_nu_m2_init = np.log(3.0)  # initial nu = 5
             init_t = np.concatenate(
                 [init[mask], [log_sigma2_init, log_nu_m2_init]]
             )
-            res_t = minimize(
-                armafn_t,
+            obj_fn = partial(armafn_t, x=x, trans=transform_pars, coef=coef, mask=mask, arma=arma, mod=mod, ncxreg=ncxreg, xreg=xreg, narma=narma)
+            opt_res = minimize(
+                obj_fn,
                 init_t,
-                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
             ml_obj = armafn_t
-            dist_tail_fit = res_t.x[n_arma_free:]
+            dist_tail_fit = opt_res.x[n_arma_free:]
             _dp_t = extract_dist_params("t", dist_tail_fit)
             sigma2_t = _dp_t["sigma2"]
             nu_t = _dp_t["nu"]
-            hess_arma = (
-                res_t.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0 and np.ndim(res_t.hess_inv) == 2
-                else np.array([])
-            )
             res = OptimResult(
-                res_t.success,
-                res_t.status,
-                res_t.x[:n_arma_free],
-                res_t.fun,
-                hess_arma,
+                opt_res.success,
+                opt_res.status,
+                opt_res.x[:n_arma_free],
+                opt_res.fun,
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
         elif distribution == Distribution.GED:
             # Always optimize [arma_free..., log_sigma, log_beta] jointly.
-            n_arma_free = int(mask.sum())
             log_sigma_init = 0.5 * np.log(max(float(np.nanvar(x)), 1e-10))
             log_beta_init = math.log(2.0)  # start at β=2 (normal shape)
             init_ged = np.concatenate(
                 [init[mask], [log_sigma_init, log_beta_init]]
             )
-            res_ged = minimize(
-                armafn_ged,
+            obj_fn = partial(armafn_ged, x=x, trans=transform_pars, coef=coef, mask=mask, arma=arma, mod=mod, ncxreg=ncxreg, xreg=xreg, narma=narma)
+            opt_res = minimize(
+                obj_fn,
                 init_ged,
-                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
             )
             ml_obj = armafn_ged
-            dist_tail_fit = res_ged.x[n_arma_free:]
+            dist_tail_fit = opt_res.x[n_arma_free:]
             _dp_ged = extract_dist_params("ged", dist_tail_fit)
             sigma2_ged = _dp_ged["sigma2"]
             beta_ged = _dp_ged["beta_dist"]
-            hess_arma = (
-                res_ged.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0 and np.ndim(res_ged.hess_inv) == 2
-                else np.array([])
-            )
             res = OptimResult(
-                res_ged.success,
-                res_ged.status,
-                res_ged.x[:n_arma_free],
-                res_ged.fun,
-                hess_arma,
+                opt_res.success,
+                opt_res.status,
+                opt_res.x[:n_arma_free],
+                opt_res.fun,
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
         elif no_optim:
             res = OptimResult(
@@ -866,13 +889,20 @@ def arima(
                 np.array([]),
             )
         else:
-            res = minimize(
-                ml_obj,
+            obj_fn = partial(ml_obj, x=x, trans=transform_pars, coef=coef, mask=mask, arma=arma, mod=mod, ncxreg=ncxreg, xreg=xreg, narma=narma)
+            opt_res = minimize(
+                obj_fn,
                 init[mask],
-                args=ml_args,
                 method=optim_method,
                 tol=tol,
                 options=optim_control,
+            )
+            res = OptimResult(
+                opt_res.success,
+                opt_res.status,
+                opt_res.x,
+                opt_res.fun,
+                approx_hess3(opt_res.x, obj_fn, epsilon=1e-3),
             )
         coef[mask] = res.x
         if transform_pars:
@@ -885,21 +915,24 @@ def arima(
                 if mask[ind].all():
                     coef[ind] = maInvert(coef[ind])
             if any(coef[mask] != res.x):
-                # maInvert re-parameterised the MA part; re-score there so res.fun
-                # (and loglik/aic below) matches the coefficients we report.
-                # scipy's maxiter=0 would return hess_inv = I, so evaluate
-                # directly and keep the approximation from the actual fit.
-                new_fun = ml_obj(np.concatenate([coef[mask], dist_tail_fit]), *ml_args)
+                # maInvert re-parameterised the MA part; re-score and re-estimate
+                # the Hessian there so res.fun (and loglik/aic below) and the
+                # variances describe the coefficients we report, as R's
+                # optim(maxit = 0, hessian = TRUE) does.
+                new_pars = np.concatenate([coef[mask], dist_tail_fit])
                 res = OptimResult(
-                    res.success, res.status, coef[mask], new_fun, res.hess_inv
+                    res.success,
+                    res.status,
+                    coef[mask],
+                    obj_fn(new_pars),
+                    approx_hess3(new_pars, obj_fn, epsilon=1e-3),
                 )
             A = arima_gradtrans(coef, arma)
             A = A[np.ix_(mask, mask)]
-            sol = np.matmul(res.hess_inv, A) / n_used
-            var = A.T @ sol
+            var = _coef_var(res.hess, n_used, n_arma_free, A)
             coef = arima_undopars(coef, arma)
         else:
-            var = None if no_optim else res.hess_inv / n_used
+            var = None if no_optim else _coef_var(res.hess, n_used, n_arma_free)
         trarma = arima_transpar(coef, arma, False)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         if ncxreg > 0:
