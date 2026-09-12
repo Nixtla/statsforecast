@@ -665,6 +665,24 @@ class TestSES:
 
 
 class TestSeasonalES:
+    @pytest.mark.parametrize(
+        "model",
+        [
+            SeasonalExponentialSmoothing(season_length=12, alpha=0.1),
+            SeasonalExponentialSmoothingOptimized(season_length=12),
+        ],
+    )
+    def test_prediction_intervals_and_simulate(self, model):
+        # `alpha` is one value per season here, so it has to be indexed.
+        model.fit(ap)
+
+        res = model.predict(h=6, level=[80])
+        assert res["lo-80"].shape == (6,)
+        assert np.all(res["lo-80"] <= res["mean"])
+        assert np.all(res["mean"] <= res["hi-80"])
+
+        assert model.simulate(h=6, n_paths=4).shape == (4, 6)
+
     def test_seasonal_es(self):
         seas_es = SeasonalExponentialSmoothing(season_length=12, alpha=1.0)
         assert_class(seas_es, x=ap, h=12)
