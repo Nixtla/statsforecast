@@ -6672,8 +6672,9 @@ class GARCH(_TS):
             res = self._add_predict_conformal_intervals(res, level)
         else:
             quantiles = _quantiles(level)
-            lo = res["mean"].reshape(-1, 1) - quantiles * res["sigma2"].reshape(-1, 1)
-            hi = res["mean"].reshape(-1, 1) + quantiles * res["sigma2"].reshape(-1, 1)
+            sigma = np.sqrt(res["sigma2"]).reshape(-1, 1)
+            lo = res["mean"].reshape(-1, 1) - quantiles * sigma
+            hi = res["mean"].reshape(-1, 1) + quantiles * sigma
             lo = lo[:, ::-1]
             lo = {f"lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
             hi = {f"hi-{l}": hi[:, i] for i, l in enumerate(level)}
@@ -6733,12 +6734,9 @@ class GARCH(_TS):
                 res = self._add_predict_conformal_intervals(res, level)
             else:
                 quantiles = _quantiles(level)
-                lo = res["mean"].reshape(-1, 1) - quantiles * res["sigma2"].reshape(
-                    -1, 1
-                )
-                hi = res["mean"].reshape(-1, 1) + quantiles * res["sigma2"].reshape(
-                    -1, 1
-                )
+                sigma = np.sqrt(res["sigma2"]).reshape(-1, 1)
+                lo = res["mean"].reshape(-1, 1) - quantiles * sigma
+                hi = res["mean"].reshape(-1, 1) + quantiles * sigma
                 lo = lo[:, ::-1]
                 lo = {f"lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
                 hi = {f"hi-{l}": hi[:, i] for i, l in enumerate(level)}

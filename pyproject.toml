@@ -1,6 +1,21 @@
 [build-system]
-requires = ["setuptools>=45", "pybind11>=2.10", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core>=1.0.3", "pybind11>=3"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+build-dir = "build/{wheel_tag}"
+build.verbose = true
+editable.rebuild = false
+logging.level = "INFO"
+minimum-version = "1.0"
+sdist.exclude = ["**/__pycache__", "**/*.pyc", "**/*.egg-info", "**/*.so", "**/*.pyd", "**/*.dylib"]
+sdist.include = ["CMakeLists.txt", "external_libs", "include", "python", "pyproject.toml", "src", "LICENSE", "README.md"]
+sdist.inclusion-mode = "explicit"
+sdist.reproducible = true
+wheel.exclude = ["Release"]
+wheel.expand-macos-universal-tags = true
+wheel.install-dir = "statsforecast"
+wheel.packages = ["python/statsforecast"]
 
 [project]
 name = "statsforecast"
@@ -42,8 +57,11 @@ Documentation = "https://nixtlaverse.nixtla.io/statsforecast/"
 
 [dependency-groups]
 dev = [
+    "cmake",
     "datasetsforecast",
     "fire",
+    "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
+    "ninja",
     "pandas[plot]<3.0.0",
     "polars[numpy]",
     "pre-commit",
@@ -51,6 +69,7 @@ dev = [
     "pyarrow>=23.0.1",
     "pybind11",
     "pytest",
+    "scikit-build-core>=1.0.3",
     "scikit-learn",
     "setuptools<84",
     "supersmoother",
@@ -58,7 +77,6 @@ dev = [
     "yfinance",
     "pytest-cov",
     "pip-licenses",
-    "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
 ]
 dask = ["dask", "fugue[dask]>=0.9.4"]
 ray = [
@@ -68,47 +86,37 @@ ray = [
 ]
 spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
 all = [
+    "cmake",
+    "datasetsforecast",
     "dask",
-    "fugue[dask]>=0.9.4",
-    "fugue[spark]>=0.9.4",
+    "fire",
+    "fugue[dask,spark]>=0.9.4",
     "fugue[ray]>=0.9.4 ; sys_platform != 'win32'",
-    "ray>=2.56.0 ; sys_platform != 'win32'",
-    "pyspark<4.1.0; sys_platform == 'win32'",
+    "ninja",
+    "numpy",
+    "pandas[plot]<3.0.0",
     "plotly",
     "plotly-resampler ; python_version < '3.14'",
     "polars[numpy]",
-    "datasetsforecast",
-    "fire",
-    "pandas[plot]<3.0.0",
     "pre-commit",
     "prophet",
+    "protobuf>=5.29.6",
     "pyarrow>=23.0.1",
     "pybind11",
+    "pyspark<4.1.0; sys_platform == 'win32'",
     "pytest",
     "pytest-cov",
+    "ray>=2.56.0 ; sys_platform != 'win32'",
+    "scikit-build-core>=1.0.3",
     "scikit-learn",
-    "setuptools<84",
     "supersmoother",
     "yfinance",
-    "protobuf>=5.29.6",
-    "numpy",
 ]
-
-[tool.setuptools]
-packages = ["statsforecast"]
-
-[tool.setuptools.dynamic]
-version = { attr = "statsforecast.__version__" }
-
-[tool.setuptools.package-dir]
-"" = "python"
-
-[tool.setuptools.package-data]
-"*" = ["**/*"]
 
 [tool.cibuildwheel]
 archs = "all"
 build-verbosity = 1
+build-frontend = "build[uv]"
 
 [tool.ruff]
 target-version = "py310"

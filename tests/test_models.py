@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.stats import norm
 
 # from fastcore.test import test_close, test_eq, test_fail
 from statsforecast.garch import generate_garch_data
@@ -2024,6 +2025,15 @@ class TestGARCH:
         assert_class(garch_c, x=ap, h=13, level=[90, 80], test_forward=False)
         fcst_garch_c = garch_c.forecast(ap, 13, None, None, (80, 95), True)
         np.testing.assert_array_equal(fcst_garch_c["mean"][:12], fcst_garch["mean"])
+
+    def test_garch_interval_scale(self):
+        # hi/lo = mean +/- z * sigma
+        y = self.y * 10
+        fcst = GARCH(2, 2).forecast(y, h=12, level=[95])
+        z = norm.ppf(0.975)
+        sigma = np.sqrt(fcst["sigma2"])
+        np.testing.assert_allclose((fcst["hi-95"] - fcst["mean"]) / sigma, z)
+        np.testing.assert_allclose((fcst["mean"] - fcst["lo-95"]) / sigma, z)
 
 
 # h = 100
