@@ -1,6 +1,7 @@
 #include <pybind11/pybind11.h>
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <numeric>
 #include <ranges>
@@ -39,48 +40,63 @@ Eigen::Vector<double, 5> init_state(const Eigen::Ref<const VectorXd> &y,
   return {alpha * y[0] + (1 - alpha) * initial_smoothed, y[0], An, Bn, mu};
 }
 
-void update(Eigen::Ref<RowMajorMatrixXd> states, size_t i, ModelType model_type,
-            double alpha, double theta, double y, bool usemu) {
-  double level = states(i - 1, 0);
-  double meany = states(i - 1, 1);
-  double An = states(i - 1, 2);
-  double Bn = states(i - 1, 3);
-  states(i, 4) =
+// One state transition, reading the previous row and writing the next one.
+// `i` enters the equations only as the time index.
+void update_step(const double *prev, double *cur, size_t i,
+                 ModelType model_type, double alpha, double theta, double y,
+                 bool usemu) {
+  double level = prev[0];
+  double meany = prev[1];
+  double An = prev[2];
+  double Bn = prev[3];
+  cur[4] =
       level + (1 - 1 / theta) * (An * std::pow(1 - alpha, i) +
                                  Bn * (1 - std::pow(1 - alpha, i + 1)) / alpha);
   if (usemu) {
-    y = states(i, 4);
+    y = cur[4];
   }
-  states(i, 0) = alpha * y + (1 - alpha) * level;
-  states(i, 1) = (i * meany + y) / (i + 1);
+  cur[0] = alpha * y + (1 - alpha) * level;
+  cur[1] = (i * meany + y) / (i + 1);
   if (model_type == ModelType::DSTM || model_type == ModelType::DOTM) {
-    states(i, 3) = ((i - 1) * Bn + 6 * (y - meany) / (i + 1)) / (i + 2);
-    states(i, 2) = states(i, 1) - states(i, 3) * (i + 2) / 2;
+    cur[3] = ((i - 1) * Bn + 6 * (y - meany) / (i + 1)) / (i + 2);
+    cur[2] = cur[1] - cur[3] * (i + 2) / 2;
   } else {
-    states(i, 2) = An;
-    states(i, 3) = Bn;
+    cur[2] = An;
+    cur[3] = Bn;
   }
+}
+
+void update(Eigen::Ref<RowMajorMatrixXd> states, size_t i, ModelType model_type,
+            double alpha, double theta, double y, bool usemu) {
+  update_step(states.row(i - 1).data(), states.row(i).data(), i, model_type,
+              alpha, theta, y, usemu);
 }
 
 void forecast(const Eigen::Ref<const RowMajorMatrixXd> &states, size_t i,
               ModelType model_type, Eigen::Ref<VectorXd> f, double alpha,
               double theta) {
   size_t h = f.size();
-  RowMajorMatrixXd new_states = RowMajorMatrixXd::Zero(i + h, states.cols());
-  std::copy(states.data(), states.data() + i * states.cols(),
-            new_states.data());
+  // Each step reads only the row before it, so two rolling rows stand in for
+  // the (i + h) x 5 matrix this used to allocate and copy the history into.
+  std::array<double, 5> prev, cur;
+  std::copy_n(states.row(i - 1).data(), prev.size(), prev.data());
   for (size_t j = 0; j < h; ++j) {
-    update(new_states, i + j, model_type, alpha, theta, double{}, true);
-    f[j] = new_states(i + j, 4);
+    update_step(prev.data(), cur.data(), i + j, model_type, alpha, theta,
+                double{}, true);
+    f[j] = cur[4];
+    prev = cur;
   }
 }
 
-double calc(const Eigen::Ref<const VectorXd> &y,
-            Eigen::Ref<RowMajorMatrixXd> states, ModelType model_type,
-            double initial_smoothed, double alpha, double theta,
-            Eigen::Ref<VectorXd> e, Eigen::Ref<VectorXd> amse, size_t nmse) {
-  VectorXd denom = VectorXd::Zero(nmse);
-  VectorXd f = VectorXd::Zero(nmse);
+// Workhorse taking caller-owned scratch: denom and f must hold nmse entries.
+// Only denom is re-zeroed here; f is fully written by forecast before it is
+// read.
+double calc_buf(const Eigen::Ref<const VectorXd> &y,
+                Eigen::Ref<RowMajorMatrixXd> states, ModelType model_type,
+                double initial_smoothed, double alpha, double theta,
+                Eigen::Ref<VectorXd> e, Eigen::Ref<VectorXd> amse, size_t nmse,
+                Eigen::Ref<VectorXd> denom, Eigen::Ref<VectorXd> f) {
+  denom.setZero();
   auto init_states = init_state(y, model_type, initial_smoothed, alpha, theta);
   std::ranges::copy(init_states, states.row(0).begin());
   std::fill_n(amse.begin(), nmse, double{});
@@ -108,6 +124,17 @@ double calc(const Eigen::Ref<const VectorXd> &y,
   return e.tail(e.size() - 3).array().square().sum() / mean_y;
 }
 
+// Allocating version (for the public calc API where the scratch isn't reused)
+double calc(const Eigen::Ref<const VectorXd> &y,
+            Eigen::Ref<RowMajorMatrixXd> states, ModelType model_type,
+            double initial_smoothed, double alpha, double theta,
+            Eigen::Ref<VectorXd> e, Eigen::Ref<VectorXd> amse, size_t nmse) {
+  VectorXd denom(nmse);
+  VectorXd f(nmse);
+  return calc_buf(y, states, model_type, initial_smoothed, alpha, theta, e,
+                  amse, nmse, denom, f);
+}
+
 std::tuple<VectorXd, VectorXd, RowMajorMatrixXd, double>
 pegels_resid(const Eigen::Ref<const VectorXd> &y, ModelType model_type,
              double initial_smoothed, double alpha, double theta, size_t nmse) {
@@ -122,11 +149,21 @@ pegels_resid(const Eigen::Ref<const VectorXd> &y, ModelType model_type,
   return {amse, e, states, mse};
 }
 
-double target_fn(const VectorXd &params, double init_level, double init_alpha,
-                 double init_theta, bool opt_level, bool opt_alpha,
-                 bool opt_theta, const VectorXd &y, ModelType model_type,
+// Buffers shared by the objective evaluations of a single optimize() call.
+// Function-local, never static: fits may run concurrently.
+struct Scratch {
+  RowMajorMatrixXd states;
+  VectorXd e, amse, denom, f;
+
+  Scratch(Eigen::Index n, size_t nmse)
+      : states(n, 5), e(n), amse(nmse), denom(nmse), f(nmse) {}
+};
+
+double target_fn(const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+                 double init_level, double init_alpha, double init_theta,
+                 bool opt_level, bool opt_alpha, bool opt_theta,
+                 const Eigen::Ref<const VectorXd> &y, ModelType model_type,
                  size_t nmse) {
-  RowMajorMatrixXd states = RowMajorMatrixXd::Zero(y.size(), 5);
   size_t j = 0;
   double level, alpha, theta;
   if (opt_level) {
@@ -144,9 +181,8 @@ double target_fn(const VectorXd &params, double init_level, double init_alpha,
   } else {
     theta = init_theta;
   }
-  VectorXd e = VectorXd::Zero(y.size());
-  VectorXd amse = VectorXd::Zero(nmse);
-  double mse = calc(y, states, model_type, level, alpha, theta, e, amse, nmse);
+  double mse = calc_buf(y, ws.states, model_type, level, alpha, theta, ws.e,
+                        ws.amse, nmse, ws.denom, ws.f);
   mse = std::max(mse, -1e10);
   if (std::isnan(mse) || std::abs(mse + 99999) < 1e-7) {
     mse = -std::numeric_limits<double>::infinity();
@@ -170,25 +206,29 @@ nm::OptimResult optimize(const Eigen::Ref<const VectorXd> &x0,
   int max_iter = 1'000;
   double tol_std = 1e-4;
   bool adaptive = true;
+  Scratch ws(y.size(), nmse);
   return nm::NelderMead(target_fn, x0, lower, upper, init_step, zero_pert,
                         alpha, gamma, rho, sigma, max_iter, tol_std, adaptive,
-                        init_level, init_alpha, init_theta, opt_level,
+                        ws, init_level, init_alpha, init_theta, opt_level,
                         opt_alpha, opt_theta, y, model_type, nmse);
 }
 
-double target_fn_dist(const VectorXd &params, double init_level,
-                      double init_alpha, double init_theta, bool opt_level,
-                      bool opt_alpha, bool opt_theta, const VectorXd &y,
+double target_fn_dist(const Eigen::Ref<const VectorXd> &params, Scratch &ws,
+                      double init_level, double init_alpha, double init_theta,
+                      bool opt_level, bool opt_alpha, bool opt_theta,
+                      const Eigen::Ref<const VectorXd> &y,
                       ModelType model_type, size_t nmse,
                       dist::Distribution distribution) {
-  RowMajorMatrixXd states = RowMajorMatrixXd::Zero(y.size(), 5);
   size_t j = 0;
   double level = opt_level ? params[j++] : init_level;
   double alpha = opt_alpha ? params[j++] : init_alpha;
   double theta = opt_theta ? params[j++] : init_theta;
-  VectorXd e = VectorXd::Zero(y.size());
-  VectorXd amse = VectorXd::Zero(nmse);
-  double mse = calc(y, states, model_type, level, alpha, theta, e, amse, nmse);
+  VectorXd &e = ws.e;
+  // calc_buf can return early, leaving e's tail untouched; negloglik_* reads
+  // from it.
+  e.setZero();
+  double mse = calc_buf(y, ws.states, model_type, level, alpha, theta, e,
+                        ws.amse, nmse, ws.denom, ws.f);
   if (std::isnan(mse) || std::abs(mse + 99999) < 1e-7)
     return std::numeric_limits<double>::infinity();
 
@@ -220,8 +260,9 @@ nm::OptimResult optimize_dist(const Eigen::Ref<const VectorXd> &x0,
                               bool opt_theta, const Eigen::Ref<const VectorXd> &y,
                               ModelType model_type, size_t nmse,
                               dist::Distribution distribution) {
+  Scratch ws(y.size(), nmse);
   return nm::NelderMead(target_fn_dist, x0, lower, upper, 0.05, 1e-4, 1.0,
-                        2.0, 0.5, 0.5, 1000, 1e-4, true, init_level,
+                        2.0, 0.5, 0.5, 1000, 1e-4, true, ws, init_level,
                         init_alpha, init_theta, opt_level, opt_alpha, opt_theta,
                         y, model_type, nmse, distribution);
 }
