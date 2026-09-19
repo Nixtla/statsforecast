@@ -698,7 +698,7 @@ class _StatsForecast:
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         if self.n_jobs == 1:
-            self.fitted_ = self.ga.fit(
+            self.fitted_ = self.ga._single_threaded_fit(
                 models=self.models, fallback_model=self.fallback_model
             )
         else:
@@ -807,7 +807,9 @@ class _StatsForecast:
         self._validate_exog(X_df)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
-            fcsts, cols = self.ga.predict(fm=self.fitted_, h=h, X=X, level=level)
+            fcsts, cols = self.ga._single_threaded_predict(
+                fm=self.fitted_, h=h, X=X, level=level
+            )
         else:
             fcsts, cols = self._predict_parallel(h=h, X=X, level=level)
         fcsts_df = self._make_future_df(h=h)
@@ -868,7 +870,7 @@ class _StatsForecast:
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
-            self.fitted_, fcsts, cols = self.ga.fit_predict(
+            self.fitted_, fcsts, cols = self.ga._single_threaded_fit_predict(
                 models=self.models, h=h, X=X, level=level
             )
         else:
@@ -933,7 +935,7 @@ class _StatsForecast:
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
-            res_fcsts = self.ga.forecast(
+            res_fcsts = self.ga._single_threaded_forecast(
                 models=self.models,
                 h=h,
                 fallback_model=self.fallback_model,
@@ -1054,7 +1056,7 @@ class _StatsForecast:
         X, _ = self._parse_X_level(h, X_df, None)
 
         if self.n_jobs == 1:
-            res_sim = self.ga.simulate(
+            res_sim = self.ga._single_threaded_simulate(
                 h=h,
                 n_paths=n_paths,
                 models=self.models,
@@ -1216,7 +1218,7 @@ class _StatsForecast:
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         _, level = self._parse_X_level(h=h, X=None, level=level)
         if self.n_jobs == 1:
-            res_fcsts = self.ga.cross_validation(
+            res_fcsts = self.ga._single_threaded_cross_validation(
                 models=self.models,
                 h=h,
                 test_size=test_size,
