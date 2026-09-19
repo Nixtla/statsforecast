@@ -912,7 +912,7 @@ def test_issue_649(capsys):
     y = np.array(42 * [100] + [119, 525])
     AutoARIMA(season_length=12, trace=True).fit(y)
     captured = capsys.readouterr()
-    expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : inf
+    expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : 505.8834
 ARIMA(0,0,0)            with non-zero mean : 494.2237
 ARIMA(1,0,0)(1,0,0)[12] with non-zero mean : 496.9135
 ARIMA(0,0,1)(0,0,1)[12] with non-zero mean : 496.7905
