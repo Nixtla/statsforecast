@@ -1354,6 +1354,8 @@ class AutoTheta(_TS):
         alias (str, default="AutoTheta"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
+        theta (Optional[float], optional): Fixed theta parameter for optimized Theta models.
+            By default, theta is estimated from the data.
 
     References:
         - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -1367,17 +1369,23 @@ class AutoTheta(_TS):
         alias: str = "AutoTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
         distribution: str = "normal",
+        theta: Optional[float] = None,
     ):
         if distribution not in _VALID_DISTRIBUTIONS:
             raise ValueError(
                 f"distribution must be one of {tuple(d.value for d in _VALID_DISTRIBUTIONS)}, got {distribution!r}"
             )
+        if theta is not None and (
+            not np.isfinite(theta) or theta < 1.0 or theta > 1e10
+        ):
+            raise ValueError("theta must be finite and between 1 and 1e10")
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        self.theta = theta
 
     def fit(
         self,
@@ -1403,6 +1411,7 @@ class AutoTheta(_TS):
             model=self.model,
             decomposition_type=self.decomposition_type,
             distribution=self.distribution,
+            theta=self.theta,
         )
         self.model_["fitted"] = y - self.model_["residuals"]
         self._store_cs(y, X)
@@ -1502,6 +1511,7 @@ class AutoTheta(_TS):
                 model=self.model,
                 decomposition_type=self.decomposition_type,
                 distribution=self.distribution,
+                theta=self.theta,
             )
         else:
             if not hasattr(self, "model_"):
@@ -1557,6 +1567,7 @@ class AutoTheta(_TS):
             m=self.season_length,
             model=self.model,
             decomposition_type=self.decomposition_type,
+            theta=self.theta,
         )
         res = forecast_theta(mod, h, level=level)
         if self.prediction_intervals is not None:
@@ -6498,6 +6509,7 @@ class OptimizedTheta(AutoTheta):
         alias (str): Custom name of the model. Default 'OptimizedTheta'.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals. Default None.
+        theta (Optional[float]): Fixed theta parameter. By default, theta is estimated from the data.
     """
 
     def __init__(
@@ -6506,6 +6518,7 @@ class OptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "OptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        theta: Optional[float] = None,
     ):
         super().__init__(
             season_length=season_length,
@@ -6513,6 +6526,7 @@ class OptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            theta=theta,
         )
 
 
@@ -6560,6 +6574,7 @@ class DynamicOptimizedTheta(AutoTheta):
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
+        theta (Optional[float]): Fixed theta parameter. By default, theta is estimated from the data.
     """
 
     def __init__(
@@ -6568,6 +6583,7 @@ class DynamicOptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "DynamicOptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        theta: Optional[float] = None,
     ):
         super().__init__(
             season_length=season_length,
@@ -6575,6 +6591,7 @@ class DynamicOptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            theta=theta,
         )
 
 
