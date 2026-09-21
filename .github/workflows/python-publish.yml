@@ -30,7 +30,7 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.os-platform[1] == 'manylinux_aarch64'
-        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         with:
           platforms: arm64
 
