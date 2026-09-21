@@ -445,6 +445,43 @@ class TestTheta:
         theta = AutoTheta(season_length=12)
         assert_class(theta, x=ap, h=12, level=[80, 90], test_forward=True)
 
+    @pytest.mark.parametrize(
+        "distribution", ["normal", "laplace", "t", "skew-normal", "ged"]
+    )
+    def test_forecast_preserves_distribution(self, distribution):
+        model = AutoTheta(season_length=12, model="STM", distribution=distribution)
+        via_predict = model.fit(ap).predict(h=12, level=[80, 95])
+        via_forecast = model.forecast(y=ap, h=12, level=[80, 95])
+
+        for key in via_predict:
+            np.testing.assert_allclose(via_forecast[key], via_predict[key])
+
+    @pytest.mark.parametrize(
+        ("distribution", "decomposition_type"),
+        [
+            ("normal", "multiplicative"),
+            ("laplace", "multiplicative"),
+            ("normal", "additive"),
+            ("laplace", "additive"),
+        ],
+    )
+    def test_forward_preserves_fitted_configuration(
+        self, distribution, decomposition_type
+    ):
+        model = AutoTheta(
+            season_length=12,
+            model="STM",
+            distribution=distribution,
+            decomposition_type=decomposition_type,
+        ).fit(ap)
+        via_predict = model.predict(h=12, level=[80, 95])
+        via_forward = model.forward(y=ap, h=12, level=[80, 95])
+
+        assert model.model_["distribution"] == distribution
+        assert model.model_["decomposition_type"] == decomposition_type
+        for key in via_predict:
+            np.testing.assert_allclose(via_forward[key], via_predict[key])
+
     def test_alias_arg(self):
         # test alias argument
         assert repr(AutoTheta()) == "AutoTheta"
