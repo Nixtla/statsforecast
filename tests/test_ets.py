@@ -1,7 +1,9 @@
 import numpy as np
 import pytest
+from scipy.stats import norm
 from statsforecast.ets import (
     _class3models,
+    _compute_pred_intervals,
     ets_f,
     etssimulate,
     forecast_ets,
@@ -286,6 +288,49 @@ def test_autoets_distribution():
     pred = model.predict(h=12, level=[95])
     assert "lo-95" in pred and "hi-95" in pred
     assert np.all(pred["lo-95"] < pred["hi-95"])
+
+
+# ---- Class 1 prediction interval tests ----
+# For additive errors the variance at step k is sigma2 * (1 + sum of c_j**2, j < k),
+# c_j = alpha + beta * (phi + ... + phi**j) + gamma * [j % m == 0], so it cannot
+# depend on how many steps are forecast.
+
+
+@pytest.mark.parametrize(
+    "trend,seasonality,damped",
+    [
+        ("N", "N", "N"),
+        ("A", "N", "N"),
+        ("A", "N", "D"),
+        ("N", "A", "N"),
+        ("A", "A", "N"),
+        ("A", "A", "D"),
+    ],
+)
+def test_class1_variance_matches_recursion(trend, seasonality, damped):
+    m, h = 4, 13
+    alpha, beta, gamma, phi, sigma2 = 0.4, 0.05, 0.3, 0.9, 0.02
+    model = {
+        "sigma2": sigma2,
+        "m": m,
+        "components": ["A", trend, seasonality, damped],
+        "states": np.zeros((1, 6)),
+        "par": np.array([alpha, beta, gamma, phi]),
+    }
+    pred = _compute_pred_intervals(model, {"mean": np.zeros(h)}, h, [95])
+    var = (pred["hi-95"] / norm.ppf(0.975)) ** 2
+
+    j = np.arange(1, h)
+    if trend == "N":
+        slope = np.zeros(h - 1)
+    elif damped == "D":
+        slope = np.cumsum(phi**j)
+    else:
+        slope = j
+    seasonal = j % m == 0 if seasonality == "A" else np.zeros(h - 1)
+    c = alpha + beta * slope + gamma * seasonal
+    expected = sigma2 * np.concatenate([[1.0], 1 + np.cumsum(c**2)])
+    np.testing.assert_allclose(var, expected, rtol=1e-10)
 
 
 # ---- Class 3 prediction interval tests ----
