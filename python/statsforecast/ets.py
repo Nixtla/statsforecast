@@ -1216,7 +1216,7 @@ def _compute_pred_intervals(model, forecasts, h, level):
     pf = forecasts["mean"]
 
     model_type = model["components"]
-    steps = steps = np.arange(1, h + 1)
+    steps = np.arange(1, h + 1)
     hm = np.floor((steps - 1) / season_length)
     last_state = model["states"][-1]
 
