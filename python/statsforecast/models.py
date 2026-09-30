@@ -148,6 +148,20 @@ def _add_arima_fitted_pi(res, model, level):
     }
 
 
+def _conformal_rank(n: int, lv: Union[int, float]) -> int:
+    r"""
+    Rank of the finite-sample conformal quantile among `n` conformity scores.
+
+    Split conformal prediction takes the `ceil((n + 1) * lv / 100)`-th smallest
+    score, which covers at least `lv` percent of exchangeable errors; the plain
+    `lv / 100` quantile of the scores under-covers, badly so with few windows.
+    When that rank exceeds `n` the largest score is used, which covers
+    `n / (n + 1)`.
+    """
+    # rounding guards against `(n + 1) * lv / 100` landing just above an integer
+    return min(int(np.ceil(round((n + 1) * lv / 100, 8))), n)
+
+
 def _add_conformal_distribution_intervals(
     fcst: Dict,
     cs: np.ndarray,
@@ -158,9 +172,14 @@ def _add_conformal_distribution_intervals(
     `level` should be already sorted. This strategy creates forecasts paths
     based on errors and calculate quantiles using those paths.
     """
-    alphas = [100 - lv for lv in level]
-    cuts = [alpha / 200 for alpha in reversed(alphas)]
-    cuts.extend(1 - alpha / 200 for alpha in alphas)
+    # `scores` stacks `mean - cs` and `mean + cs`, so with `n` windows its sorted
+    # upper half is `mean + cs` sorted. The cuts place the bounds at
+    # `mean -/+ cs_(k)`, the k-th smallest score of `_conformal_rank`, instead of
+    # the `lv` quantile of the pooled 2n values, which under-covers.
+    n = cs.shape[0]
+    ranks = [_conformal_rank(n, lv) for lv in level]
+    cuts = [(n - k) / (2 * n - 1) for k in reversed(ranks)]
+    cuts.extend((n + k - 1) / (2 * n - 1) for k in ranks)
     mean = fcst["mean"].reshape(1, -1)
     scores = np.vstack([mean - cs, mean + cs])
     quantiles = np.quantile(
@@ -184,11 +203,15 @@ def _add_conformal_error_intervals(
 ) -> Dict:
     r"""
     Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
-    `level` should be already sorted. Uses the `lv / 100` quantile of the
-    absolute conformity scores as the error margin around `fcst["mean"]`.
+    `level` should be already sorted. Uses the finite-sample conformal quantile
+    of the absolute conformity scores (see `_conformal_rank`) as the error
+    margin around `fcst["mean"]`.
     Returns the modified `fcst` dict.
     """
-    quantiles = {lv: np.quantile(cs, lv / 100, axis=0) for lv in level}
+    n = cs.shape[0]
+    quantiles = {
+        lv: np.quantile(cs, _conformal_rank(n, lv) / n, axis=0) for lv in level
+    }
     for lv in reversed(level):
         fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
     for lv in level:
