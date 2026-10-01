@@ -10,6 +10,7 @@ from scipy.stats import norm
 from statsforecast.garch import generate_garch_data
 from statsforecast.models import (
     _TS,
+    _conformal_rank,
     ADIDA,
     ARCH,
     ARIMA,
@@ -164,14 +165,43 @@ def test_conformal_error_intervals():
     assert np.all(fcst["hi-90"] >= fcst["hi-80"])
     # Hi and lo are anti-symmetric (implied by the exact-value checks below).
     # Exact-value check: for ZeroModel (mean=0), conformal_error intervals
-    # should match the lv/100 quantile of the conformity scores.
+    # should match the finite-sample conformal quantile of the conformity
+    # scores. With 2 windows, ceil(3 * 0.8) and ceil(3 * 0.9) both exceed 2,
+    # so both levels use the largest score.
     cs = zero_model._conformity_scores(ap)
-    q90 = np.quantile(cs, 0.9, axis=0)
-    q80 = np.quantile(cs, 0.8, axis=0)
+    q90 = cs.max(axis=0)
+    q80 = cs.max(axis=0)
     np.testing.assert_allclose(fcst["hi-90"], q90)
     np.testing.assert_allclose(fcst["hi-80"], q80)
     np.testing.assert_allclose(fcst["lo-90"], -q90)
     np.testing.assert_allclose(fcst["lo-80"], -q80)
+
+
+@pytest.mark.parametrize("method", ["conformal_error", "conformal_distribution"])
+def test_conformal_intervals_finite_sample_rank(method):
+    # With n windows, the bounds are at least the ceil((n + 1) * lv / 100)-th
+    # smallest conformity score, which covers lv percent of exchangeable errors.
+    n_windows = 10
+    conf_intervals = ConformalIntervals(h=12, n_windows=n_windows, method=method)
+    zero_model = ZeroModel(conf_intervals)
+    fcst = zero_model.forecast(ap, h=12, level=[70, 80])
+    cs_sorted = np.sort(zero_model._conformity_scores(ap), axis=0)
+    # ceil(11 * 0.7) = 8 and ceil(11 * 0.8) = 9
+    for lv, rank in [(70, 8), (80, 9)]:
+        assert np.all(fcst[f"hi-{lv}"] >= cs_sorted[rank - 1])
+        assert np.all(fcst[f"lo-{lv}"] <= -cs_sorted[rank - 1])
+    if method == "conformal_distribution":
+        # the pooled cuts land exactly on the k-th smallest score
+        np.testing.assert_allclose(fcst["hi-70"], cs_sorted[7])
+        np.testing.assert_allclose(fcst["lo-80"], -cs_sorted[8])
+
+
+@pytest.mark.parametrize(
+    "n, lv, expected",
+    [(2, 80, 2), (9, 90, 9), (10, 90, 10), (19, 90, 18), (20, 80, 17), (99, 95, 95)],
+)
+def test_conformal_rank(n, lv, expected):
+    assert _conformal_rank(n, lv) == expected
 
 
 def assert_class(
