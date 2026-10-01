@@ -2351,7 +2351,7 @@ class SimpleExponentialSmoothing(_TS):
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2496,17 +2496,30 @@ class SimpleExponentialSmoothing(_TS):
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        res = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
+        res = _ses(
+            y=y,
+            h=h,
+            fitted=fitted or (level is not None and self.prediction_intervals is None),
+            alpha=self.alpha,
+        )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
         res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                steps = np.arange(1, h + 1)
+                sigmah = sigma * np.sqrt(
+                    1 + (steps - 1) * self.alpha**2
+                )
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2548,7 +2561,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
     ):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2693,17 +2706,28 @@ class SimpleExponentialSmoothingOptimized(_TS):
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        res = _ses_optimized(y=y, h=h, fitted=fitted)
+        res = _ses_optimized(
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+        )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
-        res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        alpha = res.pop("alpha", None)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                steps = np.arange(1, h + 1)
+                sigmah = sigma * np.sqrt(1 + (steps - 1) * alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2768,7 +2792,7 @@ class SeasonalExponentialSmoothing(_TS):
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2924,18 +2948,33 @@ class SeasonalExponentialSmoothing(_TS):
         """
         y = _ensure_float(y)
         res = _seasonal_exponential_smoothing(
-            y=y, h=h, fitted=fitted, alpha=self.alpha, season_length=self.season_length
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+            alpha=self.alpha,
+            season_length=self.season_length,
         )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
         res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(
+                    residuals, len(y) - self.season_length
+                )
+                m = self.season_length
+                steps = np.arange(1, h + 1)
+                k = ((steps - 1) // m) + 1
+                sigmah = sigma * np.sqrt(1 + (k - 1) * self.alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2997,7 +3036,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -3152,18 +3191,32 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         """
         y = _ensure_float(y)
         res = _seasonal_ses_optimized(
-            y=y, h=h, fitted=fitted, season_length=self.season_length
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+            season_length=self.season_length,
         )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
-        res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        alpha = res.pop("alpha", None)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(
+                    residuals, len(y) - self.season_length
+                )
+                m = self.season_length
+                steps = np.arange(1, h + 1)
+                k = ((steps - 1) // m) + 1
+                sigmah = sigma * np.sqrt(1 + (k - 1) * alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 

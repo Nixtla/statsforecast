@@ -778,6 +778,50 @@ class TestSeasonalES:
         )
 
 
+@pytest.mark.parametrize(
+    "model",
+    [
+        SimpleExponentialSmoothing(alpha=0.1),
+        SimpleExponentialSmoothingOptimized(),
+        SeasonalExponentialSmoothing(season_length=12, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=12),
+    ],
+)
+def test_ses_analytical_prediction_intervals_parity(model):
+    h = 12
+    level = [80, 95]
+    model.fit(ap)
+
+    forecast = model.forecast(ap, h=h, level=level)
+    predict = model.predict(h=h, level=level)
+    pd.testing.assert_frame_equal(pd.DataFrame(forecast), pd.DataFrame(predict))
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SimpleExponentialSmoothing(alpha=0.1),
+        SimpleExponentialSmoothingOptimized(),
+        SeasonalExponentialSmoothing(season_length=3, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=1),
+    ],
+)
+def test_ses_analytical_prediction_intervals_formula(model):
+    h, level = 12, 95
+    model.fit(ap)
+    forecast = model.forecast(ap, h=h, level=[level])
+
+    steps = np.arange(h) // getattr(model, "season_length", 1)
+    alpha = np.resize(model.model_["alpha"], h)
+    width = (
+        norm.ppf(0.5 + level / 200)
+        * model.model_["sigma"]
+        * np.sqrt(1 + steps * alpha**2)
+    )
+    np.testing.assert_allclose(forecast[f"lo-{level}"], forecast["mean"] - width)
+    np.testing.assert_allclose(forecast[f"hi-{level}"], forecast["mean"] + width)
+
+
 class TestHolt:
     def test_holt_equivalence_with_ets(self):
         holt = Holt(season_length=12, error_type="A")
