@@ -238,6 +238,12 @@ def test_distribution_invalid_raises():
         ets_f(ap, m=12, distribution="cauchy")
 
 
+def test_damped_without_trend_raises():
+    """Damping is forbidden for any model with no trend. ANN is one representative example."""
+    with pytest.raises(ValueError, match="Forbidden model combination"):
+        ets_f(ap, m=12, model="ANN", damped=True)
+
+
 def test_t_aic_better_than_normal_heavy_tails():
     """On heavy-tailed data, t-distribution ETS AIC < normal ETS AIC."""
     rng = np.random.default_rng(42)
