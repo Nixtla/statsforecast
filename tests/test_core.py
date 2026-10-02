@@ -630,6 +630,55 @@ class TestModels:
         fcst._set_prediction_intervals(None)
         assert models[0].prediction_intervals is not None
 
+    def test_level_requires_conformal_intervals(self):
+        df = pd.DataFrame(
+            {
+                "unique_id": np.repeat([1, 2], 50),
+                "ds": np.tile(pd.date_range("2020-01-01", periods=50), 2),
+                "y": np.arange(100, dtype=np.float64),
+            }
+        )
+        expected_msg = "can only compute prediction intervals through conformal"
+        for method in ("forecast", "cross_validation"):
+            fcst = StatsForecast(models=[WindowAverage(window_size=5)], freq="D")
+            with pytest.raises(ValueError, match=expected_msg):
+                getattr(fcst, method)(df=df, h=3, level=[80])
+        fcst = StatsForecast(models=[WindowAverage(window_size=5)], freq="D")
+        with pytest.raises(ValueError, match=expected_msg):
+            fcst.fit_predict(df=df, h=3, level=[80])
+        fcst.fit(df=df)
+        with pytest.raises(ValueError, match=expected_msg):
+            fcst.predict(h=3, level=[80])
+        fcst = StatsForecast(
+            models=[Naive(), WindowAverage(window_size=5, alias="WA")], freq="D"
+        )
+        with pytest.raises(ValueError, match=r"\['WA'\]"):
+            fcst.forecast(df=df, h=3, level=[80])
+        fcst = StatsForecast(
+            models=[WindowAverage(window_size=5)], freq="D", fallback_model=Naive()
+        )
+        with pytest.raises(ValueError, match=expected_msg):
+            fcst.forecast(df=df, h=3, level=[80])
+        fcst = StatsForecast(models=[WindowAverage(window_size=5)], freq="D")
+        res = fcst.forecast(df=df, h=3)
+        assert list(res.columns) == ["unique_id", "ds", "WindowAverage"]
+        intervals = ConformalIntervals(h=3, n_windows=2)
+        fcst = StatsForecast(
+            models=[WindowAverage(window_size=5, prediction_intervals=intervals)],
+            freq="D",
+        )
+        interval_cols = ["WindowAverage-lo-80", "WindowAverage-hi-80"]
+        res = fcst.forecast(df=df, h=3, level=[80])
+        assert res[interval_cols].notna().all().all()
+        fcst = StatsForecast(models=[WindowAverage(window_size=5)], freq="D")
+        res = fcst.forecast(df=df, h=3, level=[80], prediction_intervals=intervals)
+        assert res[interval_cols].notna().all().all()
+        fcst = StatsForecast(models=[WindowAverage(window_size=5)], freq="D")
+        fcst.fit(df=df, prediction_intervals=intervals)
+        res = fcst.predict(h=3, level=[80])
+        assert res[interval_cols].notna().all().all()
+        assert (res["WindowAverage-lo-80"] <= res["WindowAverage-hi-80"]).all()
+
 
 # fcst = StatsForecast(
 #     models=[AutoARIMA(season_length=7)], freq="D", n_jobs=1, verbose=True
