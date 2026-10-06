@@ -432,7 +432,7 @@ class TestModels:
         panel_with_exog["month"] = panel_df["ds"].dt.month
         sf = StatsForecast(
             models=[AutoARIMA(season_length=12)],
-            freq="M",
+            freq="ME",
         )
         sf.fit(panel_with_exog)
         expected_msg = (
@@ -451,7 +451,7 @@ class TestModels:
         # if the models don't use exog then it continues
         sf = StatsForecast(
             models=[SeasonalNaive(season_length=10), Naive()],
-            freq="M",
+            freq="ME",
         )
         sf.fit(panel_with_exog)
         _ = sf.predict(h=12)
@@ -707,10 +707,10 @@ def test_for_monthly_data():
     # tests for monthly data
 
     monthly_series = generate_series(
-        10_000, freq="M", min_length=10, max_length=20, equal_ends=True
+        10_000, freq="ME", min_length=10, max_length=20, equal_ends=True
     )
 
-    fcst = StatsForecast(models=[Naive()], freq="M")
+    fcst = StatsForecast(models=[Naive()], freq="ME")
     monthly_res = fcst.forecast(df=monthly_series, h=4)
 
     # last_dates = monthly_series.groupby("unique_id")["ds"].max()
@@ -726,7 +726,7 @@ def test_for_monthly_data():
 
 def test_level_validation():
     # confidence levels must be between 0 and 100, exclusive
-    sf = StatsForecast(models=[Naive()], freq="M", n_jobs=1)
+    sf = StatsForecast(models=[Naive()], freq="ME", n_jobs=1)
     msg = "Every value in `level` must be"
     invalid_levels = [[0, 100], [-1], [101], [np.nan], [np.inf], ["a"]]
 
@@ -763,7 +763,7 @@ def test_conformal_error_end_to_end():
             h=h, n_windows=2, method="conformal_error"
         ),
     )
-    sf = StatsForecast(models=[model], freq="M", n_jobs=1)
+    sf = StatsForecast(models=[model], freq="ME", n_jobs=1)
     fcst = sf.forecast(df=ap_df, h=h, level=level)
 
     m = repr(model)  # "AutoARIMA"

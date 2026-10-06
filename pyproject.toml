@@ -41,12 +41,12 @@ dependencies = [
     "cloudpickle",
     "coreforecast>=0.0.17",
     "numpy>=1.21.6",
-    "pandas<3.0.0",
+    "pandas",
     "scipy>=1.7.3",
     "statsmodels>=0.14.5",
     "tqdm",
     "fugue>=0.9.4",
-    "utilsforecast>=0.1.4",
+    "utilsforecast>=0.2.17",
     "threadpoolctl>=3",
 ]
 
@@ -62,7 +62,7 @@ dev = [
     "fire",
     "mkdocstrings-parser@git+https://github.com/Nixtla/mkdocstrings-parser.git",
     "ninja",
-    "pandas[plot]<3.0.0",
+    "pandas[plot]",
     "polars[numpy]",
     "pre-commit",
     "prophet",
