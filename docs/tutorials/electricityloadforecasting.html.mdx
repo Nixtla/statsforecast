@@ -396,7 +396,7 @@ prophet = Prophet(interval_width=0.9)
 init = time()
 prophet.fit(df_train)
 # produce forecasts
-future = prophet.make_future_dataframe(periods=len(df_test), freq='H', include_history=False)
+future = prophet.make_future_dataframe(periods=len(df_test), freq='h', include_history=False)
 forecast_prophet = prophet.predict(future)
 end = time()
 # data wrangling

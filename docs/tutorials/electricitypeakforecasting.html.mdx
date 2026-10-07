@@ -137,7 +137,7 @@ component, however, any StatsForecast model can be used. The complete
 list of models is available [here](../../src/core/models.html).
 
 ```python
-train, _ = trend(Y_df, freq='H')
+train, _ = trend(Y_df, freq='h')
 train.head()
 ```
 
@@ -172,7 +172,7 @@ following required parameters:
 # Instantiate StatsForecast class as sf
 sf = StatsForecast(
     models=models,
-    freq='H',
+    freq='h',
 )
 ```
 
