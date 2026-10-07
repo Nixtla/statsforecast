@@ -570,8 +570,8 @@ class _StatsForecast:
                 Each model should implement the forecast interface. Models must have
                 unique names, which can be set using the `alias` parameter.
             freq (str or int): Frequency of the time series data. Must be a valid
-                pandas or polars offset alias (e.g., 'D' for daily, 'M' for monthly,
-                'H' for hourly), or an integer representing the number of observations
+                pandas or polars offset alias (e.g., 'D' for daily, 'ME' for monthly,
+                'h' for hourly), or an integer representing the number of observations
                 per cycle.
             n_jobs (int, optional): Number of jobs to use for parallel processing.
                 Use -1 to utilize all available CPU cores.
