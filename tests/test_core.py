@@ -1196,6 +1196,15 @@ def test_cv_fitted(series_cv2, str_ds):
     assert_cv_fitted(series_cv2, str_ds=str_ds)
 
 
+def test_cv_fitted_test_size(series_cv2):
+    # the windows defined through test_size are the same as with n_windows=4
+    sf = StatsForecast(models=[Naive()], freq="D")
+    sf.cross_validation(df=series_cv2, h=2, n_windows=4, fitted=True)
+    expected = sf.cross_validation_fitted_values()
+    sf.cross_validation(df=series_cv2, h=2, test_size=5, fitted=True)
+    pd.testing.assert_frame_equal(sf.cross_validation_fitted_values(), expected)
+
+
 # tests for fallback model
 def test_cv_fallback_model(series, n_jobs=1):
     fitted_fcst = StatsForecast(
