@@ -112,13 +112,17 @@ def garch_forecast(mod, h):
     sigma2_vals = np.full((h + q,), np.nan)
 
     y_vals[0:p] = mod["y_vals"]
+    # E[y_t^2] given the information at the forecast origin: the observed
+    # squares in-sample and the variance forecast for future steps
+    y2_vals = np.full((h + p,), np.nan)
+    y2_vals[0:p] = mod["y_vals"] ** 2
 
     if q != 0:
         sigma2_vals[0:q] = mod["sigma2_vals"]
 
     for k in range(0, h):
         error = np.random.normal(loc=0, scale=1)
-        psum = np.flip(alpha) * (y_vals[k : p + k] ** 2)
+        psum = np.flip(alpha) * y2_vals[k : p + k]
         psum = np.nansum(psum)
         if q != 0:
             qsum = np.flip(beta) * (sigma2_vals[k : q + k])
@@ -128,6 +132,7 @@ def garch_forecast(mod, h):
             sigma2hat = w + psum
         yhat = error * np.sqrt(sigma2hat)
         y_vals[p + k] = yhat
+        y2_vals[p + k] = sigma2hat
         sigma2_vals[q + k] = sigma2hat
 
     res = {"mean": y_vals[-h:], "sigma2": sigma2_vals[-h:], "fitted": mod["fitted"]}
