@@ -445,16 +445,25 @@ def test_class3_matches_simulation():
 # corroborated by the simulation and correlation tests above.
 expected_class3_var = {
     "MNM": np.array([
-         487.115787,  517.599801,  766.705319,  794.800167,
-         871.540585, 1192.776260, 1619.868664, 1705.262837,
-        1360.096714, 1102.476187,  886.853397, 1168.650677,
+         479.621698,  509.634432,  754.903363,  782.562770,
+         858.118554, 1174.403072, 1594.911415, 1678.984567,
+        1339.133326, 1085.480243,  873.178919, 1150.627756,
     ]),
     "MAM": np.array([
-         697.177283,  680.731069,  893.131531,  844.463569,
-         847.824675, 1095.124178, 1365.869500, 1358.976906,
-        1041.877007,  815.211436,  632.588431,  802.507673,
+         686.283888,  670.094646,  879.176351,  831.268825,
+         834.577415, 1078.012863, 1344.527620, 1337.742449,
+        1025.596897,  802.472340,  622.702345,  789.966427,
     ]),
 }  # fmt: skip
+
+
+def test_sigma2_matches_r():
+    # R's forecast::ets(AirPassengers, model = "ANN") has sigma2 = SSE / (n - length(par))
+    mod = ets_f(np.asarray(ap, dtype=np.float64), m=12, model="ANN", damped=False)
+    n_par = 2  # alpha and the initial level
+    sse = np.sum(mod["residuals"] ** 2)
+    np.testing.assert_allclose(mod["sigma2"], sse / (len(ap) - n_par))
+    np.testing.assert_allclose(mod["sigma2"], 1144.464, rtol=1e-5)
 
 
 @pytest.mark.parametrize("model", ["MNM", "MAM"])
