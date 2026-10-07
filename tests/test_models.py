@@ -1083,25 +1083,26 @@ class TestRandomWalkWithDrift:
         fcst_rwd = rwd.forecast(
             y=ap, h=12, X=None, X_future=None, level=(80, 95), fitted=True
         )
+        # lo-80 from R's forecast::rwf(AirPassengers, 12, drift = TRUE)
         np.testing.assert_almost_equal(
             fcst_rwd["lo-80"],
             np.array(
                 [
-                    390.9799,
-                    375.0862,
-                    363.2664,
-                    353.5325,
-                    345.1178,
-                    337.6304,
-                    330.8384,
-                    324.5916,
-                    318.7857,
-                    313.3453,
-                    308.2136,
-                    303.3469,
+                    390.8289,
+                    374.8734,
+                    363.0066,
+                    353.2337,
+                    344.7848,
+                    337.2668,
+                    330.4471,
+                    324.1746,
+                    318.3448,
+                    312.8821,
+                    307.7295,
+                    302.8428,
                 ]
             ),
-            decimal=1,
+            decimal=4,
         )
 
     def test_alias_arg(self):
