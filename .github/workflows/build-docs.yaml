@@ -31,7 +31,7 @@ jobs:
 
       - name: Mint a docs read token
         id: docs_token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_APP_ID }}
           private-key: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_PRIVATE_KEY }}
@@ -44,7 +44,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
