@@ -35,7 +35,7 @@ or
 conda install -c conda-forge statsforecast
 ```
 
-Vist our [Installation Guide](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/installation.html) for further instructions.
+Visit our [Installation Guide](https://nixtlaverse.nixtla.io/statsforecast/docs/getting-started/installation.html) for further instructions.
 
 ## Quick Start
 
