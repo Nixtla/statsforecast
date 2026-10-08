@@ -679,6 +679,46 @@ def test_forward_arima_models():
 # model_x.summary()
 
 
+def test_arima_xreg_matches_R():
+    """stats::arima(AirPassengers, c(1, 0, 0), xreg = cbind(sqrt(t), log(t)), method = "CSS-ML")
+
+    The two regressors are strongly correlated (r = 0.96), so the fit goes through
+    the SVD rotation of the design and the coefficients are rotated back.
+    """
+    t = np.arange(1, ap.size + 1)
+    xreg = np.column_stack([np.sqrt(t), np.log(t)])
+    fit = arima(ap, order=(1, 0, 0), xreg=xreg, method="CSS-ML")
+    expected = {"ar1": 0.749, "intercept": 69.413, "ex_1": 60.406, "ex_2": -69.001}
+    assert list(fit["coef"]) == list(expected)
+    np.testing.assert_allclose(
+        list(fit["coef"].values()), list(expected.values()), rtol=1e-2
+    )
+    np.testing.assert_allclose(fit["loglik"], -701.6, rtol=1e-4)
+    np.testing.assert_allclose(fit["aic"], 1413.2, rtol=1e-4)
+
+
+def test_arima_rotates_xreg_onto_singular_directions(monkeypatch):
+    """The initial regression is fit on xreg %*% S$v as in R's arima, so its
+    columns are orthogonal and their norms are the singular values of xreg."""
+    t = np.arange(1, ap.size + 1)
+    xreg = np.column_stack([np.sqrt(t), np.log(t)])
+    designs = []
+    real_ols = arima_module.sm.OLS
+
+    def spy_ols(endog, exog, *args, **kwargs):
+        designs.append(np.array(exog))
+        return real_ols(endog, exog, *args, **kwargs)
+
+    monkeypatch.setattr(arima_module.sm, "OLS", spy_ols)
+    arima(ap, order=(1, 0, 0), xreg=xreg, include_mean=False, method="CSS-ML")
+    assert len(designs) == 1
+    rotated = designs[0]
+    singular_values = np.linalg.svd(xreg, compute_uv=False)
+    np.testing.assert_allclose(
+        rotated.T @ rotated, np.diag(singular_values**2), atol=1e-6
+    )
+
+
 def test_AutoARIMA_edge_cases(almost_constant_x):
     """Test AutoARIMA with various edge cases and data types."""
     # Test with constant array
