@@ -1796,6 +1796,7 @@ class StatsForecast(_StatsForecast):
                 target_col=target_col,
             )
         assert df is not None
+        self._check_distributed_pandas_version()
         engine = make_execution_engine(infer_by=[df])
         self._backend = make_backend(engine)
         return self._backend.forecast(
@@ -1961,6 +1962,7 @@ class StatsForecast(_StatsForecast):
                 target_col=target_col,
             )
         assert df is not None
+        self._check_distributed_pandas_version()
         engine = make_execution_engine(infer_by=[df])
         backend = make_backend(engine)
         return backend.cross_validation(
@@ -1987,3 +1989,12 @@ class StatsForecast(_StatsForecast):
         return engine is None and (
             df is None or isinstance(df, pd.DataFrame) or isinstance(df, pl_DataFrame)
         )
+
+    @staticmethod
+    def _check_distributed_pandas_version() -> None:
+        if int(pd.__version__.split(".", 1)[0]) >= 3:
+            raise RuntimeError(
+                "Distributed forecasting with Fugue is not supported with pandas>=3. "
+                "Use pandas<3 for Dask, Ray, or Spark execution, or use a local "
+                "pandas/polars DataFrame with pandas>=3."
+            )

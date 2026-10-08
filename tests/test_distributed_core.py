@@ -57,6 +57,21 @@ class FailNaive:
         return "Naive"
 
 
+@pytest.mark.parametrize("method", ["forecast", "cross_validation"])
+def test_pandas_3_distributed_error_precedes_fugue(monkeypatch, method):
+    from statsforecast import core
+
+    monkeypatch.setattr(core.pd, "__version__", "3.0.5")
+
+    def fail_if_fugue_runs(**kwargs):
+        raise AssertionError("Fugue should not run with pandas 3")
+
+    monkeypatch.setattr(core, "make_execution_engine", fail_if_fugue_runs)
+    sf = StatsForecast(models=[Naive()], freq="D")
+    with pytest.raises(RuntimeError, match="pandas<3.*local pandas/polars"):
+        getattr(sf, method)(df=object(), h=1)
+
+
 def test_parallel_backend_forecast(df, common_params, forecast_params):
     backend = ParallelBackend()
     fcst = backend.forecast(
