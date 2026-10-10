@@ -211,7 +211,7 @@ class TestThetaModel:
         )
 
         # recover mse
-        assert math.isclose(np.sum(e_[3:] ** 2) / np.mean(np.abs(air_passengers)), mse)
+        assert math.isclose(np.sum(e_**2) / np.mean(np.abs(air_passengers)), mse)
 
     def test_simple_theta_forecasts(self, air_passengers, theta_params):
         """Test simple theta model forecasts."""
@@ -281,7 +281,7 @@ class TestThetaModel:
         )
 
         # recover mse
-        assert math.isclose(np.sum(e_[3:] ** 2) / np.mean(np.abs(air_passengers)), mse)
+        assert math.isclose(np.sum(e_**2) / np.mean(np.abs(air_passengers)), mse)
 
     def test_optimal_theta_forecasts(self, air_passengers, theta_params):
         """Test optimal theta model forecasts."""
@@ -359,7 +359,7 @@ class TestThetaModel:
         )
 
         # recover mse
-        assert math.isclose(np.sum(e_[3:] ** 2) / np.mean(np.abs(air_passengers)), mse)
+        assert math.isclose(np.sum(e_[2:] ** 2) / np.mean(np.abs(air_passengers)), mse)
 
         # test forecasts
         h = 5
@@ -405,7 +405,7 @@ class TestThetaModel:
             # Dynamic Simple Theta Model with seasonality
             (12, "DSTM", [440.7631, 429.0512, 490.4711, 476.4495, 480.4251], 0),
             # Dynamic Optimized Theta Model with no seasonality - adjusted precision due to algorithm differences
-            (1, "DOTM", [432.5131, 433.4257, 434.3344, 435.2391, 436.1399], 0),
+            (1, "DOTM", [432.5131, 433.4257, 434.3344, 435.2391, 436.1399], 1),
             # Dynamic Optimized Theta Model with seasonality
             (12, "DOTM", [442.9720, 432.3586, 495.5702, 482.6789, 487.9888], 0),
         ],
@@ -504,6 +504,41 @@ class TestThetaModel:
         res_transfer = forward_theta(res, intermittent_series)
         for key in res_transfer["par"]:
             assert res["par"][key] == res_transfer["par"][key]
+
+
+@pytest.mark.parametrize(
+    "model,expected_mean",
+    [
+        ("STM", [807.9822, 806.6251, 805.2679]),
+        ("OTM", [805.5509, 802.8423, 800.1336]),
+        ("DSTM", [795.4948, 794.1524, 792.8146]),
+        ("DOTM", [804.9958, 804.9958, 804.9958]),
+    ],
+)
+def test_theta_estimation_matches_forectheta(model, expected_mean):
+    """The fitted models should match forecTheta on a series where alpha < 0.99.
+
+    The static models use all errors in the objective and the dynamic ones skip
+    the first two. Recover with e.g. stm(Nile, h = 3) in forecTheta.
+    """
+    # Nile from R's datasets package
+    nile = np.array(
+        [
+            1120, 1160, 963, 1210, 1160, 1160, 813, 1230, 1370, 1140, 995, 935,
+            1110, 994, 1020, 960, 1180, 799, 958, 1140, 1100, 1210, 1150, 1250,
+            1260, 1220, 1030, 1100, 774, 840, 874, 694, 940, 833, 701, 916,
+            692, 1020, 1050, 969, 831, 726, 456, 824, 702, 1120, 1100, 832,
+            764, 821, 768, 845, 864, 862, 698, 845, 744, 796, 1040, 759,
+            781, 865, 845, 944, 984, 897, 822, 1010, 771, 676, 649, 846,
+            812, 742, 801, 1040, 860, 874, 848, 890, 744, 749, 838, 1050,
+            918, 986, 797, 923, 975, 815, 1020, 906, 901, 1170, 912, 746,
+            919, 718, 714, 740
+        ],
+        dtype=np.float64,
+    )
+    res = auto_theta(nile, m=1, model=model)
+    np.testing.assert_allclose(forecast_theta(res, 3)["mean"], expected_mean, rtol=2e-3)
+
 
 def test_theta_short_series_no_nan_intervals():
     """Regression test for #1135: theta should not produce NaN intervals for short series."""
