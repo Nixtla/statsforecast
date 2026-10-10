@@ -134,9 +134,9 @@ class GroupedArray(BaseGroupedArray):
             cols += cols_m
         return fcsts, cols
 
-    def fit_predict(self, models, h, X=None, level=tuple()):
+    def fit_predict(self, models, h, X=None, level=tuple(), fallback_model=None):
         # fitted models
-        fm = self.fit(models=models)
+        fm = self.fit(models=models, fallback_model=fallback_model)
         # forecasts
         fcsts, cols = self.predict(fm=fm, h=h, X=X, level=level)
         return fm, fcsts, cols
@@ -408,8 +408,12 @@ class GroupedArray(BaseGroupedArray):
         return self.predict(fm=fm, h=h, X=X, level=level)
 
     @_controller.wrap(limits=1)
-    def _single_threaded_fit_predict(self, models, h, X=None, level=tuple()):
-        return self.fit_predict(models=models, h=h, X=X, level=level)
+    def _single_threaded_fit_predict(
+        self, models, h, X=None, level=tuple(), fallback_model=None
+    ):
+        return self.fit_predict(
+            models=models, h=h, X=X, level=level, fallback_model=fallback_model
+        )
 
     @_controller.wrap(limits=1)
     def _single_threaded_forecast(
@@ -869,7 +873,11 @@ class _StatsForecast:
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
         if self.n_jobs == 1:
             self.fitted_, fcsts, cols = self.ga.fit_predict(
-                models=self.models, h=h, X=X, level=level
+                models=self.models,
+                h=h,
+                X=X,
+                level=level,
+                fallback_model=self.fallback_model,
             )
         else:
             self.fitted_, fcsts, cols = self._fit_predict_parallel(
@@ -1361,7 +1369,7 @@ class _StatsForecast:
             for ga, X_ in zip(gas, Xs):
                 future = executor.apply_async(
                     ga._single_threaded_fit_predict,
-                    (self.models, h, X_, level),
+                    (self.models, h, X_, level, self.fallback_model),
                 )
                 futures.append(future)
             out = [f.get() for f in futures]
