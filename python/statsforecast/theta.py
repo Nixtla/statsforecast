@@ -561,4 +561,6 @@ def forward_theta(fitted_model, y):
         initial_smoothed=initial_smoothed,
         alpha=alpha,
         theta=theta,
+        decomposition_type=fitted_model.get("decomposition_type", "multiplicative"),
+        distribution=fitted_model.get("distribution", "normal"),
     )
