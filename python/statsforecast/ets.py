@@ -784,7 +784,9 @@ def etsmodel(
         np_eff = np_ + 1
         neg2logL = lik
         aic, bic, aicc = aic_bic_aicc(neg2logL, np_eff, ny)
-        sigma2 = np.sum(e**2) / (ny - np_eff - 1)
+        # Same as R's forecast::ets: the number of estimated parameters (smoothing
+        # parameters and initial states), without the variance itself
+        sigma2 = np.sum(e**2) / (ny - np_)
         loglik = -0.5 * neg2logL
         np_ = np_eff
     elif distribution == "laplace":
@@ -957,7 +959,7 @@ def ets_f(
             fits = y / (1 + aux_e)
         sq_e = e**2
 
-        sigma2 = sq_e[~np.isinf(sq_e)].sum() / (ny - np_ - 1)
+        sigma2 = sq_e[~np.isinf(sq_e)].sum() / (ny - (np_ - 1))
 
         return dict(
             loglik=-0.5 * lik,
