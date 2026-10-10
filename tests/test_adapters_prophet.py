@@ -1,8 +1,8 @@
 import warnings
-
+import numpy as np
 import pandas as pd
 import pytest
-from statsforecast.adapters.prophet import Prophet
+from statsforecast.adapters.prophet import Prophet, AutoARIMAProphet
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -12,6 +12,18 @@ def prophet_model():
     """Create a Prophet model instance."""
     return Prophet(daily_seasonality=False)
 
+
+@pytest.fixture
+def autoarimaprophet_fitted_model():
+    model = AutoARIMAProphet()
+
+    history = pd.DataFrame({
+        "ds": pd.date_range("2026-01-01", periods=30, freq="D"),
+        "y": np.sin(np.arange(30) / 5) + np.arange(30) * 0.1,
+    })
+
+    model.fit(history, disable_seasonal_features=False)
+    return model
 
 @pytest.fixture
 def holidays_data():
@@ -130,3 +142,82 @@ def test_prophet_empty_dataframe():
 
     with pytest.raises(Exception):  # Prophet should raise an error with empty data
         model.fit(empty_df)
+
+@pytest.mark.parametrize(
+    "date_selection",
+    [
+        "full_training_and_test",
+        "training_only",
+        "partial_training_aligned_and_test",
+        "partial_training_not_aligned_and_test",
+        "test_only",
+        "none",
+    ],
+)
+def test_predict_with_partial_training_and_test_dates(
+    autoarimaprophet_fitted_model, date_selection
+):
+    """Predictions should align correctly for training and future dates."""
+    model = autoarimaprophet_fitted_model
+    history = model.history
+
+    last_date = history["ds"].max()
+    future_dates = pd.date_range(
+        start=last_date + pd.Timedelta(days=1),
+        periods=2,
+        freq="D",
+    )
+
+    if date_selection == "full_training_and_test":
+        train_dates = history["ds"].tolist()
+        requested_dates = train_dates + list(future_dates)
+        df = pd.DataFrame({"ds": requested_dates})
+
+    elif date_selection == "training_only":
+        df = history[["ds"]].copy()
+
+    elif date_selection == "partial_training_aligned_and_test":
+        train_dates = history["ds"].iloc[-5:].tolist()
+        requested_dates = train_dates + list(future_dates)
+        df = pd.DataFrame({"ds": requested_dates})
+
+    elif date_selection == "partial_training_not_aligned_and_test":
+        # Select non-consecutive training dates.
+        train_dates = history["ds"].iloc[[0, 2, 5, 8, 10]].tolist()
+        requested_dates = train_dates + list(future_dates)
+        df = pd.DataFrame({"ds": requested_dates})
+
+    elif date_selection == "test_only":
+        df = pd.DataFrame({"ds": future_dates})
+
+    else:  # none
+        df = None
+
+    result = model.predict(df)
+
+    if date_selection == "none":
+        expected_dates = history["ds"].reset_index(drop=True)
+    else:
+        expected_dates = df["ds"].reset_index(drop=True)
+
+    # Correct shape and schema.
+    assert len(result) == len(expected_dates)
+    assert list(result.columns) == [
+        "ds", "yhat", "yhat_lower", "yhat_upper"
+    ]
+
+    # Preserve the requested date order.
+    pd.testing.assert_series_equal(
+        result["ds"].reset_index(drop=True),
+        expected_dates,
+        check_names=False,
+    )
+
+    # All requested dates should have valid predictions.
+    assert result["yhat"].notna().all()
+    assert result["yhat_lower"].notna().all()
+    assert result["yhat_upper"].notna().all()
+
+    # Prediction intervals should contain the point forecasts.
+    assert (result["yhat_lower"] <= result["yhat"]).all()
+    assert (result["yhat"] <= result["yhat_upper"]).all()
