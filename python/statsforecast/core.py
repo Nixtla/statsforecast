@@ -1242,7 +1242,7 @@ class _StatsForecast:
             )
         if fitted:
             self.cv_fitted_values_ = res_fcsts["fitted"]
-            self.n_cv_ = n_windows
+            self.n_cv_ = (test_size - h) // step_size + 1
         fcsts_df = ufp.cv_times(
             times=self.og_dates,
             uids=self.uids,
