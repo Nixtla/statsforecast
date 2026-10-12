@@ -31,6 +31,7 @@ from statsforecast.arima import (
     forecast_arima,
     forward_arima,
     getQ0,
+    getQ0bis,
     kalman_forecast,
     make_arima,
     mstl,
@@ -107,6 +108,69 @@ def test_getQ0():
     )  # fmt: skip
     x = np.arange(1, 11)
     np.testing.assert_allclose(expected_getQ0, getQ0(x, x))
+
+
+# expected values from R 4.6.1: .Call(stats:::C_getQ0bis, phi, theta, 0)
+_GETQ0BIS_R_CASES = [
+    ([], [0.5, 0.3], [
+        1.3400000000000001, 0.65000000000000002, 0.29999999999999999,
+        0.65000000000000002, 0.33999999999999997, 0.14999999999999999,
+        0.29999999999999999, 0.14999999999999999, 0.089999999999999997,
+    ]),
+    ([0.5, -0.2], [0.4], [
+        1.8823529411764706, 0.1764705882352941,
+        0.1764705882352941, 0.23529411764705885,
+    ]),
+    ([0.2], [0.3, 0.2, -0.1, 0.4], [
+        1.5016666666666667, 0.35399999999999998, 0.27000000000000002, 0.10000000000000001, 0.40000000000000002,
+        0.35399999999999998, 0.30000000000000004, -1.0547118733938987e-17, 0.05000000000000001, 0.12,
+        0.27000000000000002, -1.0547118733938987e-17, 0.21000000000000002, -0.060000000000000012, 0.080000000000000016,
+        0.10000000000000001, 0.05000000000000001, -0.060000000000000012, 0.17000000000000001, -0.040000000000000008,
+        0.40000000000000002, 0.12, 0.080000000000000016, -0.040000000000000008, 0.16000000000000003,
+    ]),
+    ([0, 0, 0, 0.999], [0.4, 0, 0, 0.5], [
+        1205.1025512756369, 300.05002501250601, 0, 299.94997498749353, 0.5,
+        300.05002501250601, 1204.1025512756369, 299.65002501250603, 0, 0.20000000000000001,
+        0, 299.65002501250603, 1203.9425512756368, 299.65002501250603, 0,
+        299.94997498749353, 0, 299.65002501250603, 1203.9425512756368, 0,
+        0.5, 0.20000000000000001, 0, 0, 0.25,
+    ]),
+    ([0.9999], [0.3], [
+        8450.1225061262376, 0.29999999999999999,
+        0.29999999999999999, 0.089999999999999997,
+    ]),
+    ([0.99999, -0.5, 0.3], [0.2, 0.1], [
+        4.1484520613997189, -0.65640040423169088, 1.1476030517942242,
+        -0.65640040423169088, 0.31287064908168027, -0.25798689367169048,
+        1.1476030517942242, -0.25798689367169048, 0.3833606855259748,
+    ]),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize("phi,theta,expected", _GETQ0BIS_R_CASES)
+def test_getQ0bis_matches_r(phi, theta, expected):
+    phi = np.array(phi, dtype=np.float64)
+    r = max(len(phi), len(theta) + 1)
+    theta = np.array(theta + [0.0] * (r - 1 - len(theta)))
+    expected = np.array(expected).reshape(r, r)
+    np.testing.assert_allclose(getQ0bis(phi, theta), expected, rtol=1e-12, atol=1e-14)
+    np.testing.assert_allclose(getQ0(phi, theta), expected, rtol=1e-10, atol=1e-14)
+
+
+@pytest.mark.parametrize("phi", [[1.0], [np.nan]])
+def test_getQ0bis_singular_returns_nan(phi):
+    assert np.isnan(getQ0bis(np.array(phi), np.array([0.3]))).all()
+
+
+def test_getQ0_uses_rossignol_for_large_state_spaces():
+    # (0,0,0)(1,1,7)[48] from issue #1034, Gardner would need ~13GB here
+    phi = np.zeros(48)
+    phi[-1] = 0.6
+    theta = np.zeros(336)
+    theta[47::48] = 0.1
+    Q0 = getQ0(phi, theta)
+    assert Q0.shape == (337, 337)
+    np.testing.assert_array_equal(Q0, getQ0bis(phi, theta))
 
 
 @pytest.fixture
@@ -1418,3 +1482,91 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
         warnings.simplefilter("ignore")
         _resolve_blambda(np.where(positive == 2.0, 0.0, positive), "auto", 4)
     assert seen["lower"] == 0.0
+
+
+# expected values from R 4.6.1: arima(AirPassengers, ..., SSinit = "Rossignol2011")
+@pytest.mark.parametrize(
+    "kwargs,coef,loglik,sigma2",
+    [
+        (
+            dict(order=(2, 1, 1), method="ML"),
+            [1.0906358270305845, -0.48901191630824559, -0.84385201689947709],
+            -685.16901237621641,
+            844.60806873268734,
+        ),
+        (
+            dict(
+                order=(1, 1, 1),
+                seasonal={"order": (1, 1, 0), "period": 12},
+                method="CSS-ML",
+            ),
+            [-0.21547412851077635, -0.088101976956308059, -0.14184625525193278],
+            -507.17806498248723,
+            134.65663994349447,
+        ),
+    ],
+)
+def test_arima_rossignol_matches_r(kwargs, coef, loglik, sigma2):
+    fit = arima(ap, SSinit="Rossignol2011", **kwargs)
+    assert fit["SSinit"] == "Rossignol2011"
+    np.testing.assert_allclose(list(fit["coef"].values()), coef, atol=2e-3)
+    np.testing.assert_allclose(fit["loglik"], loglik, rtol=1e-7)
+    np.testing.assert_allclose(fit["sigma2"], sigma2, rtol=1e-3)
+
+
+def test_arima_large_state_space_matches_r_rossignol():
+    # r = 37, so the default Gardner1980 falls back to Rossignol2011. Expected
+    # values from R 4.6.1: arima(log(AirPassengers), c(1, 1, 0),
+    # list(order = c(1, 0, 0), period = 36), SSinit = "Rossignol2011")
+    fit = arima(
+        np.log(ap),
+        order=(1, 1, 0),
+        seasonal={"order": (1, 0, 0), "period": 36},
+        method="CSS-ML",
+    )
+    np.testing.assert_allclose(
+        list(fit["coef"].values()), [-0.1591739124572718, 0.90752672197547624], atol=1e-4
+    )
+    np.testing.assert_allclose(fit["loglik"], 202.21990600716194, rtol=1e-8)
+
+
+def test_arima_invalid_ssinit_raises():
+    with pytest.raises(ValueError, match="SSinit"):
+        arima(ap, order=(1, 0, 0), SSinit="Rossignol")
+    with pytest.raises(ValueError, match="SSinit"):
+        auto_arima_f(ap, period=12, SSinit="Rossignol")
+
+
+def test_ssinit_is_reused_on_refit():
+    kwargs = dict(
+        order=(1, 1, 1),
+        seasonal={"order": (1, 0, 0), "period": 12},
+        method="CSS-ML",
+    )
+    fit = Arima(ap[:120], SSinit="Rossignol2011", **kwargs)
+    refit = forward_arima(fit, ap)
+    assert refit["SSinit"] == "Rossignol2011"
+    expected = Arima(
+        ap, fixed=np.array(list(fit["coef"].values())), SSinit="Rossignol2011", **kwargs
+    )
+    np.testing.assert_allclose(refit["loglik"], expected["loglik"])
+
+    auto_fit = auto_arima_f(ap, period=12, SSinit="Rossignol2011")
+    assert auto_fit["SSinit"] == "Rossignol2011"
+
+
+def test_issue_1034():
+    # (0,0,0)(1,1,7)[48] has r = 337, Gardner1980 needed ~13GB of workspace
+    rng = np.random.default_rng(1)
+    t = np.arange(120)
+    y = 10 + 3 * np.sin(2 * np.pi * t / 48) + rng.normal(size=t.size)
+    fit = Arima(
+        y,
+        order=(0, 0, 0),
+        seasonal={"order": (1, 1, 7), "period": 48},
+        method="ML",
+        fixed=[np.nan] + [0.0] * 7,
+    )
+    assert fit["code"] == 0
+    assert np.isfinite(fit["loglik"])
+    assert np.isfinite(fit["coef"]["sar1"])
