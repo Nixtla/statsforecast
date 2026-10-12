@@ -644,13 +644,22 @@ void getQ0bis(const py::array_t<double> phiv, const py::array_t<double> thetav,
     ttheta(i + 1) = theta[i];
   }
 
+  // A2 A2^T, where A2 is the Hankel matrix of ttheta
+  for (Eigen::Index i = r - 1; i >= 0; --i) {
+    for (Eigen::Index j = r - 1; j >= i; --j) {
+      double v = i <= q && j <= q ? ttheta(i) * ttheta(j) : 0.0;
+      if (j + 1 < r) {
+        v += Q0(i + 1, j + 1);
+      }
+      Q0(i, j) = Q0(j, i) = v;
+    }
+  }
+  if (p == 0) {
+    return;
+  }
   Eigen::MatrixXd A2 = Eigen::MatrixXd::Zero(r, q + 1);
   for (Eigen::Index j = 0; j < std::min(r, q + 1); ++j) {
     A2.row(j).head(q + 1 - j) = ttheta.tail(q + 1 - j).transpose();
-  }
-  Q0.noalias() = A2 * A2.transpose();
-  if (p == 0) {
-    return;
   }
 
   Eigen::VectorXd tphi(p + 1);
@@ -669,8 +678,8 @@ void getQ0bis(const py::array_t<double> phiv, const py::array_t<double> thetav,
   }
   Eigen::VectorXd u(std::max(p + q, p + 1));
   u.head(p + 1) = gam.partialPivLu().solve(Eigen::VectorXd::Unit(p + 1, 0));
-  // a singular system yields non-finite values, propagate them so that the
-  // optimizer rejects the parameters instead of aborting the fit
+  // an exactly singular system yields non-finite values, propagate them so
+  // that the optimizer rejects the parameters instead of aborting the fit
   if (!u.head(p + 1).allFinite()) {
     Q0.setConstant(std::numeric_limits<double>::quiet_NaN());
     return;
@@ -718,7 +727,7 @@ void getQ0bis(const py::array_t<double> phiv, const py::array_t<double> thetav,
       SXZ(k, L) = rrz(L - k - 1);
     }
   }
-  const Eigen::MatrixXd M = A1 * SXZ * A2.transpose();
+  const Eigen::MatrixXd M = A1 * (SXZ * A2.transpose());
   Q0 += M + M.transpose();
 }
 
