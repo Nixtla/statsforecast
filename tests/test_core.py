@@ -931,18 +931,20 @@ def test_for_cross_validation(series_cv1):
     assert n_windows == 3 * 3
     np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0']",
-        df=series_cv,
-        h=10,
-    )
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
-        df=series_cv,
-        h=20,
-    )
+    for series, freq in [(series_cv, "D"), (pl.from_pandas(series_cv), "1d")]:
+        fcst = StatsForecast(models=[SumAhead(), Naive()], freq=freq)
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0']",
+            df=series,
+            h=10,
+        )
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
+            df=series,
+            h=20,
+        )
 
 
 def test_cross_validation_refit_false(series_cv1):
