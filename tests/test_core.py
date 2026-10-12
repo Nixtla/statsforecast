@@ -945,6 +945,25 @@ def test_for_cross_validation(series_cv1):
     )
 
 
+@pytest.mark.parametrize("engine", ["pandas", "polars"])
+def test_cross_validation_short_series_message(engine):
+    df = pd.DataFrame(
+        {
+            "unique_id": ["a"] * 20 + ["b"] * 3 + ["c"] * 2,
+            "ds": list(range(20)) + list(range(3)) + list(range(2)),
+            "y": np.arange(25, dtype=float),
+        }
+    )
+    if engine == "polars":
+        df = pl.from_pandas(df)
+    fcst = StatsForecast(models=[Naive()], freq=1)
+    with pytest.raises(ValueError) as exc_info:
+        fcst.cross_validation(df=df, h=2, n_windows=2)
+    assert str(exc_info.value).startswith(
+        "The following series are too short for the cross validation settings: ['b', 'c']"
+    )
+
+
 def test_cross_validation_refit_false(series_cv1):
     series_cv = series_cv1
 
