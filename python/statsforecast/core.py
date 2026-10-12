@@ -579,9 +579,8 @@ class _StatsForecast:
                 per cycle.
             n_jobs (int, optional): Number of jobs to use for parallel processing.
                 Use -1 to utilize all available CPU cores.
-            fallback_model (Any, optional): Model to use when a primary model fails during
-                fitting or forecasting. Only works with the `forecast` and `cross_validation`
-                methods. If None, exceptions from failing models will be raised.
+            fallback_model (Any, optional): Model to use when a primary model fails to fit.
+                If None, exceptions from failing models will be raised.
             verbose (bool, optional): If True, displays TQDM progress bar during single-job
                 execution (when n_jobs=1).
 
