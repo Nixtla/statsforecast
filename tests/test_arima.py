@@ -1557,6 +1557,29 @@ def test_ssinit_is_reused_on_refit():
     assert constant_fit["SSinit"] == "Rossignol2011"
 
 
+@pytest.mark.parametrize(
+    "model",
+    [
+        ARIMA(order=(1, 1, 1), season_length=12, seasonal_order=(1, 0, 0), SSinit="Rossignol2011"),
+        AutoARIMAModel(season_length=12, SSinit="Rossignol2011"),
+    ],
+)
+def test_models_forward_ssinit(model, monkeypatch):
+    seen = []
+    original = arima_module.arima
+
+    def spy(*args, **kwargs):
+        seen.append(kwargs.get("SSinit"))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(arima_module, "arima", spy)
+    model.fit(ap[:120])
+    model.forecast(ap[:120], h=12)
+    model.forward(ap, h=12)
+    assert seen
+    assert set(seen) == {"Rossignol2011"}
+
+
 def test_issue_1034():
     # (0,0,0)(1,1,7)[48] has r = 337, Gardner1980 needed ~13GB of workspace
     rng = np.random.default_rng(1)
