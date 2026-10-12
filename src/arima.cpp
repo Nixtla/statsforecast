@@ -653,29 +653,33 @@ void getQ0bis(const py::array_t<double> phiv, const py::array_t<double> thetav,
     return;
   }
 
-  // autocovariances of the pure AR part
-  const Eigen::Index r2 = std::max(p + q, p + 1);
   Eigen::VectorXd tphi(p + 1);
   tphi(0) = 1.0;
   for (Eigen::Index i = 0; i < p; ++i) {
     tphi(i + 1) = -phi[i];
   }
-  Eigen::MatrixXd gam = Eigen::MatrixXd::Zero(r2, r2);
-  for (Eigen::Index i = 0; i < r2; ++i) {
-    for (Eigen::Index j = std::max<Eigen::Index>(0, i - p); j <= i; ++j) {
+  Eigen::MatrixXd gam = Eigen::MatrixXd::Zero(p + 1, p + 1);
+  for (Eigen::Index i = 0; i <= p; ++i) {
+    for (Eigen::Index j = 0; j <= i; ++j) {
       gam(i, j) += tphi(i - j);
     }
     for (Eigen::Index j = 1; j <= p - i; ++j) {
       gam(i, j) += tphi(i + j);
     }
   }
-  const Eigen::VectorXd u =
-      gam.partialPivLu().solve(Eigen::VectorXd::Unit(r2, 0));
+  Eigen::VectorXd u(std::max(p + q, p + 1));
+  u.head(p + 1) = gam.partialPivLu().solve(Eigen::VectorXd::Unit(p + 1, 0));
   // a singular system yields non-finite values, propagate them so that the
   // optimizer rejects the parameters instead of aborting the fit
-  if (!u.allFinite()) {
+  if (!u.head(p + 1).allFinite()) {
     Q0.setConstant(std::numeric_limits<double>::quiet_NaN());
     return;
+  }
+  for (Eigen::Index k = p + 1; k < u.size(); ++k) {
+    u(k) = 0.0;
+    for (Eigen::Index l = 1; l <= p; ++l) {
+      u(k) += phi[l - 1] * u(k - l);
+    }
   }
 
   Eigen::MatrixXd toep(p + q, p + q);

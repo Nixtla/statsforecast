@@ -65,24 +65,21 @@ def ARIMA_invtrans(x, arma):
 _GARDNER_MAX_R = 30
 
 
-def getQ0(phi, theta):
-    p = len(phi)
-    q = len(theta)
-    r = max(p, q + 1)
-    if r > _GARDNER_MAX_R:
-        return getQ0bis(phi, theta)
+def _q0(fn, phi, theta):
+    r = max(len(phi), len(theta) + 1)
     res = np.zeros(r * r, dtype=np.float64)
-    _arima.getQ0(phi, theta, res)
+    fn(phi, theta, res)
     return res.reshape(r, r)
+
+
+def getQ0(phi, theta):
+    if max(len(phi), len(theta) + 1) > _GARDNER_MAX_R:
+        return getQ0bis(phi, theta)
+    return _q0(_arima.getQ0, phi, theta)
 
 
 def getQ0bis(phi, theta):
-    p = len(phi)
-    q = len(theta)
-    r = max(p, q + 1)
-    res = np.zeros(r * r, dtype=np.float64)
-    _arima.getQ0bis(phi, theta, res)
-    return res.reshape(r, r)
+    return _q0(_arima.getQ0bis, phi, theta)
 
 
 _SS_INIT = {"Gardner1980": getQ0, "Rossignol2011": getQ0bis}
@@ -102,7 +99,7 @@ def arima_css(y, arma, phi, theta):
 
 
 def make_arima(
-    phi, theta, delta, kappa=1e6, SSinit="Gardner1980", tol=np.finfo(float).eps
+    phi, theta, delta, kappa=1e6, tol=np.finfo(float).eps, SSinit="Gardner1980"
 ):
     # check nas phi
     # check nas theta
@@ -731,7 +728,7 @@ def arima(
             )
         coef[mask] = res.x
         phi, theta = arima_transpar(coef, arma, False)
-        mod = make_arima(phi, theta, Delta, kappa, SSinit)
+        mod = make_arima(phi, theta, Delta, kappa, SSinit=SSinit)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arima_css(x, arma, phi, theta)
@@ -769,7 +766,7 @@ def arima(
                 ind = np.sum(arma[:3]) + np.arange(arma[3])
                 init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
-        mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
+        mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit)
         ml_args = (x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma)
         # objective actually optimized, plus the tail appended to the arma params
         # (empty for normal/laplace, which concentrate their scale out)
@@ -924,7 +921,7 @@ def arima(
         else:
             var = None if no_optim else res.hess_inv / n_used
         trarma = arima_transpar(coef, arma, False)
-        mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
+        mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arimaSS(x, mod)
@@ -2152,6 +2149,7 @@ def auto_arima_f(
                 x,
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
+                SSinit=SSinit,
                 fixed=np.array([np.mean(x)]),
             )
         else:
@@ -2159,6 +2157,7 @@ def auto_arima_f(
                 x,
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
+                SSinit=SSinit,
                 include_mean=False,
             )
         fit["x"] = origx
@@ -2252,6 +2251,7 @@ def auto_arima_f(
                     x,
                     order=(0, d, 0),
                     seasonal={"order": (0, D, 0), "period": m},
+                    SSinit=SSinit,
                     include_constant=True,
                     fixed=np.array([np.mean(dx / m)]),
                     method=method,
@@ -2261,6 +2261,7 @@ def auto_arima_f(
                     x,
                     order=(0, d, 0),
                     seasonal={"order": (0, D, 0), "period": m},
+                    SSinit=SSinit,
                     method=method,
                 )
             elif d == 2:
@@ -2268,6 +2269,7 @@ def auto_arima_f(
                     x,
                     order=(0, d, 0),
                     seasonal={"order": (0, 0, 0), "period": m},
+                    SSinit=SSinit,
                     method=method,
                 )
             elif d < 2:
@@ -2275,6 +2277,7 @@ def auto_arima_f(
                     x,
                     order=(0, d, 0),
                     seasonal={"order": (0, 0, 0), "period": m},
+                    SSinit=SSinit,
                     include_constant=True,
                     fixed=np.array([np.mean(dx)]),
                     method=method,
@@ -2289,6 +2292,7 @@ def auto_arima_f(
                     x,
                     order=(0, d, 0),
                     seasonal={"order": (0, D, 0), "period": m},
+                    SSinit=SSinit,
                     xreg=xreg,
                     method=method,
                 )
@@ -2297,6 +2301,7 @@ def auto_arima_f(
                     x,
                     order=(0, d, 0),
                     seasonal={"order": (0, 0, 0), "period": m},
+                    SSinit=SSinit,
                     xreg=xreg,
                     method=method,
                 )

@@ -1553,6 +1553,8 @@ def test_ssinit_is_reused_on_refit():
 
     auto_fit = auto_arima_f(ap, period=12, SSinit="Rossignol2011")
     assert auto_fit["SSinit"] == "Rossignol2011"
+    constant_fit = auto_arima_f(np.full(30, 3.0), SSinit="Rossignol2011")
+    assert constant_fit["SSinit"] == "Rossignol2011"
 
 
 def test_issue_1034():
