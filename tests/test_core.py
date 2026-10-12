@@ -931,37 +931,20 @@ def test_for_cross_validation(series_cv1):
     assert n_windows == 3 * 3
     np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0']",
-        df=series_cv,
-        h=10,
-    )
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
-        df=series_cv,
-        h=20,
-    )
-
-
-@pytest.mark.parametrize("engine", ["pandas", "polars"])
-def test_cross_validation_short_series_message(engine):
-    df = pd.DataFrame(
-        {
-            "unique_id": ["a"] * 20 + ["b"] * 3 + ["c"] * 2,
-            "ds": list(range(20)) + list(range(3)) + list(range(2)),
-            "y": np.arange(25, dtype=float),
-        }
-    )
-    if engine == "polars":
-        df = pl.from_pandas(df)
-    fcst = StatsForecast(models=[Naive()], freq=1)
-    with pytest.raises(ValueError) as exc_info:
-        fcst.cross_validation(df=df, h=2, n_windows=2)
-    assert str(exc_info.value).startswith(
-        "The following series are too short for the cross validation settings: ['b', 'c']"
-    )
+    for series, freq in [(series_cv, "D"), (pl.from_pandas(series_cv), "1d")]:
+        fcst = StatsForecast(models=[SumAhead(), Naive()], freq=freq)
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0']",
+            df=series,
+            h=10,
+        )
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
+            df=series,
+            h=20,
+        )
 
 
 def test_cross_validation_refit_false(series_cv1):
