@@ -1507,30 +1507,32 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
     assert seen["lower"] == 0.0
 
 
-# expected values from R 4.6.1: arima(AirPassengers, ..., SSinit = "Rossignol2011")
+# expected values from R 4.6.1: arima(x, ..., SSinit = "Rossignol2011")
 @pytest.mark.parametrize(
-    "kwargs,coef,loglik,sigma2",
+    "x,kwargs,coef,loglik,sigma2",
     [
         (
+            ap,
             dict(order=(2, 1, 1), method="ML"),
             [1.0906, -0.4890, -0.8439],
             -685.16901,
             844.6,
         ),
         (
+            np.log(ap),
             dict(
-                order=(1, 1, 1),
-                seasonal={"order": (1, 1, 0), "period": 12},
+                order=(1, 1, 0),
+                seasonal={"order": (0, 1, 1), "period": 12},
                 method="CSS-ML",
             ),
-            [-0.2155, -0.0881, -0.1418],
-            -507.17806,
-            134.7,
+            [-0.3395, -0.5619],
+            243.7448,
+            0.0013674,
         ),
     ],
 )
-def test_arima_rossignol_matches_r(kwargs, coef, loglik, sigma2):
-    fit = arima(ap, SSinit="Rossignol2011", **kwargs)
+def test_arima_rossignol_matches_r(x, kwargs, coef, loglik, sigma2):
+    fit = arima(x, SSinit="Rossignol2011", **kwargs)
     assert fit["SSinit"] == "Rossignol2011"
     np.testing.assert_allclose(list(fit["coef"].values()), coef, atol=2e-3)
     np.testing.assert_allclose(fit["loglik"], loglik, rtol=1e-7)
