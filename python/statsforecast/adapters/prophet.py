@@ -239,8 +239,14 @@ class AutoARIMAProphet(Prophet):
             :, self.xreg_cols
         ]
 
-        ds_forecast = set(df["ds"])
-        h = len(ds_forecast - set(self.history["ds"]))
+        history_ds = pd.Index(self.history["ds"])
+        ds_forecast = pd.Index(df["ds"])
+
+        h = len(ds_forecast.difference(history_ds))
+        insample_ds_indices = history_ds.get_indexer(
+            ds_forecast[ds_forecast.isin(history_ds)]
+        )
+
         if h > 0:
             X = seasonal_features.values[-h:] if not seasonal_features.empty else None
             fcsts_df = self.arima.predict(
@@ -248,11 +254,14 @@ class AutoARIMAProphet(Prophet):
             )
         else:
             fcsts_df = pd.DataFrame()
-        if len(ds_forecast) > h:
+
+        if len(insample_ds_indices) > 0:
             in_sample = self.arima.predict_in_sample(
                 level=int(100 * self.interval_width)
             )
-            fcsts_df = pd.concat([in_sample, fcsts_df]).reset_index(drop=True)
+            # consider only the train set subset the user has passed
+            in_sample_subset = in_sample.iloc[insample_ds_indices]
+            fcsts_df = pd.concat([in_sample_subset, fcsts_df]).reset_index(drop=True)
 
         yhat = fcsts_df.pop("mean")
         fcsts_df.columns = ["yhat_lower", "yhat_upper"]

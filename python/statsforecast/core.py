@@ -747,6 +747,7 @@ class _StatsForecast:
             raise ValueError(
                 f"Expected X to have shape {expected_shape}, but got {X.shape}"
             )
+        X = X[[self.id_col, self.time_col] + self._exog]
         processed = ufp.process_df(X, self.id_col, self.time_col, None)
         return GroupedArray(processed.data, processed.indptr), level
 
@@ -1205,7 +1206,9 @@ class _StatsForecast:
         series_sizes = np.diff(self.ga.indptr)
         short_series = series_sizes <= test_size
         if short_series.any():
-            short_ids = self.uids[short_series].to_numpy().tolist()
+            short_ids = (
+                ufp.filter_with_mask(self.uids, short_series).to_numpy().tolist()
+            )
             raise ValueError(
                 f"The following series are too short for the cross validation settings: {reprlib.repr(short_ids)}\n"
                 "Please remove these series or change the settings, e.g. reducing the horizon or the number of windows."

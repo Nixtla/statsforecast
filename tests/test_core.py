@@ -8,6 +8,7 @@ import pandas as pd
 import polars as pl
 import polars.testing as pltest
 import pytest
+from sklearn.linear_model import LinearRegression
 from statsforecast.core import (
     ConformalIntervals,
     GroupedArray,
@@ -34,6 +35,7 @@ from statsforecast.models import (
     SeasonalNaive,
     SeasonalWindowAverage,
     SimpleExponentialSmoothing,
+    SklearnModel,
     WindowAverage,
 )
 from statsforecast.utils import AirPassengers as ap
@@ -931,18 +933,20 @@ def test_for_cross_validation(series_cv1):
     assert n_windows == 3 * 3
     np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0']",
-        df=series_cv,
-        h=10,
-    )
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
-        df=series_cv,
-        h=20,
-    )
+    for series, freq in [(series_cv, "D"), (pl.from_pandas(series_cv), "1d")]:
+        fcst = StatsForecast(models=[SumAhead(), Naive()], freq=freq)
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0']",
+            df=series,
+            h=10,
+        )
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
+            df=series,
+            h=20,
+        )
 
 
 def test_cross_validation_refit_false(series_cv1):
@@ -1538,3 +1542,35 @@ def test_conf_intervals(n_jobs):
 # # | eval: false
 # # test number of jobs greater than the available cores
 # test_conf_intervals(n_jobs=101)
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("as_polars", [False, True])
+@pytest.mark.parametrize("method", ["forecast", "fit_predict", "predict"])
+def test_future_exog_column_order(n_jobs, as_polars, method):
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame(
+        {
+            "unique_id": np.repeat(["a", "b"], 20),
+            "ds": np.tile(np.arange(20), 2),
+            "first": rng.normal(size=40),
+            "second": rng.normal(size=40),
+        }
+    )
+    df["y"] = 2 * df["first"] - 7 * df["second"]
+    train = df[df.ds < 17]
+    future = df[df.ds >= 17].drop(columns="y")
+    # Include an id/time permutation as well as reversing the two features.
+    future = future[["second", "ds", "first", "unique_id"]]
+    if as_polars:
+        train, future = pl.from_pandas(train), pl.from_pandas(future)
+    sf = StatsForecast(
+        models=[SklearnModel(LinearRegression())], freq=1, n_jobs=n_jobs
+    )
+    if method == "predict":
+        result = sf.fit(train).predict(h=3, X_df=future)
+    else:
+        result = getattr(sf, method)(df=train, h=3, X_df=future)
+    np.testing.assert_allclose(
+        result["LinearRegression"].to_numpy(), df.loc[df.ds >= 17, "y"]
+    )

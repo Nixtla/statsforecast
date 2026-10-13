@@ -1008,7 +1008,7 @@ def ets_f(
         raise ValueError("Inappropriate model for data with negative or zero values")
     if damped is not None:
         if damped and trendtype == "N":
-            ValueError("Forbidden model combination")
+            raise ValueError("Forbidden model combination")
     n = len(y)
     npars = 2  # alpha + l0
     if trendtype in ["A", "M"]:
