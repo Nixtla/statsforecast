@@ -103,6 +103,7 @@ def make_arima(
 ):
     # check nas phi
     # check nas theta
+    _check_ssinit(SSinit)
     p = len(phi)
     q = len(theta)
     r = max(p, q + 1)
@@ -2787,6 +2788,10 @@ class AutoARIMA:
             mean forecasts and fitted values. Defaults to False.
         period (int): Number of observations per unit of time.
             For example 24 for Hourly data. Defaults to 1.
+        SSinit (str): Method used to compute the initial state covariance,
+            either "Gardner1980" or "Rossignol2011". Gardner1980 automatically
+            switches to Rossignol2011 for large state spaces, e.g. long seasonal
+            periods, where it would be too slow or memory intensive. Defaults to "Gardner1980".
 
     Notes:
         * This implementation is a mirror of Hyndman's forecast::auto.arima.
@@ -2828,6 +2833,7 @@ class AutoARIMA:
         blambda: Optional[Union[float, str]] = None,
         biasadj: bool = False,
         period: int = 1,
+        SSinit: str = "Gardner1980",
     ):
         self.d = d
         self.D = D
@@ -2861,6 +2867,8 @@ class AutoARIMA:
         self.blambda = blambda
         self.biasadj = biasadj
         self.period = period
+        _check_ssinit(SSinit)
+        self.SSinit = SSinit
 
     def fit(self, y: np.ndarray, X: Optional[np.ndarray] = None):
         """Fit the AutoARIMA estimator.
@@ -2908,6 +2916,7 @@ class AutoARIMA:
             blambda=self.blambda,
             biasadj=self.biasadj,
             period=self.period,
+            SSinit=self.SSinit,
         )
         self.model_ = ARIMASummary(model_)
 

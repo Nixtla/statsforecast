@@ -1560,6 +1560,17 @@ def test_arima_invalid_ssinit_raises():
         arima(ap, order=(1, 0, 0), SSinit="Rossignol")
     with pytest.raises(ValueError, match="SSinit"):
         auto_arima_f(ap, period=12, SSinit="Rossignol")
+    with pytest.raises(ValueError, match="SSinit"):
+        make_arima(np.array([0.5, 0.2]), np.array([]), np.array([]), SSinit="Rossignol")
+    factories = (
+        lambda: ARIMA(order=(1, 1, 1), SSinit="Rossignol"),
+        lambda: AutoRegressive(lags=2, SSinit="Rossignol"),
+        lambda: AutoARIMAModel(SSinit="Rossignol"),
+        lambda: AutoARIMA(SSinit="Rossignol"),
+    )
+    for factory in factories:
+        with pytest.raises(ValueError, match="SSinit"):
+            factory()
 
 
 def test_ssinit_is_reused_on_refit():
@@ -1587,6 +1598,7 @@ def test_ssinit_is_reused_on_refit():
     [
         ARIMA(order=(1, 1, 1), season_length=12, seasonal_order=(1, 0, 0), SSinit="Rossignol2011"),
         AutoARIMAModel(season_length=12, SSinit="Rossignol2011"),
+        AutoRegressive(lags=2, SSinit="Rossignol2011"),
     ],
 )
 def test_models_forward_ssinit(model, monkeypatch):
@@ -1603,6 +1615,11 @@ def test_models_forward_ssinit(model, monkeypatch):
     model.forward(ap, h=12)
     assert seen
     assert set(seen) == {"Rossignol2011"}
+
+
+def test_legacy_autoarima_forwards_ssinit():
+    model = AutoARIMA(period=12, SSinit="Rossignol2011").fit(ap)
+    assert model.model_.model["SSinit"] == "Rossignol2011"
 
 
 def test_issue_1034():

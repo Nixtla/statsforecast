@@ -65,6 +65,7 @@ from scipy.special import inv_boxcox
 from statsforecast.arima import (
     Arima,
     _check_blambda,
+    _check_ssinit,
     _inv_boxcox as _arima_inv_boxcox,
     _transformed_fitted_arima,
     auto_arima_f,
@@ -407,6 +408,7 @@ class AutoARIMA(_TS):
         self.biasadj = biasadj
         self.season_length = season_length
         self.distribution = distribution
+        _check_ssinit(SSinit)
         self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
@@ -2014,6 +2016,7 @@ class ARIMA(_TS):
         self.method = method
         self.fixed = fixed
         self.distribution = distribution
+        _check_ssinit(SSinit)
         self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
@@ -2220,6 +2223,7 @@ class AutoRegressive(ARIMA):
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
     """
@@ -2235,6 +2239,7 @@ class AutoRegressive(ARIMA):
         biasadj: bool = False,
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
+        SSinit: str = "Gardner1980",
         alias: str = "AutoRegressive",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -2261,6 +2266,7 @@ class AutoRegressive(ARIMA):
             method=method,
             alias=alias,
             fixed=fixed,
+            SSinit=SSinit,
             prediction_intervals=prediction_intervals,
         )
 
