@@ -303,12 +303,20 @@ def test_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    assert (
-        arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-            "coef"
-        ]
-        == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
-    )
+    if method == "CSS-ML":
+        # CSS lands on a non-stationary AR part that ML can't evaluate
+        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
+            with pytest.raises(ValueError, match="non-stationary AR part"):
+                arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
+    else:
+        assert (
+            arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+                "coef"
+            ]
+            == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
+                "coef"
+            ]
+        )
 
     assert (
         arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -431,12 +439,20 @@ def test_Arima_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    assert (
-        Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-            "coef"
-        ]
-        == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
-    )
+    if method == "CSS-ML":
+        # CSS lands on a non-stationary AR part that ML can't evaluate
+        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
+            with pytest.raises(ValueError, match="non-stationary AR part"):
+                Arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
+    else:
+        assert (
+            Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+                "coef"
+            ]
+            == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
+                "coef"
+            ]
+        )
 
     assert (
         Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -1657,15 +1673,25 @@ def test_issue_1034():
     assert fit["SSinit"] == "Rossignol2011"
 
 
-@pytest.mark.parametrize("method", ["ML", "CSS"])
-@pytest.mark.parametrize("SSinit", ["Gardner1980", "Rossignol2011"])
-def test_unit_root_with_fixed_coefficients_raises(SSinit, method):
-    with pytest.raises(ValueError, match="non-stationary AR part"):
-        arima(
-            ap,
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(order=(1, 0, 0), fixed=[1.0, np.nan]),
+        dict(order=(2, 0, 0), fixed=[0.0, -1.0, np.nan], SSinit="Gardner1980"),
+        dict(order=(2, 0, 0), fixed=[0.0, -1.0, np.nan], SSinit="Rossignol2011"),
+        dict(
             order=(1, 0, 0),
             seasonal={"order": (1, 0, 0), "period": 36},
-            method=method,
             fixed=[1.0, 0.5, np.nan],
-            SSinit=SSinit,
-        )
+        ),
+    ],
+)
+def test_ml_unit_root_with_fixed_coefficients_raises(kwargs):
+    with pytest.raises(ValueError, match="non-stationary AR part"):
+        arima(ap, method="ML", **kwargs)
+
+
+def test_css_unit_root_with_fixed_coefficients_fits():
+    # CSS doesn't use the initial state covariance, R fits this too
+    fit = arima(ap, order=(1, 0, 0), method="CSS", fixed=[1.0, np.nan])
+    assert np.isfinite(fit["sigma2"])

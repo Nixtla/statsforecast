@@ -287,6 +287,8 @@ def arima(
             if not np.isfinite(Q0).all():
                 return None
             Z["Pn"][:r, :r] = Q0
+        elif p > 0 and phi[0] ** 2 == 1:
+            return None
         else:
             Z["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
         return Z
@@ -526,13 +528,6 @@ def arima(
         if error is not None:
             raise ValueError(error)
 
-    def check_finite_Pn(mod, pars):
-        if not np.isfinite(mod["Pn"]).all():
-            raise ValueError(
-                ar_stationarity_error(arma, pars)
-                or "non-finite initial state covariance"
-            )
-
     def maInvert(ma):
         q = len(ma)
         q0 = np.flatnonzero(np.append(1, ma))[-1]
@@ -749,7 +744,6 @@ def arima(
         coef[mask] = res.x
         phi, theta = arima_transpar(coef, arma, False)
         mod = make_arima(phi, theta, Delta, kappa, SSinit=SSinit)
-        check_finite_Pn(mod, coef)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arima_css(x, arma, phi, theta)
@@ -943,7 +937,6 @@ def arima(
             var = None if no_optim else res.hess_inv / n_used
         trarma = arima_transpar(coef, arma, False)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit)
-        check_finite_Pn(mod, coef)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arimaSS(x, mod)
@@ -970,6 +963,10 @@ def arima(
     # AIC = -2ℓ + 2k; normal/laplace: k=arma+1 (σ²); t/skew-normal/ged: k=arma+2 (σ²+extra)
     n_dist_params = 2 if distribution in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED) else 1
     aic = value + 2 * (sum(mask) + n_dist_params) if method != ArimaMethod.CSS else np.nan
+    if method != ArimaMethod.CSS and not (
+        np.isfinite(value) and np.isfinite(mod["Pn"]).all()
+    ):
+        stationary_ar_checks(arma, coef)
 
     nm = []
     if arma[0] > 0:
