@@ -576,6 +576,7 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -2131,6 +2132,7 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}

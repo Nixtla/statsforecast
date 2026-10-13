@@ -1282,6 +1282,7 @@ def search_arima(
 
 def arima2(x, model, xreg, method):
     m = model["arma"][4]  # 5
+    distribution = model.get("distribution", Distribution.NORMAL)
     use_drift = "drift" in model["coef"].keys()
     use_intercept = "intercept" in model["coef"].keys()
     use_xreg = model["xreg"] is not None
@@ -1319,6 +1320,7 @@ def arima2(x, model, xreg, method):
             seasonal=seasonal,
             include_mean=use_intercept,
             method=method,
+            distribution=distribution,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1328,6 +1330,7 @@ def arima2(x, model, xreg, method):
             order=order,
             include_mean=use_intercept,
             method=method,
+            distribution=distribution,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1337,6 +1340,7 @@ def arima2(x, model, xreg, method):
             order=order,
             include_mean=False,
             method=method,
+            distribution=distribution,
         )
     n_coef = len(refit["coef"])
     refit["var_coef"] = np.zeros((n_coef, n_coef), dtype=np.float32)
@@ -2106,6 +2110,8 @@ def auto_arima_f(
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
                 fixed=np.array([np.mean(x)]),
+                method=method,
+                distribution=distribution,
             )
         else:
             fit = Arima(
@@ -2113,6 +2119,8 @@ def auto_arima_f(
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
                 include_mean=False,
+                method=method,
+                distribution=distribution,
             )
         fit["x"] = origx
         fit["constant"] = True
@@ -2208,6 +2216,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx / m)]),
                     method=method,
+                    distribution=distribution,
                 )
             elif D > 0 and d > 0:
                 fit = Arima(
@@ -2215,6 +2224,7 @@ def auto_arima_f(
                     order=(0, d, 0),
                     seasonal={"order": (0, D, 0), "period": m},
                     method=method,
+                    distribution=distribution,
                 )
             elif d == 2:
                 fit = Arima(
@@ -2222,6 +2232,7 @@ def auto_arima_f(
                     order=(0, d, 0),
                     seasonal={"order": (0, 0, 0), "period": m},
                     method=method,
+                    distribution=distribution,
                 )
             elif d < 2:
                 fit = Arima(
@@ -2231,6 +2242,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx)]),
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 raise ValueError(
@@ -2244,6 +2256,7 @@ def auto_arima_f(
                     seasonal={"order": (0, D, 0), "period": m},
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 fit = Arima(
@@ -2252,6 +2265,7 @@ def auto_arima_f(
                     seasonal={"order": (0, 0, 0), "period": m},
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
         fit["x"] = origx
         fit["lambda"] = blambda
@@ -2311,6 +2325,7 @@ def auto_arima_f(
             allow_drift=allowdrift,
             allow_mean=allowmean,
             period=m,
+            distribution=distribution,
         )
         bestfit["lambda"] = blambda
         bestfit["biasadj"] = biasadj

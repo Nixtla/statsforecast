@@ -849,6 +849,82 @@ def test_distribution_invalid_name_raises():
         arima(y, order=(1, 0, 0), distribution="cauchy")
 
 
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("model_class", [ARIMA, AutoARIMAModel])
+def test_distribution_forecast_matches_fit_predict(model_class, distribution):
+    kwargs = {"distribution": distribution, "method": "ML"}
+    if model_class is ARIMA:
+        kwargs["order"] = (1, 1, 1)
+    else:
+        kwargs.update(
+            d=1, D=0, max_p=1, max_q=1, max_P=0, max_Q=0,
+            start_p=0, start_q=0, seasonal=False, approximation=False,
+        )
+    y = ap[:120].astype(np.float64)
+    expected = model_class(**kwargs).fit(y).predict(h=6, level=[80, 95])
+    actual = model_class(**kwargs).forecast(y=y, h=6, level=[80, 95])
+    assert actual.keys() == expected.keys()
+    for key in expected:
+        np.testing.assert_allclose(actual[key], expected[key])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("config", [
+    {"order": (1, 1, 1), "seasonal": {"order": (0, 1, 1), "period": 12}},
+    {"order": (1, 1, 1)},
+    {"order": (0, 1, 0), "include_mean": False},
+])
+def test_distribution_forward_arima(distribution, config):
+    model = Arima(ap[:120], distribution=distribution, method="ML", **config)
+    refit = forward_arima(model, y=ap, method="ML")
+    assert refit["distribution"] == distribution
+    forecasts = forecast_arima(refit, h=6, level=[80, 95])
+    assert np.isfinite(forecasts["mean"]).all()
+    assert np.isfinite(forecasts["lower"].to_numpy()).all()
+    assert np.isfinite(forecasts["upper"].to_numpy()).all()
+
+
+def test_distribution_forward_arima_legacy_normal_model():
+    model = Arima(ap[:120], order=(1, 1, 1), method="ML")
+    expected = forward_arima(model, y=ap, method="ML")
+    del model["distribution"]
+    actual = forward_arima(model, y=ap, method="ML")
+    assert actual["distribution"] == "normal"
+    np.testing.assert_allclose(actual["residuals"], expected["residuals"])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("stepwise", [True, False])
+def test_distribution_autoarima_search(distribution, stepwise):
+    model = auto_arima_f(
+        ap[:120], distribution=distribution, method="ML", stepwise=stepwise,
+        d=1, D=0, max_p=1, max_q=1, max_P=0, max_Q=0, max_order=2,
+        start_p=0, start_q=0, seasonal=False, approximation=False,
+    )
+    assert model["distribution"] == distribution
+    assert np.isfinite(forecast_arima(model, h=6)["mean"]).all()
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t"])
+@pytest.mark.parametrize("y,kwargs", [
+    (np.full(60, 3.0), {"allowmean": True}),
+    (np.full(60, 3.0), {"allowmean": False}),
+    (np.arange(60, dtype=float), {"d": 1, "D": 0}),
+    (np.arange(60, dtype=float) ** 2, {"d": 2, "D": 0}),
+    (np.tile([1., 4., 2., 5.], 15) + np.repeat(np.arange(15), 4) * 2,
+     {"d": 0, "D": 1, "period": 4}),
+    (np.tile([1., 4., 2., 5.], 15) + np.arange(60),
+     {"d": 1, "D": 1, "period": 4}),
+    (np.arange(60, dtype=float),
+     {"d": 1, "D": 0, "xreg": np.zeros((60, 1))}),
+    (np.arange(60, dtype=float),
+     {"d": 0, "D": 1, "period": 4, "xreg": np.zeros((60, 1))}),
+])
+def test_distribution_autoarima_early_returns(distribution, y, kwargs):
+    model = auto_arima_f(y, distribution=distribution, method="ML", **kwargs)
+    assert model["distribution"] == distribution
+
+
 @pytest.mark.parametrize("distribution,param_key", [
     ("t",           "nu"),
     ("skew-normal", "alpha_dist"),
