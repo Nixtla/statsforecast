@@ -71,7 +71,7 @@ jobs:
         uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
 
       - name: Export locked test dependencies
-        run: uv export --frozen --no-default-groups --group all --no-emit-project --no-hashes -o test-requirements.txt
+        run: uv export --frozen --no-default-groups --group dev --no-emit-project --no-hashes -o test-requirements.txt
 
       - name: Build wheel and run tests
         uses: pypa/cibuildwheel@e090b81e30c4d855ea63bf4b6e59204c09a101ae # v4.2.1
@@ -79,7 +79,7 @@ jobs:
           CIBW_BUILD: cp310-${{ matrix.os-platform[1] }}
           CIBW_BEFORE_TEST: uv pip install -r {package}/test-requirements.txt
           CIBW_TEST_ENVIRONMENT: MPLBACKEND=Agg
-          CIBW_TEST_COMMAND: pytest {project}/tests --no-cov
+          CIBW_TEST_COMMAND: pytest {project}/tests --ignore={project}/tests/test_distributed_fugue.py --no-cov
 
   distributed-tests:
     runs-on: ubuntu-latest
