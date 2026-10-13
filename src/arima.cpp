@@ -644,7 +644,6 @@ void getQ0bis(const py::array_t<double> phiv, const py::array_t<double> thetav,
     ttheta(i + 1) = theta[i];
   }
 
-  // A2 A2^T, where A2 is the Hankel matrix of ttheta
   for (Eigen::Index i = r - 1; i >= 0; --i) {
     for (Eigen::Index j = r - 1; j >= i; --j) {
       double v = i <= q && j <= q ? ttheta(i) * ttheta(j) : 0.0;

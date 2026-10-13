@@ -963,9 +963,7 @@ def arima(
     # AIC = -2ℓ + 2k; normal/laplace: k=arma+1 (σ²); t/skew-normal/ged: k=arma+2 (σ²+extra)
     n_dist_params = 2 if distribution in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED) else 1
     aic = value + 2 * (sum(mask) + n_dist_params) if method != ArimaMethod.CSS else np.nan
-    if method != ArimaMethod.CSS and not (
-        np.isfinite(value) and np.isfinite(mod["Pn"]).all()
-    ):
+    if method != ArimaMethod.CSS and not np.isfinite(value):
         stationary_ar_checks(arma, coef)
 
     nm = []
