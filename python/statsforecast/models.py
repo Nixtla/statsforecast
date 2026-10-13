@@ -81,6 +81,7 @@ from statsforecast.ets import (
     forward_ets,
 )
 from statsforecast._lib import ses as _ses_lib
+from statsforecast.distributions import error_params_from_model
 from statsforecast.utils import (
     ConformalIntervals,
     _VALID_DISTRIBUTIONS,
@@ -103,10 +104,10 @@ from .theta import auto_theta, forecast_theta, forward_theta
 from .ucm import UCM, LocalLevel, LocalLinearTrend, SmoothTrend  # noqa: F401
 
 
-def _add_fitted_pi(res, se, level):
+def _add_fitted_pi(res, se, level, distribution="normal", dist_params=None):
     level = sorted(level)
     level = np.asarray(level)
-    quantiles = _quantiles(level=level)
+    quantiles = _quantiles(level=level, distribution=distribution, dist_params=dist_params)
     lo = res["fitted"].reshape(-1, 1) - quantiles * se.reshape(-1, 1)
     hi = res["fitted"].reshape(-1, 1) + quantiles * se.reshape(-1, 1)
     lo = lo[:, ::-1]
@@ -134,10 +135,17 @@ def _add_arima_fitted_pi(res, model, level):
             added.
     """
     se = np.sqrt(model["sigma2"])
+    distribution = model.get("distribution", "normal")
+    dist_params = error_params_from_model(model)
     trans_fitted = _transformed_fitted_arima(model)
     if trans_fitted is None:
-        return _add_fitted_pi(res=res, se=se, level=level)
-    pi = _add_fitted_pi(res={"fitted": trans_fitted}, se=se, level=level)
+        return _add_fitted_pi(
+            res=res, se=se, level=level, distribution=distribution, dist_params=dist_params,
+        )
+    pi = _add_fitted_pi(
+        res={"fitted": trans_fitted}, se=se, level=level,
+        distribution=distribution, dist_params=dist_params,
+    )
     return {
         **res,
         **{

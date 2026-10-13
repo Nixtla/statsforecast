@@ -7,7 +7,7 @@ import pytest
 from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from scipy.optimize import minimize_scalar
 from scipy.signal import lfilter
-from scipy.stats import gennorm, skewnorm
+from scipy.stats import gennorm, laplace, norm, skewnorm
 from scipy.stats import t as t_dist
 
 import statsforecast.arima as arima_module
@@ -866,6 +866,53 @@ def test_distribution_forecast_matches_fit_predict(model_class, distribution):
     assert actual.keys() == expected.keys()
     for key in expected:
         np.testing.assert_allclose(actual[key], expected[key])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("model_class", [ARIMA, AutoARIMAModel])
+@pytest.mark.parametrize("blambda", [None, 0.0])
+def test_distribution_fitted_intervals(model_class, distribution, blambda):
+    y = np.exp(
+        0.3 + 0.003 * np.arange(80)
+        + 0.1 * np.random.default_rng(31).standard_t(4, size=80)
+    )
+    kwargs = dict(distribution=distribution, method="ML", blambda=blambda)
+    if model_class is ARIMA:
+        kwargs["order"] = (1, 0, 0)
+    else:
+        kwargs.update(
+            d=0, D=0, max_p=1, max_q=0, max_P=0, max_Q=0,
+            start_p=0, start_q=0, seasonal=False, approximation=False,
+        )
+    fitted = model_class(**kwargs).fit(y)
+    mod = fitted.model_
+    sigma = np.sqrt(mod["sigma2"])
+    if distribution == "t":
+        dist = t_dist(df=mod["nu"], scale=sigma)
+    elif distribution == "skew-normal":
+        dist = skewnorm(a=mod["alpha_dist"], scale=sigma)
+    elif distribution == "ged":
+        dist = gennorm(beta=mod["beta_dist"], scale=sigma)
+    elif distribution == "laplace":
+        dist = laplace(scale=sigma / np.sqrt(2))
+    else:
+        dist = norm(scale=sigma)
+    center = (y if blambda is None else np.log(y)) - mod["residuals"]
+    results = [
+        model_class(**kwargs).forecast(y=y, h=3, fitted=True, level=[80, 95]),
+        fitted.predict_in_sample(level=[80, 95]),
+        fitted.forward(y=y, h=3, fitted=True, level=[80, 95]),
+    ]
+    for result in results:
+        for level in (80, 95):
+            quantile = dist.ppf(0.5 + level / 200)
+            for side, sign in [("lo", -1), ("hi", 1)]:
+                expected = center + sign * quantile
+                if blambda is not None:
+                    expected = np.exp(expected)
+                np.testing.assert_allclose(
+                    result[f"fitted-{side}-{level}"], expected, rtol=1e-10, atol=1e-12,
+                )
 
 
 @pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
