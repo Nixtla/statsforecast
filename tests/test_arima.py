@@ -1,4 +1,5 @@
 import math
+import pickle
 import warnings
 
 import numpy as np
@@ -185,15 +186,14 @@ def test_getQ0bis_singular_returns_nan(phi):
     assert np.isnan(getQ0bis(np.array(phi), np.array([0.3]))).all()
 
 
-def test_getQ0_uses_rossignol_for_large_state_spaces():
+def test_make_arima_uses_rossignol_for_large_state_spaces():
     # (0,0,0)(1,1,7)[48] from issue #1034, Gardner would need ~13GB here
     phi = np.zeros(48)
     phi[-1] = 0.6
     theta = np.zeros(336)
     theta[47::48] = 0.1
-    Q0 = getQ0(phi, theta)
-    assert Q0.shape == (337, 337)
-    np.testing.assert_array_equal(Q0, getQ0bis(phi, theta))
+    mod = make_arima(phi, theta, np.array([]))
+    np.testing.assert_array_equal(mod["Pn"], getQ0bis(phi, theta))
 
 
 @pytest.fixture
@@ -1617,6 +1617,23 @@ def test_models_forward_ssinit(model, monkeypatch):
     assert set(seen) == {"Rossignol2011"}
 
 
+@pytest.mark.parametrize(
+    "model",
+    [
+        ARIMA(order=(1, 1, 1)),
+        AutoRegressive(lags=2),
+        AutoARIMAModel(season_length=12),
+        AutoARIMA(period=12),
+    ],
+)
+def test_models_pickled_before_ssinit_still_fit(model):
+    # simulate an object pickled by a release without SSinit
+    del model.SSinit
+    model = pickle.loads(pickle.dumps(model))
+    assert model.SSinit == "Gardner1980"
+    model.fit(ap)
+
+
 def test_legacy_autoarima_forwards_ssinit():
     model = AutoARIMA(period=12, SSinit="Rossignol2011").fit(ap)
     assert model.model_.model["SSinit"] == "Rossignol2011"
@@ -1637,3 +1654,17 @@ def test_issue_1034():
     assert fit["code"] == 0
     assert np.isfinite(fit["loglik"])
     assert np.isfinite(fit["coef"]["sar1"])
+    assert fit["SSinit"] == "Rossignol2011"
+
+
+@pytest.mark.parametrize("SSinit", ["Gardner1980", "Rossignol2011"])
+def test_unit_root_with_fixed_coefficients_raises(SSinit):
+    with pytest.raises(ValueError, match="non-stationary AR part"):
+        arima(
+            ap,
+            order=(1, 0, 0),
+            seasonal={"order": (1, 0, 0), "period": 36},
+            method="ML",
+            fixed=[1.0, 0.5, np.nan],
+            SSinit=SSinit,
+        )

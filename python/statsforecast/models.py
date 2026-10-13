@@ -336,6 +336,8 @@ class AutoARIMA(_TS):
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
@@ -1986,6 +1988,8 @@ class ARIMA(_TS):
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,

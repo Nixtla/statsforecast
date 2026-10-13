@@ -73,8 +73,6 @@ def _q0(fn, phi, theta):
 
 
 def getQ0(phi, theta):
-    if max(len(phi), len(theta) + 1) > _GARDNER_MAX_R:
-        return getQ0bis(phi, theta)
     return _q0(_arima.getQ0, phi, theta)
 
 
@@ -90,6 +88,13 @@ def _check_ssinit(SSinit):
         raise ValueError(f"SSinit must be one of {tuple(_SS_INIT)}, got {SSinit!r}")
 
 
+def _resolve_ssinit(SSinit, r):
+    _check_ssinit(SSinit)
+    if SSinit == "Gardner1980" and r > _GARDNER_MAX_R:
+        return "Rossignol2011"
+    return SSinit
+
+
 def arima_transpar(params_in, arma, trans):
     return _arima.arima_transpar(params_in, arma, trans)
 
@@ -103,10 +108,10 @@ def make_arima(
 ):
     # check nas phi
     # check nas theta
-    _check_ssinit(SSinit)
     p = len(phi)
     q = len(theta)
     r = max(p, q + 1)
+    SSinit = _resolve_ssinit(SSinit, r)
     d = len(delta)
 
     rd = r + d
@@ -253,7 +258,6 @@ def arima(
             "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
         )
 
-    Q0_fn = _SS_INIT[SSinit]
     x = x.astype(np.float64, copy=True)
 
     # upARIMA runs on every objective evaluation, so it reuses one result dict
@@ -570,6 +574,11 @@ def arima(
         dtype=np.int32,
     )
     narma = arma[:4].sum().item()
+    SSinit = _resolve_ssinit(
+        SSinit,
+        max(arma[0] + arma[4] * arma[2], arma[1] + arma[4] * arma[3] + 1).item(),
+    )
+    Q0_fn = _SS_INIT[SSinit]
 
     # xtsp = init x, end x and frequency
     # tsp(x) = None
@@ -923,6 +932,11 @@ def arima(
             var = None if no_optim else res.hess_inv / n_used
         trarma = arima_transpar(coef, arma, False)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit)
+        if not np.isfinite(mod["Pn"]).all():
+            raise ValueError(
+                ar_stationarity_error(arma, coef)
+                or "non-finite initial state covariance"
+            )
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arimaSS(x, mod)
@@ -2799,6 +2813,9 @@ class AutoARIMA:
     References:
         [1] https://github.com/robjhyndman/forecast
     """
+
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
