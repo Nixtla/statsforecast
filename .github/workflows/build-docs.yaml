@@ -18,25 +18,17 @@ on:
           - production
 
 jobs:
-  build-docs:
-    if: github.actor != 'dependabot[bot]'
+  # Runs for everyone (forks included): builds the docs and fails if Mintlify can't build them.
+  validate-docs:
     permissions:
-      contents: write
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Clone repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: "true"
-
-      - name: Mint a docs read token
-        id: docs_token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_APP_ID }}
-          private-key: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_PRIVATE_KEY }}
-          owner: Nixtla
-          repositories: docs
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -60,48 +52,73 @@ jobs:
       - name: Build Docs
         run: uv run make all_docs
 
-      - name: Deploy (Push to main or Pull Request)
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+      # Strict Mintlify build: fails on MDX parse errors and docs.json pages that don't exist.
+      # broken-links is skipped on purpose: cross-repo links only resolve in the merged Nixtla/docs site.
+      - name: Validate Docs
+        working-directory: docs/mintlify
+        run: npx -y mint@4.2.1020 validate
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mintlify-docs
+          path: docs/mintlify
+          retention-days: 1
+
+  # Publishes the validated docs. Skipped for forks and dependabot, which have no access to the secrets.
+  publish-docs:
+    needs: validate-docs
+    if: github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick target environment
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
+        run: |
+          if [[ "$EVENT" == "release" || "$ENVIRONMENT" == "production" ]]; then
+            echo "branch=docs" >> "$GITHUB_OUTPUT"
+            echo "workflow=production.yml" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch=docs-preview" >> "$GITHUB_OUTPUT"
+            echo "workflow=preview.yml" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mintlify-docs
+          path: docs/mintlify
+
+      - name: Deploy
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: docs-preview
+          publish_branch: ${{ steps.target.outputs.branch }}
           publish_dir: docs/mintlify
           user_name: github-actions[bot]
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
 
-      - name: Deploy (Release)
-        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
-        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
+      - name: Mint a docs dispatch token
+        id: docs_token
+        uses: actions/create-github-app-token@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: docs
-          publish_dir: docs/mintlify
-          user_name: github-actions[bot]
-          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          app-id: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_APP_ID }}
+          private-key: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_PRIVATE_KEY }}
+          owner: Nixtla
+          repositories: docs
 
-      - name: Trigger mintlify workflow (Push to main or Pull Request)
-        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+      - name: Trigger mintlify workflow
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          WORKFLOW: ${{ steps.target.outputs.workflow }}
         with:
           github-token: ${{ steps.docs_token.outputs.token }}
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: 'nixtla',
               repo: 'docs',
-              workflow_id: 'preview.yml',
-              ref: 'main',
-            });
-
-      - name: Trigger mintlify workflow (Release)
-        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          github-token: ${{ steps.docs_token.outputs.token }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: 'nixtla',
-              repo: 'docs',
-              workflow_id: 'production.yml',
+              workflow_id: process.env.WORKFLOW,
               ref: 'main',
             });
