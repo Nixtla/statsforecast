@@ -878,6 +878,10 @@ def test_distribution_forward_arima(distribution, config):
     model = Arima(ap[:120], distribution=distribution, method="ML", **config)
     refit = forward_arima(model, y=ap, method="ML")
     assert refit["distribution"] == distribution
+    assert refit["sigma2"] == model["sigma2"]
+    for key in ("nu", "alpha_dist", "beta_dist"):
+        if key in model:
+            assert refit[key] == model[key]
     forecasts = forecast_arima(refit, h=6, level=[80, 95])
     assert np.isfinite(forecasts["mean"]).all()
     assert np.isfinite(forecasts["lower"].to_numpy()).all()
@@ -903,6 +907,48 @@ def test_distribution_autoarima_search(distribution, stepwise):
     )
     assert model["distribution"] == distribution
     assert np.isfinite(forecast_arima(model, h=6)["mean"]).all()
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("stepwise", [True, False])
+@pytest.mark.parametrize("approximation", [True, None])
+def test_distribution_autoarima_approximation(distribution, stepwise, approximation):
+    y = np.random.default_rng(13).normal(size=160)
+    kwargs = dict(
+        d=0, D=0, max_p=1, max_q=0, max_P=0, max_Q=0,
+        start_p=0, start_q=0, seasonal=False, stepwise=stepwise,
+        allowmean=False, distribution=distribution,
+    )
+    model = auto_arima_f(y, approximation=approximation, **kwargs)
+    assert model["distribution"] == distribution
+    assert np.isfinite(model["aicc"])
+    assert np.isfinite(forecast_arima(model, h=3)["mean"]).all()
+    if distribution != "normal":
+        exact = auto_arima_f(y, approximation=False, **kwargs)
+        assert model["arma"] == exact["arma"]
+        assert model["aicc"] == pytest.approx(exact["aicc"])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("d", [0, 1])
+def test_distribution_information_criteria(distribution, d):
+    y = np.random.default_rng(14).normal(size=60)
+    fit = myarima(
+        y, order=(0, d, 0), constant=False, distribution=distribution,
+        method="ML", ic="aicc",
+    )
+    direct = Arima(
+        y, order=(0, d, 0), include_mean=False,
+        distribution=distribution, method="ML",
+    )
+    npar = fit["mask"].sum() + (2 if distribution in ("t", "skew-normal", "ged") else 1)
+    nstar = len(y) - d
+    aicc = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
+    bic = fit["aic"] + npar * (math.log(nstar) - 2)
+    assert fit["aicc"] == pytest.approx(aicc)
+    assert direct["aicc"] == pytest.approx(aicc)
+    assert fit["bic"] == pytest.approx(bic)
+    assert direct["bic"] == pytest.approx(bic)
 
 
 @pytest.mark.parametrize("distribution", ["normal", "t"])

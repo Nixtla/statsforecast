@@ -1105,7 +1105,7 @@ def myarima(
     use_season = np.sum(seas_order) > 0 and m > 0
     diffs = order[1] + seas_order[1]
     if method is None:
-        if approximation:
+        if approximation and distribution == Distribution.NORMAL:
             method = ArimaMethod.CSS
         else:
             method = ArimaMethod.CSS_ML
@@ -1126,7 +1126,8 @@ def myarima(
         nstar = n - order[1] - seas_order[1] * m
         if diffs == 1 and constant:
             fit["xreg"] = xreg
-        npar = fit["mask"].sum() + 1
+        n_dist_params = 2 if distribution in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED) else 1
+        npar = fit["mask"].sum() + n_dist_params
         if method == ArimaMethod.CSS:
             if fit["sigma2"] <= 0:
                 fit["aic"] = -math.inf
@@ -1347,6 +1348,9 @@ def arima2(x, model, xreg, method):
     if use_xreg:
         refit["xreg"] = xreg
     refit["sigma2"] = sigma2
+    for key in ("nu", "alpha_dist", "beta_dist"):
+        if key in model:
+            refit[key] = model[key]
     if use_drift:
         refit["coef"] = change_drift_name(refit["coef"])
     return refit
@@ -1572,7 +1576,8 @@ def Arima(
             if include_drift:
                 tmp["coef"] = change_drift_name(tmp["coef"])
 
-    npar = np.sum(tmp["mask"]) + 1
+    n_dist_params = 2 if tmp["distribution"] in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED) else 1
+    npar = np.sum(tmp["mask"]) + n_dist_params
     missing = np.isnan(tmp["residuals"])
     nonmiss_idxs = np.where(~missing)[0]
     firstnonmiss = np.min(nonmiss_idxs)
@@ -2082,6 +2087,9 @@ def auto_arima_f(
 ):
     if approximation is None:
         approximation = len(x) > 150 or period > 12
+    if distribution != Distribution.NORMAL:
+        # CSS approximations are only defined for normal innovations.
+        approximation = False
     if x.ndim > 1:
         raise ValueError("auto_arima can only handle univariate time series")
     if test_kwargs is None:
