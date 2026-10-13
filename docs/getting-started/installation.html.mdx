@@ -43,7 +43,12 @@ e.g. `pip install 'statsforecast[extra1,extra2]'`
 #### Development version
 
 If you want to try out a new feature that hasn’t made it into a release
-yet you can install from github:
-`pip install git+https://github.com/Nixtla/statsforecast`. This requires
-that you have a C++ compiler installed.
+yet you have the following options:
+
+-   Install from our nightly wheels:
+    `pip install --extra-index-url=http://nixtla-packages.s3-website.us-east-2.amazonaws.com --trusted-host nixtla-packages.s3-website.us-east-2.amazonaws.com statsforecast`
+-   Install from github:
+    `pip install git+https://github.com/Nixtla/statsforecast`. This
+    requires that you have a C++ compiler installed, so we encourage you
+    to try the previous option first.
 
