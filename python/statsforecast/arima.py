@@ -283,7 +283,10 @@ def arima(
         Z["a"][:] = 0.0
         Z["Pn"][:] = mod["Pn"]
         if r > 1:
-            Z["Pn"][:r, :r] = Q0_fn(phi, theta)
+            Q0 = Q0_fn(phi, theta)
+            if not np.isfinite(Q0).all():
+                return None
+            Z["Pn"][:r, :r] = Q0
         else:
             Z["Pn"][0, 0] = 1 / (1 - phi[0] ** 2) if p > 0 else 1
         return Z
@@ -523,6 +526,13 @@ def arima(
         if error is not None:
             raise ValueError(error)
 
+    def check_finite_Pn(mod, pars):
+        if not np.isfinite(mod["Pn"]).all():
+            raise ValueError(
+                ar_stationarity_error(arma, pars)
+                or "non-finite initial state covariance"
+            )
+
     def maInvert(ma):
         q = len(ma)
         q0 = np.flatnonzero(np.append(1, ma))[-1]
@@ -739,6 +749,7 @@ def arima(
         coef[mask] = res.x
         phi, theta = arima_transpar(coef, arma, False)
         mod = make_arima(phi, theta, Delta, kappa, SSinit=SSinit)
+        check_finite_Pn(mod, coef)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arima_css(x, arma, phi, theta)
@@ -932,11 +943,7 @@ def arima(
             var = None if no_optim else res.hess_inv / n_used
         trarma = arima_transpar(coef, arma, False)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit)
-        if not np.isfinite(mod["Pn"]).all():
-            raise ValueError(
-                ar_stationarity_error(arma, coef)
-                or "non-finite initial state covariance"
-            )
+        check_finite_Pn(mod, coef)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arimaSS(x, mod)

@@ -1657,14 +1657,15 @@ def test_issue_1034():
     assert fit["SSinit"] == "Rossignol2011"
 
 
+@pytest.mark.parametrize("method", ["ML", "CSS"])
 @pytest.mark.parametrize("SSinit", ["Gardner1980", "Rossignol2011"])
-def test_unit_root_with_fixed_coefficients_raises(SSinit):
+def test_unit_root_with_fixed_coefficients_raises(SSinit, method):
     with pytest.raises(ValueError, match="non-stationary AR part"):
         arima(
             ap,
             order=(1, 0, 0),
             seasonal={"order": (1, 0, 0), "period": 36},
-            method="ML",
+            method=method,
             fixed=[1.0, 0.5, np.nan],
             SSinit=SSinit,
         )
