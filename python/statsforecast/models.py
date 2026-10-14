@@ -87,6 +87,7 @@ from statsforecast.utils import (
     _VALID_DISTRIBUTIONS,
     _calculate_intervals,
     _calculate_sigma,
+    _conformal_quantile,
     _ensure_float,
     _naive,
     _quantiles,
@@ -164,11 +165,9 @@ def _add_conformal_distribution_intervals(
     cuts.extend(1 - alpha / 200 for alpha in alphas)
     mean = fcst["mean"].reshape(1, -1)
     scores = np.vstack([mean - cs, mean + cs])
-    quantiles = np.quantile(
-        scores,
-        cuts,
-        axis=0,
-    )
+    # lower cuts come first, then upper ones, as in `out_cols` below
+    upper = [False] * len(level) + [True] * len(level)
+    quantiles = _conformal_quantile(scores, cuts, upper, axis=0)
     quantiles = quantiles.reshape(len(cuts), -1)
     lo_cols = [f"lo-{lv}" for lv in reversed(level)]
     hi_cols = [f"hi-{lv}" for lv in level]
@@ -185,11 +184,15 @@ def _add_conformal_error_intervals(
 ) -> Dict:
     r"""
     Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
-    `level` should be already sorted. Uses the `lv / 100` quantile of the
-    absolute conformity scores as the error margin around `fcst["mean"]`.
+    `level` should be already sorted. Uses the finite-sample conformal quantile
+    of the absolute conformity scores (see `_conformal_quantile`) as the error
+    margin around `fcst["mean"]`.
     Returns the modified `fcst` dict.
     """
-    quantiles = {lv: np.quantile(cs, lv / 100, axis=0) for lv in level}
+    # the margin on absolute scores is an upper bound at every level, even below 50
+    quantiles = {
+        lv: _conformal_quantile(cs, lv / 100, upper=True, axis=0) for lv in level
+    }
     for lv in reversed(level):
         fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
     for lv in level:
@@ -4398,22 +4401,13 @@ class ConformalSeasonalPool(_TS):
             alias = "CSP-Adaptive" if variant == "adaptive" else "CSP-Fixed"
         self.alias = alias
 
-    @staticmethod
-    def _oriented_index(q: float, n: int) -> float:
-        if n <= 0:
-            return float(q)
-        if q < 0.5:
-            return max(0.0, float(np.floor((n + 1.0) * q)) / n)
-        return min(1.0, float(np.ceil((n + 1.0) * q)) / n)
-
     def _intervals_from_samples(
         self, samples: np.ndarray, level: Sequence[Union[int, float]]
     ) -> Dict[str, np.ndarray]:
         cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
         cuts += [1 - (1 - lv / 100) / 2 for lv in level]
-        n = samples.shape[0]
-        oriented = [self._oriented_index(c, n) for c in cuts]
-        quantiles = np.quantile(samples, oriented, axis=0)
+        upper = [False] * len(level) + [True] * len(level)
+        quantiles = _conformal_quantile(samples, cuts, upper, axis=0)
         lo_cols = [f"lo-{lv}" for lv in reversed(level)]
         hi_cols = [f"hi-{lv}" for lv in level]
         return {col: quantiles[i] for i, col in enumerate(lo_cols + hi_cols)}
@@ -4512,9 +4506,8 @@ class ConformalSeasonalPool(_TS):
                 lo_q = (1 - lv / 100) / 2
                 hi_q = 1 - lo_q
                 if R.size > 0:
-                    n_r = R.size
-                    lo_offset = float(np.quantile(R, self._oriented_index(lo_q, n_r)))
-                    hi_offset = float(np.quantile(R, self._oriented_index(hi_q, n_r)))
+                    lo_offset = float(_conformal_quantile(R, lo_q, upper=False))
+                    hi_offset = float(_conformal_quantile(R, hi_q, upper=True))
                 else:
                     lo_offset = hi_offset = np.nan
                 res[f"fitted-lo-{lv}"] = fitted + lo_offset
