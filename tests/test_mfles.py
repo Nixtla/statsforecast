@@ -24,7 +24,7 @@ class TestMFLES:
         timeseries = timeseries[mask]
 
         # Resample to hourly
-        cls.timeseries = timeseries.set_index("ds").resample("H").sum()
+        cls.timeseries = timeseries.set_index("ds").resample("h").sum()
 
     def test_mfles_fit_predict(self):
         mfles = MFLES()

@@ -65,6 +65,7 @@ from scipy.special import inv_boxcox
 from statsforecast.arima import (
     Arima,
     _check_blambda,
+    _check_ssinit,
     _inv_boxcox as _arima_inv_boxcox,
     _transformed_fitted_arima,
     auto_arima_f,
@@ -345,6 +346,7 @@ class AutoARIMA(_TS):
         blambda (Optional[Union[float, str]], default=None): Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None.
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         season_length (int, default=1): Number of observations per unit of time. Ex: 24 Hourly data.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str, default="AutoARIMA"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
@@ -357,6 +359,8 @@ class AutoARIMA(_TS):
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
@@ -392,6 +396,7 @@ class AutoARIMA(_TS):
         biasadj: bool = False,
         season_length: int = 1,
         distribution: str = "normal",
+        SSinit: str = "Gardner1980",
         alias: str = "AutoARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -428,6 +433,8 @@ class AutoARIMA(_TS):
         self.biasadj = biasadj
         self.season_length = season_length
         self.distribution = distribution
+        _check_ssinit(SSinit)
+        self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -484,6 +491,7 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                SSinit=self.SSinit,
                 distribution=self.distribution,
             )
 
@@ -599,6 +607,7 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                SSinit=self.SSinit,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -741,6 +750,7 @@ class AutoARIMA(_TS):
                     blambda=self.blambda,
                     biasadj=self.biasadj,
                     period=self.season_length,
+                    SSinit=self.SSinit,
                 )
         else:
             if not hasattr(self, "model_"):
@@ -1995,11 +2005,14 @@ class ARIMA(_TS):
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
@@ -2014,6 +2027,7 @@ class ARIMA(_TS):
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
         distribution: str = "normal",
+        SSinit: str = "Gardner1980",
         alias: str = "ARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -2029,6 +2043,8 @@ class ARIMA(_TS):
         self.method = method
         self.fixed = fixed
         self.distribution = distribution
+        _check_ssinit(SSinit)
+        self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -2062,6 +2078,7 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                SSinit=self.SSinit,
                 distribution=self.distribution,
             )
         self._store_cs(y=y, X=X)
@@ -2154,6 +2171,7 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                SSinit=self.SSinit,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -2232,6 +2250,7 @@ class AutoRegressive(ARIMA):
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
     """
@@ -2247,6 +2266,7 @@ class AutoRegressive(ARIMA):
         biasadj: bool = False,
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
+        SSinit: str = "Gardner1980",
         alias: str = "AutoRegressive",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -2273,6 +2293,7 @@ class AutoRegressive(ARIMA):
             method=method,
             alias=alias,
             fixed=fixed,
+            SSinit=SSinit,
             prediction_intervals=prediction_intervals,
         )
 
@@ -2374,7 +2395,7 @@ class SimpleExponentialSmoothing(_TS):
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2519,17 +2540,30 @@ class SimpleExponentialSmoothing(_TS):
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        res = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
+        res = _ses(
+            y=y,
+            h=h,
+            fitted=fitted or (level is not None and self.prediction_intervals is None),
+            alpha=self.alpha,
+        )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
         res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                steps = np.arange(1, h + 1)
+                sigmah = sigma * np.sqrt(
+                    1 + (steps - 1) * self.alpha**2
+                )
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2571,7 +2605,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
     ):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2716,17 +2750,28 @@ class SimpleExponentialSmoothingOptimized(_TS):
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        res = _ses_optimized(y=y, h=h, fitted=fitted)
+        res = _ses_optimized(
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+        )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
-        res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        alpha = res.pop("alpha", None)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                steps = np.arange(1, h + 1)
+                sigmah = sigma * np.sqrt(1 + (steps - 1) * alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2791,7 +2836,7 @@ class SeasonalExponentialSmoothing(_TS):
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2947,18 +2992,33 @@ class SeasonalExponentialSmoothing(_TS):
         """
         y = _ensure_float(y)
         res = _seasonal_exponential_smoothing(
-            y=y, h=h, fitted=fitted, alpha=self.alpha, season_length=self.season_length
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+            alpha=self.alpha,
+            season_length=self.season_length,
         )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
         res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(
+                    residuals, len(y) - self.season_length
+                )
+                m = self.season_length
+                steps = np.arange(1, h + 1)
+                k = ((steps - 1) // m) + 1
+                sigmah = sigma * np.sqrt(1 + (k - 1) * self.alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -3020,7 +3080,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -3175,18 +3235,32 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         """
         y = _ensure_float(y)
         res = _seasonal_ses_optimized(
-            y=y, h=h, fitted=fitted, season_length=self.season_length
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+            season_length=self.season_length,
         )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
-        res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        alpha = res.pop("alpha", None)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(
+                    residuals, len(y) - self.season_length
+                )
+                m = self.season_length
+                steps = np.arange(1, h + 1)
+                k = ((steps - 1) // m) + 1
+                sigmah = sigma * np.sqrt(1 + (k - 1) * alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
