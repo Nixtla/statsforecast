@@ -236,11 +236,16 @@ def arima(
     # and Pn as scratch space and both are fully rewritten below, and callers
     # hand the dict straight to arima_like without holding on to it.
     cache: Dict[str, Any] = {}
+    # set before ML when transform_pars is off: BFGS can't recover from the
+    # NaN likelihood outside the stationary region, so keep it inside
+    stationary_ml = False
 
     def upARIMA(mod, phi, theta):
         p = len(phi)
         q = len(theta)
         r = max(p, q + 1)
+        if stationary_ml and not arCheck(phi):
+            return None
 
         if cache.get("mod") is not mod:
             cache["mod"] = mod
@@ -275,15 +280,6 @@ def arima(
             0,
             True,
         )
-
-    def finite_ml_obj(fn):
-        # BFGS can't recover from a NaN, which the likelihood gives outside the
-        # stationary region when transform_pars is off
-        def obj(*args):
-            val = fn(*args)
-            return val if math.isfinite(val) else np.finfo(np.float64).max
-
-        return obj
 
     def armafn(p, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         x = x.copy()
@@ -736,15 +732,24 @@ def arima(
                 )
                 # status 1 is "maximum number of iterations exceeded"; 0 is
                 # success and 2 precision loss. The exact likelihood is
-                # undefined outside the stationary region, so a non-stationary
-                # CSS estimate can't start ML.
+                # undefined outside the stationary region, so without
+                # transform_pars a non-stationary CSS estimate only starts ML
+                # when init isn't stationary either.
                 converged = res.status != 1
                 css_coef = coef.copy()
                 css_coef[mask] = res.x
-                if converged and ar_stationarity_error(arma, css_coef) is None:
+                init_coef = coef.copy()
+                init_coef[mask] = init[mask]
+                if converged and (
+                    ar_stationarity_error(arma, css_coef) is None
+                    or (
+                        not transform_pars
+                        and ar_stationarity_error(arma, init_coef) is not None
+                    )
+                ):
                     init[mask] = res.x
                 else:
-                    stationary_ar_checks(arma, init)
+                    stationary_ar_checks(arma, init_coef)
                 ncond = 0
         if transform_pars:
             init = ARIMA_invtrans(init, arma)
@@ -755,6 +760,10 @@ def arima(
                 ind = np.sum(arma[:3]) + np.arange(arma[3])
                 init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
+        if not transform_pars and not no_optim:
+            ml_coef = coef.copy()
+            ml_coef[mask] = init[mask]
+            stationary_ml = ar_stationarity_error(arma, ml_coef) is None
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         ml_args = (x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma)
         # objective actually optimized, plus the tail appended to the arma params
@@ -776,7 +785,7 @@ def arima(
                 [init[mask], [log_sigma2_init, alpha_init]]
             )
             res_sn = minimize(
-                finite_ml_obj(armafn_skewnorm),
+                armafn_skewnorm,
                 init_sn,
                 args=ml_args,
                 method=optim_method,
@@ -809,7 +818,7 @@ def arima(
                 [init[mask], [log_sigma2_init, log_nu_m2_init]]
             )
             res_t = minimize(
-                finite_ml_obj(armafn_t),
+                armafn_t,
                 init_t,
                 args=ml_args,
                 method=optim_method,
@@ -842,7 +851,7 @@ def arima(
                 [init[mask], [log_sigma_init, log_beta_init]]
             )
             res_ged = minimize(
-                finite_ml_obj(armafn_ged),
+                armafn_ged,
                 init_ged,
                 args=ml_args,
                 method=optim_method,
@@ -876,7 +885,7 @@ def arima(
             )
         else:
             res = minimize(
-                finite_ml_obj(ml_obj),
+                ml_obj,
                 init[mask],
                 args=ml_args,
                 method=optim_method,

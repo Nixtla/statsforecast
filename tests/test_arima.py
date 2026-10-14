@@ -1430,6 +1430,8 @@ def test_autoregressive_sparse_lags_stays_stationary(seed):
     y = 10 + lfilter([1], a, rng.normal(size=300))[100:]
     model = AutoRegressive(lags=[1, 2, 3, 24]).fit(y).model_
     assert np.isfinite(model["loglik"])
+    phi = np.array(list(model["coef"].values()))[:24]
+    assert np.abs(np.polynomial.polynomial.polyroots(np.r_[1, -phi])).min() > 1
     np.testing.assert_allclose(
         [model["coef"]["ar1"], model["coef"]["ar24"]], [0.5, 0.4], atol=0.15
     )
