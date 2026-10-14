@@ -14,6 +14,7 @@ from .arima import is_constant
 from .distributions import (
     switch_distribution,
     dist_init_params,
+    dist_tail_bounds,
     extract_dist_params,
     aic_bic_aicc,
     error_params_from_model,
@@ -195,8 +196,9 @@ def thetamodel(
         lower = [lb[k] for k, v in optimize_params.items() if v]
         upper = [ub[k] for k, v in optimize_params.items() if v]
         x0_ext = np.concatenate([struct_x0, dist_init])
-        lower_ext = np.concatenate([lower, np.full(n_dist, -np.inf)])
-        upper_ext = np.concatenate([upper, np.full(n_dist, np.inf)])
+        dist_lower, dist_upper = dist_tail_bounds(distribution, n_dist)
+        lower_ext = np.concatenate([lower, dist_lower])
+        upper_ext = np.concatenate([upper, dist_upper])
         opt_res = _theta.optimize_dist(
             x0_ext, lower_ext, upper_ext,
             par["initial_smoothed"], par["alpha"], par["theta"],

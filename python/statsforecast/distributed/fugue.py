@@ -53,7 +53,7 @@ def _cotransform(
 
 class FugueBackend(ParallelBackend):
     """FugueBackend for Distributed Computation.
-    [Source code](https://github.com/Nixtla/statsforecast/blob/main/statsforecast/distributed/fugue.py).
+    [Source code](https://github.com/Nixtla/statsforecast/blob/main/python/statsforecast/distributed/fugue.py).
 
     This class uses [Fugue](https://github.com/fugue-project/fugue) backend capable of distributing
     computation on Spark, Dask and Ray without any rewrites.
@@ -301,7 +301,7 @@ class FugueBackend(ParallelBackend):
 
         Args:
             df (DataFrame): Input DataFrame containing time series data. Must have columns for series identifiers, timestamps, and target values. Can optionally include exogenous features.
-            freq (str or int): Frequency of the time series data. Must be a valid pandas or polars offset alias (e.g., 'D' for daily, 'M' for monthly, 'H' for hourly), or an integer representing the number of observations per cycle.
+            freq (str or int): Frequency of the time series data. Must be a valid pandas or polars offset alias (e.g., 'D' for daily, 'ME' for monthly, 'h' for hourly), or an integer representing the number of observations per cycle.
             models (List[Any]): List of instantiated StatsForecast model objects. Each model should implement the forecast interface. Models must have unique names, which can be set using the `alias` parameter.
             fallback_model (Any, optional): Model to use when a primary model fails during fitting or forecasting. Only works with the `forecast` and `cross_validation` methods. If None, exceptions from failing models will be raised.
             X_df (DataFrame, optional): DataFrame containing future exogenous variables. Required if any models use exogenous features. Must include future values for all time series and forecast horizon.
@@ -462,7 +462,7 @@ class FugueBackend(ParallelBackend):
 
         Args:
             df (DataFrame): Input DataFrame containing time series data with columns for series identifiers, timestamps, and target values.
-            freq (str or int): Frequency of the time series data. Must be a valid pandas or polars offset alias (e.g., 'D' for daily, 'M' for monthly, 'H' for hourly), or an integer representing the number of observations per cycle.
+            freq (str or int): Frequency of the time series data. Must be a valid pandas or polars offset alias (e.g., 'D' for daily, 'ME' for monthly, 'h' for hourly), or an integer representing the number of observations per cycle.
             models (List[Any]): List of instantiated StatsForecast model objects. Each model should implement the forecast interface. Models must have unique names, which can be set using the `alias` parameter.
             fallback_model (Any, optional): Model to use when a primary model fails during fitting or forecasting. Only works with the `forecast` and `cross_validation` methods. If None, exceptions from failing models will be raised.
             h (int): Forecast horizon for each validation window.

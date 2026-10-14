@@ -1,3 +1,4 @@
+import itertools
 import math
 import warnings
 
@@ -52,6 +53,65 @@ def test_extract_dist_params():
     out = D.extract_dist_params("laplace", np.array([]),
                                 residuals=np.array([-1.0, 1.0, -1.0, 1.0]))
     assert out["sigma2"] == pytest.approx(2.0)  # 2 * b_hat**2, b_hat = 1
+
+
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+def test_guard_dist_tail_is_identity_inside_the_box(distribution):
+    _, tail = D.dist_init_params(distribution, 4.0)
+    safe, penalty = D.guard_dist_tail(distribution, tail)
+    assert penalty == 0.0
+    assert list(safe) == [float(v) for v in tail]
+
+
+def test_guard_dist_tail_projects_diverging_line_search_step():
+    # tail from the macOS AutoARIMA-ged blow-up: exp(-1008.17) underflowed to 0.0
+    safe, penalty = D.guard_dist_tail("ged", [-1094.78, -1008.17])
+    sigma = math.exp(safe[0])
+    beta = math.exp(safe[1])
+    assert sigma > 0.0
+    assert beta > 0.0
+    assert math.isfinite(math.lgamma(1.0 / beta))  # the exact crash site
+    assert math.isfinite(penalty) and penalty > 0.0
+
+
+# shape key and a finite-shape check per distribution, at any corner of the box
+_SHAPE_CHECKS = {
+    "t": ("nu", lambda nu: math.isfinite(math.lgamma(nu / 2.0))),
+    "skew-normal": ("alpha_dist", math.isfinite),
+    "ged": ("beta_dist", lambda beta: math.isfinite(math.lgamma(1.0 / beta))),
+}
+
+
+@pytest.mark.parametrize("distribution", list(_SHAPE_CHECKS))
+def test_dist_tail_box_corners_keep_transcendentals_finite(distribution):
+    """Every corner of the box must stay inside double range."""
+    lower, upper = D.dist_tail_bounds(distribution)
+    shape_key, shape_ok = _SHAPE_CHECKS[distribution]
+    for corner in itertools.product(*zip(lower, upper)):
+        params = D.extract_dist_params(distribution, np.array(corner))
+        assert 0.0 < params["sigma2"] < math.inf, corner
+        assert shape_ok(params[shape_key]), corner
+
+
+def test_extract_dist_params_clips_runaway_tail():
+    # without the clip this returns beta_dist == 0.0 and sigma2 == 0.0
+    out = D.extract_dist_params("ged", np.array([-1094.78, -1008.17]))
+    assert out["sigma2"] > 0.0
+    assert out["beta_dist"] > 0.0
+
+
+def test_dist_tail_bounds_layout():
+    """Every valid distribution has a box, and normal/laplace are unbounded."""
+    for name in D.VALID_DISTRIBUTIONS:
+        lower, upper = D.dist_tail_bounds(name, D.distribution_n_extra_params(name))
+        assert len(lower) == len(upper) == D.distribution_n_extra_params(name)
+        assert all(lo < hi for lo, hi in zip(lower, upper))
+
+    # normal/laplace have no tail: unbounded box, guarding is a no-op
+    for name in ("normal", "laplace"):
+        assert D._DIST_TAIL_BOUNDS[name] == ((-math.inf, math.inf),) * 2
+        safe, penalty = D.guard_dist_tail(name, [1e9, -1e9])
+        assert penalty == 0.0 and safe == [1e9, -1e9]
 
 
 def test_quantiles_match_scipy():
@@ -203,6 +263,11 @@ def test_cross_method_distribution_keys(
         assert md.get("sigma2") is not None, (
             f"{model_name}/{distribution}: sigma2 missing from model dict"
         )
+        # a diverged optimizer used to leave sigma2/shape at 0.0 or non-finite
+        assert md["sigma2"] > 0.0
+        for key in ("nu", "alpha_dist", "beta_dist"):
+            if key in md:
+                assert math.isfinite(md[key]) and md[key] != 0.0
 
 
 # ---------------------------------------------------------------------------

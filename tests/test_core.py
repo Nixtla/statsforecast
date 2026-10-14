@@ -8,6 +8,7 @@ import pandas as pd
 import polars as pl
 import polars.testing as pltest
 import pytest
+from sklearn.linear_model import LinearRegression
 from statsforecast.core import (
     ConformalIntervals,
     GroupedArray,
@@ -34,6 +35,7 @@ from statsforecast.models import (
     SeasonalNaive,
     SeasonalWindowAverage,
     SimpleExponentialSmoothing,
+    SklearnModel,
     WindowAverage,
 )
 from statsforecast.utils import AirPassengers as ap
@@ -432,7 +434,7 @@ class TestModels:
         panel_with_exog["month"] = panel_df["ds"].dt.month
         sf = StatsForecast(
             models=[AutoARIMA(season_length=12)],
-            freq="M",
+            freq="ME",
         )
         sf.fit(panel_with_exog)
         expected_msg = (
@@ -451,7 +453,7 @@ class TestModels:
         # if the models don't use exog then it continues
         sf = StatsForecast(
             models=[SeasonalNaive(season_length=10), Naive()],
-            freq="M",
+            freq="ME",
         )
         sf.fit(panel_with_exog)
         _ = sf.predict(h=12)
@@ -707,10 +709,10 @@ def test_for_monthly_data():
     # tests for monthly data
 
     monthly_series = generate_series(
-        10_000, freq="M", min_length=10, max_length=20, equal_ends=True
+        10_000, freq="ME", min_length=10, max_length=20, equal_ends=True
     )
 
-    fcst = StatsForecast(models=[Naive()], freq="M")
+    fcst = StatsForecast(models=[Naive()], freq="ME")
     monthly_res = fcst.forecast(df=monthly_series, h=4)
 
     # last_dates = monthly_series.groupby("unique_id")["ds"].max()
@@ -726,7 +728,7 @@ def test_for_monthly_data():
 
 def test_level_validation():
     # confidence levels must be between 0 and 100, exclusive
-    sf = StatsForecast(models=[Naive()], freq="M", n_jobs=1)
+    sf = StatsForecast(models=[Naive()], freq="ME", n_jobs=1)
     msg = "Every value in `level` must be"
     invalid_levels = [[0, 100], [-1], [101], [np.nan], [np.inf], ["a"]]
 
@@ -750,6 +752,38 @@ def test_level_validation():
 
     pred = sf.predict(h=12, level=[80, 95])
     assert "Naive-lo-80" in pred.columns and "Naive-hi-95" in pred.columns
+
+
+def test_conformal_error_end_to_end():
+    # end-to-end: conformal_error intervals flow through AutoARIMA and
+    # StatsForecast.forecast, producing valid, symmetric, monotone intervals
+    h = 12
+    level = [80, 90]
+    model = AutoARIMA(
+        season_length=12,
+        prediction_intervals=ConformalIntervals(
+            h=h, n_windows=2, method="conformal_error"
+        ),
+    )
+    sf = StatsForecast(models=[model], freq="ME", n_jobs=1)
+    fcst = sf.forecast(df=ap_df, h=h, level=level)
+
+    m = repr(model)  # "AutoARIMA"
+    for lv in level:
+        assert f"{m}-lo-{lv}" in fcst.columns
+        assert f"{m}-hi-{lv}" in fcst.columns
+
+    mean = fcst[m].to_numpy()
+    lo80, hi80 = fcst[f"{m}-lo-80"].to_numpy(), fcst[f"{m}-hi-80"].to_numpy()
+    lo90, hi90 = fcst[f"{m}-lo-90"].to_numpy(), fcst[f"{m}-hi-90"].to_numpy()
+
+    # mean is bracketed by every interval
+    assert np.all(lo90 <= mean) and np.all(mean <= hi90)
+    # wider level => wider interval
+    assert np.all(hi90 >= hi80) and np.all(lo90 <= lo80)
+    # conformal_error adds a symmetric margin around the mean
+    np.testing.assert_allclose(hi80 - mean, mean - lo80)
+    np.testing.assert_allclose(hi90 - mean, mean - lo90)
 
 
 
@@ -899,18 +933,20 @@ def test_for_cross_validation(series_cv1):
     assert n_windows == 3 * 3
     np.testing.assert_array_equal(0.0, np.mean(res_cv["y"] - res_cv["SumAhead"]))
 
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0']",
-        df=series_cv,
-        h=10,
-    )
-    assert_raises_with_message(
-        fcst.cross_validation,
-        "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
-        df=series_cv,
-        h=20,
-    )
+    for series, freq in [(series_cv, "D"), (pl.from_pandas(series_cv), "1d")]:
+        fcst = StatsForecast(models=[SumAhead(), Naive()], freq=freq)
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0']",
+            df=series,
+            h=10,
+        )
+        assert_raises_with_message(
+            fcst.cross_validation,
+            "The following series are too short for the cross validation settings: ['id_0', 'id_2']",
+            df=series,
+            h=20,
+        )
 
 
 def test_cross_validation_refit_false(series_cv1):
@@ -1506,3 +1542,35 @@ def test_conf_intervals(n_jobs):
 # # | eval: false
 # # test number of jobs greater than the available cores
 # test_conf_intervals(n_jobs=101)
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("as_polars", [False, True])
+@pytest.mark.parametrize("method", ["forecast", "fit_predict", "predict"])
+def test_future_exog_column_order(n_jobs, as_polars, method):
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame(
+        {
+            "unique_id": np.repeat(["a", "b"], 20),
+            "ds": np.tile(np.arange(20), 2),
+            "first": rng.normal(size=40),
+            "second": rng.normal(size=40),
+        }
+    )
+    df["y"] = 2 * df["first"] - 7 * df["second"]
+    train = df[df.ds < 17]
+    future = df[df.ds >= 17].drop(columns="y")
+    # Include an id/time permutation as well as reversing the two features.
+    future = future[["second", "ds", "first", "unique_id"]]
+    if as_polars:
+        train, future = pl.from_pandas(train), pl.from_pandas(future)
+    sf = StatsForecast(
+        models=[SklearnModel(LinearRegression())], freq=1, n_jobs=n_jobs
+    )
+    if method == "predict":
+        result = sf.fit(train).predict(h=3, X_df=future)
+    else:
+        result = getattr(sf, method)(df=train, h=3, X_df=future)
+    np.testing.assert_allclose(
+        result["LinearRegression"].to_numpy(), df.loc[df.ds >= 17, "y"]
+    )

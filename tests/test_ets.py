@@ -1,6 +1,15 @@
 import numpy as np
 import pytest
-from statsforecast.ets import ets_f, forecast_ets, forward_ets
+from scipy.stats import norm
+from statsforecast.ets import (
+    _class3models,
+    _compute_pred_intervals,
+    ets_f,
+    etssimulate,
+    forecast_ets,
+    forward_ets,
+    switch,
+)
 from statsforecast.utils import AirPassengers as ap
 
 
@@ -126,6 +135,23 @@ def intermitent_series():
     return intermitent_series
 
 
+@pytest.mark.parametrize("model", ["AAN", "AAA", "ANA", "MAA", "MNA", "MAM"])
+@pytest.mark.parametrize("bounds", ["usual", "both"])
+def test_usual_constraints_enforced(model, bounds):
+    """Fits must satisfy fable's usual-space constraints beta <= alpha and gamma <= 1-alpha."""
+    mod = ets_f(np.asarray(ap, dtype=np.float64), m=12, model=model, bounds=bounds)
+    alpha, beta, gamma, _phi = mod["par"][:4]
+    _err, trend, season, _damped = mod["components"]
+    if trend != "N":
+        assert beta <= alpha + 1e-12, (
+            f"{model}: beta={beta:.6f} > alpha={alpha:.6f}"
+        )
+    if season != "N":
+        assert gamma <= 1.0 - alpha + 1e-12, (
+            f"{model}: gamma={gamma:.6f} > 1-alpha={1.0 - alpha:.6f}"
+        )
+
+
 def test_forward_ets(intermitent_series):
     res = ets_f(ap, m=12)
     assert (
@@ -214,6 +240,12 @@ def test_distribution_invalid_raises():
         ets_f(ap, m=12, distribution="cauchy")
 
 
+def test_damped_without_trend_raises():
+    """Damping is forbidden for any model with no trend. ANN is one representative example."""
+    with pytest.raises(ValueError, match="Forbidden model combination"):
+        ets_f(ap, m=12, model="ANN", damped=True)
+
+
 def test_t_aic_better_than_normal_heavy_tails():
     """On heavy-tailed data, t-distribution ETS AIC < normal ETS AIC."""
     rng = np.random.default_rng(42)
@@ -262,3 +294,178 @@ def test_autoets_distribution():
     pred = model.predict(h=12, level=[95])
     assert "lo-95" in pred and "hi-95" in pred
     assert np.all(pred["lo-95"] < pred["hi-95"])
+
+
+# ---- Additive seasonal prediction interval tests ----
+# Validate the closed-form forecast variances for ANA, AAA, and AAdA against
+# the general Class 1 recursion: sigma2 * (1 + sum(c_j**2, j < k)).
+
+@pytest.mark.parametrize(
+    "trend,damped",
+    [
+        ("N", "N"),
+        ("A", "N"),
+        ("A", "D"),
+    ],
+)
+def test_additive_seasonal_variance_matches_recursion(trend, damped):
+    m, h = 4, 13
+    alpha, beta, gamma, phi, sigma2 = 0.4, 0.05, 0.3, 0.9, 0.02
+    model = {
+        "sigma2": sigma2,
+        "m": m,
+        "components": ["A", trend, "A", damped],
+        "states": np.zeros((1, 6)),
+        "par": np.array([alpha, beta, gamma, phi]),
+    }
+    pred = _compute_pred_intervals(model, {"mean": np.zeros(h)}, h, [95])
+    var = (pred["hi-95"] / norm.ppf(0.975)) ** 2
+
+    j = np.arange(1, h)
+    if trend == "N":
+        slope = np.zeros(h - 1)
+    elif damped == "D":
+        slope = np.cumsum(phi**j)
+    else:
+        slope = j
+    seasonal = j % m == 0
+    c = alpha + beta * slope + gamma * seasonal
+    expected = sigma2 * np.concatenate([[1.0], 1 + np.cumsum(c**2)])
+    np.testing.assert_allclose(var, expected, rtol=1e-10)
+
+
+# ---- Class 3 prediction interval tests ----
+# `_class3models` computes the forecast variance for models with multiplicative
+# error and multiplicative seasonality (MNM, MAM, MAdM), and is reached
+# through `_compute_pred_intervals`. Its `Mh` moment-matrix recursion must run inside
+# the horizon loop; when it does not, `mu` stays frozen at its 1-step value and the
+# variance no longer tracks the seasonal pattern of the point forecasts.
+
+# (label, model string, damped)
+CLASS3_SPECS = [
+    ("MNM", "MNM", False),
+    ("MAM", "MAM", False),
+    ("MAdM", "MAM", True),
+]
+
+
+def fit_class3(model, damped):
+    """Fit a class 3 model on AirPassengers and unpack the `_class3models` arguments."""
+    # restrict=False is required to fit the multiplicative trend specifications
+    mod = ets_f(
+        np.asarray(ap, dtype=np.float64),
+        m=12,
+        model=model,
+        damped=damped,
+        restrict=False,
+    )
+    _, trend, _, damped_code = mod["components"]
+    alpha, beta, gamma, phi = mod["par"][:4]
+    args = dict(
+        sigma=mod["sigma2"],
+        last_state=mod["states"][-1],
+        season_length=mod["m"],
+        trend=trend,
+        damped=damped_code,
+        alpha=alpha,
+        beta=beta,
+        gamma=gamma,
+        phi=phi,
+    )
+    return mod, args
+
+
+@pytest.mark.parametrize("label,model,damped", CLASS3_SPECS)
+def test_class3_variance_tracks_seasonal_mean(label, model, damped):
+    """Variance must scale with the squared point forecast for multiplicative errors."""
+    h = 24
+    mod, args = fit_class3(model, damped)
+    var = _class3models(h, **args)
+
+    assert np.all(np.isfinite(var)), f"{label}: non-finite variance"
+    assert np.all(var > 0), f"{label}: non-positive variance"
+
+    mean = forecast_ets(mod, h=h)["mean"]
+    corr = np.corrcoef(var, mean**2)[0, 1]
+    # With the recursion frozen outside the loop this correlation collapses to ~0.
+    assert corr > 0.5, f"{label}: var/mean**2 correlation {corr:.4f} too low"
+
+
+def test_class3_interval_width_tracks_forecast():
+    """The user-visible interval width follows the seasonal pattern of the forecast."""
+    from statsforecast.models import AutoETS
+
+    h = 24
+    model = AutoETS(season_length=12, model="MAM")
+    model.fit(np.asarray(ap, dtype=np.float64))
+    pred = model.predict(h=h, level=[80])
+
+    mean, lo, hi = pred["mean"], pred["lo-80"], pred["hi-80"]
+    assert np.all(lo < mean)
+    assert np.all(mean < hi)
+
+    half_width = (hi - lo) / 2
+    corr = np.corrcoef(half_width, mean)[0, 1]
+    assert corr > 0.5, f"interval width/mean correlation {corr:.4f} too low"
+
+
+def test_class3_matches_simulation():
+    """Analytic MNM variance agrees with simulated paths across the whole horizon."""
+    h = 24
+    nsim = 20_000
+    mod, args = fit_class3("MNM", False)
+    var = _class3models(h, **args)
+
+    error, trend, seasonality, _ = mod["components"]
+    # par holds nan for components the model does not use; etssimulate needs the
+    # neutral values instead (a trend of 0 and an undamped phi of 1).
+    beta = 0.0 if np.isnan(args["beta"]) else args["beta"]
+    phi = 1.0 if np.isnan(args["phi"]) else args["phi"]
+
+    rng = np.random.default_rng(0)
+    errors = rng.standard_normal((nsim, h)) * np.sqrt(args["sigma"])
+    paths = np.empty((nsim, h))
+    for k in range(nsim):
+        y_path = np.zeros(h)
+        etssimulate(
+            args["last_state"],
+            args["season_length"],
+            switch(error),
+            switch(trend),
+            switch(seasonality),
+            args["alpha"],
+            beta,
+            args["gamma"],
+            phi,
+            h,
+            y_path,
+            errors[k],
+        )
+        paths[k] = y_path
+
+    rel_err = np.max(np.abs(var / paths.var(axis=0) - 1))
+    assert rel_err < 0.06, f"analytic variance deviates from simulation by {rel_err:.2%}"
+
+
+# Captured from the fixed implementation on AirPassengers (m=12, h=12) and
+# corroborated by the simulation and correlation tests above.
+expected_class3_var = {
+    "MNM": np.array([
+         487.115787,  517.599801,  766.705319,  794.800167,
+         871.540585, 1192.776260, 1619.868664, 1705.262837,
+        1360.096714, 1102.476187,  886.853397, 1168.650677,
+    ]),
+    "MAM": np.array([
+         697.177283,  680.731069,  893.131531,  844.463569,
+         847.824675, 1095.124178, 1365.869500, 1358.976906,
+        1041.877007,  815.211436,  632.588431,  802.507673,
+    ]),
+}  # fmt: skip
+
+
+@pytest.mark.parametrize("model", ["MNM", "MAM"])
+def test_class3_variance_regression(model):
+    """Pin the exact variances so future changes to the recursion are caught."""
+    _, args = fit_class3(model, False)
+    var = _class3models(12, **args)
+    np.testing.assert_allclose(var, expected_class3_var[model], rtol=1e-6)

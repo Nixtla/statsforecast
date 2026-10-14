@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.stats import norm
 
 # from fastcore.test import test_close, test_eq, test_fail
 from statsforecast.garch import generate_garch_data
@@ -141,6 +142,36 @@ def test_conformal_intervals():
     zero_model = ZeroModel(conf_intervals)
     fcst_conformal = zero_model.forecast(ap, h=12, level=[80, 90])
     assert list(fcst_conformal.keys()) == ["mean", "lo-90", "lo-80", "hi-80", "hi-90"]
+
+
+def test_conformal_intervals_invalid_h():
+    """ConformalIntervals must reject h < 1 at construction."""
+    with pytest.raises(ValueError, match="h >= 1"):
+        ConformalIntervals(h=0)
+
+
+def test_conformal_error_intervals():
+    """Test conformal_error method produces valid intervals."""
+    conf_intervals = ConformalIntervals(h=12, n_windows=2, method="conformal_error")
+    zero_model = ZeroModel(conf_intervals)
+    fcst = zero_model.forecast(ap, h=12, level=[80, 90])
+    # Check keys
+    assert list(fcst.keys()) == ["mean", "lo-90", "lo-80", "hi-80", "hi-90"]
+    # For ZeroModel (mean=0), intervals should be symmetric around 0
+    np.testing.assert_array_equal(fcst["lo-90"], -fcst["hi-90"])
+    np.testing.assert_array_equal(fcst["lo-80"], -fcst["hi-80"])
+    # Higher confidence = wider intervals
+    assert np.all(fcst["hi-90"] >= fcst["hi-80"])
+    # Hi and lo are anti-symmetric (implied by the exact-value checks below).
+    # Exact-value check: for ZeroModel (mean=0), conformal_error intervals
+    # should match the lv/100 quantile of the conformity scores.
+    cs = zero_model._conformity_scores(ap)
+    q90 = np.quantile(cs, 0.9, axis=0)
+    q80 = np.quantile(cs, 0.8, axis=0)
+    np.testing.assert_allclose(fcst["hi-90"], q90)
+    np.testing.assert_allclose(fcst["hi-80"], q80)
+    np.testing.assert_allclose(fcst["lo-90"], -q90)
+    np.testing.assert_allclose(fcst["lo-80"], -q80)
 
 
 def assert_class(
@@ -745,6 +776,50 @@ class TestSeasonalES:
             )
             == "SeasESOpt_custom"
         )
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SimpleExponentialSmoothing(alpha=0.1),
+        SimpleExponentialSmoothingOptimized(),
+        SeasonalExponentialSmoothing(season_length=12, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=12),
+    ],
+)
+def test_ses_analytical_prediction_intervals_parity(model):
+    h = 12
+    level = [80, 95]
+    model.fit(ap)
+
+    forecast = model.forecast(ap, h=h, level=level)
+    predict = model.predict(h=h, level=level)
+    pd.testing.assert_frame_equal(pd.DataFrame(forecast), pd.DataFrame(predict))
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SimpleExponentialSmoothing(alpha=0.1),
+        SimpleExponentialSmoothingOptimized(),
+        SeasonalExponentialSmoothing(season_length=3, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=1),
+    ],
+)
+def test_ses_analytical_prediction_intervals_formula(model):
+    h, level = 12, 95
+    model.fit(ap)
+    forecast = model.forecast(ap, h=h, level=[level])
+
+    steps = np.arange(h) // getattr(model, "season_length", 1)
+    alpha = np.resize(model.model_["alpha"], h)
+    width = (
+        norm.ppf(0.5 + level / 200)
+        * model.model_["sigma"]
+        * np.sqrt(1 + steps * alpha**2)
+    )
+    np.testing.assert_allclose(forecast[f"lo-{level}"], forecast["mean"] - width)
+    np.testing.assert_allclose(forecast[f"hi-{level}"], forecast["mean"] + width)
 
 
 class TestHolt:
@@ -1994,6 +2069,15 @@ class TestGARCH:
         assert_class(garch_c, x=ap, h=13, level=[90, 80], test_forward=False)
         fcst_garch_c = garch_c.forecast(ap, 13, None, None, (80, 95), True)
         np.testing.assert_array_equal(fcst_garch_c["mean"][:12], fcst_garch["mean"])
+
+    def test_garch_interval_scale(self):
+        # hi/lo = mean +/- z * sigma
+        y = self.y * 10
+        fcst = GARCH(2, 2).forecast(y, h=12, level=[95])
+        z = norm.ppf(0.975)
+        sigma = np.sqrt(fcst["sigma2"])
+        np.testing.assert_allclose((fcst["hi-95"] - fcst["mean"]) / sigma, z)
+        np.testing.assert_allclose((fcst["mean"] - fcst["lo-95"]) / sigma, z)
 
 
 # h = 100

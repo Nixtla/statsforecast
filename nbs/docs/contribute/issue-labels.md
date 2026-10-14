@@ -9,13 +9,7 @@ This segment delves into the variety of issue labels used within the [Nixtla Git
 
 Should you be a contributor now or in the future, it's important to take note of issues flagged with these labels.
 
-### The `first-timers-only` Label
-
-For those who have not yet contributed to Nixtla, start by looking for issues tagged as `first-timers-only`.
-
-Please note that before we can accept your contribution to Nixtla, you'll need to sign our [Contributor License Agreement](https://github.com/nixtla/nixtla_native/blob/stable/assets/contributions-agreement/individual-contributor.md).
-
-You can browse all `first-timers-only` issues [here](https://github.com/nixtla/nixtla/labels/first-timers-only).
+Before opening a pull request, review the [contributing guidelines](https://github.com/Nixtla/statsforecast/blob/main/CONTRIBUTING.md) and sign our [Contributor License Agreement](https://cla-assistant.io/Nixtla/statsforecast).
 
 ### The `good first issue` Label
 

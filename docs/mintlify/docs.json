@@ -63,7 +63,6 @@
         "group": "Experiments",
         "pages": [
           "docs/experiments/amazonstatsforecast.html",
-          "docs/experiments/autoarima_vs_prophet.html",
           "docs/experiments/autoarimaprophet_adapter.html",
           "docs/experiments/ets_ray_m5.html",
           "docs/experiments/prophet_spark_m5.html"
@@ -80,6 +79,7 @@
           "docs/models/autoets.html",
           "docs/models/autoregressive.html",
           "docs/models/autotheta.html",
+          "docs/models/conformalseasonalpool.html",
           "docs/models/crostonclassic.html",
           "docs/models/crostonoptimized.html",
           "docs/models/crostonsba.html",
