@@ -939,6 +939,133 @@ def test_issue_1167():
     assert math.isclose(mdl.model_["sigma2"], 0.9, abs_tol=0.1)
 
 
+@pytest.mark.parametrize("method", ["CSS-ML", "ML"])
+def test_coef_stderr(method):
+    """Reference values from R:
+    arima(AirPassengers, order=c(2,1,1), seasonal=list(order=c(0,1,0), period=12))
+    """
+    m = ARIMA(
+        order=(2, 1, 1),
+        seasonal_order=(0, 1, 0),
+        season_length=12,
+        method=method,
+    ).fit(ap)
+    coef_stderr = np.sqrt(np.diagonal(m.model_["var_coef"]))
+    np.testing.assert_allclose(
+        coef_stderr,
+        np.array([0.08881822, 0.08796576, 0.02920142]),
+        atol=1e-4,
+    )
+
+
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+def test_var_coef_marginalises_dist_params(distribution, monkeypatch):
+    """The scale/shape parameters are estimated jointly with the arma ones, so
+    var_coef must invert the full Hessian and then take the arma block; taking the
+    block first would report variances conditional on them, which are too small."""
+    hessians = []
+    approx_hess3 = arima_module.approx_hess3
+    monkeypatch.setattr(
+        arima_module,
+        "approx_hess3",
+        lambda x, f, **kwargs: hessians.append(approx_hess3(x, f, **kwargs))
+        or hessians[-1],
+    )
+    rng = np.random.default_rng(0)
+    y = _simulate_ar1(0.6, rng.standard_normal(300))
+    fit = arima(
+        y,
+        order=(1, 0, 0),
+        method="ML",
+        distribution=distribution,
+        transform_pars=False,
+    )
+
+    hess = hessians[-1]
+    n_free = hess.shape[0] - 2
+    expected = np.linalg.inv(fit["nobs"] * hess)[:n_free, :n_free]
+    assert np.isfinite(expected).all()
+    np.testing.assert_allclose(fit["var_coef"], expected)
+
+
+def _count_hessians(monkeypatch):
+    calls = []
+    approx_hess3 = arima_module.approx_hess3
+    monkeypatch.setattr(
+        arima_module,
+        "approx_hess3",
+        lambda x, f, **kwargs: calls.append(x) or approx_hess3(x, f, **kwargs),
+    )
+    return calls
+
+
+def test_var_coef_one_hessian_per_fit(monkeypatch):
+    """maInvert re-parameterises this model's MA part; the Hessian is still
+    computed once, at the reported coefficients."""
+    calls = _count_hessians(monkeypatch)
+    ARIMA(order=(2, 1, 1), seasonal_order=(0, 1, 0), season_length=12).fit(ap)
+    assert len(calls) == 1
+
+
+def test_var_coef_deferred_to_auto_arima_winner(monkeypatch):
+    calls = _count_hessians(monkeypatch)
+    fit = arima_module.auto_arima_f(ap, period=12)
+    assert len(calls) == 1
+    arma = fit["arma"]
+    direct = arima(
+        ap,
+        order=(arma[0], arma[5], arma[1]),
+        seasonal={"order": (arma[2], arma[6], arma[3]), "period": 12},
+        method="CSS-ML",
+    )
+    np.testing.assert_allclose(fit["var_coef"], direct["var_coef"], rtol=1e-6)
+
+
+def test_var_coef_false_skips_hessian(monkeypatch):
+    calls = _count_hessians(monkeypatch)
+    fit = arima(ap, order=(1, 1, 0), method="CSS-ML", var_coef=False)
+    assert fit["var_coef"] is None and not calls
+
+
+def test_hessian_not_evaluated_on_non_finite_objective(monkeypatch):
+    calls = _count_hessians(monkeypatch)
+    hess = arima_module._hessian(lambda p: math.nan, np.zeros(2), np.full(2, 1e-3))
+    assert not calls
+    assert np.isnan(arima_module._coef_var(hess, 10, 2)).all()
+
+
+def test_coef_var_depends_on_collinearity_not_units():
+    H = np.array([[2.0, 0.5], [0.5, 1.0]])
+    D = np.diag([1.0, 1e5])
+    np.testing.assert_allclose(
+        arima_module._coef_var(D @ H @ D, 1, 2), np.linalg.inv(D @ H @ D), rtol=1e-8
+    )
+    # rank one: invert over the identified direction only
+    np.testing.assert_allclose(
+        arima_module._coef_var(np.ones((2, 2)), 1, 2), np.full((2, 2), 0.25)
+    )
+    # saddle
+    assert np.isnan(arima_module._coef_var(np.diag([1.0, -1.0]), 1, 2)).all()
+
+
+def test_var_coef_badly_scaled_xreg():
+    """A regressor of scale 1e4 gives its coefficient a standard error of ~1e-5,
+    where a fixed finite-difference step is hundreds of standard errors wide.
+    The exact GLS covariance of the regression block is the reference."""
+    rng = np.random.default_rng(42)
+    n = 300
+    x = rng.uniform(0, 1e4, n)
+    y = 10 + 0.002 * x + _simulate_ar1(0.6, rng.standard_normal(n))
+    fit = arima(y, order=(1, 0, 0), xreg=x[:, None], method="CSS-ML")
+    phi = fit["coef"]["ar1"]
+    X = np.column_stack([np.ones(n), x])
+    Xt = np.vstack([math.sqrt(1 - phi**2) * X[:1], X[1:] - phi * X[:-1]])
+    expected = fit["sigma2"] * np.linalg.inv(Xt.T @ Xt)
+    np.testing.assert_allclose(
+        np.diag(fit["var_coef"])[1:], np.diag(expected), rtol=0.02
+    )
+
+
 @pytest.fixture
 def boxcox_series():
     """Positive, trending and seasonal series, where a Box-Cox helps."""
