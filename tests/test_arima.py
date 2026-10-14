@@ -1418,3 +1418,18 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
         warnings.simplefilter("ignore")
         _resolve_blambda(np.where(positive == 2.0, 0.0, positive), "auto", 4)
     assert seen["lower"] == 0.0
+
+
+@pytest.mark.parametrize("seed", [0, 18])
+def test_autoregressive_sparse_lags_stays_stationary(seed):
+    # seed 18's CSS estimate is non-stationary and seed 0's ML fit used to
+    # diverge from a stationary start
+    rng = np.random.default_rng(seed)
+    a = np.zeros(25)
+    a[[0, 1, 24]] = [1, -0.5, -0.4]
+    y = 10 + lfilter([1], a, rng.normal(size=300))[100:]
+    model = AutoRegressive(lags=[1, 2, 3, 24]).fit(y).model_
+    assert np.isfinite(model["loglik"])
+    np.testing.assert_allclose(
+        [model["coef"]["ar1"], model["coef"]["ar24"]], [0.5, 0.4], atol=0.15
+    )

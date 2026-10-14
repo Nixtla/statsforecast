@@ -276,6 +276,15 @@ def arima(
             True,
         )
 
+    def finite_ml_obj(fn):
+        # BFGS can't recover from a NaN, which the likelihood gives outside the
+        # stationary region when transform_pars is off
+        def obj(*args):
+            val = fn(*args)
+            return val if math.isfinite(val) else np.finfo(np.float64).max
+
+        return obj
+
     def armafn(p, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         x = x.copy()
         par = coef.copy()
@@ -726,13 +735,13 @@ def arima(
                     options=optim_control,
                 )
                 # status 1 is "maximum number of iterations exceeded"; 0 is
-                # success and 2 precision loss. Without transform_pars ML is
-                # unconstrained, so a non-stationary CSS estimate is still a
-                # better start than init.
+                # success and 2 precision loss. The exact likelihood is
+                # undefined outside the stationary region, so a non-stationary
+                # CSS estimate can't start ML.
                 converged = res.status != 1
-                if converged and (
-                    not transform_pars or ar_stationarity_error(arma, res.x) is None
-                ):
+                css_coef = coef.copy()
+                css_coef[mask] = res.x
+                if converged and ar_stationarity_error(arma, css_coef) is None:
                     init[mask] = res.x
                 else:
                     stationary_ar_checks(arma, init)
@@ -767,7 +776,7 @@ def arima(
                 [init[mask], [log_sigma2_init, alpha_init]]
             )
             res_sn = minimize(
-                armafn_skewnorm,
+                finite_ml_obj(armafn_skewnorm),
                 init_sn,
                 args=ml_args,
                 method=optim_method,
@@ -800,7 +809,7 @@ def arima(
                 [init[mask], [log_sigma2_init, log_nu_m2_init]]
             )
             res_t = minimize(
-                armafn_t,
+                finite_ml_obj(armafn_t),
                 init_t,
                 args=ml_args,
                 method=optim_method,
@@ -833,7 +842,7 @@ def arima(
                 [init[mask], [log_sigma_init, log_beta_init]]
             )
             res_ged = minimize(
-                armafn_ged,
+                finite_ml_obj(armafn_ged),
                 init_ged,
                 args=ml_args,
                 method=optim_method,
@@ -867,7 +876,7 @@ def arima(
             )
         else:
             res = minimize(
-                ml_obj,
+                finite_ml_obj(ml_obj),
                 init[mask],
                 args=ml_args,
                 method=optim_method,
