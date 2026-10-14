@@ -1418,3 +1418,41 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
         warnings.simplefilter("ignore")
         _resolve_blambda(np.where(positive == 2.0, 0.0, positive), "auto", 4)
     assert seen["lower"] == 0.0
+
+
+def test_search_arima_fallback_keeps_seasonal_period(monkeypatch):
+    # when the non-approximate refit of the best model has infinite ic,
+    # search_arima falls back to a full search that must keep the seasonal period
+    rng = np.random.default_rng(0)
+    season = 12
+    x = np.sin(np.arange(120) * 2 * np.pi / season) + rng.normal(size=120) * 0.3
+    original = arima_module.myarima
+    state = {"failed": False}
+    seen_periods = []
+
+    def myarima_refit_fails(*args, **kwargs):
+        seen_periods.append(kwargs["seasonal"]["period"])
+        fit = original(*args, **kwargs)
+        if kwargs.get("approximation") is False and not state["failed"]:
+            state["failed"] = True
+            fit = {**fit, "ic": math.inf}
+        return fit
+
+    monkeypatch.setattr(arima_module, "myarima", myarima_refit_fails)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fit = arima_module.search_arima(
+            x,
+            max_p=1,
+            max_q=1,
+            max_P=1,
+            max_Q=1,
+            max_order=3,
+            approximation=True,
+            offset=0,
+            period=season,
+        )
+    assert state["failed"]
+    # every model fitted, including those in the fallback search, uses the period
+    assert set(seen_periods) == {season}
+    assert fit["arma"][4] == season
