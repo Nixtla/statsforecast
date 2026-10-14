@@ -747,6 +747,7 @@ class _StatsForecast:
             raise ValueError(
                 f"Expected X to have shape {expected_shape}, but got {X.shape}"
             )
+        X = X[[self.id_col, self.time_col] + self._exog]
         processed = ufp.process_df(X, self.id_col, self.time_col, None)
         return GroupedArray(processed.data, processed.indptr), level
 
