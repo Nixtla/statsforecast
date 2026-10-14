@@ -115,6 +115,7 @@ class AutoARIMAProphet(Prophet):
         blambda=None,
         biasadj=False,
         period=1,
+        SSinit="Gardner1980",
     ):
         Prophet.__init__(
             self,
@@ -167,6 +168,7 @@ class AutoARIMAProphet(Prophet):
             blambda=blambda,
             biasadj=biasadj,
             period=period,
+            SSinit=SSinit,
         )
 
     def fit(self, df, disable_seasonal_features=True):
