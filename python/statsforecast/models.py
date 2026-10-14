@@ -108,7 +108,11 @@ def _add_fitted_pi(res, se, level, distribution="normal", dist_params=None):
     level = sorted(level)
     level = np.asarray(level)
     quantiles = _quantiles(level=level, distribution=distribution, dist_params=dist_params)
-    lo = res["fitted"].reshape(-1, 1) - quantiles * se.reshape(-1, 1)
+    lower_quantiles = (
+        _quantiles(level=-level, distribution=distribution, dist_params=dist_params)
+        if distribution == "skew-normal" else -quantiles
+    )
+    lo = res["fitted"].reshape(-1, 1) + lower_quantiles * se.reshape(-1, 1)
     hi = res["fitted"].reshape(-1, 1) + quantiles * se.reshape(-1, 1)
     lo = lo[:, ::-1]
     lo = {f"fitted-lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}

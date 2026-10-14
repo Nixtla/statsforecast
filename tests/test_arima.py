@@ -905,14 +905,75 @@ def test_distribution_fitted_intervals(model_class, distribution, blambda):
     ]
     for result in results:
         for level in (80, 95):
-            quantile = dist.ppf(0.5 + level / 200)
             for side, sign in [("lo", -1), ("hi", 1)]:
-                expected = center + sign * quantile
+                quantile = dist.ppf(0.5 + sign * level / 200)
+                expected = center + quantile
                 if blambda is not None:
                     expected = np.exp(expected)
                 np.testing.assert_allclose(
                     result[f"fitted-{side}-{level}"], expected, rtol=1e-10, atol=1e-12,
                 )
+
+
+@pytest.mark.parametrize("model_class", [ARIMA, AutoARIMAModel])
+@pytest.mark.parametrize("alpha", [-10, 10])
+@pytest.mark.parametrize("blambda", [None, 0.0])
+def test_skew_normal_interval_tails(model_class, alpha, blambda):
+    innovations = skewnorm.rvs(alpha, size=160, random_state=np.random.default_rng(38))
+    y = innovations if blambda is None else np.exp(innovations)
+    kwargs = dict(distribution="skew-normal", method="ML", blambda=blambda)
+    if model_class is ARIMA:
+        kwargs.update(order=(0, 0, 0), include_mean=False)
+    else:
+        kwargs.update(
+            d=0, D=0, max_p=0, max_q=0, max_P=0, max_Q=0,
+            start_p=0, start_q=0, seasonal=False, approximation=False, allowmean=False,
+        )
+    fitted = model_class(**kwargs).fit(y)
+    mod = fitted.model_
+    dist = skewnorm(a=mod["alpha_dist"])
+    center = innovations - mod["residuals"]
+    pred, se = predict_arima(mod, n_ahead=3)
+    results = [
+        model_class(**kwargs).forecast(y=y, h=3, fitted=True, level=[80, 95]),
+        fitted.forward(y=y, h=3, fitted=True, level=[80, 95]),
+    ]
+    insample = fitted.predict_in_sample(level=[80, 95])
+    for level in (80, 95):
+        for side, sign in [("lo", -1), ("hi", 1)]:
+            quantile = dist.ppf(0.5 + sign * level / 200)
+            expected_fitted = center + quantile * np.sqrt(mod["sigma2"])
+            expected_future = pred + quantile * se
+            if blambda is not None:
+                expected_fitted = np.exp(expected_fitted)
+                expected_future = np.exp(expected_future)
+            np.testing.assert_allclose(insample[f"fitted-{side}-{level}"], expected_fitted)
+            for result in results:
+                np.testing.assert_allclose(result[f"fitted-{side}-{level}"], expected_fitted)
+                np.testing.assert_allclose(result[f"{side}-{level}"], expected_future)
+        for result in results:
+            assert np.all(result[f"fitted-lo-{level}"] <= result[f"fitted-hi-{level}"])
+            assert np.all(result[f"lo-{level}"] <= result[f"hi-{level}"])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "laplace", "t", "skew-normal", "ged"])
+@pytest.mark.parametrize("relative", [0, 1, 2])
+def test_distribution_aicc_short_series(distribution, relative):
+    npar = 2 if distribution in ("t", "skew-normal", "ged") else 1
+    n = npar + relative
+    y = np.random.default_rng(39).normal(size=n) + 0.3
+    direct = Arima(y, order=(0, 0, 0), include_mean=False, method="ML", distribution=distribution)
+    search = myarima(
+        y, order=(0, 0, 0), constant=False, method="ML", distribution=distribution, ic="aicc",
+    )
+    if n <= npar + 1:
+        assert direct["aicc"] == math.inf
+        assert search["aicc"] == math.inf
+        assert search["ic"] == math.inf
+    else:
+        expected = search["aic"] + 2 * npar * (npar + 1) / (n - npar - 1)
+        assert direct["aicc"] == pytest.approx(expected)
+        assert search["aicc"] == pytest.approx(expected)
 
 
 @pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])

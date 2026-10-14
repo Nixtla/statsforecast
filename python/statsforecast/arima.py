@@ -1135,7 +1135,7 @@ def myarima(
                 fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
         if not math.isnan(fit["aic"]):
             fit["bic"] = fit["aic"] + npar * (math.log(nstar) - 2)
-            if nstar - npar - 1 != 0:
+            if nstar - npar - 1 > 0:
                 fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
             else:
                 fit["aicc"] = math.inf
@@ -1584,7 +1584,10 @@ def Arima(
     lastnonmiss = np.max(nonmiss_idxs) + 1
     n = np.sum(~missing[firstnonmiss:lastnonmiss])
     nstar = n - tmp["arma"][5] - tmp["arma"][6] * tmp["arma"][4]
-    tmp["aicc"] = tmp["aic"] + 2 * npar * (nstar / (nstar - npar - 1) - 1)
+    if nstar > npar + 1:
+        tmp["aicc"] = tmp["aic"] + 2 * npar * (nstar / (nstar - npar - 1) - 1)
+    else:
+        tmp["aicc"] = math.inf
     tmp["bic"] = tmp["aic"] + npar * (math.log(nstar) - 2)
     tmp["xreg"] = xreg
     tmp["lambda"] = blambda
@@ -1701,8 +1704,12 @@ def forecast_arima(
         else:
             dist = model.get("distribution", Distribution.NORMAL)
             quantiles = _quantiles(level, distribution=dist, dist_params=error_params_from_model(model))
+            lower_quantiles = (
+                _quantiles(-np.asarray(level), distribution=dist, dist_params=error_params_from_model(model))
+                if dist == Distribution.SKEW_NORMAL else -quantiles
+            )
             lower = pd.DataFrame(
-                pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
+                pred.reshape(-1, 1) + lower_quantiles * se.reshape(-1, 1),
                 columns=[f"{l}%" for l in level],
             )
             upper = pd.DataFrame(
