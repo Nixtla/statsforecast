@@ -1,4 +1,5 @@
 import math
+import pickle
 import warnings
 
 import numpy as np
@@ -31,6 +32,7 @@ from statsforecast.arima import (
     forecast_arima,
     forward_arima,
     getQ0,
+    getQ0bis,
     kalman_forecast,
     make_arima,
     mstl,
@@ -107,6 +109,91 @@ def test_getQ0():
     )  # fmt: skip
     x = np.arange(1, 11)
     np.testing.assert_allclose(expected_getQ0, getQ0(x, x))
+
+
+# expected values from R 4.6.1: .Call(stats:::C_getQ0bis, phi, theta, 0)
+_GETQ0BIS_R_CASES = [
+    (
+        [],
+        [0.5, 0.3],
+        [
+            [1.34, 0.65, 0.3],
+            [0.65, 0.34, 0.15],
+            [0.3, 0.15, 0.09],
+        ],
+    ),
+    (
+        [0.5, -0.2],
+        [0.4],
+        [
+            [1.882352941, 0.1764705882],
+            [0.1764705882, 0.2352941176],
+        ],
+    ),
+    (
+        [0.2],
+        [0.3, 0.2, -0.1, 0.4],
+        [
+            [1.501666667, 0.354, 0.27, 0.1, 0.4],
+            [0.354, 0.3, 0.0, 0.05, 0.12],
+            [0.27, 0.0, 0.21, -0.06, 0.08],
+            [0.1, 0.05, -0.06, 0.17, -0.04],
+            [0.4, 0.12, 0.08, -0.04, 0.16],
+        ],
+    ),
+    (
+        [0.0, 0.0, 0.0, 0.999],
+        [0.4, 0.0, 0.0, 0.5],
+        [
+            [1205.102551, 300.050025, 0.0, 299.949975, 0.5],
+            [300.050025, 1204.102551, 299.650025, 0.0, 0.2],
+            [0.0, 299.650025, 1203.942551, 299.650025, 0.0],
+            [299.949975, 0.0, 299.650025, 1203.942551, 0.0],
+            [0.5, 0.2, 0.0, 0.0, 0.25],
+        ],
+    ),
+    (
+        [0.9999],
+        [0.3],
+        [
+            [8450.122506, 0.3],
+            [0.3, 0.09],
+        ],
+    ),
+    (
+        [0.99999, -0.5, 0.3],
+        [0.2, 0.1],
+        [
+            [4.148452061, -0.6564004042, 1.147603052],
+            [-0.6564004042, 0.3128706491, -0.2579868937],
+            [1.147603052, -0.2579868937, 0.3833606855],
+        ],
+    ),
+]
+
+
+@pytest.mark.parametrize("phi,theta,expected", _GETQ0BIS_R_CASES)
+def test_getQ0bis_matches_r(phi, theta, expected):
+    phi = np.array(phi, dtype=np.float64)
+    r = max(len(phi), len(theta) + 1)
+    theta = np.array(theta + [0.0] * (r - 1 - len(theta)))
+    np.testing.assert_allclose(getQ0bis(phi, theta), expected, rtol=1e-9, atol=1e-12)
+    np.testing.assert_allclose(getQ0(phi, theta), expected, rtol=1e-9, atol=1e-12)
+
+
+@pytest.mark.parametrize("phi", [[1.0], [np.nan]])
+def test_getQ0bis_singular_returns_nan(phi):
+    assert np.isnan(getQ0bis(np.array(phi), np.array([0.3]))).all()
+
+
+def test_make_arima_uses_rossignol_for_large_state_spaces():
+    # (0,0,0)(1,1,7)[48] from issue #1034, Gardner would need ~13GB here
+    phi = np.zeros(48)
+    phi[-1] = 0.6
+    theta = np.zeros(336)
+    theta[47::48] = 0.1
+    mod = make_arima(phi, theta, np.array([]))
+    np.testing.assert_array_equal(mod["Pn"], getQ0bis(phi, theta))
 
 
 @pytest.fixture
@@ -216,12 +303,20 @@ def test_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    assert (
-        arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-            "coef"
-        ]
-        == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
-    )
+    if method == "CSS-ML":
+        # CSS lands on a non-stationary AR part that ML can't evaluate
+        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
+            with pytest.raises(ValueError, match="non-stationary AR part"):
+                arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
+    else:
+        assert (
+            arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+                "coef"
+            ]
+            == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
+                "coef"
+            ]
+        )
 
     assert (
         arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -344,12 +439,20 @@ def test_Arima_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    assert (
-        Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-            "coef"
-        ]
-        == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
-    )
+    if method == "CSS-ML":
+        # CSS lands on a non-stationary AR part that ML can't evaluate
+        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
+            with pytest.raises(ValueError, match="non-stationary AR part"):
+                Arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
+    else:
+        assert (
+            Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+                "coef"
+            ]
+            == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
+                "coef"
+            ]
+        )
 
     assert (
         Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -1418,3 +1521,177 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
         warnings.simplefilter("ignore")
         _resolve_blambda(np.where(positive == 2.0, 0.0, positive), "auto", 4)
     assert seen["lower"] == 0.0
+
+
+# expected values from R 4.6.1: arima(x, ..., SSinit = "Rossignol2011")
+@pytest.mark.parametrize(
+    "x,kwargs,coef,loglik,sigma2",
+    [
+        (
+            ap,
+            dict(order=(2, 1, 1), method="ML"),
+            [1.0906, -0.4890, -0.8439],
+            -685.16901,
+            844.6,
+        ),
+        (
+            np.log(ap),
+            dict(
+                order=(1, 1, 0),
+                seasonal={"order": (0, 1, 1), "period": 12},
+                method="CSS-ML",
+            ),
+            [-0.3395, -0.5619],
+            243.7448,
+            0.0013674,
+        ),
+    ],
+)
+def test_arima_rossignol_matches_r(x, kwargs, coef, loglik, sigma2):
+    fit = arima(x, SSinit="Rossignol2011", **kwargs)
+    assert fit["SSinit"] == "Rossignol2011"
+    np.testing.assert_allclose(list(fit["coef"].values()), coef, atol=2e-3)
+    np.testing.assert_allclose(fit["loglik"], loglik, rtol=1e-7)
+    np.testing.assert_allclose(fit["sigma2"], sigma2, rtol=1e-3)
+
+
+def test_arima_large_state_space_matches_r_rossignol():
+    # r = 37, so the default Gardner1980 falls back to Rossignol2011. Expected
+    # values from R 4.6.1: arima(log(AirPassengers), c(1, 1, 0),
+    # list(order = c(1, 0, 0), period = 36), SSinit = "Rossignol2011")
+    fit = arima(
+        np.log(ap),
+        order=(1, 1, 0),
+        seasonal={"order": (1, 0, 0), "period": 36},
+        method="CSS-ML",
+    )
+    np.testing.assert_allclose(
+        list(fit["coef"].values()), [-0.15917, 0.90753], atol=1e-4
+    )
+    np.testing.assert_allclose(fit["loglik"], 202.219906, rtol=1e-8)
+
+
+def test_arima_invalid_ssinit_raises():
+    with pytest.raises(ValueError, match="SSinit"):
+        arima(ap, order=(1, 0, 0), SSinit="Rossignol")
+    with pytest.raises(ValueError, match="SSinit"):
+        auto_arima_f(ap, period=12, SSinit="Rossignol")
+    with pytest.raises(ValueError, match="SSinit"):
+        make_arima(np.array([0.5, 0.2]), np.array([]), np.array([]), SSinit="Rossignol")
+    factories = (
+        lambda: ARIMA(order=(1, 1, 1), SSinit="Rossignol"),
+        lambda: AutoRegressive(lags=2, SSinit="Rossignol"),
+        lambda: AutoARIMAModel(SSinit="Rossignol"),
+        lambda: AutoARIMA(SSinit="Rossignol"),
+    )
+    for factory in factories:
+        with pytest.raises(ValueError, match="SSinit"):
+            factory()
+
+
+def test_ssinit_is_reused_on_refit():
+    kwargs = dict(
+        order=(1, 1, 1),
+        seasonal={"order": (1, 0, 0), "period": 12},
+        method="CSS-ML",
+    )
+    fit = Arima(ap[:120], SSinit="Rossignol2011", **kwargs)
+    refit = forward_arima(fit, ap)
+    assert refit["SSinit"] == "Rossignol2011"
+    expected = Arima(
+        ap, fixed=np.array(list(fit["coef"].values())), SSinit="Rossignol2011", **kwargs
+    )
+    np.testing.assert_allclose(refit["loglik"], expected["loglik"])
+
+    auto_fit = auto_arima_f(ap, period=12, SSinit="Rossignol2011")
+    assert auto_fit["SSinit"] == "Rossignol2011"
+    constant_fit = auto_arima_f(np.full(30, 3.0), SSinit="Rossignol2011")
+    assert constant_fit["SSinit"] == "Rossignol2011"
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        ARIMA(order=(1, 1, 1), season_length=12, seasonal_order=(1, 0, 0), SSinit="Rossignol2011"),
+        AutoARIMAModel(season_length=12, SSinit="Rossignol2011"),
+        AutoRegressive(lags=2, SSinit="Rossignol2011"),
+    ],
+)
+def test_models_forward_ssinit(model, monkeypatch):
+    seen = []
+    original = arima_module.arima
+
+    def spy(*args, **kwargs):
+        seen.append(kwargs.get("SSinit"))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(arima_module, "arima", spy)
+    model.fit(ap[:120])
+    model.forecast(ap[:120], h=12)
+    model.forward(ap, h=12)
+    assert seen
+    assert set(seen) == {"Rossignol2011"}
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        ARIMA(order=(1, 1, 1)),
+        AutoRegressive(lags=2),
+        AutoARIMAModel(season_length=12),
+        AutoARIMA(period=12),
+    ],
+)
+def test_models_pickled_before_ssinit_still_fit(model):
+    # simulate an object pickled by a release without SSinit
+    del model.SSinit
+    model = pickle.loads(pickle.dumps(model))
+    assert model.SSinit == "Gardner1980"
+    model.fit(ap)
+
+
+def test_legacy_autoarima_forwards_ssinit():
+    model = AutoARIMA(period=12, SSinit="Rossignol2011").fit(ap)
+    assert model.model_.model["SSinit"] == "Rossignol2011"
+
+
+def test_issue_1034():
+    # (0,0,0)(1,1,7)[48] has r = 337, Gardner1980 needed ~13GB of workspace
+    rng = np.random.default_rng(1)
+    t = np.arange(120)
+    y = 10 + 3 * np.sin(2 * np.pi * t / 48) + rng.normal(size=t.size)
+    fit = Arima(
+        y,
+        order=(0, 0, 0),
+        seasonal={"order": (1, 1, 7), "period": 48},
+        method="ML",
+        fixed=[np.nan] + [0.0] * 7,
+    )
+    assert fit["code"] == 0
+    assert np.isfinite(fit["loglik"])
+    assert np.isfinite(fit["coef"]["sar1"])
+    assert fit["SSinit"] == "Rossignol2011"
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        dict(order=(1, 0, 0), fixed=[1.0, np.nan]),
+        dict(order=(2, 0, 0), fixed=[0.0, -1.0, np.nan], SSinit="Gardner1980"),
+        dict(order=(2, 0, 0), fixed=[0.0, -1.0, np.nan], SSinit="Rossignol2011"),
+        dict(
+            order=(1, 0, 0),
+            seasonal={"order": (1, 0, 0), "period": 36},
+            fixed=[1.0, 0.5, np.nan],
+        ),
+    ],
+)
+def test_ml_unit_root_with_fixed_coefficients_raises(kwargs):
+    with pytest.raises(ValueError, match="non-stationary AR part"):
+        arima(ap, method="ML", **kwargs)
+
+
+def test_css_unit_root_with_fixed_coefficients_fits():
+    # CSS doesn't use the initial state covariance, R fits this too
+    fit = arima(ap, order=(1, 0, 0), method="CSS", fixed=[1.0, np.nan])
+    assert np.isfinite(fit["sigma2"])
