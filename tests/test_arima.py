@@ -50,6 +50,91 @@ from statsforecast.utils import AirPassengers as ap
 warnings.simplefilter("ignore")
 
 
+def _default_refit_inputs(branch):
+    rng = np.random.default_rng(817)
+    y = 5.0 + lfilter([1.0], [1.0, -0.45], rng.normal(scale=0.35, size=80))
+    new_y = 5.0 + lfilter([1.0], [1.0, -0.45], rng.normal(scale=0.35, size=80))
+    kwargs = {"order": (1, 0, 0)}
+    refit_kwargs = {}
+    if branch == "seasonal":
+        kwargs["seasonal"] = {"order": (1, 0, 0), "period": 4}
+    elif branch == "no-parameters":
+        kwargs.update(order=(0, 0, 0), include_mean=False)
+    elif branch == "exogenous":
+        xreg = np.sin(np.arange(80) / 5.0).reshape(-1, 1)
+        kwargs["xreg"] = xreg
+        refit_kwargs["xreg"] = xreg.copy()
+    elif branch == "boxcox":
+        kwargs["blambda"] = 0.0
+    return y, new_y, kwargs, refit_kwargs
+
+
+@pytest.mark.parametrize("distribution", ["laplace", "t", "skew-normal", "ged"])
+@pytest.mark.parametrize("branch", ["nonseasonal", "seasonal", "no-parameters", "exogenous", "boxcox"])
+def test_arima_reused_non_normal_model_has_supported_default(distribution, branch):
+    """Omitted methods must preserve the fitted non-normal innovation family."""
+    import copy
+
+    y, new_y, kwargs, refit_kwargs = _default_refit_inputs(branch)
+    fitted = Arima(y, distribution=distribution, method="CSS-ML", **kwargs)
+    before, before_y = copy.deepcopy(fitted), new_y.copy()
+    default = Arima(new_y, model=fitted, **refit_kwargs)
+    explicit = Arima(new_y, model=fitted, method="CSS-ML", **refit_kwargs)
+
+    np.testing.assert_equal(default, explicit)
+    np.testing.assert_equal(fitted, before)
+    np.testing.assert_array_equal(new_y, before_y)
+    assert default["distribution"] == distribution
+    np.testing.assert_equal(default["coef"], fitted["coef"])
+    assert default["sigma2"] == fitted["sigma2"]
+    for parameter in ("nu", "alpha_dist", "beta_dist"):
+        if parameter in fitted:
+            assert default[parameter] == fitted[parameter]
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+@pytest.mark.parametrize("branch", ["nonseasonal", "seasonal", "no-parameters"])
+def test_arima_normal_default_remains_css(legacy, branch):
+    """Normal and legacy model dictionaries retain the existing CSS default."""
+    y, new_y, kwargs, refit_kwargs = _default_refit_inputs(branch)
+    default_fitted = Arima(y, **kwargs)
+    explicit_fitted = Arima(y, method="CSS", **kwargs)
+    np.testing.assert_equal(default_fitted, explicit_fitted)
+    if legacy:
+        default_fitted.pop("distribution")
+    default = Arima(new_y, model=default_fitted, **refit_kwargs)
+    explicit = Arima(new_y, model=default_fitted, method="CSS", **refit_kwargs)
+    np.testing.assert_equal(default, explicit)
+
+
+@pytest.mark.parametrize("distribution", ["laplace", "t", "skew-normal", "ged"])
+def test_arima_reused_non_normal_model_still_rejects_explicit_css(distribution):
+    y, new_y, kwargs, _ = _default_refit_inputs("nonseasonal")
+    fitted = Arima(y, distribution=distribution, method="CSS-ML", **kwargs)
+    with pytest.raises(ValueError, match="only supported for method='ML' or 'CSS-ML'"):
+        Arima(new_y, model=fitted, method="CSS")
+
+
+@pytest.mark.parametrize("distribution", ["normal", "laplace", "t", "skew-normal", "ged"])
+def test_arima_explicit_none_retains_existing_ml_behavior(distribution):
+    """An explicit None remains distinct from an omitted method argument."""
+    y, new_y, kwargs, _ = _default_refit_inputs("nonseasonal")
+    none_fitted = Arima(y, distribution=distribution, method=None, **kwargs)
+    ml_fitted = Arima(y, distribution=distribution, method="ML", **kwargs)
+    np.testing.assert_equal(none_fitted, ml_fitted)
+    none_refitted = Arima(new_y, model=none_fitted, method=None)
+    ml_refitted = Arima(new_y, model=none_fitted, method="ML")
+    np.testing.assert_equal(none_refitted, ml_refitted)
+
+
+@pytest.mark.parametrize("distribution", ["laplace", "t", "skew-normal", "ged"])
+def test_arima_without_model_retains_existing_non_normal_default(distribution):
+    """The revised forwarding default does not change direct fit semantics."""
+    y, _, kwargs, _ = _default_refit_inputs("nonseasonal")
+    with pytest.raises(ValueError, match="only supported for method='ML' or 'CSS-ML'"):
+        Arima(y, distribution=distribution, **kwargs)
+
+
 def test_arima_gradtrans():
     x = np.array([0.1, 0.4, 1.0, 3.1], dtype=np.float32)
     arma = np.array([1, 0, 1])

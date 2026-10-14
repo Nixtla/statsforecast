@@ -1492,6 +1492,10 @@ def _inv_boxcox_mean(x, blambda, fvar=None, biasadj=False):
     return out
 
 
+# An explicit None already has ML semantics; only omitted arguments use this default.
+_ARIMA_DEFAULT_METHOD = object()
+
+
 def Arima(
     x,
     order=(0, 0, 0),
@@ -1502,11 +1506,17 @@ def Arima(
     include_constant=None,
     blambda=None,
     biasadj=None,
-    method="CSS",
+    method=_ARIMA_DEFAULT_METHOD,
     model=None,
     distribution="normal",
     **kwargs,
 ):
+    if method is _ARIMA_DEFAULT_METHOD:
+        method = (
+            ArimaMethod.CSS_ML
+            if model is not None and model.get("distribution", Distribution.NORMAL) != Distribution.NORMAL
+            else ArimaMethod.CSS
+        )
     x = x.copy()
     origx = x.copy()
     seas_order = seasonal["order"]
