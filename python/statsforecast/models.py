@@ -165,7 +165,9 @@ def _add_conformal_distribution_intervals(
     cuts.extend(1 - alpha / 200 for alpha in alphas)
     mean = fcst["mean"].reshape(1, -1)
     scores = np.vstack([mean - cs, mean + cs])
-    quantiles = _conformal_quantile(scores, cuts, axis=0)
+    # lower cuts come first, then upper ones, as in `out_cols` below
+    upper = [False] * len(level) + [True] * len(level)
+    quantiles = _conformal_quantile(scores, cuts, upper, axis=0)
     quantiles = quantiles.reshape(len(cuts), -1)
     lo_cols = [f"lo-{lv}" for lv in reversed(level)]
     hi_cols = [f"hi-{lv}" for lv in level]
@@ -187,7 +189,10 @@ def _add_conformal_error_intervals(
     margin around `fcst["mean"]`.
     Returns the modified `fcst` dict.
     """
-    quantiles = {lv: _conformal_quantile(cs, lv / 100, axis=0) for lv in level}
+    # the margin on absolute scores is an upper bound at every level, even below 50
+    quantiles = {
+        lv: _conformal_quantile(cs, lv / 100, upper=True, axis=0) for lv in level
+    }
     for lv in reversed(level):
         fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
     for lv in level:
@@ -4401,7 +4406,8 @@ class ConformalSeasonalPool(_TS):
     ) -> Dict[str, np.ndarray]:
         cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
         cuts += [1 - (1 - lv / 100) / 2 for lv in level]
-        quantiles = _conformal_quantile(samples, cuts, axis=0)
+        upper = [False] * len(level) + [True] * len(level)
+        quantiles = _conformal_quantile(samples, cuts, upper, axis=0)
         lo_cols = [f"lo-{lv}" for lv in reversed(level)]
         hi_cols = [f"hi-{lv}" for lv in level]
         return {col: quantiles[i] for i, col in enumerate(lo_cols + hi_cols)}
@@ -4500,8 +4506,8 @@ class ConformalSeasonalPool(_TS):
                 lo_q = (1 - lv / 100) / 2
                 hi_q = 1 - lo_q
                 if R.size > 0:
-                    lo_offset = float(_conformal_quantile(R, lo_q))
-                    hi_offset = float(_conformal_quantile(R, hi_q))
+                    lo_offset = float(_conformal_quantile(R, lo_q, upper=False))
+                    hi_offset = float(_conformal_quantile(R, hi_q, upper=True))
                 else:
                     lo_offset = hi_offset = np.nan
                 res[f"fitted-lo-{lv}"] = fitted + lo_offset

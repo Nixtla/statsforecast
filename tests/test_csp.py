@@ -216,10 +216,10 @@ def test_predict_in_sample_empty_R_returns_nan_intervals():
 
 def test_csp_uses_shared_conformal_ranks():
     # alpha=0.05, n=100: floor(101*0.025) = 2 and ceil(101*0.975) = 99
-    assert _conformal_rank(100, 0.025) == 2
-    assert _conformal_rank(100, 0.975) == 99
+    assert _conformal_rank(100, 0.025, upper=False) == 2
+    assert _conformal_rank(100, 0.975, upper=True) == 99
     # alpha=0.10, n=100: floor(101*0.05) = 5
-    assert _conformal_rank(100, 0.05) == 5
+    assert _conformal_rank(100, 0.05, upper=False) == 5
 
 
 def test_intervals_use_orientation_correction():
@@ -251,7 +251,7 @@ def test_predict_in_sample_uses_orientation_correction():
     n_r = R.size  # 30
     # level=95: lo_q=0.025, floor(31*0.025) = 0 is clipped to rank 1, the
     # smallest residual; the plain 0.025 quantile would interpolate above it
-    assert _conformal_rank(n_r, 0.025) == 1
+    assert _conformal_rank(n_r, 0.025, upper=False) == 1
     assert np.quantile(R, 0.025) > R.min(), "plain quantile must differ for this test to be meaningful"
     result = model.predict_in_sample(level=[95])
     fitted = model.model_["fitted"]

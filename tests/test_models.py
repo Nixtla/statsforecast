@@ -192,6 +192,19 @@ def test_conformal_intervals_finite_sample_rank(method):
         np.testing.assert_allclose(fcst[f"lo-{lv}"], -cs_sorted[rank - 1])
 
 
+@pytest.mark.parametrize("method", ["conformal_error", "conformal_distribution"])
+def test_conformal_intervals_levels_below_50(method):
+    # Below 50% the margin is still an upper bound, so the rank rounds up:
+    # ceil(11 * 0.3) = 4, ceil(11 * 0.4) = 5 and ceil(11 * 0.49) = 6.
+    conf_intervals = ConformalIntervals(h=12, n_windows=10, method=method)
+    zero_model = ZeroModel(conf_intervals)
+    fcst = zero_model.forecast(ap, h=12, level=[30, 40, 49])
+    cs_sorted = np.sort(zero_model._conformity_scores(ap), axis=0)
+    for lv, rank in [(30, 4), (40, 5), (49, 6)]:
+        np.testing.assert_allclose(fcst[f"hi-{lv}"], cs_sorted[rank - 1])
+        np.testing.assert_allclose(fcst[f"lo-{lv}"], -cs_sorted[rank - 1])
+
+
 def assert_class(
     cls_,
     x,
