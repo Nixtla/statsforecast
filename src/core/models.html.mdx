@@ -32,7 +32,7 @@ StatsForecast offers a wide variety of statistical forecasting models grouped in
 #### `AutoARIMA`
 
 ```python
-AutoARIMA(d=None, D=None, max_p=5, max_q=5, max_P=2, max_Q=2, max_order=5, max_d=2, max_D=1, start_p=2, start_q=2, start_P=1, start_Q=1, stationary=False, seasonal=True, ic='aicc', stepwise=True, nmodels=94, trace=False, approximation=False, method=None, truncate=None, test='kpss', test_kwargs=None, seasonal_test='seas', seasonal_test_kwargs=None, allowdrift=True, allowmean=True, blambda=None, biasadj=False, season_length=1, distribution='normal', alias='AutoARIMA', prediction_intervals=None)
+AutoARIMA(d=None, D=None, max_p=5, max_q=5, max_P=2, max_Q=2, max_order=5, max_d=2, max_D=1, start_p=2, start_q=2, start_P=1, start_Q=1, stationary=False, seasonal=True, ic='aicc', stepwise=True, nmodels=94, trace=False, approximation=False, method=None, truncate=None, test='kpss', test_kwargs=None, seasonal_test='seas', seasonal_test_kwargs=None, allowdrift=True, allowmean=True, blambda=None, biasadj=False, season_length=1, distribution='normal', SSinit='Gardner1980', alias='AutoARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -77,6 +77,7 @@ Name | Type | Description | Default
 `blambda` | <code>Optional\[Union[float, str]\], default=None</code> | Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None. | <code>None</code>
 `biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
 `season_length` | <code>int, default=1</code> | Number of observations per unit of time. Ex: 24 Hourly data. | <code>1</code>
+`SSinit` | <code>str, default="Gardner1980"</code> | Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive. | <code>'Gardner1980'</code>
 `alias` | <code>str, default="AutoARIMA"</code> | Custom name of the model. | <code>'AutoARIMA'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
 
@@ -850,7 +851,7 @@ Name | Type | Description
 #### `ARIMA`
 
 ```python
-ARIMA(order=(0, 0, 0), season_length=1, seasonal_order=(0, 0, 0), include_mean=True, include_drift=False, include_constant=None, blambda=None, biasadj=False, method='CSS-ML', fixed=None, distribution='normal', alias='ARIMA', prediction_intervals=None)
+ARIMA(order=(0, 0, 0), season_length=1, seasonal_order=(0, 0, 0), include_mean=True, include_drift=False, include_constant=None, blambda=None, biasadj=False, method='CSS-ML', fixed=None, distribution='normal', SSinit='Gardner1980', alias='ARIMA', prediction_intervals=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -880,6 +881,7 @@ Name | Type | Description | Default
 `biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
 `method` | <code>str, default='CSS-ML'</code> | Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. | <code>'CSS-ML'</code>
 `fixed` | <code>dict, optional, default=None</code> | Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys. | <code>None</code>
+`SSinit` | <code>str, default="Gardner1980"</code> | Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive. | <code>'Gardner1980'</code>
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'ARIMA'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
 
@@ -981,7 +983,7 @@ Name | Type | Description
 #### `AutoRegressive`
 
 ```python
-AutoRegressive(lags, include_mean=True, include_drift=False, blambda=None, biasadj=False, method='CSS-ML', fixed=None, alias='AutoRegressive', prediction_intervals=None)
+AutoRegressive(lags, include_mean=True, include_drift=False, blambda=None, biasadj=False, method='CSS-ML', fixed=None, SSinit='Gardner1980', alias='AutoRegressive', prediction_intervals=None)
 ```
 
 Bases: <code>[ARIMA](#statsforecast.models.ARIMA)</code>
@@ -999,6 +1001,7 @@ Name | Type | Description | Default
 `biasadj` | <code>bool, default=False</code> | Use adjusted back-transformed mean Box-Cox. | <code>False</code>
 `method` | <code>str, default='CSS-ML'</code> | Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood. | <code>'CSS-ML'</code>
 `fixed` | <code>dict, optional, default=None</code> | Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys. | <code>None</code>
+`SSinit` | <code>str, default="Gardner1980"</code> | Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive. | <code>'Gardner1980'</code>
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'AutoRegressive'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
 
