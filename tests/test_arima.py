@@ -1435,3 +1435,21 @@ def test_autoregressive_sparse_lags_stays_stationary(seed):
     np.testing.assert_allclose(
         [model["coef"]["ar1"], model["coef"]["ar24"]], [0.5, 0.4], atol=0.15
     )
+
+
+def test_css_ml_ignores_init_at_fixed_positions():
+    # init's value for a fixed coefficient isn't used, so it can't make the
+    # fit fail when the CSS estimate is non-stationary
+    y = 1.05 ** np.arange(100) + np.random.default_rng(0).normal(size=100)
+    fits = [
+        arima(
+            y,
+            order=(2, 0, 0),
+            fixed=np.array([np.nan, 0.0, np.nan]),
+            transform_pars=False,
+            method="CSS-ML",
+            init=np.array([0.1, ar2, np.nan]),
+        )
+        for ar2 in [0.0, 1.5]
+    ]
+    assert fits[0]["loglik"] == fits[1]["loglik"]

@@ -740,10 +740,9 @@ def arima(
                     options=optim_control,
                 )
                 # status 1 is "maximum number of iterations exceeded"; 0 is
-                # success and 2 precision loss. The exact likelihood is
-                # undefined outside the stationary region, so without
-                # transform_pars a non-stationary CSS estimate only starts ML
-                # when init isn't stationary either.
+                # success and 2 precision loss. Without transform_pars, only
+                # start ML from a non-stationary CSS estimate if init isn't
+                # stationary either.
                 converged = res.status != 1
                 css_coef = coef.copy()
                 css_coef[mask] = res.x
@@ -757,7 +756,7 @@ def arima(
                     )
                 ):
                     init[mask] = res.x
-                else:
+                elif transform_pars or not converged:
                     stationary_ar_checks(arma, init)
                 ncond = 0
         if transform_pars:
