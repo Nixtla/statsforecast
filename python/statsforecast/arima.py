@@ -60,6 +60,15 @@ def ARIMA_invtrans(x, arma):
     return y
 
 
+def _ar_stationary(phi):
+    # step-down check: stationary iff every partial autocorrelation is in (-1, 1)
+    if not len(phi):
+        return True
+    pacf = np.empty_like(phi)
+    _arima.invpartrans(len(phi), phi, pacf)
+    return np.isfinite(pacf).all()
+
+
 def getQ0(phi, theta):
     p = len(phi)
     q = len(theta)
@@ -244,7 +253,7 @@ def arima(
         p = len(phi)
         q = len(theta)
         r = max(p, q + 1)
-        if stationary_ml and not arCheck(phi):
+        if stationary_ml and not _ar_stationary(phi):
             return None
 
         if cache.get("mod") is not mod:
@@ -749,7 +758,7 @@ def arima(
                 ):
                     init[mask] = res.x
                 else:
-                    stationary_ar_checks(arma, init_coef)
+                    stationary_ar_checks(arma, init)
                 ncond = 0
         if transform_pars:
             init = ARIMA_invtrans(init, arma)
