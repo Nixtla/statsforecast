@@ -770,9 +770,8 @@ def arima(
                 init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
         if not transform_pars and not no_optim:
-            ml_coef = coef.copy()
-            ml_coef[mask] = init[mask]
-            stationary_ml = ar_stationarity_error(arma, ml_coef) is None
+            ml_phi = arima_transpar(np.where(mask, init, coef), arma, False)[0]
+            stationary_ml = _ar_stationary(ml_phi)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit)
         ml_args = (x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma)
         # objective actually optimized, plus the tail appended to the arma params
