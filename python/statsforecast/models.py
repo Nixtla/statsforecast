@@ -87,6 +87,7 @@ from statsforecast.utils import (
     _VALID_DISTRIBUTIONS,
     _calculate_intervals,
     _calculate_sigma,
+    _conformal_quantile,
     _ensure_float,
     _naive,
     _quantiles,
@@ -149,20 +150,6 @@ def _add_arima_fitted_pi(res, model, level):
     }
 
 
-def _conformal_rank(n: int, lv: Union[int, float]) -> int:
-    r"""
-    Rank of the finite-sample conformal quantile among `n` conformity scores.
-
-    Split conformal prediction takes the `ceil((n + 1) * lv / 100)`-th smallest
-    score, which covers at least `lv` percent of exchangeable errors; the plain
-    `lv / 100` quantile of the scores under-covers, badly so with few windows.
-    When that rank exceeds `n` the largest score is used, which covers
-    `n / (n + 1)`.
-    """
-    # rounding guards against `(n + 1) * lv / 100` landing just above an integer
-    return min(int(np.ceil(round((n + 1) * lv / 100, 8))), n)
-
-
 def _add_conformal_distribution_intervals(
     fcst: Dict,
     cs: np.ndarray,
@@ -173,21 +160,12 @@ def _add_conformal_distribution_intervals(
     `level` should be already sorted. This strategy creates forecasts paths
     based on errors and calculate quantiles using those paths.
     """
-    # `scores` stacks `mean - cs` and `mean + cs`, so with `n` windows its sorted
-    # upper half is `mean + cs` sorted. The cuts place the bounds at
-    # `mean -/+ cs_(k)`, the k-th smallest score of `_conformal_rank`, instead of
-    # the `lv` quantile of the pooled 2n values, which under-covers.
-    n = cs.shape[0]
-    ranks = [_conformal_rank(n, lv) for lv in level]
-    cuts = [(n - k) / (2 * n - 1) for k in reversed(ranks)]
-    cuts.extend((n + k - 1) / (2 * n - 1) for k in ranks)
+    alphas = [100 - lv for lv in level]
+    cuts = [alpha / 200 for alpha in reversed(alphas)]
+    cuts.extend(1 - alpha / 200 for alpha in alphas)
     mean = fcst["mean"].reshape(1, -1)
     scores = np.vstack([mean - cs, mean + cs])
-    quantiles = np.quantile(
-        scores,
-        cuts,
-        axis=0,
-    )
+    quantiles = _conformal_quantile(scores, cuts, axis=0)
     quantiles = quantiles.reshape(len(cuts), -1)
     lo_cols = [f"lo-{lv}" for lv in reversed(level)]
     hi_cols = [f"hi-{lv}" for lv in level]
@@ -205,14 +183,11 @@ def _add_conformal_error_intervals(
     r"""
     Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
     `level` should be already sorted. Uses the finite-sample conformal quantile
-    of the absolute conformity scores (see `_conformal_rank`) as the error
+    of the absolute conformity scores (see `_conformal_quantile`) as the error
     margin around `fcst["mean"]`.
     Returns the modified `fcst` dict.
     """
-    n = cs.shape[0]
-    quantiles = {
-        lv: np.quantile(cs, _conformal_rank(n, lv) / n, axis=0) for lv in level
-    }
+    quantiles = {lv: _conformal_quantile(cs, lv / 100, axis=0) for lv in level}
     for lv in reversed(level):
         fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
     for lv in level:
@@ -4421,22 +4396,12 @@ class ConformalSeasonalPool(_TS):
             alias = "CSP-Adaptive" if variant == "adaptive" else "CSP-Fixed"
         self.alias = alias
 
-    @staticmethod
-    def _oriented_index(q: float, n: int) -> float:
-        if n <= 0:
-            return float(q)
-        if q < 0.5:
-            return max(0.0, float(np.floor((n + 1.0) * q)) / n)
-        return min(1.0, float(np.ceil((n + 1.0) * q)) / n)
-
     def _intervals_from_samples(
         self, samples: np.ndarray, level: Sequence[Union[int, float]]
     ) -> Dict[str, np.ndarray]:
         cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
         cuts += [1 - (1 - lv / 100) / 2 for lv in level]
-        n = samples.shape[0]
-        oriented = [self._oriented_index(c, n) for c in cuts]
-        quantiles = np.quantile(samples, oriented, axis=0)
+        quantiles = _conformal_quantile(samples, cuts, axis=0)
         lo_cols = [f"lo-{lv}" for lv in reversed(level)]
         hi_cols = [f"hi-{lv}" for lv in level]
         return {col: quantiles[i] for i, col in enumerate(lo_cols + hi_cols)}
@@ -4535,9 +4500,8 @@ class ConformalSeasonalPool(_TS):
                 lo_q = (1 - lv / 100) / 2
                 hi_q = 1 - lo_q
                 if R.size > 0:
-                    n_r = R.size
-                    lo_offset = float(np.quantile(R, self._oriented_index(lo_q, n_r)))
-                    hi_offset = float(np.quantile(R, self._oriented_index(hi_q, n_r)))
+                    lo_offset = float(_conformal_quantile(R, lo_q))
+                    hi_offset = float(_conformal_quantile(R, hi_q))
                 else:
                     lo_offset = hi_offset = np.nan
                 res[f"fitted-lo-{lv}"] = fitted + lo_offset

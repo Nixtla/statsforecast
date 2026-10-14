@@ -328,6 +328,38 @@ def _calculate_sigma(residuals, n):
     return sigma
 
 
+def _conformal_rank(n: int, q: float) -> int:
+    r"""1-based rank of the finite-sample conformal quantile among `n` scores.
+
+    Split conformal prediction takes the `ceil((n + 1) * q)`-th smallest score
+    for an upper quantile (`q >= 0.5`) and the `floor((n + 1) * q)`-th for a
+    lower one, so each tail covers at least its nominal probability when the
+    scores are exchangeable. The rank is clipped to `[1, n]`: beyond that only
+    an infinite bound would reach the nominal level.
+    """
+    # rounding guards against `(n + 1) * q` landing just off an integer
+    pos = round((n + 1) * q, 8)
+    k = math.ceil(pos) if q >= 0.5 else math.floor(pos)
+    return min(max(k, 1), n)
+
+
+def _conformal_quantile(scores, q, axis: int = 0) -> np.ndarray:
+    r"""Finite-sample conformal quantile(s) of `scores` along `axis`.
+
+    Returns the exact order statistic of `_conformal_rank` rather than an
+    interpolated quantile: linear interpolation lands between two scores and
+    under-covers the lower tail. Like `np.quantile`, a sequence of levels `q`
+    adds a leading axis to the result.
+    """
+    scores = np.asarray(scores)
+    n = scores.shape[axis]
+    if n == 0:
+        raise ValueError("Cannot compute a conformal quantile of zero scores")
+    ranks = [_conformal_rank(n, float(qi)) - 1 for qi in np.atleast_1d(q)]
+    out = np.moveaxis(np.take(np.sort(scores, axis=axis), ranks, axis=axis), axis, 0)
+    return out[0] if np.ndim(q) == 0 else out
+
+
 class ConformalIntervals:
     """Class for storing conformal intervals metadata information.
 
