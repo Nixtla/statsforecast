@@ -1027,7 +1027,20 @@ def test_distribution_forward_arima(distribution, order, seasonal):
     assert refit["distribution"] == distribution
     key = _DIST_PARAM_KEYS[distribution]
     if key is not None:
-        assert refit[key] == fit[key]
+        assert refit[key] == pytest.approx(fit[key])
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+def test_distribution_forward_arima_keeps_params(distribution, monkeypatch):
+    fit = Arima(ap, order=(1, 1, 1), method="ML", distribution=distribution)
+
+    def fail(*args, **kwargs):
+        raise AssertionError("forward_arima shouldn't re-estimate parameters")
+
+    monkeypatch.setattr("statsforecast.arima.minimize", fail)
+    refit = forward_arima(fit, ap, method="ML")
+    assert refit["sigma2"] == fit["sigma2"]
+    assert refit["loglik"] == pytest.approx(fit["loglik"], rel=1e-10)
 
 
 @pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
