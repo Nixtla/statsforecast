@@ -1456,3 +1456,26 @@ def test_search_arima_fallback_keeps_seasonal_period(monkeypatch):
     # every model fitted, including those in the fallback search, uses the period
     assert set(seen_periods) == {season}
     assert fit["arma"][4] == season
+
+
+def test_auto_arima_nonstepwise_fallback_keeps_seasonal_period(monkeypatch):
+    # end-to-end: the period given to auto_arima_f(stepwise=False) must survive
+    # the fallback search that search_arima runs when the exact refit fails
+    original = arima_module.myarima
+    state = {"failed": False}
+
+    def myarima_refit_fails(*args, **kwargs):
+        fit = original(*args, **kwargs)
+        if kwargs.get("approximation") is False and not state["failed"]:
+            state["failed"] = True
+            fit = {**fit, "ic": math.inf}
+        return fit
+
+    monkeypatch.setattr(arima_module, "myarima", myarima_refit_fails)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fit = auto_arima_f(
+            ap, period=12, stepwise=False, approximation=True, max_order=3
+        )
+    assert state["failed"]
+    assert fit["arma"][4] == 12
