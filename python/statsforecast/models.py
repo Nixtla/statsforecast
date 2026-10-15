@@ -65,6 +65,7 @@ from scipy.special import inv_boxcox
 from statsforecast.arima import (
     Arima,
     _check_blambda,
+    _check_ssinit,
     _inv_boxcox as _arima_inv_boxcox,
     _transformed_fitted_arima,
     auto_arima_f,
@@ -86,6 +87,7 @@ from statsforecast.utils import (
     _VALID_DISTRIBUTIONS,
     _calculate_intervals,
     _calculate_sigma,
+    _conformal_quantile,
     _ensure_float,
     _naive,
     _quantiles,
@@ -163,11 +165,9 @@ def _add_conformal_distribution_intervals(
     cuts.extend(1 - alpha / 200 for alpha in alphas)
     mean = fcst["mean"].reshape(1, -1)
     scores = np.vstack([mean - cs, mean + cs])
-    quantiles = np.quantile(
-        scores,
-        cuts,
-        axis=0,
-    )
+    # lower cuts come first, then upper ones, as in `out_cols` below
+    upper = [False] * len(level) + [True] * len(level)
+    quantiles = _conformal_quantile(scores, cuts, upper, axis=0)
     quantiles = quantiles.reshape(len(cuts), -1)
     lo_cols = [f"lo-{lv}" for lv in reversed(level)]
     hi_cols = [f"hi-{lv}" for lv in level]
@@ -184,11 +184,15 @@ def _add_conformal_error_intervals(
 ) -> Dict:
     r"""
     Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
-    `level` should be already sorted. Uses the `lv / 100` quantile of the
-    absolute conformity scores as the error margin around `fcst["mean"]`.
+    `level` should be already sorted. Uses the finite-sample conformal quantile
+    of the absolute conformity scores (see `_conformal_quantile`) as the error
+    margin around `fcst["mean"]`.
     Returns the modified `fcst` dict.
     """
-    quantiles = {lv: np.quantile(cs, lv / 100, axis=0) for lv in level}
+    # the margin on absolute scores is an upper bound at every level, even below 50
+    quantiles = {
+        lv: _conformal_quantile(cs, lv / 100, upper=True, axis=0) for lv in level
+    }
     for lv in reversed(level):
         fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
     for lv in level:
@@ -322,6 +326,7 @@ class AutoARIMA(_TS):
         blambda (Optional[Union[float, str]], default=None): Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None.
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         season_length (int, default=1): Number of observations per unit of time. Ex: 24 Hourly data.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str, default="AutoARIMA"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
@@ -334,6 +339,8 @@ class AutoARIMA(_TS):
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
@@ -369,6 +376,7 @@ class AutoARIMA(_TS):
         biasadj: bool = False,
         season_length: int = 1,
         distribution: str = "normal",
+        SSinit: str = "Gardner1980",
         alias: str = "AutoARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -405,6 +413,8 @@ class AutoARIMA(_TS):
         self.biasadj = biasadj
         self.season_length = season_length
         self.distribution = distribution
+        _check_ssinit(SSinit)
+        self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -461,6 +471,7 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                SSinit=self.SSinit,
                 distribution=self.distribution,
             )
 
@@ -576,6 +587,7 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                SSinit=self.SSinit,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -718,6 +730,7 @@ class AutoARIMA(_TS):
                     blambda=self.blambda,
                     biasadj=self.biasadj,
                     period=self.season_length,
+                    SSinit=self.SSinit,
                 )
         else:
             if not hasattr(self, "model_"):
@@ -1972,11 +1985,14 @@ class ARIMA(_TS):
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
@@ -1991,6 +2007,7 @@ class ARIMA(_TS):
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
         distribution: str = "normal",
+        SSinit: str = "Gardner1980",
         alias: str = "ARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -2006,6 +2023,8 @@ class ARIMA(_TS):
         self.method = method
         self.fixed = fixed
         self.distribution = distribution
+        _check_ssinit(SSinit)
+        self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -2039,6 +2058,7 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                SSinit=self.SSinit,
                 distribution=self.distribution,
             )
         self._store_cs(y=y, X=X)
@@ -2131,6 +2151,7 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                SSinit=self.SSinit,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -2209,6 +2230,7 @@ class AutoRegressive(ARIMA):
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
     """
@@ -2224,6 +2246,7 @@ class AutoRegressive(ARIMA):
         biasadj: bool = False,
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
+        SSinit: str = "Gardner1980",
         alias: str = "AutoRegressive",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -2250,6 +2273,7 @@ class AutoRegressive(ARIMA):
             method=method,
             alias=alias,
             fixed=fixed,
+            SSinit=SSinit,
             prediction_intervals=prediction_intervals,
         )
 
@@ -4377,22 +4401,13 @@ class ConformalSeasonalPool(_TS):
             alias = "CSP-Adaptive" if variant == "adaptive" else "CSP-Fixed"
         self.alias = alias
 
-    @staticmethod
-    def _oriented_index(q: float, n: int) -> float:
-        if n <= 0:
-            return float(q)
-        if q < 0.5:
-            return max(0.0, float(np.floor((n + 1.0) * q)) / n)
-        return min(1.0, float(np.ceil((n + 1.0) * q)) / n)
-
     def _intervals_from_samples(
         self, samples: np.ndarray, level: Sequence[Union[int, float]]
     ) -> Dict[str, np.ndarray]:
         cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
         cuts += [1 - (1 - lv / 100) / 2 for lv in level]
-        n = samples.shape[0]
-        oriented = [self._oriented_index(c, n) for c in cuts]
-        quantiles = np.quantile(samples, oriented, axis=0)
+        upper = [False] * len(level) + [True] * len(level)
+        quantiles = _conformal_quantile(samples, cuts, upper, axis=0)
         lo_cols = [f"lo-{lv}" for lv in reversed(level)]
         hi_cols = [f"hi-{lv}" for lv in level]
         return {col: quantiles[i] for i, col in enumerate(lo_cols + hi_cols)}
@@ -4491,9 +4506,8 @@ class ConformalSeasonalPool(_TS):
                 lo_q = (1 - lv / 100) / 2
                 hi_q = 1 - lo_q
                 if R.size > 0:
-                    n_r = R.size
-                    lo_offset = float(np.quantile(R, self._oriented_index(lo_q, n_r)))
-                    hi_offset = float(np.quantile(R, self._oriented_index(hi_q, n_r)))
+                    lo_offset = float(_conformal_quantile(R, lo_q, upper=False))
+                    hi_offset = float(_conformal_quantile(R, hi_q, upper=True))
                 else:
                     lo_offset = hi_offset = np.nan
                 res[f"fitted-lo-{lv}"] = fitted + lo_offset

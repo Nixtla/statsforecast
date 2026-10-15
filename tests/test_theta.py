@@ -5,6 +5,7 @@ import pytest
 from statsforecast._lib import theta as _theta
 from statsforecast.theta import (
     auto_theta,
+    compute_pi_samples,
     forecast_theta,
     forward_theta,
     initparamtheta,
@@ -517,3 +518,37 @@ def test_theta_short_series_no_nan_intervals():
     assert not np.isnan(out["lo-95"]).any(), "NaN in lower prediction interval"
     assert not np.isnan(out["hi-95"]).any(), "NaN in upper prediction interval"
     assert not np.isnan(out["mean"]).any(), "NaN in point forecast"
+
+
+def test_theta_pi_stays_centered_for_static_models():
+    """The Theta prediction-interval simulation must stay centered on the analytic
+    point forecast.
+
+    For STM/OTM the drift terms ``A`` and ``B`` are held constant (matching the
+    ``update()`` reference in ``src/theta.cpp``); only DSTM/DOTM evolve them.
+    ``compute_pi_samples`` previously evolved them for every model type, which
+    miscentered the STM/OTM intervals with a bias that grew over the horizon.
+    """
+    rng = np.random.default_rng(0)
+    y = (
+        np.arange(1, 73) + 15 * np.sin(np.arange(72) / 6.0) + rng.normal(0, 1.5, 72)
+    ).astype(np.float64)
+    h = 24
+    for mtype in ["STM", "OTM", "DSTM", "DOTM"]:
+        res = auto_theta(y, m=12, model=mtype)
+        mean = forecast_theta(res, h, level=None)["mean"]
+        samples = compute_pi_samples(
+            n=res["n"],
+            h=h,
+            states=res["states"],
+            sigma=1.0,
+            alpha=res["par"]["alpha"],
+            theta=res["par"]["theta"],
+            mean_y=res["mean_y"],
+            n_samples=200_000,
+            modeltype=switch_theta(res["modeltype"]),
+        )
+        # With many samples the Monte Carlo error is ~1e-3, so a persistent gap
+        # above 0.05 indicates the simulation has drifted off the point forecast.
+        drift = float(np.abs(samples.mean(axis=1) - mean).max())
+        assert drift < 0.05, f"{mtype} PI drifted from the point forecast by {drift:.3f}"
