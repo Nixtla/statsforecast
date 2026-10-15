@@ -1341,6 +1341,7 @@ def arima2(x, model, xreg, method):
     sigma2 = model["sigma2"]
     # models fitted before SSinit was stored used Gardner1980
     SSinit = model.get("SSinit", "Gardner1980")
+    distribution = model.get("distribution", Distribution.NORMAL)
     if use_drift:
         n = len(model["x"])
         time = np.arange(0, (n + 1) / m, 1 / m)[:n].reshape(-1, 1)
@@ -1375,6 +1376,7 @@ def arima2(x, model, xreg, method):
             include_mean=use_intercept,
             method=method,
             SSinit=SSinit,
+            distribution=distribution,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1385,6 +1387,7 @@ def arima2(x, model, xreg, method):
             include_mean=use_intercept,
             method=method,
             SSinit=SSinit,
+            distribution=distribution,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1395,12 +1398,16 @@ def arima2(x, model, xreg, method):
             include_mean=False,
             method=method,
             SSinit=SSinit,
+            distribution=distribution,
         )
     n_coef = len(refit["coef"])
     refit["var_coef"] = np.zeros((n_coef, n_coef), dtype=np.float32)
     if use_xreg:
         refit["xreg"] = xreg
     refit["sigma2"] = sigma2
+    for key in ("nu", "alpha_dist", "beta_dist"):
+        if key in model:
+            refit[key] = model[key]
     if use_drift:
         refit["coef"] = change_drift_name(refit["coef"])
     return refit
@@ -2137,6 +2144,9 @@ def auto_arima_f(
 ):
     if approximation is None:
         approximation = len(x) > 150 or period > 12
+    if distribution != Distribution.NORMAL:
+        # the CSS approximation is only defined for normal innovations
+        approximation = False
     if x.ndim > 1:
         raise ValueError("auto_arima can only handle univariate time series")
     # myarima swallows ValueErrors, so validate before the search
@@ -2161,12 +2171,15 @@ def auto_arima_f(
     if is_constant(x):
         if np.isnan(x).all():
             raise ValueError("all data are missing")
+        const_method = ArimaMethod.CSS if distribution == Distribution.NORMAL else method
         if allowmean:
             fit = Arima(
                 x,
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
                 SSinit=SSinit,
+                method=const_method,
+                distribution=distribution,
                 fixed=np.array([np.mean(x)]),
             )
         else:
@@ -2175,6 +2188,8 @@ def auto_arima_f(
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
                 SSinit=SSinit,
+                method=const_method,
+                distribution=distribution,
                 include_mean=False,
             )
         fit["x"] = origx
@@ -2272,6 +2287,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx / m)]),
                     method=method,
+                    distribution=distribution,
                 )
             elif D > 0 and d > 0:
                 fit = Arima(
@@ -2280,6 +2296,7 @@ def auto_arima_f(
                     seasonal={"order": (0, D, 0), "period": m},
                     SSinit=SSinit,
                     method=method,
+                    distribution=distribution,
                 )
             elif d == 2:
                 fit = Arima(
@@ -2288,6 +2305,7 @@ def auto_arima_f(
                     seasonal={"order": (0, 0, 0), "period": m},
                     SSinit=SSinit,
                     method=method,
+                    distribution=distribution,
                 )
             elif d < 2:
                 fit = Arima(
@@ -2298,6 +2316,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx)]),
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 raise ValueError(
@@ -2312,6 +2331,7 @@ def auto_arima_f(
                     SSinit=SSinit,
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 fit = Arima(
@@ -2321,6 +2341,7 @@ def auto_arima_f(
                     SSinit=SSinit,
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
         fit["x"] = origx
         fit["lambda"] = blambda
@@ -2381,6 +2402,7 @@ def auto_arima_f(
             allow_mean=allowmean,
             period=m,
             SSinit=SSinit,
+            distribution=distribution,
         )
         bestfit["lambda"] = blambda
         bestfit["biasadj"] = biasadj
@@ -2768,7 +2790,8 @@ class AutoARIMA:
             The final model is still computed using
             maximum likelihood estimation.
             Approximation should be used for long time series
-            or a high seasonal period to avoid excessive computation times. Defaults to None.
+            or a high seasonal period to avoid excessive computation times.
+            Ignored when `distribution` isn't 'normal'. Defaults to None.
         method (str, optional): fitting method: maximum likelihood or minimize conditional
             sum-of-squares.
             The default (unless there are missing values)

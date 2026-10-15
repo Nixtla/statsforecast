@@ -314,7 +314,7 @@ class AutoARIMA(_TS):
         stepwise (bool, default=True): If True, will do stepwise selection (faster).
         nmodels (int, default=94): Number of models considered in stepwise search.
         trace (bool, default=False): If True, the searched ARIMA models is reported.
-        approximation (Optional[bool], default=False): If True, conditional sums-of-squares estimation, final MLE.
+        approximation (Optional[bool], default=False): If True, conditional sums-of-squares estimation, final MLE. Ignored when `distribution` isn't 'normal'.
         method (Optional[str], optional): Fitting method between maximum likelihood or sums-of-squares.
         truncate (Optional[bool], optional): Observations truncated series used in model selection.
         test (str, default="kpss"): Unit root test to use. See `ndiffs` for details.
@@ -588,6 +588,7 @@ class AutoARIMA(_TS):
                 biasadj=self.biasadj,
                 period=self.season_length,
                 SSinit=self.SSinit,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -731,6 +732,7 @@ class AutoARIMA(_TS):
                     biasadj=self.biasadj,
                     period=self.season_length,
                     SSinit=self.SSinit,
+                    distribution=self.distribution,
                 )
         else:
             if not hasattr(self, "model_"):
@@ -2152,6 +2154,7 @@ class ARIMA(_TS):
                 method=self.method,
                 fixed=self.fixed,
                 SSinit=self.SSinit,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}

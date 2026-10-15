@@ -1009,6 +1009,67 @@ def test_distribution_forecast_intervals(distribution, param_key):
     assert np.all(lower_95 < upper_95), "lower must be below upper"
 
 
+_DIST_PARAM_KEYS = {"t": "nu", "skew-normal": "alpha_dist", "ged": "beta_dist", "laplace": None}
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize(
+    "order,seasonal",
+    [
+        ((1, 1, 1), {"order": (0, 0, 0), "period": 1}),
+        ((0, 1, 1), {"order": (0, 1, 1), "period": 12}),
+        ((0, 1, 0), {"order": (0, 0, 0), "period": 1}),
+    ],
+)
+def test_distribution_forward_arima(distribution, order, seasonal):
+    fit = Arima(ap[:120], order=order, seasonal=seasonal, method="ML", distribution=distribution)
+    refit = forward_arima(fit, ap)
+    assert refit["distribution"] == distribution
+    key = _DIST_PARAM_KEYS[distribution]
+    if key is not None:
+        assert refit[key] == fit[key]
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize("approximation", [False, True])
+def test_distribution_autoarima_exhaustive(distribution, approximation):
+    rng = np.random.default_rng(9)
+    y = np.cumsum(rng.standard_normal(100))
+    fit = auto_arima_f(
+        y,
+        stepwise=False,
+        max_p=2,
+        max_q=2,
+        max_order=3,
+        approximation=approximation,
+        distribution=distribution,
+    )
+    assert fit["distribution"] == distribution
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize(
+    "y", [np.full(30, 3.0), np.arange(30.0)], ids=["constant", "linear"]
+)
+def test_distribution_autoarima_constant_series(distribution, y):
+    fit = auto_arima_f(y, distribution=distribution)
+    assert fit["distribution"] == distribution
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize(
+    "model_cls,kwargs",
+    [(ARIMA, {"order": (1, 1, 1)}), (AutoARIMAModel, {"max_p": 2, "max_q": 2})],
+    ids=["ARIMA", "AutoARIMA"],
+)
+def test_distribution_forecast_matches_fit_predict(distribution, model_cls, kwargs):
+    model = model_cls(**kwargs, distribution=distribution)
+    fcst = model.forecast(ap, h=12, level=[80])
+    pred = model.fit(ap).predict(h=12, level=[80])
+    for key in ("mean", "lo-80", "hi-80"):
+        np.testing.assert_allclose(fcst[key], pred[key])
+
+
 def test_issue_649(capsys):
     from statsforecast.models import AutoARIMA
 
