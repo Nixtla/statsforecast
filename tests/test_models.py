@@ -2110,6 +2110,12 @@ class TestGARCH:
         np.testing.assert_allclose((fcst["hi-95"] - fcst["mean"]) / sigma, z)
         np.testing.assert_allclose((fcst["mean"] - fcst["lo-95"]) / sigma, z)
 
+    def test_garch_intervals_centred_on_zero(self):
+        # GH 1280: the forecast mean of a zero-mean process is 0, not a noise draw
+        fcst = GARCH(2, 2).forecast(self.y * 10, h=12, level=[95])
+        np.testing.assert_array_equal(fcst["mean"], np.zeros(12))
+        np.testing.assert_allclose(fcst["hi-95"], -fcst["lo-95"])
+
 
 # h = 100
 # fcst = garch.forecast(y, h=h, level=[80, 95], fitted=True)
