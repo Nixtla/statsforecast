@@ -759,7 +759,7 @@ def etsmodel(
         if not np.isnan(fit_par[j]):
             gamma = fit_par[j]
         j += 1
-    if damped:
+    if damped and np.isnan(par_noopt["phi"]):
         if not np.isnan(fit_par[j]):
             phi = fit_par[j]
 
