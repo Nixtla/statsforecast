@@ -708,9 +708,8 @@ def arima(
     if init is not None:
         if len(init) != len(init0):
             raise ValueError(f"init should have length {len(init0)}")
-        nan_mask = np.isnan(init)
-        if nan_mask.any():
-            init[nan_mask] = init0[nan_mask]
+        # fixed coefficients don't use init, so it can't affect the fit there
+        init = np.where(np.isnan(init) | ~mask, init0, init)
         if method == ArimaMethod.ML:
             stationary_ar_checks(arma, init)
             if transform_pars:
@@ -781,13 +780,12 @@ def arima(
                 converged = res.status != 1
                 css_coef = coef.copy()
                 css_coef[mask] = res.x
-                init_coef = coef.copy()
-                init_coef[mask] = init[mask]
                 if converged and (
                     ar_stationarity_error(arma, css_coef) is None
                     or (
                         not transform_pars
-                        and ar_stationarity_error(arma, init_coef) is not None
+                        and ar_stationarity_error(arma, np.where(mask, init, coef))
+                        is not None
                     )
                 ):
                     init[mask] = res.x

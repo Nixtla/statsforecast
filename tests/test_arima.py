@@ -1524,22 +1524,32 @@ def test_autoregressive_sparse_lags_stays_stationary(seed):
     )
 
 
-def test_css_ml_ignores_init_at_fixed_positions():
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"method": "CSS-ML"},
+        {"method": "CSS-ML", "optim_control": {"maxiter": 1}},
+        {"method": "ML"},
+    ],
+)
+def test_arima_ignores_init_at_fixed_positions(kwargs):
     # init's value for a fixed coefficient isn't used, so it can't make the
     # fit fail when the CSS estimate is non-stationary
     y = 1.05 ** np.arange(100) + np.random.default_rng(0).normal(size=100)
+    inits = [np.array([0.1, ar2, np.nan]) for ar2 in [0.0, 1.5]]
     fits = [
         arima(
             y,
             order=(2, 0, 0),
             fixed=np.array([np.nan, 0.0, np.nan]),
             transform_pars=False,
-            method="CSS-ML",
-            init=np.array([0.1, ar2, np.nan]),
+            init=init,
+            **kwargs,
         )
-        for ar2 in [0.0, 1.5]
+        for init in inits
     ]
     assert fits[0]["loglik"] == fits[1]["loglik"]
+    np.testing.assert_array_equal(inits[1], [0.1, 1.5, np.nan])
 
 
 # expected values from R 4.6.1: arima(x, ..., SSinit = "Rossignol2011")
