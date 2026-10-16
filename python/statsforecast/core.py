@@ -40,6 +40,18 @@ logger = logging.getLogger(__name__)
 _controller = ThreadpoolController()
 
 
+def _vstack_forecasts(values, columns):
+    """Align worker results to the first worker's column order before stacking."""
+    first_columns = columns[0]
+    aligned = [
+        value
+        if cols == first_columns
+        else value[:, [cols.index(col) for col in first_columns]]
+        for value, cols in zip(values, columns)
+    ]
+    return np.vstack(aligned), first_columns
+
+
 class GroupedArray(BaseGroupedArray):
     def __init__(self, data: np.ndarray, indptr: np.ndarray):
         self.data = _ensure_float(data)
@@ -111,27 +123,28 @@ class GroupedArray(BaseGroupedArray):
             kwargs = {}
             if has_level:
                 kwargs["level"] = level
+            cols_m = None
             for i, _ in enumerate(self):
                 if X is not None:
                     X_ = X[i]
                 else:
                     X_ = None
                 res_i = fm[i, i_model].predict(h=h, X=X_, **kwargs)
-                cols_m = [
-                    key
-                    for key in res_i.keys()
-                    if any(key.startswith(m) for m in matches)
-                ]
+                if cols_m is None:
+                    cols_m = [
+                        key
+                        for key in res_i.keys()
+                        if any(key.startswith(m) for m in matches)
+                    ]
                 fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
-                model_name = repr(fm[i, i_model])
-                cols_m = [
-                    f"{model_name}" if col == "mean" else f"{model_name}-{col}"
-                    for col in cols_m
-                ]
                 if fcsts_i.ndim == 1:
                     fcsts_i = fcsts_i[:, None]
                 fcsts[i * h : (i + 1) * h, cuts[i_model] : cuts[i_model + 1]] = fcsts_i
-            cols += cols_m
+            model_name = repr(fm[0, i_model])
+            cols += [
+                f"{model_name}" if col == "mean" else f"{model_name}-{col}"
+                for col in cols_m
+            ]
         return fcsts, cols
 
     def fit_predict(self, models, h, X=None, level=tuple()):
@@ -157,6 +170,8 @@ class GroupedArray(BaseGroupedArray):
         )
         matches = ["mean", "lo", "hi"]
         matches_fitted = ["fitted", "fitted-lo", "fitted-hi"]
+        model_cols = {}
+        model_cols_fitted = {}
         if fitted:
             # for the moment we dont return levels for fitted values in
             # forecast mode
@@ -203,11 +218,13 @@ class GroupedArray(BaseGroupedArray):
                     else:
                         raise error
                 times[repr(model)] += time.perf_counter() - start
-                cols_m = [
-                    key
-                    for key in res_i.keys()
-                    if any(key.startswith(m) for m in matches)
-                ]
+                if i_model not in model_cols:
+                    model_cols[i_model] = [
+                        key
+                        for key in res_i.keys()
+                        if any(key.startswith(m) for m in matches)
+                    ]
+                cols_m = model_cols[i_model]
                 fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
                 cols_m = [
                     f"{repr(model)}" if col == "mean" else f"{repr(model)}-{col}"
@@ -218,11 +235,13 @@ class GroupedArray(BaseGroupedArray):
                 fcsts[i * h : (i + 1) * h, cuts[i_model] : cuts[i_model + 1]] = fcsts_i
                 cols += cols_m
                 if fitted:
-                    cols_m_fitted = [
-                        key
-                        for key in res_i.keys()
-                        if any(key.startswith(m) for m in matches_fitted)
-                    ]
+                    if i_model not in model_cols_fitted:
+                        model_cols_fitted[i_model] = [
+                            key
+                            for key in res_i.keys()
+                            if any(key.startswith(m) for m in matches_fitted)
+                        ]
+                    cols_m_fitted = model_cols_fitted[i_model]
                     fitted_i = np.vstack([res_i[key] for key in cols_m_fitted]).T
                     cols_m_fitted = [
                         (
@@ -279,6 +298,7 @@ class GroupedArray(BaseGroupedArray):
             last_fitted_idxs = np.full_like(fitted_idxs, False, dtype=bool)
         matches = ["mean", "lo", "hi"]
         steps = list(range(-test_size, -h + 1, step_size))
+        model_cols = {}
         for i_ts, grp in enumerate(self):
             iterable = tqdm(
                 enumerate(steps, start=0),
@@ -352,11 +372,13 @@ class GroupedArray(BaseGroupedArray):
                             fitted=fitted,
                             **kwargs,
                         )
-                    cols_m = [
-                        key
-                        for key in res_i.keys()
-                        if any(key.startswith(m) for m in matches)
-                    ]
+                    if i_model not in model_cols:
+                        model_cols[i_model] = [
+                            key
+                            for key in res_i.keys()
+                            if any(key.startswith(m) for m in matches)
+                        ]
+                    cols_m = model_cols[i_model]
                     fcsts_i = np.vstack([res_i[key] for key in cols_m]).T
                     cols_m = [
                         f"{repr(model)}" if col == "mean" else f"{repr(model)}-{col}"
@@ -1350,8 +1372,7 @@ class _StatsForecast:
                 futures.append(future)
             out = [f.get() for f in futures]
             fcsts, cols = list(zip(*out))
-            fcsts = np.vstack(fcsts)
-            cols = cols[0]
+            fcsts, cols = _vstack_forecasts(fcsts, cols)
         return fcsts, cols
 
     def _fit_predict_parallel(self, h, X, level):
@@ -1370,8 +1391,7 @@ class _StatsForecast:
             out = [f.get() for f in futures]
             fm, fcsts, cols = list(zip(*out))
             fm = np.vstack(fm)
-            fcsts = np.vstack(fcsts)
-            cols = cols[0]
+            fcsts, cols = _vstack_forecasts(fcsts, cols)
         return fm, fcsts, cols
 
     def _forecast_parallel(self, h, fitted, X, level, target_col):
@@ -1402,18 +1422,25 @@ class _StatsForecast:
             for future in iterable:
                 i = future2pos[future]
                 results[i] = future.result()
+        fcsts, cols = _vstack_forecasts(
+            [r["forecasts"] for r in results], [r["cols"] for r in results]
+        )
         result = {
-            "cols": results[0]["cols"],
-            "forecasts": np.vstack([r["forecasts"] for r in results]),
+            "cols": cols,
+            "forecasts": fcsts,
             "times": {
                 m: sum(r["times"][m] for r in results)
                 for m in [repr(m) for m in self.models]
             },
         }
         if fitted:
+            fitted_values, fitted_cols = _vstack_forecasts(
+                [r["fitted"]["values"] for r in results],
+                [r["fitted"]["cols"] for r in results],
+            )
             result["fitted"] = {
-                "cols": results[0]["fitted"]["cols"],
-                "values": np.vstack([r["fitted"]["values"] for r in results]),
+                "cols": fitted_cols,
+                "values": fitted_values,
             }
         return result
 
@@ -1447,9 +1474,9 @@ class _StatsForecast:
                 )
                 futures.append(future)
             out = [f.get() for f in futures]
-            fcsts = [d["forecasts"] for d in out]
-            fcsts = np.vstack(fcsts)
-            cols = out[0]["cols"]
+            fcsts, cols = _vstack_forecasts(
+                [d["forecasts"] for d in out], [d["cols"] for d in out]
+            )
             result["forecasts"] = fcsts
             result["cols"] = cols
             if fitted:
