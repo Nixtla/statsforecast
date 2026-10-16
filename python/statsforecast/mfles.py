@@ -387,10 +387,13 @@ class MFLES:
             self.trend = np.append(y[-1], y[-1])
             self.seasonality = np.zeros(len(y))
             self.trend_penalty = False
-            self.mean = y[-1]
-            self.std = 0
             self.exo_model = [Zeros()]
-            return np.tile(y[-1], len(y))
+            # Keep the transform parameters used by predict, and return fitted
+            # values on the same original scale as the non-fallback path.
+            fitted = np.tile(y[-1], len(y))
+            if multiplicative:
+                return np.exp(fitted)
+            return self.mean + (fitted * self.std)
         og_y = y
         self.og_y = og_y
         y = y.copy()
