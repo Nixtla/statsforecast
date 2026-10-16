@@ -303,20 +303,12 @@ def test_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    if method == "CSS-ML":
-        # CSS lands on a non-stationary AR part that ML can't evaluate
-        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
-            with pytest.raises(ValueError, match="non-stationary AR part"):
-                arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
-    else:
-        assert (
-            arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-                "coef"
-            ]
-            == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
-                "coef"
-            ]
-        )
+    assert (
+        arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+            "coef"
+        ]
+        == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
+    )
 
     assert (
         arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -439,20 +431,12 @@ def test_Arima_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    if method == "CSS-ML":
-        # CSS lands on a non-stationary AR part that ML can't evaluate
-        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
-            with pytest.raises(ValueError, match="non-stationary AR part"):
-                Arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
-    else:
-        assert (
-            Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-                "coef"
-            ]
-            == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
-                "coef"
-            ]
-        )
+    assert (
+        Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+            "coef"
+        ]
+        == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
+    )
 
     assert (
         Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -1523,18 +1507,15 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
     assert seen["lower"] == 0.0
 
 
-def test_search_arima_fallback_keeps_seasonal_period(monkeypatch):
-    # when the non-approximate refit of the best model has infinite ic,
-    # search_arima falls back to a full search that must keep the seasonal period
-    rng = np.random.default_rng(0)
-    season = 12
-    x = np.sin(np.arange(120) * 2 * np.pi / season) + rng.normal(size=120) * 0.3
+@pytest.fixture
+def exact_refit_fails(monkeypatch):
+    # makes the first non-approximate refit return an infinite ic, which forces
+    # search_arima into its fallback search, and records every seasonal period fitted
     original = arima_module.myarima
-    state = {"failed": False}
-    seen_periods = []
+    state = {"failed": False, "periods": set()}
 
     def myarima_refit_fails(*args, **kwargs):
-        seen_periods.append(kwargs["seasonal"]["period"])
+        state["periods"].add(kwargs["seasonal"]["period"])
         fit = original(*args, **kwargs)
         if kwargs.get("approximation") is False and not state["failed"]:
             state["failed"] = True
@@ -1542,6 +1523,13 @@ def test_search_arima_fallback_keeps_seasonal_period(monkeypatch):
         return fit
 
     monkeypatch.setattr(arima_module, "myarima", myarima_refit_fails)
+    return state
+
+
+def test_search_arima_fallback_keeps_seasonal_period(exact_refit_fails):
+    rng = np.random.default_rng(0)
+    season = 12
+    x = np.sin(np.arange(120) * 2 * np.pi / season) + rng.normal(size=120) * 0.3
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         fit = arima_module.search_arima(
@@ -1555,33 +1543,75 @@ def test_search_arima_fallback_keeps_seasonal_period(monkeypatch):
             offset=0,
             period=season,
         )
-    assert state["failed"]
-    # every model fitted, including those in the fallback search, uses the period
-    assert set(seen_periods) == {season}
+    assert exact_refit_fails["failed"]
+    assert exact_refit_fails["periods"] == {season}
     assert fit["arma"][4] == season
 
 
-def test_auto_arima_nonstepwise_fallback_keeps_seasonal_period(monkeypatch):
-    # end-to-end: the period given to auto_arima_f(stepwise=False) must survive
-    # the fallback search that search_arima runs when the exact refit fails
-    original = arima_module.myarima
-    state = {"failed": False}
-
-    def myarima_refit_fails(*args, **kwargs):
-        fit = original(*args, **kwargs)
-        if kwargs.get("approximation") is False and not state["failed"]:
-            state["failed"] = True
-            fit = {**fit, "ic": math.inf}
-        return fit
-
-    monkeypatch.setattr(arima_module, "myarima", myarima_refit_fails)
+def test_auto_arima_nonstepwise_fallback_keeps_seasonal_period(exact_refit_fails):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         fit = auto_arima_f(
-            ap, period=12, stepwise=False, approximation=True, max_order=3
+            ap,
+            period=12,
+            stepwise=False,
+            approximation=True,
+            max_p=1,
+            max_q=1,
+            max_P=1,
+            max_Q=1,
+            max_order=3,
         )
-    assert state["failed"]
+    assert exact_refit_fails["failed"]
+    assert exact_refit_fails["periods"] == {12}
     assert fit["arma"][4] == 12
+
+
+@pytest.mark.parametrize("seed", [0, 18])
+def test_autoregressive_sparse_lags_stays_stationary(seed):
+    # seed 18's CSS estimate is non-stationary and seed 0's ML fit used to
+    # diverge from a stationary start
+    rng = np.random.default_rng(seed)
+    a = np.zeros(25)
+    a[[0, 1, 24]] = [1, -0.5, -0.4]
+    y = 10 + lfilter([1], a, rng.normal(size=300))[100:]
+    model = AutoRegressive(lags=[1, 2, 3, 24]).fit(y).model_
+    assert np.isfinite(model["loglik"])
+    phi = np.array(list(model["coef"].values()))[:24]
+    assert np.abs(np.polynomial.polynomial.polyroots(np.r_[1, -phi])).min() > 1
+    np.testing.assert_allclose(
+        [model["coef"]["ar1"], model["coef"]["ar24"]], [0.5, 0.4], atol=0.15
+    )
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"method": "CSS-ML"},
+        {"method": "CSS-ML", "optim_control": {"maxiter": 1}},
+        {"method": "ML"},
+    ],
+)
+def test_arima_ignores_init_at_fixed_positions(kwargs):
+    # init's value for a fixed coefficient isn't used, so it can't make the
+    # fit fail when the CSS estimate is non-stationary
+    y = 1.05 ** np.arange(100) + np.random.default_rng(0).normal(size=100)
+    inits = [np.array([0.1, ar2, np.nan]) for ar2 in [0.0, 1.5]]
+    fits = [
+        arima(
+            y,
+            order=(2, 0, 0),
+            fixed=np.array([np.nan, 0.0, np.nan]),
+            transform_pars=False,
+            init=init,
+            **kwargs,
+        )
+        for init in inits
+    ]
+    assert fits[0]["loglik"] == fits[1]["loglik"]
+    np.testing.assert_array_equal(inits[1], [0.1, 1.5, np.nan])
+
+
 # expected values from R 4.6.1: arima(x, ..., SSinit = "Rossignol2011")
 @pytest.mark.parametrize(
     "x,kwargs,coef,loglik,sigma2",
