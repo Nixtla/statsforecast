@@ -303,20 +303,12 @@ def test_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    if method == "CSS-ML":
-        # CSS lands on a non-stationary AR part that ML can't evaluate
-        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
-            with pytest.raises(ValueError, match="non-stationary AR part"):
-                arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
-    else:
-        assert (
-            arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-                "coef"
-            ]
-            == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
-                "coef"
-            ]
-        )
+    assert (
+        arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+            "coef"
+        ]
+        == arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
+    )
 
     assert (
         arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -439,20 +431,12 @@ def test_Arima_fixed_argument(method, drift_xreg):
         )["coef"]
     )
 
-    if method == "CSS-ML":
-        # CSS lands on a non-stationary AR part that ML can't evaluate
-        for fixed in ([0.0, np.nan, 0.0, np.nan], {"ar1": 0, "ma1": 0}):
-            with pytest.raises(ValueError, match="non-stationary AR part"):
-                Arima(ap, order=(2, 0, 1), fixed=fixed, method=method)
-    else:
-        assert (
-            Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
-                "coef"
-            ]
-            == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)[
-                "coef"
-            ]
-        )
+    assert (
+        Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, np.nan], method=method)[
+            "coef"
+        ]
+        == Arima(ap, order=(2, 0, 1), fixed={"ar1": 0, "ma1": 0}, method=method)["coef"]
+    )
 
     assert (
         Arima(ap, order=(2, 0, 1), fixed=[0.0, np.nan, 0.0, 8], method=method)["coef"]
@@ -1521,6 +1505,51 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
         warnings.simplefilter("ignore")
         _resolve_blambda(np.where(positive == 2.0, 0.0, positive), "auto", 4)
     assert seen["lower"] == 0.0
+
+
+@pytest.mark.parametrize("seed", [0, 18])
+def test_autoregressive_sparse_lags_stays_stationary(seed):
+    # seed 18's CSS estimate is non-stationary and seed 0's ML fit used to
+    # diverge from a stationary start
+    rng = np.random.default_rng(seed)
+    a = np.zeros(25)
+    a[[0, 1, 24]] = [1, -0.5, -0.4]
+    y = 10 + lfilter([1], a, rng.normal(size=300))[100:]
+    model = AutoRegressive(lags=[1, 2, 3, 24]).fit(y).model_
+    assert np.isfinite(model["loglik"])
+    phi = np.array(list(model["coef"].values()))[:24]
+    assert np.abs(np.polynomial.polynomial.polyroots(np.r_[1, -phi])).min() > 1
+    np.testing.assert_allclose(
+        [model["coef"]["ar1"], model["coef"]["ar24"]], [0.5, 0.4], atol=0.15
+    )
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"method": "CSS-ML"},
+        {"method": "CSS-ML", "optim_control": {"maxiter": 1}},
+        {"method": "ML"},
+    ],
+)
+def test_arima_ignores_init_at_fixed_positions(kwargs):
+    # init's value for a fixed coefficient isn't used, so it can't make the
+    # fit fail when the CSS estimate is non-stationary
+    y = 1.05 ** np.arange(100) + np.random.default_rng(0).normal(size=100)
+    inits = [np.array([0.1, ar2, np.nan]) for ar2 in [0.0, 1.5]]
+    fits = [
+        arima(
+            y,
+            order=(2, 0, 0),
+            fixed=np.array([np.nan, 0.0, np.nan]),
+            transform_pars=False,
+            init=init,
+            **kwargs,
+        )
+        for init in inits
+    ]
+    assert fits[0]["loglik"] == fits[1]["loglik"]
+    np.testing.assert_array_equal(inits[1], [0.1, 1.5, np.nan])
 
 
 # expected values from R 4.6.1: arima(x, ..., SSinit = "Rossignol2011")

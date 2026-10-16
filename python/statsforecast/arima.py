@@ -60,6 +60,15 @@ def ARIMA_invtrans(x, arma):
     return y
 
 
+def _ar_stationary(phi):
+    # step-down check: stationary iff every partial autocorrelation is in (-1, 1)
+    if not len(phi):
+        return True
+    pacf = np.empty_like(phi)
+    _arima.invpartrans(len(phi), phi, pacf)
+    return np.isfinite(pacf).all()
+
+
 # Gardner's workspace and time grow as r^4 (~13GB for r=337), so larger state
 # spaces use Rossignol's method, which is O(r^2) in memory
 _GARDNER_MAX_R = 30
@@ -265,11 +274,16 @@ def arima(
     # and Pn as scratch space and both are fully rewritten below, and callers
     # hand the dict straight to arima_like without holding on to it.
     cache: Dict[str, Any] = {}
+    # set before ML when transform_pars is off: BFGS can't recover from the
+    # NaN likelihood outside the stationary region, so keep it inside
+    stationary_ml = False
 
     def upARIMA(mod, phi, theta):
         p = len(phi)
         q = len(theta)
         r = max(p, q + 1)
+        if stationary_ml and not _ar_stationary(phi):
+            return None
 
         if cache.get("mod") is not mod:
             cache["mod"] = mod
@@ -694,9 +708,8 @@ def arima(
     if init is not None:
         if len(init) != len(init0):
             raise ValueError(f"init should have length {len(init0)}")
-        nan_mask = np.isnan(init)
-        if nan_mask.any():
-            init[nan_mask] = init0[nan_mask]
+        # fixed coefficients don't use init, so it can't affect the fit there
+        init = np.where(np.isnan(init) | ~mask, init0, init)
         if method == ArimaMethod.ML:
             stationary_ar_checks(arma, init)
             if transform_pars:
@@ -761,15 +774,22 @@ def arima(
                     options=optim_control,
                 )
                 # status 1 is "maximum number of iterations exceeded"; 0 is
-                # success and 2 precision loss. Without transform_pars ML is
-                # unconstrained, so a non-stationary CSS estimate is still a
-                # better start than init.
+                # success and 2 precision loss. Without transform_pars, only
+                # start ML from a non-stationary CSS estimate if init isn't
+                # stationary either.
                 converged = res.status != 1
+                css_coef = coef.copy()
+                css_coef[mask] = res.x
                 if converged and (
-                    not transform_pars or ar_stationarity_error(arma, res.x) is None
+                    ar_stationarity_error(arma, css_coef) is None
+                    or (
+                        not transform_pars
+                        and ar_stationarity_error(arma, np.where(mask, init, coef))
+                        is not None
+                    )
                 ):
                     init[mask] = res.x
-                else:
+                elif transform_pars or not converged:
                     stationary_ar_checks(arma, init)
                 ncond = 0
         if transform_pars:
@@ -781,6 +801,9 @@ def arima(
                 ind = np.sum(arma[:3]) + np.arange(arma[3])
                 init[ind] = maInvert(init[ind])
         trarma = arima_transpar(init, arma, transform_pars)
+        if not transform_pars and not no_optim:
+            ml_phi = arima_transpar(np.where(mask, init, coef), arma, False)[0]
+            stationary_ml = _ar_stationary(ml_phi)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit)
         ml_args = (x, transform_pars, coef, mask, arma, mod, ncxreg, xreg, narma)
         # objective actually optimized, plus the tail appended to the arma params
