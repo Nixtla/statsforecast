@@ -17,7 +17,7 @@ jobs:
         os-platform:
           [
             [ubuntu-latest, manylinux_x86_64],
-            [ubuntu-latest, manylinux_aarch64],
+            [ubuntu-24.04-arm, manylinux_aarch64],
             [windows-latest, win_amd64],
             [macos-13, macosx_x86_64],
             [macos-14, macosx_arm64],
@@ -26,12 +26,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: "true"
-
-      - name: Set up QEMU
-        if: matrix.os-platform[1] == 'manylinux_aarch64'
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-        with:
-          platforms: arm64
 
       - name: Build wheels
         uses: pypa/cibuildwheel@b3395e271a35f73dad77f21802abe9b986dfe299 # v4.3.1
