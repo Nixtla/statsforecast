@@ -412,6 +412,8 @@ def arima(
         n = res[2]
         sumlog = res[1]
         std_resid = res[3]  # eₜ = vₜ/√fₜ
+        if np.nansum(np.abs(std_resid)) <= 0:
+            return math.nan
         # Concentrated -ℓ/n for t(0, σ², ν):
         # -ℓ/n = 0.5*log(σ²) + lgamma(ν/2) - lgamma((ν+1)/2) + 0.5*log(νπ)
         #        + ((ν+1)/2n) * Σ log(1 + eₜ²/(νσ²)) + 0.5*sumlog/n
@@ -461,6 +463,8 @@ def arima(
         n = res[2]
         sumlog = res[1]
         std_resid = res[3]  # eₜ = vₜ/√fₜ
+        if np.nansum(np.abs(std_resid)) <= 0:
+            return math.nan
         # -ℓ/n for SN(0, σ², α):
         # -ℓ/n = -log(2) + 0.5*log(2π) + 0.5*log(σ²) + Σeₜ²/(2nσ²)
         #        - (1/n)*Σ log Φ(α*eₜ/σ) + 0.5*sumlog/n
@@ -508,6 +512,8 @@ def arima(
         n = res[2]
         sumlog = res[1]
         std_resid = res[3]  # eₜ = vₜ/√fₜ
+        if np.nansum(np.abs(std_resid)) <= 0:
+            return math.nan
         # -ℓ/n for GED(0, σ, β):
         # -ℓ/n = log(2) + log(σ) + lgamma(1/β) - log(β)
         #        + (1/n)*Σ(|eₜ|/σ)^β + 0.5*sumlog/n
