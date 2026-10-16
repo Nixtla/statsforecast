@@ -1507,6 +1507,66 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
     assert seen["lower"] == 0.0
 
 
+@pytest.fixture
+def exact_refit_fails(monkeypatch):
+    # makes the first non-approximate refit return an infinite ic, which forces
+    # search_arima into its fallback search, and records every seasonal period fitted
+    original = arima_module.myarima
+    state = {"failed": False, "periods": set()}
+
+    def myarima_refit_fails(*args, **kwargs):
+        state["periods"].add(kwargs["seasonal"]["period"])
+        fit = original(*args, **kwargs)
+        if kwargs.get("approximation") is False and not state["failed"]:
+            state["failed"] = True
+            fit = {**fit, "ic": math.inf}
+        return fit
+
+    monkeypatch.setattr(arima_module, "myarima", myarima_refit_fails)
+    return state
+
+
+def test_search_arima_fallback_keeps_seasonal_period(exact_refit_fails):
+    rng = np.random.default_rng(0)
+    season = 12
+    x = np.sin(np.arange(120) * 2 * np.pi / season) + rng.normal(size=120) * 0.3
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fit = arima_module.search_arima(
+            x,
+            max_p=1,
+            max_q=1,
+            max_P=1,
+            max_Q=1,
+            max_order=3,
+            approximation=True,
+            offset=0,
+            period=season,
+        )
+    assert exact_refit_fails["failed"]
+    assert exact_refit_fails["periods"] == {season}
+    assert fit["arma"][4] == season
+
+
+def test_auto_arima_nonstepwise_fallback_keeps_seasonal_period(exact_refit_fails):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fit = auto_arima_f(
+            ap,
+            period=12,
+            stepwise=False,
+            approximation=True,
+            max_p=1,
+            max_q=1,
+            max_P=1,
+            max_Q=1,
+            max_order=3,
+        )
+    assert exact_refit_fails["failed"]
+    assert exact_refit_fails["periods"] == {12}
+    assert fit["arma"][4] == 12
+
+
 @pytest.mark.parametrize("seed", [0, 18])
 def test_autoregressive_sparse_lags_stays_stationary(seed):
     # seed 18's CSS estimate is non-stationary and seed 0's ML fit used to
