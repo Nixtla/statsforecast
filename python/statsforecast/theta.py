@@ -553,10 +553,10 @@ def auto_theta(
         raise Exception("no model able to be fitted")
 
     if decompose:
+        # an additive seasonal component cancels out of y - fitted, so only the
+        # multiplicative residuals need rescaling to the original scale
         if decomposition_type == "multiplicative":
             model["residuals"] = model["residuals"] * y_decompose
-        else:
-            model["residuals"] = model["residuals"] + y_decompose
         model["decompose"] = decompose
         model["decomposition_type"] = decomposition_type
         model["seas_forecast"] = dict(seas_forecast)

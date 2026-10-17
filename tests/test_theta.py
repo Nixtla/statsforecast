@@ -552,3 +552,21 @@ def test_theta_pi_stays_centered_for_static_models():
         # above 0.05 indicates the simulation has drifted off the point forecast.
         drift = float(np.abs(samples.mean(axis=1) - mean).max())
         assert drift < 0.05, f"{mtype} PI drifted from the point forecast by {drift:.3f}"
+
+
+def test_additive_decomposition_residuals_on_original_scale():
+    # an additive seasonal component cancels out of y - fitted, so the residuals
+    # must match a theta model fitted directly to the seasonally adjusted series
+    from statsmodels.tsa.seasonal import seasonal_decompose
+
+    y = ap.astype(np.float64)
+    seasonal = seasonal_decompose(y, model="additive", period=12).seasonal
+    res = auto_theta(y, m=12, model="STM", decomposition_type="additive")
+    assert res["decompose"] and res["decomposition_type"] == "additive"
+    expected = auto_theta(y - seasonal, m=1, model="STM")
+    np.testing.assert_allclose(res["residuals"], expected["residuals"])
+    fcst = forecast_theta(res, 12, level=[95])
+    expected_fcst = forecast_theta(expected, 12, level=[95])
+    np.testing.assert_allclose(
+        fcst["hi-95"] - fcst["lo-95"], expected_fcst["hi-95"] - expected_fcst["lo-95"]
+    )
