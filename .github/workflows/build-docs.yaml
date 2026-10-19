@@ -102,7 +102,7 @@ jobs:
 
       - name: Mint a docs dispatch token
         id: docs_token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_APP_ID }}
           private-key: ${{ secrets.NIXTLA_DOCS_REPO_ACCESS_PRIVATE_KEY }}
