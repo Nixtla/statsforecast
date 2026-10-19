@@ -2164,6 +2164,12 @@ def auto_arima_f(
         raise ValueError("auto_arima can only handle univariate time series")
     # myarima swallows ValueErrors, so validate before the search
     _check_ssinit(SSinit)
+    if distribution != Distribution.NORMAL and (
+        method == ArimaMethod.CSS or (method is None and approximation)
+    ):
+        raise ValueError(
+            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
+        )
     if test_kwargs is None:
         test_kwargs = {}
     if seasonal_test_kwargs is None:
