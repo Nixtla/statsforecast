@@ -89,6 +89,7 @@ from statsforecast.utils import (
     _calculate_sigma,
     _conformal_quantile,
     _ensure_float,
+    _interval_quantiles,
     _naive,
     _quantiles,
     _repeat_val,
@@ -97,6 +98,7 @@ from statsforecast.utils import (
 )
 
 from .ces import auto_ces, forecast_ces, forward_ces
+from .distributions import error_params_from_model
 from .garch import garch_forecast, garch_model
 from .mfles import MFLES as _MFLES
 from .mstl import mstl
@@ -105,12 +107,22 @@ from .theta import auto_theta, forecast_theta, forward_theta
 from .ucm import UCM, LocalLevel, LocalLinearTrend, SmoothTrend  # noqa: F401
 
 
-def _add_fitted_pi(res, se, level):
+def _add_fitted_pi(res, se, level, distribution="normal", dist_params=None):
     level = sorted(level)
     level = np.asarray(level)
-    quantiles = _quantiles(level=level)
-    lo = res["fitted"].reshape(-1, 1) - quantiles * se.reshape(-1, 1)
-    hi = res["fitted"].reshape(-1, 1) + quantiles * se.reshape(-1, 1)
+    fitted = res["fitted"].reshape(-1, 1)
+    scale = se.reshape(-1, 1)
+    # Callers that omit `distribution` use residual RMSE and stay on normal ±z.
+    if distribution == "normal" and not dist_params:
+        quantiles = _quantiles(level=level)
+        lo = fitted - quantiles * scale
+        hi = fitted + quantiles * scale
+    else:
+        lo_q, hi_q = _interval_quantiles(
+            level, distribution=distribution, dist_params=dist_params
+        )
+        lo = fitted + lo_q * scale
+        hi = fitted + hi_q * scale
     lo = lo[:, ::-1]
     lo = {f"fitted-lo-{l}": lo[:, i] for i, l in enumerate(reversed(level))}
     hi = {f"fitted-hi-{l}": hi[:, i] for i, l in enumerate(level)}
@@ -123,7 +135,8 @@ def _add_arima_fitted_pi(res, model, level):
     Adds in-sample intervals for ARIMA models to the `res` dict.
     When the model was fitted with a Box-Cox transformation the intervals are
     computed on the transformed scale and then back transformed, since that's
-    the scale `sigma2` refers to.
+    the scale `sigma2` refers to. Quantiles come from the model's innovation
+    distribution.
 
     Args:
         res (dict): Dictionary with an entry `fitted` for the in-sample
@@ -137,9 +150,15 @@ def _add_arima_fitted_pi(res, model, level):
     """
     se = np.sqrt(model["sigma2"])
     trans_fitted = _transformed_fitted_arima(model)
+    pi_kwargs = dict(
+        se=se,
+        level=level,
+        distribution=model.get("distribution", "normal"),
+        dist_params=error_params_from_model(model),
+    )
     if trans_fitted is None:
-        return _add_fitted_pi(res=res, se=se, level=level)
-    pi = _add_fitted_pi(res={"fitted": trans_fitted}, se=se, level=level)
+        return _add_fitted_pi(res=res, **pi_kwargs)
+    pi = _add_fitted_pi(res={"fitted": trans_fitted}, **pi_kwargs)
     return {
         **res,
         **{

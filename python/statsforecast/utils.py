@@ -305,12 +305,43 @@ def _quantiles(level, distribution="normal", dist_params=None):
     return frozen_error_distribution(1.0, distribution, dist_params).ppf(p)
 
 
+def _interval_quantiles(level, distribution="normal", dist_params=None):
+    """Lower and upper quantiles of the unit-scale innovation distribution.
+
+    Lower is ``ppf(0.5 - level/200)`` and upper is ``ppf(0.5 + level/200)``.
+    ``_quantiles`` is only the upper tail. Building both bounds from it
+    (``mean ± upper * se``) mirrors a skew-normal interval. Symmetric
+    distributions still satisfy ``lower == -upper``. The normal case returns
+    ``(-z, z)`` from `_quantiles` so existing normal intervals do not change.
+    Callers multiply by the forecast standard error.
+    """
+    if distribution == "normal" and not dist_params:
+        upper = _quantiles(level)
+        return -upper, upper
+    from .distributions import frozen_error_distribution
+
+    level = np.asarray(level)
+    dist = frozen_error_distribution(1.0, distribution, dist_params)
+    return dist.ppf(0.5 - level / 200), dist.ppf(0.5 + level / 200)
+
+
 def _calculate_intervals(out, level, h, sigmah, distribution="normal", dist_params=None):
-    z = _quantiles(np.asarray(level), distribution=distribution, dist_params=dist_params)
-    zz = np.repeat(z, h)
-    zz = zz.reshape(z.shape[0], h)
-    lower = out["mean"] - zz * sigmah
-    upper = out["mean"] + zz * sigmah
+    level_arr = np.asarray(level)
+    # Normal keeps the historic ±z path so existing intervals stay identical.
+    if distribution == "normal" and not dist_params:
+        z = _quantiles(level_arr)
+        zz = np.repeat(z, h)
+        zz = zz.reshape(z.shape[0], h)
+        lower = out["mean"] - zz * sigmah
+        upper = out["mean"] + zz * sigmah
+    else:
+        lo_q, hi_q = _interval_quantiles(
+            level_arr, distribution=distribution, dist_params=dist_params
+        )
+        lo = np.repeat(lo_q, h).reshape(lo_q.shape[0], h)
+        hi = np.repeat(hi_q, h).reshape(hi_q.shape[0], h)
+        lower = out["mean"] + lo * sigmah
+        upper = out["mean"] + hi * sigmah
     pred_int = {
         **{f"lo-{lv}": lower[i] for i, lv in enumerate(level)},
         **{f"hi-{lv}": upper[i] for i, lv in enumerate(level)},

@@ -8,13 +8,14 @@ import pytest
 from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from scipy.optimize import minimize_scalar
 from scipy.signal import lfilter
-from scipy.stats import gennorm, skewnorm
+from scipy.stats import gennorm, norm, skewnorm
 from scipy.stats import t as t_dist
 
 import statsforecast.arima as arima_module
 from statsforecast.arima import (
     Arima,
     ARIMA_invtrans,
+    ARIMASummary,
     AutoARIMA,
     _boxcox,
     _inv_boxcox,
@@ -991,6 +992,118 @@ def test_distribution_forecast_intervals(distribution, param_key):
     assert np.all(lower_80 > lower_95), "95% lower bound must be below 80%"
     assert np.all(upper_80 < upper_95), "95% upper bound must be above 80%"
     assert np.all(lower_95 < upper_95), "lower must be below upper"
+
+
+def _assert_finite_allclose(actual, expected):
+    actual = np.asarray(actual, dtype=float)
+    expected = np.asarray(expected, dtype=float)
+    ok = np.isfinite(actual) & np.isfinite(expected)
+    assert np.any(ok)
+    np.testing.assert_allclose(actual[ok], expected[ok])
+
+
+def test_normal_arima_intervals_match_normal_quantiles():
+    """Normal ARIMA intervals stay mean ± z * se."""
+    model = ARIMA(order=(1, 1, 1)).fit(ap)
+    sigma = np.sqrt(model.model_["sigma2"])
+    insample = model.predict_in_sample(level=[80, 95])
+    pred, se = predict_arima(model.model_, n_ahead=5)
+    fc = forecast_arima(model.model_, h=5, level=[80, 95])
+    point = model.predict(h=5, level=[80, 95])
+    for level in (80, 95):
+        z = norm.ppf(0.5 + level / 200)
+        _assert_finite_allclose(
+            insample[f"fitted-hi-{level}"], insample["fitted"] + z * sigma
+        )
+        _assert_finite_allclose(
+            insample[f"fitted-lo-{level}"], insample["fitted"] - z * sigma
+        )
+        np.testing.assert_allclose(fc["upper"][f"{level}%"], pred + z * se)
+        np.testing.assert_allclose(fc["lower"][f"{level}%"], pred - z * se)
+        np.testing.assert_allclose(point[f"hi-{level}"], pred + z * se)
+        np.testing.assert_allclose(point[f"lo-{level}"], pred - z * se)
+
+
+def test_t_arima_intervals_are_not_normal():
+    """A Student-t fit uses t quantiles for fitted and forecast intervals."""
+    model = ARIMA(order=(1, 1, 1), distribution="t").fit(ap)
+    nu = model.model_["nu"]
+    sigma = np.sqrt(model.model_["sigma2"])
+    z = norm.ppf(0.975)
+    tq = t_dist.ppf(0.975, nu)
+    assert not np.isclose(tq, z)
+
+    insample = model.predict_in_sample(level=[95])
+    _assert_finite_allclose(
+        insample["fitted-hi-95"], insample["fitted"] + tq * sigma
+    )
+    _assert_finite_allclose(
+        insample["fitted-lo-95"], insample["fitted"] - tq * sigma
+    )
+    finite = np.isfinite(insample["fitted"])
+    assert not np.allclose(
+        insample["fitted-hi-95"][finite], insample["fitted"][finite] + z * sigma
+    )
+
+    pred, se = predict_arima(model.model_, n_ahead=4)
+    fc = forecast_arima(model.model_, h=4, level=[95])
+    np.testing.assert_allclose(np.asarray(fc["upper"]["95%"]), pred + tq * se)
+    np.testing.assert_allclose(np.asarray(fc["lower"]["95%"]), pred - tq * se)
+    assert not np.allclose(np.asarray(fc["upper"]["95%"]), pred + z * se)
+    point = model.predict(h=4, level=[95])
+    np.testing.assert_allclose(point["hi-95"], pred + tq * se)
+    np.testing.assert_allclose(point["lo-95"], pred - tq * se)
+
+
+def test_skew_normal_arima_intervals_are_not_mirrored():
+    """Skew-normal bounds use each tail, so the lower deviation is not the upper one."""
+    rng = np.random.default_rng(0)
+    y = 100 + np.cumsum(skewnorm(8).rvs(300, random_state=rng))
+    model = ARIMA(
+        order=(0, 1, 0), include_constant=True, distribution="skew-normal"
+    ).fit(y)
+    alpha = model.model_["alpha_dist"]
+    assert abs(alpha) > 1
+    sigma = np.sqrt(model.model_["sigma2"])
+    lo_q = skewnorm.ppf(0.025, a=alpha)
+    hi_q = skewnorm.ppf(0.975, a=alpha)
+    assert not np.isclose(lo_q, -hi_q)
+
+    insample = model.predict_in_sample(level=[95])
+    _assert_finite_allclose(
+        insample["fitted-lo-95"], insample["fitted"] + lo_q * sigma
+    )
+    _assert_finite_allclose(
+        insample["fitted-hi-95"], insample["fitted"] + hi_q * sigma
+    )
+    finite = np.isfinite(insample["fitted"])
+    lower_dev = insample["fitted"][finite] - insample["fitted-lo-95"][finite]
+    upper_dev = insample["fitted-hi-95"][finite] - insample["fitted"][finite]
+    assert not np.allclose(lower_dev, upper_dev)
+
+    # Drift-only forecasts go through forecast_arima, which builds the drift
+    # regressor before predict_arima. se grows with the horizon, so recover it
+    # from the upper tail and check the lower tail uses its own quantile.
+    fc = forecast_arima(model.model_, h=3, level=[95])
+    upper_dev = np.asarray(fc["upper"]["95%"]) - fc["mean"]
+    lower_dev = fc["mean"] - np.asarray(fc["lower"]["95%"])
+    se = upper_dev / hi_q
+    np.testing.assert_allclose(lower_dev, -lo_q * se)
+    assert not np.allclose(lower_dev, upper_dev)
+    point = model.predict(h=3, level=[95])
+    np.testing.assert_allclose(point["mean"] - point["lo-95"], -lo_q * se)
+    np.testing.assert_allclose(point["hi-95"] - point["mean"], upper_dev)
+
+    wrapped = AutoARIMA(seasonal=False)
+    wrapped.model_ = ARIMASummary(model.model_)
+    frame = wrapped.predict_in_sample(level=95)
+    _assert_finite_allclose(frame["lo_95%"], frame["mean"] + lo_q * sigma)
+    _assert_finite_allclose(frame["hi_95%"], frame["mean"] + hi_q * sigma)
+    finite = np.isfinite(frame["mean"].to_numpy())
+    assert not np.allclose(
+        (frame["mean"] - frame["lo_95%"]).to_numpy()[finite],
+        (frame["hi_95%"] - frame["mean"]).to_numpy()[finite],
+    )
 
 
 def test_issue_649(capsys):
