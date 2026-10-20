@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from statsforecast.models import ConformalSeasonalPool, SeasonalNaive
+from statsforecast.utils import _conformal_rank
 
 
 @pytest.fixture
@@ -213,15 +214,12 @@ def test_predict_in_sample_empty_R_returns_nan_intervals():
     assert np.isnan(result["fitted-hi-90"]).all(), "offsets should be NaN when R is empty"
 
 
-def test_oriented_index_values():
-    # alpha=0.05, n=100: floor(101*0.025)/100 = 2/100 = 0.02  (differs from plain 0.025)
-    assert ConformalSeasonalPool._oriented_index(0.025, 100) == pytest.approx(0.02)
-    # upper tail: ceil(101*0.975)/100 = 99/100 = 0.99  (differs from plain 0.975)
-    assert ConformalSeasonalPool._oriented_index(0.975, 100) == pytest.approx(0.99)
-    # alpha=0.10, n=100: floor(101*0.05)/100 = 5/100 = 0.05  (exact — no change)
-    assert ConformalSeasonalPool._oriented_index(0.05, 100) == pytest.approx(0.05)
-    # degenerate: n=0 returns q unchanged
-    assert ConformalSeasonalPool._oriented_index(0.025, 0) == pytest.approx(0.025)
+def test_csp_uses_shared_conformal_ranks():
+    # alpha=0.05, n=100: floor(101*0.025) = 2 and ceil(101*0.975) = 99
+    assert _conformal_rank(100, 0.025, upper=False) == 2
+    assert _conformal_rank(100, 0.975, upper=True) == 99
+    # alpha=0.10, n=100: floor(101*0.05) = 5
+    assert _conformal_rank(100, 0.05, upper=False) == 5
 
 
 def test_intervals_use_orientation_correction():
@@ -232,13 +230,14 @@ def test_intervals_use_orientation_correction():
     model = ConformalSeasonalPool(season_length=12)
     result = model._intervals_from_samples(samples, level=[95])
 
-    # At n=100, alpha=0.05: oriented lo = floor(101*0.025)/100 = 0.02 (not 0.025)
-    oriented_lo = np.quantile(samples, 0.02, axis=0).item()
-    plain_lo = np.quantile(samples, 0.025, axis=0).item()
-
-    np.testing.assert_allclose(result["lo-95"], [oriented_lo])
+    # At n=100, alpha=0.05 the bounds are the floor(101*0.025) = 2nd and the
+    # ceil(101*0.975) = 99th smallest samples, not interpolated quantiles
+    srt = np.sort(samples, axis=0)
+    np.testing.assert_allclose(result["lo-95"], srt[1])
+    np.testing.assert_allclose(result["hi-95"], srt[98])
+    plain_lo = np.quantile(samples, 0.025, axis=0)
     # The two values must actually differ for this test to be meaningful
-    assert abs(oriented_lo - plain_lo) > 1e-10
+    assert abs(srt[1] - plain_lo).item() > 1e-10
 
 
 def test_predict_in_sample_uses_orientation_correction():
@@ -250,11 +249,11 @@ def test_predict_in_sample_uses_orientation_correction():
     model = ConformalSeasonalPool(season_length=m, calib_frac=0.5).fit(y)
     R = model.model_["calib_residuals"]
     n_r = R.size  # 30
-    # level=95: lo_q=0.025, oriented = floor(31*0.025)/30 = 0/30 = 0.0 != 0.025
-    oriented_lo = ConformalSeasonalPool._oriented_index(0.025, n_r)
-    plain_lo = 0.025
-    assert oriented_lo != plain_lo, "oriented and plain must differ for this test to be meaningful"
+    # level=95: lo_q=0.025, floor(31*0.025) = 0 is clipped to rank 1, the
+    # smallest residual; the plain 0.025 quantile would interpolate above it
+    assert _conformal_rank(n_r, 0.025, upper=False) == 1
+    assert np.quantile(R, 0.025) > R.min(), "plain quantile must differ for this test to be meaningful"
     result = model.predict_in_sample(level=[95])
     fitted = model.model_["fitted"]
-    expected_lo = fitted + float(np.quantile(R, oriented_lo))
+    expected_lo = fitted + float(R.min())
     np.testing.assert_allclose(result["fitted-lo-95"], expected_lo)
