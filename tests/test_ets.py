@@ -8,6 +8,7 @@ from statsforecast.ets import (
     etssimulate,
     forecast_ets,
     forward_ets,
+    simulate_ets,
     switch,
 )
 from statsforecast.utils import AirPassengers as ap
@@ -294,6 +295,52 @@ def test_autoets_distribution():
     pred = model.predict(h=12, level=[95])
     assert "lo-95" in pred and "hi-95" in pred
     assert np.all(pred["lo-95"] < pred["hi-95"])
+
+
+@pytest.mark.parametrize(
+    "parameter,value,index",
+    [("alpha", 0.2, 0), ("beta", 0.01, 1), ("gamma", 0.05, 2)],
+)
+def test_fixed_smoothing_parameter(parameter, value, index):
+    y = np.asarray(ap, dtype=np.float64)
+    estimated = ets_f(y, m=12, model="MAM")
+    fixed = ets_f(y, m=12, model="MAM", **{parameter: value})
+
+    assert fixed["par"][index] == value
+    assert len(fixed["fit"].x) == len(estimated["fit"].x) - 1
+    assert fixed["n_params"] == estimated["n_params"] - 1
+
+
+def test_undamped_simulation_uses_effective_phi():
+    y = np.arange(1, 31, dtype=np.float64)
+    model = ets_f(y, m=1, model="AAN", damped=False, phi=0.9)
+    model = {**model, "sigma2": 0.0}
+
+    expected = forecast_ets(model, h=3)["mean"]
+    simulated = simulate_ets(model, h=3, n_paths=1, seed=0)[0]
+
+    assert np.isnan(model["par"][3])
+    np.testing.assert_allclose(simulated, expected)
+
+
+def test_undamped_interval_simulation_uses_effective_phi():
+    h = 3
+    model = {
+        "sigma2": 0.0,
+        "m": 1,
+        "components": "AMNN",
+        "states": np.array([[10.0, 1.1]]),
+        "par": np.array([0.2, 0.1, np.nan, np.nan]),
+        "distribution": "normal",
+        "residuals": np.zeros(1),
+        "fitted": np.zeros(1),
+    }
+    mean = forecast_ets(model, h=h)["mean"]
+
+    intervals = _compute_pred_intervals(model, {"mean": mean}, h, [80])
+
+    np.testing.assert_allclose(intervals["lo-80"], mean)
+    np.testing.assert_allclose(intervals["hi-80"], mean)
 
 
 # ---- Additive seasonal prediction interval tests ----

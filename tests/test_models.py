@@ -354,6 +354,21 @@ class TestArima:
 
 
 class TestETS:
+    def test_fixed_phi(self):
+        phi = 0.9
+        y = 10 + np.cumsum(phi ** np.arange(1, 21))
+        estimated = AutoETS(model="AAN", damped=True).fit(y[:16])
+        fixed = AutoETS(model="AAN", damped=True, phi=phi).fit(y[:16])
+        undamped = AutoETS(model="ANN", phi=phi).fit(y[:16])
+
+        assert fixed.model_["par"][3] == phi
+        assert len(fixed.model_["fit"].x) == 4
+        assert fixed.model_["n_params"] == 5
+        assert fixed.model_["n_params"] == estimated.model_["n_params"] - 1
+        np.testing.assert_allclose(fixed.predict(h=4)["mean"], y[16:], rtol=1e-5)
+        assert undamped.model_["components"][3] == "N"
+        assert np.isnan(undamped.model_["par"][3])
+
     def test_ets(self):
         autoets = AutoETS(season_length=12)
         assert_class(autoets, x=ap, h=12, level=[90, 80], test_forward=True)
