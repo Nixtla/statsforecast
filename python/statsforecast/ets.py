@@ -437,8 +437,6 @@ def optimize_ets_target_fn(
     nmse,
     bounds,
     m,
-    pnames,
-    pnames2,
 ):
     alpha = par_noopt["alpha"] if np.isnan(par["alpha"]) else par["alpha"]
     if np.isnan(alpha):
@@ -526,8 +524,6 @@ def optimize_ets_dist_target_fn(
     nmse,
     bounds,
     m,
-    pnames,
-    pnames2,
     distribution,
 ):
     alpha = par_noopt["alpha"] if np.isnan(par["alpha"]) else par["alpha"]
@@ -701,8 +697,6 @@ def etsmodel(
             nmse=nmse,
             bounds=bounds,
             m=m,
-            pnames=par_opt.keys(),
-            pnames2=par_noopt.keys(),
         )
         fit_par = fred.x
         fit_par_dist = np.array([])
@@ -732,8 +726,6 @@ def etsmodel(
             nmse=nmse,
             bounds=bounds,
             m=m,
-            pnames=par_opt.keys(),
-            pnames2=par_noopt.keys(),
             distribution=distribution,
         )
         fit_par_ets = fred.x[:-n_dist] if n_dist > 0 else fred.x

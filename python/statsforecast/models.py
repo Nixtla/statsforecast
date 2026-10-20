@@ -806,6 +806,12 @@ class AutoETS(_TS):
                     UserWarning,
                     stacklevel=2,
                 )
+            elif isinstance(model, str) and model[1:2] == "N":
+                warnings.warn(
+                    "The user-defined `phi` will be ignored because the model has no trend.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals

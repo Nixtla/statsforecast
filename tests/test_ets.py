@@ -297,6 +297,20 @@ def test_autoets_distribution():
     assert np.all(pred["lo-95"] < pred["hi-95"])
 
 
+@pytest.mark.parametrize(
+    "parameter,value,index",
+    [("alpha", 0.2, 0), ("beta", 0.01, 1), ("gamma", 0.05, 2)],
+)
+def test_fixed_smoothing_parameter(parameter, value, index):
+    y = np.asarray(ap, dtype=np.float64)
+    estimated = ets_f(y, m=12, model="MAM")
+    fixed = ets_f(y, m=12, model="MAM", **{parameter: value})
+
+    assert fixed["par"][index] == value
+    assert len(fixed["fit"].x) == len(estimated["fit"].x) - 1
+    assert fixed["n_params"] == estimated["n_params"] - 1
+
+
 def test_undamped_simulation_uses_effective_phi():
     y = np.arange(1, 31, dtype=np.float64)
     model = ets_f(y, m=1, model="AAN", damped=False, phi=0.9)
