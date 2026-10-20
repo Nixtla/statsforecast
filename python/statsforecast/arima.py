@@ -97,6 +97,17 @@ def _check_ssinit(SSinit):
         raise ValueError(f"SSinit must be one of {tuple(_SS_INIT)}, got {SSinit!r}")
 
 
+def _check_distribution(distribution, method):
+    if distribution not in _VALID_DISTRIBUTIONS:
+        raise ValueError(
+            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+        )
+    if distribution != Distribution.NORMAL and method == ArimaMethod.CSS:
+        raise ValueError(
+            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
+        )
+
+
 def _resolve_ssinit(SSinit, r):
     _check_ssinit(SSinit)
     if SSinit == "Gardner1980" and r > _GARDNER_MAX_R:
@@ -257,15 +268,8 @@ def arima(
     optim_control={"maxiter": 100},
     distribution="normal",
 ):
-    if distribution not in _VALID_DISTRIBUTIONS:
-        raise ValueError(
-            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
-        )
+    _check_distribution(distribution, method)
     _check_ssinit(SSinit)
-    if distribution != Distribution.NORMAL and method == ArimaMethod.CSS:
-        raise ValueError(
-            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
-        )
 
     x = x.astype(np.float64, copy=True)
 
@@ -2164,6 +2168,7 @@ def auto_arima_f(
         raise ValueError("auto_arima can only handle univariate time series")
     # myarima swallows ValueErrors, so validate before the search
     _check_ssinit(SSinit)
+    _check_distribution(distribution, method)
     if test_kwargs is None:
         test_kwargs = {}
     if seasonal_test_kwargs is None:
