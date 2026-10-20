@@ -800,6 +800,12 @@ class AutoETS(_TS):
                 raise ValueError("phi must be `None` or float.")
             if not _PHI_LOWER <= phi <= _PHI_UPPER:
                 raise ValueError(f"Valid range for phi is [{_PHI_LOWER}, {_PHI_UPPER}]")
+            if damped is False:
+                warnings.warn(
+                    "The user-defined `phi` will be ignored because `damped=False`.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
