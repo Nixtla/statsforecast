@@ -1365,8 +1365,8 @@ def _compute_pred_intervals(model, forecasts, h, level):
             beta = 0
         if math.isnan(gamma):
             gamma = 0
-        if math.isnan(phi):
-            phi = 0
+        if damped == "N":
+            phi = 1
 
         dist = model.get("distribution", "normal")
         params = error_params_from_model(model)
@@ -1480,14 +1480,12 @@ def simulate_ets(
     alpha = model["par"][0]
     beta = model["par"][1]
     gamma = model["par"][2]
-    phi = model["par"][3]
+    phi = 1 if model_type[3] == "N" else model["par"][3]
 
     if math.isnan(beta):
         beta = 0
     if math.isnan(gamma):
         gamma = 0
-    if math.isnan(phi):
-        phi = 0
 
     y_path = np.zeros([n_paths, h])
 
