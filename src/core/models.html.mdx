@@ -475,7 +475,7 @@ Name | Type | Description
 #### `AutoTheta`
 
 ```python
-AutoTheta(season_length=1, decomposition_type='multiplicative', model=None, alias='AutoTheta', prediction_intervals=None, distribution='normal')
+AutoTheta(season_length=1, decomposition_type='multiplicative', model=None, alias='AutoTheta', prediction_intervals=None, distribution='normal', theta=None)
 ```
 
 Bases: <code>[\_TS](#statsforecast.models._TS)</code>
@@ -495,6 +495,7 @@ Name | Type | Description | Default
 `model` | <code>[Optional](#typing.Optional)\[[str](#str)\]</code> | Controlling Theta Model. By default searchs the best model. | <code>None</code>
 `alias` | <code>str, default="AutoTheta"</code> | Custom name of the model. | <code>'AutoTheta'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+`theta` | <code>[Optional](#typing.Optional)\[[float](#float)\]</code> | Fixed theta parameter for optimized Theta models. By default, theta is estimated from the data. | <code>None</code>
 
 <details class="references" open markdown="1">
 <summary>References</summary>
@@ -3573,7 +3574,7 @@ Name | Type | Description | Default
 #### `OptimizedTheta`
 
 ```python
-OptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='OptimizedTheta', prediction_intervals=None)
+OptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='OptimizedTheta', prediction_intervals=None, theta=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3595,6 +3596,7 @@ Name | Type | Description | Default
 `decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. Default 'multiplicative'. | <code>'multiplicative'</code>
 `alias` | <code>[str](#str)</code> | Custom name of the model. Default 'OptimizedTheta'. | <code>'OptimizedTheta'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. Default None. | <code>None</code>
+`theta` | <code>[Optional](#typing.Optional)\[[float](#float)\]</code> | Fixed theta parameter. By default, theta is estimated from the data. | <code>None</code>
 
 ### DynamicTheta
 
@@ -3629,7 +3631,7 @@ Name | Type | Description | Default
 #### `DynamicOptimizedTheta`
 
 ```python
-DynamicOptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='DynamicOptimizedTheta', prediction_intervals=None)
+DynamicOptimizedTheta(season_length=1, decomposition_type='multiplicative', alias='DynamicOptimizedTheta', prediction_intervals=None, theta=None)
 ```
 
 Bases: <code>[AutoTheta](#statsforecast.models.AutoTheta)</code>
@@ -3651,6 +3653,7 @@ Name | Type | Description | Default
 `decomposition_type` | <code>[str](#str)</code> | Sesonal decomposition type, 'multiplicative' (default) or 'additive'. | <code>'multiplicative'</code>
 `alias` | <code>[str](#str)</code> | Custom name of the model. | <code>'DynamicOptimizedTheta'</code>
 `prediction_intervals` | <code>[Optional](#typing.Optional)\[[ConformalIntervals](#statsforecast.utils.ConformalIntervals)\]</code> | Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals. | <code>None</code>
+`theta` | <code>[Optional](#typing.Optional)\[[float](#float)\]</code> | Fixed theta parameter. By default, theta is estimated from the data. | <code>None</code>
 
 ## ARCH/GARCH Family
 
