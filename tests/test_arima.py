@@ -796,6 +796,34 @@ def test_auto_arima_with_trend():
 
 # ---------------------------------------------------------------------------
 # Innovation-distribution tests
+
+
+@pytest.mark.parametrize(
+    "distribution", ["normal", "laplace", "t", "skew-normal", "ged"]
+)
+@pytest.mark.parametrize("fit_model", [Arima, myarima])
+def test_arima_information_criteria_count_distribution_parameters(
+    distribution, fit_model
+):
+    fit = fit_model(
+        ap,
+        order=(1, 1, 1),
+        method="ML",
+        distribution=distribution,
+        **({"constant": False} if fit_model is myarima else {}),
+    )
+    nstar = len(ap) - 1
+    npar = int(fit["mask"].sum()) + (
+        2 if distribution in {"t", "skew-normal", "ged"} else 1
+    )
+    assert fit["aic"] + 2 * fit["loglik"] == pytest.approx(2 * npar)
+    assert fit["bic"] - fit["aic"] == pytest.approx(npar * (math.log(nstar) - 2))
+    assert fit["aicc"] - fit["aic"] == pytest.approx(
+        2 * npar * (npar + 1) / (nstar - npar - 1)
+    )
+
+
+
 # ---------------------------------------------------------------------------
 
 def _simulate_ar1(phi, innovations):
