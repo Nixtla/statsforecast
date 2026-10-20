@@ -3850,7 +3850,8 @@ class RandomWalkWithDrift(_TS):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals, len(residuals) - 1)
+        # n - 1 residuals and one estimated parameter (the drift)
+        sigma = _calculate_sigma(residuals, len(residuals) - 2)
         mod["sigma"] = sigma
         mod["residuals"] = residuals
         mod["n"] = len(y)
@@ -4013,13 +4014,13 @@ class RandomWalkWithDrift(_TS):
             else:
                 steps = np.arange(1, h + 1)
                 residuals = y - out["fitted"]
-                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigma = _calculate_sigma(residuals, len(residuals) - 2)
                 sigmah = sigma * np.sqrt(steps * (1 + steps / (len(y) - 1)))
                 pred_int = _calculate_intervals(out, level, h, sigmah)
                 res = {**res, **pred_int}
             if fitted:
                 residuals = y - out["fitted"]
-                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigma = _calculate_sigma(residuals, len(residuals) - 2)
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
