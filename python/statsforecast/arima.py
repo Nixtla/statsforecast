@@ -1356,6 +1356,35 @@ def search_arima(
     return best_fit
 
 
+def _loglik_at_stored_sigma2(loglik, residuals, sigma2, n):
+    """Gaussian loglik at ``sigma2``, given the concentrated-scale loglik.
+
+    A fixed-coefficient refit profiles out the normal innovation scale, so
+    ``loglik`` is the likelihood at ``ssq / n``. ``sigma2`` is the scale the
+    returned model keeps, and ``n`` is the observation count used in the
+    likelihood (``nobs``).
+
+    Args:
+        loglik (float): Log-likelihood at the concentrated scale.
+        residuals (np.ndarray): Standardized residuals from that fit.
+        sigma2 (float): Innovation scale stored on the returned model.
+        n (int): Observation count used to score ``loglik``.
+
+    Returns:
+        float: Log-likelihood at ``sigma2``.
+    """
+    if n <= 0 or not np.isfinite(loglik) or not np.isfinite(sigma2) or sigma2 <= 0:
+        return loglik
+    finite = np.isfinite(residuals)
+    if not np.any(finite):
+        return loglik
+    ssq = float(np.dot(residuals[finite], residuals[finite]))
+    if ssq <= 0:
+        return loglik
+    scale_hat = ssq / n
+    return loglik - 0.5 * n * (math.log(sigma2 / scale_hat) + scale_hat / sigma2 - 1.0)
+
+
 def arima2(x, model, xreg, method):
     m = model["arma"][4]  # 5
     use_drift = "drift" in model["coef"].keys()
@@ -1423,6 +1452,20 @@ def arima2(x, model, xreg, method):
     refit["var_coef"] = np.zeros((n_coef, n_coef), dtype=np.float32)
     if use_xreg:
         refit["xreg"] = xreg
+    # The fixed-coefficient fit scores a normal likelihood at a re-estimated
+    # scale. Put loglik and AIC on the scale this model actually returns.
+    if (
+        method != ArimaMethod.CSS
+        and refit.get("distribution") == Distribution.NORMAL
+        and np.isfinite(refit.get("loglik", np.nan))
+    ):
+        old_loglik = refit["loglik"]
+        new_loglik = _loglik_at_stored_sigma2(
+            old_loglik, refit["residuals"], sigma2, refit["nobs"]
+        )
+        if np.isfinite(refit["aic"]):
+            refit["aic"] = refit["aic"] - 2.0 * (new_loglik - old_loglik)
+        refit["loglik"] = new_loglik
     refit["sigma2"] = sigma2
     if use_drift:
         refit["coef"] = change_drift_name(refit["coef"])
