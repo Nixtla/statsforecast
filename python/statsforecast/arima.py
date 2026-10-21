@@ -37,6 +37,7 @@ from .distributions import (
     extract_dist_params,
     guard_dist_tail,
 )
+from .utils import _interval_quantiles
 
 OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
 
@@ -1772,13 +1773,27 @@ def forecast_arima(
             raise NotImplementedError("bootstrap=True")
         else:
             dist = model.get("distribution", Distribution.NORMAL)
-            quantiles = _quantiles(level, distribution=dist, dist_params=error_params_from_model(model))
+            dist_params = error_params_from_model(model)
+            center = pred.reshape(-1, 1)
+            scale = se.reshape(-1, 1)
+            if dist == Distribution.NORMAL and not dist_params:
+                quantiles = _quantiles(
+                    level, distribution=dist, dist_params=dist_params
+                )
+                lower_vals = center - quantiles * scale
+                upper_vals = center + quantiles * scale
+            else:
+                lo_q, hi_q = _interval_quantiles(
+                    level, distribution=dist, dist_params=dist_params
+                )
+                lower_vals = center + lo_q * scale
+                upper_vals = center + hi_q * scale
             lower = pd.DataFrame(
-                pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
+                lower_vals,
                 columns=[f"{l}%" for l in level],
             )
             upper = pd.DataFrame(
-                pred.reshape(-1, 1) + quantiles * se.reshape(-1, 1),
+                upper_vals,
                 columns=[f"{l}%" for l in level],
             )
     else:
@@ -3016,7 +3031,7 @@ class AutoARIMA:
             _level = sorted(_level)
             se = np.sqrt(self.model_.model["sigma2"])
             dist = self.model_.model.get("distribution", "normal")
-            quantiles = _quantiles(_level, distribution=dist, dist_params=error_params_from_model(self.model_.model))
+            dist_params = error_params_from_model(self.model_.model)
 
             # intervals are built on the scale the model was fitted on
             blambda = self.model_.model.get("lambda")
@@ -3024,9 +3039,19 @@ class AutoARIMA:
             center = (
                 fitted_values.values if trans_fitted is None else trans_fitted
             ).reshape(-1, 1)
-
-            lo = center - quantiles * se.reshape(-1, 1)
-            hi = center + quantiles * se.reshape(-1, 1)
+            scale = se.reshape(-1, 1)
+            if dist == Distribution.NORMAL and not dist_params:
+                quantiles = _quantiles(
+                    _level, distribution=dist, dist_params=dist_params
+                )
+                lo = center - quantiles * scale
+                hi = center + quantiles * scale
+            else:
+                lo_q, hi_q = _interval_quantiles(
+                    _level, distribution=dist, dist_params=dist_params
+                )
+                lo = center + lo_q * scale
+                hi = center + hi_q * scale
             if blambda is not None:
                 lo = _inv_boxcox(lo, blambda)
                 hi = _inv_boxcox(hi, blambda)

@@ -127,6 +127,43 @@ def test_quantiles_match_scipy():
                                stats.gennorm.ppf(p, beta=1.2))
 
 
+def test_interval_quantiles_use_both_tails():
+    from statsforecast.utils import _calculate_intervals, _interval_quantiles
+
+    level = np.array([80, 95])
+    lo, hi = _interval_quantiles(level)
+    z = stats.norm.ppf(0.5 + level / 200)
+    np.testing.assert_allclose(hi, z)
+    np.testing.assert_allclose(lo, -z)
+
+    lo_t, hi_t = _interval_quantiles(level, "t", {"df": 5})
+    np.testing.assert_allclose(hi_t, stats.t.ppf(0.5 + level / 200, df=5))
+    np.testing.assert_allclose(lo_t, stats.t.ppf(0.5 - level / 200, df=5))
+    assert not np.allclose(hi_t, z)
+
+    lo_sn, hi_sn = _interval_quantiles([95], "skew-normal", {"skewness": 5.0})
+    np.testing.assert_allclose(lo_sn, stats.skewnorm.ppf(0.025, a=5.0))
+    np.testing.assert_allclose(hi_sn, stats.skewnorm.ppf(0.975, a=5.0))
+    assert not np.isclose(lo_sn, -hi_sn)
+
+    mean = np.array([10.0, 10.0])
+    sigmah = np.array([1.0, 2.0])
+    normal = _calculate_intervals({"mean": mean}, [95], h=2, sigmah=sigmah)
+    np.testing.assert_allclose(normal["hi-95"], mean + z[1] * sigmah)
+    np.testing.assert_allclose(normal["lo-95"], mean - z[1] * sigmah)
+    skew = _calculate_intervals(
+        {"mean": mean},
+        [95],
+        h=2,
+        sigmah=sigmah,
+        distribution="skew-normal",
+        dist_params={"skewness": 5.0},
+    )
+    np.testing.assert_allclose(skew["lo-95"], mean + lo_sn * sigmah)
+    np.testing.assert_allclose(skew["hi-95"], mean + hi_sn * sigmah)
+    assert not np.allclose(mean - skew["lo-95"], skew["hi-95"] - mean)
+
+
 def test_switch_distribution_maps_all():
     from statsforecast._lib import ets as _ets
     assert D.switch_distribution("t", _ets) == _ets.Distribution.StudentT
@@ -187,6 +224,55 @@ def test_theta_interval_ordering(distribution):
     assert np.all(pred["lo-80"] < pred["mean"])
     assert np.all(pred["mean"] < pred["hi-80"])
     assert np.all(pred["hi-80"] < pred["hi-95"])
+
+
+def test_residual_rmse_fitted_intervals_stay_normal():
+    """ETS, CES, and Theta fitted intervals keep normal quantiles.
+
+    Their `se` is a residual RMSE, not the fitted innovation scale, so a
+    non-normal `distribution` must not change those in-sample bounds.
+    """
+    from statsforecast.models import AutoCES, AutoETS, AutoTheta
+    from statsforecast.utils import _calculate_sigma
+
+    y = ap
+    cases = [
+        (
+            AutoETS(season_length=12, model="ANN", distribution="t"),
+            lambda m: _calculate_sigma(
+                m.model_["actual_residuals"],
+                len(m.model_["actual_residuals"]) - m.model_["n_params"],
+            ),
+        ),
+        (
+            AutoCES(season_length=12, model="N", distribution="t"),
+            lambda m: _calculate_sigma(
+                m.model_["actual_residuals"], m.model_["n"]
+            ),
+        ),
+        (
+            AutoTheta(season_length=12, model="STM", distribution="t"),
+            lambda m: np.std(m.model_["residuals"][3:], ddof=1),
+        ),
+    ]
+    z = stats.norm.ppf(0.975)
+    for model, se_of in cases:
+        model.fit(y)
+        assert model.model_["distribution"] == "t"
+        tq = stats.t.ppf(0.975, model.model_["nu"])
+        assert not np.isclose(tq, z)
+        res = model.predict_in_sample(level=[95])
+        se = se_of(model)
+        finite = np.isfinite(res["fitted"])
+        np.testing.assert_allclose(
+            res["fitted-hi-95"][finite], res["fitted"][finite] + z * se
+        )
+        np.testing.assert_allclose(
+            res["fitted-lo-95"][finite], res["fitted"][finite] - z * se
+        )
+        assert not np.allclose(
+            res["fitted-hi-95"][finite], res["fitted"][finite] + tq * se
+        )
 
 
 def test_simulate_distribution_mismatch_warns():
