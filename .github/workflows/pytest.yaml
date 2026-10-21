@@ -47,6 +47,71 @@ jobs:
           MPLBACKEND: Agg
           RAY_ENABLE_UV_RUN_RUNTIME_ENV: 0
 
+  wheel-tests:
+    name: wheel-tests (${{ matrix.os-platform[1] }})
+    runs-on: ${{ matrix.os-platform[0] }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os-platform:
+          [
+            [ubuntu-latest, manylinux_x86_64],
+            [ubuntu-24.04-arm, manylinux_aarch64],
+            [windows-latest, win_amd64],
+            [macos-15-intel, macosx_x86_64],
+            [macos-latest, macosx_arm64],
+          ]
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+
+      - name: Export locked test dependencies
+        run: uv export --frozen --no-default-groups --group dev --no-emit-project --no-hashes -o test-requirements.txt
+
+      - name: Build wheel and run tests
+        uses: pypa/cibuildwheel@b3395e271a35f73dad77f21802abe9b986dfe299 # v4.3.1
+        env:
+          CIBW_BUILD: cp310-${{ matrix.os-platform[1] }}
+          CIBW_BEFORE_TEST: uv pip install -r {package}/test-requirements.txt
+          CIBW_TEST_ENVIRONMENT: MPLBACKEND=Agg
+          CIBW_TEST_COMMAND: pytest {project}/tests --ignore={project}/tests/test_distributed_fugue.py --no-cov
+
+  distributed-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --group all
+
+      - name: Run pytest
+        run: uv run pytest action_files --ignore=action_files/test_efficiency.py --no-cov
+        env:
+          MPLBACKEND: Agg
+          RAY_ENABLE_UV_RUN_RUNTIME_ENV: 0
+
   pandas3-tests:
     runs-on: ${{ matrix.os }}
     strategy:
