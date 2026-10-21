@@ -1166,7 +1166,7 @@ def myarima(
     use_season = np.sum(seas_order) > 0 and m > 0
     diffs = order[1] + seas_order[1]
     if method is None:
-        if approximation:
+        if approximation and distribution == Distribution.NORMAL:
             method = ArimaMethod.CSS
         else:
             method = ArimaMethod.CSS_ML
@@ -1202,7 +1202,8 @@ def myarima(
         nstar = n - order[1] - seas_order[1] * m
         if diffs == 1 and constant:
             fit["xreg"] = xreg
-        npar = fit["mask"].sum() + 1
+        n_dist_params = 2 if distribution in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED) else 1
+        npar = fit["mask"].sum() + n_dist_params
         if method == ArimaMethod.CSS:
             if fit["sigma2"] <= 0:
                 fit["aic"] = -math.inf
@@ -1210,7 +1211,7 @@ def myarima(
                 fit["aic"] = offset + nstar * math.log(fit["sigma2"]) + 2 * npar
         if not math.isnan(fit["aic"]):
             fit["bic"] = fit["aic"] + npar * (math.log(nstar) - 2)
-            if nstar - npar - 1 != 0:
+            if nstar - npar - 1 > 0:
                 fit["aicc"] = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
             else:
                 fit["aicc"] = math.inf
@@ -1358,6 +1359,7 @@ def search_arima(
 
 def arima2(x, model, xreg, method):
     m = model["arma"][4]  # 5
+    distribution = model.get("distribution", Distribution.NORMAL)
     use_drift = "drift" in model["coef"].keys()
     use_intercept = "intercept" in model["coef"].keys()
     use_xreg = model["xreg"] is not None
@@ -1397,6 +1399,7 @@ def arima2(x, model, xreg, method):
             seasonal=seasonal,
             include_mean=use_intercept,
             method=method,
+            distribution=distribution,
             SSinit=SSinit,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
@@ -1407,6 +1410,7 @@ def arima2(x, model, xreg, method):
             order=order,
             include_mean=use_intercept,
             method=method,
+            distribution=distribution,
             SSinit=SSinit,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
@@ -1417,6 +1421,7 @@ def arima2(x, model, xreg, method):
             order=order,
             include_mean=False,
             method=method,
+            distribution=distribution,
             SSinit=SSinit,
         )
     n_coef = len(refit["coef"])
@@ -1424,6 +1429,9 @@ def arima2(x, model, xreg, method):
     if use_xreg:
         refit["xreg"] = xreg
     refit["sigma2"] = sigma2
+    for key in ("nu", "alpha_dist", "beta_dist"):
+        if key in model:
+            refit[key] = model[key]
     if use_drift:
         refit["coef"] = change_drift_name(refit["coef"])
     return refit
@@ -1565,6 +1573,10 @@ def _inv_boxcox_mean(x, blambda, fvar=None, biasadj=False):
     return out
 
 
+# An explicit None already has ML semantics; only omitted arguments use this default.
+_ARIMA_DEFAULT_METHOD = object()
+
+
 def Arima(
     x,
     order=(0, 0, 0),
@@ -1575,11 +1587,17 @@ def Arima(
     include_constant=None,
     blambda=None,
     biasadj=None,
-    method="CSS",
+    method=_ARIMA_DEFAULT_METHOD,
     model=None,
     distribution="normal",
     **kwargs,
 ):
+    if method is _ARIMA_DEFAULT_METHOD:
+        method = (
+            ArimaMethod.CSS_ML
+            if model is not None and model.get("distribution", Distribution.NORMAL) != Distribution.NORMAL
+            else ArimaMethod.CSS
+        )
     x = x.copy()
     origx = x.copy()
     seas_order = seasonal["order"]
@@ -1649,14 +1667,18 @@ def Arima(
             if include_drift:
                 tmp["coef"] = change_drift_name(tmp["coef"])
 
-    npar = np.sum(tmp["mask"]) + 1
+    n_dist_params = 2 if tmp["distribution"] in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED) else 1
+    npar = np.sum(tmp["mask"]) + n_dist_params
     missing = np.isnan(tmp["residuals"])
     nonmiss_idxs = np.where(~missing)[0]
     firstnonmiss = np.min(nonmiss_idxs)
     lastnonmiss = np.max(nonmiss_idxs) + 1
     n = np.sum(~missing[firstnonmiss:lastnonmiss])
     nstar = n - tmp["arma"][5] - tmp["arma"][6] * tmp["arma"][4]
-    tmp["aicc"] = tmp["aic"] + 2 * npar * (nstar / (nstar - npar - 1) - 1)
+    if nstar > npar + 1:
+        tmp["aicc"] = tmp["aic"] + 2 * npar * (nstar / (nstar - npar - 1) - 1)
+    else:
+        tmp["aicc"] = math.inf
     tmp["bic"] = tmp["aic"] + npar * (math.log(nstar) - 2)
     tmp["xreg"] = xreg
     tmp["lambda"] = blambda
@@ -1773,8 +1795,12 @@ def forecast_arima(
         else:
             dist = model.get("distribution", Distribution.NORMAL)
             quantiles = _quantiles(level, distribution=dist, dist_params=error_params_from_model(model))
+            lower_quantiles = (
+                _quantiles(-np.asarray(level), distribution=dist, dist_params=error_params_from_model(model))
+                if dist == Distribution.SKEW_NORMAL else -quantiles
+            )
             lower = pd.DataFrame(
-                pred.reshape(-1, 1) - quantiles * se.reshape(-1, 1),
+                pred.reshape(-1, 1) + lower_quantiles * se.reshape(-1, 1),
                 columns=[f"{l}%" for l in level],
             )
             upper = pd.DataFrame(
@@ -2160,6 +2186,9 @@ def auto_arima_f(
 ):
     if approximation is None:
         approximation = len(x) > 150 or period > 12
+    if distribution != Distribution.NORMAL:
+        # CSS approximations are only defined for normal innovations.
+        approximation = False
     if x.ndim > 1:
         raise ValueError("auto_arima can only handle univariate time series")
     # myarima swallows ValueErrors, so validate before the search
@@ -2191,6 +2220,8 @@ def auto_arima_f(
                 seasonal={"order": (0, 0, 0), "period": m},
                 SSinit=SSinit,
                 fixed=np.array([np.mean(x)]),
+                method=method,
+                distribution=distribution,
             )
         else:
             fit = Arima(
@@ -2199,6 +2230,8 @@ def auto_arima_f(
                 seasonal={"order": (0, 0, 0), "period": m},
                 SSinit=SSinit,
                 include_mean=False,
+                method=method,
+                distribution=distribution,
             )
         fit["x"] = origx
         fit["constant"] = True
@@ -2295,6 +2328,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx / m)]),
                     method=method,
+                    distribution=distribution,
                 )
             elif D > 0 and d > 0:
                 fit = Arima(
@@ -2303,6 +2337,7 @@ def auto_arima_f(
                     seasonal={"order": (0, D, 0), "period": m},
                     SSinit=SSinit,
                     method=method,
+                    distribution=distribution,
                 )
             elif d == 2:
                 fit = Arima(
@@ -2311,6 +2346,7 @@ def auto_arima_f(
                     seasonal={"order": (0, 0, 0), "period": m},
                     SSinit=SSinit,
                     method=method,
+                    distribution=distribution,
                 )
             elif d < 2:
                 fit = Arima(
@@ -2321,6 +2357,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx)]),
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 raise ValueError(
@@ -2335,6 +2372,7 @@ def auto_arima_f(
                     SSinit=SSinit,
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 fit = Arima(
@@ -2344,6 +2382,7 @@ def auto_arima_f(
                     SSinit=SSinit,
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
         fit["x"] = origx
         fit["lambda"] = blambda
@@ -2403,6 +2442,7 @@ def auto_arima_f(
             allow_drift=allowdrift,
             allow_mean=allowmean,
             period=m,
+            distribution=distribution,
             SSinit=SSinit,
         )
         bestfit["lambda"] = blambda
