@@ -385,7 +385,7 @@ class MFLES:
                 else:
                     print(f"input is constant with value {y[0]}, defaulting to naive")
             self.trend = np.append(y[-1], y[-1])
-            self.seasonality = None
+            self.seasonality = np.zeros(len(y))
             self.trend_penalty = False
             self.mean = y[-1]
             self.std = 0
@@ -566,11 +566,12 @@ class MFLES:
         if self.trend_penalty and self.penalty is not None:
             slope = slope * max(0, self.penalty)
         self.predicted_trend = slope * np.arange(1, forecast_horizon + 1) + last_point
-        if self.seasonality is not None:
-            seasonal = sum(np.resize(s, forecast_horizon) for s in self.seasonality)
-            predicted = self.predicted_trend + seasonal
-        else:
-            predicted = self.predicted_trend
+        predicted = self.predicted_trend.copy()
+        if isinstance(self.seasonality, list):
+            for seasonality in self.seasonality:
+                predicted += np.resize(seasonality, forecast_horizon)
+        elif self.seasonality is not None:
+            predicted += np.resize(self.seasonality, forecast_horizon)
         if X is not None:
             for model in self.exo_model:
                 predicted += model.predict(X) * self.exogenous_lr

@@ -63,8 +63,15 @@ def test_mfles_multiple_seasonalities_forecast():
     y, y_future = y_full[:n_obs], y_full[n_obs:]
 
     model = MFLES()
-    model.fit(y, seasonal_period=periods, linear_lr=0, rs_lr=0)
+    model.fit(
+        y, seasonal_period=periods, seasonal_lr=1, linear_lr=0, rs_lr=0
+    )
     forecast = model.predict(h)
 
-    np.testing.assert_allclose(forecast, y_future, atol=10)
+    np.testing.assert_allclose(forecast, y_future, atol=1e-2)
     assert [len(s) for s in model.seasonality] == periods
+
+    # Emulate the combined seasonal array stored by previously fitted MFLES models.
+    legacy_h = max(periods)
+    model.seasonality = sum(np.resize(s, legacy_h) for s in model.seasonality)
+    np.testing.assert_allclose(model.predict(legacy_h), forecast[:legacy_h])
