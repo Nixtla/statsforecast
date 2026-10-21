@@ -15,6 +15,7 @@ from statsforecast.models import (
     ARIMA,
     GARCH,
     IMAPA,
+    MFLES,
     MSTL,
     TSB,
     AutoARIMA,
@@ -555,6 +556,18 @@ class TestMFLES:
             ap, self.h, X=self.X, X_future=self.X_future, fitted=True, level=[80, 95]
         )
         assert fcst_auto_mfles is not None
+
+    def test_mfles_multiple_seasonalities(self):
+        h = 30
+        y_full = np.resize([0, 100.0], 30 + h) + np.resize([0, -200.0, 0, 0, 0], 30 + h)
+        y, y_future = y_full[:30], y_full[30:]
+
+        mfles = MFLES(season_length=[2, 5], trend_lr=0, residuals_lr=0)
+        fcst = mfles.forecast(y, h)
+        fcst_fit_predict = mfles.fit(y).predict(h)
+
+        np.testing.assert_array_equal(fcst["mean"], fcst_fit_predict["mean"])
+        np.testing.assert_allclose(fcst["mean"], y_future, atol=1)
 
 
 class TestTBATS:

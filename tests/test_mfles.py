@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from statsforecast.mfles import MFLES
 
@@ -51,3 +52,19 @@ class TestMFLES:
         assert fitted is not None
         assert predicted is not None
         assert len(predicted) == 24
+
+
+def test_mfles_multiple_seasonalities_forecast():
+    periods = [2, 3, 5]
+    n_obs = 151
+    h = 2 * np.lcm.reduce(periods)
+    patterns = [[0, 100], [0, -150, 50], [0, -200, 0, 0, 0]]
+    y_full = sum(np.resize(p, n_obs + h) for p in patterns).astype(float)
+    y, y_future = y_full[:n_obs], y_full[n_obs:]
+
+    model = MFLES()
+    model.fit(y, seasonal_period=periods, linear_lr=0, rs_lr=0)
+    forecast = model.predict(h)
+
+    np.testing.assert_allclose(forecast, y_future, atol=10)
+    assert [len(s) for s in model.seasonality] == periods

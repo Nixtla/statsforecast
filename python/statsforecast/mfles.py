@@ -385,7 +385,7 @@ class MFLES:
                 else:
                     print(f"input is constant with value {y[0]}, defaulting to naive")
             self.trend = np.append(y[-1], y[-1])
-            self.seasonality = np.zeros(len(y))
+            self.seasonality = None
             self.trend_penalty = False
             self.mean = y[-1]
             self.std = 0
@@ -422,7 +422,7 @@ class MFLES:
             ma_cycle = itertools.cycle(ma)
         if seasonal_period is not None:
             seasons_cycle = itertools.cycle(list(range(len(seasonal_period))))
-            self.seasonality = np.zeros(max(seasonal_period))
+            self.seasonality = [np.zeros(period) for period in seasonal_period]
             fourier_series = []
             for period in seasonal_period:
                 if fourier_order is None:
@@ -464,10 +464,9 @@ class MFLES:
                     mse = component_mse
                     fitted += seas
                     resids = y - fitted
-                    self.seasonality += np.resize(
-                        seas[-seasonal_period[seasonal_period_cycle] :],
-                        len(self.seasonality),
-                    )
+                    self.seasonality[seasonal_period_cycle] += seas[
+                        -seasonal_period[seasonal_period_cycle] :
+                    ]
                     self.seasonal_component += seas
             if X is not None and i > 0:
                 model_obj = exogenous_estimator(**exogenous_params)
@@ -568,9 +567,8 @@ class MFLES:
             slope = slope * max(0, self.penalty)
         self.predicted_trend = slope * np.arange(1, forecast_horizon + 1) + last_point
         if self.seasonality is not None:
-            predicted = self.predicted_trend + np.resize(
-                self.seasonality, forecast_horizon
-            )
+            seasonal = sum(np.resize(s, forecast_horizon) for s in self.seasonality)
+            predicted = self.predicted_trend + seasonal
         else:
             predicted = self.predicted_trend
         if X is not None:
