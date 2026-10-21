@@ -32,11 +32,11 @@ The following table summarizes the data details.
 
 We measured the computational time against the number of time series. The following graph shows the results. As we can see, the fastest model is our `auto_arima`.
 
-![](nbs/imgs/computational-efficiency.png)
+![](../../nbs/imgs/computational-efficiency.png)
 
 <details>
     <summary> Nixtla vs Prophet </summary> 
-    <img src="nbs/imgs/computational-efficiency-hours-wo-pmdarima.png" > 
+    <img src="../../nbs/imgs/computational-efficiency-hours-wo-pmdarima.png" > 
 </details>
 
 You can reproduce the results [here](/experiments/arima/).
