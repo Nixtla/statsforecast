@@ -68,7 +68,7 @@ def mstl(
         except ImportError as e:
             print("supersmoother is required for mstl with period=1")
             raise e
-        deseas = x
+        deseas = np.copy(x)
         t = 1 + np.arange(n)
         trend = SuperSmoother().fit(t, x).predict(t)
     deseas[np.isnan(origx)] = np.nan
