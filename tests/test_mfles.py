@@ -54,6 +54,14 @@ class TestMFLES:
         assert len(predicted) == 24
 
 
+def test_mfles_seasonal_period_longer_than_series():
+    model = MFLES()
+    model.fit(np.arange(8, dtype=float), seasonal_period=12)
+
+    forecast = model.predict(12)
+    assert np.isfinite(forecast).all()
+
+
 def test_mfles_multiple_seasonalities_forecast():
     periods = [2, 3, 5]
     n_obs = 151

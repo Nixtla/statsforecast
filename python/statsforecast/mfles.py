@@ -464,9 +464,11 @@ class MFLES:
                     mse = component_mse
                     fitted += seas
                     resids = y - fitted
-                    self.seasonality[seasonal_period_cycle] += seas[
-                        -seasonal_period[seasonal_period_cycle] :
-                    ]
+                    period = seasonal_period[seasonal_period_cycle]
+                    seasonal_update = seas[-period:]
+                    if seasonal_update.size < period:
+                        seasonal_update = np.resize(seasonal_update, period)
+                    self.seasonality[seasonal_period_cycle] += seasonal_update
                     self.seasonal_component += seas
             if X is not None and i > 0:
                 model_obj = exogenous_estimator(**exogenous_params)
