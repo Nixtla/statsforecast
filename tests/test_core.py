@@ -1574,3 +1574,54 @@ def test_future_exog_column_order(n_jobs, as_polars, method):
     np.testing.assert_allclose(
         result["LinearRegression"].to_numpy(), df.loc[df.ds >= 17, "y"]
     )
+
+
+class FailsOnNegative(_TS):
+    """Raises for any series containing a negative value."""
+
+    def __init__(self, alias="FailsOnNegative"):
+        self.alias = alias
+
+    def fit(self, y, X=None):
+        if (y < 0).any():
+            raise ValueError("no model able to be fitted")
+        return self
+
+    def forecast(self, y, h, X=None, X_future=None, fitted=False):
+        self.fit(y)
+        return {"mean": np.full(h, y[-1])}
+
+    def __repr__(self):
+        return self.alias
+
+
+@pytest.fixture
+def df_one_bad_series():
+    ds = pd.date_range("2020-01-01", periods=20)
+    good = pd.DataFrame({"unique_id": "good", "ds": ds, "y": np.arange(20.0)})
+    bad = pd.DataFrame({"unique_id": "bad_id", "ds": ds, "y": -np.arange(1.0, 21)})
+    return pd.concat([good, bad], ignore_index=True)
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("method", ["forecast", "cross_validation", "fit"])
+def test_fit_error_has_model_and_series(df_one_bad_series, method, n_jobs):
+    sf = StatsForecast(models=[FailsOnNegative()], freq="D", n_jobs=n_jobs)
+    kwargs = {"df": df_one_bad_series}
+    if method != "fit":
+        kwargs["h"] = 2
+    with pytest.raises(ValueError, match="no model able to be fitted") as exc_info:
+        getattr(sf, method)(**kwargs)
+    msg = str(exc_info.value)
+    assert "FailsOnNegative" in msg
+    assert "bad_id" in msg
+    assert "good" not in msg
+
+
+@pytest.mark.parametrize("method", ["forecast", "cross_validation"])
+def test_fit_error_with_fallback_unchanged(df_one_bad_series, method):
+    sf = StatsForecast(
+        models=[FailsOnNegative()], freq="D", n_jobs=1, fallback_model=Naive()
+    )
+    res = getattr(sf, method)(df=df_one_bad_series, h=2)
+    assert not res["FailsOnNegative"].isna().any()
