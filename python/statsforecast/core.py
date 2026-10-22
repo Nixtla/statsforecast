@@ -12,6 +12,7 @@ import reprlib
 import time
 import warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -654,11 +655,30 @@ class _StatsForecast:
 
     def _set_prediction_intervals(
         self, prediction_intervals: Optional[ConformalIntervals]
-    ) -> None:
+    ) -> List[Any]:
+        updated = []
         for model in self.models:
             interval = getattr(model, "prediction_intervals", None)
             if interval is None:
+                updated.append((model, hasattr(model, "prediction_intervals")))
                 setattr(model, "prediction_intervals", prediction_intervals)
+        return updated
+
+    @contextmanager
+    def _prediction_intervals_for_call(
+        self, prediction_intervals: Optional[ConformalIntervals]
+    ):
+        # the intervals passed to a method only apply to that call,
+        # so the models are restored once it returns
+        updated = self._set_prediction_intervals(prediction_intervals)
+        try:
+            yield
+        finally:
+            for model, had_attr in updated:
+                if had_attr:
+                    model.prediction_intervals = None
+                else:
+                    delattr(model, "prediction_intervals")
 
     def fit(
         self,
@@ -696,13 +716,13 @@ class _StatsForecast:
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
-        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
-        if self.n_jobs == 1:
-            self.fitted_ = self.ga.fit(
-                models=self.models, fallback_model=self.fallback_model
-            )
-        else:
-            self.fitted_ = self._fit_parallel()
+        with self._prediction_intervals_for_call(prediction_intervals):
+            if self.n_jobs == 1:
+                self.fitted_ = self.ga.fit(
+                    models=self.models, fallback_model=self.fallback_model
+                )
+            else:
+                self.fitted_ = self._fit_parallel()
         return self
 
     def _make_future_df(self, h: int):
@@ -797,7 +817,7 @@ class _StatsForecast:
         if (
             any(
                 getattr(m, "prediction_intervals", None) is not None
-                for m in self.models
+                for m in self.fitted_.ravel()
             )
             and level is None
         ):
@@ -866,16 +886,16 @@ class _StatsForecast:
                 "You must specify `level` when using `prediction_intervals`"
             )
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
-        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
-        if self.n_jobs == 1:
-            self.fitted_, fcsts, cols = self.ga.fit_predict(
-                models=self.models, h=h, X=X, level=level
-            )
-        else:
-            self.fitted_, fcsts, cols = self._fit_predict_parallel(
-                h=h, X=X, level=level
-            )
+        with self._prediction_intervals_for_call(prediction_intervals):
+            if self.n_jobs == 1:
+                self.fitted_, fcsts, cols = self.ga.fit_predict(
+                    models=self.models, h=h, X=X, level=level
+                )
+            else:
+                self.fitted_, fcsts, cols = self._fit_predict_parallel(
+                    h=h, X=X, level=level
+                )
         fcsts_df = self._make_future_df(h=h)
         fcsts_df[cols] = fcsts
         return fcsts_df
@@ -931,27 +951,27 @@ class _StatsForecast:
         )
         self._validate_exog(X_df)
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
-        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         X, level = self._parse_X_level(h=h, X=X_df, level=level)
-        if self.n_jobs == 1:
-            res_fcsts = self.ga.forecast(
-                models=self.models,
-                h=h,
-                fallback_model=self.fallback_model,
-                fitted=fitted,
-                X=X,
-                level=level,
-                verbose=self.verbose,
-                target_col=target_col,
-            )
-        else:
-            res_fcsts = self._forecast_parallel(
-                h=h,
-                fitted=fitted,
-                X=X,
-                level=level,
-                target_col=target_col,
-            )
+        with self._prediction_intervals_for_call(prediction_intervals):
+            if self.n_jobs == 1:
+                res_fcsts = self.ga.forecast(
+                    models=self.models,
+                    h=h,
+                    fallback_model=self.fallback_model,
+                    fitted=fitted,
+                    X=X,
+                    level=level,
+                    verbose=self.verbose,
+                    target_col=target_col,
+                )
+            else:
+                res_fcsts = self._forecast_parallel(
+                    h=h,
+                    fitted=fitted,
+                    X=X,
+                    level=level,
+                    target_col=target_col,
+                )
         if fitted:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
         fcsts = res_fcsts["forecasts"]
@@ -1216,33 +1236,33 @@ class _StatsForecast:
         self._validate_sizes_for_prediction_intervals(
             prediction_intervals=prediction_intervals, offset=test_size
         )
-        self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         _, level = self._parse_X_level(h=h, X=None, level=level)
-        if self.n_jobs == 1:
-            res_fcsts = self.ga.cross_validation(
-                models=self.models,
-                h=h,
-                test_size=test_size,
-                fallback_model=self.fallback_model,
-                step_size=step_size,
-                input_size=input_size,
-                fitted=fitted,
-                level=level,
-                verbose=self.verbose,
-                refit=refit,
-                target_col=target_col,
-            )
-        else:
-            res_fcsts = self._cross_validation_parallel(
-                h=h,
-                test_size=test_size,
-                step_size=step_size,
-                input_size=input_size,
-                fitted=fitted,
-                level=level,
-                refit=refit,
-                target_col=target_col,
-            )
+        with self._prediction_intervals_for_call(prediction_intervals):
+            if self.n_jobs == 1:
+                res_fcsts = self.ga.cross_validation(
+                    models=self.models,
+                    h=h,
+                    test_size=test_size,
+                    fallback_model=self.fallback_model,
+                    step_size=step_size,
+                    input_size=input_size,
+                    fitted=fitted,
+                    level=level,
+                    verbose=self.verbose,
+                    refit=refit,
+                    target_col=target_col,
+                )
+            else:
+                res_fcsts = self._cross_validation_parallel(
+                    h=h,
+                    test_size=test_size,
+                    step_size=step_size,
+                    input_size=input_size,
+                    fitted=fitted,
+                    level=level,
+                    refit=refit,
+                    target_col=target_col,
+                )
         if fitted:
             self.cv_fitted_values_ = res_fcsts["fitted"]
             self.n_cv_ = n_windows
