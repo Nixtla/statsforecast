@@ -1281,7 +1281,7 @@ class _StatsForecast:
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
         train_uids = ufp.repeat(self.uids, np.diff(self.ga.indptr))
         cv_uids = ufp.vertical_concat([train_uids for _ in range(self.n_cv_)])
-        used_uids = ufp.take_rows(cv_uids, idxs)
+        used_uids = ufp.filter_with_mask(cv_uids, idxs)
         dates = np.tile(self.og_dates, self.n_cv_)[idxs]
         cutoffs_mask = self.cv_fitted_values_["last_idxs"].flatten(order="F")[idxs]
         cutoffs_sizes = np.diff(np.append(0, np.where(cutoffs_mask)[0] + 1))
