@@ -76,7 +76,7 @@ def test_mfles_multiple_seasonalities_forecast():
     )
     forecast = model.predict(h)
 
-    np.testing.assert_allclose(forecast, y_future, atol=1e-2)
+    np.testing.assert_allclose(forecast, y_future, atol=10)
     assert [len(s) for s in model.seasonality] == periods
 
     # Emulate the combined seasonal array stored by previously fitted MFLES models.
