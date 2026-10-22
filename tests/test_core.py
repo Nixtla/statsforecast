@@ -1200,6 +1200,26 @@ def test_cv_fitted(series_cv2, str_ds):
     assert_cv_fitted(series_cv2, str_ds=str_ds)
 
 
+def test_cv_fitted_polars(series_cv2):
+    pd_df = series_cv2.reset_index()
+    pl_df = pl.from_pandas(pd_df.assign(unique_id=pd_df["unique_id"].astype(str)))
+    pd_sf = StatsForecast(models=[SumAhead(), Naive()], freq="D")
+    pd_sf.cross_validation(df=pd_df, h=2, n_windows=4, fitted=True)
+    expected = pd_sf.cross_validation_fitted_values()
+    pl_sf = StatsForecast(models=[SumAhead(), Naive()], freq="1d")
+    pl_sf.cross_validation(df=pl_df, h=2, n_windows=4, fitted=True)
+    actual = pl_sf.cross_validation_fitted_values()
+    assert isinstance(actual, pl.DataFrame)
+    sort_cols = ["unique_id", "cutoff", "ds"]
+    pd.testing.assert_frame_equal(
+        actual.to_pandas().sort_values(sort_cols).reset_index(drop=True),
+        expected.assign(unique_id=expected["unique_id"].astype(str))
+        .sort_values(sort_cols)
+        .reset_index(drop=True),
+        check_dtype=False,
+    )
+
+
 # tests for fallback model
 def test_cv_fallback_model(series, n_jobs=1):
     fitted_fcst = StatsForecast(
