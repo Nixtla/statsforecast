@@ -71,15 +71,44 @@ def test_mfles_multiple_seasonalities_forecast():
     y, y_future = y_full[:n_obs], y_full[n_obs:]
 
     model = MFLES()
-    model.fit(
-        y, seasonal_period=periods, seasonal_lr=1, linear_lr=0, rs_lr=0
-    )
+    model.fit(y, seasonal_period=periods, seasonal_lr=1, linear_lr=0, rs_lr=0)
     forecast = model.predict(h)
 
     np.testing.assert_allclose(forecast, y_future, atol=10)
     assert [len(s) for s in model.seasonality] == periods
 
-    # Emulate the combined seasonal array stored by previously fitted MFLES models.
-    legacy_h = max(periods)
-    model.seasonality = sum(np.resize(s, legacy_h) for s in model.seasonality)
-    np.testing.assert_allclose(model.predict(legacy_h), forecast[:legacy_h])
+
+def test_mfles_predict_matches_previously_fitted_model():
+    y = (
+        10
+        + 0.5 * np.arange(24)
+        + np.resize([0, 3.0], 24)
+        + np.resize([0, -2.0, 1.0, 0], 24)
+    )
+    # State and forecast of MFLES().fit(y, seasonal_period=[2, 4]), when seasonality was stored
+    # as a single array of length max(seasonal_period), instead of per period.
+    fitted_state = {
+        "trend": np.array([3.1085977, 3.13840306]),
+        "trend_penalty": True,
+        "penalty": 0.96620813,
+        "seasonality": np.array([-0.10717587, -0.03674268, -0.03491234, 0.07762715]),
+        "const": 10.0,
+    }
+    expected = [
+        21.328098,
+        23.553084,
+        24.285641,
+        27.972530,
+        23.932039,
+        26.428672,
+        27.250668,
+        31.387688,
+    ]
+
+    loaded = MFLES()
+    loaded.__dict__.update(fitted_state)
+    np.testing.assert_allclose(loaded.predict(8), expected, rtol=1e-6)
+
+    refitted = MFLES()
+    refitted.fit(y, seasonal_period=[2, 4])
+    np.testing.assert_allclose(refitted.predict(8), expected, rtol=1e-6)
