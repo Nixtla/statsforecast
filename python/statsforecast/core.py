@@ -45,6 +45,19 @@ class GroupedArray(BaseGroupedArray):
         self.data = _ensure_float(data)
         self.indptr = indptr
         self.n_groups = len(indptr) - 1
+        # optional series identifiers, only used to give context in error messages
+        self.uids = None
+
+    def _with_context(self, error, model, i):
+        # Adds the failing model and series to the message of `error` in place,
+        # so the exception type, traceback and attributes are preserved.
+        uid = f"{self.uids[i]!r}" if self.uids is not None else f"index {i}"
+        if error.args and isinstance(error.args[0], str):
+            error.args = (
+                f"{error.args[0]} (model: {model!r}, unique_id: {uid})",
+                *error.args[1:],
+            )
+        return error
 
     def __eq__(self, other):
         if not hasattr(other, "data") or not hasattr(other, "indptr"):
@@ -68,7 +81,7 @@ class GroupedArray(BaseGroupedArray):
                         new_fallback_model.alias = model.alias
                         fm[i, i_model] = new_fallback_model.fit(y=y, X=X)
                     else:
-                        raise error
+                        raise self._with_context(error, model, i)
         return fm
 
     def _get_cols(self, models, attr, h, X, level=tuple()):
@@ -201,7 +214,7 @@ class GroupedArray(BaseGroupedArray):
                             **kwargs,
                         )
                     else:
-                        raise error
+                        raise self._with_context(error, model, i)
                 times[repr(model)] += time.perf_counter() - start
                 cols_m = [
                     key
@@ -332,7 +345,7 @@ class GroupedArray(BaseGroupedArray):
                             res_i = model.forecast(**forecast_kwargs)
                         except Exception as error:
                             if fallback_model is None:
-                                raise error
+                                raise self._with_context(error, model, i_ts)
                             res_i = fallback_model.forecast(**forecast_kwargs)
                     else:
                         if should_fit:
@@ -340,7 +353,7 @@ class GroupedArray(BaseGroupedArray):
                                 fitted_models[i_model] = model.fit(y=y_train, X=X_train)
                             except Exception as error:
                                 if fallback_model is None:
-                                    raise error
+                                    raise self._with_context(error, model, i_ts)
                                 fitted_models[i_model] = fallback_model.new().fit(
                                     y=y_train, X=X_train
                                 )
@@ -384,7 +397,10 @@ class GroupedArray(BaseGroupedArray):
 
     def take(self, idxs):
         data, indptr = super().take(idxs)
-        return GroupedArray(data, indptr)
+        ga = GroupedArray(data, indptr)
+        if self.uids is not None:
+            ga.uids = self.uids[idxs]
+        return ga
 
     def split(self, n_chunks):
         n_chunks = min(n_chunks, self.n_groups)
@@ -619,6 +635,7 @@ class _StatsForecast:
         else:
             self.last_dates = pl_Series(last_times)
         self.ga = GroupedArray(data, indptr)
+        self.ga.uids = np.asarray(self.uids)
         self.og_dates = df[time_col].to_numpy()
         if sort_idxs is not None:
             self.og_dates = self.og_dates[sort_idxs]
