@@ -256,6 +256,7 @@ class GroupedArray(BaseGroupedArray):
         refit=True,
         verbose=False,
         target_col="y",
+        uids=None,
     ):
         # output of size: (ts, window, h)
         if (test_size - h) % step_size:
@@ -282,7 +283,11 @@ class GroupedArray(BaseGroupedArray):
         for i_ts, grp in enumerate(self):
             iterable = tqdm(
                 enumerate(steps, start=0),
-                desc=f"Cross Validation Time Series {i_ts + 1}",
+                desc=(
+                    f"Cross Validation Time Series {i_ts + 1}"
+                    if uids is None
+                    else f"Cross Validation {uids[i_ts]}"
+                ),
                 disable=(not verbose),
                 total=len(steps),
             )
@@ -448,6 +453,7 @@ class GroupedArray(BaseGroupedArray):
         refit=True,
         verbose=False,
         target_col="y",
+        uids=None,
     ):
         return self.cross_validation(
             models=models,
@@ -461,6 +467,7 @@ class GroupedArray(BaseGroupedArray):
             refit=refit,
             verbose=verbose,
             target_col=target_col,
+            uids=uids,
         )
 
     def simulate(
@@ -1231,6 +1238,7 @@ class _StatsForecast:
                 verbose=self.verbose,
                 refit=refit,
                 target_col=target_col,
+                uids=self.uids.to_numpy().tolist(),
             )
         else:
             res_fcsts = self._cross_validation_parallel(
@@ -1422,12 +1430,13 @@ class _StatsForecast:
     ):
         # create elements for each core
         gas = self.ga.split(self.n_jobs)
+        uids = np.array_split(self.uids.to_numpy().tolist(), len(gas))
         Pool, pool_kwargs = self._get_pool()
         # compute parallel forecasts
         result = {}
         with Pool(self.n_jobs, **pool_kwargs) as executor:
             futures = []
-            for ga in gas:
+            for ga, ga_uids in zip(gas, uids):
                 future = executor.apply_async(
                     ga._single_threaded_cross_validation,
                     tuple(),
@@ -1443,6 +1452,7 @@ class _StatsForecast:
                         refit=refit,
                         verbose=self.verbose,
                         target_col=target_col,
+                        uids=ga_uids.tolist(),
                     ),
                 )
                 futures.append(future)
