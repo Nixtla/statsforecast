@@ -1,5 +1,12 @@
 import numpy as np
-from statsforecast.tbats import inv_boxcox, tbats_forecast, tbats_selection
+import pytest
+from statsforecast.models import TBATS
+from statsforecast.tbats import (
+    extract_params,
+    inv_boxcox,
+    tbats_forecast,
+    tbats_selection,
+)
 from statsforecast.utils import AirPassengers as ap
 
 
@@ -88,3 +95,74 @@ def test_tbats_selection_and_forecast():
     # Verify forecast has correct length and reasonable values
     assert len(forecast) == h
     assert np.all(forecast > 0)  # Air passengers should be positive
+
+
+def _arma_series():
+    rng = np.random.default_rng(2)
+    n = 144
+    e = rng.normal(size=n)
+    x = np.zeros(n)
+    for t in range(1, n):
+        x[t] = 0.5 * x[t - 1] + e[t]
+    return 50 + 0.1 * np.arange(n) + 8 * np.sin(2 * np.pi * np.arange(n) / 12) + x
+
+
+@pytest.mark.parametrize(
+    "use_boxcox,use_trend,use_damped_trend,use_arma_errors",
+    [
+        (True, True, True, False),
+        (False, True, False, False),
+        (False, False, False, False),
+        (False, True, False, True),
+    ],
+)
+def test_tbats_labeled_params(use_boxcox, use_trend, use_damped_trend, use_arma_errors):
+    """Labeled fitted parameters must match the flat `optim_params` array."""
+    y = _arma_series() if use_arma_errors else ap
+    mod = TBATS(
+        season_length=12,
+        use_boxcox=use_boxcox,
+        use_trend=use_trend,
+        use_damped_trend=use_damped_trend,
+        use_arma_errors=use_arma_errors,
+    ).fit(y).model_
+
+    (lam, alpha, beta, phi, gamma_one, gamma_two, ar, ma) = extract_params(
+        mod["optim_params"],
+        use_boxcox,
+        use_trend,
+        use_damped_trend,
+        use_arma_errors,
+        mod["seasonal_periods"],
+        mod["p"],
+        mod["q"],
+    )
+    np.testing.assert_array_equal(mod["seasonal_periods"], [12])
+    assert mod["alpha"] == alpha
+    assert mod["BoxCox_lambda"] == lam
+    assert (mod["BoxCox_lambda"] is not None) == use_boxcox
+    np.testing.assert_array_equal(mod["gamma_one_values"], gamma_one)
+    np.testing.assert_array_equal(mod["gamma_two_values"], gamma_two)
+    assert mod["gamma_one_values"].shape == mod["gamma_two_values"].shape == (1,)
+    if use_trend:
+        assert mod["beta"] == beta
+        # phi is fixed to 1.0 (and not in optim_params) when the trend is not damped
+        assert mod["damping_parameter"] == (phi if use_damped_trend else 1.0)
+    else:
+        assert mod["beta"] is None
+        assert mod["damping_parameter"] is None
+    if use_arma_errors:
+        # ARMA errors must have been selected for this series
+        assert mod["description"]["use_arma_errors"]
+        assert mod["p"] + mod["q"] > 0
+    for key, coeffs, order in [
+        ("ar_coefficients", ar, mod["p"]),
+        ("ma_coefficients", ma, mod["q"]),
+    ]:
+        if order:
+            np.testing.assert_array_equal(mod[key], coeffs)
+            assert len(mod[key]) == order
+        else:
+            assert mod[key] is None
+    # `optim_params` is kept for backward compatibility
+    assert mod["optim_params"][1 if use_boxcox else 0] == mod["alpha"]
