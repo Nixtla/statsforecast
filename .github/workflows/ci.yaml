@@ -155,7 +155,12 @@ jobs:
       - name: Install dependencies
         run: uv sync && uv pip install pytest-codspeed pytest-xdist
 
+      - name: Run efficiency tests
+        if: github.actor == 'dependabot[bot]' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
+        run: uv run pytest action_files/test_efficiency.py -n 2 --no-cov
+
       - name: Run benchmarks
+        if: github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         uses: CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da # 5.5.0
         with:
           mode: simulation
