@@ -314,7 +314,7 @@ class AutoARIMA(_TS):
         stepwise (bool, default=True): If True, will do stepwise selection (faster).
         nmodels (int, default=94): Number of models considered in stepwise search.
         trace (bool, default=False): If True, the searched ARIMA models is reported.
-        approximation (Optional[bool], default=False): If True, conditional sums-of-squares estimation, final MLE.
+        approximation (Optional[bool], default=None): If True, conditional sums-of-squares estimation, final MLE. If None, approximation is used when the series has more than 150 observations or `season_length` is greater than 12, matching R and `statsforecast.arima.AutoARIMA`.
         method (Optional[str], optional): Fitting method between maximum likelihood or sums-of-squares.
         truncate (Optional[bool], optional): Observations truncated series used in model selection.
         test (str, default="kpss"): Unit root test to use. See `ndiffs` for details.
@@ -363,7 +363,7 @@ class AutoARIMA(_TS):
         stepwise: bool = True,
         nmodels: int = 94,
         trace: bool = False,
-        approximation: Optional[bool] = False,
+        approximation: Optional[bool] = None,
         method: Optional[str] = None,
         truncate: Optional[bool] = None,
         test: str = "kpss",

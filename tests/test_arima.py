@@ -1,3 +1,4 @@
+import inspect
 import math
 import pickle
 import warnings
@@ -1724,3 +1725,36 @@ def test_css_unit_root_with_fixed_coefficients_fits():
     # CSS doesn't use the initial state covariance, R fits this too
     fit = arima(ap, order=(1, 0, 0), method="CSS", fixed=[1.0, np.nan])
     assert np.isfinite(fit["sigma2"])
+
+
+def test_autoarima_models_and_arima_share_defaults():
+    # models.AutoARIMA must stay aligned with arima.AutoARIMA (and R) in every
+    # parameter they share, see issue #497
+    models_params = inspect.signature(AutoARIMAModel.__init__).parameters
+    arima_params = inspect.signature(AutoARIMA.__init__).parameters
+    shared = (set(models_params) & set(arima_params)) - {"self"}
+    assert {"approximation", "allowdrift", "allowmean"} <= shared
+    mismatches = {
+        name: (models_params[name].default, arima_params[name].default)
+        for name in shared
+        if models_params[name].default != arima_params[name].default
+    }
+    assert not mismatches
+
+
+def test_autoarima_models_and_arima_same_fit_with_default_approximation():
+    # 200 observations > 150 so approximation=None resolves to True
+    rng = np.random.default_rng(0)
+    e = rng.normal(size=200)
+    y = np.zeros(200)
+    for t in range(2, 200):
+        y[t] = 0.5 * y[t - 1] - 0.3 * y[t - 2] + e[t] + 0.6 * e[t - 1]
+    legacy = AutoARIMA().fit(y)
+    model = AutoARIMAModel().fit(y)
+    assert model.model_["arma"] == legacy.model_.model["arma"]
+    assert model.model_["coef"].keys() == legacy.model_.model["coef"].keys()
+    np.testing.assert_allclose(
+        list(model.model_["coef"].values()),
+        list(legacy.model_.model["coef"].values()),
+    )
+    np.testing.assert_allclose(model.predict(5)["mean"], legacy.predict(5)["mean"])
