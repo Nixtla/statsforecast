@@ -53,9 +53,12 @@ class GroupedArray(BaseGroupedArray):
             self.indptr, other.indptr
         )
 
-    def fit(self, models, fallback_model=None):
+    def fit(self, models, fallback_model=None, verbose=False):
         fm = np.full((self.n_groups, len(models)), np.nan, dtype=object)
-        for i, grp in enumerate(self):
+        iterable = tqdm(
+            enumerate(self), disable=(not verbose), total=len(self), desc="Fit"
+        )
+        for i, grp in iterable:
             y = grp[:, 0] if grp.ndim == 2 else grp
             X = grp[:, 1:] if (grp.ndim == 2 and grp.shape[1] > 1) else None
             for i_model, model in enumerate(models):
@@ -699,7 +702,9 @@ class _StatsForecast:
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
         if self.n_jobs == 1:
             self.fitted_ = self.ga.fit(
-                models=self.models, fallback_model=self.fallback_model
+                models=self.models,
+                fallback_model=self.fallback_model,
+                verbose=self.verbose,
             )
         else:
             self.fitted_ = self._fit_parallel()
@@ -1320,7 +1325,14 @@ class _StatsForecast:
                     ga._single_threaded_fit, (self.models, self.fallback_model)
                 )
                 futures.append(future)
-            fm = np.vstack([f.get() for f in futures])
+            iterable = tqdm(
+                futures,
+                disable=not self.verbose,
+                total=len(futures),
+                desc="Fit",
+                bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [Elapsed: {elapsed}{postfix}]",
+            )
+            fm = np.vstack([f.get() for f in iterable])
         return fm
 
     def _get_gas_Xs(self, X, tasks_per_job=1):
