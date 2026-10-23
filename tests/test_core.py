@@ -1200,50 +1200,31 @@ def test_cv_fitted(series_cv2, str_ds):
     assert_cv_fitted(series_cv2, str_ds=str_ds)
 
 
+@pytest.mark.parametrize("method", ["forecast", "cross_validation"])
 @pytest.mark.parametrize(
-    "method,engine",
-    [("forecast", "pandas"), ("forecast", "polars"), ("cross_validation", "pandas")],
+    "next_method", ["fit", "fit_predict", "forecast", "cross_validation", "simulate"]
 )
-@pytest.mark.parametrize("next_method", ["fit", "fit_predict", "other_method"])
-@pytest.mark.parametrize("next_length", [8, 4])
-def test_fitted_values_keep_original_metadata(method, engine, next_method, next_length):
-    df = pd.DataFrame({"series": ["original"] * 8, "time": range(8), "value": range(8)})
+def test_fitted_values_cleared_after_new_data(method, next_method):
+    df = pd.DataFrame({"series": ["a"] * 8, "time": range(8), "value": range(8)})
     other_df = pd.DataFrame(
-        {
-            "unique_id": np.repeat(["new_a", "new_b"], next_length // 2),
-            "ds": np.tile(np.arange(next_length // 2) + 100, 2),
-            "y": np.arange(next_length) + 50,
-        }
+        {"unique_id": ["b"] * 8, "ds": np.arange(8) + 100, "y": np.arange(8) + 50}
     )
-    if engine == "polars":
-        df = pl.from_pandas(df)
-    else:
-        other_df = pl.from_pandas(other_df)
-    sf = StatsForecast(models=[Naive(), HistoricAverage()], freq=1)
-    fitted_kwargs = {"n_windows": 2} if method == "cross_validation" else {}
+    sf = StatsForecast(models=[Naive()], freq=1)
     getattr(sf, method)(
-        df=df,
-        h=1,
-        fitted=True,
-        id_col="series",
-        time_col="time",
-        target_col="value",
-        **fitted_kwargs,
+        df=df, h=1, fitted=True, id_col="series", time_col="time", target_col="value"
     )
     get_fitted = getattr(sf, f"{method}_fitted_values")
-    expected = get_fitted()
+    assert not get_fitted().empty
 
-    if next_method == "other_method":
-        next_method = "cross_validation" if method == "forecast" else "forecast"
-        kwargs = {"h": 1, "fitted": True}
-    else:
-        kwargs = {} if next_method == "fit" else {"h": 1}
+    kwargs = {} if next_method == "fit" else {"h": 1}
+    if next_method == "simulate":
+        kwargs["seed"] = 0
     getattr(sf, next_method)(df=other_df, **kwargs)
 
-    if engine == "polars":
-        pltest.assert_frame_equal(get_fitted(), expected)
-    else:
-        pd.testing.assert_frame_equal(get_fitted(), expected)
+    with pytest.raises(
+        Exception, match=f"Please run `{method}` method using `fitted=True`"
+    ):
+        get_fitted()
 
 
 @pytest.mark.parametrize("method", ["forecast", "cross_validation"])
@@ -1266,30 +1247,22 @@ def test_fitted_values_cache_lifecycle(method):
 
 
 @pytest.mark.parametrize("method", ["forecast", "cross_validation"])
-def test_fitted_values_keep_dates_after_inplace_update(method):
+def test_fitted_values_replaced_by_other_method(method):
     df = pd.DataFrame({"unique_id": ["a"] * 8, "ds": range(8), "y": range(8)})
+    other_df = df.assign(unique_id="b", ds=lambda x: x.ds + 100, y=lambda x: x.y + 50)
     sf = StatsForecast(models=[Naive()], freq=1)
     getattr(sf, method)(df=df, h=1, fitted=True)
-    get_fitted = getattr(sf, f"{method}_fitted_values")
-    expected = get_fitted()
-    df.loc[:, "ds"] += 100
-    sf.fit(df=df)
-    pd.testing.assert_frame_equal(get_fitted(), expected)
+    other_method = "cross_validation" if method == "forecast" else "forecast"
+    getattr(sf, other_method)(df=other_df, h=1, fitted=True)
 
-
-@pytest.mark.parametrize("method", ["forecast", "cross_validation"])
-def test_fitted_values_metadata_save_load(method, tmp_path):
-    df = pd.DataFrame({"unique_id": ["a"] * 8, "ds": range(8), "y": range(8)})
-    sf = StatsForecast(models=[Naive()], freq=1)
-    getattr(sf, method)(df=df, h=1, fitted=True)
-    expected = getattr(sf, f"{method}_fitted_values")()
-    sf.fit(df=df.assign(unique_id="b", ds=lambda x: x.ds + 100))
-    path = tmp_path / "sf.pkl"
-    sf.save(path)
-    loaded = StatsForecast.load(path)
-    pd.testing.assert_frame_equal(
-        getattr(loaded, f"{method}_fitted_values")(), expected
-    )
+    with pytest.raises(
+        Exception, match=f"Please run `{method}` method using `fitted=True`"
+    ):
+        getattr(sf, f"{method}_fitted_values")()
+    actual = getattr(sf, f"{other_method}_fitted_values")()
+    assert actual["unique_id"].eq("b").all()
+    assert actual["ds"].min() == 100
+    assert actual["y"].min() == 50
 
 
 # tests for fallback model

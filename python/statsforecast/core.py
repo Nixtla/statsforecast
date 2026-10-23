@@ -609,6 +609,8 @@ class _StatsForecast:
         time_col: str = "ds",
         target_col: str = "y",
     ) -> None:
+        self.__dict__.pop("fcst_fitted_values_", None)
+        self.__dict__.pop("cv_fitted_values_", None)
         df = ensure_time_dtype(df, time_col)
         validate_freq(df[time_col], self.freq)
         self.uids, last_times, data, indptr, sort_idxs = ufp.process_df(
@@ -925,7 +927,6 @@ class _StatsForecast:
                 identifiers, future timestamps, and predictions from each model. Includes
                 prediction intervals if `level` is specified.
         """
-        self.__dict__.pop("fcst_fitted_values_", None)
         self._prepare_fit(
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
@@ -954,7 +955,6 @@ class _StatsForecast:
             )
         if fitted:
             self.fcst_fitted_values_ = res_fcsts["fitted"]
-            self.fcst_fitted_values_["metadata"] = self._get_fitted_metadata()
         fcsts = res_fcsts["forecasts"]
         cols = res_fcsts["cols"]
         fcsts_df = self._make_future_df(h=h)
@@ -1094,24 +1094,14 @@ class _StatsForecast:
 
         return self.df_constructor(res_dict)
 
-    def _get_fitted_metadata(self):
-        return {
-            "uids": self.uids,
-            "sizes": np.diff(self.ga.indptr),
-            "dates": self.og_dates.copy(),
-            "id_col": self.id_col,
-            "time_col": self.time_col,
-            "df_constructor": self.df_constructor,
-        }
-
     def forecast_fitted_values(self):
         """Retrieve in-sample predictions from the forecast method.
 
         Returns the fitted (in-sample) predictions generated during the last call to
         `forecast()`. These are the model's predictions on the training data, useful
         for assessing model fit quality and identifying patterns in residuals.
-        They retain the identifiers and timestamps of that call, even if the instance
-        is later used to fit or cross-validate another dataset.
+        Retrieve these predictions before calling another method that prepares
+        training data on this instance.
 
         Returns:
             pandas.DataFrame or polars.DataFrame: DataFrame containing in-sample predictions
@@ -1122,11 +1112,10 @@ class _StatsForecast:
         if not hasattr(self, "fcst_fitted_values_"):
             raise Exception("Please run `forecast` method using `fitted=True`")
         cols = self.fcst_fitted_values_["cols"]
-        metadata = self.fcst_fitted_values_["metadata"]
-        df = metadata["df_constructor"](
+        df = self.df_constructor(
             {
-                metadata["id_col"]: ufp.repeat(metadata["uids"], metadata["sizes"]),
-                metadata["time_col"]: metadata["dates"],
+                self.id_col: ufp.repeat(self.uids, np.diff(self.ga.indptr)),
+                self.time_col: self.og_dates,
             }
         )
         df[cols] = self.fcst_fitted_values_["values"]
@@ -1213,7 +1202,6 @@ class _StatsForecast:
                 raise ValueError(
                     "Can only use integer refit or refit=False with a fallback model that implements the forward method."
                 )
-        self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
@@ -1259,7 +1247,6 @@ class _StatsForecast:
             )
         if fitted:
             self.cv_fitted_values_ = res_fcsts["fitted"]
-            self.cv_fitted_values_["metadata"] = self._get_fitted_metadata()
             self.n_cv_ = n_windows
         fcsts_df = ufp.cv_times(
             times=self.og_dates,
@@ -1284,8 +1271,8 @@ class _StatsForecast:
         Returns the fitted (in-sample) predictions for each cross-validation window.
         These are the model's predictions on the training data for each window,
         useful for analyzing how model fit changes across different training periods.
-        They retain the identifiers, timestamps, and cutoffs of that call, even if the
-        instance is later used to fit or forecast another dataset.
+        Retrieve these predictions before calling another method that prepares
+        training data on this instance.
 
         Returns:
             pandas.DataFrame or polars.DataFrame: DataFrame containing in-sample predictions
@@ -1296,18 +1283,17 @@ class _StatsForecast:
         if not hasattr(self, "cv_fitted_values_"):
             raise Exception("Please run `cross_validation` method using `fitted=True`")
         idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
-        metadata = self.cv_fitted_values_["metadata"]
-        train_uids = ufp.repeat(metadata["uids"], metadata["sizes"])
+        train_uids = ufp.repeat(self.uids, np.diff(self.ga.indptr))
         cv_uids = ufp.vertical_concat([train_uids for _ in range(self.n_cv_)])
         used_uids = ufp.take_rows(cv_uids, idxs)
-        dates = np.tile(metadata["dates"], self.n_cv_)[idxs]
+        dates = np.tile(self.og_dates, self.n_cv_)[idxs]
         cutoffs_mask = self.cv_fitted_values_["last_idxs"].flatten(order="F")[idxs]
         cutoffs_sizes = np.diff(np.append(0, np.where(cutoffs_mask)[0] + 1))
         cutoffs = np.repeat(dates[cutoffs_mask], cutoffs_sizes)
-        df = metadata["df_constructor"](
+        df = self.df_constructor(
             {
-                metadata["id_col"]: used_uids,
-                metadata["time_col"]: dates,
+                self.id_col: used_uids,
+                self.time_col: dates,
                 "cutoff": cutoffs,
             }
         )
