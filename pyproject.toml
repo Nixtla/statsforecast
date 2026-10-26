@@ -30,13 +30,12 @@ classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
     "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "cloudpickle",
     "coreforecast>=0.0.17",
@@ -119,7 +118,7 @@ build-verbosity = 1
 build-frontend = "build[uv]"
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 88
 lint.select = ["F"]
 
