@@ -703,8 +703,9 @@ def arima(
         n_used = (~isna).sum() - len(Delta)
         init0 = np.append(init0, fit["coefs"])
         ses = fit["stderrs"]
-        # a perfect OLS fit (e.g. a constant series) has zero standard errors
-        parscale = np.append(parscale, np.where(ses > 0, 10 * ses, 1.0))
+        # a perfect or saturated OLS fit has zero or infinite standard errors
+        valid_ses = np.isfinite(ses) & (ses > 0)
+        parscale = np.append(parscale, np.where(valid_ses, 10 * ses, 1.0))
 
     if n_used <= 0:
         raise ValueError("Too few non-missing observations")
@@ -723,10 +724,10 @@ def arima(
 
     optim_options = {k: v for k, v in optim_control.items() if k != "parscale"}
     parscale = np.asarray(optim_control.get("parscale", parscale[mask]), dtype=float)
-    if parscale.shape != (mask.sum(),):
+    if parscale.shape != (mask.sum(),) or not (parscale > 0).all():
         raise ValueError(
-            f"optim_control['parscale'] should have length {mask.sum()}, the "
-            "number of free coefficients"
+            f"optim_control['parscale'] should have {mask.sum()} positive values, "
+            "one per free coefficient"
         )
 
     def optimize(fun, x0, args, n_dist_params=0):

@@ -1784,13 +1784,19 @@ def test_arima_user_parscale():
     assert unscaled["loglik"] < arima(ap, **kwargs)["loglik"] - 1e-4
     assert "parscale" in optim_control
 
-    with pytest.raises(ValueError, match="should have length 4"):
-        arima(ap, optim_control={"parscale": np.ones(3)}, **kwargs)
+    for parscale in [np.ones(3), np.array([1.0, 1.0, 0.0, 1.0])]:
+        with pytest.raises(ValueError, match="should have 4 positive values"):
+            arima(ap, optim_control={"parscale": parscale}, **kwargs)
 
 
 @pytest.mark.parametrize(
     "x,xreg",
-    [(np.zeros(30), None), (ap, np.c_[_t, np.zeros_like(_t)])],
+    [
+        (np.zeros(30), None),
+        (ap, np.c_[_t, np.zeros_like(_t)]),
+        # as many columns as observations, so the OLS standard errors are inf
+        (ap[:6], np.c_[_t, np.sqrt(_t), np.log(_t), _t**2, _t**3][:6]),
+    ],
 )
 def test_arima_parscale_zero_ols_se(x, xreg):
     fit = arima(x, order=(1, 0, 0), xreg=xreg, method="CSS-ML")
