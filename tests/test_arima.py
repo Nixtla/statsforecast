@@ -806,6 +806,23 @@ def test_arima_rotates_xreg_onto_singular_directions(monkeypatch):
     )
 
 
+def test_arima_init_is_in_the_original_xreg_basis():
+    t = np.arange(1, ap.size + 1)
+    xreg = np.column_stack([np.sqrt(t), np.log(t)])
+    init = np.array([0.5, 60.0, -70.0])
+    with pytest.warns(UserWarning, match="possible convergence problem"):
+        fit = arima(
+            ap,
+            order=(1, 0, 0),
+            xreg=xreg,
+            include_mean=False,
+            method="CSS",
+            init=init,
+            optim_control={"maxiter": 0},
+        )
+    np.testing.assert_allclose(list(fit["coef"].values()), init)
+
+
 def test_AutoARIMA_edge_cases(almost_constant_x):
     """Test AutoARIMA with various edge cases and data types."""
     # Test with constant array

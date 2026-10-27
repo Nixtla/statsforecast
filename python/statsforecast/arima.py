@@ -712,6 +712,10 @@ def arima(
     if init is not None:
         if len(init) != len(init0):
             raise ValueError(f"init should have length {len(init0)}")
+        if ncxreg and not orig_xreg:
+            init = np.array(init, dtype=np.float64)
+            ind = narma + np.arange(ncxreg)
+            init[ind] = np.matmul(vt, init[ind])
         # fixed coefficients don't use init, so it can't affect the fit there
         init = np.where(np.isnan(init) | ~mask, init0, init)
         if method == ArimaMethod.ML:
