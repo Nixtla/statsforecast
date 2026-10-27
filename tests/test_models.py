@@ -164,14 +164,45 @@ def test_conformal_error_intervals():
     assert np.all(fcst["hi-90"] >= fcst["hi-80"])
     # Hi and lo are anti-symmetric (implied by the exact-value checks below).
     # Exact-value check: for ZeroModel (mean=0), conformal_error intervals
-    # should match the lv/100 quantile of the conformity scores.
+    # should match the finite-sample conformal quantile of the conformity
+    # scores. With 2 windows, ceil(3 * 0.8) and ceil(3 * 0.9) both exceed 2,
+    # so both levels use the largest score.
     cs = zero_model._conformity_scores(ap)
-    q90 = np.quantile(cs, 0.9, axis=0)
-    q80 = np.quantile(cs, 0.8, axis=0)
+    q90 = cs.max(axis=0)
+    q80 = cs.max(axis=0)
     np.testing.assert_allclose(fcst["hi-90"], q90)
     np.testing.assert_allclose(fcst["hi-80"], q80)
     np.testing.assert_allclose(fcst["lo-90"], -q90)
     np.testing.assert_allclose(fcst["lo-80"], -q80)
+
+
+@pytest.mark.parametrize("method", ["conformal_error", "conformal_distribution"])
+def test_conformal_intervals_finite_sample_rank(method):
+    # With n windows both methods put the bounds exactly at -/+ the
+    # ceil((n + 1) * lv / 100)-th smallest conformity score, which covers lv
+    # percent of exchangeable errors.
+    n_windows = 10
+    conf_intervals = ConformalIntervals(h=12, n_windows=n_windows, method=method)
+    zero_model = ZeroModel(conf_intervals)
+    fcst = zero_model.forecast(ap, h=12, level=[70, 80])
+    cs_sorted = np.sort(zero_model._conformity_scores(ap), axis=0)
+    # ceil(11 * 0.7) = 8 and ceil(11 * 0.8) = 9
+    for lv, rank in [(70, 8), (80, 9)]:
+        np.testing.assert_allclose(fcst[f"hi-{lv}"], cs_sorted[rank - 1])
+        np.testing.assert_allclose(fcst[f"lo-{lv}"], -cs_sorted[rank - 1])
+
+
+@pytest.mark.parametrize("method", ["conformal_error", "conformal_distribution"])
+def test_conformal_intervals_levels_below_50(method):
+    # Below 50% the margin is still an upper bound, so the rank rounds up:
+    # ceil(11 * 0.3) = 4, ceil(11 * 0.4) = 5 and ceil(11 * 0.49) = 6.
+    conf_intervals = ConformalIntervals(h=12, n_windows=10, method=method)
+    zero_model = ZeroModel(conf_intervals)
+    fcst = zero_model.forecast(ap, h=12, level=[30, 40, 49])
+    cs_sorted = np.sort(zero_model._conformity_scores(ap), axis=0)
+    for lv, rank in [(30, 4), (40, 5), (49, 6)]:
+        np.testing.assert_allclose(fcst[f"hi-{lv}"], cs_sorted[rank - 1])
+        np.testing.assert_allclose(fcst[f"lo-{lv}"], -cs_sorted[rank - 1])
 
 
 def assert_class(
@@ -323,6 +354,21 @@ class TestArima:
 
 
 class TestETS:
+    def test_fixed_phi(self):
+        phi = 0.9
+        y = 10 + np.cumsum(phi ** np.arange(1, 21))
+        estimated = AutoETS(model="AAN", damped=True).fit(y[:16])
+        fixed = AutoETS(model="AAN", damped=True, phi=phi).fit(y[:16])
+        undamped = AutoETS(model="ANN", phi=phi).fit(y[:16])
+
+        assert fixed.model_["par"][3] == phi
+        assert len(fixed.model_["fit"].x) == 4
+        assert fixed.model_["n_params"] == 5
+        assert fixed.model_["n_params"] == estimated.model_["n_params"] - 1
+        np.testing.assert_allclose(fixed.predict(h=4)["mean"], y[16:], rtol=1e-5)
+        assert undamped.model_["components"][3] == "N"
+        assert np.isnan(undamped.model_["par"][3])
+
     def test_ets(self):
         autoets = AutoETS(season_length=12)
         assert_class(autoets, x=ap, h=12, level=[90, 80], test_forward=True)
@@ -778,6 +824,50 @@ class TestSeasonalES:
         )
 
 
+@pytest.mark.parametrize(
+    "model",
+    [
+        SimpleExponentialSmoothing(alpha=0.1),
+        SimpleExponentialSmoothingOptimized(),
+        SeasonalExponentialSmoothing(season_length=12, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=12),
+    ],
+)
+def test_ses_analytical_prediction_intervals_parity(model):
+    h = 12
+    level = [80, 95]
+    model.fit(ap)
+
+    forecast = model.forecast(ap, h=h, level=level)
+    predict = model.predict(h=h, level=level)
+    pd.testing.assert_frame_equal(pd.DataFrame(forecast), pd.DataFrame(predict))
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SimpleExponentialSmoothing(alpha=0.1),
+        SimpleExponentialSmoothingOptimized(),
+        SeasonalExponentialSmoothing(season_length=3, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=1),
+    ],
+)
+def test_ses_analytical_prediction_intervals_formula(model):
+    h, level = 12, 95
+    model.fit(ap)
+    forecast = model.forecast(ap, h=h, level=[level])
+
+    steps = np.arange(h) // getattr(model, "season_length", 1)
+    alpha = np.resize(model.model_["alpha"], h)
+    width = (
+        norm.ppf(0.5 + level / 200)
+        * model.model_["sigma"]
+        * np.sqrt(1 + steps * alpha**2)
+    )
+    np.testing.assert_allclose(forecast[f"lo-{level}"], forecast["mean"] - width)
+    np.testing.assert_allclose(forecast[f"hi-{level}"], forecast["mean"] + width)
+
+
 class TestHolt:
     def test_holt_equivalence_with_ets(self):
         holt = Holt(season_length=12, error_type="A")
@@ -1039,25 +1129,26 @@ class TestRandomWalkWithDrift:
         fcst_rwd = rwd.forecast(
             y=ap, h=12, X=None, X_future=None, level=(80, 95), fitted=True
         )
+        # lo-80 from R's forecast::rwf(AirPassengers, 12, drift = TRUE)
         np.testing.assert_almost_equal(
             fcst_rwd["lo-80"],
             np.array(
                 [
-                    390.9799,
-                    375.0862,
-                    363.2664,
-                    353.5325,
-                    345.1178,
-                    337.6304,
-                    330.8384,
-                    324.5916,
-                    318.7857,
-                    313.3453,
-                    308.2136,
-                    303.3469,
+                    390.8289,
+                    374.8734,
+                    363.0066,
+                    353.2337,
+                    344.7848,
+                    337.2668,
+                    330.4471,
+                    324.1746,
+                    318.3448,
+                    312.8821,
+                    307.7295,
+                    302.8428,
                 ]
             ),
-            decimal=1,
+            decimal=4,
         )
 
     def test_alias_arg(self):

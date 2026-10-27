@@ -1,11 +1,14 @@
 import numpy as np
 import pytest
+from scipy.stats import norm
 from statsforecast.ets import (
     _class3models,
+    _compute_pred_intervals,
     ets_f,
     etssimulate,
     forecast_ets,
     forward_ets,
+    simulate_ets,
     switch,
 )
 from statsforecast.utils import AirPassengers as ap
@@ -238,6 +241,12 @@ def test_distribution_invalid_raises():
         ets_f(ap, m=12, distribution="cauchy")
 
 
+def test_damped_without_trend_raises():
+    """Damping is forbidden for any model with no trend. ANN is one representative example."""
+    with pytest.raises(ValueError, match="Forbidden model combination"):
+        ets_f(ap, m=12, model="ANN", damped=True)
+
+
 def test_t_aic_better_than_normal_heavy_tails():
     """On heavy-tailed data, t-distribution ETS AIC < normal ETS AIC."""
     rng = np.random.default_rng(42)
@@ -286,6 +295,90 @@ def test_autoets_distribution():
     pred = model.predict(h=12, level=[95])
     assert "lo-95" in pred and "hi-95" in pred
     assert np.all(pred["lo-95"] < pred["hi-95"])
+
+
+@pytest.mark.parametrize(
+    "parameter,value,index",
+    [("alpha", 0.2, 0), ("beta", 0.01, 1), ("gamma", 0.05, 2)],
+)
+def test_fixed_smoothing_parameter(parameter, value, index):
+    y = np.asarray(ap, dtype=np.float64)
+    estimated = ets_f(y, m=12, model="MAM")
+    fixed = ets_f(y, m=12, model="MAM", **{parameter: value})
+
+    assert fixed["par"][index] == value
+    assert len(fixed["fit"].x) == len(estimated["fit"].x) - 1
+    assert fixed["n_params"] == estimated["n_params"] - 1
+
+
+def test_undamped_simulation_uses_effective_phi():
+    y = np.arange(1, 31, dtype=np.float64)
+    model = ets_f(y, m=1, model="AAN", damped=False, phi=0.9)
+    model = {**model, "sigma2": 0.0}
+
+    expected = forecast_ets(model, h=3)["mean"]
+    simulated = simulate_ets(model, h=3, n_paths=1, seed=0)[0]
+
+    assert np.isnan(model["par"][3])
+    np.testing.assert_allclose(simulated, expected)
+
+
+def test_undamped_interval_simulation_uses_effective_phi():
+    h = 3
+    model = {
+        "sigma2": 0.0,
+        "m": 1,
+        "components": "AMNN",
+        "states": np.array([[10.0, 1.1]]),
+        "par": np.array([0.2, 0.1, np.nan, np.nan]),
+        "distribution": "normal",
+        "residuals": np.zeros(1),
+        "fitted": np.zeros(1),
+    }
+    mean = forecast_ets(model, h=h)["mean"]
+
+    intervals = _compute_pred_intervals(model, {"mean": mean}, h, [80])
+
+    np.testing.assert_allclose(intervals["lo-80"], mean)
+    np.testing.assert_allclose(intervals["hi-80"], mean)
+
+
+# ---- Additive seasonal prediction interval tests ----
+# Validate the closed-form forecast variances for ANA, AAA, and AAdA against
+# the general Class 1 recursion: sigma2 * (1 + sum(c_j**2, j < k)).
+
+@pytest.mark.parametrize(
+    "trend,damped",
+    [
+        ("N", "N"),
+        ("A", "N"),
+        ("A", "D"),
+    ],
+)
+def test_additive_seasonal_variance_matches_recursion(trend, damped):
+    m, h = 4, 13
+    alpha, beta, gamma, phi, sigma2 = 0.4, 0.05, 0.3, 0.9, 0.02
+    model = {
+        "sigma2": sigma2,
+        "m": m,
+        "components": ["A", trend, "A", damped],
+        "states": np.zeros((1, 6)),
+        "par": np.array([alpha, beta, gamma, phi]),
+    }
+    pred = _compute_pred_intervals(model, {"mean": np.zeros(h)}, h, [95])
+    var = (pred["hi-95"] / norm.ppf(0.975)) ** 2
+
+    j = np.arange(1, h)
+    if trend == "N":
+        slope = np.zeros(h - 1)
+    elif damped == "D":
+        slope = np.cumsum(phi**j)
+    else:
+        slope = j
+    seasonal = j % m == 0
+    c = alpha + beta * slope + gamma * seasonal
+    expected = sigma2 * np.concatenate([[1.0], 1 + np.cumsum(c**2)])
+    np.testing.assert_allclose(var, expected, rtol=1e-10)
 
 
 # ---- Class 3 prediction interval tests ----

@@ -26,6 +26,7 @@ __all__ = [
     "dist_tail_bounds",
     "guard_dist_tail",
     "extract_dist_params",
+    "dist_tail_from_params",
     "aic_bic_aicc",
     "error_params_from_model",
     "_quantiles",
@@ -153,6 +154,17 @@ def extract_dist_params(distribution: str, fit_par_dist, residuals=None) -> dict
         b_hat = float(np.nanmean(np.abs(residuals)))
         return {"sigma2": 2.0 * b_hat ** 2}
     return {}
+
+
+def dist_tail_from_params(distribution: str, params: dict) -> list:
+    """Inverse of `extract_dist_params` for the distributions with a tail."""
+    if distribution == "t":
+        return [np.log(params["sigma2"]), np.log(params["nu"] - 2.0)]
+    if distribution == "skew-normal":
+        return [np.log(params["sigma2"]), params["alpha_dist"]]
+    if distribution == "ged":
+        return [0.5 * np.log(params["sigma2"]), np.log(params["beta_dist"])]
+    return []  # laplace / normal
 
 
 def error_params_from_model(model: dict):

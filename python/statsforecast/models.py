@@ -65,6 +65,7 @@ from scipy.special import inv_boxcox
 from statsforecast.arima import (
     Arima,
     _check_blambda,
+    _check_ssinit,
     _inv_boxcox as _arima_inv_boxcox,
     _transformed_fitted_arima,
     auto_arima_f,
@@ -86,6 +87,7 @@ from statsforecast.utils import (
     _VALID_DISTRIBUTIONS,
     _calculate_intervals,
     _calculate_sigma,
+    _conformal_quantile,
     _ensure_float,
     _naive,
     _quantiles,
@@ -163,11 +165,9 @@ def _add_conformal_distribution_intervals(
     cuts.extend(1 - alpha / 200 for alpha in alphas)
     mean = fcst["mean"].reshape(1, -1)
     scores = np.vstack([mean - cs, mean + cs])
-    quantiles = np.quantile(
-        scores,
-        cuts,
-        axis=0,
-    )
+    # lower cuts come first, then upper ones, as in `out_cols` below
+    upper = [False] * len(level) + [True] * len(level)
+    quantiles = _conformal_quantile(scores, cuts, upper, axis=0)
     quantiles = quantiles.reshape(len(cuts), -1)
     lo_cols = [f"lo-{lv}" for lv in reversed(level)]
     hi_cols = [f"hi-{lv}" for lv in level]
@@ -184,11 +184,15 @@ def _add_conformal_error_intervals(
 ) -> Dict:
     r"""
     Adds conformal intervals to the `fcst` dict based on conformal scores `cs`.
-    `level` should be already sorted. Uses the `lv / 100` quantile of the
-    absolute conformity scores as the error margin around `fcst["mean"]`.
+    `level` should be already sorted. Uses the finite-sample conformal quantile
+    of the absolute conformity scores (see `_conformal_quantile`) as the error
+    margin around `fcst["mean"]`.
     Returns the modified `fcst` dict.
     """
-    quantiles = {lv: np.quantile(cs, lv / 100, axis=0) for lv in level}
+    # the margin on absolute scores is an upper bound at every level, even below 50
+    quantiles = {
+        lv: _conformal_quantile(cs, lv / 100, upper=True, axis=0) for lv in level
+    }
     for lv in reversed(level):
         fcst[f"lo-{lv}"] = fcst["mean"] - quantiles[lv]
     for lv in level:
@@ -310,7 +314,7 @@ class AutoARIMA(_TS):
         stepwise (bool, default=True): If True, will do stepwise selection (faster).
         nmodels (int, default=94): Number of models considered in stepwise search.
         trace (bool, default=False): If True, the searched ARIMA models is reported.
-        approximation (Optional[bool], default=False): If True, conditional sums-of-squares estimation, final MLE.
+        approximation (Optional[bool], default=False): If True, conditional sums-of-squares estimation, final MLE. Ignored when `distribution` isn't 'normal'.
         method (Optional[str], optional): Fitting method between maximum likelihood or sums-of-squares.
         truncate (Optional[bool], optional): Observations truncated series used in model selection.
         test (str, default="kpss"): Unit root test to use. See `ndiffs` for details.
@@ -322,6 +326,7 @@ class AutoARIMA(_TS):
         blambda (Optional[Union[float, str]], default=None): Box-Cox transformation parameter. If 'auto', it is selected with Guerrero's method over [-0.9, 2]. No transformation is applied if None.
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         season_length (int, default=1): Number of observations per unit of time. Ex: 24 Hourly data.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str, default="AutoARIMA"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
@@ -334,6 +339,8 @@ class AutoARIMA(_TS):
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
@@ -369,6 +376,7 @@ class AutoARIMA(_TS):
         biasadj: bool = False,
         season_length: int = 1,
         distribution: str = "normal",
+        SSinit: str = "Gardner1980",
         alias: str = "AutoARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -405,6 +413,8 @@ class AutoARIMA(_TS):
         self.biasadj = biasadj
         self.season_length = season_length
         self.distribution = distribution
+        _check_ssinit(SSinit)
+        self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -461,6 +471,7 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                SSinit=self.SSinit,
                 distribution=self.distribution,
             )
 
@@ -576,6 +587,8 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
+                SSinit=self.SSinit,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -718,6 +731,8 @@ class AutoARIMA(_TS):
                     blambda=self.blambda,
                     biasadj=self.biasadj,
                     period=self.season_length,
+                    SSinit=self.SSinit,
+                    distribution=self.distribution,
                 )
         else:
             if not hasattr(self, "model_"):
@@ -787,6 +802,18 @@ class AutoETS(_TS):
                 raise ValueError("phi must be `None` or float.")
             if not _PHI_LOWER <= phi <= _PHI_UPPER:
                 raise ValueError(f"Valid range for phi is [{_PHI_LOWER}, {_PHI_UPPER}]")
+            if damped is False:
+                warnings.warn(
+                    "The user-defined `phi` will be ignored because `damped=False`.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            elif isinstance(model, str) and model[1:2] == "N":
+                warnings.warn(
+                    "The user-defined `phi` will be ignored because the model has no trend.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
@@ -1354,6 +1381,8 @@ class AutoTheta(_TS):
         alias (str, default="AutoTheta"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
+        theta (Optional[float], optional): Fixed theta parameter for optimized Theta models.
+            By default, theta is estimated from the data.
 
     References:
         - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -1367,17 +1396,23 @@ class AutoTheta(_TS):
         alias: str = "AutoTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
         distribution: str = "normal",
+        theta: Optional[float] = None,
     ):
         if distribution not in _VALID_DISTRIBUTIONS:
             raise ValueError(
                 f"distribution must be one of {tuple(d.value for d in _VALID_DISTRIBUTIONS)}, got {distribution!r}"
             )
+        if theta is not None and (
+            not np.isfinite(theta) or theta < 1.0 or theta > 1e10
+        ):
+            raise ValueError("theta must be finite and between 1 and 1e10")
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        self.theta = theta
 
     def fit(
         self,
@@ -1403,6 +1438,7 @@ class AutoTheta(_TS):
             model=self.model,
             decomposition_type=self.decomposition_type,
             distribution=self.distribution,
+            theta=self.theta,
         )
         self.model_["fitted"] = y - self.model_["residuals"]
         self._store_cs(y, X)
@@ -1502,6 +1538,7 @@ class AutoTheta(_TS):
                 model=self.model,
                 decomposition_type=self.decomposition_type,
                 distribution=self.distribution,
+                theta=self.theta,
             )
         else:
             if not hasattr(self, "model_"):
@@ -1557,6 +1594,7 @@ class AutoTheta(_TS):
             m=self.season_length,
             model=self.model,
             decomposition_type=self.decomposition_type,
+            theta=self.theta,
         )
         res = forecast_theta(mod, h, level=level)
         if self.prediction_intervals is not None:
@@ -1972,11 +2010,14 @@ class ARIMA(_TS):
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the arima model. Example: `{'ar1': 0.5, 'ma2': 0.75}`. For autoregressive terms use the `ar{i}` keys. For its seasonal version use `sar{i}`. For moving average terms use the `ma{i}` keys. For its seasonal version use `sma{i}`. For intercept and drift use the `intercept` and `drift` keys. For exogenous variables use the `ex_{i}` keys.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
     """
 
     uses_exog = True
+    # objects pickled before SSinit existed lack the instance attribute
+    SSinit = "Gardner1980"
 
     def __init__(
         self,
@@ -1991,6 +2032,7 @@ class ARIMA(_TS):
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
         distribution: str = "normal",
+        SSinit: str = "Gardner1980",
         alias: str = "ARIMA",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -2006,6 +2048,8 @@ class ARIMA(_TS):
         self.method = method
         self.fixed = fixed
         self.distribution = distribution
+        _check_ssinit(SSinit)
+        self.SSinit = SSinit
         self.alias = alias
         self.prediction_intervals = prediction_intervals
 
@@ -2039,6 +2083,7 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                SSinit=self.SSinit,
                 distribution=self.distribution,
             )
         self._store_cs(y=y, X=X)
@@ -2131,6 +2176,8 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
+                SSinit=self.SSinit,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -2209,6 +2256,7 @@ class AutoRegressive(ARIMA):
         biasadj (bool, default=False): Use adjusted back-transformed mean Box-Cox.
         method (str, default='CSS-ML'): Fitting method: maximum likelihood or minimize conditional sum-of-squares. The default (unless there are missing values) is to use conditional-sum-of-squares to find starting values, then maximum likelihood.
         fixed (dict, optional, default=None): Dictionary containing fixed coefficients for the AutoRegressive model. Example: `{'ar1': 0.5, 'ar5': 0.75}`. For autoregressive terms use the `ar{i}` keys.
+        SSinit (str, default="Gardner1980"): Method used to compute the initial state covariance, either "Gardner1980" or "Rossignol2011". Gardner1980 automatically switches to Rossignol2011 for large state spaces, e.g. long seasonal periods, where it would be too slow or memory intensive.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals. By default, the model will compute the native prediction intervals.
     """
@@ -2224,6 +2272,7 @@ class AutoRegressive(ARIMA):
         biasadj: bool = False,
         method: str = "CSS-ML",
         fixed: Optional[dict] = None,
+        SSinit: str = "Gardner1980",
         alias: str = "AutoRegressive",
         prediction_intervals: Optional[ConformalIntervals] = None,
     ):
@@ -2250,6 +2299,7 @@ class AutoRegressive(ARIMA):
             method=method,
             alias=alias,
             fixed=fixed,
+            SSinit=SSinit,
             prediction_intervals=prediction_intervals,
         )
 
@@ -2351,7 +2401,7 @@ class SimpleExponentialSmoothing(_TS):
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2496,17 +2546,30 @@ class SimpleExponentialSmoothing(_TS):
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        res = _ses(y=y, h=h, fitted=fitted, alpha=self.alpha)
+        res = _ses(
+            y=y,
+            h=h,
+            fitted=fitted or (level is not None and self.prediction_intervals is None),
+            alpha=self.alpha,
+        )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
         res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                steps = np.arange(1, h + 1)
+                sigmah = sigma * np.sqrt(
+                    1 + (steps - 1) * self.alpha**2
+                )
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2548,7 +2611,7 @@ class SimpleExponentialSmoothingOptimized(_TS):
     ):
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2693,17 +2756,28 @@ class SimpleExponentialSmoothingOptimized(_TS):
             dict: Dictionary with entries `mean` for point predictions and `level_*` for probabilistic predictions.
         """
         y = _ensure_float(y)
-        res = _ses_optimized(y=y, h=h, fitted=fitted)
+        res = _ses_optimized(
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+        )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
-        res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        alpha = res.pop("alpha", None)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                steps = np.arange(1, h + 1)
+                sigmah = sigma * np.sqrt(1 + (steps - 1) * alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2768,7 +2842,7 @@ class SeasonalExponentialSmoothing(_TS):
         self.alpha = alpha
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -2924,18 +2998,33 @@ class SeasonalExponentialSmoothing(_TS):
         """
         y = _ensure_float(y)
         res = _seasonal_exponential_smoothing(
-            y=y, h=h, fitted=fitted, alpha=self.alpha, season_length=self.season_length
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+            alpha=self.alpha,
+            season_length=self.season_length,
         )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
         res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(
+                    residuals, len(y) - self.season_length
+                )
+                m = self.season_length
+                steps = np.arange(1, h + 1)
+                k = ((steps - 1) // m) + 1
+                sigmah = sigma * np.sqrt(1 + (k - 1) * self.alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -2997,7 +3086,7 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         self.season_length = season_length
         self.alias = alias
         self.prediction_intervals = prediction_intervals
-        self.only_conformal_intervals = True
+        self.only_conformal_intervals = False
 
     def fit(
         self,
@@ -3152,18 +3241,32 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         """
         y = _ensure_float(y)
         res = _seasonal_ses_optimized(
-            y=y, h=h, fitted=fitted, season_length=self.season_length
+            y=y,
+            h=h,
+            fitted=fitted
+            or (level is not None and self.prediction_intervals is None),
+            season_length=self.season_length,
         )
         res = dict(res)
         # Remove alpha from output (internal parameter, not user-facing)
-        res.pop("alpha", None)
-        if level is None:
-            return res
-        level = sorted(level)
-        if self.prediction_intervals is not None:
-            res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
-        else:
-            raise Exception("You must pass `prediction_intervals` to compute them.")
+        alpha = res.pop("alpha", None)
+        if level is not None:
+            level = sorted(level)
+            if self.prediction_intervals is not None:
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
+            else:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(
+                    residuals, len(y) - self.season_length
+                )
+                m = self.season_length
+                steps = np.arange(1, h + 1)
+                k = ((steps - 1) // m) + 1
+                sigmah = sigma * np.sqrt(1 + (k - 1) * alpha**2)
+                pred_int = _calculate_intervals(res, level, h, sigmah)
+                res.update(pred_int)
+        if not fitted:
+            res.pop("fitted", None)
         return res
 
 
@@ -3773,7 +3876,8 @@ class RandomWalkWithDrift(_TS):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals, len(residuals) - 1)
+        # n - 1 residuals and one estimated parameter (the drift)
+        sigma = _calculate_sigma(residuals, len(residuals) - 2)
         mod["sigma"] = sigma
         mod["residuals"] = residuals
         mod["n"] = len(y)
@@ -3936,13 +4040,13 @@ class RandomWalkWithDrift(_TS):
             else:
                 steps = np.arange(1, h + 1)
                 residuals = y - out["fitted"]
-                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigma = _calculate_sigma(residuals, len(residuals) - 2)
                 sigmah = sigma * np.sqrt(steps * (1 + steps / (len(y) - 1)))
                 pred_int = _calculate_intervals(out, level, h, sigmah)
                 res = {**res, **pred_int}
             if fitted:
                 residuals = y - out["fitted"]
-                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigma = _calculate_sigma(residuals, len(residuals) - 2)
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
@@ -4324,22 +4428,13 @@ class ConformalSeasonalPool(_TS):
             alias = "CSP-Adaptive" if variant == "adaptive" else "CSP-Fixed"
         self.alias = alias
 
-    @staticmethod
-    def _oriented_index(q: float, n: int) -> float:
-        if n <= 0:
-            return float(q)
-        if q < 0.5:
-            return max(0.0, float(np.floor((n + 1.0) * q)) / n)
-        return min(1.0, float(np.ceil((n + 1.0) * q)) / n)
-
     def _intervals_from_samples(
         self, samples: np.ndarray, level: Sequence[Union[int, float]]
     ) -> Dict[str, np.ndarray]:
         cuts = [(1 - lv / 100) / 2 for lv in reversed(level)]
         cuts += [1 - (1 - lv / 100) / 2 for lv in level]
-        n = samples.shape[0]
-        oriented = [self._oriented_index(c, n) for c in cuts]
-        quantiles = np.quantile(samples, oriented, axis=0)
+        upper = [False] * len(level) + [True] * len(level)
+        quantiles = _conformal_quantile(samples, cuts, upper, axis=0)
         lo_cols = [f"lo-{lv}" for lv in reversed(level)]
         hi_cols = [f"hi-{lv}" for lv in level]
         return {col: quantiles[i] for i, col in enumerate(lo_cols + hi_cols)}
@@ -4438,9 +4533,8 @@ class ConformalSeasonalPool(_TS):
                 lo_q = (1 - lv / 100) / 2
                 hi_q = 1 - lo_q
                 if R.size > 0:
-                    n_r = R.size
-                    lo_offset = float(np.quantile(R, self._oriented_index(lo_q, n_r)))
-                    hi_offset = float(np.quantile(R, self._oriented_index(hi_q, n_r)))
+                    lo_offset = float(_conformal_quantile(R, lo_q, upper=False))
+                    hi_offset = float(_conformal_quantile(R, hi_q, upper=True))
                 else:
                     lo_offset = hi_offset = np.nan
                 res[f"fitted-lo-{lv}"] = fitted + lo_offset
@@ -6498,6 +6592,7 @@ class OptimizedTheta(AutoTheta):
         alias (str): Custom name of the model. Default 'OptimizedTheta'.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals. Default None.
+        theta (Optional[float]): Fixed theta parameter. By default, theta is estimated from the data.
     """
 
     def __init__(
@@ -6506,6 +6601,7 @@ class OptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "OptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        theta: Optional[float] = None,
     ):
         super().__init__(
             season_length=season_length,
@@ -6513,6 +6609,7 @@ class OptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            theta=theta,
         )
 
 
@@ -6560,6 +6657,7 @@ class DynamicOptimizedTheta(AutoTheta):
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
+        theta (Optional[float]): Fixed theta parameter. By default, theta is estimated from the data.
     """
 
     def __init__(
@@ -6568,6 +6666,7 @@ class DynamicOptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "DynamicOptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        theta: Optional[float] = None,
     ):
         super().__init__(
             season_length=season_length,
@@ -6575,6 +6674,7 @@ class DynamicOptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            theta=theta,
         )
 
 

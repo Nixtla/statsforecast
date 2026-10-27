@@ -560,7 +560,7 @@ models = [
     HistoricAverage()
 ]
 
-sf = StatsForecast(models=models, freq='M', n_jobs=-1)
+sf = StatsForecast(models=models, freq='ME', n_jobs=-1)
 forecasts = sf.forecast(df=df, h=12, level=[80, 95])
 ```
 
@@ -578,7 +578,7 @@ model = AutoARIMA(
     alias='ConformalAutoARIMA'
 )
 
-sf = StatsForecast(models=[model], freq='M')
+sf = StatsForecast(models=[model], freq='ME')
 forecasts = sf.forecast(df=df, h=12, level=[80, 95])
 ```
 
@@ -617,7 +617,7 @@ models = [
     AutoTBATS(season_length=[24, 168])
 ]
 
-sf = StatsForecast(models=models, freq='H')
+sf = StatsForecast(models=models, freq='h')
 forecasts = sf.forecast(df=hourly_df, h=168)
 ```
 
