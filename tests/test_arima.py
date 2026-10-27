@@ -1788,6 +1788,23 @@ def test_arima_user_parscale():
         arima(ap, optim_control={"parscale": np.ones(3)}, **kwargs)
 
 
+@pytest.mark.parametrize(
+    "x,xreg",
+    [(np.zeros(30), None), (ap, np.c_[_t, np.zeros_like(_t)])],
+)
+def test_arima_parscale_zero_ols_se(x, xreg):
+    fit = arima(x, order=(1, 0, 0), xreg=xreg, method="CSS-ML")
+    assert np.isfinite(list(fit["coef"].values())).all()
+
+
+def test_arima_parscale_lbfgsb():
+    fit = arima(
+        ap, order=(1, 1, 1), xreg=np.c_[_t, _t**2], method="ML", optim_method="L-BFGS-B"
+    )
+    se = np.sqrt(np.diag(fit["var_coef"]))[-2:]
+    np.testing.assert_allclose(se, [6.591, 0.039491], rtol=0.1)
+
+
 def test_arima_invalid_ssinit_raises():
     with pytest.raises(ValueError, match="SSinit"):
         arima(ap, order=(1, 0, 0), SSinit="Rossignol")

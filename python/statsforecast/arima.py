@@ -703,7 +703,8 @@ def arima(
         n_used = (~isna).sum() - len(Delta)
         init0 = np.append(init0, fit["coefs"])
         ses = fit["stderrs"]
-        parscale = np.append(parscale, 10 * ses)
+        # a perfect OLS fit (e.g. a constant series) has zero standard errors
+        parscale = np.append(parscale, np.where(ses > 0, 10 * ses, 1.0))
 
     if n_used <= 0:
         raise ValueError("Too few non-missing observations")
@@ -740,12 +741,16 @@ def arima(
             tol=tol,
             options=optim_options,
         )
+        hess_inv = res.hess_inv
+        if not isinstance(hess_inv, np.ndarray):
+            # L-BFGS-B returns a LinearOperator, where * is a matrix product
+            hess_inv = hess_inv.todense()
         return OptimResult(
             res.success,
             res.status,
             res.x * scale,
             res.fun,
-            res.hess_inv * np.outer(scale, scale),
+            hess_inv * np.outer(scale, scale),
         )
 
     def arma_css_op(p, x, coef, mask, arma, ncxreg, xreg, narma):
