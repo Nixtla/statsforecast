@@ -1081,7 +1081,7 @@ def test_issue_649(capsys):
     y = np.array(42 * [100] + [119, 525])
     AutoARIMA(season_length=12, trace=True).fit(y)
     captured = capsys.readouterr()
-    expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : inf
+    expected_output = """ARIMA(2,0,2)(1,0,1)[12] with non-zero mean : 506.2070
 ARIMA(0,0,0)            with non-zero mean : 494.2237
 ARIMA(1,0,0)(1,0,0)[12] with non-zero mean : 496.9135
 ARIMA(0,0,1)(0,0,1)[12] with non-zero mean : 496.7905
@@ -1089,7 +1089,7 @@ ARIMA(0,0,0)            with zero mean     : 553.2571
 ARIMA(0,0,0)(1,0,0)[12] with non-zero mean : 496.5234
 ARIMA(0,0,0)(0,0,1)[12] with non-zero mean : 496.5226
 ARIMA(0,0,0)(1,0,1)[12] with non-zero mean : inf
-ARIMA(1,0,0)            with non-zero mean : 494.4937
+ARIMA(1,0,0)            with non-zero mean : inf
 ARIMA(0,0,1)            with non-zero mean : 494.3700
 ARIMA(1,0,1)            with non-zero mean : 495.5334
 """
@@ -1740,6 +1740,52 @@ def test_arima_large_state_space_matches_r_rossignol():
         list(fit["coef"].values()), [-0.15917, 0.90753], atol=1e-4
     )
     np.testing.assert_allclose(fit["loglik"], 202.219906, rtol=1e-8)
+
+
+_t = np.arange(1, len(ap) + 1, dtype=np.float64)
+
+
+# expected values from R 4.6.1: arima(AirPassengers, ..., xreg, method = "ML")
+@pytest.mark.parametrize(
+    "xreg,kwargs,loglik,xreg_se",
+    [
+        (np.c_[_t, _t**2], dict(order=(1, 1, 1)), -694.059914, [6.591, 0.039491]),
+        (
+            np.c_[np.sqrt(_t), np.log(_t)],
+            dict(order=(0, 1, 1), seasonal={"order": (0, 1, 1), "period": 12}),
+            -507.242085,
+            [72.953, 43.297],
+        ),
+        (
+            np.c_[_t, np.sqrt(_t), np.log(_t)],
+            dict(order=(1, 1, 1)),
+            -694.034778,
+            [10.25, 175.91, 119.5],
+        ),
+    ],
+)
+def test_arima_xreg_parscale_matches_r(xreg, kwargs, loglik, xreg_se):
+    fit = arima(ap, xreg=xreg, method="ML", **kwargs)
+    np.testing.assert_allclose(fit["loglik"], loglik, rtol=1e-7)
+    se = np.sqrt(np.diag(fit["var_coef"]))[-xreg.shape[1] :]
+    np.testing.assert_allclose(se, xreg_se, rtol=0.1)
+
+
+def test_arima_user_parscale():
+    xreg = np.c_[np.sqrt(_t), np.log(_t)]
+    kwargs = dict(
+        order=(0, 1, 1),
+        seasonal={"order": (0, 1, 1), "period": 12},
+        xreg=xreg,
+        method="ML",
+    )
+    optim_control = {"maxiter": 100, "parscale": np.ones(4)}
+    unscaled = arima(ap, optim_control=optim_control, **kwargs)
+    assert unscaled["loglik"] < arima(ap, **kwargs)["loglik"] - 1e-4
+    assert "parscale" in optim_control
+
+    with pytest.raises(ValueError, match="should have length 4"):
+        arima(ap, optim_control={"parscale": np.ones(3)}, **kwargs)
 
 
 def test_arima_invalid_ssinit_raises():

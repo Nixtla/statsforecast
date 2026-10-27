@@ -720,6 +720,34 @@ def arima(
     else:
         init = init0
 
+    optim_options = {k: v for k, v in optim_control.items() if k != "parscale"}
+    parscale = np.asarray(optim_control.get("parscale", parscale[mask]), dtype=float)
+    if parscale.shape != (mask.sum(),):
+        raise ValueError(
+            f"optim_control['parscale'] should have length {mask.sum()}, the "
+            "number of free coefficients"
+        )
+
+    def optimize(fun, x0, args, n_dist_params=0):
+        # optimize over x / parscale, as R's optim does. The distribution
+        # parameters appended to the coefficients are logs, so they're left as is
+        scale = np.append(parscale, np.ones(n_dist_params))
+        res = minimize(
+            lambda z, *args: fun(z * scale, *args),
+            x0 / scale,
+            args=args,
+            method=optim_method,
+            tol=tol,
+            options=optim_options,
+        )
+        return OptimResult(
+            res.success,
+            res.status,
+            res.x * scale,
+            res.fun,
+            res.hess_inv * np.outer(scale, scale),
+        )
+
     def arma_css_op(p, x, coef, mask, arma, ncxreg, xreg, narma):
         x = x.copy()
         par = coef.copy()
@@ -739,18 +767,14 @@ def arima(
         return 0.5 * math.log(res)
 
     coef = np.array(fixed)
-    # parscale definition, think about it, scipy doesn't use it
     if method == ArimaMethod.CSS:
         if no_optim:
             res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
         else:
-            res = minimize(
+            res = optimize(
                 arma_css_op,
                 init[mask],
-                args=(x, coef, mask, arma, ncxreg, xreg, narma),
-                method=optim_method,
-                tol=tol,
-                options=optim_control,
+                (x, coef, mask, arma, ncxreg, xreg, narma),
             )
 
         if res.status > 0:
@@ -768,13 +792,10 @@ def arima(
     else:
         if method == ArimaMethod.CSS_ML:
             if not no_optim:
-                res = minimize(
+                res = optimize(
                     arma_css_op,
                     init[mask],
-                    args=(x, coef, mask, arma, ncxreg, xreg, narma),
-                    method=optim_method,
-                    tol=tol,
-                    options=optim_control,
+                    (x, coef, mask, arma, ncxreg, xreg, narma),
                 )
                 # status 1 is "maximum number of iterations exceeded"; 0 is
                 # success and 2 precision loss. Without transform_pars, only
@@ -820,14 +841,7 @@ def arima(
 
         def minimize_tail(obj, init_ext):
             if fixed_tail is None:
-                return minimize(
-                    obj,
-                    init_ext,
-                    args=ml_args,
-                    method=optim_method,
-                    tol=tol,
-                    options=optim_control,
-                )
+                return optimize(obj, init_ext, ml_args, n_dist_params=2)
             return OptimResult(
                 True, 0, fixed_tail, obj(fixed_tail, *ml_args), np.array([])
             )
@@ -926,14 +940,7 @@ def arima(
                 np.array([]),
             )
         else:
-            res = minimize(
-                ml_obj,
-                init[mask],
-                args=ml_args,
-                method=optim_method,
-                tol=tol,
-                options=optim_control,
-            )
+            res = optimize(ml_obj, init[mask], ml_args)
         coef[mask] = res.x
         if transform_pars:
             if arma[1] > 0:
