@@ -65,7 +65,7 @@ Name | Type | Description | Default
 `stepwise` | <code>bool, default=True</code> | If True, will do stepwise selection (faster). | <code>True</code>
 `nmodels` | <code>int, default=94</code> | Number of models considered in stepwise search. | <code>94</code>
 `trace` | <code>bool, default=False</code> | If True, the searched ARIMA models is reported. | <code>False</code>
-`approximation` | <code>Optional[bool], default=False</code> | If True, conditional sums-of-squares estimation, final MLE. | <code>False</code>
+`approximation` | <code>Optional[bool], default=False</code> | If True, conditional sums-of-squares estimation, final MLE. Ignored when `distribution` isn't 'normal'. | <code>False</code>
 `method` | <code>[Optional](#typing.Optional)\[[str](#str)\]</code> | Fitting method between maximum likelihood or sums-of-squares. | <code>None</code>
 `truncate` | <code>[Optional](#typing.Optional)\[[bool](#bool)\]</code> | Observations truncated series used in model selection. | <code>None</code>
 `test` | <code>str, default="kpss"</code> | Unit root test to use. See `ndiffs` for details. | <code>'kpss'</code>
