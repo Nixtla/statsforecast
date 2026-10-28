@@ -773,7 +773,9 @@ def arima(
         if ncxreg and not orig_xreg:
             init = np.array(init, dtype=np.float64)
             ind = narma + np.arange(ncxreg)
-            init[ind] = np.matmul(vt, init[ind])
+            # fill missing values first, since rotating spreads a NaN to every entry
+            xinit = np.where(np.isnan(init[ind]), np.matmul(v, init0[ind]), init[ind])
+            init[ind] = np.matmul(vt, xinit)
         # fixed coefficients don't use init, so it can't affect the fit there
         init = np.where(np.isnan(init) | ~mask, init0, init)
         if method == ArimaMethod.ML:

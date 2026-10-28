@@ -822,6 +822,19 @@ def test_arima_init_is_in_the_original_xreg_basis():
         )
     np.testing.assert_allclose(list(fit["coef"].values()), init)
 
+    init[1] = np.nan
+    with pytest.warns(UserWarning, match="possible convergence problem"):
+        fit = arima(
+            ap,
+            order=(1, 0, 0),
+            xreg=xreg,
+            include_mean=False,
+            method="CSS",
+            init=init,
+            optim_control={"maxiter": 0},
+        )
+    assert fit["coef"]["ex_2"] == pytest.approx(-70.0)
+
 
 def test_AutoARIMA_edge_cases(almost_constant_x):
     """Test AutoARIMA with various edge cases and data types."""
