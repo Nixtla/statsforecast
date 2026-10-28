@@ -1068,7 +1068,13 @@ def arima(
             )
         params = np.concatenate([coef[mask], dist_tail_fit])
         eps = 1e-3 * np.concatenate([hess_scale[mask], np.ones(dist_tail_fit.size)])
-        var = _coef_var(_hessian(obj, params, eps), n_used, int(mask.sum()))
+        n_free = int(mask.sum())
+        hess = _hessian(obj, params, eps)
+        var = _coef_var(hess, n_used, n_free)
+        if dist_tail_fit.size and np.isnan(var).all():
+            # the skew-normal information is singular at alpha = 0, so condition
+            # on the distribution parameters instead
+            var = _coef_var(hess[:n_free, :n_free], n_used, n_free)
 
     ans = {
         "coef": dict(zip(nm, coef)),
@@ -2782,7 +2788,7 @@ def auto_arima_f(
                 xreg=xreg,
                 distribution=distribution,
                 SSinit=SSinit,
-                )
+            )
             if fit["ic"] < math.inf:
                 bestfit = fit
                 break

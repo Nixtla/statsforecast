@@ -1278,6 +1278,12 @@ def test_coef_var_depends_on_collinearity_not_units():
     assert np.isnan(arima_module._coef_var(np.diag([1.0, -1.0]), 1, 2)).all()
 
 
+def test_var_coef_skew_normal_symmetric():
+    y = 5 + np.random.default_rng(0).standard_normal(200)
+    fit = arima(y, order=(0, 0, 0), method="ML", distribution="skew-normal")
+    np.testing.assert_allclose(np.sqrt(fit["var_coef"][0, 0]), 1 / np.sqrt(200), rtol=0.2)
+
+
 def test_var_coef_near_unit_root():
     """A fixed step would cross the stationarity boundary, where the objective
     is not finite. Reference values from R:
