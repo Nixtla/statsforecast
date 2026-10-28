@@ -1111,6 +1111,133 @@ def test_issue_1167():
     assert math.isclose(mdl.model_["sigma2"], 0.9, abs_tol=0.1)
 
 
+@pytest.mark.parametrize("method", ["CSS-ML", "ML"])
+def test_coef_stderr(method):
+    """Reference values from R:
+    arima(AirPassengers, order=c(2,1,1), seasonal=list(order=c(0,1,0), period=12))
+    """
+    m = ARIMA(
+        order=(2, 1, 1),
+        seasonal_order=(0, 1, 0),
+        season_length=12,
+        method=method,
+    ).fit(ap)
+    coef_stderr = np.sqrt(np.diagonal(m.model_["var_coef"]))
+    np.testing.assert_allclose(
+        coef_stderr,
+        np.array([0.08881822, 0.08796576, 0.02920142]),
+        atol=1e-4,
+    )
+
+
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+def test_var_coef_marginalises_dist_params(distribution, monkeypatch):
+    """The scale/shape parameters are estimated jointly with the arma ones, so
+    var_coef must invert the full Hessian and then take the arma block; taking the
+    block first would report variances conditional on them, which are too small."""
+    hessians = []
+    approx_hess3 = arima_module.approx_hess3
+    monkeypatch.setattr(
+        arima_module,
+        "approx_hess3",
+        lambda x, f, **kwargs: hessians.append(approx_hess3(x, f, **kwargs))
+        or hessians[-1],
+    )
+    rng = np.random.default_rng(0)
+    y = _simulate_ar1(0.6, rng.standard_normal(300))
+    fit = arima(
+        y,
+        order=(1, 0, 0),
+        method="ML",
+        distribution=distribution,
+        transform_pars=False,
+    )
+
+    hess = hessians[-1]
+    n_free = hess.shape[0] - 2
+    expected = np.linalg.inv(fit["nobs"] * hess)[:n_free, :n_free]
+    assert np.isfinite(expected).all()
+    np.testing.assert_allclose(fit["var_coef"], expected)
+
+
+def _count_hessians(monkeypatch):
+    calls = []
+    approx_hess3 = arima_module.approx_hess3
+    monkeypatch.setattr(
+        arima_module,
+        "approx_hess3",
+        lambda x, f, **kwargs: calls.append(x) or approx_hess3(x, f, **kwargs),
+    )
+    return calls
+
+
+def test_var_coef_one_hessian_per_fit(monkeypatch):
+    """maInvert re-parameterises this model's MA part; the Hessian is still
+    computed once, at the reported coefficients."""
+    calls = _count_hessians(monkeypatch)
+    ARIMA(order=(2, 1, 1), seasonal_order=(0, 1, 0), season_length=12).fit(ap)
+    assert len(calls) == 1
+
+
+def test_var_coef_deferred_to_auto_arima_winner(monkeypatch):
+    calls = _count_hessians(monkeypatch)
+    fit = arima_module.auto_arima_f(ap, period=12)
+    assert len(calls) == 1
+    arma = fit["arma"]
+    direct = arima(
+        ap,
+        order=(arma[0], arma[5], arma[1]),
+        seasonal={"order": (arma[2], arma[6], arma[3]), "period": 12},
+        method="CSS-ML",
+    )
+    np.testing.assert_allclose(fit["var_coef"], direct["var_coef"], rtol=1e-6)
+
+
+def test_var_coef_false_skips_hessian(monkeypatch):
+    calls = _count_hessians(monkeypatch)
+    fit = arima(ap, order=(1, 1, 0), method="CSS-ML", var_coef=False)
+    assert fit["var_coef"] is None and not calls
+
+
+def test_hessian_not_evaluated_on_non_finite_objective(monkeypatch):
+    calls = _count_hessians(monkeypatch)
+    hess = arima_module._hessian(lambda p: math.nan, np.zeros(2), np.full(2, 1e-3))
+    assert not calls
+    assert np.isnan(arima_module._coef_var(hess, 10, 2)).all()
+
+
+def test_coef_var_depends_on_collinearity_not_units():
+    H = np.array([[2.0, 0.5], [0.5, 1.0]])
+    D = np.diag([1.0, 1e5])
+    np.testing.assert_allclose(
+        arima_module._coef_var(D @ H @ D, 1, 2), np.linalg.inv(D @ H @ D), rtol=1e-8
+    )
+    # rank one: invert over the identified direction only
+    np.testing.assert_allclose(
+        arima_module._coef_var(np.ones((2, 2)), 1, 2), np.full((2, 2), 0.25)
+    )
+    # saddle
+    assert np.isnan(arima_module._coef_var(np.diag([1.0, -1.0]), 1, 2)).all()
+
+
+def test_var_coef_badly_scaled_xreg():
+    """A regressor of scale 1e4 gives its coefficient a standard error of ~1e-5,
+    where a fixed finite-difference step is hundreds of standard errors wide.
+    The exact GLS covariance of the regression block is the reference."""
+    rng = np.random.default_rng(42)
+    n = 300
+    x = rng.uniform(0, 1e4, n)
+    y = 10 + 0.002 * x + _simulate_ar1(0.6, rng.standard_normal(n))
+    fit = arima(y, order=(1, 0, 0), xreg=x[:, None], method="CSS-ML")
+    phi = fit["coef"]["ar1"]
+    X = np.column_stack([np.ones(n), x])
+    Xt = np.vstack([math.sqrt(1 - phi**2) * X[:1], X[1:] - phi * X[:-1]])
+    expected = fit["sigma2"] * np.linalg.inv(Xt.T @ Xt)
+    np.testing.assert_allclose(
+        np.diag(fit["var_coef"])[1:], np.diag(expected), rtol=0.02
+    )
+
+
 @pytest.fixture
 def boxcox_series():
     """Positive, trending and seasonal series, where a Box-Cox helps."""
@@ -1748,47 +1875,66 @@ def test_arima_large_state_space_matches_r_rossignol():
 _t = np.arange(1, len(ap) + 1, dtype=np.float64)
 
 
-# expected values from R 4.6.1: arima(AirPassengers, ..., xreg, method = "ML").
-# The standard errors aren't compared: BFGS's hess_inv is too sensitive to the
-# platform to pin them
+# expected values from R 4.6.1: arima(AirPassengers, ..., xreg, method = "ML")
+@pytest.mark.parametrize("optim_method", ["BFGS", "L-BFGS-B"])
 @pytest.mark.parametrize(
-    "xreg,kwargs,xreg_coef,loglik",
+    "xreg,kwargs,coef,se,loglik",
     [
         (
             np.c_[np.sqrt(_t), np.log(_t)],
             dict(order=(1, 1, 1)),
-            [32.545068, -13.867128],
+            [-0.47646888, 0.86431849, 32.545068, -13.867128],
+            [0.115504, 0.071576, 61.4336, 66.546],
             -694.119354,
         ),
         (
             np.c_[np.sqrt(_t), np.log(_t)],
             dict(order=(0, 1, 1), seasonal={"order": (0, 1, 1), "period": 12}),
-            [-24.976607, 6.905897],
+            [-0.31385924, -0.1073898, -24.976607, 6.9058965],
+            [0.0897406, 0.0825598, 72.9532, 43.2968],
             -507.242085,
         ),
         (
             np.c_[_t, np.sqrt(_t), np.log(_t)],
             dict(order=(1, 1, 1)),
-            [4.219427, -35.309204, 26.996663],
+            [-0.47772093, 0.86539536, 4.2194272, -35.309204, 26.996663],
+            [0.11506, 0.0710292, 10.2503, 175.913, 119.497],
             -694.034778,
+        ),
+        (
+            np.c_[_t, _t**2],
+            dict(order=(1, 1, 1)),
+            [-0.47666568, 0.86453581, 2.2041891, 0.0016790898],
+            [0.115316, 0.0713482, 6.59096, 0.0394906],
+            -694.059914,
         ),
     ],
 )
-def test_arima_xreg_parscale_matches_r(xreg, kwargs, xreg_coef, loglik):
-    fit = arima(ap, xreg=xreg, method="ML", **kwargs)
-    coef = list(fit["coef"].values())[-xreg.shape[1] :]
-    np.testing.assert_allclose(coef, xreg_coef, rtol=1e-2)
+def test_arima_xreg_parscale_matches_r(xreg, kwargs, coef, se, loglik, optim_method):
+    fit = arima(ap, xreg=xreg, method="ML", optim_method=optim_method, **kwargs)
+    # the likelihood is flat around the optimum, so compare coefficients in
+    # units of their standard error
+    np.testing.assert_allclose(
+        (np.array(list(fit["coef"].values())) - coef) / se, 0, atol=1e-2
+    )
+    np.testing.assert_allclose(np.sqrt(np.diag(fit["var_coef"])), se, rtol=1e-2)
     np.testing.assert_allclose(fit["loglik"], loglik, rtol=1e-7)
 
 
-def test_arima_user_parscale():
+def test_arima_user_parscale(monkeypatch):
+    x0s = []
+    minimize = arima_module.minimize
+    monkeypatch.setattr(
+        arima_module,
+        "minimize",
+        lambda fun, x0, **kwargs: x0s.append(x0) or minimize(fun, x0, **kwargs),
+    )
     kwargs = dict(order=(1, 0, 0), method="CSS")
-    # without iterations BFGS keeps its identity inverse Hessian in the scaled
-    # coordinates, which maps back to diag(parscale**2)
     parscale = np.array([3.0, 0.5])
-    optim_control = {"maxiter": 0, "parscale": parscale}
-    fit = arima(ap, optim_control=optim_control, **kwargs)
-    np.testing.assert_allclose(fit["var_coef"], np.diag(parscale**2) / fit["nobs"])
+    optim_control = {"parscale": parscale}
+    arima(ap, optim_control=optim_control, **kwargs)
+    # the optimizer starts from init / parscale, with init the zero AR and the mean
+    np.testing.assert_allclose(x0s[0], np.array([0.0, ap.mean()]) / parscale)
     assert "parscale" in optim_control
 
     for parscale in [np.ones(3), np.array([1.0, 0.0])]:
@@ -1808,14 +1954,6 @@ def test_arima_user_parscale():
 def test_arima_parscale_zero_ols_se(x, xreg):
     fit = arima(x, order=(1, 0, 0), xreg=xreg, method="CSS-ML")
     assert np.isfinite(list(fit["coef"].values())).all()
-
-
-def test_arima_parscale_lbfgsb():
-    fit = arima(
-        ap, order=(1, 1, 1), xreg=np.c_[_t, _t**2], method="ML", optim_method="L-BFGS-B"
-    )
-    se = np.sqrt(np.diag(fit["var_coef"]))[-2:]
-    np.testing.assert_allclose(se, [6.591, 0.039491], rtol=0.5)
 
 
 def test_arima_invalid_ssinit_raises():

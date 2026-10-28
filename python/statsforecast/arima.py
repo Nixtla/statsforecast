@@ -25,6 +25,7 @@ from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from scipy.optimize import minimize
 from scipy.signal import convolve
 from scipy.stats import norm
+from statsmodels.tools.numdiff import approx_hess3
 
 from ._lib import arima as _arima
 from .mstl import mstl
@@ -40,7 +41,46 @@ from .distributions import (
     guard_dist_tail,
 )
 
-OptimResult = namedtuple("OptimResult", "success status x fun hess_inv")
+OptimResult = namedtuple("OptimResult", "success status x fun")
+
+
+def _hessian(f, params, eps):
+    """Central-difference Hessian of `f` at `params`, NaN without further
+    evaluations when the objective itself is not finite there."""
+    if not np.isfinite(f(params)):
+        return np.full((params.size, params.size), np.nan)
+    return approx_hess3(params, f, epsilon=eps)
+
+
+def _coef_var(hess, n_used, n_free):
+    """Coefficient covariance from the Hessian of the per-observation objective.
+
+    `hess` covers every optimized parameter, including the nuisance distribution
+    ones, which are marginalised out by inverting the full matrix before taking
+    the leading `n_free` block. NaN if the Hessian describes a saddle rather
+    than a minimum.
+    """
+    H = np.asarray(hess, dtype=float)
+    H = n_used * (H + H.T) / 2
+    diag = np.diag(H)
+    if not (np.isfinite(H).all() and (diag > 0).all()):
+        return np.full((n_free, n_free), np.nan)
+    # The rank test below runs on the correlation-like matrix so it responds to
+    # collinearity, not to the units of each coefficient.
+    d = 1 / np.sqrt(diag)
+    try:
+        w, V = np.linalg.eigh(H * np.outer(d, d))
+    except np.linalg.LinAlgError:
+        return np.full((n_free, n_free), np.nan)
+    # Directions with an eigenvalue at zero are ones collinear xreg leaves
+    # unidentified; inverting them is what produces negative variances, so
+    # invert over the identified subspace instead.
+    tol = math.sqrt(np.finfo(float).eps) * w[-1]
+    keep = w > tol
+    if w[0] < -tol or not keep.any():
+        return np.full((n_free, n_free), np.nan)
+    var = np.outer(d, d) * ((V[:, keep] / w[keep]) @ V[:, keep].T)
+    return var[:n_free, :n_free]
 
 
 def arima_gradtrans(x, arma):
@@ -259,6 +299,7 @@ def arima(
     optim_control={"maxiter": 100},
     distribution="normal",
     fixed_dist=None,
+    var_coef=True,
 ):
     if distribution not in _VALID_DISTRIBUTIONS:
         raise ValueError(
@@ -680,8 +721,10 @@ def arima(
 
     init0 = np.zeros(narma)
     parscale = np.ones(narma)
+    hess_scale = np.ones(narma)
 
     # xreg processing
+    xreg_orig = xreg
     if ncxreg:
         cn = nmxreg
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
@@ -703,9 +746,16 @@ def arima(
         n_used = (~isna).sum() - len(Delta)
         init0 = np.append(init0, fit["coefs"])
         ses = fit["stderrs"]
+        # var_coef differentiates in the reported (unrotated) coefficient space
+        hess_ses = (
+            ses
+            if orig_xreg
+            else np.sqrt(np.diag(vt @ result.cov_params() @ vt.T))
+        )
         # a perfect or saturated OLS fit has zero or infinite standard errors
-        valid_ses = np.isfinite(ses) & (ses > 0)
-        parscale = np.append(parscale, np.where(valid_ses, 10 * ses, 1.0))
+        to_scale = lambda s: np.where(np.isfinite(s) & (s > 0), 10 * s, 1.0)
+        parscale = np.append(parscale, to_scale(ses))
+        hess_scale = np.append(hess_scale, to_scale(hess_ses))
 
     if n_used <= 0:
         raise ValueError("Too few non-missing observations")
@@ -742,17 +792,7 @@ def arima(
             tol=tol,
             options=optim_options,
         )
-        hess_inv = res.hess_inv
-        if not isinstance(hess_inv, np.ndarray):
-            # L-BFGS-B returns a LinearOperator, where * is a matrix product
-            hess_inv = hess_inv.todense()
-        return OptimResult(
-            res.success,
-            res.status,
-            res.x * scale,
-            res.fun,
-            hess_inv * np.outer(scale, scale),
-        )
+        return OptimResult(res.success, res.status, res.x * scale, res.fun)
 
     def arma_css_op(p, x, coef, mask, arma, ncxreg, xreg, narma):
         x = x.copy()
@@ -773,9 +813,11 @@ def arima(
         return 0.5 * math.log(res)
 
     coef = np.array(fixed)
+    x_orig = x
+    dist_tail_fit = np.array([])
     if method == ArimaMethod.CSS:
         if no_optim:
-            res = OptimResult(True, 0, np.array([]), 0.0, np.array([]))
+            res = OptimResult(True, 0, np.array([]), 0.0)
         else:
             res = optimize(
                 arma_css_op,
@@ -791,10 +833,9 @@ def arima(
         phi, theta = arima_transpar(coef, arma, False)
         mod = make_arima(phi, theta, Delta, kappa, SSinit=SSinit)
         if ncxreg > 0:
-            x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
+            x = x - np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arima_css(x, arma, phi, theta)
         sigma2 = val[0]
-        var = None if no_optim else res.hess_inv / n_used
     else:
         if method == ArimaMethod.CSS_ML:
             if not no_optim:
@@ -848,11 +889,8 @@ def arima(
         def minimize_tail(obj, init_ext):
             if fixed_tail is None:
                 return optimize(obj, init_ext, ml_args, n_dist_params=2)
-            return OptimResult(
-                True, 0, fixed_tail, obj(fixed_tail, *ml_args), np.array([])
-            )
+            return OptimResult(True, 0, fixed_tail, obj(fixed_tail, *ml_args))
 
-        dist_tail_fit = np.array([])
         nu_t = None
         sigma2_t = None
         alpha_sn = None
@@ -873,17 +911,11 @@ def arima(
             _dp_sn = extract_dist_params("skew-normal", dist_tail_fit)
             sigma2_sn = _dp_sn["sigma2"]
             alpha_sn = _dp_sn["alpha_dist"]
-            hess_arma = (
-                res_sn.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0
-                else np.array([])
-            )
             res = OptimResult(
                 res_sn.success,
                 res_sn.status,
                 res_sn.x[:n_arma_free],
                 res_sn.fun,
-                hess_arma,
             )
         elif distribution == Distribution.T:
             # Always optimize [arma_free..., log_sigma2, log_nu_m2] jointly.
@@ -899,17 +931,11 @@ def arima(
             _dp_t = extract_dist_params("t", dist_tail_fit)
             sigma2_t = _dp_t["sigma2"]
             nu_t = _dp_t["nu"]
-            hess_arma = (
-                res_t.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0
-                else np.array([])
-            )
             res = OptimResult(
                 res_t.success,
                 res_t.status,
                 res_t.x[:n_arma_free],
                 res_t.fun,
-                hess_arma,
             )
         elif distribution == Distribution.GED:
             # Always optimize [arma_free..., log_sigma, log_beta] jointly.
@@ -925,26 +951,14 @@ def arima(
             _dp_ged = extract_dist_params("ged", dist_tail_fit)
             sigma2_ged = _dp_ged["sigma2"]
             beta_ged = _dp_ged["beta_dist"]
-            hess_arma = (
-                res_ged.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0
-                else np.array([])
-            )
             res = OptimResult(
                 res_ged.success,
                 res_ged.status,
                 res_ged.x[:n_arma_free],
                 res_ged.fun,
-                hess_arma,
             )
         elif no_optim:
-            res = OptimResult(
-                True,
-                0,
-                np.array([]),
-                ml_obj(np.array([]), *ml_args),
-                np.array([]),
-            )
+            res = OptimResult(True, 0, np.array([]), ml_obj(np.array([]), *ml_args))
         else:
             res = optimize(ml_obj, init[mask], ml_args)
         coef[mask] = res.x
@@ -960,23 +974,13 @@ def arima(
             if any(coef[mask] != res.x):
                 # maInvert re-parameterised the MA part; re-score there so res.fun
                 # (and loglik/aic below) matches the coefficients we report.
-                # scipy's maxiter=0 would return hess_inv = I, so evaluate
-                # directly and keep the approximation from the actual fit.
                 new_fun = ml_obj(np.concatenate([coef[mask], dist_tail_fit]), *ml_args)
-                res = OptimResult(
-                    res.success, res.status, coef[mask], new_fun, res.hess_inv
-                )
-            A = arima_gradtrans(coef, arma)
-            A = A[np.ix_(mask, mask)]
-            sol = np.matmul(res.hess_inv, A) / n_used
-            var = A.T @ sol
+                res = OptimResult(res.success, res.status, coef[mask], new_fun)
             coef = arima_undopars(coef, arma)
-        else:
-            var = None if no_optim else res.hess_inv / n_used
         trarma = arima_transpar(coef, arma, False)
         mod = make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit)
         if ncxreg > 0:
-            x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
+            x = x - np.dot(xreg, coef[narma + np.arange(ncxreg)])
         val = arimaSS(x, mod)
         val = (val[0], val[3])
         if distribution == Distribution.NORMAL:
@@ -1015,16 +1019,52 @@ def arima(
         nm.extend([f"sma{i + 1}" for i in range(arma[3])])
     if ncxreg > 0:
         nm += cn
-        if not orig_xreg and (var is not None):
+        if not orig_xreg:
             ind = narma + np.arange(ncxreg)
             coef[ind] = np.matmul(vt, coef[ind])
-            A = np.identity(narma + ncxreg)
-            A[np.ix_(ind, ind)] = vt
-            A = A[np.ix_(mask, mask)]
-            var = np.matmul(np.matmul(A, var), A.T)
-    # if no_optim:
-    #     var = pd.DataFrame(var, columns=nm[mask], index=nm[mask])
     resid = val[1]
+
+    # The Hessian is taken in the reported coefficient space (untransformed AR,
+    # unrotated xreg) at the coefficients above, so nothing has to be mapped
+    # back, and only on request: the model search defers it to its winner.
+    if np.ndim(var_coef) == 0:
+        mask_var = mask if var_coef else np.zeros_like(mask)
+    else:
+        mask_var = np.asarray(var_coef, dtype=bool)
+        if mask_var.shape != mask.shape:
+            raise ValueError(f"var_coef should be a boolean or have length {mask.size}")
+    var = None
+    if mask_var.any():
+        if method == ArimaMethod.CSS:
+            obj = partial(
+                arma_css_op,
+                x=x_orig,
+                coef=coef,
+                mask=mask_var,
+                arma=arma,
+                ncxreg=ncxreg,
+                xreg=xreg_orig,
+                narma=narma,
+            )
+        else:
+            # arimaSS left the end-of-sample state in `mod`, so build the
+            # objective on a pristine template
+            trarma = arima_transpar(coef, arma, False)
+            obj = partial(
+                ml_obj,
+                x=x_orig,
+                trans=False,
+                coef=coef,
+                mask=mask_var,
+                arma=arma,
+                mod=make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit),
+                ncxreg=ncxreg,
+                xreg=xreg_orig,
+                narma=narma,
+            )
+        params = np.concatenate([coef[mask_var], dist_tail_fit])
+        eps = 1e-3 * np.concatenate([hess_scale[mask_var], np.ones(dist_tail_fit.size)])
+        var = _coef_var(_hessian(obj, params, eps), n_used, int(mask_var.sum()))
 
     ans = {
         "coef": dict(zip(nm, coef)),
@@ -1037,6 +1077,7 @@ def arima(
         "residuals": resid,
         #'series': series,
         "code": res.status,
+        "method": method,
         "n_cond": ncond,
         "nobs": n_used,
         "model": mod,
@@ -1050,6 +1091,31 @@ def arima(
     if distribution == Distribution.GED and beta_ged is not None:
         ans["beta_dist"] = beta_ged
     return ans
+
+
+def arima_var_coef(fit, x):
+    """Covariance of the estimated coefficients of `fit` at their reported values.
+
+    `x` is the series the model was fitted on, after any Box-Cox
+    transformation. Nothing is re-estimated: the coefficients are held fixed and
+    the Hessian is taken over the ones `fit["mask"]` marks as estimated.
+    """
+    arma = fit["arma"]
+    return arima(
+        x,
+        order=(arma[0], arma[5], arma[1]),
+        seasonal={"order": (arma[2], arma[6], arma[3]), "period": arma[4]},
+        xreg=fit.get("xreg"),
+        include_mean="intercept" in fit["coef"],
+        fixed=np.array(list(fit["coef"].values())),
+        method=fit["method"],
+        SSinit=fit["SSinit"],
+        distribution=fit["distribution"],
+        fixed_dist={
+            k: fit[k] for k in ("sigma2", "nu", "alpha_dist", "beta_dist") if k in fit
+        },
+        var_coef=fit["mask"],
+    )["var_coef"]
 
 
 def kalman_forecast(n, Z, a, P, T, V, h):
@@ -1420,6 +1486,7 @@ def arima2(x, model, xreg, method):
             SSinit=SSinit,
             distribution=distribution,
             fixed_dist=fixed_dist,
+            var_coef=False,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1432,6 +1499,7 @@ def arima2(x, model, xreg, method):
             SSinit=SSinit,
             distribution=distribution,
             fixed_dist=fixed_dist,
+            var_coef=False,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1444,6 +1512,7 @@ def arima2(x, model, xreg, method):
             SSinit=SSinit,
             distribution=distribution,
             fixed_dist=fixed_dist,
+            var_coef=False,
         )
     n_coef = len(refit["coef"])
     refit["var_coef"] = np.zeros((n_coef, n_coef), dtype=np.float32)
@@ -2405,6 +2474,7 @@ def auto_arima_f(
                     order=(0, d, 0),
                     seasonal={"order": (0, 0, 0), "period": m},
                     xreg=xreg,
+                    var_coef=False,
                 )
             else:
                 fit = arima(
@@ -2412,6 +2482,7 @@ def auto_arima_f(
                     order=(0, d, 0),
                     seasonal={"order": (0, D, 0), "period": m},
                     xreg=xreg,
+                    var_coef=False,
                 )
             offset = -2 * fit["loglik"] - series_len * math.log(fit["sigma2"])
         except:
@@ -2445,7 +2516,9 @@ def auto_arima_f(
             period=m,
             SSinit=SSinit,
             distribution=distribution,
+            var_coef=False,
         )
+        bestfit["var_coef"] = arima_var_coef(bestfit, x)
         bestfit["lambda"] = blambda
         bestfit["biasadj"] = biasadj
         bestfit["x"] = origx
@@ -2474,6 +2547,7 @@ def auto_arima_f(
         method=method,
         distribution=distribution,
         SSinit=SSinit,
+        var_coef=False,
     )
     bestfit = p_myarima(
         order=(p, d, q),
@@ -2733,6 +2807,7 @@ def auto_arima_f(
                 xreg=xreg,
                 distribution=distribution,
                 SSinit=SSinit,
+                var_coef=False,
             )
             if fit["ic"] < math.inf:
                 bestfit = fit
@@ -2740,6 +2815,8 @@ def auto_arima_f(
     if math.isinf(bestfit["ic"]) and method != ArimaMethod.CSS:
         raise ValueError("No suitable ARIMA model found")
 
+    if "arma" in bestfit:
+        bestfit["var_coef"] = arima_var_coef(bestfit, x)
     bestfit["x"] = origx
     bestfit["ic"] = None
     bestfit["lambda"] = blambda
@@ -2759,7 +2836,7 @@ def print_statsforecast_ARIMA(model, digits=3, se=True):
     if len(model["coef"]) > 0:
         print("\nCoefficients:")
         coef = [round(coef, ndigits=digits) for coef in model["coef"].values()]
-        if se and len(model["var_coef"]):
+        if se and model["var_coef"] is not None and len(model["var_coef"]):
             ses = np.zeros(len(coef))
             ses[model["mask"]] = np.sqrt(np.diag(model["var_coef"])).round(
                 decimals=digits
