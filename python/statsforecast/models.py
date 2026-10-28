@@ -326,7 +326,7 @@ class AutoARIMA(_TS):
         stepwise (bool, default=True): If True, will do stepwise selection (faster).
         nmodels (int, default=94): Number of models considered in stepwise search.
         trace (bool, default=False): If True, the searched ARIMA models is reported.
-        approximation (Optional[bool], default=False): If True, conditional sums-of-squares estimation, final MLE.
+        approximation (Optional[bool], default=False): If True, conditional sums-of-squares estimation, final MLE. Ignored when `distribution` isn't 'normal'.
         method (Optional[str], optional): Fitting method between maximum likelihood or sums-of-squares.
         truncate (Optional[bool], optional): Observations truncated series used in model selection.
         test (str, default="kpss"): Unit root test to use. See `ndiffs` for details.
@@ -599,8 +599,8 @@ class AutoARIMA(_TS):
                 blambda=self.blambda,
                 biasadj=self.biasadj,
                 period=self.season_length,
-                distribution=self.distribution,
                 SSinit=self.SSinit,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -744,6 +744,7 @@ class AutoARIMA(_TS):
                     biasadj=self.biasadj,
                     period=self.season_length,
                     SSinit=self.SSinit,
+                    distribution=self.distribution,
                 )
         else:
             if not hasattr(self, "model_"):
@@ -813,6 +814,18 @@ class AutoETS(_TS):
                 raise ValueError("phi must be `None` or float.")
             if not _PHI_LOWER <= phi <= _PHI_UPPER:
                 raise ValueError(f"Valid range for phi is [{_PHI_LOWER}, {_PHI_UPPER}]")
+            if damped is False:
+                warnings.warn(
+                    "The user-defined `phi` will be ignored because `damped=False`.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+            elif isinstance(model, str) and model[1:2] == "N":
+                warnings.warn(
+                    "The user-defined `phi` will be ignored because the model has no trend.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         self.phi = phi
         self.alias = alias
         self.prediction_intervals = prediction_intervals
@@ -1380,6 +1393,8 @@ class AutoTheta(_TS):
         alias (str, default="AutoTheta"): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals], optional): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
+        theta (Optional[float], optional): Fixed theta parameter for optimized Theta models.
+            By default, theta is estimated from the data.
 
     References:
         - [Jose A. Fiorucci, Tiago R. Pellegrini, Francisco Louzada, Fotios Petropoulos, Anne B. Koehler (2016). "Models for optimising the theta method and their relationship to state space models". International Journal of Forecasting](https://www.sciencedirect.com/science/article/pii/S0169207016300243)
@@ -1393,17 +1408,23 @@ class AutoTheta(_TS):
         alias: str = "AutoTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
         distribution: str = "normal",
+        theta: Optional[float] = None,
     ):
         if distribution not in _VALID_DISTRIBUTIONS:
             raise ValueError(
                 f"distribution must be one of {tuple(d.value for d in _VALID_DISTRIBUTIONS)}, got {distribution!r}"
             )
+        if theta is not None and (
+            not np.isfinite(theta) or theta < 1.0 or theta > 1e10
+        ):
+            raise ValueError("theta must be finite and between 1 and 1e10")
         self.season_length = season_length
         self.decomposition_type = decomposition_type
         self.model = model
         self.alias = alias
         self.prediction_intervals = prediction_intervals
         self.distribution = distribution
+        self.theta = theta
 
     def fit(
         self,
@@ -1429,6 +1450,7 @@ class AutoTheta(_TS):
             model=self.model,
             decomposition_type=self.decomposition_type,
             distribution=self.distribution,
+            theta=self.theta,
         )
         self.model_["fitted"] = y - self.model_["residuals"]
         self._store_cs(y, X)
@@ -1528,6 +1550,7 @@ class AutoTheta(_TS):
                 model=self.model,
                 decomposition_type=self.decomposition_type,
                 distribution=self.distribution,
+                theta=self.theta,
             )
         else:
             if not hasattr(self, "model_"):
@@ -1583,6 +1606,7 @@ class AutoTheta(_TS):
             m=self.season_length,
             model=self.model,
             decomposition_type=self.decomposition_type,
+            theta=self.theta,
         )
         res = forecast_theta(mod, h, level=level)
         if self.prediction_intervals is not None:
@@ -2164,8 +2188,8 @@ class ARIMA(_TS):
                 biasadj=self.biasadj,
                 method=self.method,
                 fixed=self.fixed,
-                distribution=self.distribution,
                 SSinit=self.SSinit,
+                distribution=self.distribution,
             )
         fcst = forecast_arima(mod, h, xreg=X_future, level=level)
         res = {"mean": fcst["mean"]}
@@ -3864,7 +3888,8 @@ class RandomWalkWithDrift(_TS):
         mod = _random_walk_with_drift(y, h=1, fitted=True)
         mod = dict(mod)
         residuals = y - mod["fitted"]
-        sigma = _calculate_sigma(residuals, len(residuals) - 1)
+        # n - 1 residuals and one estimated parameter (the drift)
+        sigma = _calculate_sigma(residuals, len(residuals) - 2)
         mod["sigma"] = sigma
         mod["residuals"] = residuals
         mod["n"] = len(y)
@@ -4027,13 +4052,13 @@ class RandomWalkWithDrift(_TS):
             else:
                 steps = np.arange(1, h + 1)
                 residuals = y - out["fitted"]
-                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigma = _calculate_sigma(residuals, len(residuals) - 2)
                 sigmah = sigma * np.sqrt(steps * (1 + steps / (len(y) - 1)))
                 pred_int = _calculate_intervals(out, level, h, sigmah)
                 res = {**res, **pred_int}
             if fitted:
                 residuals = y - out["fitted"]
-                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                sigma = _calculate_sigma(residuals, len(residuals) - 2)
                 res = _add_fitted_pi(res=res, se=sigma, level=level)
         return res
 
@@ -6579,6 +6604,7 @@ class OptimizedTheta(AutoTheta):
         alias (str): Custom name of the model. Default 'OptimizedTheta'.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals. Default None.
+        theta (Optional[float]): Fixed theta parameter. By default, theta is estimated from the data.
     """
 
     def __init__(
@@ -6587,6 +6613,7 @@ class OptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "OptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        theta: Optional[float] = None,
     ):
         super().__init__(
             season_length=season_length,
@@ -6594,6 +6621,7 @@ class OptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            theta=theta,
         )
 
 
@@ -6641,6 +6669,7 @@ class DynamicOptimizedTheta(AutoTheta):
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction
             intervals.
+        theta (Optional[float]): Fixed theta parameter. By default, theta is estimated from the data.
     """
 
     def __init__(
@@ -6649,6 +6678,7 @@ class DynamicOptimizedTheta(AutoTheta):
         decomposition_type: str = "multiplicative",
         alias: str = "DynamicOptimizedTheta",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        theta: Optional[float] = None,
     ):
         super().__init__(
             season_length=season_length,
@@ -6656,6 +6686,7 @@ class DynamicOptimizedTheta(AutoTheta):
             decomposition_type=decomposition_type,
             alias=alias,
             prediction_intervals=prediction_intervals,
+            theta=theta,
         )
 
 

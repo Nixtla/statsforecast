@@ -1025,7 +1025,7 @@ def test_distribution_invalid_name_raises():
 
 @pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
 @pytest.mark.parametrize("model_class", [ARIMA, AutoARIMAModel])
-def test_distribution_forecast_matches_fit_predict(model_class, distribution):
+def test_distribution_forecast_matches_fit_predict_innovation_distribution_regression(model_class, distribution):
     kwargs = {"distribution": distribution, "method": "ML"}
     if model_class is ARIMA:
         kwargs["order"] = (1, 1, 1)
@@ -1156,7 +1156,7 @@ def test_distribution_aicc_short_series(distribution, relative):
     {"order": (1, 1, 1)},
     {"order": (0, 1, 0), "include_mean": False},
 ])
-def test_distribution_forward_arima(distribution, config):
+def test_distribution_forward_arima_innovation_distribution_regression(distribution, config):
     model = Arima(ap[:120], distribution=distribution, method="ML", **config)
     refit = forward_arima(model, y=ap, method="ML")
     assert refit["distribution"] == distribution
@@ -1308,6 +1308,88 @@ def test_distribution_forecast_intervals(distribution, param_key):
     assert np.all(lower_80 > lower_95), "95% lower bound must be below 80%"
     assert np.all(upper_80 < upper_95), "95% upper bound must be above 80%"
     assert np.all(lower_95 < upper_95), "lower must be below upper"
+
+
+_DIST_PARAM_KEYS = {"t": "nu", "skew-normal": "alpha_dist", "ged": "beta_dist", "laplace": None}
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize(
+    "order,seasonal",
+    [
+        ((1, 1, 1), {"order": (0, 0, 0), "period": 1}),
+        ((0, 1, 1), {"order": (0, 1, 1), "period": 12}),
+        ((0, 1, 0), {"order": (0, 0, 0), "period": 1}),
+    ],
+)
+def test_distribution_forward_arima(distribution, order, seasonal):
+    fit = Arima(ap[:120], order=order, seasonal=seasonal, method="ML", distribution=distribution)
+    refit = forward_arima(fit, ap)
+    assert refit["distribution"] == distribution
+    key = _DIST_PARAM_KEYS[distribution]
+    if key is not None:
+        assert refit[key] == pytest.approx(fit[key])
+
+
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+def test_distribution_forward_arima_keeps_params(distribution, monkeypatch):
+    fit = Arima(ap[:120], order=(1, 1, 1), method="ML", distribution=distribution)
+    coefs = np.array(list(fit["coef"].values()))
+    reestimated = Arima(
+        ap, order=(1, 1, 1), method="ML", distribution=distribution, fixed=coefs
+    )
+
+    def fail(*args, **kwargs):
+        raise AssertionError("forward_arima shouldn't re-estimate parameters")
+
+    monkeypatch.setattr("statsforecast.arima.minimize", fail)
+    same_data = forward_arima(fit, ap[:120], method="ML")
+    assert same_data["loglik"] == pytest.approx(fit["loglik"], rel=1e-10)
+    refit = forward_arima(fit, ap, method="ML")
+    key = _DIST_PARAM_KEYS[distribution]
+    assert refit["sigma2"] == fit["sigma2"]
+    assert refit[key] == pytest.approx(fit[key])
+    assert refit["loglik"] < reestimated["loglik"]
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize("approximation", [False, True])
+def test_distribution_autoarima_exhaustive(distribution, approximation):
+    rng = np.random.default_rng(9)
+    y = np.cumsum(rng.standard_normal(100))
+    fit = auto_arima_f(
+        y,
+        stepwise=False,
+        max_p=2,
+        max_q=2,
+        max_order=3,
+        approximation=approximation,
+        distribution=distribution,
+    )
+    assert fit["distribution"] == distribution
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize(
+    "y", [np.full(30, 3.0), np.arange(30.0)], ids=["constant", "linear"]
+)
+def test_distribution_autoarima_constant_series(distribution, y):
+    fit = auto_arima_f(y, distribution=distribution)
+    assert fit["distribution"] == distribution
+
+
+@pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))
+@pytest.mark.parametrize(
+    "model_cls,kwargs",
+    [(ARIMA, {"order": (1, 1, 1)}), (AutoARIMAModel, {"max_p": 2, "max_q": 2})],
+    ids=["ARIMA", "AutoARIMA"],
+)
+def test_distribution_forecast_matches_fit_predict(distribution, model_cls, kwargs):
+    model = model_cls(**kwargs, distribution=distribution)
+    fcst = model.forecast(ap, h=12, level=[80])
+    pred = model.fit(ap).predict(h=12, level=[80])
+    for key in ("mean", "lo-80", "hi-80"):
+        np.testing.assert_allclose(fcst[key], pred[key])
 
 
 def test_issue_649(capsys):
@@ -1822,6 +1904,66 @@ def test_boxcox_auto_lambda_lower_bound_clamped_on_non_positive_data(monkeypatch
         warnings.simplefilter("ignore")
         _resolve_blambda(np.where(positive == 2.0, 0.0, positive), "auto", 4)
     assert seen["lower"] == 0.0
+
+
+@pytest.fixture
+def exact_refit_fails(monkeypatch):
+    # makes the first non-approximate refit return an infinite ic, which forces
+    # search_arima into its fallback search, and records every seasonal period fitted
+    original = arima_module.myarima
+    state = {"failed": False, "periods": set()}
+
+    def myarima_refit_fails(*args, **kwargs):
+        state["periods"].add(kwargs["seasonal"]["period"])
+        fit = original(*args, **kwargs)
+        if kwargs.get("approximation") is False and not state["failed"]:
+            state["failed"] = True
+            fit = {**fit, "ic": math.inf}
+        return fit
+
+    monkeypatch.setattr(arima_module, "myarima", myarima_refit_fails)
+    return state
+
+
+def test_search_arima_fallback_keeps_seasonal_period(exact_refit_fails):
+    rng = np.random.default_rng(0)
+    season = 12
+    x = np.sin(np.arange(120) * 2 * np.pi / season) + rng.normal(size=120) * 0.3
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fit = arima_module.search_arima(
+            x,
+            max_p=1,
+            max_q=1,
+            max_P=1,
+            max_Q=1,
+            max_order=3,
+            approximation=True,
+            offset=0,
+            period=season,
+        )
+    assert exact_refit_fails["failed"]
+    assert exact_refit_fails["periods"] == {season}
+    assert fit["arma"][4] == season
+
+
+def test_auto_arima_nonstepwise_fallback_keeps_seasonal_period(exact_refit_fails):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fit = auto_arima_f(
+            ap,
+            period=12,
+            stepwise=False,
+            approximation=True,
+            max_p=1,
+            max_q=1,
+            max_P=1,
+            max_Q=1,
+            max_order=3,
+        )
+    assert exact_refit_fails["failed"]
+    assert exact_refit_fails["periods"] == {12}
+    assert fit["arma"][4] == 12
 
 
 @pytest.mark.parametrize("seed", [0, 18])

@@ -609,6 +609,8 @@ class _StatsForecast:
         time_col: str = "ds",
         target_col: str = "y",
     ) -> None:
+        self.__dict__.pop("fcst_fitted_values_", None)
+        self.__dict__.pop("cv_fitted_values_", None)
         df = ensure_time_dtype(df, time_col)
         validate_freq(df[time_col], self.freq)
         self.uids, last_times, data, indptr, sort_idxs = ufp.process_df(
@@ -925,7 +927,6 @@ class _StatsForecast:
                 identifiers, future timestamps, and predictions from each model. Includes
                 prediction intervals if `level` is specified.
         """
-        self.__dict__.pop("fcst_fitted_values_", None)
         self._prepare_fit(
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
@@ -1099,6 +1100,8 @@ class _StatsForecast:
         Returns the fitted (in-sample) predictions generated during the last call to
         `forecast()`. These are the model's predictions on the training data, useful
         for assessing model fit quality and identifying patterns in residuals.
+        Retrieve these predictions before calling another method that prepares
+        training data on this instance.
 
         Returns:
             pandas.DataFrame or polars.DataFrame: DataFrame containing in-sample predictions
@@ -1199,7 +1202,6 @@ class _StatsForecast:
                 raise ValueError(
                     "Can only use integer refit or refit=False with a fallback model that implements the forward method."
                 )
-        self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
@@ -1269,6 +1271,8 @@ class _StatsForecast:
         Returns the fitted (in-sample) predictions for each cross-validation window.
         These are the model's predictions on the training data for each window,
         useful for analyzing how model fit changes across different training periods.
+        Retrieve these predictions before calling another method that prepares
+        training data on this instance.
 
         Returns:
             pandas.DataFrame or polars.DataFrame: DataFrame containing in-sample predictions
