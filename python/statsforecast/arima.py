@@ -1305,7 +1305,10 @@ def myarima(
                 proots = np.polynomial.polynomial.polyroots(np.append(1, testvec))
                 if proots.size > 0:
                     minroot = min(minroot, *abs(proots))
-        if minroot < 1 + 0.01 or checkarima(fit):
+        # the laplace and ged objectives can have kinks, which the numerical
+        # Hessian can't tell apart from a saddle
+        smooth = distribution not in (Distribution.LAPLACE, Distribution.GED)
+        if minroot < 1 + 0.01 or (smooth and checkarima(fit)):
             fit["ic"] = math.inf
         fit["xreg"] = xreg
         if trace:

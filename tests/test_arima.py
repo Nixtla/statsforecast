@@ -1297,6 +1297,19 @@ def test_var_coef_skew_normal_symmetric():
     np.testing.assert_allclose(np.sqrt(fit["var_coef"][0, 0]), 1 / np.sqrt(200), rtol=0.2)
 
 
+def test_myarima_keeps_ged_fits_at_a_kink():
+    rng = np.random.default_rng(123)
+    for _ in range(7):
+        e = rng.laplace(size=301)
+    y = np.zeros(301)
+    for t in range(1, 301):
+        y[t] = 0.6 * y[t - 1] + e[t] + 0.3 * e[t - 1]
+    fit = myarima(y[1:] + 5, order=(1, 0, 1), distribution="ged")
+    # beta < 1 puts kinks in the objective, so its numerical Hessian is not PD
+    assert np.isnan(fit["var_coef"]).all()
+    assert np.isfinite(fit["ic"])
+
+
 def test_var_coef_near_unit_root():
     """A fixed step would cross the stationarity boundary, where the objective
     is not finite. Reference values from R:
