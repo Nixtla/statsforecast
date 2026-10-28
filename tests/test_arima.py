@@ -1179,18 +1179,19 @@ def test_var_coef_one_hessian_per_fit(monkeypatch):
     assert len(calls) == 1
 
 
-def test_var_coef_deferred_to_auto_arima_winner(monkeypatch):
-    calls = _count_hessians(monkeypatch)
-    fit = arima_module.auto_arima_f(ap, period=12)
-    assert len(calls) == 1
-    arma = fit["arma"]
-    direct = arima(
-        ap,
-        order=(arma[0], arma[5], arma[1]),
-        seasonal={"order": (arma[2], arma[6], arma[3]), "period": 12},
-        method="CSS-ML",
-    )
-    np.testing.assert_allclose(fit["var_coef"], direct["var_coef"], rtol=1e-6)
+def test_auto_arima_rejects_saddle_candidates():
+    """Without checking every candidate's Hessian the search picks
+    ARIMA(1,0,1)(2,1,2)[12] with drift, which is a saddle point."""
+    rng = np.random.default_rng(19)
+    n = 120
+    e = rng.normal(size=n + 50)
+    y = np.zeros(n + 50)
+    for t in range(2, n + 50):
+        y[t] = 0.5 * y[t - 1] - 0.2 * y[t - 2] + e[t] + 0.4 * e[t - 1]
+    t = np.arange(n)
+    y = y[50:] + 10 + 0.05 * t + 3 * np.sin(t * 2 * np.pi / 12)
+    fit = auto_arima_f(y, period=12)
+    assert np.isfinite(fit["var_coef"]).all()
 
 
 def test_var_coef_false_skips_hessian(monkeypatch):

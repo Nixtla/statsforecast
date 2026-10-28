@@ -1031,22 +1031,15 @@ def arima(
     resid = val[1]
 
     # The Hessian is taken in the reported coefficient space (untransformed AR,
-    # unrotated xreg) at the coefficients above, so nothing has to be mapped
-    # back, and only on request: the model search defers it to its winner.
-    if np.ndim(var_coef) == 0:
-        mask_var = mask if var_coef else np.zeros_like(mask)
-    else:
-        mask_var = np.asarray(var_coef, dtype=bool)
-        if mask_var.shape != mask.shape:
-            raise ValueError(f"var_coef should be a boolean or have length {mask.size}")
+    # unrotated xreg) at the coefficients above, so nothing has to be mapped back
     var = None
-    if mask_var.any():
+    if var_coef and mask.any():
         if method == ArimaMethod.CSS:
             obj = partial(
                 arma_css_op,
                 x=x_orig,
                 coef=coef,
-                mask=mask_var,
+                mask=mask,
                 arma=arma,
                 ncxreg=ncxreg,
                 xreg=xreg_orig,
@@ -1061,16 +1054,16 @@ def arima(
                 x=x_orig,
                 trans=False,
                 coef=coef,
-                mask=mask_var,
+                mask=mask,
                 arma=arma,
                 mod=make_arima(trarma[0], trarma[1], Delta, kappa, SSinit=SSinit),
                 ncxreg=ncxreg,
                 xreg=xreg_orig,
                 narma=narma,
             )
-        params = np.concatenate([coef[mask_var], dist_tail_fit])
-        eps = 1e-3 * np.concatenate([hess_scale[mask_var], np.ones(dist_tail_fit.size)])
-        var = _coef_var(_hessian(obj, params, eps), n_used, int(mask_var.sum()))
+        params = np.concatenate([coef[mask], dist_tail_fit])
+        eps = 1e-3 * np.concatenate([hess_scale[mask], np.ones(dist_tail_fit.size)])
+        var = _coef_var(_hessian(obj, params, eps), n_used, int(mask.sum()))
 
     ans = {
         "coef": dict(zip(nm, coef)),
@@ -1083,7 +1076,6 @@ def arima(
         "residuals": resid,
         #'series': series,
         "code": res.status,
-        "method": method,
         "n_cond": ncond,
         "nobs": n_used,
         "model": mod,
@@ -1097,31 +1089,6 @@ def arima(
     if distribution == Distribution.GED and beta_ged is not None:
         ans["beta_dist"] = beta_ged
     return ans
-
-
-def arima_var_coef(fit, x):
-    """Covariance of the estimated coefficients of `fit` at their reported values.
-
-    `x` is the series the model was fitted on, after any Box-Cox
-    transformation. Nothing is re-estimated: the coefficients are held fixed and
-    the Hessian is taken over the ones `fit["mask"]` marks as estimated.
-    """
-    arma = fit["arma"]
-    return arima(
-        x,
-        order=(arma[0], arma[5], arma[1]),
-        seasonal={"order": (arma[2], arma[6], arma[3]), "period": arma[4]},
-        xreg=fit.get("xreg"),
-        include_mean="intercept" in fit["coef"],
-        fixed=np.array(list(fit["coef"].values())),
-        method=fit["method"],
-        SSinit=fit["SSinit"],
-        distribution=fit["distribution"],
-        fixed_dist={
-            k: fit[k] for k in ("sigma2", "nu", "alpha_dist", "beta_dist") if k in fit
-        },
-        var_coef=fit["mask"],
-    )["var_coef"]
 
 
 def kalman_forecast(n, Z, a, P, T, V, h):
@@ -2522,9 +2489,7 @@ def auto_arima_f(
             period=m,
             SSinit=SSinit,
             distribution=distribution,
-            var_coef=False,
         )
-        bestfit["var_coef"] = arima_var_coef(bestfit, x)
         bestfit["lambda"] = blambda
         bestfit["biasadj"] = biasadj
         bestfit["x"] = origx
@@ -2553,7 +2518,6 @@ def auto_arima_f(
         method=method,
         distribution=distribution,
         SSinit=SSinit,
-        var_coef=False,
     )
     bestfit = p_myarima(
         order=(p, d, q),
@@ -2813,16 +2777,13 @@ def auto_arima_f(
                 xreg=xreg,
                 distribution=distribution,
                 SSinit=SSinit,
-                var_coef=False,
-            )
+                )
             if fit["ic"] < math.inf:
                 bestfit = fit
                 break
     if math.isinf(bestfit["ic"]) and method != ArimaMethod.CSS:
         raise ValueError("No suitable ARIMA model found")
 
-    if "arma" in bestfit:
-        bestfit["var_coef"] = arima_var_coef(bestfit, x)
     bestfit["x"] = origx
     bestfit["ic"] = None
     bestfit["lambda"] = blambda
