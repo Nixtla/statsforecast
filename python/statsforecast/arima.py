@@ -736,7 +736,8 @@ def arima(
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
         if not orig_xreg:
             _, _, vt = np.linalg.svd(xreg[(~np.isnan(xreg)).all(1)])
-            xreg = np.matmul(xreg, vt)
+            v = vt.T
+            xreg = np.matmul(xreg, v)
         dx = x
         dxreg = xreg
         if order[1] > 0:
@@ -756,7 +757,7 @@ def arima(
         hess_ses = (
             ses
             if orig_xreg
-            else np.sqrt(np.diag(vt @ result.cov_params() @ vt.T))
+            else np.sqrt(np.diag(v @ result.cov_params() @ v.T))
         )
         # a perfect or saturated OLS fit has zero or infinite standard errors
         to_scale = lambda s: np.where(np.isfinite(s) & (s > 0), 10 * s, 1.0)
@@ -769,6 +770,10 @@ def arima(
     if init is not None:
         if len(init) != len(init0):
             raise ValueError(f"init should have length {len(init0)}")
+        if ncxreg and not orig_xreg:
+            init = np.array(init, dtype=np.float64)
+            ind = narma + np.arange(ncxreg)
+            init[ind] = np.matmul(vt, init[ind])
         # fixed coefficients don't use init, so it can't affect the fit there
         init = np.where(np.isnan(init) | ~mask, init0, init)
         if method == ArimaMethod.ML:
@@ -1027,7 +1032,7 @@ def arima(
         nm += cn
         if not orig_xreg:
             ind = narma + np.arange(ncxreg)
-            coef[ind] = np.matmul(vt, coef[ind])
+            coef[ind] = np.matmul(v, coef[ind])
     resid = val[1]
 
     # The Hessian is taken in the reported coefficient space (untransformed AR,
