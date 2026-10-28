@@ -731,8 +731,8 @@ def arima(
         )
 
     def optimize(fun, x0, args, n_dist_params=0):
-        # optimize over x / parscale, as R's optim does. The distribution
-        # parameters appended to the coefficients are logs, so they're left as is
+        # the distribution parameters appended to the coefficients are logs, so
+        # they aren't scaled
         scale = np.append(parscale, np.ones(n_dist_params))
         res = minimize(
             lambda z, *args: fun(z * scale, *args),
@@ -875,7 +875,7 @@ def arima(
             alpha_sn = _dp_sn["alpha_dist"]
             hess_arma = (
                 res_sn.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0 and np.ndim(res_sn.hess_inv) == 2
+                if n_arma_free > 0
                 else np.array([])
             )
             res = OptimResult(
@@ -901,7 +901,7 @@ def arima(
             nu_t = _dp_t["nu"]
             hess_arma = (
                 res_t.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0 and np.ndim(res_t.hess_inv) == 2
+                if n_arma_free > 0
                 else np.array([])
             )
             res = OptimResult(
@@ -927,7 +927,7 @@ def arima(
             beta_ged = _dp_ged["beta_dist"]
             hess_arma = (
                 res_ged.hess_inv[:n_arma_free, :n_arma_free]
-                if n_arma_free > 0 and np.ndim(res_ged.hess_inv) == 2
+                if n_arma_free > 0
                 else np.array([])
             )
             res = OptimResult(
