@@ -609,6 +609,7 @@ class _StatsForecast:
         time_col: str = "ds",
         target_col: str = "y",
     ) -> None:
+        self.__dict__.pop("fitted_", None)
         self.__dict__.pop("fcst_fitted_values_", None)
         self.__dict__.pop("cv_fitted_values_", None)
         df = ensure_time_dtype(df, time_col)
@@ -776,6 +777,8 @@ class _StatsForecast:
 
         Uses the models fitted via the `fit` method to generate predictions for the
         specified forecast horizon. This follows the scikit-learn fit/predict interface.
+        Preparing new training data invalidates stored fitted models.
+        Call `fit` or `fit_predict` again before calling `predict`.
 
         Args:
             h (int): Forecast horizon, the number of time steps ahead to predict.
