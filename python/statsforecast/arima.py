@@ -864,13 +864,28 @@ def arima(
                 converged = res.status != 1
                 css_coef = coef.copy()
                 css_coef[mask] = res.x
-                if converged and (
-                    ar_stationarity_error(arma, css_coef) is None
-                    or (
-                        not transform_pars
-                        and ar_stationarity_error(arma, np.where(mask, init, coef))
-                        is not None
+                init_coef = np.where(mask, init, coef)
+
+                def ml_loss(par):
+                    mod = make_arima(
+                        *arima_transpar(par, arma, False), Delta, kappa, SSinit=SSinit
                     )
+                    return armafn(
+                        par[mask], x, False, par, mask, arma, mod, ncxreg, xreg, narma
+                    )
+
+                # with a mean and a near-unit root the CSS minimum can drift along
+                # a ridge that ML can't climb out of, e.g. ldeaths (1,0,1)(1,0,1)[12]
+                if (
+                    converged
+                    and (
+                        ar_stationarity_error(arma, css_coef) is None
+                        or (
+                            not transform_pars
+                            and ar_stationarity_error(arma, init_coef) is not None
+                        )
+                    )
+                    and not ml_loss(css_coef) > ml_loss(init_coef)
                 ):
                     init[mask] = res.x
                 elif transform_pars or not converged:

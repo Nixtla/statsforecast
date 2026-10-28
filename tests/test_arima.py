@@ -1162,7 +1162,7 @@ ARIMA(0,0,0)            with zero mean     : 553.2571
 ARIMA(0,0,0)(1,0,0)[12] with non-zero mean : 496.5234
 ARIMA(0,0,0)(0,0,1)[12] with non-zero mean : 496.5226
 ARIMA(0,0,0)(1,0,1)[12] with non-zero mean : inf
-ARIMA(1,0,0)            with non-zero mean : inf
+ARIMA(1,0,0)            with non-zero mean : 494.4937
 ARIMA(0,0,1)            with non-zero mean : 494.3700
 ARIMA(1,0,1)            with non-zero mean : 495.5334
 """
@@ -2029,6 +2029,27 @@ def test_arima_near_duplicate_xreg_matches_r():
     fit = arima(ap, order=(1, 0, 0), xreg=np.c_[_t, _t + e], method="CSS-ML")
     np.testing.assert_allclose(fit["coef"]["ar1"], 0.72819401, rtol=1e-3)
     np.testing.assert_allclose(fit["loglik"], -700.1764455, rtol=1e-7)
+
+
+def test_css_ml_skips_css_ridge_start():
+    """The CSS minimum drifts to sar1 ~ 1 with a huge intercept. Reference from R:
+    arima(ldeaths, c(1, 0, 1), list(order = c(1, 0, 1), period = 12))$loglik
+    """
+    ldeaths = np.array([
+        3035, 2552, 2704, 2554, 2014, 1655, 1721, 1524, 1596, 2074, 2199, 2512,
+        2933, 2889, 2938, 2497, 1870, 1726, 1607, 1545, 1396, 1787, 2076, 2837,
+        2787, 3891, 3179, 2011, 1636, 1580, 1489, 1300, 1356, 1653, 2013, 2823,
+        3102, 2294, 2385, 2444, 1748, 1554, 1498, 1361, 1346, 1564, 1640, 2293,
+        2815, 3137, 2679, 1969, 1870, 1633, 1529, 1366, 1357, 1570, 1535, 2491,
+        3084, 2605, 2573, 2143, 1693, 1504, 1461, 1354, 1333, 1492, 1781, 1915,
+    ], dtype=float)  # fmt: skip
+    fit = arima(
+        ldeaths,
+        order=(1, 0, 1),
+        seasonal={"order": (1, 0, 1), "period": 12},
+        method="CSS-ML",
+    )
+    assert fit["loglik"] > -514
 
 
 def test_arima_user_parscale(monkeypatch):
