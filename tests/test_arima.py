@@ -1220,6 +1220,18 @@ def test_coef_var_depends_on_collinearity_not_units():
     assert np.isnan(arima_module._coef_var(np.diag([1.0, -1.0]), 1, 2)).all()
 
 
+def test_var_coef_near_unit_root():
+    """A fixed step would cross the stationarity boundary, where the objective
+    is not finite. Reference values from R:
+    arima(y, order=c(1,0,0), method="ML")
+    """
+    y = 50 + np.cumsum(np.random.default_rng(1).standard_normal(400))
+    fit = arima(y, order=(1, 0, 0), method="ML")
+    np.testing.assert_allclose(
+        np.sqrt(np.diag(fit["var_coef"])), [0.00206163, 13.05126], rtol=1e-2
+    )
+
+
 def test_var_coef_badly_scaled_xreg():
     """A regressor of scale 1e4 gives its coefficient a standard error of ~1e-5,
     where a fixed finite-difference step is hundreds of standard errors wide.

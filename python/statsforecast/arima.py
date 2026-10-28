@@ -49,7 +49,13 @@ def _hessian(f, params, eps):
     evaluations when the objective itself is not finite there."""
     if not np.isfinite(f(params)):
         return np.full((params.size, params.size), np.nan)
-    return approx_hess3(params, f, epsilon=eps)
+    # near the stationarity boundary the stencil can step outside it
+    for _ in range(4):
+        hess = approx_hess3(params, f, epsilon=eps)
+        if np.isfinite(hess).all():
+            break
+        eps = eps / 10
+    return hess
 
 
 def _coef_var(hess, n_used, n_free):
