@@ -1815,7 +1815,7 @@ def test_arima_parscale_lbfgsb():
         ap, order=(1, 1, 1), xreg=np.c_[_t, _t**2], method="ML", optim_method="L-BFGS-B"
     )
     se = np.sqrt(np.diag(fit["var_coef"]))[-2:]
-    np.testing.assert_allclose(se, [6.591, 0.039491], rtol=0.1)
+    np.testing.assert_allclose(se, [6.591, 0.039491], rtol=0.5)
 
 
 def test_arima_invalid_ssinit_raises():

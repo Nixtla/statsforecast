@@ -731,8 +731,8 @@ def arima(
         )
 
     def optimize(fun, x0, args, n_dist_params=0):
-        # the distribution parameters appended to the coefficients are logs, so
-        # they aren't scaled
+        # the distribution parameters appended to the coefficients have no OLS
+        # standard error to scale by, so they keep a scale of 1
         scale = np.append(parscale, np.ones(n_dist_params))
         res = minimize(
             lambda z, *args: fun(z * scale, *args),
