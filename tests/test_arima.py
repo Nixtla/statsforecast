@@ -936,6 +936,15 @@ def test_distribution_invalid_name_raises():
         arima(y, order=(1, 0, 0), distribution="cauchy")
 
 
+@pytest.mark.parametrize("distribution", ["normal", "laplace", "t", "skew-normal", "ged"])
+def test_distribution_constant_series_likelihood_is_nan(distribution):
+    """Zero residuals leave the likelihood undefined for every distribution."""
+    y = np.full(40, 3.0)
+    fit = Arima(y, order=(0, 0, 0), fixed=np.array([3.0]), method="ML", distribution=distribution)
+    for key in ("loglik", "aic", "bic", "aicc"):
+        assert np.isnan(fit[key]), key
+
+
 @pytest.mark.parametrize("distribution,param_key", [
     ("t",           "nu"),
     ("skew-normal", "alpha_dist"),
