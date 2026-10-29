@@ -1824,7 +1824,7 @@ class AutoTBATS(_TS):
         - [De Livera, Alysha M (2017). Modeling time series with complex seasonal patterns using exponential smoothing. Monash University. Thesis.](https://doi.org/10.4225/03/589299681de3d)
 
     Args:
-        seasonal_periods (int or list of int): Number of observations per unit of time. Ex: 24 Hourly data.
+        season_length (Union[int, List[int]]): Number of observations per unit of time. Ex: 24 Hourly data.
         use_boxcox (bool, default=None): Whether or not to use a Box-Cox transformation. By default tries both.
         bc_lower_bound (float, default=0.0): Lower bound for the Box-Cox transformation.
         bc_upper_bound (float, default=1.0): Upper bound for the Box-Cox transformation.
