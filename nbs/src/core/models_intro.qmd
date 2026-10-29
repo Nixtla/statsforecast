@@ -8,10 +8,11 @@ Automatic forecasting tools search for the best parameters and select the best p
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`AutoARIMA`](./models.html#autoarima)|✅|✅|✅|✅|✅|
-|[`AutoETS`](./models.html#autoets)|✅|✅|✅|✅|✅|
-|[`AutoCES`](./models.html#autoces)|✅|✅|✅|✅||
-|[`AutoTheta`](./models.html#autotheta)|✅|✅|✅|✅|✅|
+|[`AutoARIMA`](models.html#autoarima)|✅|✅|✅|✅|✅|
+|[`AutoMSARIMAX`](models.html#automsarimax)|✅|✅|✅|✅|✅|
+|[`AutoETS`](models.html#autoets)|✅|✅|✅|✅|✅|
+|[`AutoCES`](models.html#autoces)|✅|✅|✅|✅||
+|[`AutoTheta`](models.html#autotheta)|✅|✅|✅|✅|✅|
 
 
 ## ARIMA Family
@@ -19,8 +20,9 @@ These models exploit the existing autocorrelations in the time series.
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`ARIMA`](./models.html#arima)|✅|✅|✅|✅|✅|
-|[`AutoRegressive`](./models.html#autoregressive)|✅|✅|✅|✅|✅|
+|[`ARIMA`](models.html#arima)|✅|✅|✅|✅|✅|
+|[`MSARIMAX`](models.html#msarimax)|✅|✅|✅|✅|✅|
+|[`AutoRegressive`](models.html#autoregressive)|✅|✅|✅|✅|✅|
 
 
 ## Theta Family
@@ -39,7 +41,8 @@ Suited for signals with more than one clear seasonality. Useful for low-frequenc
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`MSTL`](./models.html#mstl)|✅|✅|✅|✅|✅|
+|[`MSARIMAX`](models.html#msarimax)|✅|✅|✅|✅|✅|
+|[`MSTL`](models.html#mstl)|✅|✅|✅|✅|✅|
 
 
 ## GARCH and ARCH Models
@@ -80,12 +83,9 @@ Suited for series with very few non-zero observations
 
 |Model | Point Forecast | Probabilistic Forecast | Insample fitted values | Probabilistic fitted values |
 |:------|:-------------:|:----------------------:|:---------------------:|:----------------------------:|
-|[`ADIDA`](./models.html#adida)|✅|||||
-|[`CrostonClassic`](./models.html#crostonclassic)|✅|||||
-|[`CrostonOptimized`](./models.html#crostonoptimized)|✅|||||
-|[`CrostonSBA`](./models.html#crostonsba)|✅|||||
-|[`IMAPA`](./models.html#imapa)|✅|||||
-|[`TSB`](./models.html#tsb)|✅|||||
-
-
-
+|[`ADIDA`](models.html#adida)|✅|||||
+|[`CrostonClassic`](models.html#crostonclassic)|✅|||||
+|[`CrostonOptimized`](models.html#crostonoptimized)|✅|||||
+|[`CrostonSBA`](models.html#crostonsba)|✅|||||
+|[`IMAPA`](models.html#imapa)|✅|||||
+|[`TSB`](models.html#tsb)|✅|||||
