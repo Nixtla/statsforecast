@@ -1609,6 +1609,45 @@ def test_conf_intervals(n_jobs):
 # test_conf_intervals(n_jobs=101)
 
 
+@pytest.mark.parametrize("as_polars", [False, True])
+def test_cross_validation_fitted_values_matches_across_engines(as_polars):
+    """`cross_validation_fitted_values` selects the same rows for Polars as for pandas.
+
+    The row selector is a boolean mask, and `ufp.take_rows` indexes a Polars Series with
+    `series[idxs]`, which Polars only accepts for integer positions. Passing the mask through raised
+    a TypeError on every Polars input; the positions are what both backends need.
+    """
+    data = {
+        "unique_id": ["a"] * 8,
+        "ds": list(range(8)),
+        "y": [float(i) for i in range(8)],
+    }
+    results = {}
+    for engine, frame in (("pandas", pd.DataFrame(data)), ("polars", pl.DataFrame(data))):
+        sf = StatsForecast(models=[Naive()], freq=1)
+        sf.cross_validation(df=frame, h=1, n_windows=2, fitted=True)
+        out = sf.cross_validation_fitted_values()
+        results[engine] = out.to_pandas() if engine == "polars" else out
+
+    expected, actual = results["pandas"].reset_index(drop=True), results["polars"].reset_index(drop=True)
+    assert list(actual.columns) == list(expected.columns)
+    pd.testing.assert_frame_equal(actual, expected)
+    # one row per in-sample point across both windows, so the selection is not trivially empty
+    assert len(actual) == 13
+    assert actual["cutoff"].nunique() == 2
+
+    # and the requested engine is the one that comes back
+    sf = StatsForecast(models=[Naive()], freq=1)
+    sf.cross_validation(
+        df=pl.DataFrame(data) if as_polars else pd.DataFrame(data),
+        h=1,
+        n_windows=2,
+        fitted=True,
+    )
+    out = sf.cross_validation_fitted_values()
+    assert isinstance(out, pl.DataFrame if as_polars else pd.DataFrame)
+
+
 @pytest.mark.parametrize("n_jobs", [1, 2])
 @pytest.mark.parametrize("as_polars", [False, True])
 @pytest.mark.parametrize("method", ["forecast", "fit_predict", "predict"])

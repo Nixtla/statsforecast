@@ -1282,7 +1282,11 @@ class _StatsForecast:
         """
         if not hasattr(self, "cv_fitted_values_"):
             raise Exception("Please run `cross_validation` method using `fitted=True`")
-        idxs = self.cv_fitted_values_["idxs"].flatten(order="F")
+        mask = self.cv_fitted_values_["idxs"].flatten(order="F")
+        # `ufp.take_rows` indexes a Polars Series with `series[idxs]`, which Polars only accepts for
+        # integer positions; a boolean mask raises. Convert once and use the positions everywhere
+        # below, so the pandas and Polars paths select the same rows.
+        idxs = np.flatnonzero(mask)
         train_uids = ufp.repeat(self.uids, np.diff(self.ga.indptr))
         cv_uids = ufp.vertical_concat([train_uids for _ in range(self.n_cv_)])
         used_uids = ufp.take_rows(cv_uids, idxs)
