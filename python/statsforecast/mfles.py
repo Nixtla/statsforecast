@@ -422,7 +422,7 @@ class MFLES:
             ma_cycle = itertools.cycle(ma)
         if seasonal_period is not None:
             seasons_cycle = itertools.cycle(list(range(len(seasonal_period))))
-            self.seasonality = np.zeros(max(seasonal_period))
+            self.seasonality = [np.zeros(period) for period in seasonal_period]
             fourier_series = []
             for period in seasonal_period:
                 if fourier_order is None:
@@ -464,10 +464,11 @@ class MFLES:
                     mse = component_mse
                     fitted += seas
                     resids = y - fitted
-                    self.seasonality += np.resize(
-                        seas[-seasonal_period[seasonal_period_cycle] :],
-                        len(self.seasonality),
-                    )
+                    period = seasonal_period[seasonal_period_cycle]
+                    seasonal_update = seas[-period:]
+                    if seasonal_update.size < period:
+                        seasonal_update = np.resize(seasonal_update, period)
+                    self.seasonality[seasonal_period_cycle] += seasonal_update
                     self.seasonal_component += seas
             if X is not None and i > 0:
                 model_obj = exogenous_estimator(**exogenous_params)
@@ -567,12 +568,12 @@ class MFLES:
         if self.trend_penalty and self.penalty is not None:
             slope = slope * max(0, self.penalty)
         self.predicted_trend = slope * np.arange(1, forecast_horizon + 1) + last_point
-        if self.seasonality is not None:
-            predicted = self.predicted_trend + np.resize(
-                self.seasonality, forecast_horizon
-            )
-        else:
-            predicted = self.predicted_trend
+        predicted = self.predicted_trend.copy()
+        if isinstance(self.seasonality, list):
+            for seasonality in self.seasonality:
+                predicted += np.resize(seasonality, forecast_horizon)
+        elif self.seasonality is not None:
+            predicted += np.resize(self.seasonality, forecast_horizon)
         if X is not None:
             for model in self.exo_model:
                 predicted += model.predict(X) * self.exogenous_lr
