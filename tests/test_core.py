@@ -1360,14 +1360,61 @@ def test_conformal_prediction(series):
         n_windows=2,
         level=[80, 90],
     )
+    # native and conformal intervals don't share the column order
+    assert set(cv_conformal.columns) == set(cv_no_conformal.columns)
     np.testing.assert_array_equal(
-        cv_conformal.columns,
-        cv_no_conformal.columns,
+        cv_conformal.filter(regex="ds|cutoff|y|SeasonalNaive$"),
+        cv_no_conformal.filter(regex="ds|cutoff|y|SeasonalNaive$"),
     )
-    np.testing.assert_array_equal(
-        cv_conformal.filter(regex="ds|cutoff|y|AutoARIMA$"),
-        cv_no_conformal.filter(regex="ds|cutoff|y|AutoARIMA$"),
+
+
+def test_prediction_intervals_only_apply_to_call(series):
+    # prediction_intervals passed to a method shouldn't stick to the models
+    uids = series.index.unique()[:10]
+    series_subset = series.query("unique_id in @uids")[["unique_id", "ds", "y"]]
+    model = SeasonalNaive(season_length=7)
+    sf = StatsForecast(models=[model], freq="D", n_jobs=1)
+    intervals = ConformalIntervals(h=12)
+
+    native = sf.forecast(df=series_subset, h=12, level=[80])
+    conformal = sf.forecast(
+        df=series_subset, h=12, level=[80], prediction_intervals=intervals
     )
+    assert not np.allclose(
+        native["SeasonalNaive-lo-80"], conformal["SeasonalNaive-lo-80"]
+    )
+    assert model.prediction_intervals is None
+    pd.testing.assert_frame_equal(
+        sf.forecast(df=series_subset, h=12, level=[80]), native
+    )
+
+    native_cv = sf.cross_validation(df=series_subset, h=12, n_windows=2, level=[80])
+    sf.cross_validation(
+        df=series_subset,
+        h=12,
+        n_windows=2,
+        level=[80],
+        prediction_intervals=intervals,
+    )
+    assert model.prediction_intervals is None
+    pd.testing.assert_frame_equal(
+        sf.cross_validation(df=series_subset, h=12, n_windows=2, level=[80]),
+        native_cv,
+    )
+
+    # the fitted models keep the intervals until the next fit
+    sf.fit(df=series_subset, prediction_intervals=intervals)
+    assert model.prediction_intervals is None
+    pd.testing.assert_frame_equal(sf.predict(h=12, level=[80]), conformal)
+    sf.fit(df=series_subset)
+    pd.testing.assert_frame_equal(sf.predict(h=12, level=[80]), native)
+
+    # intervals set on the model itself are left untouched
+    own = ConformalIntervals(h=12, n_windows=3)
+    model_with_own = SeasonalNaive(season_length=7, prediction_intervals=own)
+    sf = StatsForecast(models=[model_with_own], freq="D", n_jobs=1)
+    sf.forecast(df=series_subset, h=12, level=[80], prediction_intervals=intervals)
+    assert model_with_own.prediction_intervals is own
 
 
 # fcst = StatsForecast(
