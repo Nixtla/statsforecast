@@ -15,17 +15,11 @@ def horizon():
 
 @pytest.fixture()
 def local_data(n_series, horizon):
-    n_static = 2
-    series = generate_series(n_series, n_static_features=n_static)
-    static_features = []
-    for i in range(n_static):
-        name = f'static_{i}'
-        series[name] = series[name].astype(int)
-        static_features.append(name)
+    rng = np.random.default_rng(0)
+    series = generate_series(n_series)
     series['unique_id'] = series['unique_id'].astype(str)
+    series['x'] = rng.standard_normal(len(series))
     uids = series['unique_id'].unique()
-    static_values = series.groupby('unique_id')[static_features].head(1)
-    static_values['unique_id'] = uids
     last_train_dates = series.groupby('unique_id')['ds'].max()
     pred_start = last_train_dates + pd.offsets.Day()
     pred_end = last_train_dates + horizon * pd.offsets.Day()
@@ -34,7 +28,7 @@ def local_data(n_series, horizon):
         {
             'unique_id': np.repeat(uids, horizon),
             'ds': pred_dates,
+            'x': rng.standard_normal(n_series * horizon),
         }
     )
-    X_df = X_df.merge(static_values, on='unique_id')
     return series, X_df
