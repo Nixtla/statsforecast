@@ -1204,7 +1204,13 @@ def myarima(
         nstar = n - order[1] - seas_order[1] * m
         if diffs == 1 and constant:
             fit["xreg"] = xreg
-        npar = fit["mask"].sum() + 1
+        n_dist_params = (
+            2
+            if fit["distribution"]
+            in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED)
+            else 1
+        )
+        npar = fit["mask"].sum() + n_dist_params
         if method == ArimaMethod.CSS:
             if fit["sigma2"] <= 0:
                 fit["aic"] = -math.inf
@@ -1662,7 +1668,13 @@ def Arima(
             if include_drift:
                 tmp["coef"] = change_drift_name(tmp["coef"])
 
-    npar = np.sum(tmp["mask"]) + 1
+    n_dist_params = (
+        2
+        if tmp["distribution"]
+        in (Distribution.T, Distribution.SKEW_NORMAL, Distribution.GED)
+        else 1
+    )
+    npar = np.sum(tmp["mask"]) + n_dist_params
     missing = np.isnan(tmp["residuals"])
     nonmiss_idxs = np.where(~missing)[0]
     firstnonmiss = np.min(nonmiss_idxs)
