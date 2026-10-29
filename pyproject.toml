@@ -70,7 +70,7 @@ dev = [
     "pytest",
     "scikit-build-core>=1.0.3",
     "scikit-learn",
-    "setuptools<84",
+    "setuptools<85",
     "supersmoother",
     "xlrd",
     "yfinance",
