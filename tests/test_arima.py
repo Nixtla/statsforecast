@@ -8,7 +8,7 @@ import pytest
 from coreforecast.scalers import boxcox, boxcox_lambda, inv_boxcox
 from scipy.optimize import minimize_scalar
 from scipy.signal import lfilter
-from scipy.stats import gennorm, skewnorm
+from scipy.stats import gennorm, laplace, norm, skewnorm
 from scipy.stats import t as t_dist
 
 import statsforecast.arima as arima_module
@@ -50,6 +50,93 @@ from statsforecast.models import AutoARIMA as AutoARIMAModel
 from statsforecast.utils import AirPassengers as ap
 
 warnings.simplefilter("ignore")
+
+
+def _default_refit_inputs(branch):
+    rng = np.random.default_rng(817)
+    y = 5.0 + lfilter([1.0], [1.0, -0.45], rng.normal(scale=0.35, size=80))
+    new_y = 5.0 + lfilter([1.0], [1.0, -0.45], rng.normal(scale=0.35, size=80))
+    kwargs = {"order": (1, 0, 0)}
+    refit_kwargs = {}
+    if branch == "seasonal":
+        kwargs["seasonal"] = {"order": (1, 0, 0), "period": 4}
+    elif branch == "no-parameters":
+        kwargs.update(order=(0, 0, 0), include_mean=False)
+    elif branch == "exogenous":
+        xreg = np.sin(np.arange(80) / 5.0).reshape(-1, 1)
+        kwargs["xreg"] = xreg
+        refit_kwargs["xreg"] = xreg.copy()
+    elif branch == "boxcox":
+        kwargs["blambda"] = 0.0
+    return y, new_y, kwargs, refit_kwargs
+
+
+@pytest.mark.parametrize("distribution", ["laplace", "t", "skew-normal", "ged"])
+@pytest.mark.parametrize("branch", ["nonseasonal", "seasonal", "no-parameters", "exogenous", "boxcox"])
+@pytest.mark.parametrize("ssinit", ["Gardner1980", "Rossignol2011"])
+def test_arima_reused_non_normal_model_has_supported_default(distribution, branch, ssinit):
+    """Omitted methods must preserve the fitted non-normal innovation family."""
+    import copy
+
+    y, new_y, kwargs, refit_kwargs = _default_refit_inputs(branch)
+    fitted = Arima(y, distribution=distribution, method="CSS-ML", SSinit=ssinit, **kwargs)
+    before, before_y = copy.deepcopy(fitted), new_y.copy()
+    default = Arima(new_y, model=fitted, **refit_kwargs)
+    explicit = Arima(new_y, model=fitted, method="CSS-ML", **refit_kwargs)
+
+    np.testing.assert_equal(default, explicit)
+    np.testing.assert_equal(fitted, before)
+    np.testing.assert_array_equal(new_y, before_y)
+    assert default["distribution"] == distribution
+    assert default["SSinit"] == ssinit
+    np.testing.assert_equal(default["coef"], fitted["coef"])
+    assert default["sigma2"] == fitted["sigma2"]
+    for parameter in ("nu", "alpha_dist", "beta_dist"):
+        if parameter in fitted:
+            assert default[parameter] == fitted[parameter]
+
+
+@pytest.mark.parametrize("legacy", [False, True])
+@pytest.mark.parametrize("branch", ["nonseasonal", "seasonal", "no-parameters"])
+def test_arima_normal_default_remains_css(legacy, branch):
+    """Normal and legacy model dictionaries retain the existing CSS default."""
+    y, new_y, kwargs, refit_kwargs = _default_refit_inputs(branch)
+    default_fitted = Arima(y, **kwargs)
+    explicit_fitted = Arima(y, method="CSS", **kwargs)
+    np.testing.assert_equal(default_fitted, explicit_fitted)
+    if legacy:
+        default_fitted.pop("distribution")
+    default = Arima(new_y, model=default_fitted, **refit_kwargs)
+    explicit = Arima(new_y, model=default_fitted, method="CSS", **refit_kwargs)
+    np.testing.assert_equal(default, explicit)
+
+
+@pytest.mark.parametrize("distribution", ["laplace", "t", "skew-normal", "ged"])
+def test_arima_reused_non_normal_model_still_rejects_explicit_css(distribution):
+    y, new_y, kwargs, _ = _default_refit_inputs("nonseasonal")
+    fitted = Arima(y, distribution=distribution, method="CSS-ML", **kwargs)
+    with pytest.raises(ValueError, match="only supported for method='ML' or 'CSS-ML'"):
+        Arima(new_y, model=fitted, method="CSS")
+
+
+@pytest.mark.parametrize("distribution", ["normal", "laplace", "t", "skew-normal", "ged"])
+def test_arima_explicit_none_retains_existing_ml_behavior(distribution):
+    """An explicit None remains distinct from an omitted method argument."""
+    y, new_y, kwargs, _ = _default_refit_inputs("nonseasonal")
+    none_fitted = Arima(y, distribution=distribution, method=None, **kwargs)
+    ml_fitted = Arima(y, distribution=distribution, method="ML", **kwargs)
+    np.testing.assert_equal(none_fitted, ml_fitted)
+    none_refitted = Arima(new_y, model=none_fitted, method=None)
+    ml_refitted = Arima(new_y, model=none_fitted, method="ML")
+    np.testing.assert_equal(none_refitted, ml_refitted)
+
+
+@pytest.mark.parametrize("distribution", ["laplace", "t", "skew-normal", "ged"])
+def test_arima_without_model_retains_existing_non_normal_default(distribution):
+    """The revised forwarding default does not change direct fit semantics."""
+    y, _, kwargs, _ = _default_refit_inputs("nonseasonal")
+    with pytest.raises(ValueError, match="only supported for method='ML' or 'CSS-ML'"):
+        Arima(y, distribution=distribution, **kwargs)
 
 
 def test_arima_gradtrans():
@@ -934,6 +1021,236 @@ def test_distribution_invalid_name_raises():
     y = rng.standard_normal(100)
     with pytest.raises(ValueError):
         arima(y, order=(1, 0, 0), distribution="cauchy")
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("model_class", [ARIMA, AutoARIMAModel])
+def test_distribution_forecast_matches_fit_predict_innovation_distribution_regression(model_class, distribution):
+    kwargs = {"distribution": distribution, "method": "ML"}
+    if model_class is ARIMA:
+        kwargs["order"] = (1, 1, 1)
+    else:
+        kwargs.update(
+            d=1, D=0, max_p=1, max_q=1, max_P=0, max_Q=0,
+            start_p=0, start_q=0, seasonal=False, approximation=False,
+        )
+    y = ap[:120].astype(np.float64)
+    expected = model_class(**kwargs).fit(y).predict(h=6, level=[80, 95])
+    actual = model_class(**kwargs).forecast(y=y, h=6, level=[80, 95])
+    assert actual.keys() == expected.keys()
+    for key in expected:
+        np.testing.assert_allclose(actual[key], expected[key])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("model_class", [ARIMA, AutoARIMAModel])
+@pytest.mark.parametrize("blambda", [None, 0.0])
+def test_distribution_fitted_intervals(model_class, distribution, blambda):
+    y = np.exp(
+        0.3 + 0.003 * np.arange(80)
+        + 0.1 * np.random.default_rng(31).standard_t(4, size=80)
+    )
+    kwargs = dict(distribution=distribution, method="ML", blambda=blambda)
+    if model_class is ARIMA:
+        kwargs["order"] = (1, 0, 0)
+    else:
+        kwargs.update(
+            d=0, D=0, max_p=1, max_q=0, max_P=0, max_Q=0,
+            start_p=0, start_q=0, seasonal=False, approximation=False,
+        )
+    fitted = model_class(**kwargs).fit(y)
+    mod = fitted.model_
+    sigma = np.sqrt(mod["sigma2"])
+    if distribution == "t":
+        dist = t_dist(df=mod["nu"], scale=sigma)
+    elif distribution == "skew-normal":
+        dist = skewnorm(a=mod["alpha_dist"], scale=sigma)
+    elif distribution == "ged":
+        dist = gennorm(beta=mod["beta_dist"], scale=sigma)
+    elif distribution == "laplace":
+        dist = laplace(scale=sigma / np.sqrt(2))
+    else:
+        dist = norm(scale=sigma)
+    center = (y if blambda is None else np.log(y)) - mod["residuals"]
+    results = [
+        model_class(**kwargs).forecast(y=y, h=3, fitted=True, level=[80, 95]),
+        fitted.predict_in_sample(level=[80, 95]),
+        fitted.forward(y=y, h=3, fitted=True, level=[80, 95]),
+    ]
+    for result in results:
+        for level in (80, 95):
+            for side, sign in [("lo", -1), ("hi", 1)]:
+                quantile = dist.ppf(0.5 + sign * level / 200)
+                expected = center + quantile
+                if blambda is not None:
+                    expected = np.exp(expected)
+                np.testing.assert_allclose(
+                    result[f"fitted-{side}-{level}"], expected, rtol=1e-10, atol=1e-12,
+                )
+
+
+@pytest.mark.parametrize("model_class", [ARIMA, AutoARIMAModel])
+@pytest.mark.parametrize("alpha", [-10, 10])
+@pytest.mark.parametrize("blambda", [None, 0.0])
+def test_skew_normal_interval_tails(model_class, alpha, blambda):
+    innovations = skewnorm.rvs(alpha, size=160, random_state=np.random.default_rng(38))
+    y = innovations if blambda is None else np.exp(innovations)
+    kwargs = dict(distribution="skew-normal", method="ML", blambda=blambda)
+    if model_class is ARIMA:
+        kwargs.update(order=(0, 0, 0), include_mean=False)
+    else:
+        kwargs.update(
+            d=0, D=0, max_p=0, max_q=0, max_P=0, max_Q=0,
+            start_p=0, start_q=0, seasonal=False, approximation=False, allowmean=False,
+        )
+    fitted = model_class(**kwargs).fit(y)
+    mod = fitted.model_
+    dist = skewnorm(a=mod["alpha_dist"])
+    center = innovations - mod["residuals"]
+    pred, se = predict_arima(mod, n_ahead=3)
+    results = [
+        model_class(**kwargs).forecast(y=y, h=3, fitted=True, level=[80, 95]),
+        fitted.forward(y=y, h=3, fitted=True, level=[80, 95]),
+    ]
+    insample = fitted.predict_in_sample(level=[80, 95])
+    for level in (80, 95):
+        for side, sign in [("lo", -1), ("hi", 1)]:
+            quantile = dist.ppf(0.5 + sign * level / 200)
+            expected_fitted = center + quantile * np.sqrt(mod["sigma2"])
+            expected_future = pred + quantile * se
+            if blambda is not None:
+                expected_fitted = np.exp(expected_fitted)
+                expected_future = np.exp(expected_future)
+            np.testing.assert_allclose(insample[f"fitted-{side}-{level}"], expected_fitted)
+            for result in results:
+                np.testing.assert_allclose(result[f"fitted-{side}-{level}"], expected_fitted)
+                np.testing.assert_allclose(result[f"{side}-{level}"], expected_future)
+        for result in results:
+            assert np.all(result[f"fitted-lo-{level}"] <= result[f"fitted-hi-{level}"])
+            assert np.all(result[f"lo-{level}"] <= result[f"hi-{level}"])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "laplace", "t", "skew-normal", "ged"])
+@pytest.mark.parametrize("relative", [0, 1, 2])
+def test_distribution_aicc_short_series(distribution, relative):
+    npar = 2 if distribution in ("t", "skew-normal", "ged") else 1
+    n = npar + relative
+    y = np.random.default_rng(39).normal(size=n) + 0.3
+    direct = Arima(y, order=(0, 0, 0), include_mean=False, method="ML", distribution=distribution)
+    search = myarima(
+        y, order=(0, 0, 0), constant=False, method="ML", distribution=distribution, ic="aicc",
+    )
+    if n <= npar + 1:
+        assert direct["aicc"] == math.inf
+        assert search["aicc"] == math.inf
+        assert search["ic"] == math.inf
+    else:
+        expected = search["aic"] + 2 * npar * (npar + 1) / (n - npar - 1)
+        assert direct["aicc"] == pytest.approx(expected)
+        assert search["aicc"] == pytest.approx(expected)
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("config", [
+    {"order": (1, 1, 1), "seasonal": {"order": (0, 1, 1), "period": 12}},
+    {"order": (1, 1, 1)},
+    {"order": (0, 1, 0), "include_mean": False},
+])
+def test_distribution_forward_arima_innovation_distribution_regression(distribution, config):
+    model = Arima(ap[:120], distribution=distribution, method="ML", **config)
+    refit = forward_arima(model, y=ap, method="ML")
+    assert refit["distribution"] == distribution
+    assert refit["sigma2"] == model["sigma2"]
+    for key in ("nu", "alpha_dist", "beta_dist"):
+        if key in model:
+            assert refit[key] == model[key]
+    forecasts = forecast_arima(refit, h=6, level=[80, 95])
+    assert np.isfinite(forecasts["mean"]).all()
+    assert np.isfinite(forecasts["lower"].to_numpy()).all()
+    assert np.isfinite(forecasts["upper"].to_numpy()).all()
+
+
+def test_distribution_forward_arima_legacy_normal_model():
+    model = Arima(ap[:120], order=(1, 1, 1), method="ML")
+    expected = forward_arima(model, y=ap, method="ML")
+    del model["distribution"]
+    actual = forward_arima(model, y=ap, method="ML")
+    assert actual["distribution"] == "normal"
+    np.testing.assert_allclose(actual["residuals"], expected["residuals"])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("stepwise", [True, False])
+def test_distribution_autoarima_search(distribution, stepwise):
+    model = auto_arima_f(
+        ap[:120], distribution=distribution, method="ML", stepwise=stepwise,
+        d=1, D=0, max_p=1, max_q=1, max_P=0, max_Q=0, max_order=2,
+        start_p=0, start_q=0, seasonal=False, approximation=False,
+    )
+    assert model["distribution"] == distribution
+    assert np.isfinite(forecast_arima(model, h=6)["mean"]).all()
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("stepwise", [True, False])
+@pytest.mark.parametrize("approximation", [True, None])
+def test_distribution_autoarima_approximation(distribution, stepwise, approximation):
+    y = np.random.default_rng(13).normal(size=160)
+    kwargs = dict(
+        d=0, D=0, max_p=1, max_q=0, max_P=0, max_Q=0,
+        start_p=0, start_q=0, seasonal=False, stepwise=stepwise,
+        allowmean=False, distribution=distribution,
+    )
+    model = auto_arima_f(y, approximation=approximation, **kwargs)
+    assert model["distribution"] == distribution
+    assert np.isfinite(model["aicc"])
+    assert np.isfinite(forecast_arima(model, h=3)["mean"]).all()
+    if distribution != "normal":
+        exact = auto_arima_f(y, approximation=False, **kwargs)
+        assert model["arma"] == exact["arma"]
+        assert model["aicc"] == pytest.approx(exact["aicc"])
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t", "skew-normal", "ged", "laplace"])
+@pytest.mark.parametrize("d", [0, 1])
+def test_distribution_information_criteria(distribution, d):
+    y = np.random.default_rng(14).normal(size=60)
+    fit = myarima(
+        y, order=(0, d, 0), constant=False, distribution=distribution,
+        method="ML", ic="aicc",
+    )
+    direct = Arima(
+        y, order=(0, d, 0), include_mean=False,
+        distribution=distribution, method="ML",
+    )
+    npar = fit["mask"].sum() + (2 if distribution in ("t", "skew-normal", "ged") else 1)
+    nstar = len(y) - d
+    aicc = fit["aic"] + 2 * npar * (npar + 1) / (nstar - npar - 1)
+    bic = fit["aic"] + npar * (math.log(nstar) - 2)
+    assert fit["aicc"] == pytest.approx(aicc)
+    assert direct["aicc"] == pytest.approx(aicc)
+    assert fit["bic"] == pytest.approx(bic)
+    assert direct["bic"] == pytest.approx(bic)
+
+
+@pytest.mark.parametrize("distribution", ["normal", "t"])
+@pytest.mark.parametrize("y,kwargs", [
+    (np.full(60, 3.0), {"allowmean": True}),
+    (np.full(60, 3.0), {"allowmean": False}),
+    (np.arange(60, dtype=float), {"d": 1, "D": 0}),
+    (np.arange(60, dtype=float) ** 2, {"d": 2, "D": 0}),
+    (np.tile([1., 4., 2., 5.], 15) + np.repeat(np.arange(15), 4) * 2,
+     {"d": 0, "D": 1, "period": 4}),
+    (np.tile([1., 4., 2., 5.], 15) + np.arange(60),
+     {"d": 1, "D": 1, "period": 4}),
+    (np.arange(60, dtype=float),
+     {"d": 1, "D": 0, "xreg": np.zeros((60, 1))}),
+    (np.arange(60, dtype=float),
+     {"d": 0, "D": 1, "period": 4, "xreg": np.zeros((60, 1))}),
+])
+def test_distribution_autoarima_early_returns(distribution, y, kwargs):
+    model = auto_arima_f(y, distribution=distribution, method="ML", **kwargs)
+    assert model["distribution"] == distribution
 
 
 @pytest.mark.parametrize("distribution,param_key", [
