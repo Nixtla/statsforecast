@@ -1301,17 +1301,18 @@ def test_var_coef_skew_normal_symmetric():
     np.testing.assert_allclose(np.sqrt(fit["var_coef"][0, 0]), 1 / np.sqrt(200), rtol=0.2)
 
 
-def test_myarima_keeps_ged_fits_at_a_kink():
-    rng = np.random.default_rng(123)
-    for _ in range(7):
-        e = rng.laplace(size=301)
-    y = np.zeros(301)
-    for t in range(1, 301):
-        y[t] = 0.6 * y[t - 1] + e[t] + 0.3 * e[t - 1]
-    fit = myarima(y[1:] + 5, order=(1, 0, 1), distribution="ged")
-    # beta < 1 puts kinks in the objective, so its numerical Hessian is not PD
+@pytest.mark.parametrize("distribution", ["normal", "ged"])
+def test_myarima_keeps_ged_fits_at_a_kink(distribution, monkeypatch):
+    # beta < 1 puts kinks in the objective, where whether the numerical Hessian
+    # is PD depends on the build, so force the non-PD outcome
+    def singular(hess, n_used, n_free):
+        return np.full((n_free, n_free), np.nan)
+
+    monkeypatch.setattr(arima_module, "_coef_var", singular)
+    y = 5 + np.random.default_rng(0).laplace(size=300)
+    fit = myarima(y, order=(1, 0, 1), distribution=distribution)
     assert np.isnan(fit["var_coef"]).all()
-    assert np.isfinite(fit["ic"])
+    assert np.isfinite(fit["ic"]) == (distribution == "ged")
 
 
 def test_var_coef_near_unit_root():
