@@ -69,11 +69,13 @@ def _coef_var(hess, n_used, n_free):
     H = np.asarray(hess, dtype=float)
     H = n_used * (H + H.T) / 2
     diag = np.diag(H)
-    if not (np.isfinite(H).all() and (diag > 0).all()):
+    if not (np.isfinite(H).all() and (diag >= 0).all()):
         return np.full((n_free, n_free), np.nan)
     # The rank test below runs on the correlation-like matrix so it responds to
-    # collinearity, not to the units of each coefficient.
-    d = 1 / np.sqrt(diag)
+    # collinearity, not to the units of each coefficient. A zero diagonal is a
+    # coefficient the objective doesn't depend on, e.g. a constant xreg that
+    # differencing removes, so it's left unidentified too.
+    d = np.divide(1, np.sqrt(diag), out=np.zeros_like(diag), where=diag > 0)
     try:
         w, V = np.linalg.eigh(H * np.outer(d, d))
     except np.linalg.LinAlgError:
@@ -570,20 +572,21 @@ def arima(
         )
         return obj
 
-    def arCheck(ar):
+    def arCheck(ar, min_root=1.0):
         # last non-zero index: the AR order with trailing zeros trimmed
         p = np.flatnonzero(np.append(1, -ar))[-1]
         if not p:
             return True
         coefs = np.append(1, -ar[:p])
         roots = np.polynomial.polynomial.polyroots(coefs)
-        return all(np.abs(roots) > 1)
+        return all(np.abs(roots) > min_root)
 
-    def ar_stationarity_error(arma, pars):
+    def ar_stationarity_error(arma, pars, min_root=1.0):
         """Message for a non-stationary (seasonal) AR part, or None."""
-        if arma[0] > 0 and not arCheck(pars[: arma[0]]):
+        if arma[0] > 0 and not arCheck(pars[: arma[0]], min_root):
             return "non-stationary AR part"
-        if arma[2] > 0 and not arCheck(pars[arma[:2].sum() + np.arange(arma[2])]):
+        seas_ar = pars[arma[:2].sum() + np.arange(arma[2])]
+        if arma[2] > 0 and not arCheck(seas_ar, min_root):
             return "non-stationary seasonal AR part"
         return None
 
@@ -875,11 +878,12 @@ def arima(
                     )
 
                 # with a mean and a near-unit root the CSS minimum can drift along
-                # a ridge that ML can't climb out of, e.g. ldeaths (1,0,1)(1,0,1)[12]
+                # a ridge that ML can't climb out of, e.g. ldeaths (1,0,1)(1,0,1)[12].
+                # Roots within auto_arima's margin of the unit circle land there.
                 if (
                     converged
                     and (
-                        ar_stationarity_error(arma, css_coef) is None
+                        ar_stationarity_error(arma, css_coef, 1 + 0.01) is None
                         or (
                             not transform_pars
                             and ar_stationarity_error(arma, init_coef) is not None

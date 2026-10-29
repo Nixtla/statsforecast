@@ -1289,6 +1289,10 @@ def test_coef_var_depends_on_collinearity_not_units():
     )
     # saddle
     assert np.isnan(arima_module._coef_var(np.diag([1.0, -1.0]), 1, 2)).all()
+    # a coefficient the objective doesn't depend on
+    np.testing.assert_allclose(
+        arima_module._coef_var(np.diag([2.0, 0.0]), 1, 2), np.diag([0.5, 0.0])
+    )
 
 
 def test_var_coef_skew_normal_symmetric():
@@ -2050,6 +2054,17 @@ def test_css_ml_skips_css_ridge_start():
         method="CSS-ML",
     )
     assert fit["loglik"] > -514
+
+
+@pytest.mark.parametrize("rel", [0, 1e-12, 1e-8])
+def test_css_ml_skips_css_start_at_unit_root(rel):
+    """CSS ends within 1e-6 of ar1 = 1, inside or outside depending on rounding.
+    Reference from R: arima(c(rep(100, 42), 119, 525), c(1, 0, 1))
+    """
+    y = np.array(42 * [100] + [119, 525], dtype=float) * (1 + rel)
+    fit = arima(y, order=(1, 0, 1), method="CSS-ML")
+    np.testing.assert_allclose(fit["loglik"], -243.2539, atol=1e-3)
+    assert np.isfinite(fit["var_coef"]).all()
 
 
 def test_arima_user_parscale(monkeypatch):
