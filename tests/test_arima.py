@@ -928,6 +928,16 @@ def test_distribution_css_raises(distribution):
         arima(y, order=(1, 0, 0), distribution=distribution, method="CSS")
 
 
+@pytest.mark.parametrize("distribution", ["t", "laplace"])
+@pytest.mark.parametrize("method", ["CSS", None])
+def test_auto_arima_f_css_nonnormal_raises(distribution, method):
+    """auto_arima_f must raise for CSS + non-normal, not return a broken model."""
+    rng = np.random.default_rng(4)
+    y = rng.standard_normal(100)
+    with pytest.raises(ValueError, match="CSS"):
+        auto_arima_f(y, distribution=distribution, method=method, approximation=True)
+
+
 def test_distribution_invalid_name_raises():
     """Unknown distribution name raises ValueError."""
     rng = np.random.default_rng(5)
