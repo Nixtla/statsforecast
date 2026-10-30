@@ -48,6 +48,7 @@ from statsforecast.models import (
     WindowAverage,
 )
 from statsforecast.utils import AirPassengers as ap
+from statsforecast.utils import generate_series
 
 
 def _plot_insample_pi(fcst):
@@ -1946,6 +1947,27 @@ class TestMSTL:
         mstl_model.fit(y=y)
         fcst = mstl_model.predict(h=8)
         assert np.isfinite(fcst["mean"]).all()
+
+    def test_mstl_season_length_one_ignored(self):
+        # a season_length of 1 means no seasonality and should be ignored
+        # when there are other periods, see issue #489
+        y = generate_series(1, min_length=120, max_length=120, seed=0)["y"].to_numpy()
+        h = 14
+        expected = MSTL(season_length=7).fit(y)
+        for season_length in ([1, 7], [7, 1], [1, 1, 7]):
+            mstl_model = MSTL(season_length=season_length).fit(y)
+            assert mstl_model.model_.columns.tolist() == expected.model_.columns.tolist()
+            pd.testing.assert_frame_equal(mstl_model.model_, expected.model_)
+            np.testing.assert_allclose(
+                mstl_model.predict(h=h)["mean"], expected.predict(h=h)["mean"]
+            )
+            np.testing.assert_allclose(
+                MSTL(season_length=season_length).forecast(y=y, h=h)["mean"],
+                MSTL(season_length=7).forecast(y=y, h=h)["mean"],
+            )
+        # all periods equal to 1 keeps the supersmoother trend only
+        mstl_ones = MSTL(season_length=[1, 1]).fit(y)
+        assert mstl_ones.model_.columns.tolist() == ["data", "trend", "remainder"]
 
     def test_mstl_seasonal_trend_forecaster_failure(self):
         # fail with seasonal trend forecasters

@@ -22,6 +22,9 @@ def mstl(
         msts = [period]
     else:
         msts = sorted(period)
+    # a period of 1 means no seasonality, ignore it if there are other periods
+    if len(msts) > 1 and msts[-1] > 1:
+        msts = [m for m in msts if m > 1]
     if s_window is None:
         # default seasonal windows 11, 15, 19, ... following R's
         # forecast::mstl() (7 + 4*k), see
@@ -65,7 +68,7 @@ def mstl(
         except ImportError as e:
             print("supersmoother is required for mstl with period=1")
             raise e
-        deseas = x
+        deseas = np.copy(x)
         t = 1 + np.arange(n)
         trend = SuperSmoother().fit(t, x).predict(t)
     deseas[np.isnan(origx)] = np.nan
