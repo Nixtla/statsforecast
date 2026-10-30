@@ -1830,7 +1830,7 @@ def simulate_arima(
     n_paths,
     xreg=None,
     seed=None,
-    error_distribution="normal",
+    error_distribution=None,
     error_params=None,
 ):
     """
@@ -1848,9 +1848,9 @@ def simulate_arima(
         Future exogenous regressors of shape (h, n_x).
     seed : int, optional
         Random seed for reproducibility.
-    error_distribution : str, default='normal'
-        Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-        'laplace', 'skew-normal', 'ged'.
+    error_distribution : str, optional
+        Distribution for innovations. Defaults to the fitted distribution.
+        Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
     error_params : dict, optional
         Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -1863,6 +1863,12 @@ def simulate_arima(
 
     if model.get("constant", False):
         return np.full((n_paths, h), model["x"][-1])
+
+    fitted_distribution = model.get("distribution", "normal")
+    if error_distribution is None:
+        error_distribution = fitted_distribution
+    if error_params is None and error_distribution == fitted_distribution:
+        error_params = error_params_from_model(model) or {}
 
     # Set up random generator
     rng = np.random.default_rng(seed)
@@ -1929,9 +1935,26 @@ def simulate_arima(
     obs_noise_std = np.sqrt(obs_h * sigma2)
     residuals = model.get("residuals", None)
 
+    if error_distribution != "normal":
+        innovations = sample_errors(
+            size=(n_paths, h),
+            sigma=np.sqrt(sigma2),
+            distribution=error_distribution,
+            params=error_params,
+            residuals=residuals,
+            rng=rng,
+        )
+
     for i in range(n_paths):
         a = a_init.copy()
         for t in range(h):
+            if error_distribution != "normal":
+                # make_arima sets V = R R' with R[0] = 1 and h = 0.
+                # One shared innovation drives the entire ARIMA state.
+                a = T @ a + V[:, 0] * innovations[i, t]
+                paths[i, t] = Z @ a
+                continue
+
             # State transition noise (Gaussian for state-space consistency)
             state_noise = rng.normal(size=a.size)
             a = T @ a + state_noise_std @ state_noise

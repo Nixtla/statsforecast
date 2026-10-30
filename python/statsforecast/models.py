@@ -663,7 +663,7 @@ class AutoARIMA(_TS):
         X: Optional[np.ndarray] = None,
         X_future: Optional[np.ndarray] = None,
         seed: Optional[int] = None,
-        error_distribution: str = "normal",
+        error_distribution: Optional[str] = None,
         error_params: Optional[Dict] = None,
     ):
         """
@@ -683,9 +683,10 @@ class AutoARIMA(_TS):
             Future exogenous regressors of shape (h, n_x).
         seed : int, optional
             Random seed for reproducibility.
-        error_distribution : str, default='normal'
-            Distribution for error terms. Options: 'normal', 't', 'bootstrap',
-            'laplace', 'skew-normal', 'ged'.
+        error_distribution : str, optional
+            Distribution for innovations. Defaults to the fitted distribution.
+            Options: 'normal', 't', 'bootstrap', 'laplace', 'skew-normal', 'ged'.
+            A UserWarning is emitted if this differs from the fitted distribution.
         error_params : dict, optional
             Distribution-specific parameters. E.g., {'df': 5} for t-distribution.
 
@@ -738,6 +739,10 @@ class AutoARIMA(_TS):
             if not hasattr(self, "model_"):
                 raise Exception("You have to use the `fit` method first")
             mod = self.model_
+
+        fitted_dist = mod.get("distribution", "normal")
+        if error_distribution is not None and error_distribution != fitted_dist:
+            _warn_distribution_mismatch(error_distribution, fitted_dist)
 
         from statsforecast.arima import simulate_arima
 
