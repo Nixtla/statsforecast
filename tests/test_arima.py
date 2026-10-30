@@ -1772,7 +1772,13 @@ def test_ssinit_is_reused_on_refit():
     expected = Arima(
         ap, fixed=np.array(list(fit["coef"].values())), SSinit="Rossignol2011", **kwargs
     )
-    np.testing.assert_allclose(refit["loglik"], expected["loglik"])
+    # Same coefficients and initial state, so the residuals match. The refit
+    # keeps the original sigma2, so its loglik is not the fresh MLE loglik.
+    np.testing.assert_allclose(refit["residuals"], expected["residuals"])
+    np.testing.assert_allclose(
+        list(refit["coef"].values()), list(expected["coef"].values())
+    )
+    assert refit["sigma2"] == fit["sigma2"]
 
     auto_fit = auto_arima_f(ap, period=12, SSinit="Rossignol2011")
     assert auto_fit["SSinit"] == "Rossignol2011"
@@ -1860,6 +1866,70 @@ def test_issue_1034():
 def test_ml_unit_root_with_fixed_coefficients_raises(kwargs):
     with pytest.raises(ValueError, match="non-stationary AR part"):
         arima(ap, method="ML", **kwargs)
+
+
+def test_forward_arima_loglik_uses_stored_sigma2():
+    """A refit keeps the original scale, so loglik and AIC must use it too."""
+    y1 = np.tile([1.0, -1.0], 50)
+    y2 = 2.0 * y1
+    fit = Arima(y1, order=(0, 0, 0), include_mean=False, method="ML")
+    refit = forward_arima(fit, y2, method="ML")
+    fresh = Arima(y2, order=(0, 0, 0), include_mean=False, method="ML")
+
+    n = 100
+    sigma2 = 1.0
+    expected_loglik = -0.5 * (n * math.log(2 * math.pi * sigma2) + 400.0 / sigma2)
+    np.testing.assert_allclose(refit["sigma2"], sigma2)
+    np.testing.assert_allclose(refit["loglik"], expected_loglik)
+    assert not np.isclose(refit["loglik"], fresh["loglik"])
+    expected_aic = -2.0 * expected_loglik + 2.0
+    np.testing.assert_allclose(refit["aic"], expected_aic)
+    npar = 1
+    nstar = n
+    expected_aicc = expected_aic + 2 * npar * (nstar / (nstar - npar - 1) - 1)
+    expected_bic = expected_aic + npar * (math.log(nstar) - 2)
+    np.testing.assert_allclose(refit["aicc"], expected_aicc)
+    np.testing.assert_allclose(refit["bic"], expected_bic)
+
+    # CSS does not use this Gaussian likelihood, so a CSS refit is left as is.
+    fit_css = Arima(y1, order=(0, 0, 0), include_mean=False, method="CSS")
+    refit_css = forward_arima(fit_css, y2, method="CSS")
+    fresh_css = Arima(y2, order=(0, 0, 0), include_mean=False, method="CSS")
+    np.testing.assert_allclose(refit_css["loglik"], fresh_css["loglik"])
+
+
+def test_forward_arima_ar1_loglik_uses_stored_sigma2():
+    """The scale correction holds for an AR(1), not only white noise."""
+    rng = np.random.default_rng(0)
+    innovations = rng.normal(size=80)
+    y = np.zeros(80)
+    for t in range(1, len(y)):
+        y[t] = 0.6 * y[t - 1] + innovations[t]
+    y_new = 3.0 * y
+
+    fit = Arima(y, order=(1, 0, 0), include_mean=False, method="ML")
+    refit = forward_arima(fit, y_new, method="ML")
+    coefs = np.array(list(fit["coef"].values()))
+    concentrated = Arima(
+        y_new,
+        order=(1, 0, 0),
+        include_mean=False,
+        method="ML",
+        fixed=coefs,
+    )
+    residuals = concentrated["residuals"]
+    finite = np.isfinite(residuals)
+    n = concentrated["nobs"]
+    scale_hat = float(np.dot(residuals[finite], residuals[finite])) / n
+    sigma2 = fit["sigma2"]
+    expected = concentrated["loglik"] - 0.5 * n * (
+        math.log(sigma2 / scale_hat) + scale_hat / sigma2 - 1.0
+    )
+    np.testing.assert_allclose(refit["sigma2"], sigma2)
+    np.testing.assert_allclose(refit["loglik"], expected, rtol=1e-10)
+    assert not np.isclose(refit["loglik"], concentrated["loglik"])
+    expected_aic = concentrated["aic"] - 2.0 * (expected - concentrated["loglik"])
+    np.testing.assert_allclose(refit["aic"], expected_aic, rtol=1e-10)
 
 
 def test_css_unit_root_with_fixed_coefficients_fits():
