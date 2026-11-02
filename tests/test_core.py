@@ -1200,6 +1200,71 @@ def test_cv_fitted(series_cv2, str_ds):
     assert_cv_fitted(series_cv2, str_ds=str_ds)
 
 
+@pytest.mark.parametrize("method", ["forecast", "cross_validation"])
+@pytest.mark.parametrize(
+    "next_method", ["fit", "fit_predict", "forecast", "cross_validation", "simulate"]
+)
+def test_fitted_values_cleared_after_new_data(method, next_method):
+    df = pd.DataFrame({"series": ["a"] * 8, "time": range(8), "value": range(8)})
+    other_df = pd.DataFrame(
+        {"unique_id": ["b"] * 8, "ds": np.arange(8) + 100, "y": np.arange(8) + 50}
+    )
+    sf = StatsForecast(models=[Naive()], freq=1)
+    getattr(sf, method)(
+        df=df, h=1, fitted=True, id_col="series", time_col="time", target_col="value"
+    )
+    get_fitted = getattr(sf, f"{method}_fitted_values")
+    assert not get_fitted().empty
+
+    kwargs = {} if next_method == "fit" else {"h": 1}
+    if next_method == "simulate":
+        kwargs["seed"] = 0
+    getattr(sf, next_method)(df=other_df, **kwargs)
+
+    with pytest.raises(
+        Exception, match=f"Please run `{method}` method using `fitted=True`"
+    ):
+        get_fitted()
+
+
+@pytest.mark.parametrize("method", ["forecast", "cross_validation"])
+def test_fitted_values_cache_lifecycle(method):
+    df = pd.DataFrame({"unique_id": ["a"] * 8, "ds": range(8), "y": range(8)})
+    other_df = df.assign(unique_id="b", ds=lambda x: x.ds + 100, y=lambda x: x.y + 50)
+    sf = StatsForecast(models=[Naive()], freq=1)
+    run = getattr(sf, method)
+    get_fitted = getattr(sf, f"{method}_fitted_values")
+    run(df=df, h=1, fitted=True)
+    run(df=other_df, h=1, fitted=True)
+    actual = get_fitted()
+    assert actual["unique_id"].eq("b").all()
+    assert actual["ds"].min() == 100
+    assert actual["y"].min() == 50
+
+    run(df=df, h=1, fitted=False)
+    with pytest.raises(Exception, match="using `fitted=True`"):
+        get_fitted()
+
+
+@pytest.mark.parametrize("method", ["forecast", "cross_validation"])
+def test_fitted_values_replaced_by_other_method(method):
+    df = pd.DataFrame({"unique_id": ["a"] * 8, "ds": range(8), "y": range(8)})
+    other_df = df.assign(unique_id="b", ds=lambda x: x.ds + 100, y=lambda x: x.y + 50)
+    sf = StatsForecast(models=[Naive()], freq=1)
+    getattr(sf, method)(df=df, h=1, fitted=True)
+    other_method = "cross_validation" if method == "forecast" else "forecast"
+    getattr(sf, other_method)(df=other_df, h=1, fitted=True)
+
+    with pytest.raises(
+        Exception, match=f"Please run `{method}` method using `fitted=True`"
+    ):
+        getattr(sf, f"{method}_fitted_values")()
+    actual = getattr(sf, f"{other_method}_fitted_values")()
+    assert actual["unique_id"].eq("b").all()
+    assert actual["ds"].min() == 100
+    assert actual["y"].min() == 50
+
+
 # tests for fallback model
 def test_cv_fallback_model(series, n_jobs=1):
     fitted_fcst = StatsForecast(
