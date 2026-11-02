@@ -762,6 +762,7 @@ def arima(
         mod = make_arima(phi, theta, Delta, kappa, SSinit=SSinit)
         if ncxreg > 0:
             x -= np.dot(xreg, coef[narma + np.arange(ncxreg)])
+        arimaSS(x, mod)
         val = arima_css(x, arma, phi, theta)
         sigma2 = val[0]
         var = None if no_optim else res.hess_inv / n_used
