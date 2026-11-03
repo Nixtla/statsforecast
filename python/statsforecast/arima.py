@@ -290,7 +290,7 @@ def fixed_params_from_dict(
     return list(full_dict.values())
 
 
-def arima(
+def _fit_arima(
     x: np.ndarray,
     order=(0, 0, 0),
     seasonal={"order": (0, 0, 0), "period": 1},
@@ -307,8 +307,8 @@ def arima(
     optim_control={"maxiter": 100},
     distribution="normal",
     fixed_dist=None,
-    var_coef=True,
 ):
+    """`arima` with `var_coef` deferred: returns the fit and a function computing it."""
     if distribution not in _VALID_DISTRIBUTIONS:
         raise ValueError(
             f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
@@ -1058,8 +1058,7 @@ def arima(
 
     # The Hessian is taken in the reported coefficient space (untransformed AR,
     # unrotated xreg) at the coefficients above, so nothing has to be mapped back
-    var = None
-    if var_coef and mask.any():
+    def var_coef_fn():
         if method == ArimaMethod.CSS:
             obj = partial(
                 arma_css_op,
@@ -1096,11 +1095,12 @@ def arima(
             # the skew-normal information is singular at alpha = 0, so condition
             # on the distribution parameters instead
             var = _coef_var(hess[:n_free, :n_free], n_used, n_free)
+        return var
 
     ans = {
         "coef": dict(zip(nm, coef)),
         "sigma2": sigma2,
-        "var_coef": var,
+        "var_coef": None,
         "mask": mask,
         "loglik": -0.5 * value,
         "aic": aic,
@@ -1120,7 +1120,49 @@ def arima(
         ans["alpha_dist"] = alpha_sn
     if distribution == Distribution.GED and beta_ged is not None:
         ans["beta_dist"] = beta_ged
-    return ans
+    return ans, var_coef_fn if mask.any() else None
+
+
+def arima(
+    x: np.ndarray,
+    order=(0, 0, 0),
+    seasonal={"order": (0, 0, 0), "period": 1},
+    xreg=None,
+    include_mean=True,
+    transform_pars=True,
+    fixed=None,
+    init=None,
+    method="CSS",
+    SSinit="Gardner1980",
+    optim_method="BFGS",
+    kappa=1e6,
+    tol=1e-8,
+    optim_control={"maxiter": 100},
+    distribution="normal",
+    fixed_dist=None,
+    var_coef=True,
+):
+    fit, var_coef_fn = _fit_arima(
+        x,
+        order=order,
+        seasonal=seasonal,
+        xreg=xreg,
+        include_mean=include_mean,
+        transform_pars=transform_pars,
+        fixed=fixed,
+        init=init,
+        method=method,
+        SSinit=SSinit,
+        optim_method=optim_method,
+        kappa=kappa,
+        tol=tol,
+        optim_control=optim_control,
+        distribution=distribution,
+        fixed_dist=fixed_dist,
+    )
+    if var_coef and var_coef_fn is not None:
+        fit["var_coef"] = var_coef_fn()
+    return fit
 
 
 def kalman_forecast(n, Z, a, P, T, V, h):
@@ -1240,6 +1282,7 @@ def myarima(
     xreg=None,
     method=None,
     distribution="normal",
+    ic_bound=math.inf,
     **kwargs,
 ):
     missing = np.isnan(x)
@@ -1263,7 +1306,7 @@ def myarima(
                 xreg = np.concatenate([drift, xreg], axis=1)
             else:
                 xreg = drift
-            fit = arima(
+            fit, var_coef_fn = _fit_arima(
                 x,
                 order,
                 seasonal,
@@ -1274,7 +1317,7 @@ def myarima(
             )
             fit["coef"] = change_drift_name(fit["coef"])
         else:
-            fit = arima(
+            fit, var_coef_fn = _fit_arima(
                 x,
                 order,
                 seasonal,
@@ -1327,8 +1370,16 @@ def myarima(
         # the laplace and ged objectives can have kinks, which the numerical
         # Hessian can't tell apart from a saddle
         smooth = distribution not in (Distribution.LAPLACE, Distribution.GED)
-        if minroot < 1 + 0.01 or (smooth and checkarima(fit)):
+        if approximation:
+            # approximate fits are ranked again for the exact refits, so a saddle
+            # has to be marked even if it can't replace the current best
+            ic_bound = math.inf
+        if minroot < 1 + 0.01:
             fit["ic"] = math.inf
+        elif fit["ic"] < ic_bound and var_coef_fn is not None:
+            fit["var_coef"] = var_coef_fn()
+            if smooth and checkarima(fit):
+                fit["ic"] = math.inf
         fit["xreg"] = xreg
         if trace:
             print(f"{arima_string(fit, padding=True)} : {fit['ic']:.4f}")
@@ -1395,6 +1446,7 @@ def search_arima(
                             approximation=approximation,
                             offset=offset,
                             xreg=xreg,
+                            ic_bound=best_ic,
                             **kwargs,
                         )
                         if fit["ic"] < best_ic:
@@ -2560,6 +2612,7 @@ def auto_arima_f(
     )
     results[0] = (p, d, q, P, D, Q, constant, bestfit["ic"])
     fit = p_myarima(
+        ic_bound=bestfit["ic"],
         order=(0, d, 0),
         seasonal={"order": (0, D, 0), "period": m},
     )
@@ -2572,6 +2625,7 @@ def auto_arima_f(
         p_ = int(max_p > 0)
         P_ = int(m > 1 and max_P > 0)
         fit = p_myarima(
+            ic_bound=bestfit["ic"],
             order=(p_, d, 0),
             seasonal={"order": (P_, D, 0), "period": m},
         )
@@ -2586,6 +2640,7 @@ def auto_arima_f(
         q_ = int(max_q > 0)
         Q_ = int(m > 1 and max_Q > 0)
         fit = p_myarima(
+            ic_bound=bestfit["ic"],
             order=(0, d, q_),
             seasonal={"order": (0, D, Q_), "period": m},
         )
@@ -2598,6 +2653,7 @@ def auto_arima_f(
         k += 1
     if constant:
         fit = p_myarima(
+            ic_bound=bestfit["ic"],
             order=(0, d, 0),
             seasonal={"order": (0, D, 0), "period": m},
             constant=False,
@@ -2613,6 +2669,7 @@ def auto_arima_f(
         if k >= results.shape[0]:
             return k, bestfit, improved
         fit = p_myarima(
+            ic_bound=bestfit["ic"],
             order=(p, d, q),
             seasonal={"order": (P, D, Q), "period": m},
             constant=constant,

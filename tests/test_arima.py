@@ -1250,8 +1250,8 @@ def test_var_coef_one_hessian_per_fit(monkeypatch):
 
 
 def test_auto_arima_rejects_saddle_candidates():
-    """Without checking every candidate's Hessian the search picks
-    ARIMA(1,0,1)(2,1,2)[12] with drift, which is a saddle point."""
+    """Without rejecting candidates whose Hessian isn't positive definite the
+    search picks ARIMA(1,0,1)(2,1,2)[12] with drift, which is a saddle point."""
     rng = np.random.default_rng(19)
     n = 120
     e = rng.normal(size=n + 50)
@@ -1262,6 +1262,50 @@ def test_auto_arima_rejects_saddle_candidates():
     y = y[50:] + 10 + 0.05 * t + 3 * np.sin(t * 2 * np.pi / 12)
     fit = auto_arima_f(y, period=12)
     assert np.isfinite(fit["var_coef"]).all()
+
+
+def test_auto_arima_skips_hessian_of_losing_candidates(monkeypatch):
+    fits = []
+    myarima = arima_module.myarima
+
+    def spy(*args, **kwargs):
+        fit = myarima(*args, **kwargs)
+        has_coefs = "mask" in fit and fit["mask"].any()
+        fits.append((fit["ic"], has_coefs, fit.get("var_coef") is not None))
+        return fit
+
+    monkeypatch.setattr(arima_module, "myarima", spy)
+    auto_arima_f(ap, period=12)
+    best = math.inf
+    winners, losers = [], []
+    # a saddle is stored as inf, so only finite ics show which side of the bound it was on
+    for ic, has_coefs, has_var in fits:
+        if has_coefs and math.isfinite(ic):
+            (winners if ic < best else losers).append(has_var)
+        best = min(best, ic)
+    assert winners and all(winners)
+    assert losers and not any(losers)
+
+
+def test_auto_arima_checks_every_approximate_candidate(monkeypatch):
+    # the approximate fits are ranked again for the exact refits
+    fits = []
+    myarima = arima_module.myarima
+
+    def spy(*args, **kwargs):
+        fit = myarima(*args, **kwargs)
+        if kwargs.get("approximation"):
+            fits.append(fit)
+        return fit
+
+    monkeypatch.setattr(arima_module, "myarima", spy)
+    auto_arima_f(ap, period=12, approximation=True)
+    checked = [
+        f["ic"] == math.inf or f["var_coef"] is not None
+        for f in fits
+        if "mask" in f and f["mask"].any()
+    ]
+    assert checked and all(checked)
 
 
 def test_var_coef_false_skips_hessian(monkeypatch):
