@@ -570,8 +570,8 @@ class _StatsForecast:
                 Each model should implement the forecast interface. Models must have
                 unique names, which can be set using the `alias` parameter.
             freq (str or int): Frequency of the time series data. Must be a valid
-                pandas or polars offset alias (e.g., 'D' for daily, 'M' for monthly,
-                'H' for hourly), or an integer representing the number of observations
+                pandas or polars offset alias (e.g., 'D' for daily, 'ME' for monthly,
+                'h' for hourly), or an integer representing the number of observations
                 per cycle.
             n_jobs (int, optional): Number of jobs to use for parallel processing.
                 Use -1 to utilize all available CPU cores.
@@ -609,6 +609,8 @@ class _StatsForecast:
         time_col: str = "ds",
         target_col: str = "y",
     ) -> None:
+        self.__dict__.pop("fcst_fitted_values_", None)
+        self.__dict__.pop("cv_fitted_values_", None)
         df = ensure_time_dtype(df, time_col)
         validate_freq(df[time_col], self.freq)
         self.uids, last_times, data, indptr, sort_idxs = ufp.process_df(
@@ -747,6 +749,7 @@ class _StatsForecast:
             raise ValueError(
                 f"Expected X to have shape {expected_shape}, but got {X.shape}"
             )
+        X = X[[self.id_col, self.time_col] + self._exog]
         processed = ufp.process_df(X, self.id_col, self.time_col, None)
         return GroupedArray(processed.data, processed.indptr), level
 
@@ -924,7 +927,6 @@ class _StatsForecast:
                 identifiers, future timestamps, and predictions from each model. Includes
                 prediction intervals if `level` is specified.
         """
-        self.__dict__.pop("fcst_fitted_values_", None)
         self._prepare_fit(
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
@@ -1098,6 +1100,8 @@ class _StatsForecast:
         Returns the fitted (in-sample) predictions generated during the last call to
         `forecast()`. These are the model's predictions on the training data, useful
         for assessing model fit quality and identifying patterns in residuals.
+        Retrieve these predictions before calling another method that prepares
+        training data on this instance.
 
         Returns:
             pandas.DataFrame or polars.DataFrame: DataFrame containing in-sample predictions
@@ -1198,14 +1202,15 @@ class _StatsForecast:
                 raise ValueError(
                     "Can only use integer refit or refit=False with a fallback model that implements the forward method."
                 )
-        self.__dict__.pop("cv_fitted_values_", None)
         self._prepare_fit(
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
         series_sizes = np.diff(self.ga.indptr)
         short_series = series_sizes <= test_size
         if short_series.any():
-            short_ids = self.uids[short_series].to_numpy().tolist()
+            short_ids = (
+                ufp.filter_with_mask(self.uids, short_series).to_numpy().tolist()
+            )
             raise ValueError(
                 f"The following series are too short for the cross validation settings: {reprlib.repr(short_ids)}\n"
                 "Please remove these series or change the settings, e.g. reducing the horizon or the number of windows."
@@ -1266,6 +1271,8 @@ class _StatsForecast:
         Returns the fitted (in-sample) predictions for each cross-validation window.
         These are the model's predictions on the training data for each window,
         useful for analyzing how model fit changes across different training periods.
+        Retrieve these predictions before calling another method that prepares
+        training data on this instance.
 
         Returns:
             pandas.DataFrame or polars.DataFrame: DataFrame containing in-sample predictions

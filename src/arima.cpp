@@ -2,10 +2,12 @@
 #include <array>
 #include <cassert>
 #include <cmath>
+#include <limits>
 #include <span>
 #include <vector>
 #include <stdexcept>
 
+#include <Eigen/Dense>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
@@ -620,6 +622,114 @@ void getQ0(const py::array_t<double> phiv, const py::array_t<double> thetav,
   }
 }
 
+void getQ0bis(const py::array_t<double> phiv, const py::array_t<double> thetav,
+              py::array_t<double> resv) {
+  assert(thetav.ndim() == 1);
+  assert(phiv.ndim() == 1);
+  assert(resv.ndim() == 1);
+
+  const auto phi = make_cspan(phiv);
+  const auto theta = make_cspan(thetav);
+  const auto res = make_span(resv);
+
+  const Eigen::Index p = phi.size();
+  const Eigen::Index q = theta.size();
+  const Eigen::Index r = std::max(p, q + 1);
+  assert(res.size() == static_cast<size_t>(r * r));
+
+  Eigen::Map<Eigen::MatrixXd> Q0(res.data(), r, r);
+  Eigen::VectorXd ttheta(q + 1);
+  ttheta(0) = 1.0;
+  for (Eigen::Index i = 0; i < q; ++i) {
+    ttheta(i + 1) = theta[i];
+  }
+
+  for (Eigen::Index i = r - 1; i >= 0; --i) {
+    for (Eigen::Index j = r - 1; j >= i; --j) {
+      double v = i <= q && j <= q ? ttheta(i) * ttheta(j) : 0.0;
+      if (j + 1 < r) {
+        v += Q0(i + 1, j + 1);
+      }
+      Q0(i, j) = Q0(j, i) = v;
+    }
+  }
+  if (p == 0) {
+    return;
+  }
+  Eigen::MatrixXd A2 = Eigen::MatrixXd::Zero(r, q + 1);
+  for (Eigen::Index j = 0; j < std::min(r, q + 1); ++j) {
+    A2.row(j).head(q + 1 - j) = ttheta.tail(q + 1 - j).transpose();
+  }
+
+  Eigen::VectorXd tphi(p + 1);
+  tphi(0) = 1.0;
+  for (Eigen::Index i = 0; i < p; ++i) {
+    tphi(i + 1) = -phi[i];
+  }
+  Eigen::MatrixXd gam = Eigen::MatrixXd::Zero(p + 1, p + 1);
+  for (Eigen::Index i = 0; i <= p; ++i) {
+    for (Eigen::Index j = 0; j <= i; ++j) {
+      gam(i, j) += tphi(i - j);
+    }
+    for (Eigen::Index j = 1; j <= p - i; ++j) {
+      gam(i, j) += tphi(i + j);
+    }
+  }
+  Eigen::VectorXd u(std::max(p + q, p + 1));
+  u.head(p + 1) = gam.partialPivLu().solve(Eigen::VectorXd::Unit(p + 1, 0));
+  // an exactly singular system yields non-finite values, propagate them so
+  // that the optimizer rejects the parameters instead of aborting the fit
+  if (!u.head(p + 1).allFinite()) {
+    Q0.setConstant(std::numeric_limits<double>::quiet_NaN());
+    return;
+  }
+  for (Eigen::Index k = p + 1; k < u.size(); ++k) {
+    u(k) = 0.0;
+    for (Eigen::Index l = 1; l <= p; ++l) {
+      u(k) += phi[l - 1] * u(k - l);
+    }
+  }
+
+  Eigen::MatrixXd toep(p + q, p + q);
+  for (Eigen::Index i = 0; i < p + q; ++i) {
+    for (Eigen::Index j = 0; j < p + q; ++j) {
+      toep(i, j) = u(std::abs(i - j));
+    }
+  }
+  Eigen::MatrixXd A = Eigen::MatrixXd::Zero(p, p + q);
+  for (Eigen::Index k = 0; k < p; ++k) {
+    A.row(k).segment(k, q + 1) = ttheta.transpose();
+  }
+  Eigen::MatrixXd A1 = Eigen::MatrixXd::Zero(r, p);
+  for (Eigen::Index i = 0; i < p; ++i) {
+    for (Eigen::Index k = 0; k < p - i; ++k) {
+      A1(i, k) = phi[i + k];
+    }
+  }
+  const Eigen::MatrixXd SX = A * toep * A.transpose();
+  Q0.noalias() += A1 * SX * A1.transpose();
+  if (q == 0) {
+    return;
+  }
+
+  Eigen::VectorXd rrz(q);
+  for (Eigen::Index i = 0; i < q; ++i) {
+    double v = ttheta(i);
+    for (Eigen::Index j = std::max<Eigen::Index>(0, i - p); j < i; ++j) {
+      v -= rrz(j) * tphi(i - j);
+    }
+    rrz(i) = v;
+  }
+  Eigen::MatrixXd SXZ = Eigen::MatrixXd::Zero(p, q + 1);
+  for (Eigen::Index k = 0; k < p; ++k) {
+    for (Eigen::Index L = k + 1; L <= q; ++L) {
+      SXZ(k, L) = rrz(L - k - 1);
+    }
+  }
+  const Eigen::MatrixXd M = A1 * (SXZ * A2.transpose());
+  Q0 += M + M.transpose();
+}
+
 py::array_t<double> arima_gradtrans(const py::array_t<double> xv,
                                     const py::array_t<int32_t> armav) {
   assert(xv.ndim() == 1);
@@ -750,6 +860,7 @@ void init(py::module_ &m) {
   arima.def("arima_css", &arima_css);
   arima.def("arima_like", &arima_like);
   arima.def("getQ0", &getQ0);
+  arima.def("getQ0bis", &getQ0bis);
   arima.def("arima_gradtrans", &arima_gradtrans);
   arima.def("arima_undopars", &arima_undopars);
   arima.def("invpartrans", &invpartrans);

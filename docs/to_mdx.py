@@ -6,6 +6,7 @@ from mkdocstrings_parser import MkDocstringsParser
 
 comment_pat = re.compile(r"<!--.*?-->", re.DOTALL)
 anchor_pat = re.compile(r"<a.*?>(.*?)</a>")
+error_pat = re.compile(r"<!-- (Error (?:generating docs|processing block).*?) -->", re.DOTALL)
 output_path = Path("docs/mintlify")
 
 
@@ -13,12 +14,17 @@ def process_files(input_dir):
     """Process files with MkDocstrings parser, then clean with regex"""
     # Step 1: Use MkDocstrings parser to generate initial MDX files
     parser = MkDocstringsParser()
+    errors = []
     for file in Path(input_dir).rglob("*.md"):
         folder_path = Path(input_dir) / "mintlify" / Path(*file.parent.parts[1:])
         folder_path.mkdir(parents=True, exist_ok=True)
         output_file = str(folder_path / file.with_suffix(".mdx").name)
         print(f"Processing {file} -> {output_file}")
-        parser.process_file(str(file), output_file)
+        content = parser.process_file(str(file), output_file)
+        # The parser never raises: failures become HTML comments, which the cleanup below strips.
+        errors += [f"{file}: {e}" for e in error_pat.findall(content)]
+    if errors:
+        raise SystemExit("Docstring parsing failed:\n" + "\n".join(errors))
 
     # Step 2: Clean up the generated MDX files with regex patterns
     for mdx_file in (Path(input_dir) / "mintlify").glob("*.mdx"):
