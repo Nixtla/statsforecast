@@ -604,7 +604,7 @@ class TestARIMAFamily:
         )
 
     def test_autoregressive(self):
-        ar = AutoRegressive(lags=[12], fixed={"ar12": 0.9999999})
+        ar = AutoRegressive(lags=[12], fixed={"ar12": 0.9999999}, include_mean=False)
         assert_class(ar, x=ap, h=12, level=[90, 80], test_forward=True)
         fcst_ar = ar.forecast(ap, 13, None, None, (80, 95), True)
         # we should recover seasonal naive
@@ -632,7 +632,7 @@ class TestARIMAFamily:
             == "AutoRegressive_lag12"
         )
 
-        ar = AutoRegressive(lags=[12], fixed={"ar12": 0.9999999})
+        ar = AutoRegressive(lags=[12], fixed={"ar12": 0.9999999}, include_mean=False)
         assert_class(ar, x=ap, h=12, level=[90, 80], test_forward=True)
         fcst_ar = ar.forecast(ap, 13, None, None, (80, 95), True)
         # we should recover seasonal naive
