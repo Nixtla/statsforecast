@@ -1923,3 +1923,70 @@ def test_css_unit_root_with_fixed_coefficients_fits():
     # CSS doesn't use the initial state covariance, R fits this too
     fit = arima(ap, order=(1, 0, 0), method="CSS", fixed=[1.0, np.nan])
     assert np.isfinite(fit["sigma2"])
+
+
+def _css_series(n=200, seed=0):
+    rng = np.random.default_rng(seed)
+    e = rng.normal(size=n)
+    y = np.empty(n)
+    y[0] = e[0]
+    for t in range(1, n):
+        y[t] = 0.6 * y[t - 1] + e[t]
+    return y
+
+
+def test_css_forecast_ar1_with_mean_follows_last_value():
+    y = _css_series() + 100
+    fit = Arima(y, order=(1, 0, 0), method="CSS")
+    phi = fit["coef"]["ar1"]
+    mean = fit["coef"]["intercept"]
+    h = np.arange(1, 4)
+    expected = mean + phi**h * (y[-1] - mean)
+    np.testing.assert_allclose(predict_arima(fit, 3, se_fit=False), expected, rtol=1e-6)
+
+
+def test_css_forecast_ar1_differenced_follows_last_value():
+    y = np.cumsum(_css_series()) + 500
+    fit = Arima(y, order=(1, 1, 0), method="CSS", include_mean=False)
+    phi = fit["coef"]["ar1"]
+    dy = y[-1] - y[-2]
+    expected = y[-1] + np.cumsum(dy * phi ** np.arange(1, 4))
+    np.testing.assert_allclose(predict_arima(fit, 3, se_fit=False), expected, rtol=1e-6)
+
+
+@pytest.mark.parametrize(
+    "order,seasonal",
+    [
+        ((0, 1, 1), {"order": (0, 0, 0), "period": 1}),
+        ((1, 0, 1), {"order": (0, 0, 0), "period": 1}),
+        ((0, 1, 1), {"order": (0, 1, 1), "period": 12}),
+    ],
+)
+def test_css_forecast_close_to_css_ml(order, seasonal):
+    t = np.arange(240)
+    y = 200 + 10 * np.sin(2 * np.pi * t / 12) + np.cumsum(_css_series(240)) * 0.2
+    css = Arima(y, order=order, seasonal=seasonal, method="CSS")
+    ml = Arima(y, order=order, seasonal=seasonal, method="CSS-ML")
+    np.testing.assert_allclose(
+        predict_arima(css, 6, se_fit=False), predict_arima(ml, 6, se_fit=False), atol=0.1 * y.std()
+    )
+
+
+def test_css_forecast_with_xreg():
+    y = _css_series() + 100
+    xreg = np.arange(y.size, dtype=np.float64).reshape(-1, 1) / y.size
+    y = y + 5 * xreg[:, 0]
+    fit = Arima(y, order=(1, 0, 0), xreg=xreg, method="CSS")
+    newxreg = np.array([[1.0], [1.005]])
+    fc = predict_arima(fit, 2, newxreg=newxreg, se_fit=False)
+    ml = Arima(y, order=(1, 0, 0), xreg=xreg, method="CSS-ML")
+    np.testing.assert_allclose(
+        fc, predict_arima(ml, 2, newxreg=newxreg, se_fit=False), atol=0.1 * y.std()
+    )
+
+
+def test_auto_arima_css_forecast_follows_series():
+    y = 200 + np.cumsum(_css_series(240)) * 0.2
+    fit = auto_arima_f(y, period=1, method="CSS")
+    mean = forecast_arima(fit, h=3)["mean"]
+    assert abs(mean[0] - y[-1]) < 3 * np.diff(y).std()
