@@ -121,7 +121,12 @@ double calc_buf(const Eigen::Ref<const VectorXd> &y,
   if (mean_y < TOL) {
     mean_y = TOL;
   }
-  return e.tail(e.size() - 3).array().square().sum() / mean_y;
+  // As in forecTheta, the dynamic models skip the first two errors, while the
+  // static models use all of them.
+  if (model_type == ModelType::DSTM || model_type == ModelType::DOTM) {
+    return e.tail(e.size() - 2).array().square().sum() / mean_y;
+  }
+  return e.array().square().sum() / mean_y;
 }
 
 // Allocating version (for the public calc API where the scratch isn't reused)
