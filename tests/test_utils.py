@@ -2,7 +2,12 @@ import warnings
 
 import numpy as np
 import pytest
-from statsforecast.utils import _conformal_quantile, _conformal_rank, _seasonal_naive
+from statsforecast.utils import (
+    _conformal_quantile,
+    _conformal_rank,
+    _seasonal_naive,
+    find_season_length,
+)
 
 
 def test_seasonal_naive():
@@ -145,3 +150,91 @@ def test_conformal_quantile_upper_bound_below_the_median_covers(level):
     margin = _conformal_quantile(scores[:, :n], level / 100, upper=True, axis=1)
     se = np.sqrt(0.25 / reps)
     assert np.mean(scores[:, n] <= margin) >= level / 100 - 3 * se
+
+
+def _seasonal(period, n=240, amplitude=5.0, trend=0.0, seed=0):
+    rng = np.random.default_rng(seed)
+    t = np.arange(n)
+    return (
+        amplitude * np.sin(2 * np.pi * t / period) + trend * t + rng.standard_normal(n)
+    )
+
+
+def test_find_season_length_air_passengers(air_passengers):
+    assert find_season_length(air_passengers) == 12
+    assert find_season_length(np.log(air_passengers)) == 12
+
+
+@pytest.mark.parametrize("period", [4, 7, 12, 24])
+@pytest.mark.parametrize("trend", [0.0, 0.1])
+def test_find_season_length_recovers_known_periods(period, trend):
+    assert find_season_length(_seasonal(period, trend=trend)) == period
+
+
+def test_find_season_length_noiseless_sinusoid():
+    t = np.arange(120)
+    assert find_season_length(np.sin(2 * np.pi * t / 12)) == 12
+
+
+@pytest.mark.parametrize("scale", [1e-4, 1e-2, 1.0, 1e3, 1e6])
+@pytest.mark.parametrize("shift", [0.0, 1e4])
+def test_find_season_length_does_not_depend_on_units(air_passengers, scale, shift):
+    # R's findfrequency returns 1 for AirPassengers / 100: its peak threshold
+    # is applied to the unscaled spectrum.
+    assert find_season_length(scale * air_passengers + shift) == 12
+    assert find_season_length(scale * _seasonal(7) + shift) == 7
+
+
+def test_find_season_length_returns_one_without_seasonality():
+    rng = np.random.default_rng(1)
+    n_series = 300
+    white_noise = [rng.standard_normal(120) for _ in range(n_series)]
+    random_walks = [np.cumsum(rng.standard_normal(120)) for _ in range(n_series)]
+    for series in (white_noise, random_walks):
+        detected = sum(find_season_length(y) != 1 for y in series)
+        assert detected <= 0.05 * n_series
+
+
+@pytest.mark.parametrize(
+    "y",
+    [np.full(50, 3.0), np.arange(50.0), np.array([1.0, 2.0, 1.0]), np.array([])],
+)
+def test_find_season_length_degenerate_series(y):
+    assert find_season_length(y) == 1
+
+
+def test_find_season_length_uses_longest_finite_stretch():
+    y = _seasonal(12)
+    with_gaps = y.copy()
+    with_gaps[:5] = np.nan
+    with_gaps[10] = np.inf
+    assert find_season_length(with_gaps) == find_season_length(y[11:]) == 12
+
+
+def test_find_season_length_max_season_length():
+    t = np.arange(480)
+    rng = np.random.default_rng(3)
+    y = (
+        6 * np.sin(2 * np.pi * t / 24)
+        + 3 * np.sin(2 * np.pi * t / 6)
+        + rng.standard_normal(t.size)
+    )
+    assert find_season_length(y) == 24
+    assert find_season_length(y, max_season_length=12) == 6
+    assert find_season_length(y, max_season_length=24) == 24
+
+
+def test_find_season_length_max_season_length_without_peak_in_band():
+    assert find_season_length(_seasonal(24), max_season_length=4) == 1
+
+
+@pytest.mark.parametrize("bad", [0, 1, -3])
+def test_find_season_length_rejects_invalid_max(bad):
+    with pytest.raises(ValueError, match="max_season_length"):
+        find_season_length(_seasonal(12), max_season_length=bad)
+
+
+def test_find_season_length_rejects_2d_input():
+    with pytest.raises(ValueError, match="one-dimensional"):
+        find_season_length(np.ones((10, 2)))
+
