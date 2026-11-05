@@ -6022,6 +6022,10 @@ def _predict_mstl_components(mstl_ob, h, season_length):
     seasonal_periods = (
         [season_length] if isinstance(season_length, int) else season_length
     )
+    # same ordering and filtering as in `mstl`
+    seasonal_periods = sorted(seasonal_periods)
+    if len(seasonal_periods) > 1 and seasonal_periods[-1] > 1:
+        seasonal_periods = [sp for sp in seasonal_periods if sp > 1]
     for i in range(nseasons):
         mp = seasonal_periods[i]
         colname = seasoncolumns[i]
