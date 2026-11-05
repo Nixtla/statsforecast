@@ -1832,6 +1832,11 @@ class AutoTBATS(_TS):
         use_damped_trend (bool, default=None): Whether or not to dampen the trend component. By default tries both.
         use_arma_errors (bool, default=True): Whether or not to use a ARMA errors. Default is True and this evaluates both models.
         alias (str): Custom name of the model.
+
+    The fitted parameters are available in `model_` (named after R's `forecast::tbats`): `alpha`, `beta`, `damping_parameter`,
+    `gamma_one_values`, `gamma_two_values` (one per entry of `seasonal_periods`), `ar_coefficients`, `ma_coefficients`
+    and `BoxCox_lambda`. Parameters that are not part of the selected model are `None`; `damping_parameter` is 1.0 for an undamped trend.
+    `optim_params` holds the same values as a flat array.
     """
 
     def __init__(
@@ -6525,6 +6530,8 @@ class TBATS(AutoTBATS):
         use_damped_trend (Optional[bool]): Whether or not to dampen the trend component. Default False.
         use_arma_errors (bool): Whether or not to use a ARMA errors. Default False.
         alias (str): Custom name of the model. Default 'TBATS'.
+
+    The fitted parameters are available in `model_` (see `AutoTBATS`).
     """
 
     def __init__(
