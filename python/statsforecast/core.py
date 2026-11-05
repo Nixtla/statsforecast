@@ -631,6 +631,21 @@ class _StatsForecast:
         self.target_col = target_col
         self._exog = [c for c in df.columns if c not in (id_col, time_col, target_col)]
 
+    def _truncate_to_input_size(self, input_size: Optional[int]) -> None:
+        """Keep only the last `input_size` observations of each series."""
+        if input_size is None:
+            return
+        sizes = np.diff(self.ga.indptr)
+        new_sizes = np.minimum(sizes, input_size)
+        if np.array_equal(sizes, new_sizes):
+            return
+        new_indptr = np.append(0, np.cumsum(new_sizes)).astype(self.ga.indptr.dtype)
+        starts = np.repeat(self.ga.indptr[1:] - new_sizes, new_sizes)
+        offsets = np.arange(new_indptr[-1]) - np.repeat(new_indptr[:-1], new_sizes)
+        idxs = starts + offsets
+        self.ga = GroupedArray(self.ga.data[idxs], new_indptr)
+        self.og_dates = self.og_dates[idxs]
+
     def _validate_sizes_for_prediction_intervals(
         self,
         prediction_intervals: Optional[ConformalIntervals],
@@ -893,6 +908,7 @@ class _StatsForecast:
         id_col: str = "unique_id",
         time_col: str = "ds",
         target_col: str = "y",
+        input_size: Optional[int] = None,
     ) -> DataFrame:
         """Generate forecasts with memory-efficient model training.
 
@@ -921,15 +937,22 @@ class _StatsForecast:
                 indices. Values can be timestamps (datetime) or integers.
             target_col (str, optional): Name of the column containing the target variable
                 to forecast.
+            input_size (int, optional): Maximum number of training observations to use for
+                each series. If None, uses all available history. If specified, only the
+                most recent `input_size` observations of each series are used (including
+                exogenous features and, if `fitted=True`, the fitted values).
 
         Returns:
             DataFrame with forecasts containing series
                 identifiers, future timestamps, and predictions from each model. Includes
                 prediction intervals if `level` is specified.
         """
+        if input_size is not None and input_size < 1:
+            raise ValueError("`input_size` must be a positive integer.")
         self._prepare_fit(
             df=df, id_col=id_col, time_col=time_col, target_col=target_col
         )
+        self._truncate_to_input_size(input_size)
         self._validate_exog(X_df)
         self._validate_sizes_for_prediction_intervals(prediction_intervals)
         self._set_prediction_intervals(prediction_intervals=prediction_intervals)
@@ -1675,6 +1698,7 @@ class ParallelBackend:
         id_col,
         time_col,
         target_col,
+        input_size=None,
     ) -> Any:
         model = _StatsForecast(
             models=models,
@@ -1688,6 +1712,7 @@ class ParallelBackend:
             level=level,
             fitted=fitted,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
@@ -1752,6 +1777,7 @@ class StatsForecast(_StatsForecast):
         id_col: str = "unique_id",
         time_col: str = "ds",
         target_col: str = "y",
+        input_size: Optional[int] = None,
     ) -> DataFrame:
         """Generate forecasts with memory-efficient model training.
 
@@ -1780,6 +1806,10 @@ class StatsForecast(_StatsForecast):
                 indices. Values can be timestamps (datetime) or integers.
             target_col (str, optional): Name of the column containing the target variable
                 to forecast.
+            input_size (int, optional): Maximum number of training observations to use for
+                each series. If None, uses all available history. If specified, only the
+                most recent `input_size` observations of each series are used (including
+                exogenous features and, if `fitted=True`, the fitted values).
 
         Returns:
             DataFrame with forecasts containing series
@@ -1798,6 +1828,7 @@ class StatsForecast(_StatsForecast):
                 level=level,
                 fitted=fitted,
                 prediction_intervals=prediction_intervals,
+                input_size=input_size,
                 id_col=id_col,
                 time_col=time_col,
                 target_col=target_col,
@@ -1815,6 +1846,7 @@ class StatsForecast(_StatsForecast):
             level=level,
             fitted=fitted,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
