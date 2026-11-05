@@ -1639,3 +1639,21 @@ def test_future_exog_column_order(n_jobs, as_polars, method):
     np.testing.assert_allclose(
         result["LinearRegression"].to_numpy(), df.loc[df.ds >= 17, "y"]
     )
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_fit_progress_bar(n_jobs, capfd):
+    df = generate_series(n_series=4, min_length=20, max_length=30)
+    sf = StatsForecast(models=[Naive()], freq="D", n_jobs=n_jobs, verbose=True)
+    capfd.readouterr()
+    sf.fit(df)
+    err = capfd.readouterr().err
+    assert "Fit" in err
+    assert "100%" in err
+
+    sf = StatsForecast(models=[Naive()], freq="D", n_jobs=n_jobs, verbose=False)
+    capfd.readouterr()
+    sf.fit(df)
+    captured = capfd.readouterr()
+    assert "Fit" not in captured.err
+    assert captured.out == ""
