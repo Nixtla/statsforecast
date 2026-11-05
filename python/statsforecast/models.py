@@ -4402,8 +4402,9 @@ class ConformalSeasonalPool(_TS):
         Args:
             season_length (int): Number of observations per unit of time. Ex: 12 for monthly data.
             n_samples (int, default=100): Number of mixture samples used to estimate prediction intervals.
-                For a level-L interval, at least ``ceil(2/(1 - L/100)) - 1`` samples are needed before
-                the orientation-corrected lower bound is non-degenerate (e.g., ≥40 for a 95% interval).
+                For a level-L interval, both bounds stay pinned to the sample minimum and maximum
+                until ``n_samples >= 4/(1 - L/100) - 1`` (e.g., ≥79 for a 95% interval, ≥399 for 99%).
+                Must be at least 1.
             variant (str, default="adaptive"): ``"adaptive"`` adjusts the mixture weight based on
                 seasonality and history depth; ``"fixed"`` always uses w=0.5.
             calib_frac (float, default=0.5): Fraction of training history used for calibration
@@ -4419,6 +4420,8 @@ class ConformalSeasonalPool(_TS):
         """
         if variant not in ("adaptive", "fixed"):
             raise ValueError("variant must be 'adaptive' or 'fixed'")
+        if n_samples < 1:
+            raise ValueError("n_samples must be at least 1")
         self.season_length = season_length
         self.n_samples = n_samples
         self.variant = variant
@@ -4514,6 +4517,12 @@ class ConformalSeasonalPool(_TS):
         Point forecasts are seasonal naive fitted values. Prediction intervals
         are constant-width bands derived from the empirical quantiles of the
         calibration residuals R, centred on the fitted values.
+
+        The quantiles are taken over the ``R.size`` calibration residuals, not
+        over ``n_samples`` draws, so ``n_samples`` has no effect here; ``R.size``
+        is set by ``calib_frac`` and the history length. For a level-L interval
+        both offsets stay at ``R.min()`` and ``R.max()`` until
+        ``R.size >= 4/(1 - L/100) - 1``.
 
         Args:
             level (List[float]): Confidence levels (0-100) for prediction intervals.

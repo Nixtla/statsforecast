@@ -158,6 +158,23 @@ def test_invalid_variant_raises():
         ConformalSeasonalPool(season_length=12, variant="bogus")
 
 
+@pytest.mark.parametrize("n_samples", [0, -1])
+def test_invalid_n_samples_raises(n_samples):
+    with pytest.raises(ValueError, match="n_samples"):
+        ConformalSeasonalPool(season_length=12, n_samples=n_samples)
+
+
+# The documented n_samples threshold: both bounds leave the sample extremes
+# exactly at n >= 4/(1 - L/100) - 1.
+@pytest.mark.parametrize("level, threshold", [(80, 19), (90, 39), (95, 79), (99, 399)])
+def test_documented_n_samples_threshold(level, threshold):
+    a = 1 - level / 100
+    for n, degenerate in ((threshold - 1, True), (threshold, False)):
+        lo = _conformal_rank(n, a / 2, upper=False)
+        hi = _conformal_rank(n, 1 - a / 2, upper=True)
+        assert (lo == 1 and hi == n) is degenerate
+
+
 def test_short_series_no_index_error():
     """n < season_length: forecast must not raise; NaN slots filled via latest-obs fallback."""
     m = 12
