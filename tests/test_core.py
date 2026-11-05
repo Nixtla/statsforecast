@@ -1200,6 +1200,104 @@ def test_cv_fitted(series_cv2, str_ds):
     assert_cv_fitted(series_cv2, str_ds=str_ds)
 
 
+@pytest.mark.parametrize("method", ["forecast", "cross_validation", "simulate"])
+@pytest.mark.parametrize("n_series", [2, 3])
+@pytest.mark.parametrize("engine", ["pandas", "polars"])
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_predict_invalidated_by_new_training_data(method, n_series, engine, n_jobs):
+    df = pd.DataFrame(
+        {
+            "series": np.repeat(["a", "b"], 8),
+            "time": np.tile(range(8), 2),
+            "value": np.arange(16),
+        }
+    )
+    other_df = pd.DataFrame(
+        {
+            "unique_id": np.repeat([f"new-{i}" for i in range(n_series)], 8),
+            "ds": np.tile(np.arange(8) + 100, n_series),
+            "y": np.arange(8 * n_series) + 100,
+        }
+    )
+    if engine == "polars":
+        df, other_df = pl.from_pandas(df), pl.from_pandas(other_df)
+    sf = StatsForecast(models=[Naive()], freq=1, n_jobs=n_jobs)
+    sf.fit(df=df, id_col="series", time_col="time", target_col="value")
+    kwargs = {"seed": 0} if method == "simulate" else {"fitted": True}
+    actual = getattr(sf, method)(df=other_df, h=1, **kwargs)
+    fresh = StatsForecast(models=[Naive()], freq=1, n_jobs=n_jobs)
+    expected = getattr(fresh, method)(df=other_df, h=1, **kwargs)
+    assert_equal = (
+        pd.testing.assert_frame_equal
+        if engine == "pandas"
+        else pltest.assert_frame_equal
+    )
+    assert_equal(actual, expected)
+
+    with pytest.raises(
+        ValueError, match="You must call the fit method before calling predict"
+    ):
+        sf.predict(h=1)
+
+    sf.fit(df=other_df)
+    fresh.fit(df=other_df)
+    assert_equal(sf.predict(h=2), fresh.predict(h=2))
+
+
+@pytest.mark.parametrize("method", ["fit", "fit_predict"])
+@pytest.mark.parametrize("engine", ["pandas", "polars"])
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_predict_reuses_latest_fitted_models(method, engine, n_jobs):
+    df = pd.DataFrame(
+        {
+            "unique_id": np.repeat(["a", "b"], 8),
+            "ds": np.tile(range(8), 2),
+            "y": np.arange(16),
+        }
+    )
+    other_df = df.assign(
+        unique_id=lambda x: "new-" + x.unique_id,
+        ds=lambda x: x.ds + 100,
+        y=lambda x: x.y + 100,
+    )
+    if engine == "polars":
+        df, other_df = pl.from_pandas(df), pl.from_pandas(other_df)
+    sf = StatsForecast(models=[Naive()], freq=1, n_jobs=n_jobs)
+    sf.fit(df=df)
+    kwargs = {"h": 2, "level": [80]} if method == "fit_predict" else {}
+    actual = getattr(sf, method)(df=other_df, **kwargs)
+    expected = StatsForecast(models=[Naive()], freq=1, n_jobs=n_jobs).forecast(
+        df=other_df, h=2, level=[80]
+    )
+    assert_equal = (
+        pd.testing.assert_frame_equal
+        if engine == "pandas"
+        else pltest.assert_frame_equal
+    )
+    if method == "fit_predict":
+        assert_equal(actual, expected)
+    assert_equal(sf.predict(h=2, level=[80]), expected)
+    assert_equal(sf.predict(h=2, level=[80]), expected)
+
+
+@pytest.mark.parametrize("method", ["fit", "fit_predict"])
+def test_failed_refit_invalidates_predict(method):
+    df = pd.DataFrame({"unique_id": ["a"] * 8, "ds": range(8), "y": range(8)})
+    other_df = df.assign(unique_id="b", ds=lambda x: x.ds + 100, y=lambda x: x.y + 100)
+    sf = StatsForecast(models=[Naive()], freq=1).fit(df=df)
+    kwargs = {"h": 1, "level": [80]} if method == "fit_predict" else {}
+    with pytest.raises(
+        ValueError, match="Minimum samples for computing prediction intervals"
+    ):
+        getattr(sf, method)(
+            df=other_df, prediction_intervals=ConformalIntervals(h=8), **kwargs
+        )
+    with pytest.raises(
+        ValueError, match="You must call the fit method before calling predict"
+    ):
+        sf.predict(h=1)
+
+
 @pytest.mark.parametrize("method", ["forecast", "cross_validation"])
 @pytest.mark.parametrize(
     "next_method", ["fit", "fit_predict", "forecast", "cross_validation", "simulate"]
