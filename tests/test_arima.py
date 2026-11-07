@@ -26,6 +26,7 @@ from statsforecast.arima import (
     arima_string,
     arima_transpar,
     arima_undopars,
+    arroots,
     auto_arima_f,
     fitted_arima,
     fixed_params_from_dict,
@@ -35,11 +36,13 @@ from statsforecast.arima import (
     getQ0bis,
     kalman_forecast,
     make_arima,
+    maroots,
     mstl,
     myarima,
     ndiffs,
     newmodel,
     nsdiffs,
+    plot_arima_roots,
     predict_arima,
     print_statsforecast_ARIMA,
     seas_heuristic,
@@ -1923,3 +1926,102 @@ def test_css_unit_root_with_fixed_coefficients_fits():
     # CSS doesn't use the initial state covariance, R fits this too
     fit = arima(ap, order=(1, 0, 0), method="CSS", fixed=[1.0, np.nan])
     assert np.isfinite(fit["sigma2"])
+
+
+def _sorted_roots(roots):
+    return roots[np.lexsort((roots.imag.round(8), roots.real.round(8)))]
+
+
+# expected values from R 4.4.3, forecast 9.0.2: 1 / forecast:::arroots(fit)$roots
+# and 1 / forecast:::maroots(fit)$roots, with
+# fit <- Arima(AirPassengers, ..., method = "CSS", fixed = ...)
+_ROOTS_R_CASES = [
+    (
+        dict(
+            order=(1, 0, 1),
+            seasonal={"order": (1, 0, 1), "period": 4},
+            include_mean=False,
+            fixed=[0.5, 0.4, 0.3, -0.2],
+        ),
+        [-0.7400828045j, -0.7400828045, 0.7400828045j, 0.7400828045, 0.5],
+        [-0.6687403050j, -0.6687403050, 0.6687403050j, 0.6687403050, -0.4],
+    ),
+    (
+        dict(order=(2, 0, 0), fixed=[0.5, -0.3, np.nan]),
+        [0.25 - 0.4873397172j, 0.25 + 0.4873397172j],
+        [],
+    ),
+    (
+        dict(order=(1, 0, 0), fixed=[1.2, np.nan]),
+        [1.2],
+        [],
+    ),
+]
+
+
+@pytest.mark.parametrize("kwargs,expected_ar,expected_ma", _ROOTS_R_CASES)
+def test_arroots_maroots_match_r(kwargs, expected_ar, expected_ma):
+    fit = arima(ap, method="CSS", **kwargs)
+    for roots, expected in [
+        (arroots(fit), expected_ar),
+        (maroots(fit), expected_ma),
+    ]:
+        expected = np.array(expected, dtype=complex)
+        assert roots.shape == expected.shape
+        np.testing.assert_allclose(
+            _sorted_roots(roots), _sorted_roots(expected), atol=1e-9
+        )
+
+
+def test_maroots_ignores_theta_padding():
+    fit = arima(ap, order=(2, 0, 0), method="CSS", fixed=[0.5, 0.06, np.nan])
+    # make_arima pads theta with zeros, which must not become roots
+    assert fit["model"]["theta"].size > 0
+    assert maroots(fit).size == 0
+    # inverse roots solve w^2 - 0.5w - 0.06 = 0, which are real, but are
+    # still returned as a complex array
+    ar = arroots(fit)
+    assert ar.dtype == np.complex128
+    np.testing.assert_allclose(np.sort_complex(ar), [-0.1, 0.6])
+
+
+def test_arroots_maroots_empty_for_white_noise():
+    fit = arima(ap, order=(0, 0, 0), method="CSS")
+    assert arroots(fit).size == 0
+    assert maroots(fit).size == 0
+
+
+def test_arroots_on_fitted_autoarima_model():
+    model = AutoARIMAModel(season_length=12).fit(ap).model_
+    roots = np.append(arroots(model), maroots(model))
+    assert roots.size > 0
+    # AutoARIMA rejects candidates with roots too close to the unit circle
+    assert np.all(np.abs(roots) <= 1 / 1.01)
+
+
+def test_plot_arima_roots():
+    pytest.importorskip("matplotlib")
+    import matplotlib
+
+    matplotlib.use("Agg")
+
+    fit = arima(
+        ap,
+        order=(1, 0, 1),
+        seasonal={"order": (1, 0, 0), "period": 4},
+        include_mean=False,
+        method="CSS",
+        fixed=[0.5, 0.4, 0.3],
+    )
+    fig = plot_arima_roots(fit)
+    assert [ax.get_title() for ax in fig.axes] == [
+        "Inverse AR roots (stationary)",
+        "Inverse MA roots (invertible)",
+    ]
+
+    ar_only = arima(ap, order=(1, 0, 0), method="CSS", fixed=[1.2, np.nan])
+    fig = plot_arima_roots(ar_only)
+    assert [ax.get_title() for ax in fig.axes] == ["Inverse AR roots (not stationary)"]
+
+    with pytest.raises(ValueError, match="no AR or MA roots"):
+        plot_arima_roots(arima(ap, order=(0, 0, 0), method="CSS"))
