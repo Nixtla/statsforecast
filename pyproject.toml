@@ -34,6 +34,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 requires-python = ">=3.11"
 dependencies = [
@@ -44,7 +45,7 @@ dependencies = [
     "scipy>=1.7.3",
     "statsmodels>=0.14.5",
     "tqdm",
-    "fugue>=0.9.4",
+    "fugue>=0.9.9.dev0",
     "utilsforecast>=0.2.17",
     "threadpoolctl>=3",
 ]
@@ -77,23 +78,23 @@ dev = [
     "pytest-cov",
     "pip-licenses",
 ]
-dask = ["dask", "fugue[dask]>=0.9.4"]
+dask = ["dask", "fugue[dask]>=0.9.9.dev0"]
 ray = [
-    "fugue[ray]>=0.9.4 ; sys_platform != 'win32'",
+    "fugue[ray]>=0.9.9.dev0 ; sys_platform != 'win32' and python_version < '3.15'",
     "protobuf>=5.29.6 ; python_version < '3.12'",
-    "ray>=2.56.0 ; sys_platform != 'win32'",
+    "ray>=2.56.0 ; sys_platform != 'win32' and python_version < '3.15'",
 ]
-spark = ["fugue[spark]>=0.9.4", "pyspark<4.1.0; sys_platform == 'win32'"]
+spark = ["fugue[spark]>=0.9.9.dev0", "pyspark<4.1.0; sys_platform == 'win32'"]
 all = [
     "cmake",
     "datasetsforecast",
     "dask",
     "fire",
-    "fugue[dask,spark]>=0.9.4",
-    "fugue[ray]>=0.9.4 ; sys_platform != 'win32'",
+    "fugue[dask,spark]>=0.9.9.dev0",
+    "fugue[ray]>=0.9.9.dev0 ; sys_platform != 'win32' and python_version < '3.15'",
     "ninja",
     "numpy",
-    "pandas[plot]<3.0.0",
+    "pandas[plot]",
     "plotly",
     "plotly-resampler ; python_version < '3.14'",
     "polars[numpy]",
@@ -105,7 +106,7 @@ all = [
     "pyspark<4.1.0; sys_platform == 'win32'",
     "pytest",
     "pytest-cov",
-    "ray>=2.56.0 ; sys_platform != 'win32'",
+    "ray>=2.56.0 ; sys_platform != 'win32' and python_version < '3.15'",
     "scikit-build-core>=1.0.3",
     "scikit-learn",
     "supersmoother",
