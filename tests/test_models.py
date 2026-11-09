@@ -868,6 +868,38 @@ def test_ses_analytical_prediction_intervals_formula(model):
     np.testing.assert_allclose(forecast[f"hi-{level}"], forecast["mean"] + width)
 
 
+@pytest.mark.parametrize(
+    "model",
+    [
+        SimpleExponentialSmoothing(alpha=0.1),
+        SimpleExponentialSmoothingOptimized(),
+        SeasonalExponentialSmoothing(season_length=12, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=12),
+    ],
+)
+def test_ses_fitted_prediction_intervals(model):
+    level = [80, 95]
+    fcst = model.forecast(ap, h=12, level=level, fitted=True)
+    in_sample = model.fit(ap).predict_in_sample(level=level)
+    for lv in level:
+        width = norm.ppf(0.5 + lv / 200) * model.model_["sigma"]
+        lo, hi = f"fitted-lo-{lv}", f"fitted-hi-{lv}"
+        np.testing.assert_allclose(in_sample[lo], in_sample["fitted"] - width)
+        np.testing.assert_allclose(in_sample[hi], in_sample["fitted"] + width)
+        np.testing.assert_allclose(fcst[lo], in_sample[lo])
+        np.testing.assert_allclose(fcst[hi], in_sample[hi])
+
+
+@pytest.mark.parametrize(
+    "model", [SimpleExponentialSmoothing(alpha=0.1), SimpleExponentialSmoothingOptimized()]
+)
+def test_ses_fitted_prediction_intervals_single_observation(model):
+    # sigma can't be estimated from one observation, so the intervals are NaN
+    fcst = model.forecast(np.array([1.0]), h=2, level=[80], fitted=True)
+    assert np.isnan(fcst["fitted-lo-80"]).all()
+    assert np.isnan(fcst["fitted-hi-80"]).all()
+
+
 class TestHolt:
     def test_holt_equivalence_with_ets(self):
         holt = Holt(season_length=12, error_type="A")
