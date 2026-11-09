@@ -1,5 +1,6 @@
-import dask.dataframe as dd
 import pytest
+
+dd = pytest.importorskip("dask.dataframe")
 
 from .utils import pipeline, pipeline_with_level, pipeline_fitted
 

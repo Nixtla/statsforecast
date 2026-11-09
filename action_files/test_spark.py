@@ -1,7 +1,8 @@
 import sys
 
 import pytest
-from pyspark.sql import SparkSession
+
+SparkSession = pytest.importorskip("pyspark.sql").SparkSession
 
 from .utils import pipeline, pipeline_with_level, pipeline_fitted
 

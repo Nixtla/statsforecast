@@ -1,15 +1,9 @@
 import sys
 
-import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pytest
 
-if sys.platform != "win32":
-    import ray
-from dask.distributed import Client
-from fugue_dask import DaskExecutionEngine
-from pyspark.sql import SparkSession
 from statsforecast.core import StatsForecast
 from statsforecast.models import (
     AutoETS,
@@ -46,6 +40,7 @@ from statsforecast.utils import generate_series
 
 @pytest.fixture
 def df():
+    dd = pytest.importorskip("dask.dataframe")
     # Generate Synthetic Panel Data
     df = generate_series(10)
     df["unique_id"] = df["unique_id"].astype(str)
@@ -76,7 +71,9 @@ def test_fallback_model(df):
         (
             dask_fcst.sort_values(by=["unique_id", "ds"])
             .reset_index(drop=True)
-            .astype({"ds": "datetime64[ns]", "Naive": "float32", "unique_id": "object"})
+            .astype(
+                {"ds": fcst_stats["ds"].dtype, "Naive": "float32", "unique_id": "object"}
+            )
         ),
         fcst_stats.astype({"unique_id": "object", "Naive": "float32"}),
     )
@@ -114,6 +111,7 @@ class ReturnX:
 
 @pytest.fixture
 def df_w_ex():
+    dd = pytest.importorskip("dask.dataframe")
     df_w_ex = pd.DataFrame(
         {
             "ds": np.hstack([np.arange(10), np.arange(10)]),
@@ -192,6 +190,7 @@ def ray_session():
         yield None
         return
 
+    ray = pytest.importorskip("ray")
     if not ray.is_initialized():
         ray.init(
             num_cpus=2,
@@ -215,7 +214,7 @@ def ray_df(ray_session):
     # Generate Synthetic Panel Data.
     df = generate_series(5).reset_index()
     df["unique_id"] = df["unique_id"].astype(str)
-    df = ray.data.from_pandas(df).repartition(2)
+    df = ray_session.data.from_pandas(df).repartition(2)
     return df
 
 
