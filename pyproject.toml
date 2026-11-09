@@ -39,7 +39,7 @@ classifiers = [
 requires-python = ">=3.11"
 dependencies = [
     "cloudpickle",
-    "coreforecast>=0.0.17",
+    "coreforecast>=0.0.19",
     "numpy>=1.21.6",
     "pandas",
     "scipy>=1.7.3",
