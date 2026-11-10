@@ -33,7 +33,6 @@ jobs:
             [ubuntu-latest, manylinux_aarch64],
             [windows-latest, win_amd64],
             [macos-15, macosx_x86_64],
-            [macos-14, macosx_arm64],
             [macos-15, macosx_arm64],
             [macos-latest, macosx_arm64],
           ]

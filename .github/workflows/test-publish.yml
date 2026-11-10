@@ -19,8 +19,8 @@ jobs:
             [ubuntu-latest, manylinux_x86_64],
             [ubuntu-latest, manylinux_aarch64],
             [windows-latest, win_amd64],
-            [macos-13, macosx_x86_64],
-            [macos-14, macosx_arm64],
+            [macos-latest, macosx_x86_64],
+            [macos-latest, macosx_arm64],
           ]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
