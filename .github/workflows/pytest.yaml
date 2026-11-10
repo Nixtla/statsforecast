@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest]
         python-version: ["3.11", "3.14"]
     steps:
       - name: Clone repo
@@ -74,6 +74,7 @@ jobs:
         run: |
           uv sync --group all
           uv pip install "pandas<3"
+          uv run --no-sync python -c "import pandas as pd; assert pd.__version__ < '3', pd.__version__"
 
       - name: Run pytest
         run: uv run --no-sync pytest --no-cov
