@@ -27,7 +27,9 @@ def test_mstl_other_params(series):
 
     train_df, X_df = mstl_decomposition(series, model, "D", horizon)
     series_pl = generate_series(10, freq="D", engine="polars")
-    series_pl = series_pl.with_columns(unique_id=pl.col("unique_id").cast(pl.Int64))
+    series_pl = series_pl.with_columns(
+        unique_id=pl.col("unique_id").cast(pl.String).cast(pl.Int64)
+    )
     train_df_pl, X_df_pl = mstl_decomposition(series_pl, model, "1d", horizon)
     pd.testing.assert_series_equal(
         train_df.groupby("unique_id")["ds"].max() + pd.offsets.Day(),
