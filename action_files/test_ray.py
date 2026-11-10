@@ -1,9 +1,5 @@
-import sys
-
 import pytest
 
-if sys.version_info >= (3, 12):
-    pytest.skip("Ray requires Python<3.12", allow_module_level=True)
 ray = pytest.importorskip("ray")
 
 from .utils import pipeline, pipeline_with_level, pipeline_fitted
