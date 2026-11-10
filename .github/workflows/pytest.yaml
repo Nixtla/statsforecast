@@ -72,10 +72,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --group dev
+          uv sync --group all
           uv pip install "pandas<3"
 
       - name: Run pytest
-        run: uv run --no-sync pytest --ignore=tests/test_distributed_fugue.py --no-cov
+        run: uv run --no-sync pytest --no-cov
         env:
           MPLBACKEND: Agg
+          RAY_ENABLE_UV_RUN_RUNTIME_ENV: 0
