@@ -50,6 +50,15 @@ dependencies = [
     "threadpoolctl>=3",
 ]
 
+[project.optional-dependencies]
+dask = ["dask", "fugue[dask]>=0.9.9.dev0"]
+ray = [
+    "fugue[ray]>=0.9.9.dev0 ; sys_platform != 'win32' and python_version < '3.15'",
+    "protobuf>=5.29.6 ; python_version < '3.12'",
+    "ray>=2.56.0 ; sys_platform != 'win32' and python_version < '3.15'",
+]
+spark = ["fugue[spark]>=0.9.9.dev0", "pyspark<4.1.0; sys_platform == 'win32'"]
+
 [project.urls]
 Homepage = "https://github.com/Nixtla/statsforecast/"
 Repository = "https://github.com/Nixtla/statsforecast/"
@@ -78,20 +87,12 @@ dev = [
     "pytest-cov",
     "pip-licenses",
 ]
-dask = ["dask", "fugue[dask]>=0.9.9.dev0"]
-ray = [
-    "fugue[ray]>=0.9.9.dev0 ; sys_platform != 'win32' and python_version < '3.15'",
-    "protobuf>=5.29.6 ; python_version < '3.12'",
-    "ray>=2.56.0 ; sys_platform != 'win32' and python_version < '3.15'",
-]
-spark = ["fugue[spark]>=0.9.9.dev0", "pyspark<4.1.0; sys_platform == 'win32'"]
+test = ["pytest", "pytest-cov"]
 all = [
+    "statsforecast[dask,ray,spark]",
     "cmake",
     "datasetsforecast",
-    "dask",
     "fire",
-    "fugue[dask,spark]>=0.9.9.dev0",
-    "fugue[ray]>=0.9.9.dev0 ; sys_platform != 'win32' and python_version < '3.15'",
     "ninja",
     "numpy",
     "pandas[plot]",
@@ -103,10 +104,8 @@ all = [
     "protobuf>=5.29.6",
     "pyarrow>=23.0.1",
     "pybind11",
-    "pyspark<4.1.0; sys_platform == 'win32'",
     "pytest",
     "pytest-cov",
-    "ray>=2.56.0 ; sys_platform != 'win32' and python_version < '3.15'",
     "scikit-build-core>=1.0.3",
     "scikit-learn",
     "supersmoother",

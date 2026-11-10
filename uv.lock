@@ -3281,14 +3281,26 @@ dependencies = [
     { name = "utilsforecast" },
 ]
 
+[package.optional-dependencies]
+dask = [
+    { name = "dask" },
+    { name = "fugue", extra = ["dask"] },
+]
+ray = [
+    { name = "fugue", extra = ["ray"], marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
+    { name = "protobuf", marker = "python_full_version < '3.12'" },
+    { name = "ray", marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
+]
+spark = [
+    { name = "fugue", extra = ["spark"] },
+    { name = "pyspark", marker = "sys_platform == 'win32'" },
+]
+
 [package.dev-dependencies]
 all = [
     { name = "cmake" },
-    { name = "dask" },
     { name = "datasetsforecast" },
     { name = "fire" },
-    { name = "fugue", extra = ["dask", "spark"] },
-    { name = "fugue", extra = ["ray"], marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
     { name = "ninja" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -3301,18 +3313,13 @@ all = [
     { name = "protobuf" },
     { name = "pyarrow" },
     { name = "pybind11" },
-    { name = "pyspark", marker = "sys_platform == 'win32'" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "ray", marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
     { name = "scikit-build-core" },
     { name = "scikit-learn" },
+    { name = "statsforecast", extra = ["dask", "ray", "spark"] },
     { name = "supersmoother" },
     { name = "yfinance" },
-]
-dask = [
-    { name = "dask" },
-    { name = "fugue", extra = ["dask"] },
 ]
 dev = [
     { name = "cmake" },
@@ -3336,38 +3343,38 @@ dev = [
     { name = "xlrd" },
     { name = "yfinance" },
 ]
-ray = [
-    { name = "fugue", extra = ["ray"], marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
-    { name = "protobuf", marker = "python_full_version < '3.12'" },
-    { name = "ray", marker = "python_full_version < '3.15' and sys_platform != 'win32'" },
-]
-spark = [
-    { name = "fugue", extra = ["spark"] },
-    { name = "pyspark", marker = "sys_platform == 'win32'" },
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "cloudpickle" },
     { name = "coreforecast", specifier = ">=0.0.19" },
+    { name = "dask", marker = "extra == 'dask'" },
     { name = "fugue", specifier = ">=0.9.9.dev0" },
+    { name = "fugue", extras = ["dask"], marker = "extra == 'dask'", specifier = ">=0.9.9.dev0" },
+    { name = "fugue", extras = ["ray"], marker = "python_full_version < '3.15' and sys_platform != 'win32' and extra == 'ray'", specifier = ">=0.9.9.dev0" },
+    { name = "fugue", extras = ["spark"], marker = "extra == 'spark'", specifier = ">=0.9.9.dev0" },
     { name = "numpy", specifier = ">=1.21.6" },
     { name = "pandas" },
+    { name = "protobuf", marker = "python_full_version < '3.12' and extra == 'ray'", specifier = ">=5.29.6" },
+    { name = "pyspark", marker = "sys_platform == 'win32' and extra == 'spark'", specifier = "<4.1.0" },
+    { name = "ray", marker = "python_full_version < '3.15' and sys_platform != 'win32' and extra == 'ray'", specifier = ">=2.56.0" },
     { name = "scipy", specifier = ">=1.7.3" },
     { name = "statsmodels", specifier = ">=0.14.5" },
     { name = "threadpoolctl", specifier = ">=3" },
     { name = "tqdm" },
     { name = "utilsforecast", specifier = ">=0.2.17" },
 ]
+provides-extras = ["dask", "ray", "spark"]
 
 [package.metadata.requires-dev]
 all = [
     { name = "cmake" },
-    { name = "dask" },
     { name = "datasetsforecast" },
     { name = "fire" },
-    { name = "fugue", extras = ["dask", "spark"], specifier = ">=0.9.9.dev0" },
-    { name = "fugue", extras = ["ray"], marker = "python_full_version < '3.15' and sys_platform != 'win32'", specifier = ">=0.9.9.dev0" },
     { name = "ninja" },
     { name = "numpy" },
     { name = "pandas", extras = ["plot"] },
@@ -3379,18 +3386,13 @@ all = [
     { name = "protobuf", specifier = ">=5.29.6" },
     { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "pybind11" },
-    { name = "pyspark", marker = "sys_platform == 'win32'", specifier = "<4.1.0" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "ray", marker = "python_full_version < '3.15' and sys_platform != 'win32'", specifier = ">=2.56.0" },
     { name = "scikit-build-core", specifier = ">=1.0.3" },
     { name = "scikit-learn" },
+    { name = "statsforecast", extras = ["dask", "ray", "spark"] },
     { name = "supersmoother" },
     { name = "yfinance" },
-]
-dask = [
-    { name = "dask" },
-    { name = "fugue", extras = ["dask"], specifier = ">=0.9.9.dev0" },
 ]
 dev = [
     { name = "cmake" },
@@ -3414,14 +3416,9 @@ dev = [
     { name = "xlrd" },
     { name = "yfinance" },
 ]
-ray = [
-    { name = "fugue", extras = ["ray"], marker = "python_full_version < '3.15' and sys_platform != 'win32'", specifier = ">=0.9.9.dev0" },
-    { name = "protobuf", marker = "python_full_version < '3.12'", specifier = ">=5.29.6" },
-    { name = "ray", marker = "python_full_version < '3.15' and sys_platform != 'win32'", specifier = ">=2.56.0" },
-]
-spark = [
-    { name = "fugue", extras = ["spark"], specifier = ">=0.9.9.dev0" },
-    { name = "pyspark", marker = "sys_platform == 'win32'", specifier = "<4.1.0" },
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
 ]
 
 [[package]]

@@ -21,8 +21,6 @@ jobs:
     name: Run tests for cp${{ matrix.python-version }}-${{ matrix.os-platform[1] }}
     runs-on: ${{ matrix.os-platform[0] }}
     timeout-minutes: 60
-    env:
-      CIBW_BUILD_FRONTEND: build[uv]
     strategy:
       fail-fast: false
       matrix:
@@ -63,14 +61,9 @@ jobs:
           CIBW_TEST_SKIP: "*linux_aarch64"
           CIBW_BEFORE_TEST: >
             yum install -y java-17-openjdk
-          CIBW_TEST_COMMAND: >
-            if python -c "import sys; exit(0 if sys.version_info >= (3, 14) else 1)"; then
-              uv pip install pytest pytest-cov pandas dask "fugue[dask]>=0.9.9.dev0" "fugue[spark]>=0.9.9.dev0" "pyspark" &&
-              pytest --durations=0 {project}/action_files -k "not efficiency and not ray" --no-cov;
-            else
-              uv pip install pytest pytest-cov pandas dask "fugue[dask]>=0.9.9.dev0" "fugue[spark]>=0.9.9.dev0" "fugue[ray]>=0.9.9.dev0" "pyspark" &&
-              pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov;
-            fi
+          CIBW_TEST_EXTRAS: dask,ray,spark
+          CIBW_TEST_GROUPS: test
+          CIBW_TEST_COMMAND: pytest --durations=0 {project}/action_files -k "not efficiency" --no-cov
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: github.event_name == 'push'
