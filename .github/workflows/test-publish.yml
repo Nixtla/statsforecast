@@ -19,7 +19,7 @@ jobs:
             [ubuntu-latest, manylinux_x86_64],
             [ubuntu-latest, manylinux_aarch64],
             [windows-latest, win_amd64],
-            [macos-13, macosx_x86_64],
+            [macos-15, macosx_x86_64],
             [macos-15, macosx_arm64],
           ]
     steps:
