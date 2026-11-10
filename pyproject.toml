@@ -97,7 +97,7 @@ all = [
     "numpy",
     "pandas[plot]",
     "plotly",
-    "plotly-resampler ; python_version < '3.14'",
+    "plotly-resampler ; python_version < '3.15'",  # tsdownsample has no cp315 wheels yet
     "polars[numpy]",
     "pre-commit",
     "prophet",
