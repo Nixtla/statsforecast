@@ -1303,12 +1303,13 @@ def test_conformal_prediction(series):
     )
 
 
-def test_prediction_intervals_only_apply_to_call(series):
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_prediction_intervals_only_apply_to_call(series, n_jobs):
     # prediction_intervals passed to a method shouldn't stick to the models
     uids = series.index.unique()[:10]
     series_subset = series.query("unique_id in @uids")[["unique_id", "ds", "y"]]
     model = SeasonalNaive(season_length=7)
-    sf = StatsForecast(models=[model], freq="D", n_jobs=1)
+    sf = StatsForecast(models=[model], freq="D", n_jobs=n_jobs)
     intervals = ConformalIntervals(h=12)
 
     native = sf.forecast(df=series_subset, h=12, level=[80])
@@ -1344,10 +1345,22 @@ def test_prediction_intervals_only_apply_to_call(series):
     sf.fit(df=series_subset)
     pd.testing.assert_frame_equal(sf.predict(h=12, level=[80]), native)
 
+    native_fp = sf.fit_predict(df=series_subset, h=12, level=[80])
+    conformal_fp = sf.fit_predict(
+        df=series_subset, h=12, level=[80], prediction_intervals=intervals
+    )
+    assert not np.allclose(
+        native_fp["SeasonalNaive-lo-80"], conformal_fp["SeasonalNaive-lo-80"]
+    )
+    assert model.prediction_intervals is None
+    pd.testing.assert_frame_equal(
+        sf.fit_predict(df=series_subset, h=12, level=[80]), native_fp
+    )
+
     # intervals set on the model itself are left untouched
     own = ConformalIntervals(h=12, n_windows=3)
     model_with_own = SeasonalNaive(season_length=7, prediction_intervals=own)
-    sf = StatsForecast(models=[model_with_own], freq="D", n_jobs=1)
+    sf = StatsForecast(models=[model_with_own], freq="D", n_jobs=n_jobs)
     sf.forecast(df=series_subset, h=12, level=[80], prediction_intervals=intervals)
     assert model_with_own.prediction_intervals is own
 
