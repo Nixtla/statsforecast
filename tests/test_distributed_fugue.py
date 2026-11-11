@@ -1,5 +1,6 @@
 import sys
 
+import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import pytest
@@ -58,7 +59,6 @@ def assert_matches_local(dist, local, known_diffs):
 
 @pytest.fixture
 def df():
-    dd = pytest.importorskip("dask.dataframe")
     # Generate Synthetic Panel Data
     df = generate_series(10)
     df["unique_id"] = df["unique_id"].astype(str)
@@ -131,7 +131,6 @@ class ReturnX:
 
 @pytest.fixture
 def df_w_ex():
-    dd = pytest.importorskip("dask.dataframe")
     df_w_ex = pd.DataFrame(
         {
             "ds": np.hstack([np.arange(10), np.arange(10)]),
