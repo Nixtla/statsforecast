@@ -45,19 +45,19 @@ dependencies = [
     "scipy>=1.7.3",
     "statsmodels>=0.14.5",
     "tqdm",
-    "fugue>=0.9.9.dev0",
+    "fugue>=0.9.9",
     "utilsforecast>=0.2.17",
     "threadpoolctl>=3",
 ]
 
 [project.optional-dependencies]
-dask = ["dask", "fugue[dask]>=0.9.9.dev0"]
+dask = ["dask", "fugue[dask]>=0.9.9"]
 ray = [
-    "fugue[ray]>=0.9.9.dev0 ; sys_platform != 'win32' and python_version < '3.15'",
+    "fugue[ray]>=0.9.9 ; sys_platform != 'win32' and python_version < '3.15'",
     "protobuf>=5.29.6 ; python_version < '3.12'",
     "ray>=2.56.0 ; sys_platform != 'win32' and python_version < '3.15'",
 ]
-spark = ["fugue[spark]>=0.9.9.dev0", "pyspark<4.1.0; sys_platform == 'win32'"]
+spark = ["fugue[spark]>=0.9.9", "pyspark<4.1.0; sys_platform == 'win32'"]
 
 [project.urls]
 Homepage = "https://github.com/Nixtla/statsforecast/"
