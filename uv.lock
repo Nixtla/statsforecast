@@ -1077,7 +1077,7 @@ wheels = [
 
 [[package]]
 name = "fugue"
-version = "0.9.9.dev1"
+version = "0.9.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "adagio" },
@@ -1085,9 +1085,9 @@ dependencies = [
     { name = "pandas" },
     { name = "triad" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/3d/aea6b357599a5fa64973edbce46821fd1d423b3993592bd103c4e7acc66b/fugue-0.9.9.dev1.tar.gz", hash = "sha256:e2fa984018eec6edf6fb1677cef30f0ad79905876a492ce5ef182ef81adb1c40", size = 228816, upload-time = "2026-11-11T00:31:09.716Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/2d/375bca3869f2554506310f3e5a1dcf1a2f55429e77d7ff83baab0f027563/fugue-0.9.9.tar.gz", hash = "sha256:97f391e9616bcd40cad064dd682293b14206389d6aa81fd2ff3f7ffd9405f535", size = 228761, upload-time = "2026-11-12T00:38:47.346Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c5/26/6cc3381b243d25413e96d2e2cdd979a43cb8e0ee240d13c234ccf6faa2bd/fugue-0.9.9.dev1-py3-none-any.whl", hash = "sha256:a4f43ee08bbd62eb890541dc168762d502cda97d401b9207d9a6c2ada1534433", size = 281962, upload-time = "2026-11-11T00:31:08.057Z" },
+    { url = "https://files.pythonhosted.org/packages/99/34/f6dec8c7c50b51aa75478b4b7e9cae2f784ff60602f1758863997eed717b/fugue-0.9.9-py3-none-any.whl", hash = "sha256:2ee599d4a74afc9c8b6de81b30dfd52c0b1d48f6a0224fe478ccad258075630e", size = 281895, upload-time = "2026-11-12T00:38:45.84Z" },
 ]
 
 [package.optional-dependencies]
