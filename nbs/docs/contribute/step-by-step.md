@@ -52,9 +52,9 @@ Next, you'll need to set up a [Conda](https://docs.conda.io/en/latest/) environm
 
 First, ensure you have Anaconda or Miniconda installed on your system. Alternatively checkout these guides: [Anaconda](https://www.anaconda.com/), [Miniconda](https://docs.conda.io/en/latest/miniconda.html), and [Mamba](https://mamba.readthedocs.io/en/latest/).
 
-Then, you can create a new environment using `conda create -n nixtla-env python=3.10`. 
+Then, you can create a new environment using `conda create -n nixtla-env python=3.11`.
 
-You can also use mamba for creating the environment (mamba is faster than Conda) using `mamba create -n nixtla-env python=3.10`. 
+You can also use mamba for creating the environment (mamba is faster than Conda) using `mamba create -n nixtla-env python=3.11`.
 
 You can replace `nixtla-env` for something more meaningful to you. Eg. `statsforecast-env` or `mlforecast-env`. You can always check the list of environments in your system using `conda env list`.
 
@@ -163,7 +163,7 @@ You can use conda but we highly recommend using Mamba to speed up the creation o
 
 <img width="700" alt="image" src="https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/08482b00-9434-46f0-9452-c3f4920eca6d" />
 
-Create an empty environment named `mlforecast` with the following command: `mamba create -n mlforecast python=3.10`:
+Create an empty environment named `mlforecast` with the following command: `mamba create -n mlforecast python=3.11`:
 
 <img width="700" alt="image" src="https://github.com/Nixtla/how-to-contribute-nixtlaverse/assets/10517170/5e9032e8-3f5b-4a1c-93e7-3d390d5f73f1" />
 

@@ -437,8 +437,6 @@ def optimize_ets_target_fn(
     nmse,
     bounds,
     m,
-    pnames,
-    pnames2,
 ):
     alpha = par_noopt["alpha"] if np.isnan(par["alpha"]) else par["alpha"]
     if np.isnan(alpha):
@@ -526,8 +524,6 @@ def optimize_ets_dist_target_fn(
     nmse,
     bounds,
     m,
-    pnames,
-    pnames2,
     distribution,
 ):
     alpha = par_noopt["alpha"] if np.isnan(par["alpha"]) else par["alpha"]
@@ -654,14 +650,17 @@ def etsmodel(
     init_state = initstate(y, m, trendtype, seasontype)
     nstate = len(init_state)
     par_ = {key: val for key, val in par_.items() if not np.isnan(val)}
-    par = np.full(len(par_) + nstate, fill_value=np.nan)
-    par[: len(par_)] = list(par_.values())
-    par[len(par_) :] = init_state
+    par_opt = {
+        key: val for key, val in par_.items() if np.isnan(par_noopt[key])
+    }
+    par = np.full(len(par_opt) + nstate, fill_value=np.nan)
+    par[: len(par_opt)] = list(par_opt.values())
+    par[len(par_opt) :] = init_state
     lower_ = np.full_like(par, fill_value=-np.inf)
     upper_ = np.full_like(par, fill_value=np.inf)
     j = 0
     for i, pr in enumerate(["alpha", "beta", "gamma", "phi"]):
-        if pr in par_.keys():
+        if pr in par_opt:
             lower_[j] = lower[i]
             upper_[j] = upper[i]
             j += 1
@@ -698,8 +697,6 @@ def etsmodel(
             nmse=nmse,
             bounds=bounds,
             m=m,
-            pnames=par_.keys(),
-            pnames2=par_noopt.keys(),
         )
         fit_par = fred.x
         fit_par_dist = np.array([])
@@ -729,8 +726,6 @@ def etsmodel(
             nmse=nmse,
             bounds=bounds,
             m=m,
-            pnames=par_.keys(),
-            pnames2=par_noopt.keys(),
             distribution=distribution,
         )
         fit_par_ets = fred.x[:-n_dist] if n_dist > 0 else fred.x
@@ -747,21 +742,15 @@ def etsmodel(
                 - init_state[(1 + (trendtype != "N")) : nstate].sum(),
             ]
         )
-    j = 0
-    if not np.isnan(fit_par[j]):
-        alpha = fit_par[j]
-        j += 1
-    if trendtype != "N":
-        if not np.isnan(fit_par[j]):
-            beta = fit_par[j]
-        j += 1
-    if seasontype != "N":
-        if not np.isnan(fit_par[j]):
-            gamma = fit_par[j]
-        j += 1
-    if damped:
-        if not np.isnan(fit_par[j]):
-            phi = fit_par[j]
+    fitted_params = {
+        name: fit_par[i]
+        for i, name in enumerate(par_opt)
+        if not np.isnan(fit_par[i])
+    }
+    alpha = fitted_params.get("alpha", alpha)
+    beta = fitted_params.get("beta", beta)
+    gamma = fitted_params.get("gamma", gamma)
+    phi = fitted_params.get("phi", phi)
 
     amse, e, states, lik = pegelsresid_C(
         y,
@@ -807,7 +796,9 @@ def etsmodel(
     mse = amse[0]
     amse = np.mean(amse)
 
-    fit_par = np.concatenate([[alpha, beta, gamma, phi], init_state])
+    fit_par = np.concatenate(
+        [[alpha, beta, gamma, phi if damped else np.nan], init_state]
+    )
     if errortype == "A":
         fits = y - e
     else:
@@ -1366,8 +1357,8 @@ def _compute_pred_intervals(model, forecasts, h, level):
             beta = 0
         if math.isnan(gamma):
             gamma = 0
-        if math.isnan(phi):
-            phi = 0
+        if damped == "N":
+            phi = 1
 
         dist = model.get("distribution", "normal")
         params = error_params_from_model(model)
@@ -1481,14 +1472,12 @@ def simulate_ets(
     alpha = model["par"][0]
     beta = model["par"][1]
     gamma = model["par"][2]
-    phi = model["par"][3]
+    phi = 1 if model_type[3] == "N" else model["par"][3]
 
     if math.isnan(beta):
         beta = 0
     if math.isnan(gamma):
         gamma = 0
-    if math.isnan(phi):
-        phi = 0
 
     y_path = np.zeros([n_paths, h])
 

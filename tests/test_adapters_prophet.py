@@ -221,3 +221,8 @@ def test_predict_with_partial_training_and_test_dates(
     # Prediction intervals should contain the point forecasts.
     assert (result["yhat_lower"] <= result["yhat"]).all()
     assert (result["yhat"] <= result["yhat_upper"]).all()
+
+
+def test_autoarimaprophet_forwards_ssinit():
+    model = AutoARIMAProphet(SSinit="Rossignol2011")
+    assert model.arima.SSinit == "Rossignol2011"
