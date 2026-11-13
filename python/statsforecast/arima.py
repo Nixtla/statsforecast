@@ -33,6 +33,8 @@ from .distributions import (
     Distribution,
     _VALID_DISTRIBUTIONS,
     _quantiles,
+    dist_tail_from_params,
+    distribution_n_extra_params,
     error_params_from_model,
     extract_dist_params,
     guard_dist_tail,
@@ -267,6 +269,7 @@ def arima(
     tol=1e-8,
     optim_control={"maxiter": 100},
     distribution="normal",
+    fixed_dist=None,
 ):
     _check_distribution(distribution, method)
     _check_ssinit(SSinit)
@@ -688,7 +691,8 @@ def arima(
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
         if not orig_xreg:
             _, _, vt = np.linalg.svd(xreg[(~np.isnan(xreg)).all(1)])
-            xreg = np.matmul(xreg, vt)
+            v = vt.T
+            xreg = np.matmul(xreg, v)
         dx = x
         dxreg = xreg
         if order[1] > 0:
@@ -712,6 +716,10 @@ def arima(
     if init is not None:
         if len(init) != len(init0):
             raise ValueError(f"init should have length {len(init0)}")
+        if ncxreg and not orig_xreg:
+            init = np.array(init, dtype=np.float64)
+            ind = narma + np.arange(ncxreg)
+            init[ind] = np.matmul(vt, init[ind])
         # fixed coefficients don't use init, so it can't affect the fit there
         init = np.where(np.isnan(init) | ~mask, init0, init)
         if method == ArimaMethod.ML:
@@ -813,6 +821,26 @@ def arima(
         # objective actually optimized, plus the tail appended to the arma params
         # (empty for normal/laplace, which concentrate their scale out)
         ml_obj = armafn if distribution == Distribution.NORMAL else armafn_laplace
+        fixed_tail = None
+        if fixed_dist is not None and distribution_n_extra_params(distribution):
+            if not no_optim:
+                raise ValueError("fixed_dist requires all coefficients to be fixed")
+            fixed_tail = np.array(dist_tail_from_params(distribution, fixed_dist))
+
+        def minimize_tail(obj, init_ext):
+            if fixed_tail is None:
+                return minimize(
+                    obj,
+                    init_ext,
+                    args=ml_args,
+                    method=optim_method,
+                    tol=tol,
+                    options=optim_control,
+                )
+            return OptimResult(
+                True, 0, fixed_tail, obj(fixed_tail, *ml_args), np.array([])
+            )
+
         dist_tail_fit = np.array([])
         nu_t = None
         sigma2_t = None
@@ -828,14 +856,7 @@ def arima(
             init_sn = np.concatenate(
                 [init[mask], [log_sigma2_init, alpha_init]]
             )
-            res_sn = minimize(
-                armafn_skewnorm,
-                init_sn,
-                args=ml_args,
-                method=optim_method,
-                tol=tol,
-                options=optim_control,
-            )
+            res_sn = minimize_tail(armafn_skewnorm, init_sn)
             ml_obj = armafn_skewnorm
             dist_tail_fit = res_sn.x[n_arma_free:]
             _dp_sn = extract_dist_params("skew-normal", dist_tail_fit)
@@ -861,14 +882,7 @@ def arima(
             init_t = np.concatenate(
                 [init[mask], [log_sigma2_init, log_nu_m2_init]]
             )
-            res_t = minimize(
-                armafn_t,
-                init_t,
-                args=ml_args,
-                method=optim_method,
-                tol=tol,
-                options=optim_control,
-            )
+            res_t = minimize_tail(armafn_t, init_t)
             ml_obj = armafn_t
             dist_tail_fit = res_t.x[n_arma_free:]
             _dp_t = extract_dist_params("t", dist_tail_fit)
@@ -894,14 +908,7 @@ def arima(
             init_ged = np.concatenate(
                 [init[mask], [log_sigma_init, log_beta_init]]
             )
-            res_ged = minimize(
-                armafn_ged,
-                init_ged,
-                args=ml_args,
-                method=optim_method,
-                tol=tol,
-                options=optim_control,
-            )
+            res_ged = minimize_tail(armafn_ged, init_ged)
             ml_obj = armafn_ged
             dist_tail_fit = res_ged.x[n_arma_free:]
             _dp_ged = extract_dist_params("ged", dist_tail_fit)
@@ -1006,9 +1013,9 @@ def arima(
         nm += cn
         if not orig_xreg and (var is not None):
             ind = narma + np.arange(ncxreg)
-            coef[ind] = np.matmul(vt, coef[ind])
+            coef[ind] = np.matmul(v, coef[ind])
             A = np.identity(narma + ncxreg)
-            A[np.ix_(ind, ind)] = vt
+            A[np.ix_(ind, ind)] = v
             A = A[np.ix_(mask, mask)]
             var = np.matmul(np.matmul(A, var), A.T)
     # if no_optim:
@@ -1355,6 +1362,7 @@ def search_arima(
                 offset=offset,
                 allow_drift=allow_drift,
                 allow_mean=allow_mean,
+                period=period,
                 **kwargs,
             )
     return best_fit
@@ -1368,6 +1376,10 @@ def arima2(x, model, xreg, method):
     sigma2 = model["sigma2"]
     # models fitted before SSinit was stored used Gardner1980
     SSinit = model.get("SSinit", "Gardner1980")
+    distribution = model.get("distribution", Distribution.NORMAL)
+    fixed_dist = {
+        k: model[k] for k in ("sigma2", "nu", "alpha_dist", "beta_dist") if k in model
+    }
     if use_drift:
         n = len(model["x"])
         time = np.arange(0, (n + 1) / m, 1 / m)[:n].reshape(-1, 1)
@@ -1402,6 +1414,8 @@ def arima2(x, model, xreg, method):
             include_mean=use_intercept,
             method=method,
             SSinit=SSinit,
+            distribution=distribution,
+            fixed_dist=fixed_dist,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1412,6 +1426,8 @@ def arima2(x, model, xreg, method):
             include_mean=use_intercept,
             method=method,
             SSinit=SSinit,
+            distribution=distribution,
+            fixed_dist=fixed_dist,
             fixed=coefs,
             xreg=xreg if use_xreg else None,
         )
@@ -1422,6 +1438,8 @@ def arima2(x, model, xreg, method):
             include_mean=False,
             method=method,
             SSinit=SSinit,
+            distribution=distribution,
+            fixed_dist=fixed_dist,
         )
     n_coef = len(refit["coef"])
     refit["var_coef"] = np.zeros((n_coef, n_coef), dtype=np.float32)
@@ -2164,6 +2182,9 @@ def auto_arima_f(
 ):
     if approximation is None:
         approximation = len(x) > 150 or period > 12
+    if distribution != Distribution.NORMAL:
+        # the CSS approximation is only defined for normal innovations
+        approximation = False
     if x.ndim > 1:
         raise ValueError("auto_arima can only handle univariate time series")
     # myarima swallows ValueErrors, so validate before the search
@@ -2189,12 +2210,15 @@ def auto_arima_f(
     if is_constant(x):
         if np.isnan(x).all():
             raise ValueError("all data are missing")
+        const_method = ArimaMethod.CSS if distribution == Distribution.NORMAL else method
         if allowmean:
             fit = Arima(
                 x,
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
                 SSinit=SSinit,
+                method=const_method,
+                distribution=distribution,
                 fixed=np.array([np.mean(x)]),
             )
         else:
@@ -2203,6 +2227,8 @@ def auto_arima_f(
                 order=(0, 0, 0),
                 seasonal={"order": (0, 0, 0), "period": m},
                 SSinit=SSinit,
+                method=const_method,
+                distribution=distribution,
                 include_mean=False,
             )
         fit["x"] = origx
@@ -2300,6 +2326,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx / m)]),
                     method=method,
+                    distribution=distribution,
                 )
             elif D > 0 and d > 0:
                 fit = Arima(
@@ -2308,6 +2335,7 @@ def auto_arima_f(
                     seasonal={"order": (0, D, 0), "period": m},
                     SSinit=SSinit,
                     method=method,
+                    distribution=distribution,
                 )
             elif d == 2:
                 fit = Arima(
@@ -2316,6 +2344,7 @@ def auto_arima_f(
                     seasonal={"order": (0, 0, 0), "period": m},
                     SSinit=SSinit,
                     method=method,
+                    distribution=distribution,
                 )
             elif d < 2:
                 fit = Arima(
@@ -2326,6 +2355,7 @@ def auto_arima_f(
                     include_constant=True,
                     fixed=np.array([np.mean(dx)]),
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 raise ValueError(
@@ -2340,6 +2370,7 @@ def auto_arima_f(
                     SSinit=SSinit,
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
             else:
                 fit = Arima(
@@ -2349,6 +2380,7 @@ def auto_arima_f(
                     SSinit=SSinit,
                     xreg=xreg,
                     method=method,
+                    distribution=distribution,
                 )
         fit["x"] = origx
         fit["lambda"] = blambda
@@ -2409,6 +2441,7 @@ def auto_arima_f(
             allow_mean=allowmean,
             period=m,
             SSinit=SSinit,
+            distribution=distribution,
         )
         bestfit["lambda"] = blambda
         bestfit["biasadj"] = biasadj
