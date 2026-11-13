@@ -97,6 +97,12 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # pyspark 4.0 doesn't support the runner's default JDK (fails with "getSubject is not supported")
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Install uv
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
