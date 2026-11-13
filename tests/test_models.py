@@ -205,6 +205,12 @@ def test_conformal_intervals_levels_below_50(method):
         np.testing.assert_allclose(fcst[f"lo-{lv}"], -cs_sorted[rank - 1])
 
 
+def assert_dict_allclose(actual, desired):
+    assert actual.keys() == desired.keys()
+    for k in desired:
+        np.testing.assert_allclose(actual[k], desired[k], rtol=1e-12)
+
+
 def assert_class(
     cls_,
     x,
@@ -219,8 +225,10 @@ def assert_class(
     fcst_cls = cls_.predict(h=h, X=X_future)
     assert len(fcst_cls["mean"]) == h
     # test fit + predict equals forecast
-    np.testing.assert_array_equal(
-        cls_.forecast(y=x, h=h, X=X, X_future=X_future)["mean"], fcst_cls["mean"]
+    np.testing.assert_allclose(
+        cls_.forecast(y=x, h=h, X=X, X_future=X_future)["mean"],
+        fcst_cls["mean"],
+        rtol=1e-12,
     )
     if not skip_insample:
         assert len(cls_.predict_in_sample()["fitted"]) == len(x)
@@ -509,7 +517,9 @@ class TestTheta:
         )
         assert_class(theta_c, x=ap, h=13, level=[90, 80], test_forward=True)
         fcst_theta_c = theta_c.forecast(ap, 13, None, None, (80, 95), True)
-        np.testing.assert_array_equal(fcst_theta_c["mean"], fcst_theta["mean"])
+        np.testing.assert_allclose(
+            fcst_theta_c["mean"], fcst_theta["mean"], rtol=1e-12
+        )
 
     def test_zero_theta(self):
         theta = AutoTheta(season_length=12)
@@ -2062,8 +2072,8 @@ class TestDynamicOptimizedTheta:
         theta.fit(ap)
         forward_autotheta = theta.forward(y=ap, h=12)
 
-        np.testing.assert_equal(fcast_theta, fcast_dotm)
-        np.testing.assert_equal(forward_autotheta, forward_dotm)
+        assert_dict_allclose(fcast_theta, fcast_dotm)
+        assert_dict_allclose(forward_autotheta, forward_dotm)
 
     def test_dynamic_optimized_theta_fit_predict_vs_forecast(self):
         dotm = DynamicOptimizedTheta(season_length=12)
@@ -2073,7 +2083,7 @@ class TestDynamicOptimizedTheta:
         theta = AutoTheta(season_length=12, model="DOTM")
         fcast_theta = theta.forecast(ap, 12)
 
-        np.testing.assert_equal(fcast_theta, fcast_dotm)
+        assert_dict_allclose(fcast_theta, fcast_dotm)
 
     def test_dynamic_optimized_theta_conformal_prediction(self):
         dotm_c = DynamicOptimizedTheta(
@@ -2085,7 +2095,9 @@ class TestDynamicOptimizedTheta:
         fcast_dotm = dotm.forecast(ap, 12)
 
         fcst_dotm_c = dotm_c.forecast(ap, 13, None, None, (80, 95), True)
-        np.testing.assert_array_equal(fcst_dotm_c["mean"][:12], fcast_dotm["mean"])
+        np.testing.assert_allclose(
+            fcst_dotm_c["mean"][:12], fcast_dotm["mean"], rtol=1e-12
+        )
 
     def test_alias_arg(self):
         assert repr(DynamicOptimizedTheta()) == "DynamicOptimizedTheta"

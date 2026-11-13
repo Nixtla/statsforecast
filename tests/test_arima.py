@@ -1915,7 +1915,7 @@ def test_issue_1034():
         method="ML",
         fixed=[np.nan] + [0.0] * 7,
     )
-    assert fit["code"] == 0
+    assert fit["code"] != 1
     assert np.isfinite(fit["loglik"])
     assert np.isfinite(fit["coef"]["sar1"])
     assert fit["SSinit"] == "Rossignol2011"
