@@ -8,6 +8,7 @@ from scipy.stats import norm
 
 # from fastcore.test import test_close, test_eq, test_fail
 from statsforecast.garch import generate_garch_data
+from statsforecast.mstl import mstl
 from statsforecast.models import (
     _TS,
     ADIDA,
@@ -1958,6 +1959,54 @@ class TestMSTL:
         # test alias argument
         assert repr(MSTL(season_length=7)) == "MSTL"
         assert repr(MSTL(season_length=7, alias="MSTL_custom")) == "MSTL_custom"
+
+    @staticmethod
+    def _two_season_series(n=24 * 7 * 6):
+        rng = np.random.default_rng(0)
+        t = np.arange(n)
+        return (
+            50
+            + 0.01 * t
+            + 5 * np.sin(2 * np.pi * t / 24)
+            + 3 * np.sin(2 * np.pi * t / (24 * 7))
+            + rng.normal(size=n)
+        )
+
+    def test_s_window(self):
+        # https://github.com/Nixtla/statsforecast/issues/1322
+        y = self._two_season_series()
+        default = MSTL(season_length=24).fit(y).model_
+        model = MSTL(season_length=24, s_window=7).fit(y)
+        expected = mstl(y, period=24, s_window=[7])
+        pd.testing.assert_frame_equal(model.model_, expected)
+        assert not np.allclose(model.model_["seasonal"], default["seasonal"])
+        # predict, forecast and forward use the same window
+        np.testing.assert_allclose(
+            model.predict(h=12)["mean"],
+            MSTL(season_length=24, s_window=7).forecast(y=y, h=12)["mean"],
+        )
+        np.testing.assert_allclose(
+            model.predict(h=12)["mean"], model.forward(y=y, h=12)["mean"]
+        )
+
+    def test_s_window_multiple_periods_keeps_pairing(self):
+        y = self._two_season_series()
+        model = MSTL(season_length=[24 * 7, 24], s_window=[13, 7]).fit(y)
+        assert model.season_length == [24, 24 * 7]
+        assert model.s_window == [7, 13]
+        expected = mstl(y, period=[24, 24 * 7], s_window=[7, 13])
+        pd.testing.assert_frame_equal(model.model_, expected)
+
+    @pytest.mark.parametrize("key", ["seasonal", "period"])
+    def test_reserved_stl_kwargs(self, key):
+        y = self._two_season_series()
+        with pytest.raises(ValueError, match=f"`{key}` can't be set"):
+            MSTL(season_length=24, stl_kwargs={key: 7}).fit(y)
+
+    def test_s_window_wrong_length(self):
+        y = self._two_season_series()
+        with pytest.raises(ValueError, match="one value per seasonal period"):
+            mstl(y, period=[24, 24 * 7], s_window=[7, 9, 11])
 
 
 class TestOptimizedTheta:

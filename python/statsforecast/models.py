@@ -6049,8 +6049,11 @@ class MSTL(_TS):
     Args:
         season_length (Union[int, List[int]]): Number of observations per unit of time. For multiple seasonalities use a list.
         trend_forecaster (model, default=AutoETS(model='ZZN')): StatsForecast model used to forecast the trend component.
+        s_window (Optional[Union[int, List[int]]]): Length of the seasonal smoother passed to STL as `seasonal`.
+            A single odd integer is used for every seasonal period; a list sets one window per period, in the same order as `season_length`.
+            If None, defaults to 11, 15, 19, ... as in R's `forecast::mstl()`.
         stl_kwargs (dict): Extra arguments to pass to [`statsmodels.tsa.seasonal.STL`](https://www.statsmodels.org/dev/generated/statsmodels.tsa.seasonal.STL.html#statsmodels.tsa.seasonal.STL).
-            The `period` and `seasonal` arguments are reserved.
+            The `period` and `seasonal` arguments are reserved, use `season_length` and `s_window` instead.
         alias (str): Custom name of the model.
         prediction_intervals (Optional[ConformalIntervals]): Information to compute conformal prediction intervals.
             By default, the model will compute the native prediction intervals.
@@ -6063,6 +6066,7 @@ class MSTL(_TS):
         stl_kwargs: Optional[Dict] = None,
         alias: str = "MSTL",
         prediction_intervals: Optional[ConformalIntervals] = None,
+        s_window: Optional[Union[int, List[int]]] = None,
     ):
         # check ETS model doesnt have seasonality
         if repr(trend_forecaster) == "AutoETS":
@@ -6077,9 +6081,15 @@ class MSTL(_TS):
                 )
         if isinstance(season_length, int):
             season_length = [season_length]
+        elif s_window is not None and np.size(s_window) == len(season_length) > 1:
+            # keep each window paired with its period when sorting
+            order = np.argsort(season_length, kind="stable")
+            season_length = [season_length[i] for i in order]
+            s_window = [np.ravel(s_window)[i] for i in order]
         else:
             season_length = sorted(season_length)
         self.season_length = season_length
+        self.s_window = s_window
         self.trend_forecaster = trend_forecaster
         self.prediction_intervals = prediction_intervals
         self.alias = alias
@@ -6110,6 +6120,7 @@ class MSTL(_TS):
         self.model_ = mstl(
             x=y,
             period=self.season_length,
+            s_window=getattr(self, "s_window", None),
             stl_kwargs=self.stl_kwargs,
         )
         x_sa = self.model_[["trend", "remainder"]].sum(axis=1).values
@@ -6194,6 +6205,7 @@ class MSTL(_TS):
         model_ = mstl(
             x=y,
             period=self.season_length,
+            s_window=getattr(self, "s_window", None),
             stl_kwargs=self.stl_kwargs,
         )
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
@@ -6248,6 +6260,7 @@ class MSTL(_TS):
         model_ = mstl(
             x=y,
             period=self.season_length,
+            s_window=getattr(self, "s_window", None),
             stl_kwargs=self.stl_kwargs,
         )
         x_sa = model_[["trend", "remainder"]].sum(axis=1).values
