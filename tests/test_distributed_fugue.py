@@ -5,17 +5,30 @@ import numpy as np
 import pandas as pd
 import pytest
 
-if sys.platform != "win32":
-    import ray
-from dask.distributed import Client
-from fugue_dask import DaskExecutionEngine
-from pyspark.sql import SparkSession
 from statsforecast.core import StatsForecast
 from statsforecast.models import (
     AutoETS,
     Naive,
 )
 from statsforecast.utils import generate_series
+
+# Known dtype differences between fugue output and the local StatsForecast output
+# (fugue 0.9.9.dev0, dask 2026.8.0, ray 2.60.0; same under pandas 3.1.1 and 2.3.3):
+# - time columns (ds, cutoff) come back as timestamp[us][pyarrow]; local is
+#   datetime64[us] on pandas 3 and datetime64[ns] on pandas 2.
+# - model and target columns are float32 by FugueBackend's declared output schema;
+#   dask returns them as nullable Float32 and ray as float[pyarrow]. Local is float64.
+# - dask returns int64 / float32 inputs as nullable Int64 / Float32.
+# unique_id is str on both sides, but the str dtype differs by backend, so it is
+# always normalized.
+
+
+def assert_matches_local(dist, local, known_diffs):
+    """Compare with dtype checks, casting only the listed known-difference columns."""
+    dist = dist.astype({"unique_id": str, **{c: local[c].dtype for c in known_diffs}})
+    local = local.astype({"unique_id": str})
+    pd.testing.assert_frame_equal(dist, local, check_dtype=True)
+
 
 # n_series = 4
 # horizon = 7
@@ -61,6 +74,8 @@ def df():
 # # | eval: false
 # # fallback model
 class FailNaive:
+    uses_exog = False
+
     def forecast(self):
         pass
 
@@ -69,17 +84,19 @@ class FailNaive:
 
 
 def test_fallback_model(df):
-    sf = StatsForecast(models=[Naive()], freq="D", fallback_model=Naive())
-    dask_fcst = sf.forecast(df=df, h=12).compute()
-    fcst_stats = sf.forecast(df=df.compute(), h=12)
-    pd.testing.assert_frame_equal(
-        (
-            dask_fcst.sort_values(by=["unique_id", "ds"])
-            .reset_index(drop=True)
-            .astype({"ds": "datetime64[ns]", "Naive": "float32", "unique_id": "object"})
-        ),
-        fcst_stats.astype({"unique_id": "object", "Naive": "float32"}),
+    # FailNaive.forecast takes no arguments, so every series must go through the fallback.
+    sf = StatsForecast(models=[FailNaive()], freq="D", fallback_model=Naive())
+    dask_fcst = (
+        sf.forecast(df=df, h=12)
+        .compute()
+        .sort_values(["unique_id", "ds"])
+        .reset_index(drop=True)
     )
+    naive_fcst = StatsForecast(models=[Naive()], freq="D").forecast(
+        df=df.compute(), h=12
+    )
+    pd.testing.assert_frame_equal(sf.forecast(df=df.compute(), h=12), naive_fcst)
+    assert_matches_local(dask_fcst, naive_fcst, known_diffs=["ds", "Naive"])
 
 
 # sf = StatsForecast(models=[Naive()], freq="D")
@@ -151,8 +168,8 @@ def test_distribute_predictions(df):
         .sort_values(["unique_id", "ds"])
         .reset_index(drop=True)
     )
-    fcst_stats = sf.forecast(df=df.compute(), h=12).astype({"unique_id": str})
-    pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
+    fcst_stats = sf.forecast(df=df.compute(), h=12)
+    assert_matches_local(fcst_fugue, fcst_stats, known_diffs=["ds", "Naive"])
 
 
 def test_distribute_cv_predictions(df):
@@ -164,8 +181,10 @@ def test_distribute_cv_predictions(df):
         .sort_values(["unique_id", "ds", "cutoff"])
         .reset_index(drop=True)
     )
-    fcst_stats = sf.cross_validation(df=df.compute(), h=12).astype({"unique_id": str})
-    pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
+    fcst_stats = sf.cross_validation(df=df.compute(), h=12)
+    assert_matches_local(
+        fcst_fugue, fcst_stats, known_diffs=["ds", "cutoff", "y", "Naive"]
+    )
 
     # def test_cv_fallback_model():
     # cross validation fallback model
@@ -176,8 +195,10 @@ def test_distribute_cv_predictions(df):
         .sort_values(["unique_id", "ds", "cutoff"])
         .reset_index(drop=True)
     )
-    fcst_stats = sf.cross_validation(df=df.compute(), h=12).astype({"unique_id": str})
-    pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
+    fcst_stats = sf.cross_validation(df=df.compute(), h=12)
+    assert_matches_local(
+        fcst_fugue, fcst_stats, known_diffs=["ds", "cutoff", "y", "Naive"]
+    )
 
 
 # # | eval: false
@@ -192,6 +213,7 @@ def ray_session():
         yield None
         return
 
+    ray = pytest.importorskip("ray")
     if not ray.is_initialized():
         ray.init(
             num_cpus=2,
@@ -215,7 +237,7 @@ def ray_df(ray_session):
     # Generate Synthetic Panel Data.
     df = generate_series(5).reset_index()
     df["unique_id"] = df["unique_id"].astype(str)
-    df = ray.data.from_pandas(df).repartition(2)
+    df = ray_session.data.from_pandas(df).repartition(2)
     return df
 
 
@@ -233,8 +255,8 @@ def test_ray_cv_predictions(ray_df):
         .sort_values(["unique_id", "ds"])
         .reset_index(drop=True)
     )
-    fcst_stats = sf.forecast(df=df.to_pandas(), h=12).astype({"unique_id": str})
-    pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
+    fcst_stats = sf.forecast(df=df.to_pandas(), h=12)
+    assert_matches_local(fcst_fugue, fcst_stats, known_diffs=["ds", "Naive"])
 
     # Distribute cross-validation predictions.
     fcst = StatsForecast(models=[Naive()], freq="D")
@@ -244,8 +266,10 @@ def test_ray_cv_predictions(ray_df):
         .sort_values(["unique_id", "ds", "cutoff"])
         .reset_index(drop=True)
     )
-    fcst_stats = sf.cross_validation(df=df.to_pandas(), h=12).astype({"unique_id": str})
-    pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
+    fcst_stats = sf.cross_validation(df=df.to_pandas(), h=12)
+    assert_matches_local(
+        fcst_fugue, fcst_stats, known_diffs=["ds", "cutoff", "y", "Naive"]
+    )
 
     # # fallback model
     # class FailNaive:
@@ -272,15 +296,13 @@ def test_ray_cv_fallback_model(ray_df):
         .sort_values(["unique_id", "ds", "cutoff"])
         .reset_index(drop=True)
     )
-    fcst_stats = sf.cross_validation(df=df.to_pandas(), h=12).astype({"unique_id": str})
-    pd.testing.assert_frame_equal(fcst_fugue.astype(fcst_stats.dtypes), fcst_stats)
+    fcst_stats = sf.cross_validation(df=df.to_pandas(), h=12)
+    assert_matches_local(
+        fcst_fugue, fcst_stats, known_diffs=["ds", "cutoff", "y", "Naive"]
+    )
 
 
-@pytest.mark.skipif(
-    sys.platform == "win32",
-    reason="Ray is not available on Windows",
-)
-def test_ray_distributed_exogenous_regressors(df_w_ex):
+def test_dask_distributed_exogenous_regressors(df_w_ex):
     df_w_ex, train_df, test_df, xreg = df_w_ex
 
     # | eval: false
@@ -290,10 +312,8 @@ def test_ray_distributed_exogenous_regressors(df_w_ex):
     expected_res = (
         xreg.compute().rename(columns={"x": "ReturnX"}).sort_values(["unique_id", "ds"])
     )
-    # we expect strings for unique_id, and ds using exogenous
-    pd.testing.assert_frame_equal(
-        res.sort_values(["unique_id", "ds"])
-        .reset_index(drop=True)
-        .astype(expected_res.dtypes),
-        expected_res,
+    assert_matches_local(
+        res.sort_values(["unique_id", "ds"]).reset_index(drop=True),
+        expected_res.reset_index(drop=True),
+        known_diffs=["ds", "ReturnX"],
     )

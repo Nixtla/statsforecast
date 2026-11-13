@@ -99,6 +99,17 @@ def _check_ssinit(SSinit):
         raise ValueError(f"SSinit must be one of {tuple(_SS_INIT)}, got {SSinit!r}")
 
 
+def _check_distribution(distribution, method):
+    if distribution not in _VALID_DISTRIBUTIONS:
+        raise ValueError(
+            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
+        )
+    if distribution != Distribution.NORMAL and method == ArimaMethod.CSS:
+        raise ValueError(
+            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
+        )
+
+
 def _resolve_ssinit(SSinit, r):
     _check_ssinit(SSinit)
     if SSinit == "Gardner1980" and r > _GARDNER_MAX_R:
@@ -260,15 +271,8 @@ def arima(
     distribution="normal",
     fixed_dist=None,
 ):
-    if distribution not in _VALID_DISTRIBUTIONS:
-        raise ValueError(
-            f"distribution must be one of {_VALID_DISTRIBUTIONS}, got {distribution!r}"
-        )
+    _check_distribution(distribution, method)
     _check_ssinit(SSinit)
-    if distribution != Distribution.NORMAL and method == ArimaMethod.CSS:
-        raise ValueError(
-            "distribution != 'normal' is only supported for method='ML' or 'CSS-ML'"
-        )
 
     x = x.astype(np.float64, copy=True)
 
@@ -687,7 +691,8 @@ def arima(
         orig_xreg = (ncxreg == 1) | (~mask[narma + np.arange(ncxreg)]).any()
         if not orig_xreg:
             _, _, vt = np.linalg.svd(xreg[(~np.isnan(xreg)).all(1)])
-            xreg = np.matmul(xreg, vt)
+            v = vt.T
+            xreg = np.matmul(xreg, v)
         dx = x
         dxreg = xreg
         if order[1] > 0:
@@ -711,6 +716,10 @@ def arima(
     if init is not None:
         if len(init) != len(init0):
             raise ValueError(f"init should have length {len(init0)}")
+        if ncxreg and not orig_xreg:
+            init = np.array(init, dtype=np.float64)
+            ind = narma + np.arange(ncxreg)
+            init[ind] = np.matmul(vt, init[ind])
         # fixed coefficients don't use init, so it can't affect the fit there
         init = np.where(np.isnan(init) | ~mask, init0, init)
         if method == ArimaMethod.ML:
@@ -1004,9 +1013,9 @@ def arima(
         nm += cn
         if not orig_xreg and (var is not None):
             ind = narma + np.arange(ncxreg)
-            coef[ind] = np.matmul(vt, coef[ind])
+            coef[ind] = np.matmul(v, coef[ind])
             A = np.identity(narma + ncxreg)
-            A[np.ix_(ind, ind)] = vt
+            A[np.ix_(ind, ind)] = v
             A = A[np.ix_(mask, mask)]
             var = np.matmul(np.matmul(A, var), A.T)
     # if no_optim:
@@ -2180,6 +2189,7 @@ def auto_arima_f(
         raise ValueError("auto_arima can only handle univariate time series")
     # myarima swallows ValueErrors, so validate before the search
     _check_ssinit(SSinit)
+    _check_distribution(distribution, method)
     if test_kwargs is None:
         test_kwargs = {}
     if seasonal_test_kwargs is None:
