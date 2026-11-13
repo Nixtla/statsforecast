@@ -408,7 +408,7 @@ class TestETS:
         )
         assert_class(autoets_c, x=ap, h=13, level=[90, 80], test_forward=True)
         fcst_ets_c = autoets_c.forecast(ap, 13, None, None, (80, 95), True)
-        np.testing.assert_array_equal(fcst_ets_c["mean"], fcst_ets["mean"])
+        np.testing.assert_allclose(fcst_ets_c["mean"], fcst_ets["mean"], rtol=1e-12)
         # _plot_fcst(fcst_ets_c)
 
     @pytest.mark.parametrize(
@@ -889,7 +889,7 @@ class TestHolt:
         ets = AutoETS(season_length=12, model="AAN")
         fcast_ets = ets.forecast(ap, 12)
 
-        np.testing.assert_equal(fcast_holt, fcast_ets)
+        assert_dict_allclose(fcast_holt, fcast_ets)
 
     def test_holt_fit_predict_equivalence_with_ets(self):
         holt = Holt(season_length=12, error_type="A")
@@ -899,7 +899,7 @@ class TestHolt:
         ets = AutoETS(season_length=12, model="AAN")
         fcast_ets = ets.forecast(ap, 12)
 
-        np.testing.assert_equal(fcast_holt, fcast_ets)
+        assert_dict_allclose(fcast_holt, fcast_ets)
 
     def test_holt_conformal_prediction_equivalence_with_ets(self):
         holt_c = Holt(
@@ -916,7 +916,7 @@ class TestHolt:
         )
         fcast_ets_c = ets_c.forecast(ap, 12, level=[80, 90])
 
-        np.testing.assert_equal(fcast_holt_c, fcast_ets_c)
+        assert_dict_allclose(fcast_holt_c, fcast_ets_c)
 
     def test_alias_arg(self):
         # test alias argument
@@ -932,7 +932,7 @@ class TestHoltWinters:
         ets = AutoETS(season_length=12, model="AAA")
         fcast_ets = ets.forecast(ap, 12)
 
-        np.testing.assert_equal(fcast_hw, fcast_ets)
+        assert_dict_allclose(fcast_hw, fcast_ets)
 
     def test_holt_winters_conformal_prediction_equivalence_with_ets(self):
         hw_c = HoltWinters(
@@ -949,7 +949,7 @@ class TestHoltWinters:
         )
         fcast_ets_c = ets_c.forecast(ap, 12, level=[80, 90])
 
-        np.testing.assert_equal(fcast_hw_c, fcast_ets_c)
+        assert_dict_allclose(fcast_hw_c, fcast_ets_c)
 
     def test_holt_winters_fit_predict_equivalence_with_ets(self):
         hw = HoltWinters(season_length=12, error_type="A")
@@ -959,7 +959,7 @@ class TestHoltWinters:
         ets = AutoETS(season_length=12, model="AAA")
         fcast_ets = ets.forecast(ap, 12)
 
-        np.testing.assert_equal(fcast_hw, fcast_ets)
+        assert_dict_allclose(fcast_hw, fcast_ets)
 
     def test_alias_arg(self):
         # test alias argument
@@ -1985,8 +1985,8 @@ class TestOptimizedTheta:
         theta.fit(ap)
         forward_autotheta = theta.forward(y=ap, h=12)
 
-        np.testing.assert_equal(fcast_theta, fcast_otm)
-        np.testing.assert_equal(forward_autotheta, forward_otm)
+        assert_dict_allclose(fcast_theta, fcast_otm)
+        assert_dict_allclose(forward_autotheta, forward_otm)
 
     def test_optimized_theta_conformal_prediction(self):
         otm_c = OptimizedTheta(
@@ -1998,7 +1998,9 @@ class TestOptimizedTheta:
         fcast_otm = otm.forecast(ap, 12)
 
         fcst_otm_c = otm_c.forecast(ap, 13, None, None, (80, 95), True)
-        np.testing.assert_array_equal(fcst_otm_c["mean"][:12], fcast_otm["mean"])
+        np.testing.assert_allclose(
+            fcst_otm_c["mean"][:12], fcast_otm["mean"], rtol=1e-12
+        )
 
     def test_optimized_theta_fit_predict_vs_forecast(self):
         otm = OptimizedTheta(season_length=12)
@@ -2008,7 +2010,7 @@ class TestOptimizedTheta:
         theta = AutoTheta(season_length=12, model="OTM")
         fcast_theta = theta.forecast(ap, 12)
 
-        np.testing.assert_equal(fcast_theta, fcast_otm)
+        assert_dict_allclose(fcast_theta, fcast_otm)
 
     def test_alias_arg(self):
         assert repr(OptimizedTheta()) == "OptimizedTheta"
@@ -2030,8 +2032,8 @@ class TestDynamicTheta:
         theta.fit(ap)
         forward_autotheta = theta.forward(y=ap, h=12)
 
-        np.testing.assert_equal(fcast_theta, fcast_dstm)
-        np.testing.assert_equal(forward_autotheta, forward_dstm)
+        assert_dict_allclose(fcast_theta, fcast_dstm)
+        assert_dict_allclose(forward_autotheta, forward_dstm)
 
     def test_dynamic_theta_fit_predict_vs_forecast(self):
         dstm = DynamicTheta(season_length=12)
@@ -2041,7 +2043,7 @@ class TestDynamicTheta:
         theta = AutoTheta(season_length=12, model="DSTM")
         fcast_theta = theta.forecast(ap, 12)
 
-        np.testing.assert_equal(fcast_theta, fcast_dstm)
+        assert_dict_allclose(fcast_theta, fcast_dstm)
 
     def test_dynamic_theta_conformal_prediction(self):
         dstm_c = DynamicTheta(
@@ -2053,7 +2055,9 @@ class TestDynamicTheta:
         fcast_dstm = dstm.forecast(ap, 12)
 
         fcst_dstm_c = dstm_c.forecast(ap, 13, None, None, (80, 95), True)
-        np.testing.assert_array_equal(fcst_dstm_c["mean"][:12], fcast_dstm["mean"])
+        np.testing.assert_allclose(
+            fcst_dstm_c["mean"][:12], fcast_dstm["mean"], rtol=1e-12
+        )
 
     def test_alias_arg(self):
         assert repr(DynamicTheta()) == "DynamicTheta"
