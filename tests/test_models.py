@@ -826,6 +826,28 @@ class TestSeasonalES:
             == "SeasESOpt_custom"
         )
 
+    @pytest.mark.parametrize(
+        "model",
+        [
+            SeasonalExponentialSmoothing(season_length=12, alpha=0.1),
+            SeasonalExponentialSmoothingOptimized(season_length=12),
+        ],
+    )
+    def test_seasonal_es_shorter_than_season_length(self, model):
+        # less than one season of data gives all-NaN outputs, as in SeasonalNaive
+        y = ap[:8]
+        h = 12
+        fcst = model.forecast(y, h=h, level=[80], fitted=True)
+        for key in ["mean", "lo-80", "hi-80"]:
+            np.testing.assert_array_equal(fcst[key], np.full(h, np.nan))
+        np.testing.assert_array_equal(fcst["fitted"], np.full(y.size, np.nan))
+
+        model.fit(y)
+        np.testing.assert_array_equal(model.predict(h=h)["mean"], np.full(h, np.nan))
+        np.testing.assert_array_equal(
+            model.predict_in_sample()["fitted"], np.full(y.size, np.nan)
+        )
+
 
 @pytest.mark.parametrize(
     "model",

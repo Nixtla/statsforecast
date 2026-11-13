@@ -2790,7 +2790,13 @@ def _seasonal_exponential_smoothing(
 ) -> Dict[str, np.ndarray]:
     n = y.size
     if n < season_length:
-        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
+        fcst = {
+            "mean": np.full(h, np.nan, dtype=y.dtype),
+            "alpha": np.full(season_length, alpha, dtype=y.dtype),
+        }
+        if fitted:
+            fcst["fitted"] = np.full_like(y, np.nan)
+        return fcst
     season_vals = np.empty(season_length, dtype=y.dtype)
     fitted_vals = np.full_like(y, np.nan)
     alphas = np.empty(season_length, dtype=y.dtype)
@@ -3036,7 +3042,13 @@ def _seasonal_ses_optimized(
 ):
     n = y.size
     if n < season_length:
-        return {"mean": np.full(h, np.nan, dtype=y.dtype)}
+        fcst = {
+            "mean": np.full(h, np.nan, dtype=y.dtype),
+            "alpha": np.full(season_length, np.nan, dtype=y.dtype),
+        }
+        if fitted:
+            fcst["fitted"] = np.full_like(y, np.nan)
+        return fcst
     season_vals = np.empty(season_length, dtype=y.dtype)
     fitted_vals = np.full_like(y, np.nan)
     alphas = np.empty(season_length, dtype=y.dtype)
