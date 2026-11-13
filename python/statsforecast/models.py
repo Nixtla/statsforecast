@@ -2510,13 +2510,18 @@ class SimpleExponentialSmoothing(_TS):
 
         return paths
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         r"""Access fitted SimpleExponentialSmoothing insample predictions.
+
+        Args:
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
 
         Returns:
             dict: Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
     def forecast(
@@ -2568,6 +2573,10 @@ class SimpleExponentialSmoothing(_TS):
                 )
                 pred_int = _calculate_intervals(res, level, h, sigmah)
                 res.update(pred_int)
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                res = _add_fitted_pi(res=res, se=np.asarray(sigma), level=level)
         if not fitted:
             res.pop("fitted", None)
         return res
@@ -2720,13 +2729,18 @@ class SimpleExponentialSmoothingOptimized(_TS):
 
         return paths
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         r"""Access fitted SimpleExponentialSmoothingOptimized insample predictions.
+
+        Args:
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
 
         Returns:
             dict: Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
     def forecast(
@@ -2776,6 +2790,10 @@ class SimpleExponentialSmoothingOptimized(_TS):
                 sigmah = sigma * np.sqrt(1 + (steps - 1) * alpha**2)
                 pred_int = _calculate_intervals(res, level, h, sigmah)
                 res.update(pred_int)
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(residuals) - 1)
+                res = _add_fitted_pi(res=res, se=np.asarray(sigma), level=level)
         if not fitted:
             res.pop("fitted", None)
         return res
@@ -2961,13 +2979,18 @@ class SeasonalExponentialSmoothing(_TS):
 
         return paths
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         r"""Access fitted SeasonalExponentialSmoothing insample predictions.
+
+        Args:
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
 
         Returns:
             dict: Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
     def forecast(
@@ -3023,6 +3046,10 @@ class SeasonalExponentialSmoothing(_TS):
                 sigmah = sigma * np.sqrt(1 + (k - 1) * self.alpha**2)
                 pred_int = _calculate_intervals(res, level, h, sigmah)
                 res.update(pred_int)
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(y) - self.season_length)
+                res = _add_fitted_pi(res=res, se=np.asarray(sigma), level=level)
         if not fitted:
             res.pop("fitted", None)
         return res
@@ -3204,13 +3231,18 @@ class SeasonalExponentialSmoothingOptimized(_TS):
 
         return paths
 
-    def predict_in_sample(self):
+    def predict_in_sample(self, level: Optional[List[int]] = None):
         r"""Access fitted SeasonalExponentialSmoothingOptimized insample predictions.
+
+        Args:
+            level (List[float]): Confidence levels (0-100) for prediction intervals.
 
         Returns:
             dict: Dictionary with entries `fitted` for point predictions.
         """
         res = {"fitted": self.model_["fitted"]}
+        if level is not None:
+            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
         return res
 
     def forecast(
@@ -3265,6 +3297,10 @@ class SeasonalExponentialSmoothingOptimized(_TS):
                 sigmah = sigma * np.sqrt(1 + (k - 1) * alpha**2)
                 pred_int = _calculate_intervals(res, level, h, sigmah)
                 res.update(pred_int)
+            if fitted:
+                residuals = y - res["fitted"]
+                sigma = _calculate_sigma(residuals, len(y) - self.season_length)
+                res = _add_fitted_pi(res=res, se=np.asarray(sigma), level=level)
         if not fitted:
             res.pop("fitted", None)
         return res
