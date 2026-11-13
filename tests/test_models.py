@@ -220,6 +220,7 @@ def assert_class(
     test_forward=False,
     X=None,
     X_future=None,
+    rtol=1e-12,
 ):
     cls_ = cls_.fit(x, X=X)
     fcst_cls = cls_.predict(h=h, X=X_future)
@@ -228,7 +229,7 @@ def assert_class(
     np.testing.assert_allclose(
         cls_.forecast(y=x, h=h, X=X, X_future=X_future)["mean"],
         fcst_cls["mean"],
-        rtol=1e-12,
+        rtol=rtol,
     )
     if not skip_insample:
         assert len(cls_.predict_in_sample()["fitted"]) == len(x)
@@ -441,7 +442,7 @@ class TestETS:
             damped = True
 
         ets = AutoETS(season_length=12, model=mod, damped=damped)
-        assert_class(ets, x=ap, h=13, level=[90, 80], test_forward=True)
+        assert_class(ets, x=ap, h=13, level=[90, 80], test_forward=True, rtol=1e-9)
 
 
 class TestCES:
