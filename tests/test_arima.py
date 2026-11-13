@@ -994,6 +994,13 @@ def test_auto_arima_distribution_css_raises(distribution):
         AutoARIMAModel(method="CSS", distribution=distribution).fit(ap)
 
 
+def test_auto_arima_distribution_approximation_fits():
+    """approximation=True searches with CSS but refits with CSS-ML, so non-normal must still fit."""
+    model = AutoARIMAModel(season_length=12, approximation=True, distribution="t").fit(ap)
+    assert "coef" in model.model_
+    assert np.isfinite(model.predict(h=3)["mean"]).all()
+
+
 def test_distribution_invalid_name_raises():
     """Unknown distribution name raises ValueError."""
     rng = np.random.default_rng(5)
