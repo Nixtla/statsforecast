@@ -225,14 +225,17 @@ def assert_class(
     if not skip_insample:
         assert len(cls_.predict_in_sample()["fitted"]) == len(x)
         assert isinstance(cls_.predict_in_sample()["fitted"], np.ndarray)
-        np.testing.assert_array_equal(
+        # allclose: Theta init_state is alignment-dependent (#1352)
+        np.testing.assert_allclose(
             cls_.forecast(y=x, h=h, X=X, X_future=X_future, fitted=True)["fitted"],
             cls_.predict_in_sample()["fitted"],
+            rtol=1e-12,
         )
         if test_forward:
-            np.testing.assert_array_equal(
+            np.testing.assert_allclose(
                 cls_.forward(y=x, h=h, X=X, X_future=X_future, fitted=True)["fitted"],
                 cls_.predict_in_sample()["fitted"],
+                rtol=1e-12,
             )
 
     if test_forward:
