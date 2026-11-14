@@ -1595,6 +1595,7 @@ class AutoTheta(_TS):
             model=self.model,
             decomposition_type=self.decomposition_type,
             theta=self.theta,
+            distribution=self.distribution,
         )
         res = forecast_theta(mod, h, level=level)
         if self.prediction_intervals is not None:
