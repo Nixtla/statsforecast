@@ -87,6 +87,7 @@ class FugueBackend(ParallelBackend):
         h,
         level,
         prediction_intervals,
+        input_size,
         id_col,
         time_col,
         target_col,
@@ -105,6 +106,7 @@ class FugueBackend(ParallelBackend):
             level=level,
             fitted=fitted,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
@@ -121,6 +123,7 @@ class FugueBackend(ParallelBackend):
         h,
         level,
         prediction_intervals,
+        input_size,
         id_col,
         time_col,
         target_col,
@@ -135,6 +138,7 @@ class FugueBackend(ParallelBackend):
             level=level,
             fitted=False,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
@@ -151,6 +155,7 @@ class FugueBackend(ParallelBackend):
         h,
         level,
         prediction_intervals,
+        input_size,
         id_col,
         time_col,
         target_col,
@@ -165,6 +170,7 @@ class FugueBackend(ParallelBackend):
             level=level,
             fitted=True,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
@@ -183,6 +189,7 @@ class FugueBackend(ParallelBackend):
         h,
         level,
         prediction_intervals,
+        input_size,
         id_col,
         time_col,
         target_col,
@@ -197,6 +204,7 @@ class FugueBackend(ParallelBackend):
             level=level,
             fitted=False,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
@@ -214,6 +222,7 @@ class FugueBackend(ParallelBackend):
         h,
         level,
         prediction_intervals,
+        input_size,
         id_col,
         time_col,
         target_col,
@@ -228,6 +237,7 @@ class FugueBackend(ParallelBackend):
             level=level,
             fitted=True,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
@@ -293,6 +303,7 @@ class FugueBackend(ParallelBackend):
         id_col: str,
         time_col: str,
         target_col: str,
+        input_size: Optional[int] = None,
     ) -> Any:
         """Memory Efficient core.StatsForecast predictions with FugueBackend.
 
@@ -312,6 +323,7 @@ class FugueBackend(ParallelBackend):
             id_col (str, optional): Name of the column containing unique identifiers for each time series. Defaults to 'unique_id'.
             time_col (str, optional): Name of the column containing timestamps or time indices. Values can be timestamps (datetime) or integers. Defaults to 'ds'.
             target_col (str, optional): Name of the column containing the target variable to forecast. Defaults to 'y'.
+            input_size (int, optional): Maximum number of training observations to use for each series. If None, uses all available history. If specified, only the most recent `input_size` observations of each series are used.
 
         Returns:
             pandas.DataFrame: DataFrame with `models` columns for point predictions and probabilistic predictions for all fitted `models`
@@ -341,6 +353,7 @@ class FugueBackend(ParallelBackend):
             h=h,
             level=level,
             prediction_intervals=prediction_intervals,
+            input_size=input_size,
             id_col=id_col,
             time_col=time_col,
             target_col=target_col,
