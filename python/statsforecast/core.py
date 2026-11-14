@@ -751,7 +751,14 @@ class _StatsForecast:
             )
         X = X[[self.id_col, self.time_col] + self._exog]
         processed = ufp.process_df(X, self.id_col, self.time_col, None)
-        return GroupedArray(processed.data, processed.indptr), level
+        ga = GroupedArray(processed.data, processed.indptr)
+        train_uids = np.asarray(self.uids)
+        x_uids = np.asarray(processed.uids)
+        if not np.array_equal(x_uids, train_uids):
+            idxs = pd.Index(x_uids).get_indexer(train_uids)
+            if (idxs != -1).all():
+                ga = ga.take(idxs)
+        return ga, level
 
     def _validate_exog(self, X_df: Optional[DataFrame] = None) -> None:
         if not any(m.uses_exog for m in self.models) or not self._exog:
