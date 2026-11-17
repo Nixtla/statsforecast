@@ -898,6 +898,26 @@ def test_ses_fitted_prediction_intervals_single_observation(model):
     fcst = model.forecast(np.array([1.0]), h=2, level=[80], fitted=True)
     assert np.isnan(fcst["fitted-lo-80"]).all()
     assert np.isnan(fcst["fitted-hi-80"]).all()
+    in_sample = model.fit(np.array([1.0])).predict_in_sample(level=[80])
+    assert np.isnan(in_sample["fitted-lo-80"]).all()
+    assert np.isnan(in_sample["fitted-hi-80"]).all()
+
+
+@pytest.mark.parametrize(
+    "model",
+    [
+        SeasonalExponentialSmoothing(season_length=4, alpha=0.1),
+        SeasonalExponentialSmoothingOptimized(season_length=4),
+    ],
+)
+def test_seasonal_ses_fitted_prediction_intervals_single_season(model):
+    # n == season_length leaves no degrees of freedom, so the intervals are NaN
+    y = np.arange(4.0)
+    fcst = model.forecast(y, h=4, level=[80], fitted=True)
+    in_sample = model.fit(y).predict_in_sample(level=[80])
+    for key in ["fitted-lo-80", "fitted-hi-80"]:
+        assert np.isnan(fcst[key]).all()
+        assert np.isnan(in_sample[key]).all()
 
 
 class TestHolt:

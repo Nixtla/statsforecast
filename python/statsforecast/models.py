@@ -2521,7 +2521,9 @@ class SimpleExponentialSmoothing(_TS):
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            res = _add_fitted_pi(
+                res=res, se=np.asarray(self.model_["sigma"]), level=level
+            )
         return res
 
     def forecast(
@@ -2740,7 +2742,9 @@ class SimpleExponentialSmoothingOptimized(_TS):
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            res = _add_fitted_pi(
+                res=res, se=np.asarray(self.model_["sigma"]), level=level
+            )
         return res
 
     def forecast(
@@ -2990,7 +2994,9 @@ class SeasonalExponentialSmoothing(_TS):
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            res = _add_fitted_pi(
+                res=res, se=np.asarray(self.model_["sigma"]), level=level
+            )
         return res
 
     def forecast(
@@ -3242,7 +3248,9 @@ class SeasonalExponentialSmoothingOptimized(_TS):
         """
         res = {"fitted": self.model_["fitted"]}
         if level is not None:
-            res = _add_fitted_pi(res=res, se=self.model_["sigma"], level=level)
+            res = _add_fitted_pi(
+                res=res, se=np.asarray(self.model_["sigma"]), level=level
+            )
         return res
 
     def forecast(
