@@ -320,7 +320,8 @@ def _calculate_intervals(out, level, h, sigmah, distribution="normal", dist_para
 
 def _calculate_sigma(residuals, n):
     if n > 0:
-        sigma = np.nansum(residuals**2)
+        # Square in float64 to retain finite float32 residual scales.
+        sigma = np.nansum(np.square(residuals, dtype=np.float64))
         sigma = sigma / n
         sigma = np.sqrt(sigma)
     else:
