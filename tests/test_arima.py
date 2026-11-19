@@ -1087,7 +1087,7 @@ def test_distribution_forward_arima(distribution, order, seasonal):
         assert refit[key] == pytest.approx(fit[key])
 
 
-@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged"])
+@pytest.mark.parametrize("distribution", ["t", "skew-normal", "ged", "laplace"])
 def test_distribution_forward_arima_keeps_params(distribution, monkeypatch):
     fit = Arima(ap[:120], order=(1, 1, 1), method="ML", distribution=distribution)
     coefs = np.array(list(fit["coef"].values()))
@@ -1104,8 +1104,20 @@ def test_distribution_forward_arima_keeps_params(distribution, monkeypatch):
     refit = forward_arima(fit, ap, method="ML")
     key = _DIST_PARAM_KEYS[distribution]
     assert refit["sigma2"] == fit["sigma2"]
-    assert refit[key] == pytest.approx(fit[key])
+    if key is not None:
+        assert refit[key] == pytest.approx(fit[key])
     assert refit["loglik"] < reestimated["loglik"]
+
+
+def test_laplace_forward_arima_scores_the_stored_scale():
+    # Laplace log-likelihood at scale b against the profiled scale b_hat on the
+    # same data: l(b) - l(b_hat) = -n * (log(b / b_hat) + b_hat / b - 1)
+    fit = Arima(ap, order=(1, 1, 1), method="ML", distribution="laplace")
+    doubled = {**fit, "sigma2": 4.0 * fit["sigma2"]}  # b = 2 * b_hat
+    refit = forward_arima(doubled, ap, method="ML")
+    expected = fit["loglik"] - fit["nobs"] * (math.log(2.0) - 0.5)
+    assert refit["loglik"] == pytest.approx(expected, rel=1e-10)
+    assert refit["sigma2"] == doubled["sigma2"]
 
 
 @pytest.mark.parametrize("distribution", list(_DIST_PARAM_KEYS))

@@ -284,6 +284,8 @@ def arima(
     # set before ML when transform_pars is off: BFGS can't recover from the
     # NaN likelihood outside the stationary region, so keep it inside
     stationary_ml = False
+    # laplace scale b kept fixed on a refit (from fixed_dist); None profiles it out
+    laplace_scale = None
 
     def upARIMA(mod, phi, theta):
         p = len(phi)
@@ -384,7 +386,16 @@ def arima(
         if sum_abs <= 0:
             return math.nan
         b_hat = sum_abs / res[2]
-        return math.log(b_hat) + 0.5 * res[1] / res[2]
+        if laplace_scale is None:
+            return math.log(b_hat) + 0.5 * res[1] / res[2]
+        # -ℓ/n at the fixed scale, less the same constant as the profiled form
+        # above, so both agree when laplace_scale == b_hat
+        return (
+            math.log(laplace_scale)
+            + 0.5 * res[1] / res[2]
+            + b_hat / laplace_scale
+            - 1.0
+        )
 
     def armafn_t(p_ext, x, trans, coef, mask, arma, mod, ncxreg, xreg, narma):
         # p_ext = [arma_free..., log_sigma2, log_nu_m2]
@@ -826,6 +837,15 @@ def arima(
             if not no_optim:
                 raise ValueError("fixed_dist requires all coefficients to be fixed")
             fixed_tail = np.array(dist_tail_from_params(distribution, fixed_dist))
+        elif (
+            fixed_dist is not None
+            and distribution == Distribution.LAPLACE
+            and "sigma2" in fixed_dist
+        ):
+            # laplace has no tail to pin, so keep its scale fixed directly
+            if not no_optim:
+                raise ValueError("fixed_dist requires all coefficients to be fixed")
+            laplace_scale = math.sqrt(fixed_dist["sigma2"] / 2.0)
 
         def minimize_tail(obj, init_ext):
             if fixed_tail is None:
@@ -978,8 +998,11 @@ def arima(
         if distribution == Distribution.NORMAL:
             sigma2 = val[0] / n_used
         elif distribution == Distribution.LAPLACE:
-            b_hat = np.nansum(np.abs(val[1])) / n_used
-            sigma2 = 2.0 * b_hat**2
+            if laplace_scale is None:
+                b_hat = np.nansum(np.abs(val[1])) / n_used
+                sigma2 = 2.0 * b_hat**2
+            else:
+                sigma2 = 2.0 * laplace_scale**2
         elif distribution == Distribution.T:
             sigma2 = sigma2_t
         elif distribution == Distribution.SKEW_NORMAL:
