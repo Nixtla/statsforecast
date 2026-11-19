@@ -845,6 +845,25 @@ def test_fcst_fallback_model(series, n_jobs=1):
     assert_raises_with_message(fitted_fcst.forecast, "", df=series, h=14)
 
 
+@pytest.mark.parametrize(
+    "prediction_intervals", [None, ConformalIntervals(h=12, n_windows=2)]
+)
+def test_ses_forecast_fitted_values_with_level(prediction_intervals):
+    model = SeasonalExponentialSmoothing(
+        season_length=12, alpha=0.1, prediction_intervals=prediction_intervals
+    )
+    sf = StatsForecast(models=[model], freq="MS")
+    sf.forecast(df=ap_df, h=12, level=[80], fitted=True)
+    fitted = sf.forecast_fitted_values()
+    expected = model.forecast(ap, h=12, level=[80], fitted=True)
+    for col, key in [
+        ("SeasonalES", "fitted"),
+        ("SeasonalES-lo-80", "fitted-lo-80"),
+        ("SeasonalES-hi-80", "fitted-hi-80"),
+    ]:
+        np.testing.assert_allclose(fitted[col], expected[key], rtol=1e-6)
+
+
 # show_doc(
 #     _StatsForecast.cross_validation,
 #     title_level=2,
