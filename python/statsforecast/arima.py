@@ -8,6 +8,9 @@ __all__ = [
     "ARIMASummary",
     "AutoARIMA",
     "simulate_arima",
+    "arroots",
+    "maroots",
+    "plot_arima_roots",
 ]
 
 
@@ -1069,6 +1072,142 @@ def checkarima(obj):
     return any(np.isnan(np.sqrt(np.diag(obj["var_coef"]))))
 
 
+def _lag_poly_roots(parvec, sign=1):
+    """Compute the roots of the lag polynomial 1 + sign * (parvec[0] z + parvec[1] z^2 + ...).
+
+    Trailing coefficients with absolute value below 1e-8 are dropped first,
+    since `make_arima` pads `theta` with zeros, which would otherwise show up
+    as spurious roots.
+
+    Args:
+        parvec (np.ndarray): Expanded polynomial coefficients, such as
+            `model["model"]["phi"]` or `model["model"]["theta"]`.
+        sign (int, optional): -1 for the AR polynomial (`phi`) and 1 for the
+            MA polynomial (`theta`). Defaults to 1.
+
+    Returns:
+        np.ndarray: The roots, which are complex unless all of them are real.
+            Empty if every coefficient is (near) zero.
+    """
+    k = abs(parvec) > 1e-8
+    if k.sum() > 0:
+        last_nonzero = np.max(np.where(k)[0])
+        parvec = parvec[: (last_nonzero + 1)]
+        return np.polynomial.polynomial.polyroots(np.append(1, sign * parvec))
+    return np.array([])
+
+
+def arroots(model):
+    """Inverse roots of the AR polynomial of a fitted ARIMA model.
+
+    Seasonal AR terms are included, since they are part of the expanded
+    polynomial `model["model"]["phi"]`. The AR part is stationary when every
+    inverse root lies strictly inside the unit circle.
+
+    Args:
+        model (dict): Fitted ARIMA model, e.g. the `model_` attribute of a
+            fitted `statsforecast.models.ARIMA` or `AutoARIMA`.
+
+    Returns:
+        numpy.ndarray: Complex array with the inverse roots; `abs()` gives
+            their modulus. Empty if the model has no AR terms.
+    """
+    return 1 / np.asarray(_lag_poly_roots(model["model"]["phi"], sign=-1), dtype=complex)
+
+
+def maroots(model):
+    """Inverse roots of the MA polynomial of a fitted ARIMA model.
+
+    Seasonal MA terms are included, since they are part of the expanded
+    polynomial `model["model"]["theta"]`. The MA part is invertible when every
+    inverse root lies strictly inside the unit circle.
+
+    Args:
+        model (dict): Fitted ARIMA model, e.g. the `model_` attribute of a
+            fitted `statsforecast.models.ARIMA` or `AutoARIMA`.
+
+    Returns:
+        numpy.ndarray: Complex array with the inverse roots; `abs()` gives
+            their modulus. Empty if the model has no MA terms.
+    """
+    return 1 / np.asarray(_lag_poly_roots(model["model"]["theta"]), dtype=complex)
+
+
+def plot_arima_roots(model):
+    """Plot the inverse AR and MA roots of a fitted ARIMA model on the unit circle.
+
+    Points inside the unit circle mean the AR part is stationary and the MA
+    part invertible. Points on or outside it are flagged, and points close to
+    it indicate a fragile model. Requires matplotlib.
+
+    Args:
+        model (dict): Fitted ARIMA model, e.g. the `model_` attribute of a
+            fitted `statsforecast.models.ARIMA` or `AutoARIMA`.
+
+    Returns:
+        matplotlib.figure.Figure: Figure with one panel per part (AR, MA) that
+            has roots.
+    """
+    try:
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise ImportError(
+            "matplotlib is not installed. Please install it and try again.\n"
+            "You can find detailed instructions at https://matplotlib.org/stable/users/installing/index.html"
+        )
+
+    panels = [
+        (name, roots)
+        for name, roots in (("AR", arroots(model)), ("MA", maroots(model)))
+        if roots.size > 0
+    ]
+    if not panels:
+        raise ValueError("The model has no AR or MA roots to plot.")
+
+    fig, axes = plt.subplots(
+        1, len(panels), figsize=(5 * len(panels), 5), squeeze=False
+    )
+    circle = np.exp(1j * np.linspace(0, 2 * np.pi, 300))
+    for ax, (name, roots) in zip(axes[0], panels):
+        inside = np.abs(roots) < 1
+        ax.axhline(0, color="lightgrey", linewidth=1, zorder=0)
+        ax.axvline(0, color="lightgrey", linewidth=1, zorder=0)
+        ax.plot(circle.real, circle.imag, color="grey", linestyle=":", linewidth=1.2)
+        ax.scatter(
+            roots[inside].real,
+            roots[inside].imag,
+            marker="o",
+            s=60,
+            color="#1e8449",
+            edgecolors="black",
+            linewidths=0.8,
+            label="inside (OK)" if inside.any() else "_nolegend_",
+        )
+        ax.scatter(
+            roots[~inside].real,
+            roots[~inside].imag,
+            marker="X",
+            s=80,
+            color="#e60000",
+            edgecolors="black",
+            linewidths=0.8,
+            label="on or outside" if not inside.all() else "_nolegend_",
+        )
+        lim = max(1.45, 1.1 * np.abs(roots).max())
+        ax.set_xlim(-lim, lim)
+        ax.set_ylim(-lim, lim)
+        ax.set_aspect("equal")
+        ax.set_xlabel("Real")
+        ax.set_ylabel("Imaginary")
+        prop = "stationary" if name == "AR" else "invertible"
+        ax.set_title(f"Inverse {name} roots ({'' if inside.all() else 'not '}{prop})")
+        ax.legend(loc="lower left", fontsize="small", frameon=False)
+    fig.suptitle("ARIMA roots")
+    fig.tight_layout()
+    plt.close(fig)
+    return fig
+
+
 def predict_arima(model, n_ahead, newxreg=None, se_fit=True):
     myNCOL = lambda x: x.shape[1] if x is not None else 0
     # rsd = model['residuals']
@@ -1232,23 +1371,13 @@ def myarima(
             fit["sigma2"] = np.nansum(fit["residuals"] ** 2) / (nstar - npar + 1)
         minroot = 2
         if order[0] + seas_order[0] > 0:
-            testvec = fit["model"]["phi"]
-            k = abs(testvec) > 1e-8
-            if k.sum() > 0:
-                last_nonzero = np.max(np.where(k)[0])
-                testvec = testvec[: (last_nonzero + 1)]
-                proots = np.polynomial.polynomial.polyroots(np.append(1, -testvec))
-                if proots.size > 0:
-                    minroot = min(minroot, *abs(proots))
+            proots = _lag_poly_roots(fit["model"]["phi"], sign=-1)
+            if proots.size > 0:
+                minroot = min(minroot, *abs(proots))
         if order[2] + seas_order[2] > 0 and fit["ic"] < math.inf:
-            testvec = fit["model"]["theta"]
-            k = abs(testvec) > 1e-8
-            if np.sum(k) > 0:
-                last_nonzero = np.max(np.where(k)[0])
-                testvec = testvec[: (last_nonzero + 1)]
-                proots = np.polynomial.polynomial.polyroots(np.append(1, testvec))
-                if proots.size > 0:
-                    minroot = min(minroot, *abs(proots))
+            proots = _lag_poly_roots(fit["model"]["theta"])
+            if proots.size > 0:
+                minroot = min(minroot, *abs(proots))
         if minroot < 1 + 0.01 or checkarima(fit):
             fit["ic"] = math.inf
         fit["xreg"] = xreg
