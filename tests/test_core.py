@@ -949,6 +949,16 @@ def test_for_cross_validation(series_cv1):
         )
 
 
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_cross_validation_progress_shows_unique_id(series_cv1, capfd, n_jobs):
+    fcst = StatsForecast(models=[Naive()], freq="D", n_jobs=n_jobs, verbose=True)
+    fcst.cross_validation(df=series_cv1, h=2, n_windows=2)
+    err = capfd.readouterr().err
+    for uid in ("id_0", "id_1", "id_2"):
+        assert f"Cross Validation {uid}" in err
+    assert "Time Series" not in err
+
+
 def test_cross_validation_refit_false(series_cv1):
     series_cv = series_cv1
 
