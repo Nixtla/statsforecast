@@ -109,6 +109,7 @@ def _add_fitted_pi(res, se, level):
     level = sorted(level)
     level = np.asarray(level)
     quantiles = _quantiles(level=level)
+    se = np.asarray(se)
     lo = res["fitted"].reshape(-1, 1) - quantiles * se.reshape(-1, 1)
     hi = res["fitted"].reshape(-1, 1) + quantiles * se.reshape(-1, 1)
     lo = lo[:, ::-1]

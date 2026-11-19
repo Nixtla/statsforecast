@@ -1097,6 +1097,23 @@ class TestNaive:
         assert repr(Naive(alias="Naive_custom")) == "Naive_custom"
 
 
+@pytest.mark.parametrize(
+    "model, y",
+    [
+        (Naive(), np.array([5.0])),
+        (RandomWalkWithDrift(), np.array([5.0, 7.0])),
+        (SeasonalNaive(season_length=4), np.array([5.0, 7.0, 6.0, 9.0])),
+    ],
+)
+def test_fitted_intervals_short_series(model, y):
+    fcst = model.forecast(y=y, h=2, level=[80, 95], fitted=True)
+    in_sample = model.fit(y).predict_in_sample(level=[80, 95])
+    for res in (fcst, in_sample):
+        for lv in (80, 95):
+            np.testing.assert_array_equal(res[f"fitted-lo-{lv}"], res["fitted"])
+            np.testing.assert_array_equal(res[f"fitted-hi-{lv}"], res["fitted"])
+
+
 class TestRandomWalkWithDrift:
     def test_rwd_prediction_intervals(self):
         # Test prediction intervals - forecast
