@@ -100,6 +100,31 @@ def test_garch_forecast(garch_data_2_2):
     assert len(fcst["sigma2"]) == h
 
 
+@pytest.mark.parametrize("p, q", [(1, 1), (2, 2), (2, 0)])
+def test_garch_forecast_variance_recursion(garch_data_2_2, p, q):
+    """Multi-step variance forecasts use E[y^2] = sigma^2 for future steps."""
+    garch_data = garch_data_2_2(1000)
+    mod = garch_model(garch_data, p, q)
+    h = 10
+
+    fcst = garch_forecast(mod, h)
+
+    w = mod["coeff"][0]
+    alpha = mod["coeff"][1 : p + 1]
+    beta = mod["coeff"][p + 1 :]
+    y2 = list(mod["y_vals"] ** 2)
+    sigma2 = list(mod["sigma2_vals"])
+    expected = []
+    for _ in range(h):
+        s2 = w + np.dot(alpha[::-1], y2[-p:])
+        if q > 0:
+            s2 += np.dot(beta[::-1], sigma2[-q:])
+        expected.append(s2)
+        y2.append(s2)
+        sigma2.append(s2)
+    np.testing.assert_allclose(fcst["sigma2"], expected)
+
+
 def test_garch_coefficients_vs_arch(garch_data_2_2):
     """Test that GARCH(1,1) coefficients match arch library results for p=q case."""
     garch_data = garch_data_2_2(1000)
