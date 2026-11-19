@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <numeric>
 #include <pybind11/eigen.h>
 
@@ -8,6 +9,13 @@ using Eigen::VectorXd;
 using RowMajorMatrixXd =
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 using OptimResult = std::tuple<VectorXd, double, int, RowMajorMatrixXd>;
+
+// Box constraints in this library span at most a few hundred units (smoothing
+// parameters, distribution tail parameters). Wider ones, e.g. theta's
+// `[1.0, 1e10]` or the initial level's `[-1e10, 1e10]`, are sentinels for
+// "effectively unbounded", not real scales: a step proportional to such a
+// range would be astronomically large.
+constexpr double kMaxBoxRange = 1e3;
 
 inline auto Clamp(const VectorXd &x, const VectorXd &lower,
                   const VectorXd &upper) {
@@ -43,12 +51,23 @@ OptimResult NelderMead(Func F, const VectorXd &x, const VectorXd &lower,
   // perturb simplex using init_step
   for (Eigen::Index i = 0; i < n; ++i) {
     double val = simplex(i, i);
-    if (val == 0) {
-      val = zero_pert;
+    double range = upper(i) - lower(i);
+    if (std::isfinite(range) && range > 0.0 && range <= kMaxBoxRange) {
+      // Real box constraint (the smoothing parameters): step proportional to
+      // the width of the feasible range instead of the current value. Their
+      // starting values can sit very close to a bound (alpha starts at
+      // lower + 0.2 * (upper - lower) / m, which is ~0.004 for m = 52), so a
+      // relative step of init_step is orders of magnitude too small there:
+      // the simplex degenerates into a point along that coordinate and the
+      // search never escapes the initial basin, stalling in a poor local
+      // optimum far from the best likelihood.
+      simplex(i, i) = std::clamp(val + init_step * range, lower(i), upper(i));
     } else {
-      val *= 1.0 + init_step;
+      // Unbounded coordinates (initial states) and sentinel-wide boxes: keep
+      // the relative step.
+      double pert = (val == 0.0) ? zero_pert : val * (1.0 + init_step);
+      simplex(i, i) = std::clamp(pert, lower(i), upper(i));
     }
-    simplex(i, i) = std::clamp(val, lower(i), upper(i));
   }
   // array of the value of f
   auto f_simplex = VectorXd(simplex.rows());
