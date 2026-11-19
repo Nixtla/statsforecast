@@ -1639,3 +1639,53 @@ def test_future_exog_column_order(n_jobs, as_polars, method):
     np.testing.assert_allclose(
         result["LinearRegression"].to_numpy(), df.loc[df.ds >= 17, "y"]
     )
+
+
+@pytest.mark.parametrize("as_polars", [False, True])
+@pytest.mark.parametrize("method", ["forecast", "fit_predict", "predict"])
+@pytest.mark.parametrize("future_categorical", [False, True])
+def test_categorical_ids_exogenous_order(as_polars, method, future_categorical):
+    n = 12
+    train = pd.DataFrame(
+        {
+            "unique_id": np.repeat(["A", "B"], n),
+            "ds": np.tile(np.arange(n), 2),
+            "x": np.r_[np.arange(n, dtype=float), np.arange(n, dtype=float)],
+            "y": np.r_[2.0 * np.arange(n), np.full(n, 100.0)],
+        }
+    )
+    future = pd.DataFrame(
+        {
+            "unique_id": ["A", "A", "B", "B"],
+            "ds": [n, n + 1, n, n + 1],
+            "x": [10.0, 20.0, 50.0, 60.0],
+        }
+    )
+    if as_polars:
+        train = pl.from_pandas(train).with_columns(
+            pl.col("unique_id").cast(pl.Enum(["B", "A"]))
+        )
+        future = pl.from_pandas(future)
+        if future_categorical:
+            future = future.with_columns(
+                pl.col("unique_id").cast(pl.Enum(["A", "B"]))
+            )
+    else:
+        train["unique_id"] = pd.Categorical(
+            train["unique_id"], categories=["B", "A"], ordered=True
+        )
+        if future_categorical:
+            future["unique_id"] = pd.Categorical(
+                future["unique_id"], categories=["A", "B"], ordered=True
+            )
+    sf = StatsForecast(models=[SklearnModel(LinearRegression())], freq=1, n_jobs=1)
+    if method == "predict":
+        result = sf.fit(train).predict(h=2, X_df=future)
+    else:
+        result = getattr(sf, method)(df=train, h=2, X_df=future)
+    if as_polars:
+        result = result.to_pandas()
+    preds_a = result.loc[result["unique_id"] == "A", "LinearRegression"].to_numpy()
+    preds_b = result.loc[result["unique_id"] == "B", "LinearRegression"].to_numpy()
+    np.testing.assert_allclose(preds_a, [20.0, 40.0])
+    np.testing.assert_allclose(preds_b, [100.0, 100.0])
