@@ -98,6 +98,7 @@ def test_garch_forecast(garch_data_2_2):
     assert "sigma2" in fcst
     assert len(fcst["mean"]) == h
     assert len(fcst["sigma2"]) == h
+    np.testing.assert_array_equal(fcst["mean"], np.zeros(h))
 
 
 def test_garch_coefficients_vs_arch(garch_data_2_2):

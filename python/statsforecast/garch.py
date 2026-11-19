@@ -130,6 +130,7 @@ def garch_forecast(mod, h):
         y_vals[p + k] = yhat
         sigma2_vals[q + k] = sigma2hat
 
-    res = {"mean": y_vals[-h:], "sigma2": sigma2_vals[-h:], "fitted": mod["fitted"]}
+    # the conditional mean of a zero-mean GARCH process is 0 at every horizon
+    res = {"mean": np.zeros(h), "sigma2": sigma2_vals[-h:], "fitted": mod["fitted"]}
 
     return res
