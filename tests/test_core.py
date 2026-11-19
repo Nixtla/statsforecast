@@ -1639,3 +1639,109 @@ def test_future_exog_column_order(n_jobs, as_polars, method):
     np.testing.assert_allclose(
         result["LinearRegression"].to_numpy(), df.loc[df.ds >= 17, "y"]
     )
+
+
+def _tail_per_series(df, k):
+    if isinstance(df, pl.DataFrame):
+        return (
+            df.sort(["unique_id", "ds"])
+            .group_by("unique_id", maintain_order=True)
+            .tail(k)
+        )
+    return df.sort_values(["unique_id", "ds"]).groupby("unique_id", observed=True).tail(k)
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+@pytest.mark.parametrize("engine,freq", [("pandas", "D"), ("polars", "1d")])
+@pytest.mark.parametrize("model_cls", [HistoricAverage, AutoETS])
+def test_forecast_input_size(n_jobs, engine, freq, model_cls):
+    # series of different lengths, some shorter than input_size
+    df = generate_series(
+        n_series=4, min_length=20, max_length=40, equal_ends=False, engine=engine
+    )
+    input_size = 15
+    col = repr(model_cls())
+    res = StatsForecast(models=[model_cls()], freq=freq, n_jobs=n_jobs).forecast(
+        df=df, h=5, input_size=input_size
+    )
+    expected = StatsForecast(models=[model_cls()], freq=freq, n_jobs=n_jobs).forecast(
+        df=_tail_per_series(df, input_size), h=5
+    )
+    full = StatsForecast(models=[model_cls()], freq=freq, n_jobs=n_jobs).forecast(
+        df=df, h=5
+    )
+    np.testing.assert_allclose(res[col].to_numpy(), expected[col].to_numpy())
+    # future dates still start after the last observation of the full series
+    np.testing.assert_array_equal(res["ds"].to_numpy(), full["ds"].to_numpy())
+    # truncation actually changes the result
+    assert not np.allclose(res[col].to_numpy(), full[col].to_numpy())
+
+
+@pytest.mark.parametrize("input_size", [None, 10_000])
+def test_forecast_input_size_noop(input_size):
+    df = generate_series(n_series=3, min_length=20, max_length=30, equal_ends=False)
+    sf = StatsForecast(models=[HistoricAverage()], freq="D")
+    expected = sf.forecast(df=df, h=3)
+    res = sf.forecast(df=df, h=3, input_size=input_size)
+    pd.testing.assert_frame_equal(res, expected)
+
+
+@pytest.mark.parametrize("input_size", [0, -1])
+def test_forecast_input_size_invalid(input_size):
+    df = generate_series(n_series=2, min_length=20, max_length=30)
+    sf = StatsForecast(models=[HistoricAverage()], freq="D")
+    with pytest.raises(ValueError, match="input_size"):
+        sf.forecast(df=df, h=3, input_size=input_size)
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_forecast_input_size_exog(n_jobs):
+    rng = np.random.RandomState(0)
+    n = 40
+    df = pd.DataFrame(
+        {
+            "unique_id": np.repeat(["a", "b"], n),
+            "ds": np.tile(np.arange(n), 2),
+            "x": rng.normal(size=2 * n),
+        }
+    )
+    # relationship between y and x changes midway, so truncation matters
+    slope = np.where(df["ds"] < 20, 1.0, 5.0)
+    df["y"] = slope * df["x"] + rng.normal(scale=0.01, size=2 * n)
+    X_df = pd.DataFrame(
+        {
+            "unique_id": np.repeat(["a", "b"], 3),
+            "ds": np.tile(np.arange(n, n + 3), 2),
+            "x": rng.normal(size=6),
+        }
+    )
+    models = [SklearnModel(LinearRegression())]
+    kwargs = dict(freq=1, n_jobs=n_jobs)
+    res = StatsForecast(models=models, **kwargs).forecast(
+        df=df, h=3, X_df=X_df, input_size=15
+    )
+    expected = StatsForecast(models=models, **kwargs).forecast(
+        df=_tail_per_series(df, 15), h=3, X_df=X_df
+    )
+    full = StatsForecast(models=models, **kwargs).forecast(df=df, h=3, X_df=X_df)
+    np.testing.assert_allclose(res["LinearRegression"], expected["LinearRegression"])
+    assert not np.allclose(res["LinearRegression"], full["LinearRegression"])
+
+
+@pytest.mark.parametrize("n_jobs", [1, 2])
+def test_forecast_input_size_fitted(n_jobs):
+    df = generate_series(n_series=3, min_length=20, max_length=40, equal_ends=False)
+    input_size = 12
+    sf = StatsForecast(models=[Naive()], freq="D", n_jobs=n_jobs)
+    sf.forecast(df=df, h=3, fitted=True, input_size=input_size)
+    fitted = sf.forecast_fitted_values()
+    tail = _tail_per_series(df, input_size)
+    # fitted values only cover the observations that were used
+    assert len(fitted) == len(tail)
+    pd.testing.assert_frame_equal(
+        fitted[["unique_id", "ds", "y"]].reset_index(drop=True),
+        tail[["unique_id", "ds", "y"]].reset_index(drop=True),
+    )
+    sf2 = StatsForecast(models=[Naive()], freq="D", n_jobs=n_jobs)
+    sf2.forecast(df=tail, h=3, fitted=True)
+    pd.testing.assert_frame_equal(fitted, sf2.forecast_fitted_values())
