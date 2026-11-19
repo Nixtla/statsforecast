@@ -13,8 +13,8 @@ def mstl(
     period: Union[int, List[int]],  # season length
     blambda: Optional[float] = None,  # box-cox transform
     iterate: int = 2,  # number of iterations
-    s_window: Optional[np.ndarray] = None,  # seasonal window
-    stl_kwargs: Dict = dict(),
+    s_window: Optional[Union[int, List[int], np.ndarray]] = None,  # seasonal window
+    stl_kwargs: Optional[Dict] = None,
 ):
     origx = x
     n = len(x)
@@ -22,6 +22,23 @@ def mstl(
         msts = [period]
     else:
         msts = sorted(period)
+    stl_kwargs = {} if stl_kwargs is None else stl_kwargs
+    for reserved, alternative in (
+        ("period", "the season length"),
+        ("seasonal", "the `s_window` argument"),
+    ):
+        if reserved in stl_kwargs:
+            raise ValueError(
+                f"`{reserved}` can't be set through `stl_kwargs`, "
+                f"use {alternative} instead."
+            )
+    if s_window is not None:
+        s_window = np.atleast_1d(s_window)
+        if s_window.ndim != 1 or s_window.size not in (1, len(msts)):
+            raise ValueError(
+                "`s_window` must be a single value or have one value per "
+                f"seasonal period ({len(msts)}), got {s_window.size}."
+            )
     if s_window is None:
         # default seasonal windows 11, 15, 19, ... following R's
         # forecast::mstl() (7 + 4*k), see
