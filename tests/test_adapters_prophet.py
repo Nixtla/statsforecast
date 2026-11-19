@@ -226,3 +226,17 @@ def test_predict_with_partial_training_and_test_dates(
 def test_autoarimaprophet_forwards_ssinit():
     model = AutoARIMAProphet(SSinit="Rossignol2011")
     assert model.arima.SSinit == "Rossignol2011"
+
+
+def test_missing_prophet_error_includes_original_message(monkeypatch):
+    import importlib
+    import sys
+
+    monkeypatch.setitem(sys.modules, "prophet", None)
+    monkeypatch.setitem(sys.modules, "fbprophet", None)
+    monkeypatch.delitem(sys.modules, "statsforecast.adapters.prophet")
+    with pytest.raises(ModuleNotFoundError) as excinfo:
+        importlib.import_module("statsforecast.adapters.prophet")
+    msg = str(excinfo.value)
+    assert "{e}" not in msg
+    assert msg.startswith(str(excinfo.value.__cause__))

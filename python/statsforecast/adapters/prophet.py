@@ -12,7 +12,7 @@ if sys.version_info.minor != 6 or (sys.platform not in ["win32", "cygwin"]):
         from prophet import Prophet
     except ModuleNotFoundError as e:
         msg = (
-            "{e}. To use prophet adapters you have to install "
+            f"{e}. To use prophet adapters you have to install "
             "prophet. Please run `pip install prophet`. "
             "Note that it is recommended to install prophet "
             "using conda environments due to dependencies."
@@ -23,7 +23,7 @@ elif sys.version_info.minor == 6 and (sys.platform in ["win32", "cygwin"]):
         from fbprophet import Prophet
     except ModuleNotFoundError as e:
         msg = (
-            "{e}. To use prophet adapters you have to install "
+            f"{e}. To use prophet adapters you have to install "
             "fbprophet. Please run `pip install fbprophet`. "
             "Note that it is recommended to install prophet "
             "using conda environments due to dependencies."
