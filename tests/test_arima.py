@@ -661,6 +661,36 @@ def test_nsdiffs_and_newmodel(almost_constant_x):
     assert newmodel(0, 1, 0, 0, 1, 0, 1, results)
 
 
+@pytest.mark.parametrize(
+    "x, kind, expected",
+    [
+        (ap[48:], "level", {"kpss": 1, "adf": 0, "pp": 1}),
+        (ap[36:60], "level", {"kpss": 0, "adf": 1, "pp": 1}),
+        (ap, "trend", {"kpss": 0, "adf": 0, "pp": 0}),
+    ],
+)
+def test_ndiffs_matches_forecast(x, kind, expected):
+    """ndiffs runs the requested unit root test, as forecast::ndiffs does.
+
+    R code (forecast 8.24.0, urca 1.3-4):
+    ```
+    a <- as.numeric(AirPassengers)
+    sapply(c("kpss", "adf", "pp"), function(t) ndiffs(a[49:144], test = t))
+    sapply(c("kpss", "adf", "pp"), function(t) ndiffs(a[37:60], test = t))
+    sapply(c("kpss", "adf", "pp"), function(t) ndiffs(a, test = t, type = "trend"))
+    ```
+    """
+    for test, d in expected.items():
+        assert ndiffs(x, test=test, kind=kind) == d
+
+
+def test_ndiffs_rejects_unknown_test():
+    with pytest.raises(ValueError, match="test must be"):
+        ndiffs(ap, test="KPSS")
+    with pytest.raises(ValueError, match="kind must be"):
+        ndiffs(ap, kind="drift")
+
+
 def test_auto_arima_simple_cases():
     """Test auto_arima_f with simple cases."""
     assert math.isclose(
