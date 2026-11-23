@@ -150,6 +150,37 @@ def test_conformal_intervals_invalid_h():
         ConformalIntervals(h=0)
 
 
+def test_conformal_intervals_shorter_horizon():
+    """A horizon shorter than ConformalIntervals.h uses the first h columns of the scores."""
+    conf_intervals = ConformalIntervals(h=12, n_windows=2)
+    naive = Naive(prediction_intervals=conf_intervals)
+    full = naive.forecast(ap, h=12, level=[80])
+    short = naive.forecast(ap, h=5, level=[80])
+    for key in ["mean", "lo-80", "hi-80"]:
+        np.testing.assert_array_equal(short[key], full[key][:5])
+    fitted = naive.fit(ap)
+    np.testing.assert_array_equal(
+        fitted.predict(h=5, level=[80])["hi-80"], full["hi-80"][:5]
+    )
+
+
+def test_conformal_intervals_single_step_scores_are_reused():
+    """With ConformalIntervals(h=1) the one-step scores apply to every horizon."""
+    naive = Naive(prediction_intervals=ConformalIntervals(h=1, n_windows=2))
+    res = naive.forecast(ap, h=12, level=[80])
+    assert len(res["hi-80"]) == 12
+    assert np.ptp(res["hi-80"]) == 0
+
+
+def test_conformal_intervals_longer_horizon():
+    """A horizon longer than ConformalIntervals.h must fail with a clear message."""
+    naive = Naive(prediction_intervals=ConformalIntervals(h=6, n_windows=2))
+    with pytest.raises(ValueError, match="larger than the `h` of `ConformalIntervals`"):
+        naive.forecast(ap, h=12, level=[80])
+    with pytest.raises(ValueError, match="larger than the `h` of `ConformalIntervals`"):
+        naive.fit(ap).predict(h=12, level=[80])
+
+
 def test_conformal_error_intervals():
     """Test conformal_error method produces valid intervals."""
     conf_intervals = ConformalIntervals(h=12, n_windows=2, method="conformal_error")

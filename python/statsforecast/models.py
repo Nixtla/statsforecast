@@ -267,6 +267,15 @@ class _TS:
     def _add_conformal_intervals(self, fcst, y, X, level):
         if self.prediction_intervals is not None and level is not None:
             cs = self._conformity_scores(y, X) if y is not None else self._cs
+            h = len(fcst["mean"])
+            if cs.shape[1] > 1:
+                if h > cs.shape[1]:
+                    raise ValueError(
+                        f"The horizon ({h}) is larger than the `h` of `ConformalIntervals` "
+                        f"({cs.shape[1]}). Please use `ConformalIntervals(h={h}, ...)` "
+                        "or a smaller horizon."
+                    )
+                cs = cs[:, :h]
             res = self._conformal_method(fcst=fcst, cs=cs, level=level)
             return res
         return fcst

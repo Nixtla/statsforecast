@@ -1295,6 +1295,21 @@ def test_cv_fallback_model(series, n_jobs=1):
 # show_doc(StatsForecast.load, title_level=2, name="StatsForecast.load")
 
 
+def test_conformal_prediction_shorter_horizon(series):
+    uids = series.index.unique()[:3]
+    series_subset = series.query("unique_id in @uids")[["unique_id", "ds", "y"]]
+    sf = StatsForecast(models=[SeasonalNaive(season_length=7)], freq="D", n_jobs=1)
+    sf.fit(df=series_subset, prediction_intervals=ConformalIntervals(h=12))
+    full = sf.predict(h=12, level=[80])
+    short = sf.predict(h=5, level=[80])
+    assert len(short) == 5 * len(uids)
+    expected = full.groupby("unique_id").head(5).reset_index(drop=True)
+    for col in ["SeasonalNaive-lo-80", "SeasonalNaive-hi-80"]:
+        np.testing.assert_array_equal(short[col].to_numpy(), expected[col].to_numpy())
+    with pytest.raises(ValueError, match="larger than the `h` of `ConformalIntervals`"):
+        sf.predict(h=13, level=[80])
+
+
 def test_conformal_prediction(series):
     # test for conformal prediction
     uids = series.index.unique()[:10]
