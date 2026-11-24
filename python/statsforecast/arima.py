@@ -2092,7 +2092,118 @@ def nsdiffs(x, test="seas", alpha=0.05, period=1, max_D=1, **kwargs):
     return D
 
 
+def _urca_pval(stat, cval, levels):
+    # forecast::ndiffs reads the p-value off the urca critical values with
+    # approx(rule = 2): linear interpolation, clamped at the table's ends.
+    cval = np.asarray(cval, dtype=float)
+    levels = np.asarray(levels, dtype=float)
+    order = np.argsort(cval)
+    return float(np.interp(stat, cval[order], levels[order]))
+
+
+def _ols_tstats(y, X):
+    coef, *_ = np.linalg.lstsq(X, y, rcond=None)
+    resid = y - X @ coef
+    sigma2 = resid @ resid / (X.shape[0] - X.shape[1])
+    se = np.sqrt(np.diag(sigma2 * np.linalg.inv(X.T @ X)))
+    return coef, se, resid
+
+
+def _kpss_pval(x, kind):
+    # urca::ur.kpss(x, type = "mu" / "tau", use.lag = trunc(3 * sqrt(n) / 13))
+    nlags = math.floor(3 * math.sqrt(len(x)) / 13)
+    regression = "c" if kind == "level" else "ct"
+    stat = sm.tsa.kpss(x, regression, nlags=nlags)[0]
+    if kind == "level":
+        cval = [0.347, 0.463, 0.574, 0.739]
+    else:
+        cval = [0.119, 0.146, 0.176, 0.216]
+    return _urca_pval(stat, cval, [0.10, 0.05, 0.025, 0.01])
+
+
+def _adf_pval(x, kind):
+    # urca::ur.df(x, type = "drift" / "trend", lags = 1)
+    z = np.diff(x)
+    n = z.size
+    z_diff = z[1:]
+    z_lag_1 = x[1:n]
+    cols = [np.ones(n - 1), z_lag_1]
+    if kind == "trend":
+        cols.append(np.arange(2, n + 1, dtype=float))
+    cols.append(z[:-1])
+    coef, se, _ = _ols_tstats(z_diff, np.column_stack(cols))
+    stat = coef[1] / se[1]
+    row = np.searchsorted([25, 50, 100, 250, 500], n, side="right")
+    if kind == "level":
+        table = [
+            [-3.75, -3.00, -2.63],
+            [-3.58, -2.93, -2.60],
+            [-3.51, -2.89, -2.58],
+            [-3.46, -2.88, -2.57],
+            [-3.44, -2.87, -2.57],
+            [-3.43, -2.86, -2.57],
+        ]
+    else:
+        table = [
+            [-4.38, -3.60, -3.24],
+            [-4.15, -3.50, -3.18],
+            [-4.04, -3.45, -3.15],
+            [-3.99, -3.43, -3.13],
+            [-3.98, -3.42, -3.13],
+            [-3.96, -3.41, -3.12],
+        ]
+    return _urca_pval(stat, table[row], [0.01, 0.05, 0.10])
+
+
+def _pp_pval(x, kind):
+    # urca::ur.pp(x, type = "Z-tau", model = "constant" / "trend", lags = "short")
+    y = x[1:]
+    y_l1 = x[:-1]
+    n = y.size
+    lmax = math.trunc(4 * (n / 100) ** 0.25)
+    cols = [np.ones(n), y_l1]
+    if kind == "trend":
+        cols.append(np.arange(1, n + 1) - n / 2)
+    coef, se, res = _ols_tstats(y, np.column_stack(cols))
+    s = res @ res / n
+    idx = np.arange(1, lmax + 1)
+    coprods = np.array([res[l:] @ res[: n - l] for l in idx])
+    weights = 1 - idx / (lmax + 1)
+    sig = s + (2 / n) * (weights @ coprods)
+    lambda_prime = 0.5 * (sig - s) / sig
+    tstat = (coef[1] - 1) / se[1]
+    if kind == "level":
+        myybar = np.sum((y - y.mean()) ** 2) / n**2
+        stat = np.sqrt(s / sig) * tstat - lambda_prime * np.sqrt(sig) / np.sqrt(myybar)
+        cval = [
+            -3.4335 - 5.999 / n - 29.25 / n**2,
+            -2.8621 - 2.738 / n - 8.36 / n**2,
+            -2.5671 - 1.438 / n - 4.48 / n**2,
+        ]
+    else:
+        myy = np.sum(y**2) / n**2
+        mty = n ** (-5 / 2) * (np.arange(1, n + 1) @ y)
+        my = n ** (-3 / 2) * np.sum(y)
+        M = (
+            (1 - n ** (-2)) * myy
+            - 12 * mty**2
+            + 12 * (1 + 1 / n) * mty * my
+            - (4 + 6 / n + 2 / n**2) * my**2
+        )
+        stat = np.sqrt(s / sig) * tstat - lambda_prime * np.sqrt(sig) / np.sqrt(M)
+        cval = [
+            -3.9638 - 8.353 / n - 47.44 / n**2,
+            -3.4126 - 4.039 / n - 17.83 / n**2,
+            -3.1279 - 2.418 / n - 7.58 / n**2,
+        ]
+    return _urca_pval(stat, cval, [0.01, 0.05, 0.10])
+
+
 def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
+    if test not in ("kpss", "adf", "pp"):
+        raise ValueError(f"test must be 'kpss', 'adf' or 'pp', got {test!r}")
+    if kind not in ("level", "trend"):
+        raise ValueError(f"kind must be 'level' or 'trend', got {kind!r}")
     x = x[~np.isnan(x)]
     d = 0
     if alpha < 0.01:
@@ -2112,8 +2223,12 @@ def ndiffs(x, alpha=0.05, test="kpss", kind="level", max_d=2):
         try:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                nlags = math.floor(3 * math.sqrt(len(x)) / 13)
-                diff = sm.tsa.kpss(x, "c", nlags=nlags)[1] < alpha
+                if test == "kpss":
+                    diff = _kpss_pval(x, kind) < alpha
+                elif test == "adf":
+                    diff = _adf_pval(x, kind) > alpha
+                else:
+                    diff = _pp_pval(x, kind) > alpha
         except Exception as e:
             warnings.warn(
                 f"The chosen unit root test encountered an error when testing for the {d} difference.\n"
