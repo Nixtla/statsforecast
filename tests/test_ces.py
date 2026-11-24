@@ -13,6 +13,7 @@ from statsforecast.ces import (
     forward_ces,
     initparamces,
     initstate,
+    optimize_ces_target_fn,
     switch_ces,
 )
 from statsforecast.utils import AirPassengers as ap
@@ -304,3 +305,21 @@ class TestCES:
         # Less than two seasonal periods removes seasonal component
         res_short = auto_ces(np.arange(23, dtype=np.float64), m=self.m)
         assert res_short['seasontype'] == 'N'
+
+    def test_optimizer_does_not_prefer_diverging_parameters(self):
+        """A NaN likelihood must be the worst value for the minimizer, not the best"""
+        rng = np.random.default_rng(0)
+        n = 1_000
+        y = 10 + 6 * np.sin(2 * np.pi * np.arange(n) / 24) + rng.normal(0, 1, n)
+        init = initstate(y, 1, 'N')
+        res = optimize_ces_target_fn(
+            init_par={'alpha_0': 0.8, 'alpha_1': 0.7, 'beta_0': np.nan, 'beta_1': np.nan},
+            optimize_params={'alpha_0': True, 'alpha_1': True, 'beta_0': False, 'beta_1': False},
+            y=y,
+            m=1,
+            init_states=init,
+            n_components=init.shape[1],
+            seasontype='N',
+            nmse=3,
+        )
+        assert np.isfinite(res.fn)
