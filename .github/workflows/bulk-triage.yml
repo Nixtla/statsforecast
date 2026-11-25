@@ -1,0 +1,30 @@
+name: Bulk AI Issue Triage
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_issues:
+        description: "Max number of issues to triage (default: 50)"
+        required: false
+        default: "50"
+        type: number
+
+jobs:
+  dispatch:
+    name: Trigger triage for open untriaged issues
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      actions: write
+
+    steps:
+      - name: Trigger triage for each untriaged issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          MAX: ${{ inputs.max_issues }}
+        run: |
+          gh issue list --repo "$REPO" --state open --limit "$MAX" \
+            --json number,labels \
+            --jq '.[] | select(.labels | map(.name) | contains(["ai-triaged"]) | not) | .number' \
+          | xargs -I{} gh workflow run ai-triage.yml --repo "$REPO" -f issue_number={}
