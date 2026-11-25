@@ -301,10 +301,10 @@ double ces_target_fn(const VectorXd &optimal_param, double init_alpha_0,
 
   if (lik < -1e10)
     lik = -1e10;
-  if (std::isnan(lik))
-    lik = -std::numeric_limits<double>::infinity();
-  if (std::fabs(lik + 99999) < 1e-7)
-    lik = -std::numeric_limits<double>::infinity();
+  // Nelder-Mead minimizes, so a diverging fit (NaN) or an invalid one (the
+  // -99999 sentinel) must be the worst value, not the best.
+  if (std::isnan(lik) || std::fabs(lik + 99999) < 1e-7)
+    lik = std::numeric_limits<double>::infinity();
   return lik;
 }
 
