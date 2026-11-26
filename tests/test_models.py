@@ -7,6 +7,7 @@ import pytest
 from scipy.stats import norm
 
 # from fastcore.test import test_close, test_eq, test_fail
+from statsforecast import StatsForecast
 from statsforecast.garch import generate_garch_data
 from statsforecast.models import (
     _TS,
@@ -48,6 +49,7 @@ from statsforecast.models import (
     WindowAverage,
 )
 from statsforecast.utils import AirPassengers as ap
+from statsforecast.utils import AirPassengersDF
 
 
 def _plot_insample_pi(fcst):
@@ -2137,6 +2139,17 @@ class TestGARCH:
         fcst_garch_c = garch_c.forecast(ap, 13, None, None, (80, 95), True)
         np.testing.assert_array_equal(fcst_garch_c["mean"][:12], fcst_garch["mean"])
 
+    def test_garch_conformal_forecast_matches_predict(self):
+        model = GARCH(prediction_intervals=ConformalIntervals(h=2, n_windows=2))
+        forecast = model.forecast(ap, h=2, level=[80])
+        sf = StatsForecast(models=[model], freq="ME")
+        sf_forecast = sf.forecast(df=AirPassengersDF, h=2, level=[80])
+        expected = model.fit(ap).predict(h=2, level=[80])
+
+        for bound in ("lo-80", "hi-80"):
+            np.testing.assert_allclose(forecast[bound], expected[bound])
+            np.testing.assert_allclose(sf_forecast[f"{model}-{bound}"], expected[bound])
+
     def test_garch_interval_scale(self):
         # hi/lo = mean +/- z * sigma
         y = self.y * 10
@@ -2192,11 +2205,25 @@ class TestARCH:
         fcst_arch_c = arch_c.forecast(ap, 13, None, None, (80, 95), True)
         np.testing.assert_array_equal(fcst_arch_c["mean"][:12], fcst_arch["mean"])
 
-    def test_arch_equals_garch_p1_q0(self):
-        garch = GARCH(p=1, q=0)
+    def test_arch_conformal_bounds_match_garch(self):
+        y = np.array([1, -1, 2, -2, 3, -3, 2, -2], dtype=float)
+        intervals = ConformalIntervals(h=1, n_windows=2, method="conformal_error")
+        arch = ARCH(1, prediction_intervals=intervals).fit(y)
+        garch = GARCH(1, 0, prediction_intervals=intervals).fit(y)
+
+        arch_fcst = arch.predict(h=1, level=[80])
+        garch_fcst = garch.predict(h=1, level=[80])
+        native_fcst = ARCH(1).fit(y).predict(h=1, level=[80])
+        for bound in ("lo-80", "hi-80"):
+            np.testing.assert_allclose(arch_fcst[bound], garch_fcst[bound])
+            assert not np.allclose(arch_fcst[bound], native_fcst[bound])
+
+    @pytest.mark.parametrize("intervals", [None, ConformalIntervals(h=12, n_windows=2)])
+    def test_arch_equals_garch_p1_q0(self, intervals):
+        garch = GARCH(p=1, q=0, prediction_intervals=intervals)
         fcast_garch = garch.forecast(self.y, h=12, level=[90, 80], fitted=True)
 
-        arch = ARCH(p=1)
+        arch = ARCH(p=1, prediction_intervals=intervals)
         fcast_arch = arch.forecast(self.y, h=12, level=[90, 80], fitted=True)
 
         np.testing.assert_equal(fcast_garch, fcast_arch)
