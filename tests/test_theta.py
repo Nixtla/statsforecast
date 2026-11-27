@@ -552,3 +552,59 @@ def test_theta_pi_stays_centered_for_static_models():
         # above 0.05 indicates the simulation has drifted off the point forecast.
         drift = float(np.abs(samples.mean(axis=1) - mean).max())
         assert drift < 0.05, f"{mtype} PI drifted from the point forecast by {drift:.3f}"
+
+
+def test_forecast_theta_uses_fitted_scale_for_non_normal_distributions():
+    """Non-normal forecast_theta intervals must use sqrt(sigma2) as scale and not refit residuals."""
+    from scipy import stats
+    from statsforecast.distributions import frozen_error_distribution
+
+    # Heavy-tailed Student-t series where sample SD >> MLE scale
+    rng = np.random.default_rng(42)
+    y_t = 100.0 + np.cumsum(stats.t.rvs(df=2.5, scale=1.0, size=300, random_state=rng))
+    mod_t = auto_theta(y_t, m=1, model="STM", distribution="t")
+    fcst_t = forecast_theta(mod_t, h=1, level=[95])
+    scale_t = float(np.sqrt(mod_t["sigma2"]))
+    expected_hw = float(
+        frozen_error_distribution(scale_t, "t", {"df": mod_t["nu"]}).ppf(0.975)
+    )
+    actual_hw = float((fcst_t["hi-95"][0] - fcst_t["lo-95"][0]) / 2.0)
+    # Sample SD is >2x larger than MLE scale here; actual half-width must track MLE scale
+    assert abs(actual_hw - expected_hw) / expected_hw < 0.35
+
+    # Laplace with asymmetric residuals: interval must stay centered at the point forecast
+    # rather than shifting by a re-fitted scipy.stats.laplace median location
+    rng_lap = np.random.default_rng(7)
+    y_lap = 50.0 + np.cumsum(rng_lap.exponential(scale=2.0, size=200) - 2.0)
+    mod_lap = auto_theta(y_lap, m=1, model="STM", distribution="laplace")
+    fcst_lap = forecast_theta(mod_lap, h=1, level=[95])
+    scale_lap = float(np.sqrt(mod_lap["sigma2"]))
+    expected_lap_hw = float(
+        frozen_error_distribution(scale_lap, "laplace").ppf(0.975)
+    )
+    mid_lap = float((fcst_lap["hi-95"][0] + fcst_lap["lo-95"][0]) / 2.0)
+    actual_lap_hw = float((fcst_lap["hi-95"][0] - fcst_lap["lo-95"][0]) / 2.0)
+    assert abs(mid_lap - float(fcst_lap["mean"][0])) < 0.35 * expected_lap_hw
+    assert abs(actual_lap_hw - expected_lap_hw) / expected_lap_hw < 0.35
+
+
+@pytest.mark.parametrize("distribution", ["laplace", "t", "skew-normal", "ged"])
+def test_forecast_theta_passes_mle_sigma_and_no_residuals(monkeypatch, distribution):
+    """forecast_theta passes sqrt(model['sigma2']) and residuals=None for non-normal distributions."""
+    import statsforecast.theta as theta_mod
+
+    captured = {}
+    orig = theta_mod.compute_pi_samples
+
+    def spy(*args, **kwargs):
+        captured["sigma"] = kwargs.get("sigma")
+        captured["residuals"] = kwargs.get("residuals")
+        return orig(*args, **kwargs)
+
+    monkeypatch.setattr(theta_mod, "compute_pi_samples", spy)
+    mod = auto_theta(ap.astype(np.float64), m=12, model="STM", distribution=distribution)
+    forecast_theta(mod, h=3, level=[95])
+
+    assert captured["sigma"] == pytest.approx(float(np.sqrt(mod["sigma2"])))
+    assert captured["residuals"] is None
+
