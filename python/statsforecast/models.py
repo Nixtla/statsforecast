@@ -6840,7 +6840,7 @@ class GARCH(_TS):
         if level is not None:
             level = sorted(level)
             if self.prediction_intervals is not None:
-                res = self._add_predict_conformal_intervals(res, level)
+                res = self._add_conformal_intervals(fcst=res, y=y, X=X, level=level)
             else:
                 quantiles = _quantiles(level)
                 sigma = np.sqrt(res["sigma2"]).reshape(-1, 1)
@@ -6895,7 +6895,7 @@ class ARCH(GARCH):
     ):
         self.p = p
         self.alias = alias
-        super().__init__(p, q=0, alias=alias)
+        super().__init__(p, q=0, alias=alias, prediction_intervals=prediction_intervals)
 
 
 class SklearnModel(_TS):
