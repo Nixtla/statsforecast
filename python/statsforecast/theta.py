@@ -421,16 +421,21 @@ def forecast_theta(obj, h, level=None):
 
     if level is not None:
         residuals_tail = obj["residuals"][3:]
-        if len(residuals_tail) < 2:
-            warnings.warn(
-                "Too few residuals after burn-in for sigma estimate; using all residuals",
-                stacklevel=2,
-            )
-            sigma = np.std(obj["residuals"], ddof=1)
-        else:
-            sigma = np.std(residuals_tail, ddof=1)
-        mean_y = obj["mean_y"]
         dist = obj.get("distribution", "normal")
+        if dist != "normal" and "sigma2" in obj:
+            sigma = float(np.sqrt(obj["sigma2"]))
+            sim_residuals = None
+        else:
+            if len(residuals_tail) < 2:
+                warnings.warn(
+                    "Too few residuals after burn-in for sigma estimate; using all residuals",
+                    stacklevel=2,
+                )
+                sigma = np.std(obj["residuals"], ddof=1)
+            else:
+                sigma = np.std(residuals_tail, ddof=1)
+            sim_residuals = residuals_tail
+        mean_y = obj["mean_y"]
         samples = compute_pi_samples(
             n=n,
             h=h,
@@ -441,7 +446,7 @@ def forecast_theta(obj, h, level=None):
             mean_y=mean_y,
             error_distribution=dist,
             error_params=error_params_from_model(obj),
-            residuals=residuals_tail,
+            residuals=sim_residuals,
             modeltype=switch_theta(obj["modeltype"]),
         )
         for lv in level:
